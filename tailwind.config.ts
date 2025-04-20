@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -52,6 +53,19 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				diamond: {
+					50: '#f5f7ff',
+					100: '#ecefff',
+					200: '#dfe3ff',
+					300: '#c4cbff',
+					400: '#a3a6ff',
+					500: '#8a82ff',
+					600: '#7a63f5',
+					700: '#6a4adf',
+					800: '#563eb3',
+					900: '#483a91',
+					950: '#2d234f',
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -84,11 +98,28 @@ export default {
 					to: {
 						height: '0'
 					}
-				}
+				},
+				'fade-in': {
+					'0%': { opacity: '0' },
+					'100%': { opacity: '1' }
+				},
+				'counter': {
+					'0%': { transform: 'translateY(0)' },
+					'10%': { transform: 'translateY(0)' },
+					'25%': { transform: 'translateY(-12px)' },
+					'35%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-8px)' },
+					'60%': { transform: 'translateY(0)' },
+					'75%': { transform: 'translateY(-4px)' },
+					'85%': { transform: 'translateY(0)' },
+					'100%': { transform: 'translateY(0)' }
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.6s ease-out',
+				'counter': 'counter 2s ease-in-out',
 			}
 		}
 	},
