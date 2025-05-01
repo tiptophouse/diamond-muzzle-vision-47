@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
-import { TrendingUp, TrendingDown, Chart, Search, MessageSquare } from "lucide-react";
+import { TrendingUp, TrendingDown, BarChartBig, Search, MessageSquare } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
 
 // Types for our AI insights data
@@ -175,7 +175,7 @@ export default function InsightsPage() {
     switch (recommendation) {
       case "Buy": return <TrendingUp className="h-4 w-4 text-green-600" />;
       case "Sell": return <TrendingDown className="h-4 w-4 text-blue-600" />;
-      case "Hold": return <Chart className="h-4 w-4 text-amber-600" />;
+      case "Hold": return <BarChartBig className="h-4 w-4 text-amber-600" />;
       default: return null;
     }
   };
@@ -272,7 +272,7 @@ export default function InsightsPage() {
             
             <div className="flex justify-center">
               <Button>
-                <Chart className="mr-2 h-4 w-4" />
+                <BarChartBig className="mr-2 h-4 w-4" />
                 Refresh Analysis
               </Button>
             </div>
