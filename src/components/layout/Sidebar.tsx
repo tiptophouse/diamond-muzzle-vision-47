@@ -64,7 +64,7 @@ export function Sidebar() {
       <Button
         variant="ghost"
         size="icon"
-        className="fixed top-4 left-4 z-50 md:hidden bg-diamond-100 hover:bg-diamond-200 text-diamond-700 hover:text-diamond-900 hover:scale-110 transition-all duration-300 shadow-md hover:shadow-lg border border-diamond-200 animate-pulse"
+        className="fixed top-4 left-4 z-50 md:hidden bg-diamond-100 hover:bg-diamond-200 text-diamond-700 hover:text-diamond-900 hover:scale-110 transition-all duration-300 shadow-md hover:shadow-lg border border-diamond-200"
         onClick={toggleMobile}
       >
         {isMobileOpen ? <X size={20} className="animate-fade-in" /> : <Menu size={20} className="animate-fade-in" />}
