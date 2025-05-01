@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import InventoryPage from "./pages/InventoryPage";
 import UploadPage from "./pages/UploadPage";
 import SettingsPage from "./pages/SettingsPage";
+import InsightsPage from "./pages/InsightsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,9 +24,9 @@ const App = () => (
           <Route path="/inventory" element={<InventoryPage />} />
           <Route path="/upload" element={<UploadPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/insights" element={<InsightsPage />} />
           {/* You'll need to implement these pages */}
           <Route path="/queries" element={<Dashboard />} />
-          <Route path="/insights" element={<Dashboard />} />
           <Route path="/payments" element={<Dashboard />} />
           {/* Catch-all route */}
           <Route path="*" element={<NotFound />} />

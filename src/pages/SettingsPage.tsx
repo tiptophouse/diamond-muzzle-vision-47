@@ -1,6 +1,8 @@
 
 import { Layout } from "@/components/layout/Layout";
 import { SettingsForm } from "@/components/settings/SettingsForm";
+import { TelegramIntegration } from "@/components/settings/TelegramIntegration";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function SettingsPage() {
   return (
@@ -13,7 +15,20 @@ export default function SettingsPage() {
           </p>
         </div>
         
-        <SettingsForm />
+        <Tabs defaultValue="general" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="general">General Settings</TabsTrigger>
+            <TabsTrigger value="integrations">Integrations</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="general">
+            <SettingsForm />
+          </TabsContent>
+          
+          <TabsContent value="integrations">
+            <TelegramIntegration />
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );
