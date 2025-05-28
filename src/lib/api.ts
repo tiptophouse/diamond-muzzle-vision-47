@@ -3,6 +3,23 @@ import { toast } from "@/components/ui/use-toast";
 
 const API_BASE_URL = "https://mazalbot.app/api/v1";
 
+let currentUserId: number | null = null;
+
+export function setCurrentUserId(userId: number) {
+  currentUserId = userId;
+  console.log('Current user ID set to:', userId);
+}
+
+export function getCurrentUserId(): number | null {
+  return currentUserId;
+}
+
+export const apiEndpoints = {
+  getDashboardStats: (userId: number) => `/users/${userId}/dashboard/stats`,
+  getInventoryByShape: (userId: number) => `/users/${userId}/inventory/by-shape`,
+  getRecentSales: (userId: number) => `/users/${userId}/sales/recent`,
+};
+
 interface ApiResponse<T> {
   data?: T;
   error?: string;
