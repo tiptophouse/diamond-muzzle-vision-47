@@ -2,7 +2,7 @@
 import { toast } from "@/components/ui/use-toast";
 
 // Update this to point to your FastAPI backend
-const API_BASE_URL = "http://localhost:8000/api/v1"; // Change this to your FastAPI URL
+const API_BASE_URL = "https://api.mazalbot.com/api/v1"; // Your production FastAPI URL
 
 let currentUserId: number | null = null;
 
@@ -40,6 +40,7 @@ export async function fetchApi<T>(
       ...options,
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ifj9ov1rh20fslfp`, // Your backend access token
         ...options.headers,
       },
     });
@@ -89,7 +90,9 @@ export const api = {
     return fetchApi<T>(endpoint, {
       method: "POST",
       body: formData,
-      headers: {}, // Let the browser set the content type with boundary
+      headers: {
+        "Authorization": `Bearer ifj9ov1rh20fslfp`, // Include auth for uploads
+      }, // Let the browser set the content type with boundary
     });
   },
 };
