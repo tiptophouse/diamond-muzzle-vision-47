@@ -19,9 +19,9 @@ interface InventoryFiltersProps {
 export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [filters, setFilters] = useState<Record<string, string>>({
-    shape: "",
-    color: "",
-    clarity: "",
+    shape: "all",
+    color: "all",
+    clarity: "all",
     caratMin: "",
     caratMax: "",
   });
@@ -46,18 +46,34 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
   };
 
   const applyFilters = () => {
-    onFilterChange(filters);
+    // Convert "all" values to empty strings for the parent component
+    const processedFilters = Object.keys(filters).reduce((acc, key) => {
+      acc[key] = filters[key] === "all" ? "" : filters[key];
+      return acc;
+    }, {} as Record<string, string>);
+    
+    onFilterChange(processedFilters);
     setIsOpen(false);
   };
 
   const clearFilters = () => {
-    const emptyFilters = Object.keys(filters).reduce((acc, key) => {
-      acc[key] = "";
+    const emptyFilters = {
+      shape: "all",
+      color: "all",
+      clarity: "all",
+      caratMin: "",
+      caratMax: "",
+    };
+    
+    setFilters(emptyFilters);
+    
+    // Convert to empty strings for parent component
+    const processedFilters = Object.keys(emptyFilters).reduce((acc, key) => {
+      acc[key] = emptyFilters[key] === "all" ? "" : emptyFilters[key];
       return acc;
     }, {} as Record<string, string>);
     
-    setFilters(emptyFilters);
-    onFilterChange(emptyFilters);
+    onFilterChange(processedFilters);
   };
 
   return (
@@ -73,34 +89,34 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
         </Button>
         
         {/* Filter pills - show when active */}
-        {filters.shape && (
+        {filters.shape !== "all" && (
           <Button 
             variant="outline" 
             size="sm"
             className="bg-diamond-50 text-diamond-700 border-diamond-200"
-            onClick={() => handleChange('shape', '')}
+            onClick={() => handleChange('shape', 'all')}
           >
             Shape: {filters.shape}
             <X size={14} className="ml-1" />
           </Button>
         )}
-        {filters.color && (
+        {filters.color !== "all" && (
           <Button 
             variant="outline" 
             size="sm"
             className="bg-diamond-50 text-diamond-700 border-diamond-200"
-            onClick={() => handleChange('color', '')}
+            onClick={() => handleChange('color', 'all')}
           >
             Color: {filters.color}
             <X size={14} className="ml-1" />
           </Button>
         )}
-        {filters.clarity && (
+        {filters.clarity !== "all" && (
           <Button 
             variant="outline" 
             size="sm"
             className="bg-diamond-50 text-diamond-700 border-diamond-200"
-            onClick={() => handleChange('clarity', '')}
+            onClick={() => handleChange('clarity', 'all')}
           >
             Clarity: {filters.clarity}
             <X size={14} className="ml-1" />
@@ -122,7 +138,7 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
         )}
         
         {/* Clear all filters button - only show when at least one filter is active */}
-        {(filters.shape || filters.color || filters.clarity || filters.caratMin || filters.caratMax) && (
+        {(filters.shape !== "all" || filters.color !== "all" || filters.clarity !== "all" || filters.caratMin || filters.caratMax) && (
           <Button 
             variant="ghost" 
             size="sm"
@@ -146,7 +162,7 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
                   <SelectValue placeholder="Any shape" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any shape</SelectItem>
+                  <SelectItem value="all">Any shape</SelectItem>
                   {shapes.map((shape) => (
                     <SelectItem key={shape} value={shape}>
                       {shape}
@@ -166,7 +182,7 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
                   <SelectValue placeholder="Any color" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any color</SelectItem>
+                  <SelectItem value="all">Any color</SelectItem>
                   {colors.map((color) => (
                     <SelectItem key={color} value={color}>
                       {color}
@@ -186,7 +202,7 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
                   <SelectValue placeholder="Any clarity" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any clarity</SelectItem>
+                  <SelectItem value="all">Any clarity</SelectItem>
                   {clarities.map((clarity) => (
                     <SelectItem key={clarity} value={clarity}>
                       {clarity}
