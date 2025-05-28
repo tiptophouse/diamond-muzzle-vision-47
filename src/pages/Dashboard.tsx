@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -46,69 +45,35 @@ export default function Dashboard() {
       try {
         console.log(`Fetching dashboard data for user ${user.id}`);
         
-        // Fetch dashboard stats
+        // Fetch dashboard stats from your FastAPI backend
         const statsResponse = await api.get<DashboardStats>(
           apiEndpoints.getDashboardStats(user.id)
         );
         
         if (statsResponse.data) {
           setStats(statsResponse.data);
-        } else {
-          // Fallback to mock data if API fails
-          setStats({
-            totalDiamonds: 1287,
-            matchedPairs: 42,
-            totalLeads: 96,
-            activeSubscriptions: 18,
-          });
         }
 
-        // Fetch inventory by shape
+        // Fetch inventory by shape from your FastAPI backend
         const inventoryResponse = await api.get<InventoryData[]>(
           apiEndpoints.getInventoryByShape(user.id)
         );
         
         if (inventoryResponse.data) {
           setInventoryData(inventoryResponse.data);
-        } else {
-          // Fallback data
-          setInventoryData([
-            { name: "Round", value: 582 },
-            { name: "Princess", value: 231 },
-            { name: "Cushion", value: 142 },
-            { name: "Oval", value: 118 },
-            { name: "Pear", value: 64 },
-            { name: "Other", value: 150 },
-          ]);
         }
 
-        // Fetch recent sales data
+        // Fetch recent sales data from your FastAPI backend
         const salesResponse = await api.get<InventoryData[]>(
           apiEndpoints.getRecentSales(user.id)
         );
         
         if (salesResponse.data) {
           setSalesData(salesResponse.data);
-        } else {
-          // Fallback data
-          setSalesData([
-            { name: "0-1 carat", value: 28 },
-            { name: "1-2 carat", value: 42 },
-            { name: "2-3 carat", value: 18 },
-            { name: "3-4 carat", value: 8 },
-            { name: "4+ carat", value: 4 },
-          ]);
         }
         
       } catch (error) {
         console.error("Failed to fetch dashboard data", error);
-        // Use fallback data on error
-        setStats({
-          totalDiamonds: 1287,
-          matchedPairs: 42,
-          totalLeads: 96,
-          activeSubscriptions: 18,
-        });
       } finally {
         setLoading(false);
       }
@@ -162,7 +127,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">
-            Welcome to Diamond Muzzle, {user.first_name}. Here's an overview of your inventory.
+            Welcome to Diamond Muzzle, {user?.first_name}. Here's an overview of your inventory.
           </p>
         </div>
         

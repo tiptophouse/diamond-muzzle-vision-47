@@ -1,7 +1,8 @@
 
 import { toast } from "@/components/ui/use-toast";
 
-const API_BASE_URL = "https://mazalbot.app/api/v1";
+// Update this to point to your FastAPI backend
+const API_BASE_URL = "http://localhost:8000/api/v1"; // Change this to your FastAPI URL
 
 let currentUserId: number | null = null;
 
@@ -18,6 +19,9 @@ export const apiEndpoints = {
   getDashboardStats: (userId: number) => `/users/${userId}/dashboard/stats`,
   getInventoryByShape: (userId: number) => `/users/${userId}/inventory/by-shape`,
   getRecentSales: (userId: number) => `/users/${userId}/sales/recent`,
+  // Add more endpoints as needed
+  getInventory: (userId: number, page: number = 1, limit: number = 10) => `/users/${userId}/inventory?page=${page}&limit=${limit}`,
+  uploadInventory: (userId: number) => `/users/${userId}/inventory/upload`,
 };
 
 interface ApiResponse<T> {
@@ -43,13 +47,14 @@ export async function fetchApi<T>(
     const data = await response.json();
 
     if (!response.ok) {
-      const errorMessage = data.detail || data.message || "An error occurred";
+      const errorMessage = data.detail || data.message || `HTTP ${response.status}: ${response.statusText}`;
       throw new Error(errorMessage);
     }
 
     return { data: data as T };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error('API Error:', errorMessage);
     toast({
       title: "API Error",
       description: errorMessage,
