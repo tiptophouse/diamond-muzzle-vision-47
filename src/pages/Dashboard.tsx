@@ -4,7 +4,7 @@ import { Layout } from "@/components/layout/Layout";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { InventoryChart } from "@/components/dashboard/InventoryChart";
 import { Diamond, Coins, Users, BadgeCheck } from "lucide-react";
-import { api, apiEndpoints } from "@/lib/api";
+import { api, apiEndpoints, setCurrentUserId } from "@/lib/api";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -41,6 +41,8 @@ export default function Dashboard() {
       }
 
       setLoading(true);
+      setCurrentUserId(user.id);
+      
       try {
         console.log(`Fetching dashboard data for user ${user.id}`);
         
@@ -142,6 +144,11 @@ export default function Dashboard() {
               <CardDescription>
                 Please open this app through Telegram to access your dashboard.
               </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                This app requires Telegram authentication to function properly.
+              </p>
             </CardContent>
           </Card>
         </div>
