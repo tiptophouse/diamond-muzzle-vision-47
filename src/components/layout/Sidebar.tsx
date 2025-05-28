@@ -10,6 +10,7 @@ import {
   MessageSquare,
   Lightbulb,
   CreditCard,
+  FileText,
   Menu,
   X
 } from "lucide-react";
@@ -50,6 +51,7 @@ export function Sidebar() {
     { path: "/", label: "Dashboard", icon: BarChart },
     { path: "/inventory", label: "Inventory", icon: Database },
     { path: "/upload", label: "Upload", icon: Upload },
+    { path: "/reports", label: "Reports", icon: FileText },
     { path: "/queries", label: "Client Queries", icon: MessageSquare },
     { path: "/insights", label: "AI Insights", icon: Lightbulb },
     { path: "/payments", label: "Payments & Leads", icon: CreditCard },
