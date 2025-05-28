@@ -15,48 +15,55 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from "@/components/ui/pagination";
+import { api, apiEndpoints } from "@/lib/api";
+import { convertDiamondsToInventoryFormat } from "@/services/diamondAnalytics";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
 
 export default function InventoryPage() {
   const { toast } = useToast();
+  const { isAuthenticated, isLoading: authLoading } = useTelegramAuth();
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(5);
+  const [totalPages, setTotalPages] = useState(1);
   
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
+  const [allDiamonds, setAllDiamonds] = useState<Diamond[]>([]);
   
   useEffect(() => {
     const fetchData = async () => {
+      if (!isAuthenticated) {
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       try {
-        // In a real app, we would call the actual API with filters and pagination
-        // const response = await api.get<Diamond[]>(`/inventory?page=${currentPage}&...`);
+        console.log('Fetching inventory data from backend...');
         
-        // For demo purposes, we'll use mock data
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Fetch all diamonds from your backend
+        const response = await api.get<any[]>(apiEndpoints.getAllStones());
         
-        // Generate mock diamonds
-        const shapes = ["Round", "Princess", "Cushion", "Emerald", "Oval", "Pear"];
-        const colors = ["D", "E", "F", "G", "H", "I"];
-        const clarities = ["IF", "VVS1", "VVS2", "VS1", "VS2", "SI1"];
-        const cuts = ["Excellent", "Very Good", "Good"];
-        const statuses = ["Available", "Reserved", "Sold"];
-        
-        const mockDiamonds: Diamond[] = Array.from({ length: 10 }).map((_, i) => ({
-          id: `d-${i + 1}`,
-          stockNumber: `D${10000 + i}`,
-          shape: shapes[Math.floor(Math.random() * shapes.length)],
-          carat: parseFloat((0.5 + Math.random() * 4).toFixed(2)),
-          color: colors[Math.floor(Math.random() * colors.length)],
-          clarity: clarities[Math.floor(Math.random() * clarities.length)],
-          cut: cuts[Math.floor(Math.random() * cuts.length)],
-          price: Math.floor(3000 + Math.random() * 50000),
-          status: statuses[Math.floor(Math.random() * statuses.length)],
-        }));
-        
-        setDiamonds(mockDiamonds);
-        setTotalPages(5);
+        if (response.data) {
+          console.log('Received diamonds:', response.data);
+          
+          // Convert backend data to frontend format
+          const convertedDiamonds = convertDiamondsToInventoryFormat(response.data);
+          setAllDiamonds(convertedDiamonds);
+          
+          // Apply pagination
+          const itemsPerPage = 10;
+          const startIndex = (currentPage - 1) * itemsPerPage;
+          const endIndex = startIndex + itemsPerPage;
+          const paginatedDiamonds = convertedDiamonds.slice(startIndex, endIndex);
+          
+          setDiamonds(paginatedDiamonds);
+          setTotalPages(Math.ceil(convertedDiamonds.length / itemsPerPage));
+        } else {
+          console.warn('No inventory data received');
+          setDiamonds([]);
+        }
       } catch (error) {
         console.error("Failed to fetch inventory data", error);
         toast({
@@ -69,11 +76,42 @@ export default function InventoryPage() {
       }
     };
     
-    fetchData();
-  }, [currentPage, filters]);
+    if (!authLoading) {
+      fetchData();
+    }
+  }, [currentPage, filters, isAuthenticated, authLoading]);
+  
+  // Filter diamonds based on search query
+  useEffect(() => {
+    if (!searchQuery) {
+      const itemsPerPage = 10;
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      setDiamonds(allDiamonds.slice(startIndex, endIndex));
+      setTotalPages(Math.ceil(allDiamonds.length / itemsPerPage));
+      return;
+    }
+
+    const filtered = allDiamonds.filter(diamond =>
+      diamond.stockNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      diamond.shape.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      diamond.color.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      diamond.clarity.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const itemsPerPage = 10;
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    setDiamonds(filtered.slice(startIndex, endIndex));
+    setTotalPages(Math.ceil(filtered.length / itemsPerPage));
+  }, [searchQuery, allDiamonds, currentPage]);
   
   const handleEdit = (id: string, data: Partial<Diamond>) => {
     setDiamonds((prev) =>
+      prev.map((diamond) => (diamond.id === id ? { ...diamond, ...data } : diamond))
+    );
+    
+    setAllDiamonds((prev) =>
       prev.map((diamond) => (diamond.id === id ? { ...diamond, ...data } : diamond))
     );
     
@@ -85,6 +123,7 @@ export default function InventoryPage() {
   
   const handleDelete = (id: string) => {
     setDiamonds((prev) => prev.filter((diamond) => diamond.id !== id));
+    setAllDiamonds((prev) => prev.filter((diamond) => diamond.id !== id));
     
     toast({
       title: "Diamond deleted",
@@ -93,11 +132,13 @@ export default function InventoryPage() {
   };
   
   const handleMarkAsSold = (id: string) => {
-    setDiamonds((prev) =>
-      prev.map((diamond) => 
+    const updateStatus = (diamonds: Diamond[]) =>
+      diamonds.map((diamond) => 
         diamond.id === id ? { ...diamond, status: "Sold" } : diamond
-      )
-    );
+      );
+    
+    setDiamonds(updateStatus);
+    setAllDiamonds(updateStatus);
     
     toast({
       title: "Status updated",
@@ -112,9 +153,21 @@ export default function InventoryPage() {
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, we would update the filters or call a search API endpoint
-    console.log("Searching for:", searchQuery);
+    setCurrentPage(1); // Reset to first page when searching
   };
+
+  if (authLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-diamond-500 mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -123,7 +176,7 @@ export default function InventoryPage() {
           <div>
             <h1 className="text-3xl font-bold">Inventory</h1>
             <p className="text-muted-foreground">
-              Manage your diamond inventory
+              Manage your diamond inventory ({allDiamonds.length} total diamonds)
             </p>
           </div>
           
@@ -137,7 +190,7 @@ export default function InventoryPage() {
           <form onSubmit={handleSearch} className="relative flex-1">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by stock number, shape, etc."
+              placeholder="Search by stock number, shape, color, clarity..."
               className="pl-8"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -155,44 +208,51 @@ export default function InventoryPage() {
           loading={loading}
         />
         
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious 
-                href="#" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (currentPage > 1) setCurrentPage(currentPage - 1);
-                }}
-              />
-            </PaginationItem>
-            
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <PaginationItem key={i}>
-                <PaginationLink
-                  href="#"
-                  isActive={currentPage === i + 1}
+        {totalPages > 1 && (
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  href="#" 
                   onClick={(e) => {
                     e.preventDefault();
-                    setCurrentPage(i + 1);
+                    if (currentPage > 1) setCurrentPage(currentPage - 1);
                   }}
-                >
-                  {i + 1}
-                </PaginationLink>
+                />
               </PaginationItem>
-            ))}
-            
-            <PaginationItem>
-              <PaginationNext 
-                href="#" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-                }}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+              
+              {Array.from({ length: Math.min(totalPages, 5) }).map((_, i) => {
+                const pageNum = currentPage <= 3 ? i + 1 : currentPage - 2 + i;
+                if (pageNum > totalPages) return null;
+                
+                return (
+                  <PaginationItem key={pageNum}>
+                    <PaginationLink
+                      href="#"
+                      isActive={currentPage === pageNum}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage(pageNum);
+                      }}
+                    >
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              })}
+              
+              <PaginationItem>
+                <PaginationNext 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                  }}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
       </div>
     </Layout>
   );

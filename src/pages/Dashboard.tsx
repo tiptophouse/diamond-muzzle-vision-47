@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -6,6 +7,7 @@ import { Diamond, Coins, Users, BadgeCheck } from "lucide-react";
 import { api, apiEndpoints, setCurrentUserId } from "@/lib/api";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { processDiamondDataForDashboard } from "@/services/diamondAnalytics";
 
 interface DashboardStats {
   totalDiamonds: number;
@@ -43,33 +45,25 @@ export default function Dashboard() {
       setCurrentUserId(user.id);
       
       try {
-        console.log(`Fetching dashboard data for user ${user.id}`);
+        console.log(`Fetching diamond data for dashboard`);
         
-        // Fetch dashboard stats from your FastAPI backend
-        const statsResponse = await api.get<DashboardStats>(
-          apiEndpoints.getDashboardStats(user.id)
+        // Fetch all diamonds from your backend
+        const diamondsResponse = await api.get<any[]>(
+          apiEndpoints.getAllStones()
         );
         
-        if (statsResponse.data) {
-          setStats(statsResponse.data);
-        }
-
-        // Fetch inventory by shape from your FastAPI backend
-        const inventoryResponse = await api.get<InventoryData[]>(
-          apiEndpoints.getInventoryByShape(user.id)
-        );
-        
-        if (inventoryResponse.data) {
-          setInventoryData(inventoryResponse.data);
-        }
-
-        // Fetch recent sales data from your FastAPI backend
-        const salesResponse = await api.get<InventoryData[]>(
-          apiEndpoints.getRecentSales(user.id)
-        );
-        
-        if (salesResponse.data) {
-          setSalesData(salesResponse.data);
+        if (diamondsResponse.data) {
+          console.log('Received diamond data:', diamondsResponse.data);
+          
+          // Process the diamond data for dashboard analytics
+          const { stats: processedStats, inventoryByShape, salesByCategory } = 
+            processDiamondDataForDashboard(diamondsResponse.data);
+          
+          setStats(processedStats);
+          setInventoryData(inventoryByShape);
+          setSalesData(salesByCategory);
+        } else {
+          console.warn('No diamond data received');
         }
         
       } catch (error) {
@@ -175,7 +169,7 @@ export default function Dashboard() {
           />
           
           <InventoryChart
-            title="Recent Sales by Category"
+            title="Diamond Distribution by Color"
             data={salesData}
             loading={loading}
           />

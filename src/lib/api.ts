@@ -16,10 +16,13 @@ export function getCurrentUserId(): number | null {
 }
 
 export const apiEndpoints = {
+  getAllStones: () => `/get_all_stones`,
+  createReport: () => `/create-report`,
+  getReport: (reportId: string) => `/get-report?diamond_id=${reportId}`,
+  // Legacy endpoints for compatibility
   getDashboardStats: (userId: number) => `/users/${userId}/dashboard/stats`,
   getInventoryByShape: (userId: number) => `/users/${userId}/inventory/by-shape`,
   getRecentSales: (userId: number) => `/users/${userId}/sales/recent`,
-  // Add more endpoints as needed
   getInventory: (userId: number, page: number = 1, limit: number = 10) => `/users/${userId}/inventory?page=${page}&limit=${limit}`,
   uploadInventory: (userId: number) => `/users/${userId}/inventory/upload`,
 };
