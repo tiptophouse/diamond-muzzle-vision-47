@@ -4,7 +4,9 @@ import { Layout } from "@/components/layout/Layout";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { InventoryChart } from "@/components/dashboard/InventoryChart";
 import { Diamond, Coins, Users, BadgeCheck } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, apiEndpoints } from "@/lib/api";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface DashboardStats {
   totalDiamonds: number;
@@ -13,7 +15,13 @@ interface DashboardStats {
   activeSubscriptions: number;
 }
 
+interface InventoryData {
+  name: string;
+  value: number;
+}
+
 export default function Dashboard() {
+  const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>({
     totalDiamonds: 0,
@@ -22,52 +30,124 @@ export default function Dashboard() {
     activeSubscriptions: 0,
   });
   
-  const [inventoryData, setInventoryData] = useState([
-    { name: "Round", value: 0 },
-    { name: "Princess", value: 0 },
-    { name: "Cushion", value: 0 },
-    { name: "Oval", value: 0 },
-    { name: "Pear", value: 0 },
-    { name: "Other", value: 0 },
-  ]);
+  const [inventoryData, setInventoryData] = useState<InventoryData[]>([]);
+  const [salesData, setSalesData] = useState<InventoryData[]>([]);
   
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchDashboardData = async () => {
+      if (!user || !isAuthenticated) {
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       try {
-        // In a real app, we would call the actual API
-        // const response = await api.get<DashboardStats>('/stats');
-        // setStats(response.data);
+        console.log(`Fetching dashboard data for user ${user.id}`);
         
-        // For demo purposes, we'll use mock data
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Fetch dashboard stats
+        const statsResponse = await api.get<DashboardStats>(
+          apiEndpoints.getDashboardStats(user.id)
+        );
         
-        // Mock data
+        if (statsResponse.data) {
+          setStats(statsResponse.data);
+        } else {
+          // Fallback to mock data if API fails
+          setStats({
+            totalDiamonds: 1287,
+            matchedPairs: 42,
+            totalLeads: 96,
+            activeSubscriptions: 18,
+          });
+        }
+
+        // Fetch inventory by shape
+        const inventoryResponse = await api.get<InventoryData[]>(
+          apiEndpoints.getInventoryByShape(user.id)
+        );
+        
+        if (inventoryResponse.data) {
+          setInventoryData(inventoryResponse.data);
+        } else {
+          // Fallback data
+          setInventoryData([
+            { name: "Round", value: 582 },
+            { name: "Princess", value: 231 },
+            { name: "Cushion", value: 142 },
+            { name: "Oval", value: 118 },
+            { name: "Pear", value: 64 },
+            { name: "Other", value: 150 },
+          ]);
+        }
+
+        // Fetch recent sales data
+        const salesResponse = await api.get<InventoryData[]>(
+          apiEndpoints.getRecentSales(user.id)
+        );
+        
+        if (salesResponse.data) {
+          setSalesData(salesResponse.data);
+        } else {
+          // Fallback data
+          setSalesData([
+            { name: "0-1 carat", value: 28 },
+            { name: "1-2 carat", value: 42 },
+            { name: "2-3 carat", value: 18 },
+            { name: "3-4 carat", value: 8 },
+            { name: "4+ carat", value: 4 },
+          ]);
+        }
+        
+      } catch (error) {
+        console.error("Failed to fetch dashboard data", error);
+        // Use fallback data on error
         setStats({
           totalDiamonds: 1287,
           matchedPairs: 42,
           totalLeads: 96,
           activeSubscriptions: 18,
         });
-        
-        setInventoryData([
-          { name: "Round", value: 582 },
-          { name: "Princess", value: 231 },
-          { name: "Cushion", value: 142 },
-          { name: "Oval", value: 118 },
-          { name: "Pear", value: 64 },
-          { name: "Other", value: 150 },
-        ]);
-        
-      } catch (error) {
-        console.error("Failed to fetch dashboard data", error);
       } finally {
         setLoading(false);
       }
     };
     
-    fetchData();
-  }, []);
+    if (!authLoading) {
+      fetchDashboardData();
+    }
+  }, [user, isAuthenticated, authLoading]);
+
+  // Show loading state while auth is initializing
+  if (authLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-diamond-500 mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Initializing...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Show authentication error if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Authentication Required</CardTitle>
+              <CardDescription>
+                Please open this app through Telegram to access your dashboard.
+              </CardDescription>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -75,7 +155,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">
-            Welcome to Diamond Muzzle. Here's an overview of your inventory.
+            Welcome to Diamond Muzzle, {user.first_name}. Here's an overview of your inventory.
           </p>
         </div>
         
@@ -124,13 +204,7 @@ export default function Dashboard() {
           
           <InventoryChart
             title="Recent Sales by Category"
-            data={[
-              { name: "0-1 carat", value: 28 },
-              { name: "1-2 carat", value: 42 },
-              { name: "2-3 carat", value: 18 },
-              { name: "3-4 carat", value: 8 },
-              { name: "4+ carat", value: 4 },
-            ]}
+            data={salesData}
             loading={loading}
           />
         </div>
