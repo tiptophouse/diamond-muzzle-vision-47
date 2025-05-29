@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Upload, File, CheckCircle, XCircle, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { api, apiEndpoints, getCurrentUserId } from "@/lib/api";
+import { api } from "@/lib/api";
 import { toast } from "@/components/ui/use-toast";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 
@@ -55,6 +55,36 @@ export function UploadForm() {
     return () => clearInterval(interval);
   };
 
+  const parseCSVFile = (file: File): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const text = e.target?.result as string;
+          const lines = text.split('\n');
+          const headers = lines[0].split(',').map(h => h.trim());
+          
+          const data = lines.slice(1)
+            .filter(line => line.trim())
+            .map(line => {
+              const values = line.split(',').map(v => v.trim());
+              const item: any = {};
+              headers.forEach((header, index) => {
+                item[header] = values[index] || '';
+              });
+              return item;
+            });
+          
+          resolve(data);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsText(file);
+    });
+  };
+
   const handleUpload = async () => {
     if (!selectedFile || !isAuthenticated || !user) {
       toast({
@@ -74,51 +104,38 @@ export function UploadForm() {
       console.log('Starting upload for user:', user.id);
       console.log('File details:', { name: selectedFile.name, size: selectedFile.size });
       
-      // Use the actual API endpoint for uploading inventory
-      const userId = getCurrentUserId() || user.id;
-      const endpoint = apiEndpoints.uploadInventory(userId);
+      // Parse CSV file
+      const csvData = await parseCSVFile(selectedFile);
+      console.log('Parsed CSV data:', csvData);
       
-      console.log('Uploading to endpoint:', endpoint);
-      
-      const response = await api.upload<UploadResult>(endpoint, selectedFile);
+      // Send parsed data to backend using a working endpoint
+      // Since the upload endpoint doesn't exist, we'll simulate a successful upload
+      // and provide feedback to the user
       
       setProgress(100);
       
-      if (response.error) {
-        throw new Error(response.error);
-      }
+      const mockResult: UploadResult = {
+        totalItems: csvData.length,
+        matchedPairs: 0,
+        errors: [],
+      };
       
-      if (response.data) {
-        setResult(response.data);
-        
-        toast({
-          title: "Upload successful",
-          description: `Processed ${response.data.totalItems} diamonds successfully.`,
-        });
-        
-        console.log('Upload completed successfully:', response.data);
-      } else {
-        // Handle case where backend doesn't return the expected format
-        const mockResult: UploadResult = {
-          totalItems: 1,
-          matchedPairs: 0,
-          errors: [],
-        };
-        
-        setResult(mockResult);
-        
-        toast({
-          title: "Upload successful",
-          description: "File uploaded successfully to your inventory.",
-        });
-      }
+      setResult(mockResult);
+      
+      toast({
+        title: "File processed successfully",
+        description: `Parsed ${csvData.length} items from your CSV file. Note: Backend upload endpoint needs to be implemented.`,
+      });
+      
+      console.log('CSV processing completed:', mockResult);
+      
     } catch (error) {
       console.error('Upload failed:', error);
       
       toast({
         variant: "destructive",
         title: "Upload failed",
-        description: error instanceof Error ? error.message : "There was an error uploading your inventory.",
+        description: error instanceof Error ? error.message : "There was an error processing your CSV file.",
       });
     } finally {
       setUploading(false);
@@ -209,7 +226,7 @@ export function UploadForm() {
                   <div className="bg-diamond-50 border border-diamond-100 rounded-lg p-4 space-y-3">
                     <div className="flex items-center">
                       <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
-                      <p className="text-sm font-medium">Upload complete</p>
+                      <p className="text-sm font-medium">File processed</p>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-2 text-sm">
@@ -218,8 +235,8 @@ export function UploadForm() {
                         <p className="font-medium">{result.totalItems}</p>
                       </div>
                       <div>
-                        <p className="text-gray-500">Matched Pairs</p>
-                        <p className="font-medium">{result.matchedPairs}</p>
+                        <p className="text-gray-500">Status</p>
+                        <p className="font-medium text-orange-600">Parsed (Backend upload needed)</p>
                       </div>
                     </div>
                     
@@ -250,7 +267,7 @@ export function UploadForm() {
                     disabled={uploading || !!result}
                   >
                     <Upload className="h-4 w-4 mr-2" />
-                    {uploading ? "Uploading..." : "Upload"}
+                    {uploading ? "Processing..." : "Process CSV"}
                   </Button>
                 </div>
               </div>
@@ -269,6 +286,12 @@ export function UploadForm() {
             <li>Optional columns: Certificate, Measurements, Depth, Table</li>
             <li>First row should contain column headers</li>
           </ul>
+          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800">
+              <strong>Note:</strong> This currently processes your CSV file but doesn't save to the backend. 
+              You need to implement the upload endpoint in your FastAPI backend to complete the integration.
+            </p>
+          </div>
           <p className="mt-4 text-gray-500 text-xs">
             Need a template? <a href="#" className="text-diamond-600 hover:underline">Download sample CSV</a>
           </p>
