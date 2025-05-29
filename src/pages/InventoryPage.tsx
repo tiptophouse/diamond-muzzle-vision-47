@@ -5,7 +5,7 @@ import { InventoryTable, Diamond } from "@/components/inventory/InventoryTable";
 import { InventoryFilters } from "@/components/inventory/InventoryFilters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, RefreshCw } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { 
   Pagination, 
@@ -21,7 +21,7 @@ import { useTelegramAuth } from "@/context/TelegramAuthContext";
 
 export default function InventoryPage() {
   const { toast } = useToast();
-  const { isAuthenticated, isLoading: authLoading } = useTelegramAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useTelegramAuth();
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -31,51 +31,59 @@ export default function InventoryPage() {
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
   const [allDiamonds, setAllDiamonds] = useState<Diamond[]>([]);
   
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!isAuthenticated) {
-        setLoading(false);
-        return;
-      }
+  const fetchData = async () => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
 
-      setLoading(true);
-      try {
-        console.log('Fetching inventory data from backend...');
+    setLoading(true);
+    try {
+      console.log('Fetching inventory data from backend for user:', user?.id);
+      
+      // Fetch all diamonds from your backend
+      const response = await api.get<any[]>(apiEndpoints.getAllStones());
+      
+      if (response.data) {
+        console.log('Received diamonds from backend:', response.data);
         
-        // Fetch all diamonds from your backend
-        const response = await api.get<any[]>(apiEndpoints.getAllStones());
+        // Convert backend data to frontend format
+        const convertedDiamonds = convertDiamondsToInventoryFormat(response.data);
+        console.log('Converted diamonds for display:', convertedDiamonds);
         
-        if (response.data) {
-          console.log('Received diamonds:', response.data);
-          
-          // Convert backend data to frontend format
-          const convertedDiamonds = convertDiamondsToInventoryFormat(response.data);
-          setAllDiamonds(convertedDiamonds);
-          
-          // Apply pagination
-          const itemsPerPage = 10;
-          const startIndex = (currentPage - 1) * itemsPerPage;
-          const endIndex = startIndex + itemsPerPage;
-          const paginatedDiamonds = convertedDiamonds.slice(startIndex, endIndex);
-          
-          setDiamonds(paginatedDiamonds);
-          setTotalPages(Math.ceil(convertedDiamonds.length / itemsPerPage));
-        } else {
-          console.warn('No inventory data received');
-          setDiamonds([]);
-        }
-      } catch (error) {
-        console.error("Failed to fetch inventory data", error);
+        setAllDiamonds(convertedDiamonds);
+        
+        // Apply pagination
+        const itemsPerPage = 10;
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const paginatedDiamonds = convertedDiamonds.slice(startIndex, endIndex);
+        
+        setDiamonds(paginatedDiamonds);
+        setTotalPages(Math.ceil(convertedDiamonds.length / itemsPerPage));
+        
         toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to fetch inventory data.",
+          title: "Inventory loaded",
+          description: `Found ${convertedDiamonds.length} diamonds in your inventory.`,
         });
-      } finally {
-        setLoading(false);
+      } else {
+        console.warn('No inventory data received from backend');
+        setDiamonds([]);
+        setAllDiamonds([]);
       }
-    };
-    
+    } catch (error) {
+      console.error("Failed to fetch inventory data", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch inventory data. Please check your connection.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  useEffect(() => {
     if (!authLoading) {
       fetchData();
     }
@@ -156,6 +164,11 @@ export default function InventoryPage() {
     setCurrentPage(1); // Reset to first page when searching
   };
 
+  const handleRefresh = () => {
+    console.log('Manually refreshing inventory data...');
+    fetchData();
+  };
+
   if (authLoading) {
     return (
       <Layout>
@@ -177,13 +190,25 @@ export default function InventoryPage() {
             <h1 className="text-3xl font-bold">Inventory</h1>
             <p className="text-muted-foreground">
               Manage your diamond inventory ({allDiamonds.length} total diamonds)
+              {user && <span className="ml-2 text-xs text-gray-500">User: {user.first_name}</span>}
             </p>
           </div>
           
-          <Button className="w-full sm:w-auto">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Diamond
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleRefresh}
+              disabled={loading}
+              className="w-full sm:w-auto"
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Button className="w-full sm:w-auto">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Diamond
+            </Button>
+          </div>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-4">

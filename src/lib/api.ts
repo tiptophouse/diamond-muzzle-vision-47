@@ -39,22 +39,40 @@ export async function fetchApi<T>(
   const url = `${API_BASE_URL}${endpoint}`;
   
   try {
+    console.log('Making API request to:', url);
+    console.log('Request options:', { ...options, body: options.body ? '[FormData/Body]' : undefined });
+    
     const response = await fetch(url, {
       ...options,
       headers: {
-        "Content-Type": "application/json",
         "Authorization": `Bearer ifj9ov1rh20fslfp`, // Your backend access token
         ...options.headers,
+        // Don't override Content-Type for FormData uploads
       },
     });
 
-    const data = await response.json();
+    console.log('API Response status:', response.status);
+    console.log('API Response headers:', Object.fromEntries(response.headers.entries()));
+
+    let data;
+    const contentType = response.headers.get('content-type');
+    
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+      console.log('Non-JSON response:', text);
+      data = text;
+    }
 
     if (!response.ok) {
-      const errorMessage = data.detail || data.message || `HTTP ${response.status}: ${response.statusText}`;
+      const errorMessage = typeof data === 'object' && data 
+        ? (data.detail || data.message || `HTTP ${response.status}: ${response.statusText}`)
+        : `HTTP ${response.status}: ${response.statusText}`;
       throw new Error(errorMessage);
     }
 
+    console.log('API Response data:', data);
     return { data: data as T };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
@@ -74,12 +92,18 @@ export const api = {
   post: <T>(endpoint: string, body: Record<string, any>) =>
     fetchApi<T>(endpoint, {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(body),
     }),
   
   put: <T>(endpoint: string, body: Record<string, any>) =>
     fetchApi<T>(endpoint, {
       method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(body),
     }),
   
@@ -90,12 +114,15 @@ export const api = {
     const formData = new FormData();
     formData.append("file", file);
     
+    console.log('Uploading file:', file.name, 'Size:', file.size);
+    
     return fetchApi<T>(endpoint, {
       method: "POST",
       body: formData,
+      // Don't set Content-Type header - let browser set it with boundary for FormData
       headers: {
         "Authorization": `Bearer ifj9ov1rh20fslfp`, // Include auth for uploads
-      }, // Let the browser set the content type with boundary
+      },
     });
   },
 };

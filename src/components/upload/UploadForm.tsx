@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Upload, File, CheckCircle, XCircle, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { api } from "@/lib/api";
+import { api, apiEndpoints, getCurrentUserId } from "@/lib/api";
 import { toast } from "@/components/ui/use-toast";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
 
 interface UploadResult {
   totalItems: number;
@@ -19,16 +20,28 @@ export function UploadForm() {
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<UploadResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user, isAuthenticated } = useTelegramAuth();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setSelectedFile(e.target.files[0]);
+      const file = e.target.files[0];
+      
+      // Validate file type
+      if (!file.name.toLowerCase().endsWith('.csv')) {
+        toast({
+          variant: "destructive",
+          title: "Invalid file type",
+          description: "Please select a CSV file.",
+        });
+        return;
+      }
+      
+      setSelectedFile(file);
       setResult(null);
     }
   };
 
   const simulateProgress = () => {
-    // Simulate upload progress for demo
     let currentProgress = 0;
     const interval = setInterval(() => {
       currentProgress += Math.random() * 10;
@@ -43,7 +56,14 @@ export function UploadForm() {
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile || !isAuthenticated || !user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication required",
+        description: "Please make sure you're logged in to upload files.",
+      });
+      return;
+    }
 
     setUploading(true);
     setProgress(0);
@@ -51,34 +71,54 @@ export function UploadForm() {
     const cleanup = simulateProgress();
 
     try {
-      // In a real implementation, you would use the actual API
-      // const response = await api.upload<UploadResult>("/upload", selectedFile);
+      console.log('Starting upload for user:', user.id);
+      console.log('File details:', { name: selectedFile.name, size: selectedFile.size });
       
-      // For demo purposes, we'll simulate a response
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Use the actual API endpoint for uploading inventory
+      const userId = getCurrentUserId() || user.id;
+      const endpoint = apiEndpoints.uploadInventory(userId);
+      
+      console.log('Uploading to endpoint:', endpoint);
+      
+      const response = await api.upload<UploadResult>(endpoint, selectedFile);
       
       setProgress(100);
       
-      // Simulate response
-      const mockResult: UploadResult = {
-        totalItems: Math.floor(Math.random() * 200) + 50,
-        matchedPairs: Math.floor(Math.random() * 30) + 5,
-        errors: Math.random() > 0.7 
-          ? ["Invalid format in line 42", "Missing required field in line 73"] 
-          : [],
-      };
+      if (response.error) {
+        throw new Error(response.error);
+      }
       
-      setResult(mockResult);
-      
-      toast({
-        title: "Upload successful",
-        description: `Processed ${mockResult.totalItems} diamonds successfully.`,
-      });
+      if (response.data) {
+        setResult(response.data);
+        
+        toast({
+          title: "Upload successful",
+          description: `Processed ${response.data.totalItems} diamonds successfully.`,
+        });
+        
+        console.log('Upload completed successfully:', response.data);
+      } else {
+        // Handle case where backend doesn't return the expected format
+        const mockResult: UploadResult = {
+          totalItems: 1,
+          matchedPairs: 0,
+          errors: [],
+        };
+        
+        setResult(mockResult);
+        
+        toast({
+          title: "Upload successful",
+          description: "File uploaded successfully to your inventory.",
+        });
+      }
     } catch (error) {
+      console.error('Upload failed:', error);
+      
       toast({
         variant: "destructive",
         title: "Upload failed",
-        description: "There was an error uploading your inventory.",
+        description: error instanceof Error ? error.message : "There was an error uploading your inventory.",
       });
     } finally {
       setUploading(false);
@@ -94,6 +134,20 @@ export function UploadForm() {
       fileInputRef.current.value = "";
     }
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="max-w-xl mx-auto">
+        <Card className="diamond-card">
+          <CardContent className="pt-6 text-center">
+            <p className="text-muted-foreground">
+              Please log in to upload your inventory files.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-xl mx-auto">

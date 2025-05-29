@@ -1,5 +1,5 @@
-
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { setCurrentUserId } from '@/lib/api';
 
 declare global {
   interface Window {
@@ -67,6 +67,7 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
         
         if (telegramUser) {
           setUser(telegramUser);
+          setCurrentUserId(telegramUser.id); // Set user ID for API calls
           console.log('Telegram user authenticated:', telegramUser);
         } else {
           // For development, create a mock user
@@ -77,6 +78,7 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
             username: 'johndoe'
           };
           setUser(mockUser);
+          setCurrentUserId(mockUser.id); // Set mock user ID for API calls
           console.log('Using mock user for development:', mockUser);
         }
       } else {
@@ -88,6 +90,7 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
           username: 'johndoe'
         };
         setUser(mockUser);
+        setCurrentUserId(mockUser.id); // Set mock user ID for API calls
         console.log('Telegram WebApp not available, using mock user:', mockUser);
       }
     } catch (err) {
