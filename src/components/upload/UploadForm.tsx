@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -108,26 +107,48 @@ export function UploadForm() {
       const csvData = await parseCSVFile(selectedFile);
       console.log('Parsed CSV data:', csvData);
       
-      // Send parsed data to backend using a working endpoint
-      // Since the upload endpoint doesn't exist, we'll simulate a successful upload
-      // and provide feedback to the user
+      // Map CSV data to match your FastAPI expected format
+      const mappedData = csvData.map(row => ({
+        shape: row.Shape || row.shape || '',
+        weight: parseFloat(row.Carat || row.carat || row.Weight || row.weight || '0'),
+        color: row.Color || row.color || '',
+        clarity: row.Clarity || row.clarity || '',
+        price: parseFloat(row.Price || row.price || '0'),
+        cut: row.Cut || row.cut || 'Excellent',
+        stock_number: row['Stock #'] || row.stock_number || `D${Math.floor(Math.random() * 10000)}`,
+        certificate_number: row.Certificate || row.certificate || '',
+        status: 'Available'
+      }));
+      
+      console.log('Mapped data for FastAPI:', mappedData);
+      
+      // Send data to your FastAPI backend
+      const response = await api.uploadCsv(
+        apiEndpoints.uploadInventory(),
+        mappedData,
+        user.id
+      );
       
       setProgress(100);
       
-      const mockResult: UploadResult = {
-        totalItems: csvData.length,
-        matchedPairs: 0,
-        errors: [],
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      
+      const uploadResult: UploadResult = {
+        totalItems: mappedData.length,
+        matchedPairs: response.data?.matched_pairs || 0,
+        errors: response.data?.errors || [],
       };
       
-      setResult(mockResult);
+      setResult(uploadResult);
       
       toast({
-        title: "File processed successfully",
-        description: `Parsed ${csvData.length} items from your CSV file. Note: Backend upload endpoint needs to be implemented.`,
+        title: "Upload successful",
+        description: `Successfully uploaded ${mappedData.length} diamonds to your inventory.`,
       });
       
-      console.log('CSV processing completed:', mockResult);
+      console.log('Upload completed:', uploadResult);
       
     } catch (error) {
       console.error('Upload failed:', error);
@@ -135,7 +156,7 @@ export function UploadForm() {
       toast({
         variant: "destructive",
         title: "Upload failed",
-        description: error instanceof Error ? error.message : "There was an error processing your CSV file.",
+        description: error instanceof Error ? error.message : "There was an error uploading your CSV file.",
       });
     } finally {
       setUploading(false);
@@ -282,14 +303,14 @@ export function UploadForm() {
           <p>Please ensure your CSV file follows the required format:</p>
           <ul className="list-disc list-inside space-y-1 text-gray-600">
             <li>One diamond per row</li>
-            <li>Required columns: Stock #, Shape, Carat, Color, Clarity, Cut, Price</li>
-            <li>Optional columns: Certificate, Measurements, Depth, Table</li>
+            <li>Required columns: Stock #, Shape, Carat (or Weight), Color, Clarity, Price</li>
+            <li>Optional columns: Cut, Certificate, Status</li>
             <li>First row should contain column headers</li>
           </ul>
-          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800">
-              <strong>Note:</strong> This currently processes your CSV file but doesn't save to the backend. 
-              You need to implement the upload endpoint in your FastAPI backend to complete the integration.
+          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-sm text-green-800">
+              <strong>Ready:</strong> Your CSV data will be uploaded directly to your FastAPI backend 
+              and filtered by your user ID ({user?.id}).
             </p>
           </div>
           <p className="mt-4 text-gray-500 text-xs">

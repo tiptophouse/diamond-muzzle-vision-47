@@ -45,19 +45,19 @@ export default function Dashboard() {
       setCurrentUserId(user.id);
       
       try {
-        console.log(`Fetching diamond data for dashboard`);
+        console.log(`Fetching diamond data for dashboard for user:`, user.id);
         
-        // Fetch all diamonds from your backend
+        // Fetch user-specific diamonds from your FastAPI backend
         const diamondsResponse = await api.get<any[]>(
-          apiEndpoints.getAllStones()
+          apiEndpoints.getAllStones(user.id)
         );
         
         if (diamondsResponse.data) {
           console.log('Received diamond data:', diamondsResponse.data);
           
-          // Process the diamond data for dashboard analytics
+          // Process the diamond data for dashboard analytics with user filtering
           const { stats: processedStats, inventoryByShape, salesByCategory } = 
-            processDiamondDataForDashboard(diamondsResponse.data);
+            processDiamondDataForDashboard(diamondsResponse.data, user.id);
           
           setStats(processedStats);
           setInventoryData(inventoryByShape);

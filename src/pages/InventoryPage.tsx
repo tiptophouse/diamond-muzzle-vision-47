@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { InventoryTable, Diamond } from "@/components/inventory/InventoryTable";
@@ -32,23 +31,23 @@ export default function InventoryPage() {
   const [allDiamonds, setAllDiamonds] = useState<Diamond[]>([]);
   
   const fetchData = async () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !user) {
       setLoading(false);
       return;
     }
 
     setLoading(true);
     try {
-      console.log('Fetching inventory data from backend for user:', user?.id);
+      console.log('Fetching inventory data from FastAPI for user:', user.id);
       
-      // Fetch all diamonds from your backend
-      const response = await api.get<any[]>(apiEndpoints.getAllStones());
+      // Fetch user-specific diamonds from your FastAPI backend
+      const response = await api.get<any[]>(apiEndpoints.getAllStones(user.id));
       
       if (response.data) {
-        console.log('Received diamonds from backend:', response.data);
+        console.log('Received diamonds from FastAPI:', response.data);
         
-        // Convert backend data to frontend format
-        const convertedDiamonds = convertDiamondsToInventoryFormat(response.data);
+        // Convert backend data to frontend format with user filtering
+        const convertedDiamonds = convertDiamondsToInventoryFormat(response.data, user.id);
         console.log('Converted diamonds for display:', convertedDiamonds);
         
         setAllDiamonds(convertedDiamonds);
@@ -67,7 +66,7 @@ export default function InventoryPage() {
           description: `Found ${convertedDiamonds.length} diamonds in your inventory.`,
         });
       } else {
-        console.warn('No inventory data received from backend');
+        console.warn('No inventory data received from FastAPI');
         setDiamonds([]);
         setAllDiamonds([]);
       }

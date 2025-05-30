@@ -16,7 +16,11 @@ export function getCurrentUserId(): number | null {
 }
 
 export const apiEndpoints = {
-  getAllStones: () => `/get_all_stones`,
+  getAllStones: (userId?: number) => {
+    const userParam = userId ? `?user_id=${userId}` : '';
+    return `/get_all_stones${userParam}`;
+  },
+  uploadInventory: () => `/upload-inventory`,
   createReport: () => `/create-report`,
   getReport: (reportId: string) => `/get-report?diamond_id=${reportId}`,
   // Legacy endpoints for compatibility
@@ -24,7 +28,6 @@ export const apiEndpoints = {
   getInventoryByShape: (userId: number) => `/users/${userId}/inventory/by-shape`,
   getRecentSales: (userId: number) => `/users/${userId}/sales/recent`,
   getInventory: (userId: number, page: number = 1, limit: number = 10) => `/users/${userId}/inventory?page=${page}&limit=${limit}`,
-  uploadInventory: (userId: number) => `/users/${userId}/inventory/upload`,
 };
 
 interface ApiResponse<T> {
@@ -110,19 +113,19 @@ export const api = {
   delete: <T>(endpoint: string) =>
     fetchApi<T>(endpoint, { method: "DELETE" }),
     
-  upload: async <T>(endpoint: string, file: File): Promise<ApiResponse<T>> => {
-    const formData = new FormData();
-    formData.append("file", file);
-    
-    console.log('Uploading file:', file.name, 'Size:', file.size);
+  uploadCsv: async <T>(endpoint: string, csvData: any[], userId: number): Promise<ApiResponse<T>> => {
+    console.log('Uploading CSV data to FastAPI:', { endpoint, dataLength: csvData.length, userId });
     
     return fetchApi<T>(endpoint, {
       method: "POST",
-      body: formData,
-      // Don't set Content-Type header - let browser set it with boundary for FormData
       headers: {
-        "Authorization": `Bearer ifj9ov1rh20fslfp`, // Include auth for uploads
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ifj9ov1rh20fslfp`,
       },
+      body: JSON.stringify({
+        user_id: userId,
+        diamonds: csvData
+      }),
     });
   },
 };

@@ -74,6 +74,99 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory: {
+        Row: {
+          certificate_comment: string | null
+          certificate_number: number | null
+          clarity: string
+          color: string
+          created_at: string
+          culet: string | null
+          cut: string | null
+          depth: number | null
+          depth_percentage: number | null
+          fluorescence: string | null
+          gridle: string | null
+          id: string
+          lab: string | null
+          length: number | null
+          picture: string | null
+          polish: string | null
+          price_per_carat: number | null
+          rapnet: number | null
+          ratio: number | null
+          shape: string
+          status: string | null
+          stock_number: string
+          symmetry: string | null
+          table_percentage: number | null
+          updated_at: string
+          user_id: number
+          weight: number
+          width: number | null
+        }
+        Insert: {
+          certificate_comment?: string | null
+          certificate_number?: number | null
+          clarity: string
+          color: string
+          created_at?: string
+          culet?: string | null
+          cut?: string | null
+          depth?: number | null
+          depth_percentage?: number | null
+          fluorescence?: string | null
+          gridle?: string | null
+          id?: string
+          lab?: string | null
+          length?: number | null
+          picture?: string | null
+          polish?: string | null
+          price_per_carat?: number | null
+          rapnet?: number | null
+          ratio?: number | null
+          shape: string
+          status?: string | null
+          stock_number: string
+          symmetry?: string | null
+          table_percentage?: number | null
+          updated_at?: string
+          user_id: number
+          weight: number
+          width?: number | null
+        }
+        Update: {
+          certificate_comment?: string | null
+          certificate_number?: number | null
+          clarity?: string
+          color?: string
+          created_at?: string
+          culet?: string | null
+          cut?: string | null
+          depth?: number | null
+          depth_percentage?: number | null
+          fluorescence?: string | null
+          gridle?: string | null
+          id?: string
+          lab?: string | null
+          length?: number | null
+          picture?: string | null
+          polish?: string | null
+          price_per_carat?: number | null
+          rapnet?: number | null
+          ratio?: number | null
+          shape?: string
+          status?: string | null
+          stock_number?: string
+          symmetry?: string | null
+          table_percentage?: number | null
+          updated_at?: string
+          user_id?: number
+          weight?: number
+          width?: number | null
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string | null
