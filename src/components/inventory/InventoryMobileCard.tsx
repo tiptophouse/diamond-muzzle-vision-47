@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,11 +8,21 @@ interface InventoryMobileCardProps {
   diamond: Diamond;
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
+  onStoneSelect?: (stone: Diamond) => void;
 }
 
-export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobileCardProps) {
+export function InventoryMobileCard({ diamond, onEdit, onDelete, onStoneSelect }: InventoryMobileCardProps) {
+  const handleCardClick = () => {
+    if (onStoneSelect) {
+      onStoneSelect(diamond);
+    }
+  };
+
   return (
-    <Card className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors">
+    <Card 
+      className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors cursor-pointer"
+      onClick={handleCardClick}
+    >
       <CardContent className="p-4 w-full">
         {/* Image section */}
         {diamond.imageUrl && (
@@ -92,7 +101,7 @@ export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobi
         </div>
 
         {(onEdit || onDelete) && (
-          <div className="flex gap-2 pt-3 border-t border-slate-200 dark:border-slate-700 w-full">
+          <div className="flex gap-2 pt-3 border-t border-slate-200 dark:border-slate-700 w-full" onClick={(e) => e.stopPropagation()}>
             {onEdit && (
               <Button
                 variant="outline"
