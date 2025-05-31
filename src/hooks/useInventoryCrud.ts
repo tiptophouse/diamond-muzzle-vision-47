@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { api } from '@/lib/api';
+import { supabase } from '@/integrations/supabase/client';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
@@ -83,9 +84,26 @@ export function useInventoryCrud(onSuccess?: () => void) {
     try {
       console.log('Updating diamond:', diamondId, data);
       
-      // Simulate update for now since we don't have a dedicated update endpoint
-      // In a real implementation, you'd want a PUT endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Update in Supabase inventory table
+      const { error } = await supabase
+        .from('inventory')
+        .update({
+          stock_number: data.stockNumber,
+          shape: data.shape,
+          weight: data.carat,
+          color: data.color,
+          clarity: data.clarity,
+          cut: data.cut,
+          price_per_carat: Math.round(data.price / data.carat),
+          status: data.status,
+          picture: data.imageUrl || null,
+        })
+        .eq('id', diamondId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        throw error;
+      }
       
       toast({
         title: "Success",
@@ -119,11 +137,18 @@ export function useInventoryCrud(onSuccess?: () => void) {
 
     setIsLoading(true);
     try {
-      console.log('Deleting diamond:', diamondId);
+      console.log('Deleting diamond from database:', diamondId);
       
-      // Simulate deletion for now since we don't have a dedicated delete endpoint
-      // In a real implementation, you'd want a DELETE endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Delete from Supabase inventory table
+      const { error } = await supabase
+        .from('inventory')
+        .delete()
+        .eq('id', diamondId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        throw error;
+      }
       
       toast({
         title: "Success",
