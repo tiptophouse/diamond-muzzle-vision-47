@@ -31,7 +31,14 @@ export function useChatMessages(sessionId: string | null) {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages(data || []);
+      
+      // Cast the data to our ChatMessage interface
+      const typedMessages: ChatMessage[] = (data || []).map(msg => ({
+        ...msg,
+        role: msg.role as 'user' | 'assistant'
+      }));
+      
+      setMessages(typedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
       toast({
@@ -64,7 +71,14 @@ export function useChatMessages(sessionId: string | null) {
         .single();
 
       if (error) throw error;
-      return data;
+      
+      // Cast the returned data to our ChatMessage interface
+      const typedMessage: ChatMessage = {
+        ...data,
+        role: data.role as 'user' | 'assistant'
+      };
+      
+      return typedMessage;
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -95,7 +109,13 @@ export function useChatMessages(sessionId: string | null) {
           filter: `session_id=eq.${sessionId}`,
         },
         (payload) => {
-          setMessages(prev => [...prev, payload.new as ChatMessage]);
+          // Cast the payload to our ChatMessage interface
+          const typedMessage: ChatMessage = {
+            ...payload.new,
+            role: payload.new.role as 'user' | 'assistant'
+          } as ChatMessage;
+          
+          setMessages(prev => [...prev, typedMessage]);
         }
       )
       .subscribe();
