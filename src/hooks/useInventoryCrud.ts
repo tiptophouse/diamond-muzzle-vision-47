@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { api } from '@/lib/api';
+import { api, apiEndpoints } from '@/lib/api';
 import { supabase } from '@/integrations/supabase/client';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
@@ -137,17 +137,13 @@ export function useInventoryCrud(onSuccess?: () => void) {
 
     setIsLoading(true);
     try {
-      console.log('Deleting diamond from database:', diamondId);
+      console.log('Deleting diamond from FastAPI backend:', diamondId, 'for user:', user.id);
       
-      // Delete from Supabase inventory table
-      const { error } = await supabase
-        .from('inventory')
-        .delete()
-        .eq('id', diamondId)
-        .eq('user_id', user.id);
-
-      if (error) {
-        throw error;
+      // Delete from FastAPI backend
+      const response = await api.delete(apiEndpoints.deleteDiamond(diamondId, user.id));
+      
+      if (response.error) {
+        throw new Error(response.error);
       }
       
       toast({
