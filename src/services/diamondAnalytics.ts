@@ -7,6 +7,8 @@ interface DiamondData {
   weight?: number; // FastAPI uses 'weight' not 'carat'
   carat?: number;
   price?: number;
+  price_per_carat?: number; // Add missing property
+  stock?: string; // Add missing property
   owners?: number[]; // FastAPI uses 'owners' array
   owner_id?: number;
   status?: string;
