@@ -33,7 +33,7 @@ const cuts = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'];
 const statuses = ['Available', 'Reserved', 'Sold'];
 
 export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: DiamondFormProps) {
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<DiamondFormData>({
+  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<DiamondFormData>({
     defaultValues: diamond ? {
       stockNumber: diamond.stockNumber,
       shape: diamond.shape,
@@ -49,6 +49,23 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       imageUrl: ''
     }
   });
+
+  // Reset form when diamond prop changes (useful for QR scan data)
+  React.useEffect(() => {
+    if (diamond) {
+      reset({
+        stockNumber: diamond.stockNumber,
+        shape: diamond.shape,
+        carat: diamond.carat,
+        color: diamond.color,
+        clarity: diamond.clarity,
+        cut: diamond.cut,
+        price: diamond.price,
+        status: diamond.status,
+        imageUrl: diamond.imageUrl || '',
+      });
+    }
+  }, [diamond, reset]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

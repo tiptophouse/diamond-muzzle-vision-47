@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -28,6 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
 
 export default function InventoryPage() {
   const { isAuthenticated, isLoading: authLoading, user, error: authError } = useTelegramAuth();
@@ -37,6 +37,7 @@ export default function InventoryPage() {
   const [editingDiamond, setEditingDiamond] = useState<Diamond | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [diamondToDelete, setDiamondToDelete] = useState<string | null>(null);
+  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
 
   const {
     loading,
@@ -107,6 +108,26 @@ export default function InventoryPage() {
     }
   };
 
+  const handleQRScan = () => {
+    setIsQRScannerOpen(true);
+  };
+
+  const handleQRScanSuccess = (giaData: any) => {
+    setEditingDiamond(null);
+    setIsFormOpen(true);
+    // The QR data will be passed to the form for pre-population
+    // We'll need to modify DiamondForm to accept initial data
+    setTimeout(() => {
+      // Pre-populate form with GIA data
+      Object.keys(giaData).forEach(key => {
+        const element = document.getElementById(key) as HTMLInputElement;
+        if (element) {
+          element.value = giaData[key];
+        }
+      });
+    }, 100);
+  };
+
   if (authLoading) {
     return (
       <Layout>
@@ -142,6 +163,7 @@ export default function InventoryPage() {
           totalDiamonds={allDiamonds.length}
           onRefresh={handleRefresh}
           onAdd={handleAddDiamond}
+          onQRScan={handleQRScan}
           loading={loading}
         />
         
@@ -186,6 +208,12 @@ export default function InventoryPage() {
           />
         </DialogContent>
       </Dialog>
+
+      <QRCodeScanner
+        isOpen={isQRScannerOpen}
+        onClose={() => setIsQRScannerOpen(false)}
+        onScanSuccess={handleQRScanSuccess}
+      />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
