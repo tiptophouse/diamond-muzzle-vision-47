@@ -16,7 +16,7 @@ export function useInventoryData() {
     try {
       console.log('Fetching inventory data from FastAPI');
       
-      // Use a test user ID that exists in your backend data (2138564172 appears in most diamonds)
+      // Use a test user ID that exists in your backend data
       const testUserId = 2138564172;
       
       // Fetch all diamonds from your FastAPI backend
@@ -52,46 +52,6 @@ export function useInventoryData() {
     }
   };
 
-  const handleEdit = (id: string, data: Partial<Diamond>) => {
-    setDiamonds((prev) =>
-      prev.map((diamond) => (diamond.id === id ? { ...diamond, ...data } : diamond))
-    );
-    
-    setAllDiamonds((prev) =>
-      prev.map((diamond) => (diamond.id === id ? { ...diamond, ...data } : diamond))
-    );
-    
-    toast({
-      title: "Diamond updated",
-      description: `Stock #${data.stockNumber || ""} has been updated.`,
-    });
-  };
-  
-  const handleDelete = (id: string) => {
-    setDiamonds((prev) => prev.filter((diamond) => diamond.id !== id));
-    setAllDiamonds((prev) => prev.filter((diamond) => diamond.id !== id));
-    
-    toast({
-      title: "Diamond deleted",
-      description: "The diamond has been removed from your inventory.",
-    });
-  };
-  
-  const handleMarkAsSold = (id: string) => {
-    const updateStatus = (diamonds: Diamond[]) =>
-      diamonds.map((diamond) => 
-        diamond.id === id ? { ...diamond, status: "Sold" } : diamond
-      );
-    
-    setDiamonds(updateStatus);
-    setAllDiamonds(updateStatus);
-    
-    toast({
-      title: "Status updated",
-      description: "The diamond has been marked as sold.",
-    });
-  };
-
   const handleRefresh = () => {
     console.log('Manually refreshing inventory data...');
     fetchData();
@@ -103,9 +63,6 @@ export function useInventoryData() {
     setDiamonds,
     allDiamonds,
     fetchData,
-    handleEdit,
-    handleDelete,
-    handleMarkAsSold,
     handleRefresh,
   };
 }

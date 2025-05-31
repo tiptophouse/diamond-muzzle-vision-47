@@ -4,12 +4,12 @@ interface DiamondData {
   shape?: string;
   color?: string;
   clarity?: string;
-  weight?: number; // FastAPI uses 'weight' not 'carat'
+  weight?: number;
   carat?: number;
   price?: number;
-  price_per_carat?: number; // Add missing property
-  stock?: string; // Add missing property
-  owners?: number[]; // FastAPI uses 'owners' array
+  price_per_carat?: number;
+  stock?: string;
+  owners?: number[];
   owner_id?: number;
   status?: string;
 }
@@ -44,15 +44,11 @@ export function processDiamondDataForDashboard(diamonds: DiamondData[], currentU
   // Calculate basic stats
   const totalDiamonds = userDiamonds.length;
   
-  // Count unique owners as leads
-  const uniqueOwners = new Set(userDiamonds.flatMap(d => d.owners || [d.owner_id].filter(Boolean)));
-  const totalLeads = uniqueOwners.size;
-  
-  // Count matched pairs (diamonds with same color and clarity)
+  // Calculate matched pairs based on similar characteristics
   const pairMap = new Map<string, number>();
   userDiamonds.forEach(diamond => {
-    if (diamond.color && diamond.clarity) {
-      const key = `${diamond.color}-${diamond.clarity}`;
+    if (diamond.color && diamond.clarity && diamond.shape) {
+      const key = `${diamond.shape}-${diamond.color}-${diamond.clarity}`;
       pairMap.set(key, (pairMap.get(key) || 0) + 1);
     }
   });
@@ -60,14 +56,20 @@ export function processDiamondDataForDashboard(diamonds: DiamondData[], currentU
     acc + Math.floor(count / 2), 0
   );
   
-  // For demo, set active subscriptions to number of unique owners
-  const activeSubscriptions = totalLeads;
+  // Count unique shapes as market diversity
+  const uniqueShapes = new Set(userDiamonds.map(d => d.shape).filter(Boolean));
+  const totalLeads = uniqueShapes.size;
+  
+  // Calculate inventory value tiers
+  const highValueDiamonds = userDiamonds.filter(d => 
+    (d.price_per_carat || 0) * (d.weight || d.carat || 0) > 10000
+  ).length;
   
   const stats: DashboardStats = {
     totalDiamonds,
     matchedPairs,
     totalLeads,
-    activeSubscriptions,
+    activeSubscriptions: highValueDiamonds,
   };
   
   // Group diamonds by shape for inventory chart
@@ -95,7 +97,7 @@ export function processDiamondDataForDashboard(diamonds: DiamondData[], currentU
   const salesByCategory: InventoryData[] = Array.from(colorMap.entries())
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value)
-    .slice(0, 8); // Top 8 colors
+    .slice(0, 8);
   
   return {
     stats,
@@ -115,15 +117,21 @@ export function convertDiamondsToInventoryFormat(diamonds: DiamondData[], curren
   
   console.log('Converting diamonds to inventory format for user:', currentUserId, 'Filtered diamonds:', userDiamonds.length);
   
-  return userDiamonds.map(diamond => ({
-    id: diamond.id?.toString() || '',
-    stockNumber: diamond.stock || `D${diamond.id || Math.floor(Math.random() * 10000)}`,
-    shape: diamond.shape || 'Unknown',
-    carat: diamond.weight || diamond.carat || 0, // Map 'weight' to 'carat'
-    color: diamond.color || 'Unknown',
-    clarity: diamond.clarity || 'Unknown',
-    cut: 'Excellent', // Default since not in your data
-    price: (diamond.price_per_carat || 0) * (diamond.weight || diamond.carat || 0), // Calculate total price
-    status: diamond.status || 'Available',
-  }));
+  return userDiamonds.map(diamond => {
+    const weight = diamond.weight || diamond.carat || 0;
+    const pricePerCarat = diamond.price_per_carat || 0;
+    const totalPrice = Math.round(pricePerCarat * weight);
+    
+    return {
+      id: diamond.id?.toString() || '',
+      stockNumber: diamond.stock || `D${diamond.id || Math.floor(Math.random() * 10000)}`,
+      shape: diamond.shape || 'Unknown',
+      carat: weight,
+      color: diamond.color || 'Unknown',
+      clarity: diamond.clarity || 'Unknown',
+      cut: 'Excellent', // Default since not in your data
+      price: totalPrice,
+      status: diamond.status || 'Available',
+    };
+  });
 }

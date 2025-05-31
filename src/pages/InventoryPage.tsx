@@ -21,9 +21,6 @@ export default function InventoryPage() {
     setDiamonds,
     allDiamonds,
     fetchData,
-    handleEdit,
-    handleDelete,
-    handleMarkAsSold,
     handleRefresh,
   } = useInventoryData();
 
@@ -84,9 +81,6 @@ export default function InventoryPage() {
         
         <InventoryTable
           data={diamonds}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onMarkAsSold={handleMarkAsSold}
           loading={loading}
         />
         

@@ -2,210 +2,113 @@
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
-import { TrendingUp, TrendingDown, BarChartBig, Search, MessageSquare } from "lucide-react";
+import { TrendingUp, TrendingDown, BarChartBig, RefreshCw } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
-
-// Types for our AI insights data
-interface DiamondInsight {
-  id: string;
-  stockNumber: string;
-  shape: string;
-  carat: number;
-  color: string;
-  clarity: string;
-  price: number;
-  recommendation: "Buy" | "Sell" | "Hold";
-  confidenceScore: number;
-  reason: string;
-}
+import { api, apiEndpoints } from "@/lib/api";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
 
 interface MarketTrend {
   category: string;
-  trending: number;
-  previous: number;
-}
-
-interface MessageMatch {
-  messageId: string;
-  timestamp: string;
-  messageText: string;
-  diamondId: string;
-  stockNumber: string;
-  confidence: number;
+  count: number;
+  percentage: number;
 }
 
 export default function InsightsPage() {
   const { toast } = useToast();
+  const { user, isAuthenticated } = useTelegramAuth();
   const [loading, setLoading] = useState(true);
-  const [insights, setInsights] = useState<DiamondInsight[]>([]);
   const [marketTrends, setMarketTrends] = useState<MarketTrend[]>([]);
-  const [messageMatches, setMessageMatches] = useState<MessageMatch[]>([]);
+  const [totalDiamonds, setTotalDiamonds] = useState(0);
   
   useEffect(() => {
-    const fetchInsights = async () => {
-      setLoading(true);
-      try {
-        // Simulate API calls
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Mock data for diamond insights
-        const mockInsights: DiamondInsight[] = [
-          {
-            id: "d-1",
-            stockNumber: "D10001",
-            shape: "Round",
-            carat: 2.1,
-            color: "D",
-            clarity: "VS1",
-            price: 15000,
-            recommendation: "Sell",
-            confidenceScore: 87,
-            reason: "High current demand for D color rounds with increased inquiries in Telegram group"
-          },
-          {
-            id: "d-2",
-            stockNumber: "D10002",
-            shape: "Princess",
-            carat: 1.75,
-            color: "F",
-            clarity: "VVS2",
-            price: 10500,
-            recommendation: "Hold",
-            confidenceScore: 73,
-            reason: "Princess cuts showing seasonal demand downturn, expected to recover in 3 months"
-          },
-          {
-            id: "d-3",
-            stockNumber: "D10003",
-            shape: "Emerald",
-            carat: 3.0,
-            color: "G",
-            clarity: "VS2",
-            price: 18000,
-            recommendation: "Buy",
-            confidenceScore: 92,
-            reason: "Emerald cuts trending in social media, significant price appreciation forecasted"
-          },
-          {
-            id: "d-4",
-            stockNumber: "D10004",
-            shape: "Oval",
-            carat: 1.5,
-            color: "E",
-            clarity: "SI1",
-            price: 8500,
-            recommendation: "Sell",
-            confidenceScore: 81,
-            reason: "Multiple recent Telegram inquiries match this specification exactly"
-          },
-        ];
-        
-        // Mock data for market trends
-        const mockTrends: MarketTrend[] = [
-          { category: "Round", trending: 10, previous: 8 },
-          { category: "Princess", trending: 4, previous: 7 },
-          { category: "Cushion", trending: 7, previous: 6 },
-          { category: "Emerald", trending: 12, previous: 5 },
-          { category: "Oval", trending: 8, previous: 9 },
-          { category: "Pear", trending: 5, previous: 6 },
-        ];
-        
-        // Mock data for message matches
-        const mockMatches: MessageMatch[] = [
-          { 
-            messageId: "m1", 
-            timestamp: "2025-05-01T14:23:45Z", 
-            messageText: "Looking for a 2ct round D color VS1 or better", 
-            diamondId: "d-1", 
-            stockNumber: "D10001", 
-            confidence: 95 
-          },
-          { 
-            messageId: "m2", 
-            timestamp: "2025-05-01T08:12:33Z", 
-            messageText: "Does anyone have an oval around 1.5ct, E or F color?", 
-            diamondId: "d-4", 
-            stockNumber: "D10004", 
-            confidence: 88 
-          },
-          { 
-            messageId: "m3", 
-            timestamp: "2025-04-30T19:45:12Z", 
-            messageText: "Need a large emerald cut, preferably G color, at least 2.5ct", 
-            diamondId: "d-3", 
-            stockNumber: "D10003", 
-            confidence: 86 
-          },
-        ];
-        
-        setInsights(mockInsights);
-        setMarketTrends(mockTrends);
-        setMessageMatches(mockMatches);
-        
-      } catch (error) {
-        console.error("Failed to fetch insights", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to load AI insights. Please try again later.",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (isAuthenticated && user) {
+      fetchRealInsights();
+    }
+  }, [isAuthenticated, user]);
+  
+  const fetchRealInsights = async () => {
+    if (!user) return;
     
-    fetchInsights();
-  }, []);
-  
-  const getRecommendationClass = (recommendation: string) => {
-    switch (recommendation) {
-      case "Buy": return "bg-green-100 text-green-800 border-green-300";
-      case "Sell": return "bg-blue-100 text-blue-800 border-blue-300";
-      case "Hold": return "bg-amber-100 text-amber-800 border-amber-300";
-      default: return "bg-gray-100 text-gray-800 border-gray-300";
+    setLoading(true);
+    try {
+      console.log('Fetching real insights for user:', user.id);
+      
+      const response = await api.get<any[]>(apiEndpoints.getAllStones(user.id));
+      
+      if (response.data) {
+        const diamonds = response.data.filter(d => 
+          d.owners?.includes(user.id) || d.owner_id === user.id
+        );
+        
+        setTotalDiamonds(diamonds.length);
+        
+        // Calculate real market trends by shape
+        const shapeMap = new Map<string, number>();
+        diamonds.forEach(diamond => {
+          if (diamond.shape) {
+            shapeMap.set(diamond.shape, (shapeMap.get(diamond.shape) || 0) + 1);
+          }
+        });
+        
+        const trends: MarketTrend[] = Array.from(shapeMap.entries())
+          .map(([category, count]) => ({
+            category,
+            count,
+            percentage: Math.round((count / diamonds.length) * 100)
+          }))
+          .sort((a, b) => b.count - a.count);
+        
+        setMarketTrends(trends);
+        
+        toast({
+          title: "Insights loaded",
+          description: `Analyzed ${diamonds.length} diamonds in your inventory.`,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch insights", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load insights. Please try again.",
+      });
+    } finally {
+      setLoading(false);
     }
   };
   
-  const getRecommendationIcon = (recommendation: string) => {
-    switch (recommendation) {
-      case "Buy": return <TrendingUp className="h-4 w-4 text-green-600" />;
-      case "Sell": return <TrendingDown className="h-4 w-4 text-blue-600" />;
-      case "Hold": return <BarChartBig className="h-4 w-4 text-amber-600" />;
-      default: return null;
-    }
-  };
+  if (!isAuthenticated) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <Card>
+            <CardHeader>
+              <CardTitle>Authentication Required</CardTitle>
+              <CardDescription>Please authenticate to view insights.</CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
   
   if (loading) {
     return (
       <Layout>
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-bold">AI Insights</h1>
-            <p className="text-muted-foreground">
-              Market analysis and inventory recommendations
-            </p>
+            <h1 className="text-3xl font-bold">Market Insights</h1>
+            <p className="text-muted-foreground">Real-time analytics from your inventory</p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[...Array(4)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardHeader className="pb-2">
-                  <div className="h-5 bg-gray-200 rounded w-1/3"></div>
-                  <div className="h-4 bg-gray-100 rounded w-2/3"></div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="h-24 bg-gray-100 rounded"></div>
-                    <div className="h-4 bg-gray-200 rounded w-full"></div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-diamond-500 mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Analyzing your inventory...</p>
+            </div>
           </div>
         </div>
       </Layout>
@@ -215,171 +118,107 @@ export default function InsightsPage() {
   return (
     <Layout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">AI Insights</h1>
-          <p className="text-muted-foreground">
-            Market analysis and inventory recommendations powered by GPT
-          </p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold">Market Insights</h1>
+            <p className="text-muted-foreground">
+              Real-time analytics from your {totalDiamonds} diamonds
+            </p>
+          </div>
+          
+          <Button onClick={fetchRealInsights} disabled={loading}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
         
-        <Tabs defaultValue="recommendations" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-3 mb-6">
-            <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
-            <TabsTrigger value="trends">Market Trends</TabsTrigger>
-            <TabsTrigger value="matches">Message Matches</TabsTrigger>
-          </TabsList>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Inventory Distribution by Shape</CardTitle>
+              <CardDescription>
+                Shape breakdown of your current inventory
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={marketTrends}>
+                  <XAxis dataKey="category" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#8b5cf6" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
           
-          <TabsContent value="recommendations" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {insights.map((insight) => (
-                <Card key={insight.id} className="overflow-hidden border-t-4" 
-                      style={{ 
-                        borderTopColor: insight.recommendation === "Buy" ? "#22c55e" : 
-                                       insight.recommendation === "Sell" ? "#3b82f6" : "#f59e0b" 
-                      }}>
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-lg">{insight.stockNumber}</CardTitle>
-                        <CardDescription>
-                          {insight.shape} {insight.carat}ct {insight.color}-{insight.clarity}
-                        </CardDescription>
-                      </div>
-                      <Badge 
-                        className={`${getRecommendationClass(insight.recommendation)} flex items-center gap-1 px-2 py-1`}
-                        variant="outline"
-                      >
-                        {getRecommendationIcon(insight.recommendation)}
-                        {insight.recommendation}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <p className="text-sm">{insight.reason}</p>
-                      <div className="flex items-center justify-between text-sm">
-                        <div>Price: ${insight.price.toLocaleString()}</div>
-                        <div className="flex items-center gap-1">
-                          <span>Confidence:</span>
-                          <span className="font-semibold">{insight.confidenceScore}%</span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            
-            <div className="flex justify-center">
-              <Button>
-                <BarChartBig className="mr-2 h-4 w-4" />
-                Refresh Analysis
-              </Button>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="trends">
-            <Card>
-              <CardHeader>
-                <CardTitle>Diamond Market Trends</CardTitle>
-                <CardDescription>
-                  Shape popularity based on Telegram group analysis and market data
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={350}>
-                  <BarChart data={marketTrends}>
-                    <XAxis dataKey="category" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="previous" name="Previous Month" fill="#94a3b8" />
-                    <Bar dataKey="trending" name="Current Trend" fill="#a855f7" />
-                  </BarChart>
-                </ResponsiveContainer>
-                
-                <div className="grid grid-cols-2 gap-4 mt-6">
-                  <div className="space-y-2">
-                    <h4 className="font-semibold flex items-center">
-                      <TrendingUp className="mr-2 h-4 w-4 text-green-500" />
-                      Rising Demand
-                    </h4>
-                    <ul className="text-sm space-y-1">
-                      <li className="flex justify-between">
-                        <span>Emerald</span>
-                        <span className="text-green-500">+140%</span>
-                      </li>
-                      <li className="flex justify-between">
-                        <span>Round</span>
-                        <span className="text-green-500">+25%</span>
-                      </li>
-                    </ul>
+          <Card>
+            <CardHeader>
+              <CardTitle>Shape Analysis</CardTitle>
+              <CardDescription>
+                Percentage breakdown of your inventory
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {marketTrends.slice(0, 6).map((trend, index) => (
+                <div key={trend.category} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="w-12 justify-center">
+                      #{index + 1}
+                    </Badge>
+                    <span className="font-medium">{trend.category}</span>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-semibold flex items-center">
-                      <TrendingDown className="mr-2 h-4 w-4 text-red-500" />
-                      Falling Demand
-                    </h4>
-                    <ul className="text-sm space-y-1">
-                      <li className="flex justify-between">
-                        <span>Princess</span>
-                        <span className="text-red-500">-43%</span>
-                      </li>
-                      <li className="flex justify-between">
-                        <span>Oval</span>
-                        <span className="text-red-500">-11%</span>
-                      </li>
-                    </ul>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">
+                      {trend.count} diamonds
+                    </span>
+                    <Badge className="bg-diamond-100 text-diamond-800">
+                      {trend.percentage}%
+                    </Badge>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="matches">
-            <Card>
-              <CardHeader>
-                <CardTitle>Inventory-Message Matches</CardTitle>
-                <CardDescription>
-                  Recent Telegram messages that match your inventory
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {messageMatches.map((match) => (
-                  <div key={match.messageId} className="border rounded-lg p-4 space-y-2">
-                    <div className="flex justify-between items-start">
-                      <div className="text-sm text-muted-foreground">
-                        {new Date(match.timestamp).toLocaleString()}
-                      </div>
-                      <Badge className="bg-diamond-100 text-diamond-800 hover:bg-diamond-200">
-                        {match.confidence}% Match
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <MessageSquare className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                      <p className="text-sm">"{match.messageText}"</p>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <div className="text-sm font-medium">Matches your inventory:</div>
-                        <div className="text-sm">Stock #{match.stockNumber}</div>
-                      </div>
-                      
-                      <Button size="sm" variant="outline">
-                        <MessageSquare className="mr-2 h-3.5 w-3.5" />
-                        Reply
-                      </Button>
-                    </div>
+              ))}
+              
+              {marketTrends.length === 0 && (
+                <p className="text-center text-muted-foreground py-4">
+                  No data available. Upload your inventory to see insights.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+        
+        {totalDiamonds > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Stats</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">{totalDiamonds}</div>
+                  <div className="text-sm text-green-700">Total Diamonds</div>
+                </div>
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">{marketTrends.length}</div>
+                  <div className="text-sm text-blue-700">Different Shapes</div>
+                </div>
+                <div className="text-center p-4 bg-purple-50 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {marketTrends[0]?.category || 'N/A'}
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                  <div className="text-sm text-purple-700">Most Common Shape</div>
+                </div>
+                <div className="text-center p-4 bg-amber-50 rounded-lg">
+                  <div className="text-2xl font-bold text-amber-600">
+                    {marketTrends[0]?.percentage || 0}%
+                  </div>
+                  <div className="text-sm text-amber-700">Top Shape Share</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </Layout>
   );

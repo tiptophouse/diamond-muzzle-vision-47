@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Plus, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 interface InventoryHeaderProps {
   totalDiamonds: number;
@@ -15,7 +15,6 @@ export function InventoryHeader({ totalDiamonds, onRefresh, loading }: Inventory
         <h1 className="text-3xl font-bold">Inventory</h1>
         <p className="text-muted-foreground">
           Manage your diamond inventory ({totalDiamonds} total diamonds)
-          <span className="ml-2 text-xs text-gray-500">Test User: 2138564172</span>
         </p>
       </div>
       
@@ -28,10 +27,6 @@ export function InventoryHeader({ totalDiamonds, onRefresh, loading }: Inventory
         >
           <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh
-        </Button>
-        <Button className="w-full sm:w-auto">
-          <Plus className="mr-2 h-4 w-4" />
-          Add Diamond
         </Button>
       </div>
     </div>
