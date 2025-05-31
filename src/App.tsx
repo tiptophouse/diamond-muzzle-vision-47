@@ -13,6 +13,7 @@ import UploadPage from "./pages/UploadPage";
 import SettingsPage from "./pages/SettingsPage";
 import InsightsPage from "./pages/InsightsPage";
 import ReportsPage from "./pages/ReportsPage";
+import ChatPage from "./pages/ChatPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -42,6 +43,7 @@ const App = () => (
                 <Route path="/:reportId" element={<ReportsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/insights" element={<InsightsPage />} />
+                <Route path="/chat" element={<ChatPage />} />
                 <Route path="/queries" element={<Dashboard />} />
                 <Route path="/payments" element={<Dashboard />} />
                 <Route path="*" element={<NotFound />} />
