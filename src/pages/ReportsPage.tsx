@@ -1,294 +1,171 @@
-
-import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { FileText, Plus, Search, ArrowLeft } from "lucide-react";
+import { InventoryTable } from "@/components/inventory/InventoryTable";
+import { InventoryFilters } from "@/components/inventory/InventoryFilters";
+import { InventoryHeader } from "@/components/inventory/InventoryHeader";
+import { InventorySearch } from "@/components/inventory/InventorySearch";
+import { InventoryPagination } from "@/components/inventory/InventoryPagination";
+import { useInventoryData } from "@/hooks/useInventoryData";
+import { useInventorySearch } from "@/hooks/useInventorySearch";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { useToast } from "@/components/ui/use-toast";
 import { api, apiEndpoints } from "@/lib/api";
-import { toast } from "@/components/ui/use-toast";
-import { processDiamondDataForDashboard } from "@/services/diamondAnalytics";
-
-interface DiamondReport {
-  total: number;
-  unique_color: number;
-  total_price: number;
-  colors: string[];
-}
+import { convertDiamondsToInventoryFormat } from "@/services/diamondAnalytics";
+import { Diamond } from "@/components/inventory/InventoryTable";
 
 export default function ReportsPage() {
-  const { reportId } = useParams();
-  const [loading, setLoading] = useState(false);
-  const [searchId, setSearchId] = useState("");
-  const [foundReport, setFoundReport] = useState<DiamondReport | null>(null);
-  const [reportUrl, setReportUrl] = useState<string>("");
+  const { isAuthenticated, isLoading: authLoading, user, error: authError } = useTelegramAuth();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [diamonds, setDiamonds] = useState<Diamond[]>([]);
+  const [allDiamonds, setAllDiamonds] = useState<Diamond[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [totalPages, setTotalPages] = useState(1);
 
-  // Auto-load report if reportId is provided in URL
-  useEffect(() => {
-    if (reportId) {
-      setSearchId(reportId);
-      handleSearchReport(reportId);
-    }
-  }, [reportId]);
-
-  const handleGenerateReport = async () => {
-    setLoading(true);
-    try {
-      // Fetch current diamond data
-      const diamondsResponse = await api.get<any[]>(
-        apiEndpoints.getAllStones()
-      );
-
-      if (diamondsResponse.data) {
-        const { stats } = processDiamondDataForDashboard(diamondsResponse.data);
-        
-        // Get unique colors from the data
-        const colors = [...new Set(
-          diamondsResponse.data
-            .map(d => d.color)
-            .filter(Boolean)
-        )] as string[];
-
-        const reportData = {
-          total: stats.totalDiamonds,
-          unique_color: colors.length,
-          total_price: diamondsResponse.data.reduce((sum, d) => sum + (d.price || 0), 0),
-          colors: colors
-        };
-
-        const response = await api.post<string>(
-          apiEndpoints.createReport(),
-          reportData
-        );
-
-        if (response.data) {
-          setReportUrl(response.data);
-          toast({
-            title: "Report Generated",
-            description: "Your diamond report has been created successfully!",
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Failed to generate report:", error);
-      toast({
-        title: "Error",
-        description: "Failed to generate report. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSearchReport = async (id?: string) => {
-    const searchReportId = id || searchId;
-    
-    if (!searchReportId.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a report ID to search.",
-        variant: "destructive",
-      });
+  const fetchData = async () => {
+    if (!user?.id) {
+      console.log('No authenticated user, skipping data fetch');
       return;
     }
 
     setLoading(true);
     try {
-      const response = await api.get<DiamondReport>(
-        apiEndpoints.getReport(searchReportId)
-      );
-
+      console.log('Fetching inventory data for user:', user.id);
+      
+      const response = await api.get<any[]>(apiEndpoints.getAllStones(user.id));
+      
       if (response.data) {
-        setFoundReport(response.data);
+        console.log('Received diamonds from FastAPI:', response.data.length, 'total diamonds');
+        
+        const convertedDiamonds = convertDiamondsToInventoryFormat(response.data, user.id);
+        console.log('Converted diamonds for display:', convertedDiamonds.length, 'diamonds for user', user.id);
+        
+        setAllDiamonds(convertedDiamonds);
+        setDiamonds(convertedDiamonds);
+        
         toast({
-          title: "Report Found",
-          description: "Report retrieved successfully!",
+          title: "Report data loaded",
+          description: `Found ${convertedDiamonds.length} diamonds.`,
         });
       }
     } catch (error) {
-      console.error("Failed to fetch report:", error);
-      setFoundReport(null);
+      console.error("Failed to fetch report data", error);
       toast({
-        title: "Error",
-        description: "Report not found. Please check the ID and try again.",
         variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch report data. Please try again.",
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const goBackToReports = () => {
-    window.history.pushState({}, '', '/reports');
-    setFoundReport(null);
-    setSearchId("");
+  useEffect(() => {
+    if (isAuthenticated && user?.id) {
+      fetchData();
+    }
+  }, [isAuthenticated, user?.id]);
+
+  useEffect(() => {
+    // Implement search and filter logic here
+    const filtered = allDiamonds.filter((diamond) => {
+      // Search logic
+      const searchRegex = new RegExp(searchQuery, "i");
+      const searchMatch =
+        searchQuery === "" ||
+        Object.values(diamond).some((value) =>
+          String(value).match(searchRegex)
+        );
+
+      // Filter logic
+      const filterMatch = Object.entries(filters).every(([key, value]) => {
+        if (!value) return true; // Skip empty filters
+        return String(diamond[key as keyof Diamond])
+          .toLowerCase()
+          .includes(value.toLowerCase());
+      });
+
+      return searchMatch && filterMatch;
+    });
+
+    // Pagination
+    const startIndex = (currentPage - 1) * 10;
+    const endIndex = startIndex + 10;
+    const paginatedDiamonds = filtered.slice(startIndex, endIndex);
+
+    setDiamonds(paginatedDiamonds);
+    setTotalPages(Math.ceil(filtered.length / 10));
+  }, [allDiamonds, currentPage, filters, searchQuery]);
+
+  const handleFilterChange = (newFilters: Record<string, string>) => {
+    setFilters(newFilters);
+    setCurrentPage(1);
   };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setCurrentPage(1);
+  };
+
+  if (authLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600 mx-auto mb-4"></div>
+            <p className="text-slate-600">Authenticating...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!isAuthenticated || authError) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">
+              {authError || "Authentication required to view reports"}
+            </p>
+            <p className="text-slate-600">Please ensure you're accessing this app through Telegram.</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
-      <div className="space-y-8">
-        <div className="flex items-center gap-4">
-          {reportId && (
-            <Button variant="outline" size="sm" onClick={goBackToReports}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Reports
-            </Button>
-          )}
-          <div>
-            <h1 className="text-3xl font-bold">
-              {reportId ? `Report #${reportId}` : 'Diamond Reports'}
-            </h1>
-            <p className="text-muted-foreground">
-              {reportId 
-                ? 'Viewing individual diamond report details'
-                : 'Generate comprehensive reports on your diamond inventory and retrieve existing reports.'
-              }
-            </p>
-          </div>
+      <div className="space-y-4 px-4 sm:px-6 pb-6">
+        <InventoryHeader
+          totalDiamonds={allDiamonds.length}
+          onRefresh={fetchData}
+          loading={loading}
+        />
+        
+        <div className="space-y-4">
+          <InventorySearch
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onSubmit={handleSearch}
+          />
+          
+          <InventoryFilters onFilterChange={handleFilterChange} />
         </div>
-
-        {!reportId && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Generate New Report */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Plus className="h-5 w-5" />
-                  Generate New Report
-                </CardTitle>
-                <CardDescription>
-                  Create a comprehensive report based on your current diamond inventory.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button 
-                  onClick={handleGenerateReport} 
-                  disabled={loading}
-                  className="w-full"
-                >
-                  {loading ? "Generating..." : "Generate Report"}
-                </Button>
-                
-                {reportUrl && (
-                  <div className="p-4 bg-muted rounded-lg">
-                    <Label className="text-sm font-medium">Report URL:</Label>
-                    <div className="mt-2 p-2 bg-background rounded border text-sm break-all">
-                      {reportUrl}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-2"
-                      onClick={() => {
-                        navigator.clipboard.writeText(reportUrl);
-                        toast({
-                          title: "Copied!",
-                          description: "Report URL copied to clipboard.",
-                        });
-                      }}
-                    >
-                      Copy URL
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Search Existing Report */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Search className="h-5 w-5" />
-                  Find Existing Report
-                </CardTitle>
-                <CardDescription>
-                  Retrieve a previously generated report using its ID.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="reportId">Report ID</Label>
-                  <Input
-                    id="reportId"
-                    type="text"
-                    placeholder="Enter report ID..."
-                    value={searchId}
-                    onChange={(e) => setSearchId(e.target.value)}
-                  />
-                </div>
-                
-                <Button 
-                  onClick={() => handleSearchReport()} 
-                  disabled={loading}
-                  variant="outline"
-                  className="w-full"
-                >
-                  {loading ? "Searching..." : "Search Report"}
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Display Found Report */}
-        {foundReport && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Report Details {reportId && `- #${reportId}`}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-muted-foreground">
-                    Total Diamonds
-                  </Label>
-                  <div className="text-2xl font-bold">{foundReport.total}</div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-muted-foreground">
-                    Unique Colors
-                  </Label>
-                  <div className="text-2xl font-bold">{foundReport.unique_color}</div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-muted-foreground">
-                    Total Value
-                  </Label>
-                  <div className="text-2xl font-bold">
-                    ${foundReport.total_price.toLocaleString()}
-                  </div>
-                </div>
-              </div>
-              
-              <Separator className="my-6" />
-              
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-muted-foreground">
-                  Available Colors
-                </Label>
-                <div className="flex flex-wrap gap-2">
-                  {foundReport.colors.map((color, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 bg-muted rounded-full text-sm"
-                    >
-                      {color}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        
+        <InventoryTable
+          data={diamonds}
+          loading={loading}
+        />
+        
+        <InventoryPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </div>
     </Layout>
   );

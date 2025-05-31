@@ -1,18 +1,5 @@
 
-export interface TelegramInitData {
-  query_id?: string;
-  user?: {
-    id: number;
-    first_name: string;
-    last_name?: string;
-    username?: string;
-    language_code?: string;
-    is_premium?: boolean;
-    photo_url?: string;
-  };
-  auth_date: number;
-  hash: string;
-}
+import { TelegramInitData } from '@/types/telegram';
 
 export function parseTelegramInitData(initData: string): TelegramInitData | null {
   try {
@@ -35,8 +22,6 @@ export function parseTelegramInitData(initData: string): TelegramInitData | null
 }
 
 export function validateTelegramInitData(initData: string, botToken?: string): boolean {
-  // For now, we'll skip the crypto validation since it's causing issues
-  // In production, you should implement proper validation with your bot token
   console.log('Telegram initData validation - skipping crypto validation for now');
   
   if (!initData) {
@@ -56,3 +41,6 @@ export function validateTelegramInitData(initData: string, botToken?: string): b
 export function isTelegramWebApp(): boolean {
   return typeof window !== 'undefined' && !!window.Telegram?.WebApp;
 }
+
+// Re-export the types for backward compatibility
+export type { TelegramInitData } from '@/types/telegram';
