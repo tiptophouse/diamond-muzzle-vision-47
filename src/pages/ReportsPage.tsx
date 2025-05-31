@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -5,10 +6,8 @@ import { InventoryFilters } from "@/components/inventory/InventoryFilters";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { InventorySearch } from "@/components/inventory/InventorySearch";
 import { InventoryPagination } from "@/components/inventory/InventoryPagination";
-import { PriceComparisonChart } from "@/components/charts/PriceComparisonChart";
 import { useInventoryData } from "@/hooks/useInventoryData";
 import { useInventorySearch } from "@/hooks/useInventorySearch";
-import { usePriceComparison } from "@/hooks/usePriceComparison";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { api, apiEndpoints } from "@/lib/api";
@@ -25,9 +24,6 @@ export default function ReportsPage() {
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [totalPages, setTotalPages] = useState(1);
-
-  // Add price comparison hook
-  const { comparisonData } = usePriceComparison(allDiamonds);
 
   const fetchData = async () => {
     if (!user?.id) {
@@ -148,12 +144,6 @@ export default function ReportsPage() {
         <InventoryHeader
           totalDiamonds={allDiamonds.length}
           onRefresh={fetchData}
-          loading={loading}
-        />
-        
-        {/* Add Price Comparison Chart */}
-        <PriceComparisonChart 
-          data={comparisonData} 
           loading={loading}
         />
         
