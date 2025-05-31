@@ -160,14 +160,14 @@ async function processWithOCR(imageData: string) {
             - clarity (FL, IF, VVS1, VVS2, VS1, VS2, SI1, SI2, I1, I2, I3)
             - cut (Excellent, Very Good, Good, Fair, Poor)
             
-            If any information is not clearly visible, use reasonable defaults. Return only valid JSON.`
+            Return ONLY the JSON object, no markdown formatting or extra text.`
           },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: 'Please extract the GIA diamond certificate information from this image.'
+                text: 'Please extract the GIA diamond certificate information from this image and return only the JSON object.'
               },
               {
                 type: 'image_url',
@@ -192,7 +192,17 @@ async function processWithOCR(imageData: string) {
     console.log('OpenAI extracted text:', extractedText);
 
     try {
-      const parsedData = JSON.parse(extractedText);
+      // Clean the response to handle markdown formatting
+      let cleanedText = extractedText.trim();
+      
+      // Remove markdown code blocks if present
+      if (cleanedText.startsWith('```json')) {
+        cleanedText = cleanedText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      } else if (cleanedText.startsWith('```')) {
+        cleanedText = cleanedText.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      }
+      
+      const parsedData = JSON.parse(cleanedText);
       
       const giaData: GIAData = {
         stockNumber: `GIA-${parsedData.certificateNumber || Date.now()}`,
@@ -220,6 +230,7 @@ async function processWithOCR(imageData: string) {
 
     } catch (parseError) {
       console.error('Error parsing OpenAI response:', parseError);
+      console.error('Raw response was:', extractedText);
       return createMockOCRResponse();
     }
 
