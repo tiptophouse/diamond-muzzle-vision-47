@@ -15,10 +15,8 @@ export function getCurrentUserId(): number | null {
 }
 
 export const apiEndpoints = {
-  getAllStones: (userId?: number) => {
-    // For testing with your actual data, use one of the existing owner IDs
-    const testUserId = userId || 2138564172; // This ID appears in your backend data
-    const userParam = `?user_id=${testUserId}`;
+  getAllStones: (userId: number) => {
+    const userParam = `?user_id=${userId}`;
     return `/get_all_stones${userParam}`;
   },
   uploadInventory: () => `/upload-inventory`,

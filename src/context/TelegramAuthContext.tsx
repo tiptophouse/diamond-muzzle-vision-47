@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { setCurrentUserId } from '@/lib/api';
 import { parseTelegramInitData, validateTelegramInitData, isTelegramWebApp, TelegramInitData } from '@/utils/telegramValidation';
@@ -120,6 +121,8 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
 
       const tg = window.Telegram!.WebApp;
       console.log('Telegram WebApp object:', tg);
+      console.log('Telegram WebApp version:', tg.version);
+      console.log('Telegram WebApp platform:', tg.platform);
       
       // Initialize Telegram WebApp
       tg.ready();
@@ -134,34 +137,43 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
       const rawInitData = tg.initData;
       const unsafeData = tg.initDataUnsafe;
       
-      console.log('Raw initData:', rawInitData);
-      console.log('Unsafe data:', unsafeData);
+      console.log('Raw initData length:', rawInitData?.length || 0);
+      console.log('Unsafe data available:', !!unsafeData?.user);
       
       // If we have unsafe data but no initData, use unsafe data directly
       if (!rawInitData && unsafeData?.user) {
-        console.log('Using unsafe data directly');
+        console.log('Using unsafe data directly for user:', unsafeData.user.id);
         setUser(unsafeData.user);
         setCurrentUserId(unsafeData.user.id);
+        setError(null);
         setIsLoading(false);
         return;
       }
 
       if (!rawInitData) {
-        console.log('No initData available');
-        setError('No initialization data received from Telegram. Please restart the app.');
+        console.log('No initData available, checking if we have any user data');
+        if (unsafeData?.user) {
+          console.log('Found user in unsafe data, using that');
+          setUser(unsafeData.user);
+          setCurrentUserId(unsafeData.user.id);
+          setError(null);
+        } else {
+          setError('No user data available from Telegram. Please restart the app.');
+        }
         setIsLoading(false);
         return;
       }
 
       // Parse initData
       const parsedInitData = parseTelegramInitData(rawInitData);
-      console.log('Parsed initData:', parsedInitData);
+      console.log('Parsed initData available:', !!parsedInitData);
       
       if (!parsedInitData) {
         console.log('Failed to parse initData, trying unsafe data');
         if (unsafeData?.user) {
           setUser(unsafeData.user);
           setCurrentUserId(unsafeData.user.id);
+          setError(null);
           setIsLoading(false);
           return;
         }
@@ -184,9 +196,9 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
       // Set authenticated user
       setUser(telegramUser);
       setCurrentUserId(telegramUser.id);
+      setError(null);
       
-      console.log('Telegram user authenticated:', telegramUser);
-      console.log('Telegram WebApp version:', tg.version);
+      console.log('Telegram user authenticated successfully:', telegramUser.id, telegramUser.first_name);
 
     } catch (err) {
       console.error('Error initializing Telegram auth:', err);
@@ -224,10 +236,11 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshAuth = () => {
+    console.log('Refreshing authentication...');
     initializeAuth();
   };
 
-  const isAuthenticated = !!user && isTelegramEnvironment;
+  const isAuthenticated = !!user && isTelegramEnvironment && !error;
 
   return (
     <TelegramAuthContext.Provider
