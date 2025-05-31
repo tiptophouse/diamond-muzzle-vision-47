@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -151,6 +152,7 @@ export default function ReportsPage() {
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             onSubmit={handleSearch}
+            allDiamonds={allDiamonds}
           />
           
           <InventoryFilters onFilterChange={handleFilterChange} />
