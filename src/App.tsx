@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { TelegramAuthProvider } from "@/context/TelegramAuthContext";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import Dashboard from "./pages/Dashboard";
 import InventoryPage from "./pages/InventoryPage";
 import UploadPage from "./pages/UploadPage";
@@ -22,19 +23,21 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/inventory" element={<InventoryPage />} />
-            <Route path="/upload" element={<UploadPage />} />
-            <Route path="/reports" element={<ReportsPage />} />
-            <Route path="/reports/:reportId" element={<ReportsPage />} />
-            <Route path="/:reportId" element={<ReportsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/insights" element={<InsightsPage />} />
-            <Route path="/queries" element={<Dashboard />} />
-            <Route path="/payments" element={<Dashboard />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AuthGuard>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/inventory" element={<InventoryPage />} />
+              <Route path="/upload" element={<UploadPage />} />
+              <Route path="/reports" element={<ReportsPage />} />
+              <Route path="/reports/:reportId" element={<ReportsPage />} />
+              <Route path="/:reportId" element={<ReportsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/insights" element={<InsightsPage />} />
+              <Route path="/queries" element={<Dashboard />} />
+              <Route path="/payments" element={<Dashboard />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthGuard>
         </BrowserRouter>
       </TooltipProvider>
     </TelegramAuthProvider>
