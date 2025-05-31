@@ -3,7 +3,7 @@ import { ReactNode } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, AlertTriangle } from 'lucide-react';
+import { MessageSquare, AlertTriangle, CheckCircle } from 'lucide-react';
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -11,7 +11,7 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children, fallback }: AuthGuardProps) {
-  const { isAuthenticated, isLoading, error, refreshAuth, isTelegramEnvironment } = useTelegramAuth();
+  const { isAuthenticated, isLoading, error, refreshAuth, isTelegramEnvironment, user } = useTelegramAuth();
 
   if (isLoading) {
     return (
@@ -25,7 +25,24 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
     );
   }
 
-  if (!isTelegramEnvironment) {
+  // Show development mode indicator if not in Telegram
+  if (!isTelegramEnvironment && user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="bg-yellow-100 border-b border-yellow-200 p-2">
+          <div className="flex items-center justify-center gap-2 text-yellow-800">
+            <AlertTriangle size={16} />
+            <span className="text-sm font-medium">
+              Development Mode - Using mock user: {user.first_name} (ID: {user.id})
+            </span>
+          </div>
+        </div>
+        {children}
+      </div>
+    );
+  }
+
+  if (!isTelegramEnvironment && !user) {
     return fallback || (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-red-50 to-red-100 p-4">
         <Card className="w-full max-w-md border-red-200">
@@ -47,6 +64,9 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
               <li>• Telegram Mini App menu</li>
               <li>• Direct link from Telegram</li>
             </ul>
+            <Button onClick={refreshAuth} className="w-full bg-red-600 hover:bg-red-700">
+              Try Development Mode
+            </Button>
             <div className="pt-4 border-t border-red-200">
               <p className="text-xs text-red-500">
                 If you believe this is an error, please contact support
@@ -58,7 +78,7 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !user) {
     return fallback || (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-yellow-50 to-yellow-100 p-4">
         <Card className="w-full max-w-md border-yellow-200">

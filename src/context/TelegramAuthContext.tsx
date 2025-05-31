@@ -25,7 +25,8 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
     refreshAuth,
   } = useTelegramInit();
 
-  const isAuthenticated = !!user && isTelegramEnvironment && !error;
+  // Consider authenticated if we have a user (either real or mock)
+  const isAuthenticated = !!user && !error;
 
   return (
     <TelegramAuthContext.Provider
