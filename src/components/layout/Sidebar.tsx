@@ -52,6 +52,7 @@ export function Sidebar() {
     { path: "/inventory", label: "Inventory", icon: Database },
     { path: "/upload", label: "Upload", icon: Upload },
     { path: "/reports", label: "Reports", icon: FileText },
+    { path: "/chat", label: "Chat", icon: MessageSquare },
     { path: "/queries", label: "Client Queries", icon: MessageSquare },
     { path: "/insights", label: "AI Insights", icon: Lightbulb },
     { path: "/payments", label: "Payments & Leads", icon: CreditCard },
