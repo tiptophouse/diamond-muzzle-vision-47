@@ -13,16 +13,16 @@ interface InventoryMobileCardProps {
 
 export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobileCardProps) {
   return (
-    <Card className="bg-slate-50 border-slate-200 hover:bg-slate-100 transition-colors">
-      <CardContent className="p-4">
-        <div className="flex justify-between items-start mb-3">
-          <div>
-            <h3 className="font-mono text-sm font-semibold text-slate-900">
+    <Card className="w-full bg-white border-slate-200 hover:bg-slate-50 transition-colors">
+      <CardContent className="p-4 w-full">
+        <div className="flex justify-between items-start mb-3 w-full">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-mono text-sm font-semibold text-slate-900 truncate">
               {diamond.stockNumber}
             </h3>
             <p className="text-lg font-bold text-slate-800">{diamond.shape}</p>
           </div>
-          <div className="text-right">
+          <div className="text-right flex-shrink-0 ml-4">
             <p className="text-xl font-bold text-slate-900">
               ${diamond.price.toLocaleString()}
             </p>
@@ -41,7 +41,7 @@ export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobi
           </div>
         </div>
         
-        <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="grid grid-cols-2 gap-3 mb-3 w-full">
           <div className="space-y-2">
             <div>
               <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">Carat</span>
@@ -72,7 +72,7 @@ export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobi
         </div>
 
         {(onEdit || onDelete) && (
-          <div className="flex gap-2 pt-2 border-t border-slate-200">
+          <div className="flex gap-2 pt-2 border-t border-slate-200 w-full">
             {onEdit && (
               <Button
                 variant="outline"

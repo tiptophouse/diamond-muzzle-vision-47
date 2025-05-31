@@ -38,7 +38,7 @@ export function InventoryTable({ data, loading = false, onEdit, onDelete }: Inve
 
   if (isMobile) {
     return (
-      <div className="space-y-3">
+      <div className="w-full space-y-3 bg-background">
         {data.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             No diamonds found. Upload your inventory to get started.
@@ -58,9 +58,9 @@ export function InventoryTable({ data, loading = false, onEdit, onDelete }: Inve
   }
   
   return (
-    <div className="rounded-md border overflow-hidden">
-      <div className="overflow-x-auto">
-        <Table>
+    <div className="w-full rounded-md border overflow-hidden bg-background">
+      <div className="w-full overflow-x-auto">
+        <Table className="w-full min-w-full">
           <InventoryTableHeader />
           <TableBody>
             {data.length === 0 ? (

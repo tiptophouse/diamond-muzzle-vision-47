@@ -113,7 +113,7 @@ export default function InventoryPage() {
   if (authLoading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-64">
+        <div className="flex items-center justify-center h-64 w-full">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600 mx-auto mb-4"></div>
             <p className="text-slate-600">Authenticating...</p>
@@ -126,8 +126,8 @@ export default function InventoryPage() {
   if (!isAuthenticated || authError) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
+        <div className="flex items-center justify-center h-64 w-full">
+          <div className="text-center px-4">
             <p className="text-red-600 mb-4">
               {authError || "Authentication required to view inventory"}
             </p>
@@ -140,7 +140,7 @@ export default function InventoryPage() {
 
   return (
     <Layout>
-      <div className="space-y-4 px-4 sm:px-6 pb-6">
+      <div className="w-full max-w-full overflow-x-hidden space-y-4">
         <InventoryHeader
           totalDiamonds={allDiamonds.length}
           onRefresh={handleRefresh}
@@ -148,7 +148,7 @@ export default function InventoryPage() {
           loading={loading}
         />
         
-        <div className="space-y-4">
+        <div className="w-full space-y-4">
           <InventorySearch
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -158,12 +158,14 @@ export default function InventoryPage() {
           <InventoryFilters onFilterChange={handleFilterChange} />
         </div>
         
-        <InventoryTable
-          data={diamonds}
-          loading={loading}
-          onEdit={handleEditDiamond}
-          onDelete={handleDeleteDiamond}
-        />
+        <div className="w-full overflow-x-hidden">
+          <InventoryTable
+            data={diamonds}
+            loading={loading}
+            onEdit={handleEditDiamond}
+            onDelete={handleDeleteDiamond}
+          />
+        </div>
         
         <InventoryPagination
           currentPage={currentPage}
@@ -173,7 +175,7 @@ export default function InventoryPage() {
       </div>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingDiamond ? 'Edit Diamond' : 'Add New Diamond'}
