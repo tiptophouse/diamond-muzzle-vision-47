@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { setCurrentUserId } from '@/lib/api';
 import { parseTelegramInitData, isTelegramWebApp } from '@/utils/telegramValidation';
@@ -17,9 +16,7 @@ export function useTelegramInit() {
       first_name: "Test",
       last_name: "User",
       username: "testuser",
-      language_code: "en",
-      is_bot: false,
-      allows_write_to_pm: true
+      language_code: "en"
     };
   };
 
