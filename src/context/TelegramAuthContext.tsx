@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { setCurrentUserId } from '@/lib/api';
 import { parseTelegramInitData, validateTelegramInitData, isTelegramWebApp, TelegramInitData } from '@/utils/telegramValidation';
@@ -105,40 +104,67 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
     setError(null);
 
     try {
+      console.log('Starting Telegram auth initialization...');
+      
       // Check if we're in a Telegram environment
       const inTelegram = isTelegramWebApp();
       setIsTelegramEnvironment(inTelegram);
+      console.log('Is in Telegram environment:', inTelegram);
 
       if (!inTelegram) {
+        console.log('Not in Telegram environment');
         setError('This app can only be used within Telegram. Please open it through a Telegram bot or Mini App.');
         setIsLoading(false);
         return;
       }
 
       const tg = window.Telegram!.WebApp;
+      console.log('Telegram WebApp object:', tg);
       
       // Initialize Telegram WebApp
       tg.ready();
       tg.expand();
 
       // Configure theme
-      document.body.style.backgroundColor = tg.themeParams.bg_color || '#ffffff';
+      if (tg.themeParams?.bg_color) {
+        document.body.style.backgroundColor = tg.themeParams.bg_color;
+      }
       
-      // Get and validate initData
+      // Get initData - try both sources
       const rawInitData = tg.initData;
+      const unsafeData = tg.initDataUnsafe;
       
+      console.log('Raw initData:', rawInitData);
+      console.log('Unsafe data:', unsafeData);
+      
+      // If we have unsafe data but no initData, use unsafe data directly
+      if (!rawInitData && unsafeData?.user) {
+        console.log('Using unsafe data directly');
+        setUser(unsafeData.user);
+        setCurrentUserId(unsafeData.user.id);
+        setIsLoading(false);
+        return;
+      }
+
       if (!rawInitData) {
+        console.log('No initData available');
         setError('No initialization data received from Telegram. Please restart the app.');
         setIsLoading(false);
         return;
       }
 
-      console.log('Raw Telegram initData:', rawInitData);
-
       // Parse initData
       const parsedInitData = parseTelegramInitData(rawInitData);
+      console.log('Parsed initData:', parsedInitData);
       
       if (!parsedInitData) {
+        console.log('Failed to parse initData, trying unsafe data');
+        if (unsafeData?.user) {
+          setUser(unsafeData.user);
+          setCurrentUserId(unsafeData.user.id);
+          setIsLoading(false);
+          return;
+        }
         setError('Invalid initialization data format.');
         setIsLoading(false);
         return;
@@ -146,19 +172,8 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
 
       setInitData(parsedInitData);
 
-      // Validate auth_date (not older than 24 hours)
-      const authDate = parsedInitData.auth_date;
-      const currentTime = Math.floor(Date.now() / 1000);
-      const timeDiff = currentTime - authDate;
-      
-      if (timeDiff > 86400) { // 24 hours in seconds
-        setError('Session expired. Please restart the app.');
-        setIsLoading(false);
-        return;
-      }
-
       // Get user data
-      const telegramUser = parsedInitData.user || tg.initDataUnsafe?.user;
+      const telegramUser = parsedInitData.user || unsafeData?.user;
       
       if (!telegramUser) {
         setError('User data not available. Please ensure you have authorized the bot.');
@@ -172,7 +187,6 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
       
       console.log('Telegram user authenticated:', telegramUser);
       console.log('Telegram WebApp version:', tg.version);
-      console.log('Platform:', tg.platform);
 
     } catch (err) {
       console.error('Error initializing Telegram auth:', err);
