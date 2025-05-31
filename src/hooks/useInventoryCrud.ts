@@ -1,4 +1,5 @@
 
+
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { api, apiEndpoints } from '@/lib/api';
@@ -139,10 +140,13 @@ export function useInventoryCrud(onSuccess?: () => void) {
     try {
       console.log('Deleting diamond from FastAPI backend:', diamondId, 'for user:', user.id);
       
-      // Delete from FastAPI backend
+      // Delete from FastAPI backend using DELETE method
       const response = await api.delete(apiEndpoints.deleteDiamond(diamondId, user.id));
       
+      console.log('Delete response:', response);
+      
       if (response.error) {
+        console.error('Delete API error:', response.error);
         throw new Error(response.error);
       }
       
@@ -155,10 +159,11 @@ export function useInventoryCrud(onSuccess?: () => void) {
       return true;
     } catch (error) {
       console.error('Failed to delete diamond:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond. Please try again.";
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to delete diamond. Please try again.",
+        description: errorMessage,
       });
       return false;
     } finally {
@@ -173,3 +178,4 @@ export function useInventoryCrud(onSuccess?: () => void) {
     isLoading,
   };
 }
+
