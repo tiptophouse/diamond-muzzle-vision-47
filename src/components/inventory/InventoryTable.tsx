@@ -28,10 +28,9 @@ interface InventoryTableProps {
   loading?: boolean;
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
-  onStoneSelect?: (stone: Diamond) => void;
 }
 
-export function InventoryTable({ data, loading = false, onEdit, onDelete, onStoneSelect }: InventoryTableProps) {
+export function InventoryTable({ data, loading = false, onEdit, onDelete }: InventoryTableProps) {
   const isMobile = useIsMobile();
 
   if (loading) {
@@ -52,7 +51,6 @@ export function InventoryTable({ data, loading = false, onEdit, onDelete, onSton
               diamond={diamond} 
               onEdit={onEdit}
               onDelete={onDelete}
-              onStoneSelect={onStoneSelect}
             />
           ))
         )}
@@ -75,7 +73,6 @@ export function InventoryTable({ data, loading = false, onEdit, onDelete, onSton
                   diamond={diamond} 
                   onEdit={onEdit}
                   onDelete={onDelete}
-                  onStoneSelect={onStoneSelect}
                 />
               ))
             )}

@@ -1,3 +1,4 @@
+
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,21 +9,11 @@ interface InventoryTableRowProps {
   diamond: Diamond;
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
-  onStoneSelect?: (stone: Diamond) => void;
 }
 
-export function InventoryTableRow({ diamond, onEdit, onDelete, onStoneSelect }: InventoryTableRowProps) {
-  const handleRowClick = () => {
-    if (onStoneSelect) {
-      onStoneSelect(diamond);
-    }
-  };
-
+export function InventoryTableRow({ diamond, onEdit, onDelete }: InventoryTableRowProps) {
   return (
-    <TableRow 
-      className="hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
-      onClick={handleRowClick}
-    >
+    <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-800">
       <TableCell className="w-16">
         {diamond.imageUrl ? (
           <img 
@@ -80,7 +71,7 @@ export function InventoryTableRow({ diamond, onEdit, onDelete, onStoneSelect }: 
         </Badge>
       </TableCell>
       <TableCell>
-        <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+        <div className="flex gap-1">
           {onEdit && (
             <Button
               variant="ghost"
