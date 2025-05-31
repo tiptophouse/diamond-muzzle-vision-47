@@ -16,6 +16,7 @@ interface DiamondFormData {
   cut: string;
   price: number;
   status: string;
+  imageUrl?: string;
 }
 
 interface DiamondFormProps {
@@ -42,14 +43,25 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       cut: diamond.cut,
       price: diamond.price,
       status: diamond.status,
+      imageUrl: diamond.imageUrl || '',
     } : {
-      status: 'Available'
+      status: 'Available',
+      imageUrl: ''
     }
   });
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="md:col-span-2">
+          <Label htmlFor="imageUrl">Image URL</Label>
+          <Input
+            id="imageUrl"
+            {...register('imageUrl')}
+            placeholder="Enter image URL (optional)"
+          />
+        </div>
+
         <div>
           <Label htmlFor="stockNumber">Stock Number</Label>
           <Input

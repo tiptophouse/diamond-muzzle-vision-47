@@ -53,7 +53,7 @@ export default function InventoryPage() {
     filteredDiamonds,
     totalPages,
     handleSearch,
-  } = useInventorySearch(allDiamonds, currentPage);
+  } = useInventorySearch(allDiamonds, currentPage, filters);
 
   const { addDiamond, updateDiamond, deleteDiamond, isLoading: crudLoading } = useInventoryCrud(handleRefresh);
 
@@ -62,6 +62,7 @@ export default function InventoryPage() {
   }, [filteredDiamonds, setDiamonds]);
 
   const handleFilterChange = (newFilters: Record<string, string>) => {
+    console.log('Applying filters:', newFilters);
     setFilters(newFilters);
     setCurrentPage(1);
   };

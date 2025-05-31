@@ -20,6 +20,7 @@ export type Diamond = {
   cut: string;
   price: number;
   status: string;
+  imageUrl?: string;
 };
 
 interface InventoryTableProps {

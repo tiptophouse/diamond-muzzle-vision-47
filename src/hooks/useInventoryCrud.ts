@@ -14,6 +14,7 @@ interface DiamondFormData {
   cut: string;
   price: number;
   status: string;
+  imageUrl?: string;
 }
 
 export function useInventoryCrud(onSuccess?: () => void) {
