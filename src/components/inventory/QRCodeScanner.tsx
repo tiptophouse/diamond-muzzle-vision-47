@@ -40,17 +40,20 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
       setError(null);
       setIsLoading(true);
 
-      const videoInputDevices = await BrowserMultiFormatReader.listVideoInputDevices();
+      // Get available video input devices
+      const videoInputDevices = await navigator.mediaDevices.enumerateDevices();
+      const cameras = videoInputDevices.filter(device => device.kind === 'videoinput');
       
-      if (videoInputDevices.length === 0) {
+      if (cameras.length === 0) {
         throw new Error('No camera devices found');
       }
 
-      const backCamera = videoInputDevices.find(device => 
+      // Prefer back camera if available
+      const backCamera = cameras.find(device => 
         device.label.toLowerCase().includes('back') || 
         device.label.toLowerCase().includes('rear')
       );
-      const selectedDeviceId = backCamera ? backCamera.deviceId : videoInputDevices[0].deviceId;
+      const selectedDeviceId = backCamera ? backCamera.deviceId : cameras[0].deviceId;
 
       setIsLoading(false);
 
@@ -112,6 +115,7 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
 
   const parseGIAQRCode = (qrText: string) => {
     try {
+      // GIA QR codes typically contain structured data
       if (qrText.includes('gia.edu') || qrText.includes('gia.org')) {
         const certMatch = qrText.match(/certificate[\/=](\d+)/i);
         if (certMatch) {
@@ -124,6 +128,7 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
         }
       }
       
+      // Try to parse as JSON
       try {
         const jsonData = JSON.parse(qrText);
         if (jsonData.certificate || jsonData.gia || jsonData.diamond) {
@@ -144,6 +149,7 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
         // Continue with text parsing
       }
       
+      // Parse structured text format
       const lines = qrText.split('\n').map(line => line.trim());
       const giaData: any = {
         lab: 'GIA',
