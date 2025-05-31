@@ -26,8 +26,8 @@ export default function ReportsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [totalPages, setTotalPages] = useState(1);
 
-  // Add price comparison hook
-  const { comparisonData } = usePriceComparison(allDiamonds);
+  // Update price comparison hook to get the new functionality
+  const { comparisonData, selectedStoneComparison, analyzeSpecificStone, clearSelectedStone } = usePriceComparison(allDiamonds);
 
   const fetchData = async () => {
     if (!user?.id) {
@@ -114,6 +114,10 @@ export default function ReportsPage() {
     setCurrentPage(1);
   };
 
+  const handleStoneSelect = (stone: Diamond) => {
+    analyzeSpecificStone(stone);
+  };
+
   if (authLoading) {
     return (
       <Layout>
@@ -151,9 +155,10 @@ export default function ReportsPage() {
           loading={loading}
         />
         
-        {/* Add Price Comparison Chart */}
+        {/* Updated Price Comparison Chart with detailed analysis */}
         <PriceComparisonChart 
           data={comparisonData} 
+          selectedStoneComparison={selectedStoneComparison}
           loading={loading}
         />
         
@@ -171,6 +176,7 @@ export default function ReportsPage() {
         <InventoryTable
           data={diamonds}
           loading={loading}
+          onStoneSelect={handleStoneSelect}
         />
         
         <InventoryPagination
@@ -178,6 +184,17 @@ export default function ReportsPage() {
           totalPages={totalPages}
           onPageChange={setCurrentPage}
         />
+
+        {selectedStoneComparison && (
+          <div className="fixed bottom-4 right-4">
+            <button 
+              onClick={clearSelectedStone}
+              className="bg-gray-800 text-white px-3 py-2 rounded-lg text-sm hover:bg-gray-700"
+            >
+              Clear Selection
+            </button>
+          </div>
+        )}
       </div>
     </Layout>
   );
