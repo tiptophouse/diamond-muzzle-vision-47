@@ -28,6 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
+import { toast } from "react-toastify";
 
 export default function InventoryPage() {
   const { isAuthenticated, isLoading: authLoading, user, error: authError } = useTelegramAuth();
@@ -113,19 +114,32 @@ export default function InventoryPage() {
   };
 
   const handleQRScanSuccess = (giaData: any) => {
-    setEditingDiamond(null);
+    console.log('Received GIA data from scanner:', giaData);
+    
+    // Set the diamond data to be used in the form
+    setEditingDiamond({
+      id: '', // Will be generated when saving
+      stockNumber: giaData.stockNumber || `GIA-${Date.now()}`,
+      shape: giaData.shape || 'Round',
+      carat: giaData.carat || 1.0,
+      color: giaData.color || 'G',
+      clarity: giaData.clarity || 'VS1',
+      cut: giaData.cut || 'Excellent',
+      price: giaData.price || 5000,
+      status: giaData.status || 'Available',
+      imageUrl: giaData.imageUrl || '',
+      certificateNumber: giaData.certificateNumber || '',
+      lab: giaData.lab || 'GIA'
+    } as Diamond);
+    
+    // Close scanner and open form with populated data
+    setIsQRScannerOpen(false);
     setIsFormOpen(true);
-    // The QR data will be passed to the form for pre-population
-    // We'll need to modify DiamondForm to accept initial data
-    setTimeout(() => {
-      // Pre-populate form with GIA data
-      Object.keys(giaData).forEach(key => {
-        const element = document.getElementById(key) as HTMLInputElement;
-        if (element) {
-          element.value = giaData[key];
-        }
-      });
-    }, 100);
+    
+    toast({
+      title: "GIA Data Loaded",
+      description: `Certificate ${giaData.certificateNumber} data has been loaded into the form`,
+    });
   };
 
   if (authLoading) {

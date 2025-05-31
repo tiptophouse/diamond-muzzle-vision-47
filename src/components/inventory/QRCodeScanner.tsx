@@ -1,10 +1,10 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { BrowserMultiFormatReader } from '@zxing/library';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Camera, X, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface QRCodeScannerProps {
   onScanSuccess: (giaData: any) => void;
@@ -16,6 +16,7 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingGIA, setIsFetchingGIA] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
@@ -87,99 +88,88 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
 
   const handleQRScan = async (qrText: string) => {
     try {
-      const giaData = parseGIAQRCode(qrText);
+      const certificateNumber = extractCertificateNumber(qrText);
       
-      if (giaData) {
-        onScanSuccess(giaData);
-        stopScanning();
-        toast({
-          title: "Success",
-          description: "GIA information successfully loaded from QR code",
-        });
-      } else {
+      if (!certificateNumber) {
         toast({
           variant: "destructive",
           title: "Invalid QR Code",
           description: "This doesn't appear to be a valid GIA diamond QR code",
         });
+        return;
       }
+
+      setIsFetchingGIA(true);
+      toast({
+        title: "Fetching GIA Data",
+        description: "Getting diamond information from GIA database...",
+      });
+
+      // Call our edge function to fetch GIA data
+      const { data, error } = await supabase.functions.invoke('fetch-gia-data', {
+        body: { certificateNumber }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to fetch GIA data');
+      }
+
+      if (data) {
+        onScanSuccess(data);
+        stopScanning();
+        toast({
+          title: "Success",
+          description: "GIA diamond information loaded successfully",
+        });
+      } else {
+        throw new Error('No data received from GIA');
+      }
+
     } catch (error) {
-      console.error('Error parsing GIA QR code:', error);
+      console.error('Error fetching GIA data:', error);
       toast({
         variant: "destructive",
-        title: "Parse Error",
-        description: "Failed to parse GIA information from QR code",
+        title: "Fetch Error",
+        description: error instanceof Error ? error.message : "Failed to fetch GIA information",
       });
+    } finally {
+      setIsFetchingGIA(false);
     }
   };
 
-  const parseGIAQRCode = (qrText: string) => {
+  const extractCertificateNumber = (qrText: string): string | null => {
     try {
-      // GIA QR codes typically contain structured data
+      // Check if it's a GIA URL
       if (qrText.includes('gia.edu') || qrText.includes('gia.org')) {
-        const certMatch = qrText.match(/certificate[\/=](\d+)/i);
-        if (certMatch) {
-          return {
-            stockNumber: `GIA-${certMatch[1]}`,
-            certificateNumber: certMatch[1],
-            lab: 'GIA',
-            status: 'Available'
-          };
+        const urlMatch = qrText.match(/reportno[=\/](\d+)/i);
+        if (urlMatch) {
+          return urlMatch[1];
         }
       }
-      
-      // Try to parse as JSON
+
+      // Check if it's just a certificate number
+      const numberMatch = qrText.match(/^\d{10,}$/);
+      if (numberMatch) {
+        return numberMatch[0];
+      }
+
+      // Try to extract from structured data
       try {
         const jsonData = JSON.parse(qrText);
-        if (jsonData.certificate || jsonData.gia || jsonData.diamond) {
-          return {
-            stockNumber: jsonData.stockNumber || `GIA-${Date.now()}`,
-            shape: jsonData.shape || jsonData.diamond?.shape || 'Round',
-            carat: parseFloat(jsonData.carat || jsonData.diamond?.weight || jsonData.weight || '1.0'),
-            color: jsonData.color || jsonData.diamond?.color || 'G',
-            clarity: jsonData.clarity || jsonData.diamond?.clarity || 'VS1',
-            cut: jsonData.cut || jsonData.diamond?.cut || 'Excellent',
-            certificateNumber: jsonData.certificate || jsonData.certificateNumber || '',
-            lab: 'GIA',
-            price: parseFloat(jsonData.price || '5000'),
-            status: 'Available'
-          };
-        }
+        return jsonData.certificate || jsonData.certificateNumber || jsonData.reportNumber;
       } catch {
-        // Continue with text parsing
+        // Continue with other parsing methods
       }
-      
-      // Parse structured text format
-      const lines = qrText.split('\n').map(line => line.trim());
-      const giaData: any = {
-        lab: 'GIA',
-        stockNumber: `GIA-${Date.now()}`,
-        status: 'Available',
-        shape: 'Round',
-        carat: 1.0,
-        color: 'G',
-        clarity: 'VS1',
-        cut: 'Excellent',
-        price: 5000
-      };
-      
-      lines.forEach(line => {
-        const lowerLine = line.toLowerCase();
-        if (lowerLine.includes('carat') || lowerLine.includes('weight')) {
-          const caratMatch = line.match(/(\d+\.?\d*)/);
-          if (caratMatch) giaData.carat = parseFloat(caratMatch[1]);
-        } else if (lowerLine.includes('color')) {
-          const colorMatch = line.match(/([D-Z])/i);
-          if (colorMatch) giaData.color = colorMatch[1].toUpperCase();
-        } else if (lowerLine.includes('clarity')) {
-          const clarityMatch = line.match(/(FL|IF|VVS1|VVS2|VS1|VS2|SI1|SI2|I1|I2|I3)/i);
-          if (clarityMatch) giaData.clarity = clarityMatch[1].toUpperCase();
-        }
-      });
-      
-      return giaData;
+
+      // Look for certificate patterns in text
+      const certMatch = qrText.match(/(?:certificate|cert|report)[\s:]*(\d{10,})/i);
+      if (certMatch) {
+        return certMatch[1];
+      }
+
+      return null;
     } catch (error) {
-      console.error('Error parsing QR code:', error);
+      console.error('Error extracting certificate number:', error);
       return null;
     }
   };
@@ -189,6 +179,7 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
       readerRef.current.reset();
     }
     setIsScanning(false);
+    setIsFetchingGIA(false);
   };
 
   if (!isOpen) return null;
@@ -216,9 +207,12 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
               playsInline
               muted
             />
-            {isLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
-                <Loader2 className="h-8 w-8 animate-spin text-white" />
+            {(isLoading || isFetchingGIA) && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 rounded-lg">
+                <Loader2 className="h-8 w-8 animate-spin text-white mb-2" />
+                <p className="text-white text-sm">
+                  {isFetchingGIA ? 'Fetching GIA data...' : 'Starting camera...'}
+                </p>
               </div>
             )}
           </div>
@@ -229,19 +223,19 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
           
           <div className="flex gap-2">
             {!isScanning ? (
-              <Button onClick={startScanning} className="flex-1">
+              <Button onClick={startScanning} className="flex-1" disabled={isFetchingGIA}>
                 <Camera className="h-4 w-4 mr-2" />
                 Start Scanning
               </Button>
             ) : (
-              <Button onClick={stopScanning} variant="outline" className="flex-1">
+              <Button onClick={stopScanning} variant="outline" className="flex-1" disabled={isFetchingGIA}>
                 Stop Scanning
               </Button>
             )}
           </div>
           
           <p className="text-sm text-gray-600 text-center">
-            Position the GIA QR code within the camera frame to scan
+            Position the GIA QR code within the camera frame. The system will automatically fetch real diamond data from GIA's database.
           </p>
         </CardContent>
       </Card>
