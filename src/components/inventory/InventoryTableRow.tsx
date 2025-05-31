@@ -1,13 +1,17 @@
 
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Diamond } from "./InventoryTable";
+import { Edit, Trash } from "lucide-react";
 
 interface InventoryTableRowProps {
   diamond: Diamond;
+  onEdit?: (diamond: Diamond) => void;
+  onDelete?: (diamondId: string) => void;
 }
 
-export function InventoryTableRow({ diamond }: InventoryTableRowProps) {
+export function InventoryTableRow({ diamond, onEdit, onDelete }: InventoryTableRowProps) {
   return (
     <TableRow className="hover:bg-slate-50">
       <TableCell className="font-mono text-xs font-medium text-slate-900">
@@ -48,6 +52,30 @@ export function InventoryTableRow({ diamond }: InventoryTableRowProps) {
         >
           {diamond.status}
         </Badge>
+      </TableCell>
+      <TableCell>
+        <div className="flex gap-1">
+          {onEdit && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onEdit(diamond)}
+              className="h-8 w-8 p-0 hover:bg-slate-100"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+          )}
+          {onDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDelete(diamond.id)}
+              className="h-8 w-8 p-0 hover:bg-red-100 text-red-600"
+            >
+              <Trash className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </TableCell>
     </TableRow>
   );

@@ -25,9 +25,11 @@ export type Diamond = {
 interface InventoryTableProps {
   data: Diamond[];
   loading?: boolean;
+  onEdit?: (diamond: Diamond) => void;
+  onDelete?: (diamondId: string) => void;
 }
 
-export function InventoryTable({ data, loading = false }: InventoryTableProps) {
+export function InventoryTable({ data, loading = false, onEdit, onDelete }: InventoryTableProps) {
   const isMobile = useIsMobile();
 
   if (loading) {
@@ -43,7 +45,12 @@ export function InventoryTable({ data, loading = false }: InventoryTableProps) {
           </div>
         ) : (
           data.map((diamond) => (
-            <InventoryMobileCard key={diamond.id} diamond={diamond} />
+            <InventoryMobileCard 
+              key={diamond.id} 
+              diamond={diamond} 
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
           ))
         )}
       </div>
@@ -60,7 +67,12 @@ export function InventoryTable({ data, loading = false }: InventoryTableProps) {
               <InventoryTableEmpty />
             ) : (
               data.map((diamond) => (
-                <InventoryTableRow key={diamond.id} diamond={diamond} />
+                <InventoryTableRow 
+                  key={diamond.id} 
+                  diamond={diamond} 
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                />
               ))
             )}
           </TableBody>

@@ -1,13 +1,17 @@
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Diamond } from "./InventoryTable";
+import { Edit, Trash } from "lucide-react";
 
 interface InventoryMobileCardProps {
   diamond: Diamond;
+  onEdit?: (diamond: Diamond) => void;
+  onDelete?: (diamondId: string) => void;
 }
 
-export function InventoryMobileCard({ diamond }: InventoryMobileCardProps) {
+export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobileCardProps) {
   return (
     <Card className="bg-slate-50 border-slate-200 hover:bg-slate-100 transition-colors">
       <CardContent className="p-4">
@@ -37,7 +41,7 @@ export function InventoryMobileCard({ diamond }: InventoryMobileCardProps) {
           </div>
         </div>
         
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 mb-3">
           <div className="space-y-2">
             <div>
               <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">Carat</span>
@@ -66,6 +70,33 @@ export function InventoryMobileCard({ diamond }: InventoryMobileCardProps) {
             </div>
           </div>
         </div>
+
+        {(onEdit || onDelete) && (
+          <div className="flex gap-2 pt-2 border-t border-slate-200">
+            {onEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onEdit(diamond)}
+                className="flex-1"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onDelete(diamond.id)}
+                className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
+              >
+                <Trash className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
