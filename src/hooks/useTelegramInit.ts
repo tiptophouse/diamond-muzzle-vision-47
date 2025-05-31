@@ -12,8 +12,9 @@ export function useTelegramInit() {
   const [isTelegramEnvironment, setIsTelegramEnvironment] = useState(false);
 
   const createMockUser = (): TelegramUser => {
+    // Use one of the actual user IDs from the API data for development
     return {
-      id: 123456789,
+      id: 2138564172, // Using a real user ID from the API data
       first_name: "Test",
       last_name: "User",
       username: "testuser",
@@ -41,7 +42,7 @@ export function useTelegramInit() {
       }
 
       // Wait for Telegram script to be fully loaded
-      const maxWaitTime = 5000; // 5 seconds
+      const maxWaitTime = 3000; // Reduced to 3 seconds
       const checkInterval = 100; // 100ms
       let waitTime = 0;
 
@@ -53,7 +54,7 @@ export function useTelegramInit() {
           waitTime += checkInterval;
           setTimeout(checkTelegramScript, checkInterval);
         } else {
-          console.log('Telegram script failed to load within timeout, using mock user');
+          console.log('Telegram script timeout, using mock user for development');
           fallbackToMockUser();
         }
       };
@@ -161,7 +162,7 @@ export function useTelegramInit() {
       // Add a small delay to ensure DOM is ready
       timeoutId = setTimeout(() => {
         initializeAuth();
-      }, 200);
+      }, 100); // Reduced delay
     };
 
     if (document.readyState === 'loading') {

@@ -28,6 +28,7 @@ export default function ReportsPage() {
   const fetchData = async () => {
     if (!user?.id) {
       console.log('No authenticated user, skipping data fetch');
+      setLoading(false);
       return;
     }
 
@@ -46,10 +47,22 @@ export default function ReportsPage() {
         setAllDiamonds(convertedDiamonds);
         setDiamonds(convertedDiamonds);
         
-        toast({
-          title: "Report data loaded",
-          description: `Found ${convertedDiamonds.length} diamonds.`,
-        });
+        if (convertedDiamonds.length > 0) {
+          toast({
+            title: "Report data loaded",
+            description: `Found ${convertedDiamonds.length} diamonds.`,
+          });
+        } else {
+          toast({
+            title: "No data found",
+            description: "No diamonds found for your account.",
+            variant: "destructive"
+          });
+        }
+      } else {
+        console.warn('No data received from API');
+        setAllDiamonds([]);
+        setDiamonds([]);
       }
     } catch (error) {
       console.error("Failed to fetch report data", error);
@@ -64,10 +77,12 @@ export default function ReportsPage() {
   };
 
   useEffect(() => {
-    if (isAuthenticated && user?.id) {
+    if (!authLoading && isAuthenticated && user?.id) {
       fetchData();
+    } else if (!authLoading && !isAuthenticated) {
+      setLoading(false);
     }
-  }, [isAuthenticated, user?.id]);
+  }, [authLoading, isAuthenticated, user?.id]);
 
   useEffect(() => {
     // Implement search and filter logic here

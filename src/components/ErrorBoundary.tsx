@@ -28,34 +28,33 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   handleRefresh = () => {
-    // Force reload the mini app
-    if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.close();
-    } else {
-      window.location.reload();
-    }
+    // Reset the error boundary state
+    this.setState({ hasError: false, error: undefined });
+    
+    // Force reload the page
+    window.location.reload();
   };
 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100 p-4">
-          <Card className="w-full max-w-md border-red-200">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+          <Card className="w-full max-w-md border-slate-200">
             <CardHeader className="text-center">
-              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                <AlertTriangle size={32} className="text-red-600" />
+              <div className="mx-auto w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-4">
+                <div className="text-4xl">🐥</div>
               </div>
-              <CardTitle className="text-red-800">Oops...</CardTitle>
-              <CardDescription className="text-red-600">
+              <CardTitle className="text-slate-800">Oops...</CardTitle>
+              <CardDescription className="text-slate-600">
                 Failed to load mazalbot.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="text-sm text-red-700 space-y-2">
+              <div className="text-sm text-slate-700 space-y-2">
                 <p>Something went wrong while loading the application.</p>
                 <details className="text-xs">
                   <summary className="cursor-pointer">Error details</summary>
-                  <pre className="mt-2 p-2 bg-red-50 rounded text-red-600 whitespace-pre-wrap">
+                  <pre className="mt-2 p-2 bg-slate-50 rounded text-slate-600 whitespace-pre-wrap overflow-auto max-h-32">
                     {this.state.error?.message || 'Unknown error'}
                   </pre>
                 </details>
@@ -67,7 +66,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
                 <RefreshCw size={16} className="mr-2" />
                 Refresh
               </Button>
-              <div className="text-xs text-red-500 text-center">
+              <div className="text-xs text-slate-500 text-center">
                 If the problem persists, please contact support
               </div>
             </CardContent>
