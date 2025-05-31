@@ -55,7 +55,7 @@ export default function InventoryPage() {
     handleSearch,
   } = useInventorySearch(allDiamonds, currentPage);
 
-  const { addDiamond, updateDiamond, deleteDiamond, isLoading: crudLoading } = useInventoryCrud();
+  const { addDiamond, updateDiamond, deleteDiamond, isLoading: crudLoading } = useInventoryCrud(handleRefresh);
 
   useEffect(() => {
     setDiamonds(filteredDiamonds);
@@ -93,8 +93,6 @@ export default function InventoryPage() {
     if (success) {
       setIsFormOpen(false);
       setEditingDiamond(null);
-      // Refresh the data
-      handleRefresh();
     }
   };
 
@@ -104,8 +102,6 @@ export default function InventoryPage() {
       if (success) {
         setDeleteDialogOpen(false);
         setDiamondToDelete(null);
-        // Refresh the data
-        handleRefresh();
       }
     }
   };
@@ -203,8 +199,9 @@ export default function InventoryPage() {
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-red-600 hover:bg-red-700"
+              disabled={crudLoading}
             >
-              Delete
+              {crudLoading ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

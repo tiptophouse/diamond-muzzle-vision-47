@@ -15,15 +15,15 @@ export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobi
   return (
     <Card className="w-full bg-white border-slate-200 hover:bg-slate-50 transition-colors">
       <CardContent className="p-4 w-full">
-        <div className="flex justify-between items-start mb-3 w-full">
+        <div className="flex justify-between items-start mb-4 w-full">
           <div className="flex-1 min-w-0">
-            <h3 className="font-mono text-sm font-semibold text-slate-900 truncate">
+            <h3 className="font-mono text-sm font-semibold text-slate-900 truncate mb-1">
               {diamond.stockNumber}
             </h3>
-            <p className="text-lg font-bold text-slate-800">{diamond.shape}</p>
+            <p className="text-lg font-bold text-slate-800 capitalize">{diamond.shape}</p>
           </div>
           <div className="text-right flex-shrink-0 ml-4">
-            <p className="text-xl font-bold text-slate-900">
+            <p className="text-xl font-bold text-slate-900 mb-1">
               ${diamond.price.toLocaleString()}
             </p>
             <Badge 
@@ -41,29 +41,29 @@ export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobi
           </div>
         </div>
         
-        <div className="grid grid-cols-2 gap-3 mb-3 w-full">
-          <div className="space-y-2">
-            <div>
-              <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">Carat</span>
-              <p className="text-sm font-semibold text-slate-900">{diamond.carat.toFixed(2)}</p>
+        <div className="space-y-3 mb-4 w-full">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">CARAT</span>
+              <span className="text-sm font-semibold text-slate-900">{diamond.carat.toFixed(2)}</span>
             </div>
-            <div>
-              <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">Color</span>
-              <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 text-xs">
-                {diamond.color}
-              </Badge>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <div>
-              <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">Clarity</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">CLARITY</span>
               <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 text-xs">
                 {diamond.clarity}
               </Badge>
             </div>
-            <div>
-              <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">Cut</span>
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">COLOR</span>
+              <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 text-xs">
+                {diamond.color}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">CUT</span>
               <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 text-xs">
                 {diamond.cut}
               </Badge>
@@ -72,13 +72,13 @@ export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobi
         </div>
 
         {(onEdit || onDelete) && (
-          <div className="flex gap-2 pt-2 border-t border-slate-200 w-full">
+          <div className="flex gap-2 pt-3 border-t border-slate-200 w-full">
             {onEdit && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => onEdit(diamond)}
-                className="flex-1"
+                className="flex-1 h-9"
               >
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
@@ -89,7 +89,7 @@ export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobi
                 variant="outline"
                 size="sm"
                 onClick={() => onDelete(diamond.id)}
-                className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
+                className="flex-1 h-9 text-red-600 border-red-200 hover:bg-red-50"
               >
                 <Trash className="h-4 w-4 mr-2" />
                 Delete

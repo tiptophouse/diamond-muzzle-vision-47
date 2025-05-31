@@ -16,7 +16,7 @@ interface DiamondFormData {
   status: string;
 }
 
-export function useInventoryCrud() {
+export function useInventoryCrud(onSuccess?: () => void) {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -39,8 +39,9 @@ export function useInventoryCrud() {
         id: crypto.randomUUID(),
       };
 
-      // For now, we'll use the existing upload endpoint
-      // In a real implementation, you'd want a separate endpoint for individual diamond creation
+      console.log('Adding diamond:', diamondData);
+      
+      // Use the existing upload endpoint for individual diamond creation
       const response = await api.uploadCsv('/upload-inventory', [diamondData], user.id);
       
       if (response.error) {
@@ -51,6 +52,8 @@ export function useInventoryCrud() {
         title: "Success",
         description: "Diamond added successfully",
       });
+      
+      if (onSuccess) onSuccess();
       return true;
     } catch (error) {
       console.error('Failed to add diamond:', error);
@@ -77,14 +80,18 @@ export function useInventoryCrud() {
 
     setIsLoading(true);
     try {
-      // Note: This would require a PUT endpoint on your backend
-      // For now, we'll simulate the update
       console.log('Updating diamond:', diamondId, data);
+      
+      // Simulate update for now since we don't have a dedicated update endpoint
+      // In a real implementation, you'd want a PUT endpoint
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
         title: "Success",
         description: "Diamond updated successfully",
       });
+      
+      if (onSuccess) onSuccess();
       return true;
     } catch (error) {
       console.error('Failed to update diamond:', error);
@@ -111,14 +118,18 @@ export function useInventoryCrud() {
 
     setIsLoading(true);
     try {
-      // Note: This would require a DELETE endpoint on your backend
-      // For now, we'll simulate the deletion
       console.log('Deleting diamond:', diamondId);
+      
+      // Simulate deletion for now since we don't have a dedicated delete endpoint
+      // In a real implementation, you'd want a DELETE endpoint
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
         title: "Success",
         description: "Diamond deleted successfully",
       });
+      
+      if (onSuccess) onSuccess();
       return true;
     } catch (error) {
       console.error('Failed to delete diamond:', error);
