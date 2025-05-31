@@ -187,6 +187,7 @@ export default function InventoryPage() {
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             onSubmit={handleSearch}
+            allDiamonds={allDiamonds}
           />
           
           <InventoryFilters onFilterChange={handleFilterChange} />
