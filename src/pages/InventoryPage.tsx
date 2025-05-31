@@ -52,8 +52,8 @@ export default function InventoryPage() {
       <Layout>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-diamond-500 mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600 mx-auto mb-4"></div>
+            <p className="text-slate-600">Loading...</p>
           </div>
         </div>
       </Layout>
@@ -62,22 +62,22 @@ export default function InventoryPage() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-4 px-4 sm:px-6 pb-6">
         <InventoryHeader
           totalDiamonds={allDiamonds.length}
           onRefresh={handleRefresh}
           loading={loading}
         />
         
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="space-y-4">
           <InventorySearch
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             onSubmit={handleSearch}
           />
+          
+          <InventoryFilters onFilterChange={handleFilterChange} />
         </div>
-        
-        <InventoryFilters onFilterChange={handleFilterChange} />
         
         <InventoryTable
           data={diamonds}

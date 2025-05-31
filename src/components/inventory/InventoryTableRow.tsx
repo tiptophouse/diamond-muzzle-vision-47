@@ -9,40 +9,40 @@ interface InventoryTableRowProps {
 
 export function InventoryTableRow({ diamond }: InventoryTableRowProps) {
   return (
-    <TableRow className="hover:bg-muted/50">
-      <TableCell className="font-mono text-xs font-medium">
+    <TableRow className="hover:bg-slate-50">
+      <TableCell className="font-mono text-xs font-medium text-slate-900">
         {diamond.stockNumber}
       </TableCell>
-      <TableCell className="font-medium">{diamond.shape}</TableCell>
-      <TableCell className="text-right font-medium">
+      <TableCell className="font-medium text-slate-900">{diamond.shape}</TableCell>
+      <TableCell className="text-right font-medium text-slate-900">
         {diamond.carat.toFixed(2)}
       </TableCell>
       <TableCell>
-        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+        <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300">
           {diamond.color}
         </Badge>
       </TableCell>
       <TableCell>
-        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+        <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300">
           {diamond.clarity}
         </Badge>
       </TableCell>
       <TableCell>
-        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+        <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300">
           {diamond.cut}
         </Badge>
       </TableCell>
-      <TableCell className="text-right font-bold">
+      <TableCell className="text-right font-bold text-slate-900">
         ${diamond.price.toLocaleString()}
       </TableCell>
       <TableCell>
         <Badge 
           className={`${
             diamond.status === "Available" 
-              ? "bg-green-100 text-green-800 border-green-300" 
+              ? "bg-emerald-100 text-emerald-800 border-emerald-300" 
               : diamond.status === "Reserved" 
               ? "bg-blue-100 text-blue-800 border-blue-300" 
-              : "bg-gray-100 text-gray-800 border-gray-300"
+              : "bg-slate-100 text-slate-800 border-slate-300"
           }`}
           variant="outline"
         >
