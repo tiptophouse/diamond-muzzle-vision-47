@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
-import { toast } from "react-toastify";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function InventoryPage() {
   const { isAuthenticated, isLoading: authLoading, user, error: authError } = useTelegramAuth();
@@ -39,6 +39,7 @@ export default function InventoryPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [diamondToDelete, setDiamondToDelete] = useState<string | null>(null);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+  const { toast } = useToast();
 
   const {
     loading,
