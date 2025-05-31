@@ -31,9 +31,10 @@ export function processDiamondDataForDashboard(diamonds: DiamondData[], currentU
 } {
   // Filter diamonds for current user if user ID is provided
   const userDiamonds = currentUserId 
-    ? diamonds.filter(diamond => 
-        diamond.owners?.includes(currentUserId) || diamond.owner_id === currentUserId
-      )
+    ? diamonds.filter(diamond => {
+        console.log('Checking diamond:', diamond.id, 'owners:', diamond.owners, 'against user:', currentUserId);
+        return diamond.owners?.includes(currentUserId) || diamond.owner_id === currentUserId;
+      })
     : diamonds;
   
   console.log('Processing dashboard data for user:', currentUserId, 'User diamonds:', userDiamonds.length, 'Total diamonds:', diamonds.length);
@@ -104,22 +105,23 @@ export function processDiamondDataForDashboard(diamonds: DiamondData[], currentU
 export function convertDiamondsToInventoryFormat(diamonds: DiamondData[], currentUserId?: number) {
   // Filter diamonds for current user if user ID is provided
   const userDiamonds = currentUserId 
-    ? diamonds.filter(diamond => 
-        diamond.owners?.includes(currentUserId) || diamond.owner_id === currentUserId
-      )
+    ? diamonds.filter(diamond => {
+        console.log('Converting - checking diamond:', diamond.id, 'owners:', diamond.owners, 'against user:', currentUserId);
+        return diamond.owners?.includes(currentUserId) || diamond.owner_id === currentUserId;
+      })
     : diamonds;
   
   console.log('Converting diamonds to inventory format for user:', currentUserId, 'Filtered diamonds:', userDiamonds.length);
   
   return userDiamonds.map(diamond => ({
     id: diamond.id?.toString() || '',
-    stockNumber: `D${diamond.id || Math.floor(Math.random() * 10000)}`,
+    stockNumber: diamond.stock || `D${diamond.id || Math.floor(Math.random() * 10000)}`,
     shape: diamond.shape || 'Unknown',
     carat: diamond.weight || diamond.carat || 0, // Map 'weight' to 'carat'
     color: diamond.color || 'Unknown',
     clarity: diamond.clarity || 'Unknown',
     cut: 'Excellent', // Default since not in your data
-    price: diamond.price || 0,
+    price: (diamond.price_per_carat || 0) * (diamond.weight || diamond.carat || 0), // Calculate total price
     status: diamond.status || 'Available',
   }));
 }

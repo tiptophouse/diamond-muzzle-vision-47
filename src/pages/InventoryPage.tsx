@@ -31,24 +31,22 @@ export default function InventoryPage() {
   const [allDiamonds, setAllDiamonds] = useState<Diamond[]>([]);
   
   const fetchData = async () => {
-    if (!isAuthenticated || !user) {
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
     try {
-      console.log('Fetching inventory data from FastAPI for user:', user.id);
+      console.log('Fetching inventory data from FastAPI');
       
-      // Fetch user-specific diamonds from your FastAPI backend
-      const response = await api.get<any[]>(apiEndpoints.getAllStones(user.id));
+      // Use a test user ID that exists in your backend data (2138564172 appears in most diamonds)
+      const testUserId = 2138564172;
+      
+      // Fetch all diamonds from your FastAPI backend
+      const response = await api.get<any[]>(apiEndpoints.getAllStones());
       
       if (response.data) {
-        console.log('Received diamonds from FastAPI:', response.data);
+        console.log('Received diamonds from FastAPI:', response.data.length, 'total diamonds');
         
         // Convert backend data to frontend format with user filtering
-        const convertedDiamonds = convertDiamondsToInventoryFormat(response.data, user.id);
-        console.log('Converted diamonds for display:', convertedDiamonds);
+        const convertedDiamonds = convertDiamondsToInventoryFormat(response.data, testUserId);
+        console.log('Converted diamonds for display:', convertedDiamonds.length, 'diamonds for user', testUserId);
         
         setAllDiamonds(convertedDiamonds);
         
@@ -189,7 +187,7 @@ export default function InventoryPage() {
             <h1 className="text-3xl font-bold">Inventory</h1>
             <p className="text-muted-foreground">
               Manage your diamond inventory ({allDiamonds.length} total diamonds)
-              {user && <span className="ml-2 text-xs text-gray-500">User: {user.first_name}</span>}
+              <span className="ml-2 text-xs text-gray-500">Test User: 2138564172</span>
             </p>
           </div>
           

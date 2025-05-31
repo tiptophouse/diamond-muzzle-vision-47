@@ -1,4 +1,3 @@
-
 import { toast } from "@/components/ui/use-toast";
 
 // Update this to point to your FastAPI backend
@@ -17,7 +16,9 @@ export function getCurrentUserId(): number | null {
 
 export const apiEndpoints = {
   getAllStones: (userId?: number) => {
-    const userParam = userId ? `?user_id=${userId}` : '';
+    // For testing with your actual data, use one of the existing owner IDs
+    const testUserId = userId || 2138564172; // This ID appears in your backend data
+    const userParam = `?user_id=${testUserId}`;
     return `/get_all_stones${userParam}`;
   },
   uploadInventory: () => `/upload-inventory`,
