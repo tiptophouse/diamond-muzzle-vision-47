@@ -46,13 +46,17 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       imageUrl: diamond.imageUrl || '',
     } : {
       status: 'Available',
-      imageUrl: ''
+      imageUrl: '',
+      shape: 'Round',
+      color: 'G',
+      clarity: 'VS1',
+      cut: 'Excellent'
     }
   });
 
-  // Reset form when diamond prop changes (useful for QR scan data)
   React.useEffect(() => {
     if (diamond) {
+      console.log('Resetting form with diamond data:', diamond);
       reset({
         stockNumber: diamond.stockNumber,
         shape: diamond.shape,
@@ -67,8 +71,22 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
     }
   }, [diamond, reset]);
 
+  const handleFormSubmit = (data: DiamondFormData) => {
+    console.log('Form submitted with data:', data);
+    
+    // Ensure all required fields are present
+    const formattedData = {
+      ...data,
+      carat: Number(data.carat),
+      price: Number(data.price),
+    };
+    
+    console.log('Formatted form data:', formattedData);
+    onSubmit(formattedData);
+  };
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="md:col-span-2">
           <Label htmlFor="imageUrl">Image URL</Label>
@@ -93,7 +111,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
 
         <div>
           <Label htmlFor="shape">Shape</Label>
-          <Select onValueChange={(value) => setValue('shape', value)} defaultValue={diamond?.shape}>
+          <Select onValueChange={(value) => setValue('shape', value)} value={watch('shape')}>
             <SelectTrigger>
               <SelectValue placeholder="Select shape" />
             </SelectTrigger>
@@ -124,7 +142,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
 
         <div>
           <Label htmlFor="color">Color</Label>
-          <Select onValueChange={(value) => setValue('color', value)} defaultValue={diamond?.color}>
+          <Select onValueChange={(value) => setValue('color', value)} value={watch('color')}>
             <SelectTrigger>
               <SelectValue placeholder="Select color" />
             </SelectTrigger>
@@ -138,7 +156,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
 
         <div>
           <Label htmlFor="clarity">Clarity</Label>
-          <Select onValueChange={(value) => setValue('clarity', value)} defaultValue={diamond?.clarity}>
+          <Select onValueChange={(value) => setValue('clarity', value)} value={watch('clarity')}>
             <SelectTrigger>
               <SelectValue placeholder="Select clarity" />
             </SelectTrigger>
@@ -152,7 +170,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
 
         <div>
           <Label htmlFor="cut">Cut</Label>
-          <Select onValueChange={(value) => setValue('cut', value)} defaultValue={diamond?.cut}>
+          <Select onValueChange={(value) => setValue('cut', value)} value={watch('cut')}>
             <SelectTrigger>
               <SelectValue placeholder="Select cut" />
             </SelectTrigger>
@@ -182,7 +200,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
 
         <div>
           <Label htmlFor="status">Status</Label>
-          <Select onValueChange={(value) => setValue('status', value)} defaultValue={diamond?.status || 'Available'}>
+          <Select onValueChange={(value) => setValue('status', value)} value={watch('status')}>
             <SelectTrigger>
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
@@ -199,7 +217,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
         <Button type="submit" disabled={isLoading}>
           {isLoading ? 'Saving...' : diamond ? 'Update Diamond' : 'Add Diamond'}
         </Button>
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
           Cancel
         </Button>
       </div>

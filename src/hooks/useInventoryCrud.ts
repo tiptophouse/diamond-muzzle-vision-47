@@ -1,5 +1,4 @@
 
-
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { api, apiEndpoints } from '@/lib/api';
@@ -44,7 +43,6 @@ export function useInventoryCrud(onSuccess?: () => void) {
 
       console.log('Adding diamond:', diamondData);
       
-      // Use the existing upload endpoint for individual diamond creation
       const response = await api.uploadCsv('/upload-inventory', [diamondData], user.id);
       
       if (response.error) {
@@ -83,28 +81,37 @@ export function useInventoryCrud(onSuccess?: () => void) {
 
     setIsLoading(true);
     try {
-      console.log('Updating diamond:', diamondId, data);
+      console.log('Updating diamond:', diamondId, 'with data:', data);
       
-      // Update in Supabase inventory table
-      const { error } = await supabase
+      // First try to update in Supabase
+      const updateData = {
+        stock_number: data.stockNumber,
+        shape: data.shape,
+        weight: data.carat,
+        color: data.color,
+        clarity: data.clarity,
+        cut: data.cut,
+        price_per_carat: data.carat > 0 ? Math.round(data.price / data.carat) : 0,
+        status: data.status,
+        picture: data.imageUrl || null,
+      };
+
+      console.log('Supabase update data:', updateData);
+
+      const { data: updatedData, error } = await supabase
         .from('inventory')
-        .update({
-          stock_number: data.stockNumber,
-          shape: data.shape,
-          weight: data.carat,
-          color: data.color,
-          clarity: data.clarity,
-          cut: data.cut,
-          price_per_carat: Math.round(data.price / data.carat),
-          status: data.status,
-          picture: data.imageUrl || null,
-        })
+        .update(updateData)
         .eq('id', diamondId)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .select()
+        .single();
 
       if (error) {
-        throw error;
+        console.error('Supabase update error:', error);
+        throw new Error(`Database update failed: ${error.message}`);
       }
+
+      console.log('Diamond updated successfully in Supabase:', updatedData);
       
       toast({
         title: "Success",
@@ -115,10 +122,11 @@ export function useInventoryCrud(onSuccess?: () => void) {
       return true;
     } catch (error) {
       console.error('Failed to update diamond:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to update diamond. Please try again.";
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to update diamond. Please try again.",
+        description: errorMessage,
       });
       return false;
     } finally {
@@ -140,7 +148,6 @@ export function useInventoryCrud(onSuccess?: () => void) {
     try {
       console.log('Deleting diamond from FastAPI backend:', diamondId, 'for user:', user.id);
       
-      // Delete from FastAPI backend using DELETE method
       const response = await api.delete(apiEndpoints.deleteDiamond(diamondId, user.id));
       
       console.log('Delete response:', response);
@@ -178,4 +185,3 @@ export function useInventoryCrud(onSuccess?: () => void) {
     isLoading,
   };
 }
-
