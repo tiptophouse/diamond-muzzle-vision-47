@@ -8,10 +8,14 @@ import { useSmartChat } from '@/hooks/useSmartChat';
 
 export const ChatContainer = () => {
   const { user } = useTelegramAuth();
-  const { messages, sendMessage, isLoading } = useSmartChat();
+  const { messages, sendMessage, isLoading, clearMessages } = useSmartChat();
 
   const handleSendMessage = async (content: string) => {
     await sendMessage(content);
+  };
+
+  const handleNewChat = () => {
+    clearMessages();
   };
 
   return (
@@ -20,6 +24,7 @@ export const ChatContainer = () => {
         title="Diamond Assistant"
         subtitle="AI-powered diamond expert with live inventory access"
         isOnline={true}
+        onNewChat={handleNewChat}
       />
       
       <div className="flex-1 overflow-hidden">
