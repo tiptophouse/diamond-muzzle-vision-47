@@ -13,7 +13,6 @@ export function useTelegramInit() {
   const [retryCount, setRetryCount] = useState(0);
 
   const createMockUser = (): TelegramUser => {
-    // Use a real user ID from the API data for development
     return {
       id: 2138564172,
       first_name: "Test",
@@ -41,15 +40,16 @@ export function useTelegramInit() {
         return;
       }
 
-      // Check for Telegram environment first
+      // Check for Telegram environment
       const inTelegram = isTelegramWebApp();
       setIsTelegramEnvironment(inTelegram);
       console.log('📱 Telegram environment detected:', inTelegram);
 
       if (inTelegram && window.Telegram?.WebApp) {
+        console.log('🔄 Proceeding with Telegram initialization...');
         proceedWithTelegramInit();
       } else {
-        console.log('🔧 Using development mock user');
+        console.log('🔧 Not in Telegram, using development mock user');
         fallbackToMockUser();
       }
 
@@ -65,7 +65,7 @@ export function useTelegramInit() {
       const tg = window.Telegram.WebApp;
       console.log('📲 Telegram WebApp object available:', !!tg);
       
-      // Safely initialize WebApp
+      // Initialize WebApp with better error handling
       try {
         if (typeof tg.ready === 'function') {
           tg.ready();
@@ -77,7 +77,7 @@ export function useTelegramInit() {
           console.log('🔄 Telegram WebApp expanded');
         }
 
-        // Apply theme with error handling
+        // Apply theme safely
         if (tg.themeParams?.bg_color) {
           try {
             document.body.style.backgroundColor = tg.themeParams.bg_color;
@@ -96,7 +96,7 @@ export function useTelegramInit() {
       console.log('📊 Raw initData available:', !!rawInitData);
       console.log('📊 Unsafe data available:', !!unsafeData?.user);
       
-      // Try unsafe data first
+      // Try unsafe data first (most reliable)
       if (unsafeData?.user) {
         console.log('✅ Using unsafe data for user:', unsafeData.user.id);
         setUser(unsafeData.user);
@@ -121,8 +121,8 @@ export function useTelegramInit() {
         }
       }
 
-      // If no data available from Telegram, use mock user
-      console.log('🔧 No user data from Telegram, using mock user');
+      // If no data available from Telegram, use mock user for development
+      console.log('🔧 No user data from Telegram, using mock user for development');
       fallbackToMockUser();
 
     } catch (err) {
@@ -133,7 +133,7 @@ export function useTelegramInit() {
   };
 
   const fallbackToMockUser = () => {
-    console.log('🔧 Falling back to mock user for development');
+    console.log('🔧 Using mock user for development/fallback');
     try {
       const mockUser = createMockUser();
       setUser(mockUser);
@@ -155,7 +155,7 @@ export function useTelegramInit() {
       setRetryCount(prev => prev + 1);
       setTimeout(() => {
         initializeAuth();
-      }, 1000 * (retryCount + 1)); // Exponential backoff
+      }, 1000 * (retryCount + 1));
     } else {
       console.log('❌ Max retry attempts reached, using fallback');
       fallbackToMockUser();
@@ -169,11 +169,12 @@ export function useTelegramInit() {
     const delayedInit = () => {
       if (!mounted) return;
       
+      // Reduced delay for faster initialization
       timeoutId = setTimeout(() => {
         if (mounted) {
           initializeAuth();
         }
-      }, 100);
+      }, 50);
     };
 
     if (document.readyState === 'loading') {
