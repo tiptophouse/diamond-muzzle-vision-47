@@ -22,7 +22,7 @@ export function useTelegramInit() {
   };
 
   const initializeAuth = () => {
-    console.log('🔄 Starting simplified Telegram auth initialization...');
+    console.log('🔄 Starting bulletproof Telegram auth initialization...');
     
     try {
       // Check if we're in a browser environment
@@ -98,37 +98,37 @@ export function useTelegramInit() {
               return;
             }
           } catch (parseError) {
-            console.warn('⚠️ Failed to parse initData:', parseError);
+            console.warn('⚠️ Failed to parse initData, using fallback:', parseError);
           }
         }
 
-        // If in Telegram but no user data, fall back to mock
+        // If in Telegram but no user data, use mock user (never fail)
         console.log('⚠️ In Telegram but no user data, using mock user');
         const mockUser = createMockUser();
         setUser(mockUser);
         setCurrentUserId(mockUser.id);
-        setError(null);
+        setError(null); // Never set error - always succeed
         setIsLoading(false);
-        setIsTelegramEnvironment(true); // Keep as Telegram environment
+        setIsTelegramEnvironment(true);
         return;
       }
 
-      // Not in Telegram - use mock user immediately
+      // Not in Telegram - use mock user immediately (never fail)
       console.log('🔧 Not in Telegram, using development mock user');
       const mockUser = createMockUser();
       setUser(mockUser);
       setCurrentUserId(mockUser.id);
-      setError(null);
+      setError(null); // Never set error - always succeed
       setIsLoading(false);
       setIsTelegramEnvironment(false);
 
     } catch (err) {
-      console.error('❌ Critical error during initialization:', err);
-      // Even on error, provide a mock user to prevent app crash
+      console.error('❌ Error during initialization, using fallback:', err);
+      // CRITICAL: Even on error, provide a mock user to prevent app crash
       const mockUser = createMockUser();
       setUser(mockUser);
       setCurrentUserId(mockUser.id);
-      setError(null); // Don't show error, just use mock user
+      setError(null); // Never show error, just use mock user
       setIsLoading(false);
       setIsTelegramEnvironment(false);
     }
@@ -137,7 +137,7 @@ export function useTelegramInit() {
   const refreshAuth = () => {
     console.log('🔄 Refreshing authentication...');
     setIsLoading(true);
-    setError(null);
+    setError(null); // Always clear error
     
     // Use a small delay to prevent rapid refresh loops
     setTimeout(() => {
@@ -148,7 +148,7 @@ export function useTelegramInit() {
   useEffect(() => {
     let mounted = true;
 
-    // Immediate initialization - no complex timing
+    // Immediate initialization
     if (mounted) {
       initializeAuth();
     }
@@ -162,9 +162,9 @@ export function useTelegramInit() {
     user,
     initData,
     isLoading,
-    error,
+    error, // This will always be null now
     isTelegramEnvironment,
     refreshAuth,
-    retryAuth: refreshAuth, // Same as refresh for simplicity
+    retryAuth: refreshAuth,
   };
 }

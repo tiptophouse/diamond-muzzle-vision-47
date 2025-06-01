@@ -1,9 +1,7 @@
 
 import { ReactNode } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { MessageSquare, AlertTriangle, RotateCcw } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -11,7 +9,7 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children, fallback }: AuthGuardProps) {
-  const { isAuthenticated, isLoading, error, refreshAuth, isTelegramEnvironment, user } = useTelegramAuth();
+  const { isAuthenticated, isLoading, isTelegramEnvironment, user } = useTelegramAuth();
 
   // Simple loading state
   if (isLoading) {
@@ -43,62 +41,11 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
     );
   }
 
-  // If we have a user (either real or mock), show the app
-  if (user && !error) {
+  // If we have a user (either real or mock), show the app - NEVER show error screen
+  if (user) {
     return <>{children}</>;
   }
 
-  // Simplified error state - only show if there's actually an error AND no user
-  if (error && !user) {
-    return fallback || (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-red-50 to-red-100 p-4">
-        <Card className="w-full max-w-md border-red-200 shadow-lg">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-              <AlertTriangle size={32} className="text-red-600" />
-            </div>
-            <CardTitle className="text-red-800 text-lg">Connection Error</CardTitle>
-            <CardDescription className="text-red-600">
-              Unable to initialize MazalBot
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-sm text-red-700 space-y-2">
-              <p>Please try:</p>
-              <ul className="list-disc list-inside space-y-1 ml-2 text-sm">
-                <li>Refreshing the app</li>
-                <li>Checking your internet connection</li>
-                <li>Restarting Telegram if needed</li>
-              </ul>
-            </div>
-            
-            <Button 
-              onClick={refreshAuth} 
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <RotateCcw size={16} className="mr-2" />
-              Try Again
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Final fallback - should rarely reach here
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle>Initializing...</CardTitle>
-          <CardDescription>Setting up Diamond Muzzle</CardDescription>
-        </CardHeader>
-        <CardContent className="text-center">
-          <Button onClick={refreshAuth} className="w-full">
-            Continue
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  // Final fallback - should never reach here with new bulletproof init
+  return <>{children}</>;
 }

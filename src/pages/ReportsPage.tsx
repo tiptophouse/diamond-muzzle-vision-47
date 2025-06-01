@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -59,11 +58,17 @@ export default function ReportsPage() {
         setDiamonds(convertedDiamonds);
         setRetryCount(0); // Reset retry count on success
         
+        // Show smaller, less intrusive toast message
         if (convertedDiamonds.length > 0) {
-          toast({
-            title: "Report data loaded",
-            description: `Found ${convertedDiamonds.length} diamonds.`,
+          const toastInstance = toast({
+            title: `${convertedDiamonds.length} diamonds`,
+            description: "Report data loaded",
           });
+          
+          // Auto-dismiss after 3 seconds
+          setTimeout(() => {
+            toastInstance.dismiss();
+          }, 3000);
         }
       } else {
         console.warn('⚠️ No data received from API');

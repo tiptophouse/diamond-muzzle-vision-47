@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { api, apiEndpoints } from "@/lib/api";
 import { convertDiamondsToInventoryFormat } from "@/services/diamondAnalytics";
 import { Diamond } from "@/components/inventory/InventoryTable";
@@ -36,10 +36,18 @@ export function useInventoryData() {
         
         setAllDiamonds(convertedDiamonds);
         
-        toast({
-          title: "Inventory loaded",
-          description: `Found ${convertedDiamonds.length} diamonds in your inventory.`,
-        });
+        // Show much smaller, less prominent toast message that auto-dismisses quickly
+        if (convertedDiamonds.length > 0) {
+          const toastInstance = toast({
+            title: `${convertedDiamonds.length} diamonds`,
+            description: "Inventory loaded",
+          });
+          
+          // Auto-dismiss after 3 seconds
+          setTimeout(() => {
+            toastInstance.dismiss();
+          }, 3000);
+        }
       } else {
         console.warn('No inventory data received from FastAPI');
         setDiamonds([]);
