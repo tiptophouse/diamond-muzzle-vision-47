@@ -1,7 +1,6 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,47 +16,84 @@ serve(async (req) => {
     const { message, conversation_history = [] } = await req.json();
     
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
     if (!openaiApiKey) {
       throw new Error('OpenAI API key not configured');
     }
 
-    // Initialize Supabase client to get real inventory data
-    const supabase = createClient(supabaseUrl!, supabaseKey!);
+    console.log('Fetching inventory data from FastAPI backend...');
     
-    console.log('Fetching inventory data from Supabase...');
-    
-    // Get current inventory data from your database - try both tables
+    // Get current inventory data from your FastAPI backend
     let inventory = [];
     let inventorySource = '';
     
-    // First try the 'inventory' table (your main table)
-    const { data: inventoryData, error: inventoryError } = await supabase
-      .from('inventory')
-      .select('*')
-      .limit(200);
+    try {
+      // First, we need to get the user ID from the request headers or body
+      // For now, we'll fetch all diamonds and let the user context handle filtering
+      const fastApiResponse = await fetch('https://api.mazalbot.com/api/v1/get_all_stones', {
+        method: 'GET',
+        headers: {
+          'Authorization': 'Bearer ifj9ov1rh20fslfp',
+          'Content-Type': 'application/json',
+        },
+      });
 
-    if (inventoryData && inventoryData.length > 0) {
-      inventory = inventoryData;
-      inventorySource = 'inventory table';
-      console.log('Found inventory data in inventory table:', inventory.length, 'diamonds');
-    } else {
-      console.log('No data in inventory table, trying diamonds table...');
-      
-      // Fallback to 'diamonds' table if inventory is empty
-      const { data: diamondsData, error: diamondsError } = await supabase
-        .from('diamonds')
-        .select('*')
-        .limit(200);
-
-      if (diamondsData && diamondsData.length > 0) {
-        inventory = diamondsData;
-        inventorySource = 'diamonds table';
-        console.log('Found inventory data in diamonds table:', inventory.length, 'diamonds');
+      if (fastApiResponse.ok) {
+        const fastApiData = await fastApiResponse.json();
+        console.log('FastAPI response received:', fastApiData?.length || 0, 'diamonds');
+        
+        if (fastApiData && Array.isArray(fastApiData) && fastApiData.length > 0) {
+          inventory = fastApiData;
+          inventorySource = 'FastAPI backend';
+          console.log('Found inventory data from FastAPI:', inventory.length, 'diamonds');
+        } else {
+          console.log('No data from FastAPI, response:', fastApiData);
+        }
       } else {
-        console.log('No data found in either table. Inventory error:', inventoryError, 'Diamonds error:', diamondsError);
+        console.log('FastAPI request failed:', fastApiResponse.status, fastApiResponse.statusText);
+      }
+    } catch (fastApiError) {
+      console.error('Error fetching from FastAPI:', fastApiError);
+    }
+
+    // If FastAPI fails, fallback to Supabase as backup
+    if (!inventory || inventory.length === 0) {
+      console.log('Falling back to Supabase tables...');
+      
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      
+      if (supabaseUrl && supabaseKey) {
+        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.45.0');
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        // Try the 'inventory' table first
+        const { data: inventoryData, error: inventoryError } = await supabase
+          .from('inventory')
+          .select('*')
+          .limit(1000);
+
+        if (inventoryData && inventoryData.length > 0) {
+          inventory = inventoryData;
+          inventorySource = 'Supabase inventory table';
+          console.log('Found inventory data in Supabase inventory table:', inventory.length, 'diamonds');
+        } else {
+          console.log('No data in Supabase inventory table, trying diamonds table...');
+          
+          // Fallback to 'diamonds' table
+          const { data: diamondsData, error: diamondsError } = await supabase
+            .from('diamonds')
+            .select('*')
+            .limit(1000);
+
+          if (diamondsData && diamondsData.length > 0) {
+            inventory = diamondsData;
+            inventorySource = 'Supabase diamonds table';
+            console.log('Found inventory data in Supabase diamonds table:', inventory.length, 'diamonds');
+          } else {
+            console.log('No data found in either Supabase table. Inventory error:', inventoryError, 'Diamonds error:', diamondsError);
+          }
+        }
       }
     }
 
@@ -69,33 +105,40 @@ SUMMARY:
 - Total inventory count: ${inventory.length} diamonds
 - Shapes available: ${[...new Set(inventory.map(d => d.shape).filter(Boolean))].join(', ')}
 - Carat weight range: ${Math.min(...inventory.map(d => d.weight || d.carat || 0))}ct - ${Math.max(...inventory.map(d => d.weight || d.carat || 0))}ct
-- Price range: $${Math.min(...inventory.map(d => (d.price_per_carat || d.price || 0) * (d.weight || d.carat || 1)))} - $${Math.max(...inventory.map(d => (d.price_per_carat || d.price || 0) * (d.weight || d.carat || 1)))}
+- Price range: $${Math.min(...inventory.map(d => {
+  const weight = d.weight || d.carat || 1;
+  const price = d.price_per_carat ? (d.price_per_carat * weight) : (d.price || 0);
+  return price;
+})).toLocaleString()} - $${Math.max(...inventory.map(d => {
+  const weight = d.weight || d.carat || 1;
+  const price = d.price_per_carat ? (d.price_per_carat * weight) : (d.price || 0);
+  return price;
+})).toLocaleString()}
 - Colors available: ${[...new Set(inventory.map(d => d.color).filter(Boolean))].join(', ')}
 - Clarities available: ${[...new Set(inventory.map(d => d.clarity).filter(Boolean))].join(', ')}
 
-DETAILED INVENTORY:
-${inventory.map(d => {
+DETAILED INVENTORY (showing first 50 diamonds):
+${inventory.slice(0, 50).map(d => {
   const weight = d.weight || d.carat || 0;
-  const price = d.price_per_carat ? (d.price_per_carat * weight) : (d.price || 0);
-  return `• ${weight}ct ${d.shape || 'Unknown'} ${d.color || ''} ${d.clarity || ''} ${d.cut || ''} - $${price.toLocaleString()} total${d.price_per_carat ? ` ($${d.price_per_carat.toLocaleString()}/ct)` : ''} [Stock: ${d.stock_number || d.id}]${d.lab ? ` [Lab: ${d.lab}]` : ''}${d.certificate_number ? ` [Cert: ${d.certificate_number}]` : ''}`;
+  const pricePerCarat = d.price_per_carat || 0;
+  const totalPrice = pricePerCarat * weight;
+  return `• ${weight}ct ${d.shape || 'Unknown'} ${d.color || ''} ${d.clarity || ''} ${d.cut || ''} - $${totalPrice.toLocaleString()} total${pricePerCarat ? ` ($${pricePerCarat.toLocaleString()}/ct)` : ''} [Stock: ${d.stock_number || d.id}]${d.lab ? ` [Lab: ${d.lab}]` : ''}${d.certificate_number ? ` [Cert: ${d.certificate_number}]` : ''}`;
 }).join('\n')}
+${inventory.length > 50 ? `\n... and ${inventory.length - 50} more diamonds` : ''}
 
 INVENTORY ANALYTICS:
 - Average carat weight: ${(inventory.reduce((sum, d) => sum + (d.weight || d.carat || 0), 0) / inventory.length).toFixed(2)}ct
-- Average price per carat: $${Math.round(inventory.reduce((sum, d) => sum + (d.price_per_carat || (d.price || 0) / (d.weight || d.carat || 1)), 0) / inventory.length).toLocaleString()}
+- Average price per carat: $${Math.round(inventory.reduce((sum, d) => sum + (d.price_per_carat || 0), 0) / inventory.length).toLocaleString()}
 - Total portfolio value: $${inventory.reduce((sum, d) => {
   const weight = d.weight || d.carat || 0;
-  const price = d.price_per_carat ? (d.price_per_carat * weight) : (d.price || 0);
-  return sum + price;
+  const pricePerCarat = d.price_per_carat || 0;
+  return sum + (pricePerCarat * weight);
 }, 0).toLocaleString()}
 - Premium stones (>2ct): ${inventory.filter(d => (d.weight || d.carat || 0) > 2).length}
 - High-value stones (>$10k/ct): ${inventory.filter(d => (d.price_per_carat || 0) > 10000).length}
 - Largest diamond: ${Math.max(...inventory.map(d => d.weight || d.carat || 0))}ct
-- Most expensive diamond: $${Math.max(...inventory.map(d => {
-  const weight = d.weight || d.carat || 0;
-  return d.price_per_carat ? (d.price_per_carat * weight) : (d.price || 0);
-})).toLocaleString()}
-    ` : 'No diamonds currently in inventory. Data source checked: inventory and diamonds tables.';
+- Most expensive per carat: $${Math.max(...inventory.map(d => d.price_per_carat || 0)).toLocaleString()}/ct
+    ` : 'No diamonds currently found in inventory. Please check your data source connection or upload your inventory.';
 
     const systemPrompt = `You are an expert AI diamond assistant for Mazalbot, a luxury diamond trading platform. You have access to real-time inventory data and can provide sophisticated insights about diamonds, pricing, market analysis, and recommendations.
 
@@ -110,8 +153,9 @@ Your capabilities include:
 - Comparing diamonds in the current inventory
 - Identifying the biggest, smallest, most expensive, best value diamonds
 - Providing detailed breakdowns by shape, color, clarity, etc.
+- Calculating total stock value and portfolio analytics
 
-When users ask about "my diamonds" or "my inventory", refer specifically to the inventory data provided above. Always use the actual data to give precise, accurate answers with specific stock numbers, prices, and characteristics.
+When users ask about "my diamonds", "my inventory", "my stock", refer specifically to the inventory data provided above. Always use the actual data to give precise, accurate answers with specific stock numbers, prices, and characteristics.
 
 Be professional, knowledgeable, and provide actionable insights. Use the real inventory data to give specific recommendations and comparisons.`;
 
