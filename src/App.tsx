@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +19,7 @@ import NotificationsPage from "./pages/NotificationsPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 import DiamondSwipe from "./pages/DiamondSwipe";
+import AdminAnalytics from "./pages/AdminAnalytics";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,6 +53,7 @@ const App = () => (
                   <Route path="/swipe" element={<DiamondSwipe />} />
                   <Route path="/notifications" element={<NotificationsPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/admin" element={<AdminAnalytics />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </AuthGuard>
