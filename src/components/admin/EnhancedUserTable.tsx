@@ -213,7 +213,7 @@ export function EnhancedUserTable({ users, getUserEngagementScore }: EnhancedUse
                       <span className="font-medium truncate">{fullName}</span>
                       {user.is_premium && <Crown className="h-4 w-4 text-yellow-500" />}
                       {user.phone_number && <Phone className="h-4 w-4 text-green-500" />}
-                      {blocked && <Shield className="h-4 w-4 text-red-500" title="Blocked User" />}
+                      {blocked && <Shield className="h-4 w-4 text-red-500" />}
                     </div>
                     
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
