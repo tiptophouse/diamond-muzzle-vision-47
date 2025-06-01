@@ -10,7 +10,7 @@ export interface ChatMessage {
   timestamp: string;
 }
 
-export function useOpenAIChat() {
+export function useOpenAIChat(userId?: number) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -31,6 +31,7 @@ export function useOpenAIChat() {
       const { data, error } = await supabase.functions.invoke('openai-chat', {
         body: {
           message: content,
+          user_id: userId,
           conversation_history: messages.map(msg => ({
             role: msg.role,
             content: msg.content

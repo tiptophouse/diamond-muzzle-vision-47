@@ -8,7 +8,7 @@ import { useOpenAIChat } from '@/hooks/useOpenAIChat';
 
 export const ChatContainer = () => {
   const { user } = useTelegramAuth();
-  const { messages, sendMessage, isLoading, clearMessages } = useOpenAIChat();
+  const { messages, sendMessage, isLoading, clearMessages } = useOpenAIChat(user?.id);
 
   const handleSendMessage = async (content: string) => {
     await sendMessage(content);
