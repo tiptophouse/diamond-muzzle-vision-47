@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Users } from 'lucide-react';
+import { users } from 'lucide-react';
 import { AdminUserSearch } from './AdminUserSearch';
 import { AdminUserCard } from './AdminUserCard';
 
@@ -28,22 +28,24 @@ export function AdminUserTable({
   onDeleteUser 
 }: AdminUserTableProps) {
   return (
-    <div className="glass-card rounded-xl p-4 sm:p-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold cosmic-text flex items-center gap-2">
-            <Users className="h-6 w-6" />
-            User Management ({filteredUsers.length} users)
-          </h2>
-          <p className="text-cyan-300 text-sm mt-1">
-            Complete cosmic user database with management controls
-          </p>
+    <div className="bg-white rounded-lg border border-gray-200">
+      <div className="p-6 border-b border-gray-200">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <users className="h-6 w-6 text-blue-600" />
+              User Management ({filteredUsers.length} users)
+            </h2>
+            <p className="text-gray-600 text-sm mt-1">
+              Complete user database with management controls
+            </p>
+          </div>
         </div>
+        
+        <AdminUserSearch searchTerm={searchTerm} onSearchChange={onSearchChange} />
       </div>
-      
-      <AdminUserSearch searchTerm={searchTerm} onSearchChange={onSearchChange} />
 
-      <div className="space-y-3 max-h-96 overflow-y-auto">
+      <div className="divide-y divide-gray-100">
         {filteredUsers.map((user) => {
           const blocked = isUserBlocked(user.telegram_id);
           const engagementScore = getUserEngagementScore(user);

@@ -93,7 +93,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-4 sm:p-6">
+      <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
         <div className="text-center py-12">
           <div className="relative inline-block">
             <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto mb-6"></div>
@@ -110,63 +110,67 @@ export function AdminUserManager({}: AdminUserManagerProps) {
     : 0;
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 space-y-6">
-      <AdminHeader onExportData={exportUserData} onAddUser={() => setShowAddUser(true)} />
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+        <AdminHeader onExportData={exportUserData} onAddUser={() => setShowAddUser(true)} />
 
-      <AdminStatsGrid 
-        stats={stats} 
-        blockedUsersCount={blockedUsers.length} 
-        averageEngagement={averageEngagement} 
-      />
+        <AdminStatsGrid 
+          stats={stats} 
+          blockedUsersCount={blockedUsers.length} 
+          averageEngagement={averageEngagement} 
+        />
 
-      <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="users">User Management</TabsTrigger>
-          <TabsTrigger value="notifications">Send Notifications</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="users">
-          <AdminUserTable
-            filteredUsers={filteredUsers}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            getUserEngagementScore={getUserEngagementScore}
-            isUserBlocked={isUserBlocked}
-            onViewUser={handleViewUser}
-            onEditUser={handleEditUser}
-            onToggleBlock={handleToggleBlock}
-            onDeleteUser={handleDeleteUser}
+        <Tabs defaultValue="users" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6 bg-white">
+            <TabsTrigger value="users" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">User Management</TabsTrigger>
+            <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Send Notifications</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="users">
+            <AdminUserTable
+              filteredUsers={filteredUsers}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              getUserEngagementScore={getUserEngagementScore}
+              isUserBlocked={isUserBlocked}
+              onViewUser={handleViewUser}
+              onEditUser={handleEditUser}
+              onToggleBlock={handleToggleBlock}
+              onDeleteUser={handleDeleteUser}
+            />
+          </TabsContent>
+          
+          <TabsContent value="notifications">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <NotificationSender onSendNotification={(notification) => console.log('Sent notification:', notification)} />
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Modals */}
+        {showUserDetails && selectedUser && (
+          <UserDetailsModal
+            user={selectedUser}
+            isOpen={showUserDetails}
+            onClose={() => setShowUserDetails(false)}
           />
-        </TabsContent>
-        
-        <TabsContent value="notifications">
-          <NotificationSender onSendNotification={(notification) => console.log('Sent notification:', notification)} />
-        </TabsContent>
-      </Tabs>
+        )}
 
-      {/* Modals */}
-      {showUserDetails && selectedUser && (
-        <UserDetailsModal
-          user={selectedUser}
-          isOpen={showUserDetails}
-          onClose={() => setShowUserDetails(false)}
-        />
-      )}
+        {showAddUser && (
+          <AddUserModal
+            isOpen={showAddUser}
+            onClose={() => setShowAddUser(false)}
+          />
+        )}
 
-      {showAddUser && (
-        <AddUserModal
-          isOpen={showAddUser}
-          onClose={() => setShowAddUser(false)}
-        />
-      )}
-
-      {showEditUser && editingUser && (
-        <EditUserModal
-          user={editingUser}
-          isOpen={showEditUser}
-          onClose={() => setShowEditUser(false)}
-        />
-      )}
+        {showEditUser && editingUser && (
+          <EditUserModal
+            user={editingUser}
+            isOpen={showEditUser}
+            onClose={() => setShowEditUser(false)}
+          />
+        )}
+      </div>
     </div>
   );
 }
