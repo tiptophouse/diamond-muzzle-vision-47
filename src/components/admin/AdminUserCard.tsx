@@ -2,7 +2,7 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Star, Phone, Shield } from 'lucide-react';
+import { Star, Phone, Shield, AlertCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { AdminUserActions } from './AdminUserActions';
 
@@ -27,32 +27,47 @@ export function AdminUserCard({
 }: AdminUserCardProps) {
   // Get the real display name from actual data
   const getDisplayName = () => {
-    // Use real first_name and last_name from the user data
-    if (user.first_name && user.first_name.trim()) {
+    // Check if this is real user data vs mock/placeholder data
+    const isRealData = user.first_name && 
+      user.first_name.trim() && 
+      !['Test', 'Telegram', 'Emergency', 'Unknown'].includes(user.first_name.trim());
+    
+    if (isRealData) {
       const lastName = user.last_name ? ` ${user.last_name.trim()}` : '';
       return `${user.first_name.trim()}${lastName}`;
     }
     
-    // Fallback to username if available
-    if (user.username) {
+    // For mock data, try username first
+    if (user.username && !user.username.includes('testuser') && !user.username.includes('telegram_user')) {
       return `@${user.username}`;
     }
     
-    // Final fallback to telegram ID
+    // Fallback: Show telegram ID with indicator
     return `User ${user.telegram_id}`;
+  };
+
+  // Check if this is real user data
+  const isRealUserData = () => {
+    return user.first_name && 
+      user.first_name.trim() && 
+      !['Test', 'Telegram', 'Emergency', 'Unknown'].includes(user.first_name.trim());
   };
 
   // Get initials for avatar
   const getInitials = () => {
-    const displayName = getDisplayName();
-    if (displayName.startsWith('@')) {
-      return displayName.substring(1, 3).toUpperCase();
+    if (isRealUserData() && user.first_name) {
+      const lastName = user.last_name || '';
+      if (lastName) {
+        return `${user.first_name.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+      }
+      return user.first_name.substring(0, 2).toUpperCase();
     }
-    const nameParts = displayName.split(' ');
-    if (nameParts.length >= 2) {
-      return `${nameParts[0].charAt(0)}${nameParts[1].charAt(0)}`.toUpperCase();
+    
+    if (user.username && !user.username.includes('testuser')) {
+      return user.username.substring(0, 2).toUpperCase();
     }
-    return displayName.substring(0, 2).toUpperCase();
+    
+    return 'U?';
   };
 
   // Get real user status
@@ -87,7 +102,7 @@ export function AdminUserCard({
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <Avatar className="h-12 w-12 border-2 border-gray-200">
             <AvatarImage src={user.photo_url} />
-            <AvatarFallback className="bg-blue-100 text-blue-700 font-semibold">
+            <AvatarFallback className={`font-semibold ${isRealUserData() ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
               {getInitials()}
             </AvatarFallback>
           </Avatar>
@@ -97,6 +112,7 @@ export function AdminUserCard({
               <span className="font-semibold text-gray-900 text-sm sm:text-base">
                 {getDisplayName()}
               </span>
+              {!isRealUserData() && <AlertCircle className="h-4 w-4 text-orange-500" title="Mock/Placeholder Data" />}
               {user.is_premium && <Star className="h-4 w-4 text-yellow-500" />}
               {user.phone_number && <Phone className="h-4 w-4 text-green-500" />}
               {isBlocked && <Shield className="h-4 w-4 text-red-500" />}
@@ -117,6 +133,11 @@ export function AdminUserCard({
               >
                 {user.subscription_status || 'free'}
               </Badge>
+              {!isRealUserData() && (
+                <Badge variant="outline" className="border-orange-300 text-orange-700 bg-orange-50">
+                  Mock Data
+                </Badge>
+              )}
             </div>
           </div>
         </div>

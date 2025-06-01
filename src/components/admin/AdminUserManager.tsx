@@ -28,13 +28,27 @@ export function AdminUserManager({}: AdminUserManagerProps) {
   const stats = getUserStats();
 
   const filteredUsers = enhancedUsers.filter(user => {
-    const fullName = `${user.first_name} ${user.last_name || ''}`.toLowerCase();
+    // Create a comprehensive search that includes real names
     const searchLower = searchTerm.toLowerCase();
+    
+    // Primary search fields
+    const firstName = (user.first_name || '').toLowerCase();
+    const lastName = (user.last_name || '').toLowerCase();
+    const fullName = `${firstName} ${lastName}`.trim();
+    const username = (user.username || '').toLowerCase();
+    const telegramId = user.telegram_id.toString();
+    const phoneNumber = user.phone_number || '';
+    
+    // Enhanced search logic
     return (
+      firstName.includes(searchLower) ||
+      lastName.includes(searchLower) ||
       fullName.includes(searchLower) ||
-      user.telegram_id.toString().includes(searchTerm) ||
-      user.username?.toLowerCase().includes(searchLower) ||
-      user.phone_number?.includes(searchTerm)
+      username.includes(searchLower) ||
+      telegramId.includes(searchTerm) ||
+      phoneNumber.includes(searchTerm) ||
+      // Also search by display logic for cases where first_name might be "Telegram" etc
+      (user.username && `@${username}`.includes(searchLower))
     );
   });
 
@@ -49,7 +63,11 @@ export function AdminUserManager({}: AdminUserManagerProps) {
   };
 
   const handleDeleteUser = async (user: any) => {
-    if (window.confirm(`Are you sure you want to delete ${user.first_name} ${user.last_name}? This action cannot be undone.`)) {
+    const displayName = user.first_name && !['Test', 'Telegram', 'Emergency'].includes(user.first_name)
+      ? `${user.first_name} ${user.last_name || ''}`.trim()
+      : `User ${user.telegram_id}`;
+      
+    if (window.confirm(`Are you sure you want to delete ${displayName}? This action cannot be undone.`)) {
       console.log('Delete user:', user.telegram_id);
     }
   };
@@ -68,18 +86,26 @@ export function AdminUserManager({}: AdminUserManagerProps) {
 
   const exportUserData = () => {
     const csv = [
-      ['ID', 'Telegram ID', 'Name', 'Username', 'Phone', 'Status', 'Premium', 'Created', 'Last Login'].join(','),
-      ...filteredUsers.map(user => [
-        user.id,
-        user.telegram_id,
-        `"${user.first_name} ${user.last_name || ''}"`,
-        user.username || '',
-        user.phone_number || '',
-        user.subscription_status || 'free',
-        user.is_premium ? 'Yes' : 'No',
-        user.created_at,
-        user.last_active || 'Never'
-      ].join(','))
+      ['ID', 'Telegram ID', 'Name', 'Username', 'Phone', 'Status', 'Premium', 'Created', 'Last Active', 'Data Type'].join(','),
+      ...filteredUsers.map(user => {
+        const isReal = user.first_name && !['Test', 'Telegram', 'Emergency', 'Unknown'].includes(user.first_name);
+        const displayName = isReal 
+          ? `${user.first_name} ${user.last_name || ''}`
+          : `User ${user.telegram_id}`;
+          
+        return [
+          user.id,
+          user.telegram_id,
+          `"${displayName.trim()}"`,
+          user.username || '',
+          user.phone_number || '',
+          user.subscription_status || 'free',
+          user.is_premium ? 'Yes' : 'No',
+          user.created_at,
+          user.last_active || 'Never',
+          isReal ? 'Real' : 'Mock'
+        ].join(',');
+      })
     ].join('\n');
 
     const blob = new Blob([csv], { type: 'text/csv' });
