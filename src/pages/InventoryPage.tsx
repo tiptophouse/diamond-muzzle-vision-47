@@ -89,9 +89,11 @@ export default function InventoryPage() {
   const handleFormSubmit = async (data: DiamondFormData) => {
     let success = false;
     
-    if (editingDiamond) {
+    // Check if we're editing an existing diamond (has valid ID) or creating new one
+    if (editingDiamond && editingDiamond.id && editingDiamond.id !== '') {
       success = await updateDiamond(editingDiamond.id, data);
     } else {
+      // This is a new diamond (either from "Add" button or QR scan with empty ID)
       success = await addDiamond(data);
     }
 

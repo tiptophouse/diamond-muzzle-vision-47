@@ -19,13 +19,15 @@ export function useUpdateDiamond(onSuccess?: () => void) {
       return false;
     }
 
-    // Validate diamond ID format
-    if (!diamondId || !isValidUUID(diamondId)) {
-      console.error('Invalid diamond ID format:', diamondId);
+    // If diamondId is empty or invalid, this is actually a new diamond from QR scan
+    if (!diamondId || diamondId === '' || !isValidUUID(diamondId)) {
+      console.log('Invalid or empty diamond ID, treating as new diamond creation');
+      
+      // This should be handled by the add diamond function instead
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Invalid diamond ID format. Please refresh and try again.",
+        description: "Cannot update diamond without valid ID. Please save as new diamond instead.",
       });
       return false;
     }
