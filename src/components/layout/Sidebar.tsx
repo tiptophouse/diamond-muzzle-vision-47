@@ -3,6 +3,8 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   LayoutDashboard,
   Package,
@@ -20,7 +22,11 @@ import {
 
 const ADMIN_TELEGRAM_ID = 2138564172;
 
-const Sidebar = () => {
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+const Sidebar = ({ onClose }: SidebarProps) => {
   const { user } = useTelegramAuth();
   const isAdmin = user?.id === ADMIN_TELEGRAM_ID;
 
@@ -40,39 +46,58 @@ const Sidebar = () => {
     { name: 'Admin Analytics', href: '/admin', icon: BarChart3 },
   ];
 
+  const handleNavClick = () => {
+    // Close sidebar on mobile when navigation item is clicked
+    onClose?.();
+  };
+
   return (
     <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-full">
-      <div className="p-6 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-900">Diamond Muzzle</h1>
-        {isAdmin && (
-          <div className="mt-2 px-3 py-1 bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 text-white text-xs font-semibold rounded-full inline-flex items-center gap-1">
-            <Star className="h-3 w-3" />
-            COSMIC ADMIN
-          </div>
+      {/* Header with close button for mobile */}
+      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-bold text-gray-900">Diamond Muzzle</h1>
+          {isAdmin && (
+            <div className="mt-1 px-2 py-1 bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 text-white text-xs font-semibold rounded-full inline-flex items-center gap-1">
+              <Star className="h-3 w-3" />
+              COSMIC ADMIN
+            </div>
+          )}
+        </div>
+        {onClose && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="lg:hidden p-1"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         )}
       </div>
       
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {navigation.map((item) => (
           <NavLink
             key={item.name}
             to={item.href}
+            onClick={handleNavClick}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors w-full',
                 isActive
                   ? 'bg-blue-50 text-blue-700'
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               )
             }
           >
-            <item.icon className="h-5 w-5" />
-            {item.name}
+            <item.icon className="h-4 w-4 flex-shrink-0" />
+            <span className="truncate">{item.name}</span>
           </NavLink>
         ))}
         
         {isAdmin && (
-          <div className="pt-4 border-t border-gray-200">
+          <div className="pt-3 border-t border-gray-200 mt-3">
             <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
               Admin Panel
             </div>
@@ -80,17 +105,18 @@ const Sidebar = () => {
               <NavLink
                 key={item.name}
                 to={item.href}
+                onClick={handleNavClick}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors w-full',
                     isActive
                       ? 'bg-gradient-to-r from-purple-100 to-cyan-100 text-purple-700 border border-purple-200'
                       : 'text-gray-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-cyan-50 hover:text-purple-700'
                   )
                 }
               >
-                <item.icon className="h-5 w-5" />
-                {item.name}
+                <item.icon className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{item.name}</span>
               </NavLink>
             ))}
           </div>
