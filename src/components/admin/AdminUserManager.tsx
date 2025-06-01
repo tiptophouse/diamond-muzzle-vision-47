@@ -11,14 +11,13 @@ import {
   Search, 
   Edit, 
   Trash2, 
-  Sparkles, 
-  Star, 
+  Shield, 
+  Crown, 
   Phone,
   Eye,
   UserCheck,
   UserX,
-  Download,
-  Zap
+  Download
 } from 'lucide-react';
 import { useEnhancedAnalytics } from '@/hooks/useEnhancedAnalytics';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
@@ -65,6 +64,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
 
   const handleDeleteUser = async (user: any) => {
     if (window.confirm(`Are you sure you want to delete ${user.first_name} ${user.last_name}? This action cannot be undone.`)) {
+      // TODO: Implement user deletion
       console.log('Delete user:', user.telegram_id);
     }
   };
@@ -101,122 +101,94 @@ export function AdminUserManager({}: AdminUserManagerProps) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `unicorn_users_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `admin_users_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 cosmic-bg min-h-screen">
+      <div className="container mx-auto p-6">
         <div className="text-center py-8">
-          <div className="cosmic-gradient w-16 h-16 rounded-full mx-auto mb-4 animate-spin neon-glow"></div>
-          <div className="text-xl text-purple-200 cosmic-text">Loading unicorn dashboard...</div>
+          <div className="text-lg">Loading admin panel...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6 cosmic-bg min-h-screen">
+    <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold cosmic-text mb-2 floating-animation">
-            🦄 Unicorn User Management
-          </h1>
-          <p className="text-purple-200 text-lg">Complete cosmic control over user realms and data</p>
+          <h1 className="text-3xl font-bold text-red-800">👑 Admin User Management</h1>
+          <p className="text-red-600 mt-2">Complete control over user accounts and data</p>
         </div>
         <div className="flex gap-3">
-          <Button 
-            onClick={exportUserData} 
-            variant="outline" 
-            className="glass-card cosmic-border hover:neon-glow text-purple-200 border-purple-400"
-          >
+          <Button onClick={exportUserData} variant="outline" className="border-red-200">
             <Download className="h-4 w-4 mr-2" />
             Export Data
           </Button>
-          <Button 
-            onClick={() => setShowAddUser(true)} 
-            className="cosmic-gradient hover:neon-glow text-white font-bold"
-          >
+          <Button onClick={() => setShowAddUser(true)} className="bg-red-600 hover:bg-red-700">
             <UserPlus className="h-4 w-4 mr-2" />
-            Add Unicorn
+            Add User
           </Button>
         </div>
       </div>
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <Card className="glass-card cosmic-border neon-glow floating-animation">
+        <Card className="border-red-200">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-purple-300 flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Total Registered
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-red-700">Total Registered</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold cosmic-text">{stats.totalUsers}</div>
+            <div className="text-2xl font-bold text-red-800">{stats.totalUsers}</div>
           </CardContent>
         </Card>
 
-        <Card className="glass-card cosmic-border neon-glow floating-animation" style={{ animationDelay: '0.1s' }}>
+        <Card className="border-green-200">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-green-300 flex items-center gap-2">
-              <Zap className="h-4 w-4" />
-              Active Today
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-green-700">Active Users</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-400">{stats.activeToday}</div>
+            <div className="text-2xl font-bold text-green-800">{stats.activeToday}</div>
           </CardContent>
         </Card>
 
-        <Card className="glass-card cosmic-border neon-glow floating-animation" style={{ animationDelay: '0.2s' }}>
+        <Card className="border-yellow-200">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-yellow-300 flex items-center gap-2">
-              <Star className="h-4 w-4 sparkle" />
-              Premium Users
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-yellow-700">Premium Users</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-yellow-400">{stats.premiumUsers}</div>
+            <div className="text-2xl font-bold text-yellow-800">{stats.premiumUsers}</div>
           </CardContent>
         </Card>
 
-        <Card className="glass-card cosmic-border neon-glow floating-animation" style={{ animationDelay: '0.3s' }}>
+        <Card className="border-blue-200">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-blue-300 flex items-center gap-2">
-              <Phone className="h-4 w-4" />
-              Phone Verified
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-blue-700">Phone Verified</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-400">{stats.usersWithPhone}</div>
+            <div className="text-2xl font-bold text-blue-800">{stats.usersWithPhone}</div>
           </CardContent>
         </Card>
 
-        <Card className="glass-card cosmic-border neon-glow floating-animation" style={{ animationDelay: '0.4s' }}>
+        <Card className="border-purple-200">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-purple-300 flex items-center gap-2">
-              <UserX className="h-4 w-4" />
-              Blocked Users
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-purple-700">Blocked Users</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-purple-400">{blockedUsers.length}</div>
+            <div className="text-2xl font-bold text-purple-800">{blockedUsers.length}</div>
           </CardContent>
         </Card>
 
-        <Card className="glass-card cosmic-border neon-glow floating-animation" style={{ animationDelay: '0.5s' }}>
+        <Card className="border-orange-200">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-cyan-300 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 sparkle" />
-              Avg Engagement
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-orange-700">Avg Engagement</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-cyan-400">
+            <div className="text-2xl font-bold text-orange-800">
               {enhancedUsers.length > 0 
                 ? Math.round(enhancedUsers.reduce((sum, u) => sum + getUserEngagementScore(u), 0) / enhancedUsers.length)
                 : 0}%
@@ -226,64 +198,60 @@ export function AdminUserManager({}: AdminUserManagerProps) {
       </div>
 
       {/* Search and User Table */}
-      <Card className="glass-card cosmic-border neon-glow">
+      <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2 cosmic-text text-2xl">
-                <Users className="h-6 w-6" />
-                Unicorn Management ({filteredUsers.length} beings)
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                User Management ({filteredUsers.length} users)
               </CardTitle>
-              <CardDescription className="text-purple-200">
-                Complete cosmic database with management controls
+              <CardDescription>
+                Complete user database with management controls
               </CardDescription>
             </div>
           </div>
           
           <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-purple-400" />
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by name, Telegram ID, username, or phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 glass-card cosmic-border text-purple-100 placeholder-purple-300"
+              className="pl-10"
             />
           </div>
         </CardHeader>
         
         <CardContent>
           <div className="space-y-3 max-h-96 overflow-y-auto">
-            {filteredUsers.map((user, index) => {
+            {filteredUsers.map((user) => {
               const blocked = isUserBlocked(user.telegram_id);
               const engagementScore = getUserEngagementScore(user);
               
               return (
-                <div 
-                  key={user.id} 
-                  className={`flex items-center justify-between p-4 glass-card cosmic-border rounded-lg hover:neon-glow transition-all duration-300 floating-animation ${blocked ? 'border-red-400/50' : ''}`}
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
+                <div key={user.id} className={`flex items-center justify-between p-4 border rounded-lg ${blocked ? 'bg-red-50 border-red-200' : 'hover:bg-gray-50'}`}>
                   <div className="flex items-center gap-4 flex-1">
-                    <Avatar className="h-12 w-12 cosmic-border">
+                    <Avatar className="h-12 w-12">
                       <AvatarImage src={user.photo_url} />
-                      <AvatarFallback className="cosmic-gradient text-white font-bold">
+                      <AvatarFallback>
                         {user.first_name.charAt(0)}{user.last_name?.charAt(0) || ''}
                       </AvatarFallback>
                     </Avatar>
                     
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="font-semibold text-purple-100">{user.first_name} {user.last_name}</span>
-                        {user.is_premium && <Star className="h-4 w-4 text-yellow-400 sparkle" />}
-                        {user.phone_number && <Phone className="h-4 w-4 text-green-400" />}
-                        {blocked && <UserX className="h-4 w-4 text-red-400" />}
+                        <span className="font-semibold">{user.first_name} {user.last_name}</span>
+                        {user.is_premium && <Crown className="h-4 w-4 text-yellow-500" />}
+                        {user.phone_number && <Phone className="h-4 w-4 text-green-500" />}
+                        {blocked && <Shield className="h-4 w-4 text-red-500" />}
                       </div>
                       
-                      <div className="flex items-center gap-4 text-sm text-purple-300">
-                        <Badge variant="outline" className="cosmic-border text-purple-200">ID: {user.telegram_id}</Badge>
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <Badge variant="outline">ID: {user.telegram_id}</Badge>
                         {user.username && <span>@{user.username}</span>}
                         {user.phone_number && <span>{user.phone_number}</span>}
-                        <Badge className={user.subscription_status === 'premium' ? 'cosmic-gradient' : 'glass-card'}>
+                        <Badge variant={user.subscription_status === 'premium' ? 'default' : 'secondary'}>
                           {user.subscription_status || 'free'}
                         </Badge>
                       </div>
@@ -292,16 +260,16 @@ export function AdminUserManager({}: AdminUserManagerProps) {
 
                   <div className="flex items-center gap-4">
                     <div className="text-center">
-                      <div className="text-sm font-medium text-purple-200">{user.total_visits}</div>
-                      <div className="text-xs text-purple-400">Visits</div>
+                      <div className="text-sm font-medium">{user.total_visits}</div>
+                      <div className="text-xs text-gray-500">Visits</div>
                     </div>
                     
                     <div className="text-center">
-                      <div className="text-sm font-medium text-cyan-300">{engagementScore}%</div>
-                      <div className="text-xs text-purple-400">Engagement</div>
+                      <div className="text-sm font-medium">{engagementScore}%</div>
+                      <div className="text-xs text-gray-500">Engagement</div>
                     </div>
 
-                    <div className="text-right text-xs text-purple-300">
+                    <div className="text-right text-xs text-gray-500">
                       <div>Joined {formatDistanceToNow(new Date(user.created_at), { addSuffix: true })}</div>
                       {user.last_active && (
                         <div>Active {formatDistanceToNow(new Date(user.last_active), { addSuffix: true })}</div>
@@ -313,7 +281,6 @@ export function AdminUserManager({}: AdminUserManagerProps) {
                         variant="outline"
                         size="sm"
                         onClick={() => handleViewUser(user)}
-                        className="glass-card cosmic-border hover:neon-glow text-purple-200"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -321,7 +288,6 @@ export function AdminUserManager({}: AdminUserManagerProps) {
                         variant="outline"
                         size="sm"
                         onClick={() => handleEditUser(user)}
-                        className="glass-card cosmic-border hover:neon-glow text-purple-200"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -329,7 +295,6 @@ export function AdminUserManager({}: AdminUserManagerProps) {
                         variant={blocked ? "outline" : "destructive"}
                         size="sm"
                         onClick={() => handleToggleBlock(user)}
-                        className={blocked ? "glass-card cosmic-border text-green-400" : "bg-red-500/20 border-red-400 text-red-300 hover:bg-red-500/30"}
                       >
                         {blocked ? <UserCheck className="h-4 w-4" /> : <UserX className="h-4 w-4" />}
                       </Button>
@@ -337,7 +302,6 @@ export function AdminUserManager({}: AdminUserManagerProps) {
                         variant="destructive"
                         size="sm"
                         onClick={() => handleDeleteUser(user)}
-                        className="bg-red-500/20 border-red-400 text-red-300 hover:bg-red-500/30"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
