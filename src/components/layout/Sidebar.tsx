@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -11,8 +12,7 @@ import {
   FileText,
   Menu,
   X,
-  Bell,
-  BarChart3
+  Bell
 } from "lucide-react";
 import { useState } from "react";
 
@@ -42,11 +42,11 @@ const SidebarItem = ({ icon: Icon, label, path, isActive, onClick }: SidebarItem
   );
 };
 
-export default function Sidebar() {
+export function Sidebar() {
   const location = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  const navigationItems = [
+  const routes = [
     { path: "/", label: "Dashboard", icon: BarChart },
     { path: "/inventory", label: "Inventory", icon: Database },
     { path: "/upload", label: "Upload", icon: Upload },
@@ -55,12 +55,6 @@ export default function Sidebar() {
     { path: "/notifications", label: "Notifications", icon: Bell },
     { path: "/insights", label: "AI Insights", icon: Lightbulb },
     { path: "/settings", label: "Settings", icon: Settings },
-    {
-      href: '/analytics',
-      icon: BarChart3,
-      label: 'Analytics',
-      description: 'User tracking & costs'
-    }
   ];
 
   const toggleMobile = () => setIsMobileOpen(!isMobileOpen);
@@ -104,7 +98,7 @@ export default function Sidebar() {
         </div>
 
         <nav className="flex-1 py-6 px-4 space-y-2 overflow-y-auto">
-          {navigationItems.map((route) => (
+          {routes.map((route) => (
             <SidebarItem
               key={route.path}
               icon={route.icon}

@@ -12,11 +12,6 @@ interface DiamondData {
   owners?: number[];
   owner_id?: number;
   status?: string;
-  certificate_number?: number;
-  polish?: string;
-  fluorescence?: string;
-  stock_number?: string;
-  lab?: string;
 }
 
 interface DashboardStats {
@@ -129,18 +124,14 @@ export function convertDiamondsToInventoryFormat(diamonds: DiamondData[], curren
     
     return {
       id: diamond.id?.toString() || '',
-      stockNumber: diamond.stock_number || diamond.stock || `D${diamond.id || Math.floor(Math.random() * 10000)}`,
+      stockNumber: diamond.stock || `D${diamond.id || Math.floor(Math.random() * 10000)}`,
       shape: diamond.shape || 'Unknown',
       carat: weight,
       color: diamond.color || 'Unknown',
       clarity: diamond.clarity || 'Unknown',
       cut: 'Excellent', // Default since not in your data
       price: totalPrice,
-      pricePerCarat: pricePerCarat,
       status: diamond.status || 'Available',
-      certificateNumber: diamond.certificate_number?.toString() || diamond.lab || undefined,
-      polish: diamond.polish || undefined,
-      fluorescence: diamond.fluorescence || undefined,
     };
   });
 }

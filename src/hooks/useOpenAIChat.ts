@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useTracking } from '@/context/TrackingContext';
 
 export interface ChatMessage {
   id: string;
@@ -15,15 +14,13 @@ export function useOpenAIChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { trackCost } = useTracking();
-
-  const sendMessage = async (message: string) => {
-    if (!message.trim()) return;
+  const sendMessage = async (content: string): Promise<void> => {
+    if (!content.trim()) return;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
-      content: message.trim(),
+      content: content.trim(),
       timestamp: new Date().toISOString(),
     };
 
@@ -31,39 +28,22 @@ export function useOpenAIChat() {
     setIsLoading(true);
 
     try {
-      const conversationHistory = messages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
-
-      const response = await supabase.functions.invoke('openai-chat', {
-        body: { 
-          message, 
-          conversation_history: conversationHistory 
-        }
+      const { data, error } = await supabase.functions.invoke('openai-chat', {
+        body: {
+          message: content,
+          conversation_history: messages.map(msg => ({
+            role: msg.role,
+            content: msg.content
+          }))
+        },
       });
 
-      if (response.error) {
-        throw new Error(response.error.message || 'Failed to get AI response');
-      }
-
-      const aiResponse = response.data?.response;
-      if (!aiResponse) {
-        throw new Error('No response from AI');
-      }
-
-      // Track OpenAI API cost (estimated)
-      const estimatedCost = message.length * 0.00002; // Rough estimate
-      trackCost('api_call', 'openai', estimatedCost, {
-        message_length: message.length,
-        model: 'gpt-4o-mini',
-        response_length: aiResponse.length
-      });
+      if (error) throw error;
 
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: aiResponse,
+        content: data.response || 'I apologize, but I encountered an issue processing your request.',
         timestamp: new Date().toISOString(),
       };
 

@@ -4,73 +4,69 @@ import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Heart, X, Star, Eye, Diamond as DiamondIcon } from 'lucide-react';
 import { useInventoryData } from '@/hooks/useInventoryData';
-import { Diamond } from '@/components/inventory/InventoryTable';
+import { Heart, X, Star, Diamond as DiamondIcon, Zap } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
-const DiamondSwipe = () => {
+interface Diamond {
+  id: string;
+  shape: string;
+  weight: number;
+  color: string;
+  clarity: string;
+  price_per_carat: number;
+  stock_number: string;
+  cut?: string;
+  fluorescence?: string;
+  lab?: string;
+}
+
+export default function DiamondSwipe() {
   const { allDiamonds, loading } = useInventoryData();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [likedDiamonds, setLikedDiamonds] = useState<Diamond[]>([]);
-  const [passedDiamonds, setPassedDiamonds] = useState<Diamond[]>([]);
+  const [matches, setMatches] = useState<Diamond[]>([]);
+  const [passed, setPassed] = useState<Diamond[]>([]);
 
   const currentDiamond = allDiamonds[currentIndex];
 
-  const handleLike = () => {
-    if (currentDiamond) {
-      setLikedDiamonds(prev => [...prev, currentDiamond]);
-      nextDiamond();
+  const handleSwipe = (direction: 'left' | 'right') => {
+    if (!currentDiamond) return;
+
+    if (direction === 'right') {
+      setMatches(prev => [...prev, currentDiamond]);
+      toast({
+        title: "💎 Diamond Matched!",
+        description: `${currentDiamond.weight}ct ${currentDiamond.shape} added to your matches`,
+      });
+    } else {
+      setPassed(prev => [...prev, currentDiamond]);
     }
+
+    setCurrentIndex(prev => prev + 1);
   };
 
-  const handlePass = () => {
-    if (currentDiamond) {
-      setPassedDiamonds(prev => [...prev, currentDiamond]);
-      nextDiamond();
-    }
+  const handleSuperLike = () => {
+    if (!currentDiamond) return;
+    
+    setMatches(prev => [...prev, { ...currentDiamond, superLiked: true } as any]);
+    toast({
+      title: "⭐ Super Match!",
+      description: `${currentDiamond.weight}ct ${currentDiamond.shape} super liked!`,
+    });
+    setCurrentIndex(prev => prev + 1);
   };
 
-  const nextDiamond = () => {
-    if (currentIndex < allDiamonds.length - 1) {
-      setCurrentIndex(prev => prev + 1);
-    }
-  };
-
-  const reset = () => {
+  const resetStack = () => {
     setCurrentIndex(0);
-    setLikedDiamonds([]);
-    setPassedDiamonds([]);
-  };
-
-  const getQualityScore = (diamond: Diamond) => {
-    // Simple quality scoring based on clarity and color
-    const clarityScore = ['FL', 'IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'I1', 'I2', 'I3'].indexOf(diamond.clarity || '') + 1;
-    const colorScore = ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'].indexOf(diamond.color || '') + 1;
-    return Math.max(1, 11 - Math.floor((clarityScore + colorScore) / 2));
+    setMatches([]);
+    setPassed([]);
   };
 
   if (loading) {
     return (
       <Layout>
         <div className="flex items-center justify-center h-full">
-          <div className="text-center">
-            <DiamondIcon className="mx-auto h-12 w-12 animate-spin text-blue-500" />
-            <p className="mt-4 text-lg">Loading diamonds...</p>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
-
-  if (allDiamonds.length === 0) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center">
-            <DiamondIcon className="mx-auto h-16 w-16 text-gray-400" />
-            <h2 className="mt-4 text-xl font-semibold">No Diamonds Available</h2>
-            <p className="mt-2 text-gray-600">Add some diamonds to your inventory to start swiping!</p>
-          </div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
         </div>
       </Layout>
     );
@@ -79,14 +75,20 @@ const DiamondSwipe = () => {
   if (currentIndex >= allDiamonds.length) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center max-w-md mx-auto p-6">
-            <Heart className="mx-auto h-16 w-16 text-red-500" />
-            <h2 className="mt-4 text-2xl font-bold">You've seen all diamonds!</h2>
-            <p className="mt-2 text-gray-600">
-              You liked {likedDiamonds.length} diamonds out of {allDiamonds.length}
-            </p>
-            <Button onClick={reset} className="mt-4">
+        <div className="max-w-md mx-auto p-4 text-center">
+          <DiamondIcon className="h-16 w-16 mx-auto text-blue-500 mb-4" />
+          <h2 className="text-2xl font-bold mb-2">No More Diamonds!</h2>
+          <p className="text-muted-foreground mb-6">
+            You've seen all available diamonds. Check your matches or reset to start over.
+          </p>
+          <div className="space-y-4">
+            <div className="p-4 bg-green-50 rounded-lg border">
+              <h3 className="font-semibold text-green-800">Your Matches: {matches.length}</h3>
+              <p className="text-sm text-green-600">
+                Total value: ${matches.reduce((sum, d) => sum + ((d.price_per_carat || 0) * (d.weight || 0)), 0).toLocaleString()}
+              </p>
+            </div>
+            <Button onClick={resetStack} className="w-full">
               Start Over
             </Button>
           </div>
@@ -95,133 +97,138 @@ const DiamondSwipe = () => {
     );
   }
 
+  if (!currentDiamond) {
+    return (
+      <Layout>
+        <div className="max-w-md mx-auto p-4 text-center">
+          <p>No diamonds available</p>
+        </div>
+      </Layout>
+    );
+  }
+
+  const totalValue = (currentDiamond.price_per_carat || 0) * (currentDiamond.weight || 0);
+
   return (
     <Layout>
-      <div className="max-w-md mx-auto p-4 h-full flex flex-col">
+      <div className="max-w-md mx-auto p-4">
         {/* Header */}
-        <div className="text-center mb-4">
-          <h1 className="text-2xl font-bold text-gray-900">Diamond Swipe</h1>
-          <p className="text-sm text-gray-600">
-            {currentIndex + 1} of {allDiamonds.length} diamonds
-          </p>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
-          <div 
-            className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${((currentIndex + 1) / allDiamonds.length) * 100}%` }}
-          />
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h1 className="text-2xl font-bold">💎 Diamond Swipe</h1>
+            <p className="text-sm text-muted-foreground">
+              {currentIndex + 1} of {allDiamonds.length}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-medium text-green-600">
+              Matches: {matches.length}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Passed: {passed.length}
+            </p>
+          </div>
         </div>
 
         {/* Diamond Card */}
-        <div className="flex-1 flex items-center justify-center mb-6">
-          <Card className="w-full max-w-sm mx-auto shadow-2xl border-0 bg-gradient-to-br from-white to-blue-50">
-            <CardContent className="p-6">
-              {/* Diamond Icon */}
-              <div className="text-center mb-4">
-                <div className="relative">
-                  <DiamondIcon className="mx-auto h-20 w-20 text-blue-500" />
-                  <div className="absolute -top-2 -right-2">
-                    {[...Array(getQualityScore(currentDiamond))].map((_, i) => (
-                      <Star key={i} className="inline h-3 w-3 text-yellow-400 fill-current" />
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Diamond Details */}
-              <div className="space-y-3">
-                <div className="text-center">
-                  <h3 className="text-xl font-bold text-gray-900">
-                    {currentDiamond.carat}ct {currentDiamond.shape}
-                  </h3>
-                  <p className="text-lg text-blue-600 font-semibold">
-                    ${((currentDiamond.pricePerCarat || 0) * (currentDiamond.carat || 0)).toLocaleString()}
+        <Card className="mb-6 overflow-hidden shadow-xl">
+          <div className="relative h-64 bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+            <DiamondIcon className="h-24 w-24 text-blue-500" />
+            <div className="absolute top-4 right-4">
+              <Badge variant="secondary" className="bg-white/80">
+                {currentDiamond.lab || 'Certified'}
+              </Badge>
+            </div>
+          </div>
+          
+          <CardContent className="p-6">
+            <div className="space-y-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-xl font-bold">
+                    {currentDiamond.weight}ct {currentDiamond.shape}
+                  </h2>
+                  <p className="text-lg font-semibold text-blue-600">
+                    ${totalValue.toLocaleString()}
                   </p>
                 </div>
+                <Badge variant="outline" className="text-lg px-3 py-1">
+                  {currentDiamond.color} {currentDiamond.clarity}
+                </Badge>
+              </div>
 
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Color:</span>
-                    <Badge variant="outline">{currentDiamond.color}</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Clarity:</span>
-                    <Badge variant="outline">{currentDiamond.clarity}</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Cut:</span>
-                    <Badge variant="outline">{currentDiamond.cut || 'N/A'}</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Lab:</span>
-                    <Badge variant="outline">{currentDiamond.certificateNumber || 'N/A'}</Badge>
-                  </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Cut:</span>
+                  <p className="font-medium">{currentDiamond.cut || 'N/A'}</p>
                 </div>
-
-                <div className="border-t pt-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Weight:</span>
-                    <span className="font-medium">{currentDiamond.carat} carats</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Price/Carat:</span>
-                    <span className="font-medium">${(currentDiamond.pricePerCarat || 0).toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Polish:</span>
-                    <span className="font-medium">{currentDiamond.polish || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Fluorescence:</span>
-                    <span className="font-medium">{currentDiamond.fluorescence || 'None'}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Stock #:</span>
-                    <span className="font-medium">{currentDiamond.stockNumber}</span>
-                  </div>
+                <div>
+                  <span className="text-muted-foreground">Price/Ct:</span>
+                  <p className="font-medium">${(currentDiamond.price_per_carat || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Fluorescence:</span>
+                  <p className="font-medium">{currentDiamond.fluorescence || 'None'}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Stock #:</span>
+                  <p className="font-medium">{currentDiamond.stock_number}</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+
+              {/* Investment Potential */}
+              <div className="p-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <Zap className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-800">Investment Score</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Market Demand:</span>
+                  <span className="font-medium">High</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Price Trend:</span>
+                  <span className="font-medium text-green-600">↗️ +12%</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Action Buttons */}
-        <div className="flex justify-center space-x-8">
+        <div className="flex justify-center gap-4">
           <Button
-            onClick={handlePass}
             variant="outline"
             size="lg"
-            className="rounded-full h-16 w-16 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
+            className="w-16 h-16 rounded-full border-red-200 hover:bg-red-50"
+            onClick={() => handleSwipe('left')}
           >
-            <X className="h-8 w-8" />
+            <X className="h-8 w-8 text-red-500" />
           </Button>
-          
+
           <Button
-            onClick={handleLike}
             variant="outline"
             size="lg"
-            className="rounded-full h-16 w-16 border-green-300 text-green-600 hover:bg-green-50 hover:border-green-400"
+            className="w-16 h-16 rounded-full border-blue-200 hover:bg-blue-50"
+            onClick={handleSuperLike}
           >
-            <Heart className="h-8 w-8" />
+            <Star className="h-8 w-8 text-blue-500" />
+          </Button>
+
+          <Button
+            variant="outline"
+            size="lg"
+            className="w-16 h-16 rounded-full border-green-200 hover:bg-green-50"
+            onClick={() => handleSwipe('right')}
+          >
+            <Heart className="h-8 w-8 text-green-500" />
           </Button>
         </div>
 
-        {/* Stats */}
-        <div className="mt-6 flex justify-center space-x-6 text-sm text-gray-600">
-          <div className="flex items-center space-x-1">
-            <Heart className="h-4 w-4 text-green-500" />
-            <span>{likedDiamonds.length} liked</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <X className="h-4 w-4 text-red-500" />
-            <span>{passedDiamonds.length} passed</span>
-          </div>
+        <div className="text-center mt-4 text-sm text-muted-foreground">
+          <p>← Pass • ⭐ Super Like • Like →</p>
         </div>
       </div>
     </Layout>
   );
-};
-
-export default DiamondSwipe;
+}
