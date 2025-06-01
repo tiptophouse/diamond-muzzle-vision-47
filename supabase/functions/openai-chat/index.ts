@@ -27,40 +27,75 @@ serve(async (req) => {
     // Initialize Supabase client to get real inventory data
     const supabase = createClient(supabaseUrl!, supabaseKey!);
     
-    // Get current inventory data from your database
-    const { data: inventory, error } = await supabase
+    console.log('Fetching inventory data from Supabase...');
+    
+    // Get current inventory data from your database - try both tables
+    let inventory = [];
+    let inventorySource = '';
+    
+    // First try the 'inventory' table (your main table)
+    const { data: inventoryData, error: inventoryError } = await supabase
       .from('inventory')
       .select('*')
-      .limit(100); // Get up to 100 diamonds for context
+      .limit(200);
 
-    if (error) {
-      console.error('Error fetching inventory:', error);
+    if (inventoryData && inventoryData.length > 0) {
+      inventory = inventoryData;
+      inventorySource = 'inventory table';
+      console.log('Found inventory data in inventory table:', inventory.length, 'diamonds');
+    } else {
+      console.log('No data in inventory table, trying diamonds table...');
+      
+      // Fallback to 'diamonds' table if inventory is empty
+      const { data: diamondsData, error: diamondsError } = await supabase
+        .from('diamonds')
+        .select('*')
+        .limit(200);
+
+      if (diamondsData && diamondsData.length > 0) {
+        inventory = diamondsData;
+        inventorySource = 'diamonds table';
+        console.log('Found inventory data in diamonds table:', inventory.length, 'diamonds');
+      } else {
+        console.log('No data found in either table. Inventory error:', inventoryError, 'Diamonds error:', diamondsError);
+      }
     }
 
     // Build comprehensive context about the diamond inventory
     const inventoryContext = inventory && inventory.length > 0 ? `
-Current Diamond Inventory (${inventory.length} diamonds total):
+Current Diamond Inventory (${inventory.length} diamonds total from ${inventorySource}):
 
 SUMMARY:
 - Total inventory count: ${inventory.length} diamonds
-- Shapes available: ${[...new Set(inventory.map(d => d.shape))].join(', ')}
-- Carat weight range: ${Math.min(...inventory.map(d => d.weight || 0))}ct - ${Math.max(...inventory.map(d => d.weight || 0))}ct
-- Price range: $${Math.min(...inventory.map(d => (d.price_per_carat || 0) * (d.weight || 0)))} - $${Math.max(...inventory.map(d => (d.price_per_carat || 0) * (d.weight || 0)))}
-- Colors available: ${[...new Set(inventory.map(d => d.color))].join(', ')}
-- Clarities available: ${[...new Set(inventory.map(d => d.clarity))].join(', ')}
+- Shapes available: ${[...new Set(inventory.map(d => d.shape).filter(Boolean))].join(', ')}
+- Carat weight range: ${Math.min(...inventory.map(d => d.weight || d.carat || 0))}ct - ${Math.max(...inventory.map(d => d.weight || d.carat || 0))}ct
+- Price range: $${Math.min(...inventory.map(d => (d.price_per_carat || d.price || 0) * (d.weight || d.carat || 1)))} - $${Math.max(...inventory.map(d => (d.price_per_carat || d.price || 0) * (d.weight || d.carat || 1)))}
+- Colors available: ${[...new Set(inventory.map(d => d.color).filter(Boolean))].join(', ')}
+- Clarities available: ${[...new Set(inventory.map(d => d.clarity).filter(Boolean))].join(', ')}
 
 DETAILED INVENTORY:
-${inventory.map(d => 
-  `• ${d.weight}ct ${d.shape} ${d.color} ${d.clarity} ${d.cut || ''} - $${((d.price_per_carat || 0) * (d.weight || 0)).toLocaleString()} total ($${d.price_per_carat?.toLocaleString() || 0}/ct) [Stock: ${d.stock_number}] ${d.lab ? `[Lab: ${d.lab}]` : ''} ${d.certificate_number ? `[Cert: ${d.certificate_number}]` : ''}`
-).join('\n')}
+${inventory.map(d => {
+  const weight = d.weight || d.carat || 0;
+  const price = d.price_per_carat ? (d.price_per_carat * weight) : (d.price || 0);
+  return `• ${weight}ct ${d.shape || 'Unknown'} ${d.color || ''} ${d.clarity || ''} ${d.cut || ''} - $${price.toLocaleString()} total${d.price_per_carat ? ` ($${d.price_per_carat.toLocaleString()}/ct)` : ''} [Stock: ${d.stock_number || d.id}]${d.lab ? ` [Lab: ${d.lab}]` : ''}${d.certificate_number ? ` [Cert: ${d.certificate_number}]` : ''}`;
+}).join('\n')}
 
 INVENTORY ANALYTICS:
-- Average carat weight: ${(inventory.reduce((sum, d) => sum + (d.weight || 0), 0) / inventory.length).toFixed(2)}ct
-- Average price per carat: $${Math.round(inventory.reduce((sum, d) => sum + (d.price_per_carat || 0), 0) / inventory.length).toLocaleString()}
-- Total portfolio value: $${inventory.reduce((sum, d) => sum + ((d.price_per_carat || 0) * (d.weight || 0)), 0).toLocaleString()}
-- Premium stones (>2ct): ${inventory.filter(d => (d.weight || 0) > 2).length}
+- Average carat weight: ${(inventory.reduce((sum, d) => sum + (d.weight || d.carat || 0), 0) / inventory.length).toFixed(2)}ct
+- Average price per carat: $${Math.round(inventory.reduce((sum, d) => sum + (d.price_per_carat || (d.price || 0) / (d.weight || d.carat || 1)), 0) / inventory.length).toLocaleString()}
+- Total portfolio value: $${inventory.reduce((sum, d) => {
+  const weight = d.weight || d.carat || 0;
+  const price = d.price_per_carat ? (d.price_per_carat * weight) : (d.price || 0);
+  return sum + price;
+}, 0).toLocaleString()}
+- Premium stones (>2ct): ${inventory.filter(d => (d.weight || d.carat || 0) > 2).length}
 - High-value stones (>$10k/ct): ${inventory.filter(d => (d.price_per_carat || 0) > 10000).length}
-    ` : 'No diamonds currently in inventory.';
+- Largest diamond: ${Math.max(...inventory.map(d => d.weight || d.carat || 0))}ct
+- Most expensive diamond: $${Math.max(...inventory.map(d => {
+  const weight = d.weight || d.carat || 0;
+  return d.price_per_carat ? (d.price_per_carat * weight) : (d.price || 0);
+})).toLocaleString()}
+    ` : 'No diamonds currently in inventory. Data source checked: inventory and diamonds tables.';
 
     const systemPrompt = `You are an expert AI diamond assistant for Mazalbot, a luxury diamond trading platform. You have access to real-time inventory data and can provide sophisticated insights about diamonds, pricing, market analysis, and recommendations.
 
@@ -89,7 +124,7 @@ Be professional, knowledgeable, and provide actionable insights. Use the real in
       { role: 'user', content: message }
     ];
 
-    console.log('Sending request to OpenAI with inventory context');
+    console.log('Sending request to OpenAI with inventory context for', inventory.length, 'diamonds');
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -119,7 +154,8 @@ Be professional, knowledgeable, and provide actionable insights. Use the real in
     return new Response(JSON.stringify({ 
       response: aiResponse,
       status: 'success',
-      inventory_count: inventory?.length || 0
+      inventory_count: inventory?.length || 0,
+      inventory_source: inventorySource
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
