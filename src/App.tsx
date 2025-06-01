@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
+
+import React from 'react';
 import {
   BrowserRouter,
   Routes,
   Route,
-  useLocation,
 } from 'react-router-dom';
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from "@/components/theme-provider"
 import { TelegramAuthProvider } from '@/context/TelegramAuthContext';
 import InventoryPage from '@/pages/InventoryPage';
@@ -17,9 +17,11 @@ import ErrorFallback from '@/components/ErrorFallback';
 import { TrackingProvider } from '@/context/TrackingContext';
 import AnalyticsPage from '@/pages/AnalyticsPage';
 
+const queryClient = new QueryClient();
+
 function App() {
   return (
-    <QueryClient.Provider>
+    <QueryClientProvider client={queryClient}>
       <TelegramAuthProvider>
         <TrackingProvider>
           <BrowserRouter>
@@ -38,7 +40,7 @@ function App() {
           </BrowserRouter>
         </TrackingProvider>
       </TelegramAuthProvider>
-    </QueryClient.Provider>
+    </QueryClientProvider>
   );
 }
 
