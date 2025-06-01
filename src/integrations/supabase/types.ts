@@ -9,6 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      blocked_users: {
+        Row: {
+          blocked_by_telegram_id: number
+          created_at: string
+          id: string
+          reason: string | null
+          telegram_id: number
+          updated_at: string
+        }
+        Insert: {
+          blocked_by_telegram_id: number
+          created_at?: string
+          id?: string
+          reason?: string | null
+          telegram_id: number
+          updated_at?: string
+        }
+        Update: {
+          blocked_by_telegram_id?: number
+          created_at?: string
+          id?: string
+          reason?: string | null
+          telegram_id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string

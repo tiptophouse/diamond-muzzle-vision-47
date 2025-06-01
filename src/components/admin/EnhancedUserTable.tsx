@@ -5,8 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Search, Phone, Crown, Clock, TrendingUp, Download } from 'lucide-react';
+import { Search, Phone, Crown, Clock, TrendingUp, Download, Shield, UserX } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useBlockedUsers } from '@/hooks/useBlockedUsers';
 
 interface EnhancedUserData {
   id: string;
@@ -36,6 +37,9 @@ export function EnhancedUserTable({ users, getUserEngagementScore }: EnhancedUse
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'visits' | 'engagement' | 'created'>('engagement');
   const [filterPremium, setFilterPremium] = useState<'all' | 'premium' | 'free'>('all');
+  const [filterBlocked, setFilterBlocked] = useState<'all' | 'blocked' | 'active'>('all');
+  
+  const { isUserBlocked, blockUser, unblockUser, blockedUsers } = useBlockedUsers();
 
   const filteredAndSortedUsers = useMemo(() => {
     let filtered = users.filter(user => {
@@ -51,7 +55,13 @@ export function EnhancedUserTable({ users, getUserEngagementScore }: EnhancedUse
         (filterPremium === 'premium' && user.is_premium) ||
         (filterPremium === 'free' && !user.is_premium);
 
-      return searchMatch && premiumMatch;
+      const blocked = isUserBlocked(user.telegram_id);
+      const blockedMatch = 
+        filterBlocked === 'all' ||
+        (filterBlocked === 'blocked' && blocked) ||
+        (filterBlocked === 'active' && !blocked);
+
+      return searchMatch && premiumMatch && blockedMatch;
     });
 
     return filtered.sort((a, b) => {
@@ -68,11 +78,11 @@ export function EnhancedUserTable({ users, getUserEngagementScore }: EnhancedUse
           return 0;
       }
     });
-  }, [users, searchTerm, sortBy, filterPremium, getUserEngagementScore]);
+  }, [users, searchTerm, sortBy, filterPremium, filterBlocked, getUserEngagementScore, isUserBlocked]);
 
   const exportData = () => {
     const csv = [
-      ['Name', 'Telegram ID', 'Username', 'Phone', 'Premium', 'Visits', 'Engagement', 'Last Active', 'Created'].join(','),
+      ['Name', 'Telegram ID', 'Username', 'Phone', 'Premium', 'Visits', 'Engagement', 'Last Active', 'Created', 'Blocked'].join(','),
       ...filteredAndSortedUsers.map(user => [
         `"${user.first_name} ${user.last_name || ''}"`,
         user.telegram_id,
@@ -82,7 +92,8 @@ export function EnhancedUserTable({ users, getUserEngagementScore }: EnhancedUse
         user.total_visits,
         getUserEngagementScore(user),
         user.last_active || '',
-        user.created_at
+        user.created_at,
+        isUserBlocked(user.telegram_id) ? 'Yes' : 'No'
       ].join(','))
     ].join('\n');
 
@@ -100,6 +111,18 @@ export function EnhancedUserTable({ users, getUserEngagementScore }: EnhancedUse
     if (score >= 60) return 'bg-blue-500';
     if (score >= 40) return 'bg-yellow-500';
     return 'bg-gray-500';
+  };
+
+  const handleToggleBlock = async (telegramId: number) => {
+    const blocked = isUserBlocked(telegramId);
+    if (blocked) {
+      const blockedUser = blockedUsers.find(bu => bu.telegram_id === telegramId);
+      if (blockedUser) {
+        await unblockUser(blockedUser.id);
+      }
+    } else {
+      await blockUser(telegramId, 'Blocked from admin panel');
+    }
   };
 
   return (
@@ -123,8 +146,8 @@ export function EnhancedUserTable({ users, getUserEngagementScore }: EnhancedUse
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Search and Filters */}
-        <div className="flex gap-4 items-center">
-          <div className="relative flex-1">
+        <div className="flex gap-4 items-center flex-wrap">
+          <div className="relative flex-1 min-w-64">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by name, Telegram ID, username, or phone..."
@@ -152,6 +175,15 @@ export function EnhancedUserTable({ users, getUserEngagementScore }: EnhancedUse
             <option value="premium">Premium Only</option>
             <option value="free">Free Only</option>
           </select>
+          <select 
+            value={filterBlocked} 
+            onChange={(e) => setFilterBlocked(e.target.value as any)}
+            className="px-3 py-2 border rounded-md text-sm"
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active Only</option>
+            <option value="blocked">Blocked Only</option>
+          </select>
         </div>
 
         {/* Results count */}
@@ -164,9 +196,10 @@ export function EnhancedUserTable({ users, getUserEngagementScore }: EnhancedUse
           {filteredAndSortedUsers.map((user) => {
             const engagementScore = getUserEngagementScore(user);
             const fullName = `${user.first_name} ${user.last_name || ''}`.trim();
+            const blocked = isUserBlocked(user.telegram_id);
             
             return (
-              <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
+              <div key={user.id} className={`flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 ${blocked ? 'bg-red-50 border-red-200' : ''}`}>
                 <div className="flex items-center gap-4 flex-1 min-w-0">
                   <Avatar className="h-10 w-10">
                     <AvatarImage src={user.photo_url} />
@@ -180,10 +213,11 @@ export function EnhancedUserTable({ users, getUserEngagementScore }: EnhancedUse
                       <span className="font-medium truncate">{fullName}</span>
                       {user.is_premium && <Crown className="h-4 w-4 text-yellow-500" />}
                       {user.phone_number && <Phone className="h-4 w-4 text-green-500" />}
+                      {blocked && <Shield className="h-4 w-4 text-red-500" title="Blocked User" />}
                     </div>
                     
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <Badge variant="outline">{user.telegram_id}</Badge>
+                      <Badge variant={blocked ? "destructive" : "outline"}>{user.telegram_id}</Badge>
                       {user.username && <span>@{user.username}</span>}
                       {user.phone_number && <span>{user.phone_number}</span>}
                       {user.language_code && <span>{user.language_code.toUpperCase()}</span>}
@@ -220,6 +254,15 @@ export function EnhancedUserTable({ users, getUserEngagementScore }: EnhancedUse
                       Joined {formatDistanceToNow(new Date(user.created_at), { addSuffix: true })}
                     </div>
                   </div>
+
+                  <Button
+                    variant={blocked ? "outline" : "destructive"}
+                    size="sm"
+                    onClick={() => handleToggleBlock(user.telegram_id)}
+                  >
+                    <UserX className="h-4 w-4 mr-1" />
+                    {blocked ? 'Unblock' : 'Block'}
+                  </Button>
                 </div>
               </div>
             );
