@@ -8,6 +8,7 @@ interface ErrorBoundaryState {
   hasError: boolean;
   error?: Error;
   errorInfo?: React.ErrorInfo;
+  retryCount: number;
 }
 
 interface ErrorBoundaryProps {
@@ -15,63 +16,85 @@ interface ErrorBoundaryProps {
 }
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  private retryCount = 0;
-  private maxRetries = 3;
+  private maxRetries = 2; // Reduced from 3 for production stability
 
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, retryCount: 0 };
   }
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('🚨 ErrorBoundary caught an error:', error);
-    console.error('🚨 Error info:', errorInfo);
+    console.error('🚨 ErrorBoundary caught error:', error);
+    console.error('🚨 Component stack:', errorInfo.componentStack);
     
-    // Store error info for debugging
     this.setState({ errorInfo });
     
-    // Log additional context
-    console.error('🚨 Component stack:', errorInfo.componentStack);
-    console.error('🚨 Error stack:', error.stack);
+    // Critical: Never reload the page in production Telegram environment
+    if (window.Telegram?.WebApp) {
+      console.log('📱 In Telegram - preventing page reload');
+    }
   }
 
-  handleRefresh = () => {
-    console.log('🔄 Refreshing application...');
-    // Reset the error boundary state
-    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+  handleSoftRetry = () => {
+    const newRetryCount = this.state.retryCount + 1;
     
-    // Force reload the page
-    window.location.reload();
-  };
-
-  handleRetry = () => {
-    if (this.retryCount < this.maxRetries) {
-      this.retryCount++;
-      console.log(`🔄 Retrying (attempt ${this.retryCount}/${this.maxRetries})`);
+    if (newRetryCount <= this.maxRetries) {
+      console.log(`🔄 Soft retry attempt ${newRetryCount}/${this.maxRetries}`);
       
-      // Reset the error boundary state to retry rendering
-      this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+      // Soft reset - don't reload page
+      this.setState({ 
+        hasError: false, 
+        error: undefined, 
+        errorInfo: undefined,
+        retryCount: newRetryCount
+      });
     } else {
-      console.log('❌ Max retries reached, forcing refresh');
-      this.handleRefresh();
+      console.log('❌ Max retries reached, showing error state');
     }
   };
 
   handleGoHome = () => {
-    console.log('🏠 Navigating to home page...');
-    // Reset state and navigate to home
-    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
-    window.location.href = '/';
+    console.log('🏠 Navigating to home (soft navigation)');
+    
+    // Soft reset without page reload
+    this.setState({ 
+      hasError: false, 
+      error: undefined, 
+      errorInfo: undefined,
+      retryCount: 0
+    });
+    
+    // Use hash navigation instead of page reload
+    if (window.location.hash !== '#/') {
+      window.location.hash = '#/';
+    }
+  };
+
+  handleForceRefresh = () => {
+    // Only use this as last resort and warn user
+    console.log('⚠️ Force refresh requested - this will reload the app');
+    
+    if (window.Telegram?.WebApp) {
+      // In Telegram, try to close the app instead of reloading
+      try {
+        window.Telegram.WebApp.close();
+      } catch {
+        // If close fails, then reload as last resort
+        window.location.reload();
+      }
+    } else {
+      window.location.reload();
+    }
   };
 
   render() {
     if (this.state.hasError) {
-      const { error, errorInfo } = this.state;
-      const canRetry = this.retryCount < this.maxRetries;
+      const { error, errorInfo, retryCount } = this.state;
+      const canRetry = retryCount < this.maxRetries;
       
       return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
@@ -82,47 +105,44 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               </div>
               <CardTitle className="text-slate-800">Something went wrong</CardTitle>
               <CardDescription className="text-slate-600">
-                The application encountered an unexpected error.
+                The app encountered an error but is trying to recover.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-sm text-slate-700 space-y-2">
-                <p>We apologize for the inconvenience. The app will try to recover automatically.</p>
+                <p>Don't worry - this won't close your Telegram app.</p>
                 
-                <details className="text-xs">
-                  <summary className="cursor-pointer font-medium">Error details</summary>
-                  <pre className="mt-2 p-3 bg-slate-50 rounded text-slate-600 whitespace-pre-wrap overflow-auto max-h-40 text-xs">
-                    <strong>Error:</strong> {error?.message || 'Unknown error'}
-                    {error?.stack && (
-                      <>
-                        {'\n\n'}<strong>Stack:</strong> {error.stack}
-                      </>
-                    )}
-                    {errorInfo?.componentStack && (
-                      <>
-                        {'\n\n'}<strong>Component Stack:</strong> {errorInfo.componentStack}
-                      </>
-                    )}
-                  </pre>
-                </details>
+                {process.env.NODE_ENV === 'development' && (
+                  <details className="text-xs">
+                    <summary className="cursor-pointer font-medium">Error details (dev only)</summary>
+                    <pre className="mt-2 p-3 bg-slate-50 rounded text-slate-600 whitespace-pre-wrap overflow-auto max-h-40 text-xs">
+                      <strong>Error:</strong> {error?.message || 'Unknown error'}
+                      {error?.stack && (
+                        <>
+                          {'\n\n'}<strong>Stack:</strong> {error.stack.substring(0, 500)}
+                        </>
+                      )}
+                    </pre>
+                  </details>
+                )}
               </div>
               
               <div className="flex gap-2 flex-col sm:flex-row">
                 {canRetry ? (
                   <Button 
-                    onClick={this.handleRetry} 
+                    onClick={this.handleSoftRetry} 
                     className="bg-blue-500 hover:bg-blue-600 text-white flex-1"
                   >
                     <RefreshCw size={16} className="mr-2" />
-                    Retry ({this.maxRetries - this.retryCount} left)
+                    Try Again ({this.maxRetries - retryCount} left)
                   </Button>
                 ) : (
                   <Button 
-                    onClick={this.handleRefresh} 
-                    className="bg-blue-500 hover:bg-blue-600 text-white flex-1"
+                    onClick={this.handleForceRefresh} 
+                    className="bg-orange-500 hover:bg-orange-600 text-white flex-1"
                   >
                     <RefreshCw size={16} className="mr-2" />
-                    Refresh App
+                    Restart App
                   </Button>
                 )}
                 
@@ -137,7 +157,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               </div>
               
               <div className="text-xs text-slate-500 text-center">
-                If the problem persists, please contact support with the error details above.
+                Error #{retryCount + 1} • Telegram mini app safe mode
               </div>
             </CardContent>
           </Card>

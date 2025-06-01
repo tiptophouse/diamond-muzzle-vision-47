@@ -21,11 +21,22 @@ import NotFound from "./pages/NotFound";
 import DiamondSwipe from "./pages/DiamondSwipe";
 import AdminAnalytics from "./pages/AdminAnalytics";
 
+// Optimized React Query client for production stability
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 3,
-      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+      retry: 1, // Reduced from 3 for production stability
+      retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 3000), // Max 3 seconds
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime)
+      refetchOnWindowFocus: false, // Prevent unnecessary refetches in Telegram
+      refetchOnReconnect: true,
+      networkMode: 'offlineFirst', // Better for unstable Telegram connections
+    },
+    mutations: {
+      retry: 1, // Reduced retries for mutations
+      retryDelay: 1000,
+      networkMode: 'offlineFirst',
     },
   },
 });

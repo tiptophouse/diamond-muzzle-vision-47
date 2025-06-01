@@ -11,7 +11,7 @@ interface AuthGuardProps {
 export function AuthGuard({ children, fallback }: AuthGuardProps) {
   const { isAuthenticated, isLoading, isTelegramEnvironment, user } = useTelegramAuth();
 
-  // Enhanced loading state with better UX
+  // Stable loading state - no timeouts or reload risks
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
@@ -27,7 +27,7 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
     );
   }
 
-  // Enhanced development mode indicator with better styling
+  // Development mode indicator - stable, no reload risks
   if (!isTelegramEnvironment && user) {
     return (
       <div className="min-h-screen bg-background">
@@ -45,12 +45,20 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
     );
   }
 
-  // Always render the app if we have a user - never show error screens
+  // Critical: Always render if we have a user - never show error screens that could cause reloads
   if (user) {
     return <>{children}</>;
   }
 
-  // Ultimate fallback - should never reach here with enhanced bulletproof init
-  console.log('🚨 AuthGuard ultimate fallback triggered');
-  return <>{children}</>;
+  // Final fallback - should never reach here with stable init, but if it does, show safe loading state
+  console.log('🚨 AuthGuard final fallback - showing safe loading state');
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
+      <div className="text-center p-8 max-w-sm">
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-6"></div>
+        <h3 className="text-xl font-semibold text-blue-700 mb-3">Connecting...</h3>
+        <p className="text-blue-600 text-sm">Please wait while we establish your session</p>
+      </div>
+    </div>
+  );
 }

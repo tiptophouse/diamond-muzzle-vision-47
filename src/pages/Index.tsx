@@ -14,7 +14,7 @@ const Index = () => {
     trackPageVisit('/', 'Diamond Muzzle - Home');
   }, [trackPageVisit]);
 
-  // If user is admin, show admin selection
+  // If user is admin, show admin selection (no reload risks)
   if (isAuthenticated && user?.id === ADMIN_TELEGRAM_ID) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-purple-50">
@@ -30,20 +30,20 @@ const Index = () => {
           </div>
           
           <div className="space-y-4">
-            <a 
-              href="#/admin" 
+            <button 
+              onClick={() => window.location.hash = '#/admin'} 
               className="block w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 shadow-lg"
             >
               🎯 Admin Control Panel
               <div className="text-sm opacity-90 mt-1">Full user management system</div>
-            </a>
-            <a 
-              href="#/" 
+            </button>
+            <button 
+              onClick={() => window.location.hash = '#/'} 
               className="block w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 shadow-lg"
             >
               💎 Regular Dashboard
               <div className="text-sm opacity-90 mt-1">Standard user interface</div>
-            </a>
+            </button>
           </div>
           
           <div className="text-sm text-gray-500 mt-6">
@@ -54,11 +54,12 @@ const Index = () => {
     );
   }
 
-  // For regular users, redirect to dashboard
+  // For regular users, redirect to dashboard (using React Router, no page reload)
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
   }
 
+  // Safe loading state for unauthenticated users
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="text-center">
