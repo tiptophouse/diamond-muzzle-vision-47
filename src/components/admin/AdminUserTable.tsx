@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { users } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { AdminUserSearch } from './AdminUserSearch';
 import { AdminUserCard } from './AdminUserCard';
 
@@ -28,12 +28,12 @@ export function AdminUserTable({
   onDeleteUser 
 }: AdminUserTableProps) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200">
-      <div className="p-6 border-b border-gray-200">
+    <div className="bg-gray-50 border border-gray-200">
+      <div className="p-6 border-b border-gray-300 bg-white">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <users className="h-6 w-6 text-blue-600" />
+              <Users className="h-6 w-6 text-blue-600" />
               User Management ({filteredUsers.length} users)
             </h2>
             <p className="text-gray-600 text-sm mt-1">
@@ -45,7 +45,7 @@ export function AdminUserTable({
         <AdminUserSearch searchTerm={searchTerm} onSearchChange={onSearchChange} />
       </div>
 
-      <div className="divide-y divide-gray-100">
+      <div className="bg-white divide-y divide-gray-200">
         {filteredUsers.map((user) => {
           const blocked = isUserBlocked(user.telegram_id);
           const engagementScore = getUserEngagementScore(user);
