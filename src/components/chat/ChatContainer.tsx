@@ -4,11 +4,11 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { ChatHeader } from './ChatHeader';
 import { ChatMessages } from './ChatMessages';
 import { ChatInput } from './ChatInput';
-import { useOpenAIChat } from '@/hooks/useOpenAIChat';
+import { useSmartChat } from '@/hooks/useSmartChat';
 
 export const ChatContainer = () => {
   const { user } = useTelegramAuth();
-  const { messages, sendMessage, isLoading } = useOpenAIChat();
+  const { messages, sendMessage, isLoading } = useSmartChat();
 
   const handleSendMessage = async (content: string) => {
     await sendMessage(content);
@@ -18,7 +18,7 @@ export const ChatContainer = () => {
     <div className="flex flex-col h-full bg-background">
       <ChatHeader 
         title="Diamond Assistant"
-        subtitle="AI-powered diamond expert"
+        subtitle="AI-powered diamond expert with live inventory access"
         isOnline={true}
       />
       
