@@ -43,7 +43,7 @@ interface NotificationData {
 
 interface UserAnalytics {
   total_visits?: number;
-  total_time_spent?: string;
+  total_time_spent?: unknown;
   last_active?: string;
   lifetime_value?: number;
   api_calls_count?: number;
