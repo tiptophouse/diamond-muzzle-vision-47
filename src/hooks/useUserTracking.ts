@@ -9,7 +9,7 @@ interface UserSession {
   user_id?: string;
   session_start: string;
   session_end?: string;
-  total_duration?: string;
+  total_duration?: string | null;
   pages_visited: number;
   is_active: boolean;
   user_agent?: string;
@@ -22,7 +22,7 @@ interface PageVisit {
   page_path: string;
   page_title?: string;
   visit_timestamp: string;
-  time_spent?: string;
+  time_spent?: string | null;
   referrer?: string;
   created_at: string;
 }
@@ -138,7 +138,16 @@ export function useUserTracking() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setSessions(data || []);
+      
+      // Map the data to ensure proper types
+      const mappedSessions = (data || []).map(session => ({
+        ...session,
+        total_duration: session.total_duration ? String(session.total_duration) : null,
+        pages_visited: session.pages_visited || 0,
+        is_active: session.is_active || false
+      }));
+      
+      setSessions(mappedSessions);
     } catch (error) {
       console.error('Error fetching sessions:', error);
     }
@@ -153,7 +162,14 @@ export function useUserTracking() {
         .order('visit_timestamp', { ascending: false });
 
       if (error) throw error;
-      setPageVisits(data || []);
+      
+      // Map the data to ensure proper types
+      const mappedVisits = (data || []).map(visit => ({
+        ...visit,
+        time_spent: visit.time_spent ? String(visit.time_spent) : null
+      }));
+      
+      setPageVisits(mappedVisits);
     } catch (error) {
       console.error('Error fetching page visits:', error);
     } finally {

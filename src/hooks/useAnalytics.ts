@@ -7,7 +7,7 @@ interface UserAnalytics {
   telegram_id: number;
   user_id?: string;
   total_visits: number;
-  total_time_spent: string;
+  total_time_spent: string | null;
   last_active?: string;
   lifetime_value: number;
   api_calls_count: number;
@@ -32,7 +32,22 @@ export function useAnalytics() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAnalytics(data || []);
+      
+      // Map the data to ensure proper types
+      const mappedData = (data || []).map(item => ({
+        ...item,
+        total_time_spent: item.total_time_spent ? String(item.total_time_spent) : null,
+        total_visits: item.total_visits || 0,
+        lifetime_value: item.lifetime_value || 0,
+        api_calls_count: item.api_calls_count || 0,
+        storage_used_mb: item.storage_used_mb || 0,
+        cost_per_user: item.cost_per_user || 0,
+        revenue_per_user: item.revenue_per_user || 0,
+        profit_loss: item.profit_loss || 0,
+        subscription_status: item.subscription_status || 'free'
+      }));
+      
+      setAnalytics(mappedData);
     } catch (error) {
       console.error('Error fetching analytics:', error);
     } finally {
