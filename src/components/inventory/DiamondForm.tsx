@@ -18,16 +18,19 @@ interface DiamondFormProps {
 export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: DiamondFormProps) {
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<DiamondFormData>({
     defaultValues: diamond ? {
-      stockNumber: diamond.stockNumber,
-      shape: diamond.shape,
-      carat: diamond.carat,
-      color: diamond.color,
-      clarity: diamond.clarity,
-      cut: diamond.cut,
-      price: diamond.price,
-      status: diamond.status,
+      stockNumber: diamond.stockNumber || '',
+      shape: diamond.shape || 'Round',
+      carat: diamond.carat || 1,
+      color: diamond.color || 'G',
+      clarity: diamond.clarity || 'VS1',
+      cut: diamond.cut || 'Excellent',
+      price: diamond.price || 0,
+      status: diamond.status || 'Available',
       imageUrl: diamond.imageUrl || '',
     } : {
+      stockNumber: '',
+      carat: 1,
+      price: 0,
       status: 'Available',
       imageUrl: '',
       shape: 'Round',
@@ -38,29 +41,52 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
   });
 
   React.useEffect(() => {
-    if (diamond) {
+    if (diamond && diamond.id) {
       console.log('Resetting form with diamond data:', diamond);
       reset({
-        stockNumber: diamond.stockNumber,
-        shape: diamond.shape,
-        carat: diamond.carat,
-        color: diamond.color,
-        clarity: diamond.clarity,
-        cut: diamond.cut,
-        price: diamond.price,
-        status: diamond.status,
+        stockNumber: diamond.stockNumber || '',
+        shape: diamond.shape || 'Round',
+        carat: diamond.carat || 1,
+        color: diamond.color || 'G',
+        clarity: diamond.clarity || 'VS1',
+        cut: diamond.cut || 'Excellent',
+        price: diamond.price || 0,
+        status: diamond.status || 'Available',
         imageUrl: diamond.imageUrl || '',
       });
     }
-  }, [diamond, reset]);
+  }, [diamond?.id, reset]);
 
   const handleFormSubmit = (data: DiamondFormData) => {
     console.log('Form submitted with data:', data);
     
+    // Validate required fields
+    if (!data.stockNumber || data.stockNumber.trim() === '') {
+      console.error('Stock number is required');
+      return;
+    }
+    
+    if (!data.carat || data.carat <= 0) {
+      console.error('Valid carat weight is required');
+      return;
+    }
+    
+    if (!data.price || data.price <= 0) {
+      console.error('Valid price is required');
+      return;
+    }
+    
     const formattedData = {
       ...data,
+      stockNumber: data.stockNumber.trim(),
       carat: Number(data.carat),
       price: Number(data.price),
+      shape: data.shape || 'Round',
+      color: data.color || 'G',
+      clarity: data.clarity || 'VS1',
+      cut: data.cut || 'Excellent',
+      status: data.status || 'Available',
+      imageUrl: data.imageUrl?.trim() || '',
     };
     
     console.log('Formatted form data:', formattedData);
@@ -92,7 +118,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
         <DiamondSelectField
           id="shape"
           label="Shape"
-          value={watch('shape')}
+          value={watch('shape') || 'Round'}
           onValueChange={(value) => setValue('shape', value)}
           options={shapes}
         />
@@ -114,7 +140,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
         <DiamondSelectField
           id="color"
           label="Color"
-          value={watch('color')}
+          value={watch('color') || 'G'}
           onValueChange={(value) => setValue('color', value)}
           options={colors}
         />
@@ -122,7 +148,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
         <DiamondSelectField
           id="clarity"
           label="Clarity"
-          value={watch('clarity')}
+          value={watch('clarity') || 'VS1'}
           onValueChange={(value) => setValue('clarity', value)}
           options={clarities}
         />
@@ -130,7 +156,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
         <DiamondSelectField
           id="cut"
           label="Cut"
-          value={watch('cut')}
+          value={watch('cut') || 'Excellent'}
           onValueChange={(value) => setValue('cut', value)}
           options={cuts}
         />
@@ -151,7 +177,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
         <DiamondSelectField
           id="status"
           label="Status"
-          value={watch('status')}
+          value={watch('status') || 'Available'}
           onValueChange={(value) => setValue('status', value)}
           options={statuses}
         />

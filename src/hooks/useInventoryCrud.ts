@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { api, apiEndpoints } from '@/lib/api';
@@ -10,6 +11,12 @@ export function useInventoryCrud(onSuccess?: () => void) {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Helper function to validate UUID
+  const isValidUUID = (uuid: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+  };
 
   const addDiamond = async (data: DiamondFormData) => {
     if (!user?.id) {
@@ -67,24 +74,36 @@ export function useInventoryCrud(onSuccess?: () => void) {
       return false;
     }
 
+    // Validate diamond ID
+    if (!diamondId || !isValidUUID(diamondId)) {
+      console.error('Invalid diamond ID:', diamondId);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Invalid diamond ID provided",
+      });
+      return false;
+    }
+
     setIsLoading(true);
     try {
       console.log('Updating diamond:', diamondId, 'with data:', data);
       
-      // First try to update in Supabase
+      // Prepare update data with proper validation
       const updateData = {
-        stock_number: data.stockNumber,
-        shape: data.shape,
-        weight: data.carat,
-        color: data.color,
-        clarity: data.clarity,
-        cut: data.cut,
-        price_per_carat: data.carat > 0 ? Math.round(data.price / data.carat) : 0,
-        status: data.status,
+        stock_number: data.stockNumber || '',
+        shape: data.shape || 'Round',
+        weight: data.carat && data.carat > 0 ? data.carat : 1,
+        color: data.color || 'G',
+        clarity: data.clarity || 'VS1',
+        cut: data.cut || 'Excellent',
+        price_per_carat: data.carat > 0 ? Math.round(data.price / data.carat) : Math.round(data.price),
+        status: data.status || 'Available',
         picture: data.imageUrl || null,
       };
 
       console.log('Supabase update data:', updateData);
+      console.log('Updating diamond with ID:', diamondId, 'for user:', user.id);
 
       const { data: updatedData, error } = await supabase
         .from('inventory')
@@ -96,7 +115,19 @@ export function useInventoryCrud(onSuccess?: () => void) {
 
       if (error) {
         console.error('Supabase update error:', error);
-        throw new Error(`Database update failed: ${error.message}`);
+        
+        // Provide more specific error messages
+        if (error.message.includes('invalid input syntax for type uuid')) {
+          throw new Error('Invalid ID format. Please try refreshing the page.');
+        } else if (error.message.includes('row-level security')) {
+          throw new Error('You do not have permission to update this diamond.');
+        } else {
+          throw new Error(`Database update failed: ${error.message}`);
+        }
+      }
+
+      if (!updatedData) {
+        throw new Error('Diamond not found or no changes were made');
       }
 
       console.log('Diamond updated successfully in Supabase:', updatedData);
@@ -128,6 +159,17 @@ export function useInventoryCrud(onSuccess?: () => void) {
         variant: "destructive",
         title: "Error",
         description: "User not authenticated",
+      });
+      return false;
+    }
+
+    // Validate diamond ID
+    if (!diamondId || !isValidUUID(diamondId)) {
+      console.error('Invalid diamond ID for deletion:', diamondId);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Invalid diamond ID provided",
       });
       return false;
     }
