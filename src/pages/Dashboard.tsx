@@ -1,27 +1,22 @@
 
 import { Layout } from "@/components/layout/Layout";
-import { DiamondViewer } from "@/components/dashboard/DiamondViewer";
-import { EnhancedStatsGrid } from "@/components/dashboard/EnhancedStatsGrid";
+import { StatCard } from "@/components/dashboard/StatCard";
 import { InventoryChart } from "@/components/dashboard/InventoryChart";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useInventoryData } from "@/hooks/useInventoryData";
 import { useLeads } from "@/hooks/useLeads";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useNotifications } from "@/hooks/useNotifications";
-import { TrendingUp, Users, Crown, Bell, Sparkles, BarChart3 } from "lucide-react";
-import { useTheme } from "@/contexts/ThemeContext";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { TrendingUp, Users, Crown, Bell } from "lucide-react";
 
 export default function Dashboard() {
   const { allDiamonds, loading: inventoryLoading } = useInventoryData();
   const { leads, isLoading: leadsLoading } = useLeads();
   const { subscriptions, isLoading: subscriptionsLoading } = useSubscriptions();
   const { notifications } = useNotifications();
-  const { theme, toggleTheme } = useTheme();
-  const isMobile = useIsMobile();
 
   // Calculate real metrics
+  const totalInventory = allDiamonds.length;
   const activeLeads = leads.filter(lead => lead.status === 'active').length;
   const activeSubscriptions = subscriptions.filter(sub => sub.status === 'active').length;
   const unreadNotifications = notifications.filter(n => !n.read).length;
@@ -39,7 +34,7 @@ export default function Dashboard() {
   const chartData = Object.entries(shapeData).map(([name, value]) => ({
     name,
     value,
-    color: theme === 'dark' ? '#a855f7' : '#7a63f5'
+    color: '#7a63f5'
   }));
 
   // Recent activity data
@@ -61,23 +56,19 @@ export default function Dashboard() {
   if (inventoryLoading || leadsLoading || subscriptionsLoading) {
     return (
       <Layout>
-        <div className={`space-y-4 sm:space-y-6 p-3 sm:p-6 ${isMobile ? 'mobile-spacing' : ''}`}>
+        <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
-            <Button variant="outline" onClick={toggleTheme} className="glass-card text-xs sm:text-sm">
-              <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              {theme === 'dark' ? 'Light' : 'Dark'} Mode
-            </Button>
+            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           </div>
-          <EnhancedStatsGrid diamonds={[]} loading={true} />
-          <div className={`grid gap-4 sm:gap-6 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2'}`}>
-            <DiamondViewer diamonds={[]} loading={true} />
-            <Card className="glass-card animate-pulse">
-              <CardContent className="p-4 sm:p-6">
-                <div className="h-4 bg-muted rounded w-3/4 mb-4"></div>
-                <div className="h-48 sm:h-64 bg-muted rounded"></div>
-              </CardContent>
-            </Card>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardContent className="p-6">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </Layout>
@@ -86,87 +77,62 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <div className={`space-y-4 sm:space-y-6 p-3 sm:p-6 telegram-safe ${isMobile ? 'mobile-spacing' : ''}`}>
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-diamond-600 via-purple-600 to-diamond-700 bg-clip-text text-transparent">
-              Diamond Muzzle
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-diamond-600 to-diamond-700 bg-clip-text text-transparent">
+              Dashboard
             </h1>
-            <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-base">
-              Premium diamond management at your fingertips
+            <p className="text-muted-foreground">
+              Welcome back! Here's what's happening with your diamond business.
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={toggleTheme} className="glass-card text-xs sm:text-sm px-2 sm:px-4">
-              <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              {theme === 'dark' ? 'Light' : 'Dark'} Mode
-            </Button>
-          </div>
         </div>
 
-        <EnhancedStatsGrid diamonds={allDiamonds} loading={inventoryLoading} />
-
-        <div className={`grid gap-4 sm:gap-6 ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-3'}`}>
-          <div className={isMobile ? 'col-span-1' : 'lg:col-span-2'}>
-            <DiamondViewer diamonds={allDiamonds} loading={inventoryLoading} />
-          </div>
-          
-          <Card className="glass-card">
-            <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-                <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-diamond-600" />
-                Quick Insights
-              </CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                Key metrics at a glance
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-6">
-              <div className="flex justify-between items-center p-2 sm:p-3 rounded-lg bg-gradient-to-r from-diamond-50 to-blue-50 dark:from-diamond-950 dark:to-blue-950 border">
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <Users className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
-                  <span className="text-xs sm:text-sm font-medium">Active Leads</span>
-                </div>
-                <span className="text-sm sm:text-lg font-bold text-green-600">{activeLeads}</span>
-              </div>
-              
-              <div className="flex justify-between items-center p-2 sm:p-3 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 border">
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <Crown className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
-                  <span className="text-xs sm:text-sm font-medium">Subscriptions</span>
-                </div>
-                <span className="text-sm sm:text-lg font-bold text-purple-600">{activeSubscriptions}</span>
-              </div>
-              
-              <div className="flex justify-between items-center p-2 sm:p-3 rounded-lg bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950 dark:to-red-950 border">
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <Bell className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
-                  <span className="text-xs sm:text-sm font-medium">Notifications</span>
-                </div>
-                <span className="text-sm sm:text-lg font-bold text-orange-600">{unreadNotifications}</span>
-              </div>
-
-              <div className="pt-3 sm:pt-4 border-t">
-                <div className="text-center">
-                  <p className="text-lg sm:text-2xl font-bold text-diamond-600 mb-1">
-                    ${totalValue.toLocaleString()}
-                  </p>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Total Portfolio Value</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Total Inventory"
+            value={totalInventory}
+            description="Diamonds in stock"
+            icon={TrendingUp}
+            trend={12}
+            trendLabel="from last month"
+          />
+          <StatCard
+            title="Active Leads"
+            value={activeLeads}
+            description="Customer inquiries"
+            icon={Users}
+            trend={8}
+            trendLabel="from last week"
+          />
+          <StatCard
+            title="Active Subscriptions"
+            value={activeSubscriptions}
+            description="Current plans"
+            icon={Crown}
+            trend={0}
+            trendLabel="unchanged"
+          />
+          <StatCard
+            title="Notifications"
+            value={unreadNotifications}
+            description="Unread alerts"
+            icon={Bell}
+            trend={-3}
+            trendLabel="from yesterday"
+          />
         </div>
 
-        <div className={`grid gap-4 sm:gap-6 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2'}`}>
-          <Card className="glass-card">
-            <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="text-sm sm:text-base">Inventory Distribution</CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                Diamond shapes in your collection
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="md:col-span-1">
+            <CardHeader>
+              <CardTitle>Inventory Overview</CardTitle>
+              <CardDescription>
+                Your diamond collection at a glance
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-3 sm:p-6">
+            <CardContent>
               <InventoryChart 
                 data={chartData}
                 title="Diamonds by Shape"
@@ -175,30 +141,30 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="glass-card">
-            <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="text-sm sm:text-base">Recent Activity</CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
+          <Card className="md:col-span-1">
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>
                 Latest updates and notifications
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-3 sm:p-6">
-              <div className="space-y-2 sm:space-y-3">
+            <CardContent>
+              <div className="space-y-4">
                 {recentActivity.length === 0 ? (
-                  <p className="text-xs sm:text-sm text-muted-foreground text-center py-6 sm:py-8">
+                  <p className="text-sm text-muted-foreground text-center py-4">
                     No recent activity to display
                   </p>
                 ) : (
                   recentActivity.map((activity, index) => (
-                    <div key={index} className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg bg-gradient-to-r from-diamond-50 to-blue-50 dark:from-diamond-950 dark:to-blue-950 border border-diamond-200 dark:border-diamond-800">
+                    <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-diamond-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 border border-diamond-200 dark:border-gray-600">
                       <div className={`p-1 rounded-full ${
-                        activity.type === 'lead' ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400'
+                        activity.type === 'lead' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
                       }`}>
-                        {activity.type === 'lead' ? <Users className="h-2 w-2 sm:h-3 sm:w-3" /> : <Bell className="h-2 w-2 sm:h-3 sm:w-3" />}
+                        {activity.type === 'lead' ? <Users className="h-3 w-3" /> : <Bell className="h-3 w-3" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs sm:text-sm font-medium text-foreground truncate">{activity.title}</p>
-                        <p className="text-xs text-muted-foreground truncate">{activity.description}</p>
+                        <p className="text-sm font-medium text-foreground">{activity.title}</p>
+                        <p className="text-xs text-muted-foreground">{activity.description}</p>
                         <p className="text-xs text-muted-foreground mt-1">
                           {new Date(activity.time).toLocaleDateString()}
                         </p>
@@ -207,6 +173,50 @@ export default function Dashboard() {
                   ))
                 )}
               </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-3">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Inventory Value</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-diamond-600">
+                ${totalValue.toLocaleString()}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Total collection value
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Lead Conversion</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {leads.length > 0 ? Math.round((activeLeads / leads.length) * 100) : 0}%
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Active lead rate
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Average Price</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">
+                ${totalInventory > 0 ? Math.round(totalValue / totalInventory).toLocaleString() : 0}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Per diamond
+              </p>
             </CardContent>
           </Card>
         </div>

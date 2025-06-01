@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import { TelegramAuthProvider } from "@/context/TelegramAuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
@@ -13,6 +13,7 @@ import InventoryPage from "./pages/InventoryPage";
 import UploadPage from "./pages/UploadPage";
 import SettingsPage from "./pages/SettingsPage";
 import InsightsPage from "./pages/InsightsPage";
+import ReportsPage from "./pages/ReportsPage";
 import ChatPage from "./pages/ChatPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -41,13 +42,14 @@ const App = () => (
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/inventory" element={<InventoryPage />} />
                   <Route path="/upload" element={<UploadPage />} />
+                  <Route path="/reports" element={<ReportsPage />} />
+                  <Route path="/reports/:reportId" element={<ReportsPage />} />
+                  <Route path="/:reportId" element={<ReportsPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="/insights" element={<InsightsPage />} />
                   <Route path="/chat" element={<ChatPage />} />
                   <Route path="/notifications" element={<NotificationsPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
-                  {/* Redirect old report routes to dashboard */}
-                  <Route path="/:reportId" element={<Navigate to="/" replace />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </AuthGuard>

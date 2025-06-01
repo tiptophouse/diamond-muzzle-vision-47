@@ -15,11 +15,10 @@ export const ChatContainer = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full bg-white">
       <ChatHeader 
         title="Diamond Assistant"
         subtitle="AI-powered diamond expert"
-        isOnline={true}
       />
       
       <div className="flex-1 overflow-hidden">
@@ -31,7 +30,7 @@ export const ChatContainer = () => {
             user_id: msg.role === 'user' ? user?.id?.toString() || null : 'ai',
             created_at: msg.timestamp,
           }))}
-          isLoading={isLoading}
+          isLoading={false}
           currentUserId={user?.id?.toString()}
         />
       </div>
