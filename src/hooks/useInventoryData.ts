@@ -1,14 +1,15 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { api, apiEndpoints } from "@/lib/api";
 import { convertDiamondsToInventoryFormat } from "@/services/diamondAnalytics";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { useTracking } from '@/context/TrackingContext';
 
 export function useInventoryData() {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
+  const { trackCost } = useTracking();
   const [loading, setLoading] = useState(true);
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
   const [allDiamonds, setAllDiamonds] = useState<Diamond[]>([]);
@@ -24,6 +25,12 @@ export function useInventoryData() {
     try {
       console.log('Fetching inventory data from FastAPI for user:', user.id);
       
+      // Track API call cost
+      trackCost('api_call', 'fastapi', 0.001, {
+        endpoint: 'getAllStones',
+        user_id: user.id
+      });
+
       // Use the authenticated user's ID
       const response = await api.get<any[]>(apiEndpoints.getAllStones(user.id));
       
