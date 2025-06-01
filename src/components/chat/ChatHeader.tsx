@@ -26,12 +26,10 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
       <div className="flex-1">
         <div className="flex items-center gap-2">
           <h2 className="font-semibold text-foreground">{title}</h2>
-          {isOnline && (
-            <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse" />
-              Online
-            </Badge>
-          )}
+          <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs">
+            <div className="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse" />
+            OpenAI Connected
+          </Badge>
         </div>
         {subtitle && (
           <p className="text-sm text-muted-foreground">{subtitle}</p>
