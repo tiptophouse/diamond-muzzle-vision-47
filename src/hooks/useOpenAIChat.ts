@@ -16,7 +16,7 @@ export function useOpenAIChat() {
     {
       id: 'welcome',
       role: 'assistant',
-      content: '💎 Welcome to Diamond Assistant! I\'m connected to your live inventory database and can answer questions about your actual diamonds, stock counts, pricing, and provide market insights. Ask me anything like "How many diamonds do I have?" or "What\'s my most valuable stone?"',
+      content: '💎 Welcome to Diamond Assistant! I\'m here to help you with inventory management, pricing analysis, market insights, and any diamond-related questions. How can I assist you today?',
       timestamp: new Date().toISOString(),
     }
   ]);
@@ -49,7 +49,7 @@ export function useOpenAIChat() {
           messages: [
             {
               role: 'system',
-              content: 'You are a Diamond Assistant, an expert AI specialized in diamond inventory management, market analysis, pricing, and trading. You have access to the user\'s live inventory data and can provide specific answers about their actual diamond stock. When provided with inventory data, use it to give precise, data-driven responses. Always be helpful, accurate, and professional in your responses related to the diamond industry.'
+              content: 'You are a Diamond Assistant, an expert AI specialized in diamond inventory management, market analysis, pricing, and trading. You help users with diamond-related questions, inventory management, market insights, pricing analysis, quality assessment, and investment recommendations. Always provide helpful, accurate, and professional responses related to the diamond industry.'
             },
             ...messages
               .filter(msg => msg.id !== 'welcome')
@@ -93,7 +93,7 @@ export function useOpenAIChat() {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'I apologize, but I\'m currently experiencing connection issues. As your Diamond Assistant with live inventory access, I can help with:\n\n• Real-time inventory counts and analysis\n• Specific diamond details and pricing\n• Market trends and insights\n• Investment recommendations\n\nPlease try your question again in a moment.',
+        content: 'I apologize, but I\'m currently experiencing connection issues. As your Diamond Assistant, I can help with:\n\n• Diamond inventory management\n• Market pricing analysis\n• Quality assessment and grading\n• Investment recommendations\n• Market trends and insights\n\nPlease try your question again in a moment.',
         timestamp: new Date().toISOString(),
       };
 
@@ -113,7 +113,7 @@ export function useOpenAIChat() {
     setMessages([{
       id: 'welcome',
       role: 'assistant',
-      content: '💎 Welcome back to Diamond Assistant! I\'m connected to your live inventory and ready to answer questions about your actual diamond stock, pricing, and market insights.',
+      content: '💎 Welcome back to Diamond Assistant! How can I help you today?',
       timestamp: new Date().toISOString(),
     }]);
   };
