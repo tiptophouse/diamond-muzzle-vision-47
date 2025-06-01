@@ -91,6 +91,9 @@
   html {
     overflow-x: hidden;
     width: 100%;
+    /* Telegram Mini App specific viewport handling */
+    height: 100vh;
+    height: var(--tg-viewport-height, 100vh);
   }
 
   body {
@@ -98,12 +101,32 @@
     overflow-x: hidden;
     width: 100%;
     min-width: 0;
+    /* Telegram Mini App optimizations */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: none;
+    height: 100vh;
+    height: var(--tg-viewport-height, 100vh);
   }
 
   #root {
     width: 100%;
     min-width: 0;
     overflow-x: hidden;
+    height: 100vh;
+    height: var(--tg-viewport-height, 100vh);
+  }
+
+  /* Telegram Mini App specific styles */
+  @media (max-width: 480px) {
+    body {
+      font-size: 14px;
+    }
+    
+    .telegram-viewport {
+      height: var(--tg-viewport-height, 100vh);
+      width: 100vw;
+      position: relative;
+    }
   }
 }
 
@@ -122,11 +145,11 @@
   }
   
   .data-grid th {
-    @apply px-4 py-3 text-left font-medium text-muted-foreground bg-muted;
+    @apply px-2 sm:px-4 py-2 sm:py-3 text-left font-medium text-muted-foreground bg-muted text-xs sm:text-sm;
   }
   
   .data-grid td {
-    @apply px-4 py-3 border-t border-border;
+    @apply px-2 sm:px-4 py-2 sm:py-3 border-t border-border text-xs sm:text-sm;
   }
   
   .data-grid tr:hover {
@@ -134,26 +157,48 @@
   }
   
   .stat-value {
-    @apply relative text-4xl font-bold text-foreground;
+    @apply relative text-2xl sm:text-4xl font-bold text-foreground;
   }
 
   .glass-card {
-    @apply backdrop-blur-lg bg-white/10 dark:bg-black/10 border border-white/20 dark:border-white/10 rounded-2xl shadow-xl;
+    @apply backdrop-blur-lg bg-white/10 dark:bg-black/10 border border-white/20 dark:border-white/10 rounded-xl sm:rounded-2xl shadow-xl;
   }
 
   .diamond-viewer {
-    @apply relative w-80 h-80 mx-auto rounded-full bg-gradient-to-br from-diamond-200 via-diamond-300 to-diamond-400 dark:from-diamond-700 dark:via-diamond-800 dark:to-diamond-900 shadow-2xl flex items-center justify-center overflow-hidden;
+    @apply relative w-60 h-60 sm:w-80 sm:h-80 mx-auto rounded-full bg-gradient-to-br from-diamond-200 via-diamond-300 to-diamond-400 dark:from-diamond-700 dark:via-diamond-800 dark:to-diamond-900 shadow-2xl flex items-center justify-center overflow-hidden;
   }
 
   .diamond-shine {
     @apply absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent animate-pulse;
   }
 
-  /* Prevent horizontal scrolling on mobile */
+  /* Enhanced mobile responsiveness for Telegram */
   @media (max-width: 768px) {
     * {
       max-width: 100vw;
       overflow-x: hidden;
+    }
+    
+    .mobile-optimized {
+      @apply text-sm p-2 gap-2;
+    }
+    
+    .mobile-grid {
+      @apply grid-cols-1 gap-3;
+    }
+    
+    .mobile-spacing {
+      @apply space-y-3 p-3;
+    }
+  }
+
+  /* Telegram-specific safe areas */
+  @supports (padding: max(0px)) {
+    .telegram-safe {
+      padding-left: max(12px, env(safe-area-inset-left));
+      padding-right: max(12px, env(safe-area-inset-right));
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+      padding-top: max(12px, env(safe-area-inset-top));
     }
   }
 }
