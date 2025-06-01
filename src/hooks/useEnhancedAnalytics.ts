@@ -41,6 +41,19 @@ interface NotificationData {
   user_last_name?: string;
 }
 
+interface UserAnalytics {
+  total_visits?: number;
+  total_time_spent?: string;
+  last_active?: string;
+  lifetime_value?: number;
+  api_calls_count?: number;
+  storage_used_mb?: number;
+  cost_per_user?: number;
+  revenue_per_user?: number;
+  profit_loss?: number;
+  subscription_status?: string;
+}
+
 export function useEnhancedAnalytics() {
   const [enhancedUsers, setEnhancedUsers] = useState<EnhancedUserData[]>([]);
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
@@ -72,8 +85,8 @@ export function useEnhancedAnalytics() {
 
       // Transform the data to flatten analytics
       const transformedData = (userData || []).map(user => {
-        // Safely access the first analytics record or use empty object
-        const analytics = Array.isArray(user.user_analytics) && user.user_analytics.length > 0 
+        // Safely access the first analytics record with proper typing
+        const analytics: UserAnalytics = Array.isArray(user.user_analytics) && user.user_analytics.length > 0 
           ? user.user_analytics[0] 
           : {};
         
@@ -89,16 +102,16 @@ export function useEnhancedAnalytics() {
           photo_url: user.photo_url,
           created_at: user.created_at,
           updated_at: user.updated_at,
-          total_visits: analytics?.total_visits || 0,
-          total_time_spent: analytics?.total_time_spent ? String(analytics.total_time_spent) : undefined,
-          last_active: analytics?.last_active,
-          lifetime_value: analytics?.lifetime_value || 0,
-          api_calls_count: analytics?.api_calls_count || 0,
-          storage_used_mb: analytics?.storage_used_mb || 0,
-          cost_per_user: analytics?.cost_per_user || 0,
-          revenue_per_user: analytics?.revenue_per_user || 0,
-          profit_loss: analytics?.profit_loss || 0,
-          subscription_status: analytics?.subscription_status || 'free'
+          total_visits: analytics.total_visits || 0,
+          total_time_spent: analytics.total_time_spent ? String(analytics.total_time_spent) : undefined,
+          last_active: analytics.last_active,
+          lifetime_value: analytics.lifetime_value || 0,
+          api_calls_count: analytics.api_calls_count || 0,
+          storage_used_mb: analytics.storage_used_mb || 0,
+          cost_per_user: analytics.cost_per_user || 0,
+          revenue_per_user: analytics.revenue_per_user || 0,
+          profit_loss: analytics.profit_loss || 0,
+          subscription_status: analytics.subscription_status || 'free'
         };
       });
 
