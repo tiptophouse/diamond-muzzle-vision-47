@@ -13,7 +13,6 @@ import InventoryPage from "./pages/InventoryPage";
 import UploadPage from "./pages/UploadPage";
 import SettingsPage from "./pages/SettingsPage";
 import InsightsPage from "./pages/InsightsPage";
-import ReportsPage from "./pages/ReportsPage";
 import ChatPage from "./pages/ChatPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -42,9 +41,6 @@ const App = () => (
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/inventory" element={<InventoryPage />} />
                   <Route path="/upload" element={<UploadPage />} />
-                  <Route path="/reports" element={<ReportsPage />} />
-                  <Route path="/reports/:reportId" element={<ReportsPage />} />
-                  <Route path="/:reportId" element={<ReportsPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="/insights" element={<InsightsPage />} />
                   <Route path="/chat" element={<ChatPage />} />

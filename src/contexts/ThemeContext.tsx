@@ -21,9 +21,30 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const root = window.document.documentElement;
+    const body = window.document.body;
+    
+    // Remove previous theme classes
     root.classList.remove('light', 'dark');
+    body.classList.remove('light', 'dark');
+    
+    // Add current theme
     root.classList.add(theme);
+    body.classList.add(theme);
+    
+    // Store in localStorage
     localStorage.setItem('theme', theme);
+
+    // Apply Telegram theme if available
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+      const tg = window.Telegram.WebApp;
+      if (theme === 'dark') {
+        if (tg.themeParams?.bg_color) {
+          body.style.backgroundColor = tg.themeParams.bg_color;
+        }
+      } else {
+        body.style.backgroundColor = '';
+      }
+    }
   }, [theme]);
 
   const toggleTheme = () => {
