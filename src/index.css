@@ -33,6 +33,38 @@
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 250 30% 20%;
     --sidebar-ring: 250 84% 65%;
+
+    /* Cosmic Admin Variables */
+    --cosmic-bg: linear-gradient(135deg, #0f0f23 0%, #1a0b2e 25%, #16213e 50%, #0f3460 75%, #533483 100%);
+    --cosmic-card: rgba(139, 92, 246, 0.1);
+    --cosmic-border: rgba(168, 85, 247, 0.3);
+    --cosmic-glow: 0 0 20px rgba(139, 92, 246, 0.5);
+    --cosmic-text: linear-gradient(135deg, #a855f7, #06b6d4, #ec4899);
+    --neon-cyan: #06b6d4;
+    --neon-purple: #8b5cf6;
+    --neon-pink: #ec4899;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 250 84% 65%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 250 84% 65%;
   }
 
   * {
@@ -42,11 +74,9 @@
   html {
     overflow-x: hidden;
     width: 100%;
-    /* Telegram Mini App optimizations */
     -webkit-user-select: none;
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
-    /* Use Telegram's viewport height */
     height: 100vh;
     height: var(--tg-viewport-height, 100vh);
   }
@@ -56,15 +86,11 @@
     overflow-x: hidden;
     width: 100%;
     min-width: 0;
-    /* Telegram Mini App optimizations */
     margin: 0;
     padding: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    /* Prevent bounce scrolling on iOS */
     overscroll-behavior: none;
-    /* Better touch scrolling */
     -webkit-overflow-scrolling: touch;
-    /* Use Telegram's viewport height */
     height: 100vh;
     height: var(--tg-viewport-height, 100vh);
   }
@@ -73,15 +99,117 @@
     width: 100%;
     min-width: 0;
     overflow-x: hidden;
-    /* Use Telegram's viewport height */
     min-height: 100vh;
     min-height: var(--tg-viewport-height, 100vh);
   }
 
-  /* Telegram Mini App specific styles */
   .tg-viewport {
     height: 100vh;
     height: var(--tg-viewport-height, 100vh);
+  }
+
+  /* Cosmic Admin Styles */
+  .cosmic-bg {
+    background: var(--cosmic-bg);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cosmic-bg::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 20% 80%, rgba(139, 92, 246, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(6, 182, 212, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(236, 72, 153, 0.2) 0%, transparent 50%);
+    animation: cosmic-float 6s ease-in-out infinite;
+  }
+
+  @keyframes cosmic-float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(2deg); }
+  }
+
+  .glass-card {
+    background: rgba(139, 92, 246, 0.1);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    box-shadow: 
+      0 8px 32px rgba(139, 92, 246, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .neon-glow {
+    box-shadow: var(--cosmic-glow);
+    transition: all 0.3s ease;
+  }
+
+  .neon-glow:hover {
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.8);
+    transform: translateY(-2px);
+  }
+
+  .cosmic-text {
+    background: var(--cosmic-text);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: cosmic-pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes cosmic-pulse {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.2); }
+  }
+
+  .gradient-border {
+    position: relative;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(6, 182, 212, 0.1));
+    border-radius: 12px;
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 2px;
+    background: linear-gradient(135deg, #8b5cf6, #06b6d4, #ec4899);
+    border-radius: inherit;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: xor;
+    -webkit-mask-composite: xor;
+  }
+
+  .particle-bg {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .particle-bg::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      radial-gradient(2px 2px at 20px 30px, rgba(139, 92, 246, 0.8), transparent),
+      radial-gradient(2px 2px at 40px 70px, rgba(6, 182, 212, 0.8), transparent),
+      radial-gradient(1px 1px at 90px 40px, rgba(236, 72, 153, 0.8), transparent),
+      radial-gradient(1px 1px at 130px 80px, rgba(168, 85, 247, 0.8), transparent);
+    background-repeat: repeat;
+    background-size: 150px 100px;
+    animation: particle-float 8s linear infinite;
+    pointer-events: none;
+  }
+
+  @keyframes particle-float {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-100px); }
   }
 }
 
@@ -126,12 +254,10 @@
       @apply text-lg;
     }
     
-    /* Better mobile padding */
     .mobile-padding {
       @apply px-2 py-1;
     }
     
-    /* Mobile cards */
     .mobile-card {
       @apply p-3 text-sm;
     }
@@ -139,7 +265,6 @@
 
   /* Telegram-specific optimizations */
   @media screen and (max-width: 600px) {
-    /* Assume most Telegram users are on mobile */
     .container {
       @apply px-2;
     }
@@ -148,9 +273,53 @@
       @apply rounded-lg shadow-sm;
     }
     
-    /* Better button sizing for touch */
     .btn-touch {
       @apply min-h-[44px] min-w-[44px];
     }
+  }
+
+  /* Cosmic Admin Components */
+  .cosmic-button {
+    @apply relative overflow-hidden bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-300;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+  }
+
+  .cosmic-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.6);
+  }
+
+  .cosmic-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+  }
+
+  .cosmic-button:hover::before {
+    left: 100%;
+  }
+
+  .cosmic-stats {
+    @apply glass-card neon-glow rounded-xl p-6 text-center transition-all duration-300;
+  }
+
+  .cosmic-stats:hover {
+    transform: translateY(-4px) scale(1.02);
+  }
+
+  .cosmic-input {
+    @apply bg-slate-900/50 border border-purple-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 backdrop-blur-sm;
+    box-shadow: inset 0 2px 10px rgba(139, 92, 246, 0.1);
+  }
+
+  .cosmic-input:focus {
+    outline: none;
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3);
   }
 }

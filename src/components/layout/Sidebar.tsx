@@ -38,15 +38,21 @@ const SidebarItem = ({ icon: Icon, label, path, isActive, onClick, isAdminOnly }
         isActive 
           ? "bg-blue-600 text-white shadow-lg"
           : "text-gray-700 hover:text-gray-900 hover:bg-blue-50 hover:scale-105",
-        isAdminOnly && "bg-red-50 border border-red-200 hover:bg-red-100"
+        isAdminOnly && "glass-card neon-glow bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-cyan-600/20 border border-purple-500/30 hover:from-purple-600/30 hover:via-blue-600/30 hover:to-cyan-600/30"
       )}
       onClick={onClick}
     >
-      <Icon size={20} />
-      <span className="font-medium text-base">{label}</span>
+      <Icon size={20} className={isAdminOnly ? "text-purple-400" : ""} />
+      <span className={cn(
+        "font-medium text-base",
+        isAdminOnly && "cosmic-text font-bold"
+      )}>
+        {label}
+      </span>
       {isAdminOnly && (
-        <div className="ml-auto">
-          <Shield size={16} className="text-red-600" />
+        <div className="ml-auto flex items-center gap-1">
+          <Star size={14} className="text-purple-400 animate-pulse" />
+          <Shield size={16} className="text-cyan-400" />
         </div>
       )}
     </Link>
@@ -73,7 +79,7 @@ export function Sidebar() {
 
   // Admin-only routes
   const adminRoutes = [
-    { path: "/admin", label: "Admin Panel", icon: Shield, isAdminOnly: true },
+    { path: "/admin", label: "🦄 Cosmic Control", icon: Shield, isAdminOnly: true },
   ];
 
   const toggleMobile = () => setIsMobileOpen(!isMobileOpen);
@@ -133,13 +139,14 @@ export function Sidebar() {
           {isAdmin && (
             <>
               <div className="py-4">
-                <div className="border-t border-red-200"></div>
+                <div className="border-t border-purple-200/50"></div>
               </div>
               
               <div className="mb-3">
-                <div className="flex items-center gap-2 px-4 py-2 text-red-600 font-semibold text-sm">
-                  <Shield size={16} />
-                  <span>ADMIN SECTION</span>
+                <div className="flex items-center gap-2 px-4 py-2 cosmic-text font-bold text-sm">
+                  <Star size={16} className="animate-pulse" />
+                  <span>🦄 COSMIC REALM</span>
+                  <Star size={16} className="animate-pulse" />
                 </div>
               </div>
 
@@ -160,10 +167,10 @@ export function Sidebar() {
 
         <div className="p-6 border-t border-gray-200">
           {isAdmin && (
-            <div className="mb-3 p-2 bg-red-50 rounded-lg border border-red-200">
-              <div className="flex items-center gap-2 text-red-700 text-sm font-medium">
-                <Shield size={14} />
-                <span>Admin Mode Active</span>
+            <div className="mb-3 p-3 glass-card rounded-lg gradient-border">
+              <div className="flex items-center gap-2 cosmic-text text-sm font-bold">
+                <Star size={14} className="animate-pulse" />
+                <span>🦄 Unicorn Mode Active</span>
               </div>
             </div>
           )}
