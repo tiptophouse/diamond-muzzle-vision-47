@@ -32,7 +32,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
     scrollToBottom();
   }, [messages]);
 
-  if (isLoading) {
+  if (isLoading && messages.length === 0) {
     return (
       <div className="flex-1 p-4 space-y-4">
         {[...Array(3)].map((_, i) => (
@@ -66,6 +66,15 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
               isOwnMessage={message.user_id === currentUserId}
             />
           ))}
+          {isLoading && (
+            <div className="flex gap-3">
+              <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse" />
+              <div className="flex flex-col space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-16 w-64" />
+              </div>
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </>
       )}
