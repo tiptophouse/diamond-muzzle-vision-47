@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +17,7 @@ import ChatPage from "./pages/ChatPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
+import DiamondSwipe from "./pages/DiamondSwipe";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,6 +48,7 @@ const App = () => (
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="/insights" element={<InsightsPage />} />
                   <Route path="/chat" element={<ChatPage />} />
+                  <Route path="/swipe" element={<DiamondSwipe />} />
                   <Route path="/notifications" element={<NotificationsPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="*" element={<NotFound />} />

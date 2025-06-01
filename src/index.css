@@ -7,34 +7,24 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
-
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-
     --primary: 250 84% 65%;
     --primary-foreground: 210 40% 98%;
-
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
-
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-
     --accent: 250 95% 92%;
     --accent-foreground: 222.2 47.4% 11.2%;
-
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 250 84% 65%;
-
     --radius: 0.5rem;
-
     --sidebar-background: 250 45% 15%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 250 84% 65%;
@@ -52,6 +42,13 @@
   html {
     overflow-x: hidden;
     width: 100%;
+    /* Telegram Mini App optimizations */
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    /* Use Telegram's viewport height */
+    height: 100vh;
+    height: var(--tg-viewport-height, 100vh);
   }
 
   body {
@@ -59,23 +56,43 @@
     overflow-x: hidden;
     width: 100%;
     min-width: 0;
+    /* Telegram Mini App optimizations */
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    /* Prevent bounce scrolling on iOS */
+    overscroll-behavior: none;
+    /* Better touch scrolling */
+    -webkit-overflow-scrolling: touch;
+    /* Use Telegram's viewport height */
+    height: 100vh;
+    height: var(--tg-viewport-height, 100vh);
   }
 
   #root {
     width: 100%;
     min-width: 0;
     overflow-x: hidden;
+    /* Use Telegram's viewport height */
+    min-height: 100vh;
+    min-height: var(--tg-viewport-height, 100vh);
+  }
+
+  /* Telegram Mini App specific styles */
+  .tg-viewport {
+    height: 100vh;
+    height: var(--tg-viewport-height, 100vh);
   }
 }
 
 @layer components {
   .diamond-card {
-    @apply relative overflow-hidden bg-gradient-to-br from-white to-diamond-50 rounded-xl border border-diamond-100 shadow-md hover:shadow-lg transition-all duration-300;
+    @apply relative overflow-hidden bg-gradient-to-br from-white to-blue-50 rounded-xl border border-blue-100 shadow-md hover:shadow-lg transition-all duration-300;
   }
   
   .diamond-card::before {
     content: '';
-    @apply absolute -top-8 -right-8 w-16 h-16 bg-diamond-200 rounded-full opacity-50 blur-xl;
+    @apply absolute -top-8 -right-8 w-16 h-16 bg-blue-200 rounded-full opacity-50 blur-xl;
   }
   
   .data-grid {
@@ -83,26 +100,57 @@
   }
   
   .data-grid th {
-    @apply px-4 py-3 text-left font-medium text-gray-600 bg-gray-50;
+    @apply px-2 sm:px-4 py-2 sm:py-3 text-left font-medium text-gray-600 bg-gray-50 text-xs sm:text-sm;
   }
   
   .data-grid td {
-    @apply px-4 py-3 border-t border-gray-100;
+    @apply px-2 sm:px-4 py-2 sm:py-3 border-t border-gray-100 text-xs sm:text-sm;
   }
   
   .data-grid tr:hover {
-    @apply bg-diamond-50;
+    @apply bg-blue-50;
   }
   
   .stat-value {
-    @apply relative text-4xl font-bold text-diamond-900;
+    @apply relative text-xl sm:text-4xl font-bold text-blue-900;
   }
 
-  /* Prevent horizontal scrolling on mobile */
+  /* Mobile-first responsive design */
   @media (max-width: 768px) {
     * {
       max-width: 100vw;
       overflow-x: hidden;
+    }
+    
+    .stat-value {
+      @apply text-lg;
+    }
+    
+    /* Better mobile padding */
+    .mobile-padding {
+      @apply px-2 py-1;
+    }
+    
+    /* Mobile cards */
+    .mobile-card {
+      @apply p-3 text-sm;
+    }
+  }
+
+  /* Telegram-specific optimizations */
+  @media screen and (max-width: 600px) {
+    /* Assume most Telegram users are on mobile */
+    .container {
+      @apply px-2;
+    }
+    
+    .card {
+      @apply rounded-lg shadow-sm;
+    }
+    
+    /* Better button sizing for touch */
+    .btn-touch {
+      @apply min-h-[44px] min-w-[44px];
     }
   }
 }

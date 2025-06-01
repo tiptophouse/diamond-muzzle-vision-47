@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface ChatMessage {
   id: string;
@@ -27,32 +28,22 @@ export function useOpenAIChat() {
     setIsLoading(true);
 
     try {
-      // Use your Mazal API endpoint
-      const response = await fetch('https://api.mazalbot.com/api/v1/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ifj9ov1rh20fslfp',
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('openai-chat', {
+        body: {
           message: content,
           conversation_history: messages.map(msg => ({
             role: msg.role,
             content: msg.content
           }))
-        }),
+        },
       });
 
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`);
-      }
+      if (error) throw error;
 
-      const data = await response.json();
-      
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.response || data.message || 'I apologize, but I encountered an issue processing your request.',
+        content: data.response || 'I apologize, but I encountered an issue processing your request.',
         timestamp: new Date().toISOString(),
       };
 
