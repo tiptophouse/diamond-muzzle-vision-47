@@ -5,7 +5,7 @@ import { toast } from '@/components/ui/use-toast';
 
 interface ChatSession {
   id: string;
-  user_id: number;
+  user_id: string;
   title: string;
   created_at: string;
   updated_at: string;
@@ -25,7 +25,7 @@ export function useChatSession(userId: number | null) {
       const { data, error } = await supabase
         .from('chat_sessions')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', userId.toString())
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
@@ -49,7 +49,7 @@ export function useChatSession(userId: number | null) {
       const { data, error } = await supabase
         .from('chat_sessions')
         .insert({
-          user_id: userId,
+          user_id: userId.toString(),
           title,
         })
         .select()
