@@ -8,7 +8,7 @@ import { useInventoryData } from '@/hooks/useInventoryData';
 import { Heart, X, Star, Diamond as DiamondIcon, Zap } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 
-interface Diamond {
+interface BackendDiamond {
   id: string;
   shape: string;
   weight: number;
@@ -19,15 +19,30 @@ interface Diamond {
   cut?: string;
   fluorescence?: string;
   lab?: string;
+  superLiked?: boolean;
 }
 
 export default function DiamondSwipe() {
   const { allDiamonds, loading } = useInventoryData();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [matches, setMatches] = useState<Diamond[]>([]);
-  const [passed, setPassed] = useState<Diamond[]>([]);
+  const [matches, setMatches] = useState<BackendDiamond[]>([]);
+  const [passed, setPassed] = useState<BackendDiamond[]>([]);
 
-  const currentDiamond = allDiamonds[currentIndex];
+  // Convert frontend Diamond type to backend format for swipe functionality
+  const backendDiamonds: BackendDiamond[] = allDiamonds.map(diamond => ({
+    id: diamond.id,
+    shape: diamond.shape,
+    weight: diamond.carat,
+    color: diamond.color,
+    clarity: diamond.clarity,
+    price_per_carat: diamond.price / diamond.carat,
+    stock_number: diamond.stockNumber,
+    cut: diamond.cut,
+    fluorescence: 'None',
+    lab: 'GIA',
+  }));
+
+  const currentDiamond = backendDiamonds[currentIndex];
 
   const handleSwipe = (direction: 'left' | 'right') => {
     if (!currentDiamond) return;
@@ -48,7 +63,7 @@ export default function DiamondSwipe() {
   const handleSuperLike = () => {
     if (!currentDiamond) return;
     
-    setMatches(prev => [...prev, { ...currentDiamond, superLiked: true } as any]);
+    setMatches(prev => [...prev, { ...currentDiamond, superLiked: true }]);
     toast({
       title: "⭐ Super Match!",
       description: `${currentDiamond.weight}ct ${currentDiamond.shape} super liked!`,
@@ -72,7 +87,7 @@ export default function DiamondSwipe() {
     );
   }
 
-  if (currentIndex >= allDiamonds.length) {
+  if (currentIndex >= backendDiamonds.length) {
     return (
       <Layout>
         <div className="max-w-md mx-auto p-4 text-center">
@@ -117,7 +132,7 @@ export default function DiamondSwipe() {
           <div>
             <h1 className="text-2xl font-bold">💎 Diamond Swipe</h1>
             <p className="text-sm text-muted-foreground">
-              {currentIndex + 1} of {allDiamonds.length}
+              {currentIndex + 1} of {backendDiamonds.length}
             </p>
           </div>
           <div className="text-right">

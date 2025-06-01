@@ -21,10 +21,10 @@ export default function Dashboard() {
   const activeSubscriptions = subscriptions.filter(sub => sub.status === 'active').length;
   const unreadNotifications = notifications.filter(n => !n.read).length;
 
-  // Advanced calculations
-  const totalValue = allDiamonds.reduce((sum, diamond) => sum + ((diamond.price_per_carat || 0) * (diamond.weight || 0)), 0);
-  const avgCaratWeight = allDiamonds.length > 0 ? allDiamonds.reduce((sum, d) => sum + (d.weight || 0), 0) / allDiamonds.length : 0;
-  const avgPricePerCarat = allDiamonds.length > 0 ? allDiamonds.reduce((sum, d) => sum + (d.price_per_carat || 0), 0) / allDiamonds.length : 0;
+  // Advanced calculations using frontend Diamond type properties
+  const totalValue = allDiamonds.reduce((sum, diamond) => sum + (diamond.price || 0), 0);
+  const avgCaratWeight = allDiamonds.length > 0 ? allDiamonds.reduce((sum, d) => sum + (d.carat || 0), 0) / allDiamonds.length : 0;
+  const avgPricePerCarat = allDiamonds.length > 0 ? allDiamonds.reduce((sum, d) => sum + ((d.price || 0) / (d.carat || 1)), 0) / allDiamonds.length : 0;
   
   // Shape distribution for chart
   const shapeData = allDiamonds.reduce((acc, diamond) => {
@@ -39,8 +39,8 @@ export default function Dashboard() {
     color: '#7a63f5'
   }));
 
-  // Premium diamonds (>2ct or >$10k/ct)
-  const premiumDiamonds = allDiamonds.filter(d => (d.weight || 0) > 2 || (d.price_per_carat || 0) > 10000);
+  // Premium diamonds (>2ct or >$10k)
+  const premiumDiamonds = allDiamonds.filter(d => (d.carat || 0) > 2 || (d.price || 0) > 10000);
 
   if (inventoryLoading || leadsLoading || subscriptionsLoading) {
     return (
@@ -129,7 +129,7 @@ export default function Dashboard() {
           <StatCard
             title="Premium Stones"
             value={premiumDiamonds.length}
-            description=">2ct or >$10k/ct"
+            description=">2ct or >$10k"
             icon={Crown}
             className="text-xs"
           />
@@ -184,18 +184,18 @@ export default function Dashboard() {
                   <div key={index} className="flex justify-between items-center p-2 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">
-                        {diamond.weight}ct {diamond.shape} {diamond.color} {diamond.clarity}
+                        {diamond.carat}ct {diamond.shape} {diamond.color} {diamond.clarity}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Stock: {diamond.stock_number}
+                        Stock: {diamond.stockNumber}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold text-blue-600">
-                        ${((diamond.price_per_carat || 0) * (diamond.weight || 0)).toLocaleString()}
+                        ${(diamond.price || 0).toLocaleString()}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        ${(diamond.price_per_carat || 0).toLocaleString()}/ct
+                        ${Math.round((diamond.price || 0) / (diamond.carat || 1)).toLocaleString()}/ct
                       </p>
                     </div>
                   </div>
