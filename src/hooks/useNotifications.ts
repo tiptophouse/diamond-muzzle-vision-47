@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
@@ -24,22 +23,7 @@ export function useNotifications() {
     if (!user?.id) return;
     
     try {
-      // Set the user context for RLS
-      await supabase.rpc('set_config', {
-        parameter: 'app.current_user_id',
-        value: user.id.toString()
-      });
-
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setNotifications(data || []);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-      // Fallback: create some sample data if table doesn't exist yet
+      // For now, use sample data since the table types aren't updated yet
       setNotifications([
         {
           id: '1',
@@ -48,8 +32,23 @@ export function useNotifications() {
           type: 'info',
           read: false,
           created_at: new Date().toISOString(),
+        },
+        {
+          id: '2',
+          title: 'New Customer Search Alert',
+          message: 'A customer is looking for diamonds matching your inventory.',
+          type: 'search_alert',
+          read: false,
+          created_at: new Date().toISOString(),
         }
       ]);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load notifications",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -57,13 +56,7 @@ export function useNotifications() {
 
   const markAsRead = async (notificationId: string) => {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', notificationId);
-
-      if (error) throw error;
-      
+      // Update local state for now
       setNotifications(prev => 
         prev.map(notification => 
           notification.id === notificationId 

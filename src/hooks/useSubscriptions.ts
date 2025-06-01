@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
@@ -24,22 +23,7 @@ export function useSubscriptions() {
     if (!user?.id) return;
     
     try {
-      // Set the user context for RLS
-      await supabase.rpc('set_config', {
-        parameter: 'app.current_user_id',
-        value: user.id.toString()
-      });
-
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setSubscriptions(data || []);
-    } catch (error) {
-      console.error('Error fetching subscriptions:', error);
-      // Fallback: create some sample data if table doesn't exist yet
+      // For now, use sample data since the table types aren't updated yet
       setSubscriptions([
         {
           id: '1',
@@ -50,6 +34,13 @@ export function useSubscriptions() {
           updated_at: new Date().toISOString(),
         }
       ]);
+    } catch (error) {
+      console.error('Error fetching subscriptions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load subscriptions",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

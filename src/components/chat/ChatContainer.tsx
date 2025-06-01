@@ -15,11 +15,11 @@ export const ChatContainer = () => {
     sessions, 
     createSession, 
     isLoading: sessionsLoading 
-  } = useChatSession(user?.id?.toString() || '');
+  } = useChatSession(user?.id || null);
   
   const { 
     messages, 
-    sendMessage, 
+    addMessage, 
     isLoading: messagesLoading 
   } = useChatMessages(currentSessionId);
 
@@ -39,14 +39,14 @@ export const ChatContainer = () => {
   const handleSendMessage = async (content: string) => {
     if (!currentSessionId || !user) return;
     
-    await sendMessage(content, user.id.toString(), 'user');
+    await addMessage(content, 'user', user.id.toString());
     
     // Simulate AI response (you can replace this with actual AI integration)
     setTimeout(async () => {
-      await sendMessage(
+      await addMessage(
         `I understand you're asking about: "${content}". As your diamond assistant, I'm here to help with inventory management, pricing, and diamond analysis. How can I assist you further?`,
-        null,
-        'assistant'
+        'assistant',
+        'ai'
       );
     }, 1000);
   };
