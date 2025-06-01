@@ -24,6 +24,19 @@ export default function Dashboard() {
   // Calculate total inventory value
   const totalValue = allDiamonds.reduce((sum, diamond) => sum + (diamond.price || 0), 0);
 
+  // Generate chart data for shapes
+  const shapeData = allDiamonds.reduce((acc, diamond) => {
+    const shape = diamond.shape || 'Unknown';
+    acc[shape] = (acc[shape] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const chartData = Object.entries(shapeData).map(([name, value]) => ({
+    name,
+    value,
+    color: '#7a63f5'
+  }));
+
   // Recent activity data
   const recentActivity = [
     ...leads.slice(0, 3).map(lead => ({
@@ -79,31 +92,35 @@ export default function Dashboard() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Total Inventory"
-            value={totalInventory.toString()}
+            value={totalInventory}
             description="Diamonds in stock"
             icon={TrendingUp}
-            trend={{ value: 12, isPositive: true }}
+            trend={12}
+            trendLabel="from last month"
           />
           <StatCard
             title="Active Leads"
-            value={activeLeads.toString()}
+            value={activeLeads}
             description="Customer inquiries"
             icon={Users}
-            trend={{ value: 8, isPositive: true }}
+            trend={8}
+            trendLabel="from last week"
           />
           <StatCard
             title="Active Subscriptions"
-            value={activeSubscriptions.toString()}
+            value={activeSubscriptions}
             description="Current plans"
             icon={Crown}
-            trend={{ value: 0, isPositive: true }}
+            trend={0}
+            trendLabel="unchanged"
           />
           <StatCard
             title="Notifications"
-            value={unreadNotifications.toString()}
+            value={unreadNotifications}
             description="Unread alerts"
             icon={Bell}
-            trend={{ value: 3, isPositive: false }}
+            trend={-3}
+            trendLabel="from yesterday"
           />
         </div>
 
@@ -116,7 +133,11 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <InventoryChart />
+              <InventoryChart 
+                data={chartData}
+                title="Diamonds by Shape"
+                loading={inventoryLoading}
+              />
             </CardContent>
           </Card>
 
