@@ -484,6 +484,39 @@ export type Database = {
           },
         ]
       }
+      user_management_log: {
+        Row: {
+          action_type: string
+          admin_telegram_id: number
+          changes: Json | null
+          created_at: string | null
+          id: string
+          reason: string | null
+          target_telegram_id: number | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_telegram_id: number
+          changes?: Json | null
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+          target_telegram_id?: number | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_telegram_id?: number
+          changes?: Json | null
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+          target_telegram_id?: number | null
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           created_at: string | null
@@ -491,9 +524,14 @@ export type Database = {
           id: string
           is_premium: boolean | null
           language_code: string | null
+          last_login: string | null
           last_name: string | null
+          notes: string | null
+          payment_status: string | null
           phone_number: string | null
           photo_url: string | null
+          status: string | null
+          subscription_plan: string | null
           telegram_id: number
           updated_at: string | null
           username: string | null
@@ -504,9 +542,14 @@ export type Database = {
           id?: string
           is_premium?: boolean | null
           language_code?: string | null
+          last_login?: string | null
           last_name?: string | null
+          notes?: string | null
+          payment_status?: string | null
           phone_number?: string | null
           photo_url?: string | null
+          status?: string | null
+          subscription_plan?: string | null
           telegram_id: number
           updated_at?: string | null
           username?: string | null
@@ -517,9 +560,14 @@ export type Database = {
           id?: string
           is_premium?: boolean | null
           language_code?: string | null
+          last_login?: string | null
           last_name?: string | null
+          notes?: string | null
+          payment_status?: string | null
           phone_number?: string | null
           photo_url?: string | null
+          status?: string | null
+          subscription_plan?: string | null
           telegram_id?: number
           updated_at?: string | null
           username?: string | null
@@ -596,7 +644,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_statistics: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_users: number
+          active_users: number
+          premium_users: number
+          blocked_users: number
+          users_with_phone: number
+          recent_signups: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
