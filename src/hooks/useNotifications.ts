@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Notification {
   id: string;
@@ -23,25 +24,26 @@ export function useNotifications() {
     if (!user?.id) return;
     
     try {
-      // For now, use sample data since the table types aren't updated yet
-      setNotifications([
-        {
-          id: '1',
-          title: 'Welcome to Diamond Muzzle',
-          message: 'Your account has been successfully created.',
-          type: 'info',
-          read: false,
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: '2',
-          title: 'New Customer Search Alert',
-          message: 'A customer is looking for diamonds matching your inventory.',
-          type: 'search_alert',
-          read: false,
-          created_at: new Date().toISOString(),
-        }
-      ]);
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('telegram_id', user.id)
+        .order('sent_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Transform to match the expected interface
+      const transformedNotifications = (data || []).map(notification => ({
+        id: notification.id,
+        title: `${notification.message_type.charAt(0).toUpperCase()}${notification.message_type.slice(1)} Notification`,
+        message: notification.message_content,
+        type: notification.message_type,
+        read: !!notification.read_at,
+        data: notification.metadata,
+        created_at: notification.sent_at,
+      }));
+
+      setNotifications(transformedNotifications);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       toast({
@@ -56,7 +58,17 @@ export function useNotifications() {
 
   const markAsRead = async (notificationId: string) => {
     try {
-      // Update local state for now
+      const { error } = await supabase
+        .from('notifications')
+        .update({ 
+          read_at: new Date().toISOString(),
+          status: 'read'
+        })
+        .eq('id', notificationId);
+
+      if (error) throw error;
+
+      // Update local state
       setNotifications(prev => 
         prev.map(notification => 
           notification.id === notificationId 

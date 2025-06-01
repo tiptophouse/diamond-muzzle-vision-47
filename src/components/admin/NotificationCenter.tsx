@@ -3,81 +3,74 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Bell, MessageSquare, Users, Send } from 'lucide-react';
+import { Bell, MessageSquare, Users, Send, TrendingUp } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { formatDistanceToNow } from 'date-fns';
 
-interface BotNotification {
+interface NotificationData {
   id: string;
   telegram_id: number;
-  message: string;
-  type: 'info' | 'alert' | 'promotion' | 'system';
-  status: 'sent' | 'delivered' | 'read';
-  created_at: string;
+  message_type: string;
+  message_content: string;
+  status: string;
+  sent_at: string;
+  delivered_at?: string;
+  read_at?: string;
   metadata?: any;
+  created_at: string;
+  user_first_name?: string;
+  user_last_name?: string;
 }
 
-export function NotificationCenter() {
-  const [notifications, setNotifications] = useState<BotNotification[]>([]);
+interface NotificationCenterProps {
+  notifications: NotificationData[];
+  onRefresh: () => void;
+}
+
+export function NotificationCenter({ notifications, onRefresh }: NotificationCenterProps) {
   const [newMessage, setNewMessage] = useState('');
   const [selectedType, setSelectedType] = useState<'info' | 'alert' | 'promotion' | 'system'>('info');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-
-  const fetchNotifications = async () => {
-    try {
-      // For now, use mock data since we don't have the notifications table set up yet
-      const mockNotifications: BotNotification[] = [
-        {
-          id: '1',
-          telegram_id: 123456789,
-          message: 'Welcome to Diamond Muzzle! Your account has been set up.',
-          type: 'info',
-          status: 'read',
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: '2',
-          telegram_id: 987654321,
-          message: 'New diamond matching your search criteria is available!',
-          type: 'alert',
-          status: 'delivered',
-          created_at: new Date(Date.now() - 3600000).toISOString(),
-        },
-        {
-          id: '3',
-          telegram_id: 456789123,
-          message: 'Special promotion: 20% off premium subscription!',
-          type: 'promotion',
-          status: 'sent',
-          created_at: new Date(Date.now() - 7200000).toISOString(),
-        }
-      ];
-
-      setNotifications(mockNotifications);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    }
-  };
 
   const sendBroadcastMessage = async () => {
     if (!newMessage.trim()) return;
 
     setIsLoading(true);
     try {
-      // Simulate sending broadcast message
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Get all user telegram IDs
+      const { data: users, error: usersError } = await supabase
+        .from('user_profiles')
+        .select('telegram_id');
+
+      if (usersError) throw usersError;
+
+      // Insert notifications for all users
+      const notificationInserts = users.map(user => ({
+        telegram_id: user.telegram_id,
+        message_type: selectedType,
+        message_content: newMessage,
+        status: 'sent',
+        metadata: { broadcast: true, sent_by: 'admin' }
+      }));
+
+      const { error: insertError } = await supabase
+        .from('notifications')
+        .insert(notificationInserts);
+
+      if (insertError) throw insertError;
       
       toast({
         title: "Broadcast Sent",
-        description: `Message sent to all users as ${selectedType} notification`,
+        description: `Message sent to ${users.length} users as ${selectedType} notification`,
       });
 
       setNewMessage('');
-      fetchNotifications();
+      onRefresh();
     } catch (error) {
+      console.error('Error sending broadcast:', error);
       toast({
         title: "Error",
         description: "Failed to send broadcast message",
@@ -87,10 +80,6 @@ export function NotificationCenter() {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
 
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -105,8 +94,22 @@ export function NotificationCenter() {
     switch (status) {
       case 'read': return 'default';
       case 'delivered': return 'secondary';
+      case 'failed': return 'destructive';
       default: return 'outline';
     }
+  };
+
+  const notificationStats = {
+    total: notifications.length,
+    readRate: notifications.length > 0 ? 
+      Math.round((notifications.filter(n => n.read_at).length / notifications.length) * 100) : 0,
+    deliveryRate: notifications.length > 0 ? 
+      Math.round((notifications.filter(n => n.delivered_at || n.status === 'delivered').length / notifications.length) * 100) : 0,
+    uniqueRecipients: new Set(notifications.map(n => n.telegram_id)).size,
+    byType: notifications.reduce((acc, n) => {
+      acc[n.message_type] = (acc[n.message_type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>)
   };
 
   return (
@@ -160,6 +163,49 @@ export function NotificationCenter() {
         </CardContent>
       </Card>
 
+      {/* Notification Statistics */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Notifications</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{notificationStats.total}</div>
+            <p className="text-xs text-muted-foreground">All time</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Read Rate</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{notificationStats.readRate}%</div>
+            <p className="text-xs text-muted-foreground">Notifications read</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Delivery Rate</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{notificationStats.deliveryRate}%</div>
+            <p className="text-xs text-muted-foreground">Successfully delivered</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Active Recipients</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{notificationStats.uniqueRecipients}</div>
+            <p className="text-xs text-muted-foreground">Unique users</p>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Notification History */}
       <Card>
         <CardHeader>
@@ -172,67 +218,48 @@ export function NotificationCenter() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {notifications.map((notification) => (
-              <div key={notification.id} className="flex items-start justify-between p-4 border rounded-lg">
-                <div className="space-y-2 flex-1">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{notification.telegram_id}</Badge>
-                    <Badge variant={getTypeColor(notification.type) as any}>
-                      {notification.type}
-                    </Badge>
-                    <Badge variant={getStatusColor(notification.status) as any}>
-                      {notification.status}
-                    </Badge>
+          {notifications.length === 0 ? (
+            <div className="text-center py-8">
+              <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No notifications sent yet</p>
+            </div>
+          ) : (
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {notifications.slice(0, 50).map((notification) => (
+                <div key={notification.id} className="flex items-start justify-between p-4 border rounded-lg">
+                  <div className="space-y-2 flex-1">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">{notification.telegram_id}</Badge>
+                      {notification.user_first_name && (
+                        <span className="text-sm text-muted-foreground">
+                          {notification.user_first_name} {notification.user_last_name}
+                        </span>
+                      )}
+                      <Badge variant={getTypeColor(notification.message_type) as any}>
+                        {notification.message_type}
+                      </Badge>
+                      <Badge variant={getStatusColor(notification.status) as any}>
+                        {notification.status}
+                      </Badge>
+                    </div>
+                    <p className="text-sm">{notification.message_content}</p>
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <span>Sent: {formatDistanceToNow(new Date(notification.sent_at), { addSuffix: true })}</span>
+                      {notification.delivered_at && (
+                        <span>Delivered: {formatDistanceToNow(new Date(notification.delivered_at), { addSuffix: true })}</span>
+                      )}
+                      {notification.read_at && (
+                        <span>Read: {formatDistanceToNow(new Date(notification.read_at), { addSuffix: true })}</span>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-sm">{notification.message}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(notification.created_at).toLocaleString()}
-                  </p>
+                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
                 </div>
-                <MessageSquare className="h-4 w-4 text-muted-foreground" />
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      {/* Statistics */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Notifications</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{notifications.length}</div>
-            <p className="text-xs text-muted-foreground">All time</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Read Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {Math.round((notifications.filter(n => n.status === 'read').length / notifications.length) * 100)}%
-            </div>
-            <p className="text-xs text-muted-foreground">Notifications read</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {new Set(notifications.map(n => n.telegram_id)).size}
-            </div>
-            <p className="text-xs text-muted-foreground">Unique recipients</p>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

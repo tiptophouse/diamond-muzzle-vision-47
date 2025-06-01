@@ -245,6 +245,59 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          delivered_at: string | null
+          id: string
+          message_content: string
+          message_type: string
+          metadata: Json | null
+          read_at: string | null
+          sent_at: string
+          status: string
+          telegram_id: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          message_content: string
+          message_type?: string
+          metadata?: Json | null
+          read_at?: string | null
+          sent_at?: string
+          status?: string
+          telegram_id: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          message_content?: string
+          message_type?: string
+          metadata?: Json | null
+          read_at?: string | null
+          sent_at?: string
+          status?: string
+          telegram_id?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       page_visits: {
         Row: {
           created_at: string | null
@@ -412,6 +465,7 @@ export type Database = {
           is_premium: boolean | null
           language_code: string | null
           last_name: string | null
+          phone_number: string | null
           photo_url: string | null
           telegram_id: number
           updated_at: string | null
@@ -424,6 +478,7 @@ export type Database = {
           is_premium?: boolean | null
           language_code?: string | null
           last_name?: string | null
+          phone_number?: string | null
           photo_url?: string | null
           telegram_id: number
           updated_at?: string | null
@@ -436,6 +491,7 @@ export type Database = {
           is_premium?: boolean | null
           language_code?: string | null
           last_name?: string | null
+          phone_number?: string | null
           photo_url?: string | null
           telegram_id?: number
           updated_at?: string | null

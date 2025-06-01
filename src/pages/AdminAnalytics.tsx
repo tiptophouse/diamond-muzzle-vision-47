@@ -1,19 +1,20 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUserTracking } from '@/hooks/useUserTracking';
-import { useAnalytics } from '@/hooks/useAnalytics';
+import { useEnhancedAnalytics } from '@/hooks/useEnhancedAnalytics';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { Users, Eye, Clock, Bell, Phone, MessageSquare, TrendingUp } from 'lucide-react';
+import { EnhancedUserTable } from '@/components/admin/EnhancedUserTable';
+import { NotificationCenter } from '@/components/admin/NotificationCenter';
+import { Users, Eye, Clock, Bell, Phone, MessageSquare, TrendingUp, Crown } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 export default function AdminAnalytics() {
   const { user } = useTelegramAuth();
-  const { analytics, isLoading: analyticsLoading } = useAnalytics();
+  const { enhancedUsers, notifications, isLoading, getUserEngagementScore, getTopUsers, getUserStats, refetch } = useEnhancedAnalytics();
   const { sessions, pageVisits, isLoading: trackingLoading } = useUserTracking();
 
   // Admin check - only allow specific admin user ID
@@ -32,21 +33,7 @@ export default function AdminAnalytics() {
     );
   }
 
-  const totalUsers = analytics.length;
-  const activeUsers = analytics.filter(a => a.last_active && new Date(a.last_active) > new Date(Date.now() - 24 * 60 * 60 * 1000)).length;
-  const totalSessions = sessions.length;
-  const totalPageViews = pageVisits.length;
-
-  const topPages = pageVisits.reduce((acc, visit) => {
-    acc[visit.page_path] = (acc[visit.page_path] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const topPagesArray = Object.entries(topPages)
-    .sort(([,a], [,b]) => b - a)
-    .slice(0, 10);
-
-  if (analyticsLoading || trackingLoading) {
+  if (isLoading || trackingLoading) {
     return (
       <Layout>
         <div className="space-y-6">
@@ -66,6 +53,20 @@ export default function AdminAnalytics() {
     );
   }
 
+  const userStats = getUserStats();
+  const topUsers = getTopUsers();
+  const totalSessions = sessions.length;
+  const totalPageViews = pageVisits.length;
+
+  const topPages = pageVisits.reduce((acc, visit) => {
+    acc[visit.page_path] = (acc[visit.page_path] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const topPagesArray = Object.entries(topPages)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 10);
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -74,97 +75,115 @@ export default function AdminAnalytics() {
           <Badge variant="destructive" className="text-xs">ADMIN ONLY</Badge>
         </div>
 
-        {/* Key Metrics */}
-        <div className="grid gap-4 md:grid-cols-4">
+        {/* Enhanced Key Metrics */}
+        <div className="grid gap-4 md:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalUsers}</div>
+              <div className="text-2xl font-bold">{userStats.totalUsers}</div>
               <p className="text-xs text-muted-foreground">Registered users</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Users (24h)</CardTitle>
+              <CardTitle className="text-sm font-medium">Active Today</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{activeUsers}</div>
-              <p className="text-xs text-muted-foreground">Users active today</p>
+              <div className="text-2xl font-bold">{userStats.activeToday}</div>
+              <p className="text-xs text-muted-foreground">Users active in 24h</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Sessions</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Premium Users</CardTitle>
+              <Crown className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalSessions}</div>
-              <p className="text-xs text-muted-foreground">User sessions</p>
+              <div className="text-2xl font-bold">{userStats.premiumUsers}</div>
+              <p className="text-xs text-muted-foreground">
+                {userStats.totalUsers > 0 ? Math.round((userStats.premiumUsers / userStats.totalUsers) * 100) : 0}% premium
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Page Views</CardTitle>
+              <CardTitle className="text-sm font-medium">Phone Numbers</CardTitle>
+              <Phone className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{userStats.usersWithPhone}</div>
+              <p className="text-xs text-muted-foreground">Users with phone</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Avg Visits</CardTitle>
               <Eye className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalPageViews}</div>
-              <p className="text-xs text-muted-foreground">Total page views</p>
+              <div className="text-2xl font-bold">{Math.round(userStats.averageVisits)}</div>
+              <p className="text-xs text-muted-foreground">Per user</p>
             </CardContent>
           </Card>
         </div>
 
         <Tabs defaultValue="users" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="users">Enhanced Users</TabsTrigger>
+            <TabsTrigger value="top-users">Top Users</TabsTrigger>
             <TabsTrigger value="sessions">Sessions</TabsTrigger>
             <TabsTrigger value="pages">Page Analytics</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="users" className="space-y-4">
+          <TabsContent value="users">
+            <EnhancedUserTable users={enhancedUsers} getUserEngagementScore={getUserEngagementScore} />
+          </TabsContent>
+
+          <TabsContent value="top-users" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>User Details</CardTitle>
-                <CardDescription>Complete user information and analytics</CardDescription>
+                <CardTitle>Top Engaged Users</CardTitle>
+                <CardDescription>Users with highest engagement scores based on activity</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {analytics.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">{user.telegram_id}</Badge>
-                          <span className="font-medium">User ID: {user.telegram_id}</span>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Total Visits: {user.total_visits} | 
-                          API Calls: {user.api_calls_count} | 
-                          Storage: {user.storage_used_mb}MB
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Revenue: ${user.revenue_per_user} | 
-                          Cost: ${user.cost_per_user} | 
-                          Profit: ${user.profit_loss}
-                        </div>
-                        {user.last_active && (
-                          <div className="text-xs text-muted-foreground">
-                            Last active: {formatDistanceToNow(new Date(user.last_active), { addSuffix: true })}
+                  {topUsers.map((user, index) => {
+                    const engagementScore = getUserEngagementScore(user);
+                    const fullName = `${user.first_name} ${user.last_name || ''}`.trim();
+                    
+                    return (
+                      <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                            #{index + 1}
                           </div>
-                        )}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{fullName}</span>
+                              {user.is_premium && <Crown className="h-4 w-4 text-yellow-500" />}
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Badge variant="outline">{user.telegram_id}</Badge>
+                              {user.username && <span>@{user.username}</span>}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold">{engagementScore}%</div>
+                          <div className="text-sm text-muted-foreground">{user.total_visits} visits</div>
+                        </div>
                       </div>
-                      <Badge variant={user.subscription_status === 'premium' ? 'default' : 'secondary'}>
-                        {user.subscription_status}
-                      </Badge>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -258,25 +277,7 @@ export default function AdminAnalytics() {
           </TabsContent>
 
           <TabsContent value="notifications" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Centralized Notifications</CardTitle>
-                <CardDescription>All bot notifications and user interactions</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Notification Center</h3>
-                  <p className="text-muted-foreground mb-4">
-                    This will centralize all notifications from the MazalChat bot across all users.
-                  </p>
-                  <Button variant="outline">
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Configure Bot Integration
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <NotificationCenter notifications={notifications} onRefresh={refetch} />
           </TabsContent>
         </Tabs>
       </div>
