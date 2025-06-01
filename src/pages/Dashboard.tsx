@@ -1,115 +1,62 @@
 
-import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { InventoryChart } from "@/components/dashboard/InventoryChart";
-import { Diamond, Coins, Users, BadgeCheck } from "lucide-react";
-import { api, apiEndpoints, setCurrentUserId } from "@/lib/api";
-import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { processDiamondDataForDashboard } from "@/services/diamondAnalytics";
-
-interface DashboardStats {
-  totalDiamonds: number;
-  matchedPairs: number;
-  totalLeads: number;
-  activeSubscriptions: number;
-}
-
-interface InventoryData {
-  name: string;
-  value: number;
-}
+import { useInventoryData } from "@/hooks/useInventoryData";
+import { useLeads } from "@/hooks/useLeads";
+import { useSubscriptions } from "@/hooks/useSubscriptions";
+import { useNotifications } from "@/hooks/useNotifications";
+import { TrendingUp, Users, Crown, Bell } from "lucide-react";
 
 export default function Dashboard() {
-  const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<DashboardStats>({
-    totalDiamonds: 0,
-    matchedPairs: 0,
-    totalLeads: 0,
-    activeSubscriptions: 0,
-  });
-  
-  const [inventoryData, setInventoryData] = useState<InventoryData[]>([]);
-  const [salesData, setSalesData] = useState<InventoryData[]>([]);
-  
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      if (!user || !isAuthenticated) {
-        setLoading(false);
-        return;
-      }
+  const { allDiamonds, loading: inventoryLoading } = useInventoryData();
+  const { leads, isLoading: leadsLoading } = useLeads();
+  const { subscriptions, isLoading: subscriptionsLoading } = useSubscriptions();
+  const { notifications } = useNotifications();
 
-      setLoading(true);
-      setCurrentUserId(user.id);
-      
-      try {
-        console.log(`Fetching diamond data for dashboard for user:`, user.id);
-        
-        // Fetch user-specific diamonds from your FastAPI backend
-        const diamondsResponse = await api.get<any[]>(
-          apiEndpoints.getAllStones(user.id)
-        );
-        
-        if (diamondsResponse.data) {
-          console.log('Received diamond data:', diamondsResponse.data);
-          
-          // Process the diamond data for dashboard analytics with user filtering
-          const { stats: processedStats, inventoryByShape, salesByCategory } = 
-            processDiamondDataForDashboard(diamondsResponse.data, user.id);
-          
-          setStats(processedStats);
-          setInventoryData(inventoryByShape);
-          setSalesData(salesByCategory);
-        } else {
-          console.warn('No diamond data received');
-        }
-        
-      } catch (error) {
-        console.error("Failed to fetch dashboard data", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    if (!authLoading) {
-      fetchDashboardData();
-    }
-  }, [user, isAuthenticated, authLoading]);
+  // Calculate real metrics
+  const totalInventory = allDiamonds.length;
+  const activeLeads = leads.filter(lead => lead.status === 'active').length;
+  const activeSubscriptions = subscriptions.filter(sub => sub.status === 'active').length;
+  const unreadNotifications = notifications.filter(n => !n.read).length;
 
-  // Show loading state while auth is initializing
-  if (authLoading) {
+  // Calculate total inventory value
+  const totalValue = allDiamonds.reduce((sum, diamond) => sum + (diamond.price || 0), 0);
+
+  // Recent activity data
+  const recentActivity = [
+    ...leads.slice(0, 3).map(lead => ({
+      type: 'lead',
+      title: `New lead from ${lead.customer_name}`,
+      time: lead.created_at,
+      description: `Inquiry type: ${lead.inquiry_type}`
+    })),
+    ...notifications.slice(0, 2).map(notif => ({
+      type: 'notification',
+      title: notif.title,
+      time: notif.created_at,
+      description: notif.message
+    }))
+  ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 5);
+
+  if (inventoryLoading || leadsLoading || subscriptionsLoading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-diamond-500 mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Initializing...</p>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           </div>
-        </div>
-      </Layout>
-    );
-  }
-
-  // Show authentication error if not authenticated
-  if (!isAuthenticated) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center h-64">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Authentication Required</CardTitle>
-              <CardDescription>
-                Please open this app through Telegram to access your dashboard.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                This app requires Telegram authentication to function properly.
-              </p>
-            </CardContent>
-          </Card>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardContent className="p-6">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </Layout>
     );
@@ -117,62 +64,140 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Welcome to Diamond Muzzle, {user?.first_name}. Here's an overview of your inventory.
-          </p>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-diamond-600 to-diamond-700 bg-clip-text text-transparent">
+              Dashboard
+            </h1>
+            <p className="text-muted-foreground">
+              Welcome back! Here's what's happening with your diamond business.
+            </p>
+          </div>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            title="Total Diamonds"
-            value={stats.totalDiamonds}
-            icon={Diamond}
-            trend={7.4}
-            trendLabel="vs last month"
-            loading={loading}
-          />
-          <StatCard
-            title="Matched Pairs"
-            value={stats.matchedPairs}
-            icon={BadgeCheck}
-            trend={3.2}
-            trendLabel="vs last month"
-            loading={loading}
+            title="Total Inventory"
+            value={totalInventory.toString()}
+            description="Diamonds in stock"
+            icon={TrendingUp}
+            trend={{ value: 12, isPositive: true }}
           />
           <StatCard
             title="Active Leads"
-            value={stats.totalLeads}
+            value={activeLeads.toString()}
+            description="Customer inquiries"
             icon={Users}
-            trend={-2.1}
-            trendLabel="vs last month"
-            loading={loading}
+            trend={{ value: 8, isPositive: true }}
           />
           <StatCard
             title="Active Subscriptions"
-            value={stats.activeSubscriptions}
-            suffix=""
-            icon={Coins}
-            trend={12.5}
-            trendLabel="vs last month"
-            loading={loading}
+            value={activeSubscriptions.toString()}
+            description="Current plans"
+            icon={Crown}
+            trend={{ value: 0, isPositive: true }}
+          />
+          <StatCard
+            title="Notifications"
+            value={unreadNotifications.toString()}
+            description="Unread alerts"
+            icon={Bell}
+            trend={{ value: 3, isPositive: false }}
           />
         </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <InventoryChart
-            title="Inventory by Shape"
-            data={inventoryData}
-            loading={loading}
-          />
-          
-          <InventoryChart
-            title="Diamond Distribution by Color"
-            data={salesData}
-            loading={loading}
-          />
+
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="md:col-span-1">
+            <CardHeader>
+              <CardTitle>Inventory Overview</CardTitle>
+              <CardDescription>
+                Your diamond collection at a glance
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <InventoryChart />
+            </CardContent>
+          </Card>
+
+          <Card className="md:col-span-1">
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>
+                Latest updates and notifications
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {recentActivity.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No recent activity to display
+                  </p>
+                ) : (
+                  recentActivity.map((activity, index) => (
+                    <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-diamond-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 border border-diamond-200 dark:border-gray-600">
+                      <div className={`p-1 rounded-full ${
+                        activity.type === 'lead' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
+                      }`}>
+                        {activity.type === 'lead' ? <Users className="h-3 w-3" /> : <Bell className="h-3 w-3" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground">{activity.title}</p>
+                        <p className="text-xs text-muted-foreground">{activity.description}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(activity.time).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-3">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Inventory Value</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-diamond-600">
+                ${totalValue.toLocaleString()}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Total collection value
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Lead Conversion</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {leads.length > 0 ? Math.round((activeLeads / leads.length) * 100) : 0}%
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Active lead rate
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Average Price</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">
+                ${totalInventory > 0 ? Math.round(totalValue / totalInventory).toLocaleString() : 0}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Per diamond
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </Layout>

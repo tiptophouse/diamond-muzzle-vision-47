@@ -9,10 +9,10 @@ import {
   Upload,
   MessageSquare,
   Lightbulb,
-  CreditCard,
   FileText,
   Menu,
-  X
+  X,
+  Bell
 } from "lucide-react";
 import { useState } from "react";
 
@@ -30,15 +30,15 @@ const SidebarItem = ({ icon: Icon, label, path, isActive, isMobileOpen, onClick 
     <Link
       to={path}
       className={cn(
-        "flex items-center gap-3 px-3 py-2 rounded-md transition-colors",
+        "flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200",
         isActive 
-          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-          : "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          ? "bg-gradient-to-r from-diamond-500 to-diamond-600 text-white shadow-md"
+          : "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-gradient-to-r hover:from-diamond-50 hover:to-diamond-100 hover:scale-105"
       )}
       onClick={onClick}
     >
       <Icon size={20} />
-      {isMobileOpen && <span>{label}</span>}
+      {isMobileOpen && <span className="font-medium">{label}</span>}
     </Link>
   );
 };
@@ -53,9 +53,8 @@ export function Sidebar() {
     { path: "/upload", label: "Upload", icon: Upload },
     { path: "/reports", label: "Reports", icon: FileText },
     { path: "/chat", label: "Chat", icon: MessageSquare },
-    { path: "/queries", label: "Client Queries", icon: MessageSquare },
+    { path: "/notifications", label: "Notifications", icon: Bell },
     { path: "/insights", label: "AI Insights", icon: Lightbulb },
-    { path: "/payments", label: "Payments & Leads", icon: CreditCard },
     { path: "/settings", label: "Settings", icon: Settings },
   ];
 
@@ -67,7 +66,7 @@ export function Sidebar() {
       <Button
         variant="ghost"
         size="icon"
-        className="fixed top-4 left-4 z-50 md:hidden bg-diamond-100 hover:bg-diamond-200 text-diamond-700 hover:text-diamond-900 hover:scale-110 transition-all duration-300 shadow-md hover:shadow-lg border border-diamond-200"
+        className="fixed top-4 left-4 z-50 md:hidden bg-white/90 backdrop-blur-sm hover:bg-white hover:scale-110 transition-all duration-300 shadow-lg hover:shadow-xl border border-diamond-200"
         onClick={toggleMobile}
       >
         {isMobileOpen ? <X size={20} className="animate-fade-in" /> : <Menu size={20} className="animate-fade-in" />}
@@ -84,17 +83,17 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 bg-sidebar flex flex-col w-16 transition-all duration-300 md:relative md:w-64",
+          "fixed inset-y-0 left-0 z-50 bg-gradient-to-b from-white to-diamond-50 dark:from-gray-900 dark:to-gray-800 flex flex-col w-16 transition-all duration-300 md:relative md:w-64 border-r border-diamond-200 dark:border-gray-700 shadow-lg",
           isMobileOpen ? "translate-x-0 w-64" : "-translate-x-full md:translate-x-0 md:w-16 md:hover:w-64"
         )}
       >
-        <div className="p-4 border-b border-sidebar-border flex items-center h-16">
+        <div className="p-4 border-b border-diamond-200 dark:border-gray-700 flex items-center h-16">
           <div className="flex items-center gap-3 overflow-hidden">
-            <div className="w-8 h-8 rounded-full bg-diamond-500 flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-diamond-500 to-diamond-600 flex items-center justify-center text-white font-bold shadow-md">
               D
             </div>
             <h1 className={cn(
-              "font-bold text-sidebar-foreground whitespace-nowrap transition-opacity",
+              "font-bold text-gray-800 dark:text-white whitespace-nowrap transition-opacity bg-gradient-to-r from-diamond-600 to-diamond-700 bg-clip-text text-transparent",
               isMobileOpen ? "opacity-100" : "opacity-0 md:group-hover:opacity-100"
             )}>
               Diamond Muzzle
@@ -102,7 +101,7 @@ export function Sidebar() {
           </div>
         </div>
 
-        <nav className="flex-1 py-6 px-2 space-y-1 overflow-y-auto">
+        <nav className="flex-1 py-6 px-2 space-y-2 overflow-y-auto">
           {routes.map((route) => (
             <SidebarItem
               key={route.path}
@@ -116,12 +115,12 @@ export function Sidebar() {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-sidebar-border">
+        <div className="p-4 border-t border-diamond-200 dark:border-gray-700">
           <div className={cn(
             "text-xs text-sidebar-foreground/70 transition-opacity",
             isMobileOpen ? "opacity-100" : "opacity-0 md:group-hover:opacity-100"
           )}>
-            v1.0.0
+            v2.0.0
           </div>
         </div>
       </aside>

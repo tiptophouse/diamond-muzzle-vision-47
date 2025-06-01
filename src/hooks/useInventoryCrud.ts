@@ -18,6 +18,11 @@ export function useInventoryCrud(onSuccess?: () => void) {
     return uuidRegex.test(uuid);
   };
 
+  // Helper function to generate consistent UUID
+  const generateDiamondId = (): string => {
+    return crypto.randomUUID();
+  };
+
   const addDiamond = async (data: DiamondFormData) => {
     if (!user?.id) {
       toast({
@@ -33,10 +38,10 @@ export function useInventoryCrud(onSuccess?: () => void) {
       const diamondData = {
         ...data,
         user_id: user.id,
-        id: crypto.randomUUID(),
+        id: generateDiamondId(),
       };
 
-      console.log('Adding diamond:', diamondData);
+      console.log('Adding diamond with generated ID:', diamondData);
       
       const response = await api.uploadCsv('/upload-inventory', [diamondData], user.id);
       
@@ -74,36 +79,36 @@ export function useInventoryCrud(onSuccess?: () => void) {
       return false;
     }
 
-    // Validate diamond ID
+    // Validate diamond ID format
     if (!diamondId || !isValidUUID(diamondId)) {
-      console.error('Invalid diamond ID:', diamondId);
+      console.error('Invalid diamond ID format:', diamondId);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Invalid diamond ID provided",
+        description: "Invalid diamond ID format. Please refresh and try again.",
       });
       return false;
     }
 
     setIsLoading(true);
     try {
-      console.log('Updating diamond:', diamondId, 'with data:', data);
+      console.log('Updating diamond ID:', diamondId, 'with data:', data);
       
-      // Prepare update data with proper validation
+      // Prepare update data with proper validation and type conversion
       const updateData = {
-        stock_number: data.stockNumber || '',
+        stock_number: data.stockNumber?.toString() || '',
         shape: data.shape || 'Round',
-        weight: data.carat && data.carat > 0 ? data.carat : 1,
+        weight: Number(data.carat) || 1,
         color: data.color || 'G',
         clarity: data.clarity || 'VS1',
         cut: data.cut || 'Excellent',
-        price_per_carat: data.carat > 0 ? Math.round(data.price / data.carat) : Math.round(data.price),
+        price_per_carat: data.carat > 0 ? Math.round(Number(data.price) / Number(data.carat)) : Math.round(Number(data.price)),
         status: data.status || 'Available',
         picture: data.imageUrl || null,
+        updated_at: new Date().toISOString(),
       };
 
       console.log('Supabase update data:', updateData);
-      console.log('Updating diamond with ID:', diamondId, 'for user:', user.id);
 
       const { data: updatedData, error } = await supabase
         .from('inventory')
@@ -116,13 +121,14 @@ export function useInventoryCrud(onSuccess?: () => void) {
       if (error) {
         console.error('Supabase update error:', error);
         
-        // Provide more specific error messages
         if (error.message.includes('invalid input syntax for type uuid')) {
-          throw new Error('Invalid ID format. Please try refreshing the page.');
+          throw new Error('Invalid diamond ID format. Please refresh the page and try again.');
         } else if (error.message.includes('row-level security')) {
           throw new Error('You do not have permission to update this diamond.');
+        } else if (error.message.includes('No rows found')) {
+          throw new Error('Diamond not found. It may have been deleted.');
         } else {
-          throw new Error(`Database update failed: ${error.message}`);
+          throw new Error(`Update failed: ${error.message}`);
         }
       }
 
@@ -130,7 +136,7 @@ export function useInventoryCrud(onSuccess?: () => void) {
         throw new Error('Diamond not found or no changes were made');
       }
 
-      console.log('Diamond updated successfully in Supabase:', updatedData);
+      console.log('Diamond updated successfully:', updatedData);
       
       toast({
         title: "Success",
@@ -163,28 +169,36 @@ export function useInventoryCrud(onSuccess?: () => void) {
       return false;
     }
 
-    // Validate diamond ID
+    // Validate diamond ID format
     if (!diamondId || !isValidUUID(diamondId)) {
       console.error('Invalid diamond ID for deletion:', diamondId);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Invalid diamond ID provided",
+        description: "Invalid diamond ID format",
       });
       return false;
     }
 
     setIsLoading(true);
     try {
-      console.log('Deleting diamond from FastAPI backend:', diamondId, 'for user:', user.id);
+      console.log('Deleting diamond ID:', diamondId, 'for user:', user.id);
       
-      const response = await api.delete(apiEndpoints.deleteDiamond(diamondId, user.id));
-      
-      console.log('Delete response:', response);
-      
-      if (response.error) {
-        console.error('Delete API error:', response.error);
-        throw new Error(response.error);
+      // First try deleting directly from Supabase for immediate feedback
+      const { error: supabaseError } = await supabase
+        .from('inventory')
+        .delete()
+        .eq('id', diamondId)
+        .eq('user_id', user.id);
+
+      if (supabaseError) {
+        console.error('Supabase delete error:', supabaseError);
+        // Fall back to API deletion
+        const response = await api.delete(apiEndpoints.deleteDiamond(diamondId, user.id));
+        
+        if (response.error) {
+          throw new Error(response.error);
+        }
       }
       
       toast({

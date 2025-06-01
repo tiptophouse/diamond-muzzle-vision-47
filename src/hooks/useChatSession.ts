@@ -5,18 +5,21 @@ import { toast } from '@/components/ui/use-toast';
 
 interface ChatSession {
   id: string;
-  user_id: string;
+  user_id: number;
   title: string;
   created_at: string;
   updated_at: string;
 }
 
-export function useChatSession(userId: string) {
+export function useChatSession(userId: number | null) {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchSessions = async () => {
-    if (!userId) return;
+    if (!userId) {
+      setIsLoading(false);
+      return;
+    }
     
     try {
       const { data, error } = await supabase

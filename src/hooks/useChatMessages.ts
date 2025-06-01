@@ -7,7 +7,7 @@ interface ChatMessage {
   id: string;
   content: string;
   role: 'user' | 'assistant';
-  user_id: string | null;
+  user_id: number | null;
   session_id: string | null;
   created_at: string;
 }
@@ -32,7 +32,6 @@ export function useChatMessages(sessionId: string | null) {
 
       if (error) throw error;
       
-      // Cast the data to our ChatMessage interface
       const typedMessages: ChatMessage[] = (data || []).map(msg => ({
         ...msg,
         role: msg.role as 'user' | 'assistant'
@@ -53,7 +52,7 @@ export function useChatMessages(sessionId: string | null) {
 
   const sendMessage = async (
     content: string, 
-    userId: string | null, 
+    userId: number | null, 
     role: 'user' | 'assistant'
   ): Promise<ChatMessage | null> => {
     if (!sessionId) return null;
@@ -72,7 +71,6 @@ export function useChatMessages(sessionId: string | null) {
 
       if (error) throw error;
       
-      // Cast the returned data to our ChatMessage interface
       const typedMessage: ChatMessage = {
         ...data,
         role: data.role as 'user' | 'assistant'
@@ -109,7 +107,6 @@ export function useChatMessages(sessionId: string | null) {
           filter: `session_id=eq.${sessionId}`,
         },
         (payload) => {
-          // Cast the payload to our ChatMessage interface
           const typedMessage: ChatMessage = {
             ...payload.new,
             role: payload.new.role as 'user' | 'assistant'
