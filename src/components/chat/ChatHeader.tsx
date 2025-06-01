@@ -2,21 +2,18 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Sparkles, Plus } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 interface ChatHeaderProps {
   title: string;
   subtitle?: string;
   isOnline?: boolean;
-  onNewChat?: () => void;
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({ 
   title, 
   subtitle, 
-  isOnline = true,
-  onNewChat 
+  isOnline = true 
 }) => {
   return (
     <div className="flex items-center gap-3 p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
@@ -38,18 +35,6 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           <p className="text-sm text-muted-foreground">{subtitle}</p>
         )}
       </div>
-
-      {onNewChat && (
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={onNewChat}
-          className="flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          New Chat
-        </Button>
-      )}
     </div>
   );
 };

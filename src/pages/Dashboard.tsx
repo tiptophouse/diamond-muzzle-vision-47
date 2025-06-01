@@ -1,5 +1,6 @@
 
 import { Layout } from "@/components/layout/Layout";
+import { DiamondViewer } from "@/components/dashboard/DiamondViewer";
 import { EnhancedStatsGrid } from "@/components/dashboard/EnhancedStatsGrid";
 import { InventoryChart } from "@/components/dashboard/InventoryChart";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +9,7 @@ import { useInventoryData } from "@/hooks/useInventoryData";
 import { useLeads } from "@/hooks/useLeads";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useNotifications } from "@/hooks/useNotifications";
-import { TrendingUp, Users, Crown, Bell, Sparkles, BarChart3, Diamond, DollarSign, Eye, Package } from "lucide-react";
+import { TrendingUp, Users, Crown, Bell, Sparkles, BarChart3 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 
 export default function Dashboard() {
@@ -22,10 +23,9 @@ export default function Dashboard() {
   const activeLeads = leads.filter(lead => lead.status === 'active').length;
   const activeSubscriptions = subscriptions.filter(sub => sub.status === 'active').length;
   const unreadNotifications = notifications.filter(n => !n.read).length;
+
+  // Calculate total inventory value
   const totalValue = allDiamonds.reduce((sum, diamond) => sum + (diamond.price || 0), 0);
-  const averagePrice = allDiamonds.length > 0 ? totalValue / allDiamonds.length : 0;
-  const availableDiamonds = allDiamonds.filter(d => d.status === 'Available').length;
-  const premiumDiamonds = allDiamonds.filter(d => (d.price || 0) > 10000).length;
 
   // Generate chart data for shapes
   const shapeData = allDiamonds.reduce((acc, diamond) => {
@@ -38,19 +38,6 @@ export default function Dashboard() {
     name,
     value,
     color: theme === 'dark' ? '#a855f7' : '#7a63f5'
-  }));
-
-  // Color distribution
-  const colorData = allDiamonds.reduce((acc, diamond) => {
-    const color = diamond.color || 'Unknown';
-    acc[color] = (acc[color] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const colorChartData = Object.entries(colorData).map(([name, value]) => ({
-    name,
-    value,
-    color: theme === 'dark' ? '#10b981' : '#059669'
   }));
 
   // Recent activity data
@@ -81,6 +68,15 @@ export default function Dashboard() {
             </Button>
           </div>
           <EnhancedStatsGrid diamonds={[]} loading={true} />
+          <div className="grid gap-6 md:grid-cols-2">
+            <DiamondViewer diamonds={[]} loading={true} />
+            <Card className="glass-card animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-4 bg-muted rounded w-3/4 mb-4"></div>
+                <div className="h-64 bg-muted rounded"></div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </Layout>
     );
@@ -108,64 +104,20 @@ export default function Dashboard() {
 
         <EnhancedStatsGrid diamonds={allDiamonds} loading={inventoryLoading} />
 
-        {/* Main Content Grid - More Data Dense */}
-        <div className="grid gap-6 lg:grid-cols-12">
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <DiamondViewer diamonds={allDiamonds} loading={inventoryLoading} />
+          </div>
           
-          {/* Portfolio Overview - Takes up more space */}
-          <Card className="glass-card lg:col-span-4">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Diamond className="h-5 w-5 text-diamond-600" />
-                Portfolio Overview
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 rounded-lg bg-gradient-to-br from-diamond-50 to-blue-50 dark:from-diamond-950 dark:to-blue-950">
-                  <p className="text-2xl font-bold text-diamond-600">{allDiamonds.length}</p>
-                  <p className="text-sm text-muted-foreground">Total Stones</p>
-                </div>
-                <div className="text-center p-4 rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
-                  <p className="text-2xl font-bold text-green-600">${totalValue.toLocaleString()}</p>
-                  <p className="text-sm text-muted-foreground">Total Value</p>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 border">
-                  <div className="flex items-center gap-2">
-                    <Eye className="h-4 w-4 text-purple-600" />
-                    <span className="text-sm font-medium">Available</span>
-                  </div>
-                  <span className="text-lg font-bold text-purple-600">{availableDiamonds}</span>
-                </div>
-                
-                <div className="flex justify-between items-center p-3 rounded-lg bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950 dark:to-red-950 border">
-                  <div className="flex items-center gap-2">
-                    <Crown className="h-4 w-4 text-orange-600" />
-                    <span className="text-sm font-medium">Premium ($10k+)</span>
-                  </div>
-                  <span className="text-lg font-bold text-orange-600">{premiumDiamonds}</span>
-                </div>
-
-                <div className="flex justify-between items-center p-3 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border">
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm font-medium">Avg. Price</span>
-                  </div>
-                  <span className="text-lg font-bold text-blue-600">${Math.round(averagePrice).toLocaleString()}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Quick Insights */}
-          <Card className="glass-card lg:col-span-4">
+          <Card className="glass-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-diamond-600" />
                 Quick Insights
               </CardTitle>
+              <CardDescription>
+                Key metrics at a glance
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center p-3 rounded-lg bg-gradient-to-r from-diamond-50 to-blue-50 dark:from-diamond-950 dark:to-blue-950 border">
@@ -202,9 +154,26 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
+        </div>
 
-          {/* Recent Activity */}
-          <Card className="glass-card lg:col-span-4">
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle>Inventory Distribution</CardTitle>
+              <CardDescription>
+                Diamond shapes in your collection
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <InventoryChart 
+                data={chartData}
+                title="Diamonds by Shape"
+                loading={inventoryLoading}
+              />
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card">
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
               <CardDescription>
@@ -236,41 +205,6 @@ export default function Dashboard() {
                   ))
                 )}
               </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Charts Row */}
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle>Shape Distribution</CardTitle>
-              <CardDescription>
-                Diamond shapes in your collection
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <InventoryChart 
-                data={chartData}
-                title="Diamonds by Shape"
-                loading={inventoryLoading}
-              />
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle>Color Distribution</CardTitle>
-              <CardDescription>
-                Color grades in your inventory
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <InventoryChart 
-                data={colorChartData}
-                title="Diamonds by Color"
-                loading={inventoryLoading}
-              />
             </CardContent>
           </Card>
         </div>
