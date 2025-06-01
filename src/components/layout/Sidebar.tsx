@@ -13,7 +13,8 @@ import {
   Menu,
   X,
   Bell,
-  Shield
+  Shield,
+  Star
 } from "lucide-react";
 import { useState } from "react";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
