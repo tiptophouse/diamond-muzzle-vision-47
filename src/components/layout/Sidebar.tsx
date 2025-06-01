@@ -12,9 +12,13 @@ import {
   FileText,
   Menu,
   X,
-  Bell
+  Bell,
+  Shield
 } from "lucide-react";
 import { useState } from "react";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
+
+const ADMIN_TELEGRAM_ID = 2138564172;
 
 interface SidebarItemProps {
   icon: React.ElementType;
@@ -22,9 +26,10 @@ interface SidebarItemProps {
   path: string;
   isActive: boolean;
   onClick?: () => void;
+  isAdminOnly?: boolean;
 }
 
-const SidebarItem = ({ icon: Icon, label, path, isActive, onClick }: SidebarItemProps) => {
+const SidebarItem = ({ icon: Icon, label, path, isActive, onClick, isAdminOnly }: SidebarItemProps) => {
   return (
     <Link
       to={path}
@@ -32,12 +37,18 @@ const SidebarItem = ({ icon: Icon, label, path, isActive, onClick }: SidebarItem
         "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 w-full",
         isActive 
           ? "bg-blue-600 text-white shadow-lg"
-          : "text-gray-700 hover:text-gray-900 hover:bg-blue-50 hover:scale-105"
+          : "text-gray-700 hover:text-gray-900 hover:bg-blue-50 hover:scale-105",
+        isAdminOnly && "bg-red-50 border border-red-200 hover:bg-red-100"
       )}
       onClick={onClick}
     >
       <Icon size={20} />
       <span className="font-medium text-base">{label}</span>
+      {isAdminOnly && (
+        <div className="ml-auto">
+          <Shield size={16} className="text-red-600" />
+        </div>
+      )}
     </Link>
   );
 };
@@ -45,6 +56,9 @@ const SidebarItem = ({ icon: Icon, label, path, isActive, onClick }: SidebarItem
 export function Sidebar() {
   const location = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { user } = useTelegramAuth();
+
+  const isAdmin = user?.id === ADMIN_TELEGRAM_ID;
 
   const routes = [
     { path: "/", label: "Dashboard", icon: BarChart },
@@ -55,6 +69,11 @@ export function Sidebar() {
     { path: "/notifications", label: "Notifications", icon: Bell },
     { path: "/insights", label: "AI Insights", icon: Lightbulb },
     { path: "/settings", label: "Settings", icon: Settings },
+  ];
+
+  // Admin-only routes
+  const adminRoutes = [
+    { path: "/admin", label: "Admin Panel", icon: Shield, isAdminOnly: true },
   ];
 
   const toggleMobile = () => setIsMobileOpen(!isMobileOpen);
@@ -98,6 +117,7 @@ export function Sidebar() {
         </div>
 
         <nav className="flex-1 py-6 px-4 space-y-2 overflow-y-auto">
+          {/* Regular routes */}
           {routes.map((route) => (
             <SidebarItem
               key={route.path}
@@ -108,9 +128,45 @@ export function Sidebar() {
               onClick={() => setIsMobileOpen(false)}
             />
           ))}
+
+          {/* Admin section - only visible to admin */}
+          {isAdmin && (
+            <>
+              <div className="py-4">
+                <div className="border-t border-red-200"></div>
+              </div>
+              
+              <div className="mb-3">
+                <div className="flex items-center gap-2 px-4 py-2 text-red-600 font-semibold text-sm">
+                  <Shield size={16} />
+                  <span>ADMIN SECTION</span>
+                </div>
+              </div>
+
+              {adminRoutes.map((route) => (
+                <SidebarItem
+                  key={route.path}
+                  icon={route.icon}
+                  label={route.label}
+                  path={route.path}
+                  isActive={location.pathname === route.path}
+                  onClick={() => setIsMobileOpen(false)}
+                  isAdminOnly={route.isAdminOnly}
+                />
+              ))}
+            </>
+          )}
         </nav>
 
         <div className="p-6 border-t border-gray-200">
+          {isAdmin && (
+            <div className="mb-3 p-2 bg-red-50 rounded-lg border border-red-200">
+              <div className="flex items-center gap-2 text-red-700 text-sm font-medium">
+                <Shield size={14} />
+                <span>Admin Mode Active</span>
+              </div>
+            </div>
+          )}
           <div className="text-sm text-gray-500 text-center">
             v2.0.0
           </div>
