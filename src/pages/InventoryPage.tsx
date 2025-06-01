@@ -6,6 +6,7 @@ import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { InventorySearch } from "@/components/inventory/InventorySearch";
 import { InventoryPagination } from "@/components/inventory/InventoryPagination";
 import { DiamondForm } from "@/components/inventory/DiamondForm";
+import { DiamondFormData } from "@/components/inventory/form/types";
 import { useInventoryData } from "@/hooks/useInventoryData";
 import { useInventorySearch } from "@/hooks/useInventorySearch";
 import { useInventoryCrud } from "@/hooks/useInventoryCrud";
@@ -85,7 +86,7 @@ export default function InventoryPage() {
     setDeleteDialogOpen(true);
   };
 
-  const handleFormSubmit = async (data: any) => {
+  const handleFormSubmit = async (data: DiamondFormData) => {
     let success = false;
     
     if (editingDiamond) {

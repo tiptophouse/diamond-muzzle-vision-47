@@ -1,22 +1,10 @@
-
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { api, apiEndpoints } from '@/lib/api';
 import { supabase } from '@/integrations/supabase/client';
 import { Diamond } from '@/components/inventory/InventoryTable';
+import { DiamondFormData } from '@/components/inventory/form/types';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-
-interface DiamondFormData {
-  stockNumber: string;
-  shape: string;
-  carat: number;
-  color: string;
-  clarity: string;
-  cut: string;
-  price: number;
-  status: string;
-  imageUrl?: string;
-}
 
 export function useInventoryCrud(onSuccess?: () => void) {
   const { toast } = useToast();
