@@ -112,7 +112,7 @@ export function AdminUserCard({
               <span className="font-semibold text-gray-900 text-sm sm:text-base">
                 {getDisplayName()}
               </span>
-              {!isRealUserData() && <AlertCircle className="h-4 w-4 text-orange-500" title="Mock/Placeholder Data" />}
+              {!isRealUserData() && <AlertCircle className="h-4 w-4 text-orange-500" />}
               {user.is_premium && <Star className="h-4 w-4 text-yellow-500" />}
               {user.phone_number && <Phone className="h-4 w-4 text-green-500" />}
               {isBlocked && <Shield className="h-4 w-4 text-red-500" />}

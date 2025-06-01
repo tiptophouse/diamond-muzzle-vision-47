@@ -11,12 +11,15 @@ import { AdminStatsGrid } from './AdminStatsGrid';
 import { AdminUserTable } from './AdminUserTable';
 import { NotificationSender } from './NotificationSender';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AdminUserManagerProps {}
 
 export function AdminUserManager({}: AdminUserManagerProps) {
-  const { enhancedUsers, isLoading, getUserEngagementScore, getUserStats } = useEnhancedAnalytics();
+  const { enhancedUsers, isLoading, getUserEngagementScore, getUserStats, refetch } = useEnhancedAnalytics();
   const { isUserBlocked, blockUser, unblockUser, blockedUsers } = useBlockedUsers();
+  const { toast } = useToast();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -24,6 +27,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
   const [showAddUser, setShowAddUser] = useState(false);
   const [showEditUser, setShowEditUser] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const stats = getUserStats();
 
@@ -68,7 +72,68 @@ export function AdminUserManager({}: AdminUserManagerProps) {
       : `User ${user.telegram_id}`;
       
     if (window.confirm(`Are you sure you want to delete ${displayName}? This action cannot be undone.`)) {
-      console.log('Delete user:', user.telegram_id);
+      setIsDeleting(true);
+      
+      try {
+        console.log('Deleting user:', user.telegram_id);
+        
+        // Delete from user_analytics first (foreign key constraint)
+        const { error: analyticsError } = await supabase
+          .from('user_analytics')
+          .delete()
+          .eq('telegram_id', user.telegram_id);
+
+        if (analyticsError) {
+          console.warn('Error deleting analytics:', analyticsError);
+        }
+
+        // Delete from blocked_users if exists
+        const { error: blockedError } = await supabase
+          .from('blocked_users')
+          .delete()
+          .eq('telegram_id', user.telegram_id);
+
+        if (blockedError) {
+          console.warn('Error deleting blocked user:', blockedError);
+        }
+
+        // Delete from user_profiles
+        const { error: profileError } = await supabase
+          .from('user_profiles')
+          .delete()
+          .eq('telegram_id', user.telegram_id);
+
+        if (profileError) {
+          throw profileError;
+        }
+
+        // Log admin action
+        await supabase
+          .from('user_management_log')
+          .insert({
+            admin_telegram_id: 2138564172,
+            action_type: 'deleted',
+            target_telegram_id: user.telegram_id,
+            reason: 'User deleted via admin panel'
+          });
+
+        toast({
+          title: "User Deleted",
+          description: `Successfully deleted ${displayName}`,
+        });
+
+        // Refresh the data
+        refetch();
+      } catch (error: any) {
+        console.error('Error deleting user:', error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to delete user",
+          variant: "destructive",
+        });
+      } finally {
+        setIsDeleting(false);
+      }
     }
   };
 
@@ -77,10 +142,54 @@ export function AdminUserManager({}: AdminUserManagerProps) {
     if (blocked) {
       const blockedUser = blockedUsers.find(bu => bu.telegram_id === user.telegram_id);
       if (blockedUser) {
-        await unblockUser(blockedUser.id);
+        const success = await unblockUser(blockedUser.id);
+        if (success) {
+          refetch();
+        }
       }
     } else {
-      await blockUser(user.telegram_id, 'Blocked by admin');
+      const success = await blockUser(user.telegram_id, 'Blocked by admin');
+      if (success) {
+        refetch();
+      }
+    }
+  };
+
+  const deleteMockData = async () => {
+    if (window.confirm('Are you sure you want to delete ALL mock/test data? This will remove users with names like "Test", "Telegram", "Emergency", etc.')) {
+      try {
+        console.log('Deleting all mock data...');
+        
+        // Delete mock users from analytics first
+        const { error: analyticsError } = await supabase
+          .from('user_analytics')
+          .delete()
+          .in('telegram_id', [2138564172, 1000000000]); // Known mock IDs
+
+        // Delete mock users where first_name indicates test data
+        const { error: profileError } = await supabase
+          .from('user_profiles')
+          .delete()
+          .or('first_name.ilike.%test%,first_name.ilike.%telegram%,first_name.ilike.%emergency%,first_name.ilike.%unknown%');
+
+        if (profileError) {
+          throw profileError;
+        }
+
+        toast({
+          title: "Mock Data Deleted",
+          description: "All mock/test data has been removed",
+        });
+
+        refetch();
+      } catch (error: any) {
+        console.error('Error deleting mock data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete mock data",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -139,6 +248,15 @@ export function AdminUserManager({}: AdminUserManagerProps) {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
         <AdminHeader onExportData={exportUserData} onAddUser={() => setShowAddUser(true)} />
+
+        <div className="flex gap-4 mb-6">
+          <button
+            onClick={deleteMockData}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+          >
+            Delete All Mock Data
+          </button>
+        </div>
 
         <AdminStatsGrid 
           stats={stats} 
