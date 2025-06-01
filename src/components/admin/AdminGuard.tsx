@@ -2,7 +2,7 @@
 import { ReactNode } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { Navigate } from 'react-router-dom';
-import { Shield, AlertTriangle, Star } from 'lucide-react';
+import { Shield, AlertTriangle, Settings } from 'lucide-react';
 
 interface AdminGuardProps {
   children: ReactNode;
@@ -15,58 +15,52 @@ export function AdminGuard({ children }: AdminGuardProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen cosmic-bg particle-bg flex items-center justify-center">
-        <div className="text-center p-8 glass-card rounded-2xl max-w-md mx-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
           <div className="relative">
-            <div className="animate-spin rounded-full h-20 w-20 border-4 border-purple-500/30 border-t-cyan-400 mx-auto mb-6"></div>
-            <Star className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-purple-400 animate-pulse" />
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto mb-6"></div>
+            <Settings className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-6 w-6 text-blue-600" />
           </div>
-          <h3 className="text-2xl font-bold cosmic-text mb-4">🦄 Accessing Cosmic Portal</h3>
-          <p className="text-cyan-300 text-sm mb-4">Verifying unicorn-level clearance...</p>
-          <div className="w-full bg-slate-800/50 rounded-full h-3 overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500 rounded-full animate-pulse"></div>
-          </div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Verifying Access</h3>
+          <p className="text-gray-600 text-sm">Checking administrator permissions...</p>
         </div>
       </div>
     );
   }
 
-  // Check if user is the admin
   if (!user || user.id !== ADMIN_TELEGRAM_ID) {
     return (
-      <div className="min-h-screen cosmic-bg particle-bg flex items-center justify-center">
-        <div className="text-center p-8 glass-card rounded-2xl max-w-md mx-4">
-          <div className="bg-gradient-to-br from-purple-500/20 to-cyan-500/20 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 neon-glow">
-            <AlertTriangle className="h-12 w-12 text-purple-400" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
+          <div className="bg-red-50 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle className="h-10 w-10 text-red-600" />
           </div>
-          <h2 className="text-3xl font-bold cosmic-text mb-4">🔮 Access Restricted</h2>
-          <p className="text-cyan-300 mb-6">
-            This cosmic realm is reserved for unicorn administrators only.
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Restricted</h2>
+          <p className="text-gray-600 mb-6">
+            This area is restricted to administrators only.
           </p>
-          <p className="text-sm text-purple-300 mb-8">
-            Current user ID: {user?.id || 'Unknown entity'}
+          <p className="text-sm text-gray-500 mb-8">
+            User ID: {user?.id || 'Unknown'}
           </p>
           <button
             onClick={() => window.location.href = '#/'}
-            className="cosmic-button w-full"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors w-full"
           >
-            🌟 Return to Main Universe
+            Return to Dashboard
           </button>
         </div>
       </div>
     );
   }
 
-  // Admin verified - show cosmic admin panel
   return (
-    <div className="min-h-screen cosmic-bg">
-      <div className="gradient-border sticky top-0 z-50 backdrop-blur-md">
-        <div className="flex items-center justify-center gap-3 p-4 text-white">
-          <Star className="h-6 w-6 text-purple-400 animate-pulse" />
-          <span className="font-bold cosmic-text text-lg">
-            🦄 COSMIC ADMIN PORTAL - Welcome, {user.first_name}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="bg-white border-b sticky top-0 z-50 shadow-sm">
+        <div className="flex items-center justify-center gap-3 p-4">
+          <Shield className="h-5 w-5 text-blue-600" />
+          <span className="font-semibold text-gray-900">
+            Admin Dashboard - Welcome, {user.first_name}
           </span>
-          <div className="h-3 w-3 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full animate-pulse"></div>
         </div>
       </div>
       {children}

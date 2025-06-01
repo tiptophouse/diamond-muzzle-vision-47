@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { useEnhancedAnalytics } from '@/hooks/useEnhancedAnalytics';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
 import { UserDetailsModal } from './UserDetailsModal';
@@ -9,6 +9,8 @@ import { EditUserModal } from './EditUserModal';
 import { AdminHeader } from './AdminHeader';
 import { AdminStatsGrid } from './AdminStatsGrid';
 import { AdminUserTable } from './AdminUserTable';
+import { NotificationSender } from './NotificationSender';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface AdminUserManagerProps {}
 
@@ -84,7 +86,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `cosmic_users_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `users_export_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -94,10 +96,10 @@ export function AdminUserManager({}: AdminUserManagerProps) {
       <div className="container mx-auto p-4 sm:p-6">
         <div className="text-center py-12">
           <div className="relative inline-block">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-500/30 border-t-cyan-400 mx-auto mb-6"></div>
-            <Sparkles className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-purple-400 animate-pulse" />
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto mb-6"></div>
+            <Settings className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-blue-600" />
           </div>
-          <div className="text-xl cosmic-text font-bold">Loading cosmic dashboard...</div>
+          <div className="text-xl font-semibold text-gray-900">Loading dashboard...</div>
         </div>
       </div>
     );
@@ -108,7 +110,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
     : 0;
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 space-y-6 particle-bg">
+    <div className="container mx-auto p-4 sm:p-6 space-y-6">
       <AdminHeader onExportData={exportUserData} onAddUser={() => setShowAddUser(true)} />
 
       <AdminStatsGrid 
@@ -117,17 +119,30 @@ export function AdminUserManager({}: AdminUserManagerProps) {
         averageEngagement={averageEngagement} 
       />
 
-      <AdminUserTable
-        filteredUsers={filteredUsers}
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        getUserEngagementScore={getUserEngagementScore}
-        isUserBlocked={isUserBlocked}
-        onViewUser={handleViewUser}
-        onEditUser={handleEditUser}
-        onToggleBlock={handleToggleBlock}
-        onDeleteUser={handleDeleteUser}
-      />
+      <Tabs defaultValue="users" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="users">User Management</TabsTrigger>
+          <TabsTrigger value="notifications">Send Notifications</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="users">
+          <AdminUserTable
+            filteredUsers={filteredUsers}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            getUserEngagementScore={getUserEngagementScore}
+            isUserBlocked={isUserBlocked}
+            onViewUser={handleViewUser}
+            onEditUser={handleEditUser}
+            onToggleBlock={handleToggleBlock}
+            onDeleteUser={handleDeleteUser}
+          />
+        </TabsContent>
+        
+        <TabsContent value="notifications">
+          <NotificationSender onSendNotification={(notification) => console.log('Sent notification:', notification)} />
+        </TabsContent>
+      </Tabs>
 
       {/* Modals */}
       {showUserDetails && selectedUser && (
