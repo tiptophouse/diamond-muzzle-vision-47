@@ -13,11 +13,11 @@ export function AdminHeader({ onExportData, onAddUser }: AdminHeaderProps) {
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
       <div className="space-y-2">
         <h1 className="text-3xl sm:text-4xl font-bold cosmic-text flex items-center gap-3">
-          🦄 Cosmic User Control
+          COSMIC ADMIN PORTAL
           <Sparkles className="h-8 w-8 text-purple-400 animate-pulse" />
         </h1>
         <p className="text-cyan-300 text-sm sm:text-base">
-          Master the unicorn realm with ultimate user management powers
+          Master the digital realm with ultimate user management powers
         </p>
       </div>
       <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">

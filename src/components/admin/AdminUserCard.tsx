@@ -25,6 +25,30 @@ export function AdminUserCard({
   onToggleBlock, 
   onDeleteUser 
 }: AdminUserCardProps) {
+  // Get the display name - prioritize actual names over default
+  const getDisplayName = () => {
+    if (user.first_name && user.first_name !== 'Telegram' && user.first_name !== 'Test' && user.first_name !== 'Timeout' && user.first_name !== 'Emergency') {
+      return `${user.first_name} ${user.last_name || ''}`.trim();
+    }
+    if (user.username) {
+      return `@${user.username}`;
+    }
+    return `User ${user.telegram_id}`;
+  };
+
+  // Get initials for avatar
+  const getInitials = () => {
+    const displayName = getDisplayName();
+    if (displayName.startsWith('@')) {
+      return displayName.substring(1, 3).toUpperCase();
+    }
+    const nameParts = displayName.split(' ');
+    if (nameParts.length >= 2) {
+      return `${nameParts[0].charAt(0)}${nameParts[1].charAt(0)}`.toUpperCase();
+    }
+    return displayName.substring(0, 2).toUpperCase();
+  };
+
   return (
     <div 
       className={`glass-card rounded-lg p-3 sm:p-4 transition-all duration-300 hover:neon-glow ${
@@ -36,14 +60,14 @@ export function AdminUserCard({
           <Avatar className="h-10 w-10 sm:h-12 sm:w-12 neon-glow">
             <AvatarImage src={user.photo_url} />
             <AvatarFallback className="bg-gradient-to-br from-purple-500 to-cyan-500 text-white">
-              {user.first_name.charAt(0)}{user.last_name?.charAt(0) || ''}
+              {getInitials()}
             </AvatarFallback>
           </Avatar>
           
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="font-semibold text-white text-sm sm:text-base truncate">
-                {user.first_name} {user.last_name}
+                {getDisplayName()}
               </span>
               {user.is_premium && <Star className="h-4 w-4 text-yellow-400" />}
               {user.phone_number && <Phone className="h-4 w-4 text-green-400" />}
