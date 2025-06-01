@@ -1,4 +1,4 @@
-
+import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
@@ -45,12 +45,7 @@ export function Layout({ children }: LayoutProps) {
       {isMobile ? (
         <MobileNav />
       ) : (
-        <div className="w-64 bg-card border-r border-border">
-          {/* Sidebar placeholder - will use existing Sidebar when available */}
-          <div className="p-4">
-            <h2 className="text-lg font-semibold">Navigation</h2>
-          </div>
-        </div>
+        <Sidebar />
       )}
       <div className="flex-1 flex flex-col overflow-hidden">
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background">

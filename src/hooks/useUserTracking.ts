@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
@@ -186,22 +185,18 @@ export function useUserTracking() {
       // Update user analytics with new cost
       const { data: analytics } = await supabase
         .from('user_analytics')
-        .select('cost_per_user, api_calls_count')
+        .select('cost_per_user')
         .eq('telegram_id', user.id)
         .single();
 
       if (analytics) {
-        const updateData: any = {
-          cost_per_user: (analytics.cost_per_user || 0) + amount,
-        };
-
-        if (costType === 'api_call') {
-          updateData.api_calls_count = (analytics.api_calls_count || 0) + 1;
-        }
-
         await supabase
           .from('user_analytics')
-          .update(updateData)
+          .update({
+            cost_per_user: (analytics.cost_per_user || 0) + amount,
+            api_calls_count: costType === 'api_call' ? 
+              supabase.from('user_analytics').select('api_calls_count').eq('telegram_id', user.id).single().then(data => (data.data?.api_calls_count || 0) + 1) : undefined
+          })
           .eq('telegram_id', user.id);
       }
 
