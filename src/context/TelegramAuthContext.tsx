@@ -9,6 +9,7 @@ interface TelegramAuthContextType {
   isLoading: boolean;
   error: string | null;
   refreshAuth: () => void;
+  retryAuth: () => void;
   initData: TelegramInitData | null;
   isTelegramEnvironment: boolean;
 }
@@ -23,6 +24,7 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
     error,
     isTelegramEnvironment,
     refreshAuth,
+    retryAuth,
   } = useTelegramInit();
 
   // Consider authenticated if we have a user (either real or mock)
@@ -36,6 +38,7 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         error,
         refreshAuth,
+        retryAuth,
         initData,
         isTelegramEnvironment,
       }}
