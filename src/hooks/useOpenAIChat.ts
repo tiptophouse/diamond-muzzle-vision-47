@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,7 +39,7 @@ export function useOpenAIChat() {
       const response = await supabase.functions.invoke('openai-chat', {
         body: { 
           message, 
-          conversation_history 
+          conversation_history: conversationHistory 
         }
       });
 

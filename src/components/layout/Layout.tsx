@@ -1,4 +1,5 @@
-import { Sidebar } from './Sidebar';
+
+import Sidebar from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
