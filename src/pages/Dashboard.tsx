@@ -20,32 +20,34 @@ export default function Dashboard() {
   const subscriptionsHook = useSubscriptions();
   const notificationsHook = useNotifications();
 
-  // Fallback data for emergency mode
+  // Fallback data for emergency mode with proper loading states
   const fallbackData = {
     allDiamonds: [],
     leads: [],
     subscriptions: [],
     notifications: [],
+    loading: false,
+    isLoading: false,
   };
 
-  // Use actual data or fallback based on mode
+  // Use actual data or fallback based on mode with proper destructuring
   const {
-    allDiamonds = fallbackData.allDiamonds,
+    allDiamonds = [],
     loading: inventoryLoading = false
   } = emergencyMode ? fallbackData : inventoryHook;
   
   const {
-    leads = fallbackData.leads,
+    leads = [],
     isLoading: leadsLoading = false
   } = emergencyMode ? fallbackData : leadsHook;
   
   const {
-    subscriptions = fallbackData.subscriptions,
+    subscriptions = [],
     isLoading: subscriptionsLoading = false
   } = emergencyMode ? fallbackData : subscriptionsHook;
   
   const {
-    notifications = fallbackData.notifications
+    notifications = []
   } = emergencyMode ? fallbackData : notificationsHook;
 
   // Auto-enable emergency mode if any hook fails
@@ -71,7 +73,7 @@ export default function Dashboard() {
   const avgPricePerCarat = allDiamonds?.length > 0 ? 
     allDiamonds.reduce((sum, d) => sum + (d.price || 0) / (d.carat || 1), 0) / allDiamonds.length : 0;
 
-  // Safe shape distribution
+  // Safe shape distribution with proper number typing
   const shapeData = allDiamonds?.reduce((acc, diamond) => {
     const shape = diamond.shape || 'Unknown';
     acc[shape] = (acc[shape] || 0) + 1;
@@ -80,7 +82,7 @@ export default function Dashboard() {
   
   const chartData = Object.entries(shapeData).map(([name, value]) => ({
     name,
-    value,
+    value: Number(value), // Ensure value is a number
     color: '#7a63f5'
   }));
 
