@@ -2,7 +2,7 @@
 import Sidebar from "./Sidebar";
 import { Header } from "./Header";
 import { useState } from "react";
-import { Menu } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface LayoutProps {
@@ -31,23 +31,21 @@ export function Layout({ children }: LayoutProps) {
       </div>
       
       <div className="flex-1 w-full min-w-0 flex flex-col bg-background lg:ml-0">
-        {/* Mobile header with menu button - only show on mobile */}
-        <div className="block lg:hidden">
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSidebarOpen(true)}
-              className="p-2"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-            <h1 className="text-lg font-bold text-gray-900">Diamond Muzzle</h1>
-            <div className="w-9" /> {/* Spacer for center alignment */}
-          </div>
+        {/* Mobile header with menu button */}
+        <div className="lg:hidden flex items-center justify-between p-4 border-b border-gray-200 bg-white">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSidebarOpen(true)}
+            className="p-2"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <h1 className="text-lg font-bold text-gray-900">Diamond Muzzle</h1>
+          <div className="w-9" /> {/* Spacer for center alignment */}
         </div>
         
-        {/* Desktop header - only show on desktop */}
+        {/* Desktop header */}
         <div className="hidden lg:block">
           <Header />
         </div>

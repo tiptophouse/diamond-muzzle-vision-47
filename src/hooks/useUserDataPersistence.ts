@@ -1,104 +1,37 @@
 
 import { useEffect, useRef } from 'react';
 import { TelegramUser } from '@/types/telegram';
-import { supabase } from '@/integrations/supabase/client';
-import { extractTelegramUserData, upsertUserProfile, initializeUserAnalytics } from '@/utils/telegramUserData';
-
-const ADMIN_TELEGRAM_ID = 2138564172;
+import { setCurrentUserId } from '@/lib/api';
 
 export function useUserDataPersistence(user: TelegramUser | null, isTelegramEnvironment: boolean) {
-  const processedRef = useRef(new Set<number>());
+  const persistenceCompleteRef = useRef(false);
 
   useEffect(() => {
-    if (!user?.id || processedRef.current.has(user.id)) {
-      return;
-    }
+    if (!user || persistenceCompleteRef.current) return;
 
-    const persistUserData = async () => {
+    console.log('💾 Starting background user data persistence...');
+    
+    // Set current user ID immediately (non-blocking)
+    setCurrentUserId(user.id);
+    
+    // Background database operations (non-blocking)
+    const saveUserToDatabase = async () => {
       try {
-        console.log('📝 Processing user data for persistence:', user.id);
-        
-        // Mark as processed to prevent duplicates
-        processedRef.current.add(user.id);
-
-        // Extract user data
+        const { extractTelegramUserData, upsertUserProfile, initializeUserAnalytics } = await import('@/utils/telegramUserData');
         const extractedData = extractTelegramUserData(user);
-        
-        // Everyone gets active status by default now
-        let initialStatus = 'active';
-        
-        // Check if this is admin user
-        if (user.id === ADMIN_TELEGRAM_ID) {
-          console.log('👑 Admin user detected - setting active status');
-        } else {
-          console.log('✅ Regular user - setting active status (no authorization required)');
-        }
-
-        // Check if user already exists
-        const { data: existingUser } = await supabase
-          .from('user_profiles')
-          .select('id, status, telegram_id')
-          .eq('telegram_id', user.id)
-          .single();
-
-        if (existingUser) {
-          console.log('✅ User already exists, updating data only');
-          // Update existing user data without changing status
-          const { error } = await supabase
-            .from('user_profiles')
-            .update({
-              first_name: extractedData.first_name,
-              last_name: extractedData.last_name,
-              username: extractedData.username,
-              photo_url: extractedData.photo_url,
-              is_premium: extractedData.is_premium,
-              language_code: extractedData.language_code,
-              updated_at: new Date().toISOString()
-            })
-            .eq('telegram_id', user.id);
-
-          if (error) {
-            console.error('❌ Error updating user profile:', error);
-          }
-        } else {
-          console.log('🆕 Creating new user with active status');
-          // Create new user with active status
-          const { error } = await supabase
-            .from('user_profiles')
-            .insert({
-              telegram_id: extractedData.telegram_id,
-              first_name: extractedData.first_name,
-              last_name: extractedData.last_name,
-              username: extractedData.username,
-              photo_url: extractedData.photo_url,
-              is_premium: extractedData.is_premium,
-              language_code: extractedData.language_code,
-              status: initialStatus
-            });
-
-          if (error) {
-            console.error('❌ Error creating user profile:', error);
-          } else {
-            console.log('✅ User profile created successfully');
-            
-            // Initialize analytics for new users
-            await initializeUserAnalytics(user.id);
-          }
-        }
-
+        await upsertUserProfile(extractedData);
+        await initializeUserAnalytics(user.id);
+        console.log('✅ Background: User data saved successfully');
       } catch (error) {
-        console.error('❌ Error in user data persistence:', error);
-        // Don't throw - this is a background operation
+        console.warn('⚠️ Background: Failed to save user data, but continuing...', error);
       }
     };
 
-    // Add small delay to prevent race conditions
-    const timeoutId = setTimeout(persistUserData, 500);
-    
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, [user?.id, isTelegramEnvironment]);
+    // Run database operations in background without blocking UI
+    setTimeout(() => {
+      saveUserToDatabase();
+    }, 500);
 
-  return null; // This is a side-effect only hook
+    persistenceCompleteRef.current = true;
+  }, [user, isTelegramEnvironment]);
 }
