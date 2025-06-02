@@ -8,6 +8,7 @@ import { TelegramAuthProvider } from "@/context/TelegramAuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import InventoryPage from "./pages/InventoryPage";
 import UploadPage from "./pages/UploadPage";
@@ -21,20 +22,20 @@ import NotFound from "./pages/NotFound";
 import DiamondSwipe from "./pages/DiamondSwipe";
 import AdminAnalytics from "./pages/AdminAnalytics";
 
-// Optimized React Query client for production stability
+// Optimized React Query client for Telegram environment
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1, // Reduced from 3 for production stability
-      retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 3000), // Max 3 seconds
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime)
-      refetchOnWindowFocus: false, // Prevent unnecessary refetches in Telegram
+      retry: 1,
+      retryDelay: 1000,
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+      refetchOnWindowFocus: false,
       refetchOnReconnect: true,
-      networkMode: 'offlineFirst', // Better for unstable Telegram connections
+      networkMode: 'offlineFirst',
     },
     mutations: {
-      retry: 1, // Reduced retries for mutations
+      retry: 1,
       retryDelay: 1000,
       networkMode: 'offlineFirst',
     },
@@ -52,7 +53,8 @@ const App = () => (
             <HashRouter>
               <AuthGuard>
                 <Routes>
-                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/" element={<Index />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/inventory" element={<InventoryPage />} />
                   <Route path="/upload" element={<UploadPage />} />
                   <Route path="/reports" element={<ReportsPage />} />
