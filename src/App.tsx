@@ -1,12 +1,13 @@
+
 import {
   BrowserRouter as Router,
   Route,
   Routes,
 } from "react-router-dom";
-import { QueryClient } from "react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Dashboard from "./pages/Dashboard";
-import Inventory from "./pages/Inventory";
-import Settings from "./pages/Settings";
+import Inventory from "./pages/InventoryPage";
+import Settings from "./pages/SettingsPage";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import { TelegramAuthProvider } from '@/context/TelegramAuthContext';
@@ -14,9 +15,11 @@ import { AuthGuard } from '@/components/auth/AuthGuard';
 import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 
+const queryClient = new QueryClient();
+
 function App() {
   return (
-    <QueryClient>
+    <QueryClientProvider client={queryClient}>
       <TelegramAuthProvider>
         <AuthGuard>
           <AuthorizationGuard>
@@ -37,7 +40,7 @@ function App() {
           </AuthorizationGuard>
         </AuthGuard>
       </TelegramAuthProvider>
-    </QueryClient>
+    </QueryClientProvider>
   );
 }
 
