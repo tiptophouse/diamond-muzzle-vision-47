@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -29,23 +30,23 @@ const isTelegramEnv = typeof window !== 'undefined' && !!window.Telegram?.WebApp
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: isTelegramEnv ? 0 : 1, // No retries in Telegram to prevent loops
+      retry: isTelegramEnv ? 0 : 1,
       retryDelay: 2000,
-      staleTime: isTelegramEnv ? 10 * 60 * 1000 : 5 * 60 * 1000, // Longer stale time in Telegram
+      staleTime: isTelegramEnv ? 10 * 60 * 1000 : 5 * 60 * 1000,
       gcTime: 15 * 60 * 1000,
       refetchOnWindowFocus: false,
-      refetchOnReconnect: isTelegramEnv ? false : true, // Disable reconnect refetch in Telegram
-      networkMode: 'online', // Changed from 'offlineFirst' to prevent issues
+      refetchOnReconnect: isTelegramEnv ? false : true,
+      networkMode: 'online',
     },
     mutations: {
-      retry: 0, // No retries for mutations to prevent conflicts
+      retry: 0,
       retryDelay: 2000,
       networkMode: 'online',
     },
   },
 });
 
-const App = () => (
+const App: React.FC = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <TelegramAuthProvider>

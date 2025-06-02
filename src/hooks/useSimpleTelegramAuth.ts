@@ -1,13 +1,13 @@
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { TelegramUser } from '@/types/telegram';
 import { parseTelegramInitData, isTelegramWebApp } from '@/utils/telegramValidation';
 
 export function useSimpleTelegramAuth() {
-  const [user, setUser] = useState<TelegramUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isTelegramEnvironment, setIsTelegramEnvironment] = useState(false);
+  const [user, setUser] = React.useState<TelegramUser | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [isTelegramEnvironment, setIsTelegramEnvironment] = React.useState(false);
   
   const mountedRef = useRef(true);
   const initializedRef = useRef(false);
@@ -15,14 +15,14 @@ export function useSimpleTelegramAuth() {
   const createMockUser = (): TelegramUser => {
     return {
       id: 2138564172,
-      first_name: "Test",
+      first_name: "Admin",
       last_name: "User", 
-      username: "testuser",
+      username: "adminuser",
       language_code: "en"
     };
   };
 
-  const initializeAuth = () => {
+  const initializeAuth = React.useCallback(() => {
     if (initializedRef.current || !mountedRef.current) {
       console.log('🔄 Auth already initialized or component unmounted');
       return;
@@ -109,10 +109,10 @@ export function useSimpleTelegramAuth() {
         return;
       }
 
-      // Development mode fallback
-      console.log('🔧 Development mode - using mock user');
-      const mockUser = createMockUser();
-      setUser(mockUser);
+      // Development mode fallback - always admin
+      console.log('🔧 Development mode - using admin user');
+      const adminUser = createMockUser();
+      setUser(adminUser);
       setIsLoading(false);
       initializedRef.current = true;
 
@@ -124,9 +124,9 @@ export function useSimpleTelegramAuth() {
       setIsLoading(false);
       initializedRef.current = true;
     }
-  };
+  }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     mountedRef.current = true;
     
     // Shorter timeout to prevent hanging
@@ -139,16 +139,16 @@ export function useSimpleTelegramAuth() {
         setIsLoading(false);
         initializedRef.current = true;
       }
-    }, 2000); // Reduced to 2 seconds
+    }, 1000); // Reduced to 1 second
 
-    // Initialize immediately without delay
+    // Initialize immediately
     initializeAuth();
 
     return () => {
       mountedRef.current = false;
       clearTimeout(timeoutId);
     };
-  }, []);
+  }, [initializeAuth]);
 
   return {
     user,
