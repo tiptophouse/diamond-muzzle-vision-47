@@ -14,32 +14,35 @@ import { TelegramAuthProvider } from '@/context/TelegramAuthContext';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
 import { AdminGuard } from '@/components/admin/AdminGuard';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 
 const queryClient = new QueryClient();
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TelegramAuthProvider>
-        <AuthGuard>
-          <AuthorizationGuard>
-            <Router>
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/inventory" element={<Inventory />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/admin" element={
-                  <AdminGuard>
-                    <Admin />
-                  </AdminGuard>
-                } />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Router>
-          </AuthorizationGuard>
-        </AuthGuard>
-      </TelegramAuthProvider>
+      <ThemeProvider>
+        <TelegramAuthProvider>
+          <AuthGuard>
+            <AuthorizationGuard>
+              <Router>
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/inventory" element={<Inventory />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/admin" element={
+                    <AdminGuard>
+                      <Admin />
+                    </AdminGuard>
+                  } />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Router>
+            </AuthorizationGuard>
+          </AuthGuard>
+        </TelegramAuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
