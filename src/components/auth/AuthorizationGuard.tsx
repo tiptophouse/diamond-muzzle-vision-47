@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
 import { useAppSettings } from '@/hooks/useAppSettings';
-import { Shield, UserX, Clock } from 'lucide-react';
+import { Shield, UserX, Clock, Crown } from 'lucide-react';
 
 interface AuthorizationGuardProps {
   children: ReactNode;
@@ -21,25 +21,31 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
       return;
     }
 
-    // Admin always gets access
+    console.log('🔍 Authorization check for user:', user.id, 'Admin ID:', ADMIN_TELEGRAM_ID);
+
+    // Admin always gets access - highest priority
     if (user.id === ADMIN_TELEGRAM_ID) {
+      console.log('✅ Admin user detected - granting full access');
       setIsAuthorized(true);
       return;
     }
 
     // Check if user is blocked
     if (isUserBlocked(user.id)) {
+      console.log('❌ User is blocked');
       setIsAuthorized(false);
       return;
     }
 
     // If manual authorization is enabled, only admin can access
     if (settings.manual_authorization_enabled) {
+      console.log('⚠️ Manual authorization enabled - denying access to non-admin');
       setIsAuthorized(false);
       return;
     }
 
     // Otherwise, user is authorized
+    console.log('✅ User authorized');
     setIsAuthorized(true);
   }, [user, isUserBlocked, settings, authLoading, blockedLoading, settingsLoading]);
 
@@ -54,6 +60,9 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
           </div>
           <h3 className="text-xl font-semibold text-gray-900 mb-2">Checking Authorization</h3>
           <p className="text-gray-600 text-sm">Verifying your access permissions...</p>
+          {user && (
+            <p className="text-xs text-gray-500 mt-2">User ID: {user.id}</p>
+          )}
         </div>
       </div>
     );
@@ -62,12 +71,17 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
   // Not authorized
   if (!isAuthorized) {
     const isBlocked = user && isUserBlocked(user.id);
+    const isAdminUser = user && user.id === ADMIN_TELEGRAM_ID;
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
-          <div className="bg-red-50 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-            {isBlocked ? (
+          <div className={`rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 ${
+            isAdminUser ? 'bg-yellow-50' : isBlocked ? 'bg-red-50' : 'bg-orange-50'
+          }`}>
+            {isAdminUser ? (
+              <Crown className="h-10 w-10 text-yellow-600" />
+            ) : isBlocked ? (
               <UserX className="h-10 w-10 text-red-600" />
             ) : (
               <Clock className="h-10 w-10 text-orange-600" />
@@ -88,9 +102,19 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
           <div className="text-sm text-gray-500 mb-8 space-y-1">
             <p>User ID: {user?.id || 'Unknown'}</p>
             <p>Status: {isBlocked ? 'Blocked' : 'Pending Authorization'}</p>
+            {isAdminUser && <p className="text-yellow-600 font-medium">⚠️ Admin user detected but authorization failed</p>}
           </div>
           
           <div className="space-y-3">
+            <button
+              onClick={() => {
+                console.log('🔄 Refreshing page for authorization check');
+                window.location.reload();
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors w-full"
+            >
+              Refresh & Retry
+            </button>
             <p className="text-sm text-gray-600">
               If you believe this is an error, please contact the administrator.
             </p>

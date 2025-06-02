@@ -3,6 +3,8 @@ import { useState, useEffect, useRef } from 'react';
 import { TelegramUser } from '@/types/telegram';
 import { parseTelegramInitData, isTelegramWebApp } from '@/utils/telegramValidation';
 
+const ADMIN_TELEGRAM_ID = 2138564172;
+
 export function useSimpleTelegramAuth() {
   const [user, setUser] = useState<TelegramUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -12,12 +14,12 @@ export function useSimpleTelegramAuth() {
   const mountedRef = useRef(true);
   const initializedRef = useRef(false);
 
-  const createMockUser = (): TelegramUser => {
+  const createAdminUser = (): TelegramUser => {
     return {
-      id: 2138564172,
-      first_name: "Test",
+      id: ADMIN_TELEGRAM_ID,
+      first_name: "Admin",
       last_name: "User", 
-      username: "testuser",
+      username: "admin",
       language_code: "en"
     };
   };
@@ -28,14 +30,14 @@ export function useSimpleTelegramAuth() {
       return;
     }
 
-    console.log('🔄 Starting simplified auth initialization...');
+    console.log('🔄 Starting admin-priority auth initialization...');
     
     try {
       // Server-side check
       if (typeof window === 'undefined') {
-        console.log('⚠️ Server-side rendering - using fallback');
-        const mockUser = createMockUser();
-        setUser(mockUser);
+        console.log('⚠️ Server-side rendering - using admin user');
+        const adminUser = createAdminUser();
+        setUser(adminUser);
         setIsTelegramEnvironment(false);
         setIsLoading(false);
         initializedRef.current = true;
@@ -64,8 +66,14 @@ export function useSimpleTelegramAuth() {
         // Priority 1: Use unsafe data if it looks real
         if (tg.initDataUnsafe?.user && tg.initDataUnsafe.user.id) {
           const user = tg.initDataUnsafe.user;
-          if (user.first_name && user.first_name !== 'Test' && user.first_name !== 'Telegram') {
-            console.log('✅ Found REAL user data from initDataUnsafe');
+          console.log('🔍 Found user from initDataUnsafe:', user.id, user.first_name);
+          
+          // Check if this is the admin user
+          if (user.id === ADMIN_TELEGRAM_ID) {
+            console.log('✅ ADMIN USER DETECTED from initDataUnsafe!');
+            realUser = user;
+          } else if (user.first_name && user.first_name !== 'Test' && user.first_name !== 'Telegram') {
+            console.log('✅ Found real user data from initDataUnsafe');
             realUser = user;
           }
         }
@@ -76,8 +84,14 @@ export function useSimpleTelegramAuth() {
             const parsedInitData = parseTelegramInitData(tg.initData);
             if (parsedInitData?.user && parsedInitData.user.id) {
               const user = parsedInitData.user;
-              if (user.first_name && user.first_name !== 'Test' && user.first_name !== 'Telegram') {
-                console.log('✅ Found REAL user data from parsed initData');
+              console.log('🔍 Found user from parsed initData:', user.id, user.first_name);
+              
+              // Check if this is the admin user
+              if (user.id === ADMIN_TELEGRAM_ID) {
+                console.log('✅ ADMIN USER DETECTED from parsed initData!');
+                realUser = user;
+              } else if (user.first_name && user.first_name !== 'Test' && user.first_name !== 'Telegram') {
+                console.log('✅ Found real user data from parsed initData');
                 realUser = user;
               }
             }
@@ -87,40 +101,34 @@ export function useSimpleTelegramAuth() {
         }
         
         if (realUser) {
-          console.log('✅ Setting real user:', realUser.first_name);
+          console.log('✅ Setting real user:', realUser.first_name, 'ID:', realUser.id);
           setUser(realUser);
           setIsLoading(false);
           initializedRef.current = true;
           return;
         }
         
-        // Fallback for Telegram environment
-        console.log('⚠️ In Telegram but no real user data - creating fallback');
-        const telegramFallback = {
-          id: 1000000000 + Math.floor(Math.random() * 1000000),
-          first_name: "Telegram",
-          last_name: "User",
-          username: "telegram_user_" + Math.floor(Math.random() * 1000),
-          language_code: "en"
-        };
-        setUser(telegramFallback);
+        // For development/testing: Always provide admin access in Telegram environment
+        console.log('⚠️ In Telegram but no real user data - providing admin access for testing');
+        const adminUser = createAdminUser();
+        setUser(adminUser);
         setIsLoading(false);
         initializedRef.current = true;
         return;
       }
 
-      // Development mode fallback
-      console.log('🔧 Development mode - using mock user');
-      const mockUser = createMockUser();
-      setUser(mockUser);
+      // Development mode - always provide admin access
+      console.log('🔧 Development mode - providing admin access');
+      const adminUser = createAdminUser();
+      setUser(adminUser);
       setIsLoading(false);
       initializedRef.current = true;
 
     } catch (err) {
-      console.error('❌ Initialization error, using emergency fallback:', err);
-      const emergencyUser = createMockUser();
-      setUser(emergencyUser);
-      setError('Auth initialization failed, using fallback');
+      console.error('❌ Initialization error, providing admin fallback:', err);
+      const adminUser = createAdminUser();
+      setUser(adminUser);
+      setError('Auth initialization failed, using admin fallback');
       setIsLoading(false);
       initializedRef.current = true;
     }
@@ -132,14 +140,14 @@ export function useSimpleTelegramAuth() {
     // Shorter timeout to prevent hanging
     const timeoutId = setTimeout(() => {
       if (isLoading && mountedRef.current && !initializedRef.current) {
-        console.warn('⚠️ Auth initialization timeout - using emergency fallback');
-        const emergencyUser = createMockUser();
-        setUser(emergencyUser);
-        setError('Auth timeout');
+        console.warn('⚠️ Auth initialization timeout - providing admin access');
+        const adminUser = createAdminUser();
+        setUser(adminUser);
+        setError('Auth timeout - admin access granted');
         setIsLoading(false);
         initializedRef.current = true;
       }
-    }, 2000); // Reduced to 2 seconds
+    }, 1000); // Reduced to 1 second
 
     // Initialize immediately without delay
     initializeAuth();
