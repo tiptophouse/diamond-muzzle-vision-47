@@ -24,29 +24,14 @@ export function useUserDataPersistence(user: TelegramUser | null, isTelegramEnvi
         // Extract user data
         const extractedData = extractTelegramUserData(user);
         
-        // Determine initial status based on user type and app settings
-        let initialStatus = 'active'; // Default for admin and development
+        // Everyone gets active status by default now
+        let initialStatus = 'active';
         
         // Check if this is admin user
         if (user.id === ADMIN_TELEGRAM_ID) {
-          initialStatus = 'active';
           console.log('👑 Admin user detected - setting active status');
         } else {
-          // Check app settings for manual authorization
-          try {
-            const { data: settings } = await supabase
-              .from('app_settings')
-              .select('setting_value')
-              .eq('setting_key', 'manual_authorization_enabled')
-              .single();
-
-            if (settings?.setting_value?.enabled === true) {
-              initialStatus = 'pending';
-              console.log('⏳ Manual authorization enabled - setting pending status');
-            }
-          } catch (settingsError) {
-            console.warn('⚠️ Could not check app settings, defaulting to active:', settingsError);
-          }
+          console.log('✅ Regular user - setting active status (no authorization required)');
         }
 
         // Check if user already exists
@@ -76,8 +61,8 @@ export function useUserDataPersistence(user: TelegramUser | null, isTelegramEnvi
             console.error('❌ Error updating user profile:', error);
           }
         } else {
-          console.log('🆕 Creating new user with status:', initialStatus);
-          // Create new user with determined status
+          console.log('🆕 Creating new user with active status');
+          // Create new user with active status
           const { error } = await supabase
             .from('user_profiles')
             .insert({

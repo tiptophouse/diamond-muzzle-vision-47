@@ -8,7 +8,7 @@ interface AppSettings {
 
 export function useAppSettings() {
   const [settings, setSettings] = useState<AppSettings>({
-    manual_authorization_enabled: false
+    manual_authorization_enabled: false // Default to false - no authorization required
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -23,7 +23,16 @@ export function useAppSettings() {
 
       const settingsMap: any = {};
       data?.forEach(setting => {
-        settingsMap[setting.setting_key] = setting.setting_value;
+        // Handle the Json type properly
+        if (setting.setting_key === 'manual_authorization_enabled') {
+          // Check if setting_value is an object with enabled property, or just a boolean
+          const value = setting.setting_value;
+          if (typeof value === 'object' && value !== null && 'enabled' in value) {
+            settingsMap[setting.setting_key] = (value as any).enabled === true;
+          } else {
+            settingsMap[setting.setting_key] = value === true;
+          }
+        }
       });
 
       setSettings({
@@ -31,6 +40,10 @@ export function useAppSettings() {
       });
     } catch (error) {
       console.error('Error fetching app settings:', error);
+      // Default to no authorization required on error
+      setSettings({
+        manual_authorization_enabled: false
+      });
     } finally {
       setIsLoading(false);
     }
