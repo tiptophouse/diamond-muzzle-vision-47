@@ -40,35 +40,18 @@ export function AdminGuard({ children }: AdminGuardProps) {
           <p className="text-gray-600 mb-6">
             This area is restricted to administrators only.
           </p>
-          <p className="text-sm text-gray-500 mb-4">
-            Current User ID: {user?.id || 'Unknown'}
+          <p className="text-sm text-gray-500 mb-8">
+            User ID: {user?.id || 'Unknown'}
           </p>
-          <p className="text-xs text-gray-400 mb-8">
-            Required Admin ID: {ADMIN_TELEGRAM_ID}
-          </p>
-          
-          {/* Development helper button */}
-          <div className="space-y-3">
-            <button
-              onClick={() => {
-                localStorage.setItem('dev_admin_mode', 'true');
-                window.location.reload();
-              }}
-              className="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm mb-2"
-            >
-              Enable Admin Mode (Dev)
-            </button>
-            <br />
-            <button
-              onClick={() => {
-                console.log('🔄 Redirecting to dashboard');
-                window.location.hash = '#/dashboard';
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors w-full"
-            >
-              Return to Dashboard
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              console.log('🔄 Redirecting to dashboard');
+              window.location.hash = '#/dashboard';
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors w-full"
+          >
+            Return to Dashboard
+          </button>
         </div>
       </div>
     );
@@ -81,7 +64,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
         <div className="flex items-center justify-center gap-3 p-4">
           <Shield className="h-5 w-5 text-blue-600" />
           <span className="font-semibold text-gray-900">
-            Admin Dashboard - Welcome, {user.first_name} (ID: {user.id})
+            Admin Dashboard - Welcome, {user.first_name}
           </span>
         </div>
       </div>
