@@ -2,5 +2,11 @@
 import { AdminUserManager } from '@/components/admin/AdminUserManager';
 
 export default function Admin() {
-  return <AdminUserManager />;
+  console.log('🔧 Admin page component rendering');
+  
+  return (
+    <div>
+      <AdminUserManager />
+    </div>
+  );
 }
