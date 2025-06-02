@@ -32,17 +32,19 @@ export function Layout({ children }: LayoutProps) {
       
       <div className="flex-1 w-full min-w-0 flex flex-col bg-background lg:ml-0">
         {/* Mobile header with menu button - only show on mobile */}
-        <div className="lg:hidden flex items-center justify-between p-4 border-b border-gray-200 bg-white">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSidebarOpen(true)}
-            className="p-2"
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-          <h1 className="text-lg font-bold text-gray-900">Diamond Muzzle</h1>
-          <div className="w-9" /> {/* Spacer for center alignment */}
+        <div className="block lg:hidden">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSidebarOpen(true)}
+              className="p-2"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+            <h1 className="text-lg font-bold text-gray-900">Diamond Muzzle</h1>
+            <div className="w-9" /> {/* Spacer for center alignment */}
+          </div>
         </div>
         
         {/* Desktop header - only show on desktop */}
