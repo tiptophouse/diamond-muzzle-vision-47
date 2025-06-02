@@ -14,39 +14,31 @@ export default function Dashboard() {
   const [enableDataFetching, setEnableDataFetching] = useState(true);
   const [emergencyMode, setEmergencyMode] = useState(false);
   
-  // Only use hooks if data fetching is enabled
-  const inventoryResult = enableDataFetching ? useInventoryData() : null;
-  const leadsResult = enableDataFetching ? useLeads() : null;
-  const subscriptionsResult = enableDataFetching ? useSubscriptions() : null;
-  const notificationsResult = enableDataFetching ? useNotifications() : null;
-
-  // Fallback data for emergency mode
-  const fallbackData = {
-    allDiamonds: [],
-    leads: [],
-    subscriptions: [],
-    notifications: [],
-  };
+  // Always use hooks, but handle emergency mode in the data processing
+  const inventoryResult = useInventoryData();
+  const leadsResult = useLeads();
+  const subscriptionsResult = useSubscriptions();
+  const notificationsResult = useNotifications();
 
   // Use actual data or fallback based on mode
   const {
     allDiamonds = [],
     loading: inventoryLoading = false
-  } = emergencyMode ? fallbackData : (inventoryResult || fallbackData);
+  } = emergencyMode ? { allDiamonds: [], loading: false } : inventoryResult;
   
   const {
     leads = [],
     isLoading: leadsLoading = false
-  } = emergencyMode ? fallbackData : (leadsResult || fallbackData);
+  } = emergencyMode ? { leads: [], isLoading: false } : leadsResult;
   
   const {
     subscriptions = [],
     isLoading: subscriptionsLoading = false
-  } = emergencyMode ? fallbackData : (subscriptionsResult || fallbackData);
+  } = emergencyMode ? { subscriptions: [], isLoading: false } : subscriptionsResult;
   
   const {
     notifications = []
-  } = emergencyMode ? fallbackData : (notificationsResult || fallbackData);
+  } = emergencyMode ? { notifications: [] } : notificationsResult;
 
   // Auto-enable emergency mode if any hook fails
   useEffect(() => {
