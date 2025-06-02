@@ -1,6 +1,7 @@
 
 import { ReactNode } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useCurrentUserBlockStatus } from '@/hooks/useCurrentUserBlockStatus';
 import { Shield, AlertTriangle, Settings } from 'lucide-react';
 
 interface AdminGuardProps {
@@ -11,9 +12,10 @@ const ADMIN_TELEGRAM_ID = 2138564172;
 
 export function AdminGuard({ children }: AdminGuardProps) {
   const { user, isLoading, isTelegramEnvironment } = useTelegramAuth();
+  const { isBlocked, isLoading: blockCheckLoading } = useCurrentUserBlockStatus();
 
   // Reduced loading time to prevent hanging
-  if (isLoading) {
+  if (isLoading || blockCheckLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
@@ -23,6 +25,35 @@ export function AdminGuard({ children }: AdminGuardProps) {
           </div>
           <h3 className="text-xl font-semibold text-gray-900 mb-2">Verifying Access</h3>
           <p className="text-gray-600 text-sm">Checking administrator permissions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if user is blocked first
+  if (isBlocked) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
+          <div className="bg-red-50 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+            <Shield className="h-10 w-10 text-red-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Blocked</h2>
+          <p className="text-gray-600 mb-6">
+            Your account has been blocked and cannot access admin functions.
+          </p>
+          <p className="text-sm text-gray-500 mb-8">
+            User ID: {user?.id || 'Unknown'}
+          </p>
+          <button
+            onClick={() => {
+              console.log('🔄 Redirecting to dashboard');
+              window.location.hash = '#/dashboard';
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors w-full"
+          >
+            Return to Dashboard
+          </button>
         </div>
       </div>
     );

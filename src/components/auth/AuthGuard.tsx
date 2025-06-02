@@ -1,7 +1,8 @@
 
 import { ReactNode } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { AlertTriangle } from 'lucide-react';
+import { useCurrentUserBlockStatus } from '@/hooks/useCurrentUserBlockStatus';
+import { AlertTriangle, Shield } from 'lucide-react';
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -10,9 +11,10 @@ interface AuthGuardProps {
 
 export function AuthGuard({ children, fallback }: AuthGuardProps) {
   const { isAuthenticated, isLoading, isTelegramEnvironment, user, error } = useTelegramAuth();
+  const { isBlocked, isLoading: blockCheckLoading } = useCurrentUserBlockStatus();
 
-  // Faster loading state
-  if (isLoading) {
+  // Show loading while checking auth and block status
+  if (isLoading || blockCheckLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
         <div className="text-center p-8 max-w-sm">
@@ -24,6 +26,31 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
               Error: {error}
             </div>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  // Check if user is blocked - show access denied
+  if (isBlocked) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-red-50 to-red-100">
+        <div className="text-center p-8 max-w-md mx-4">
+          <div className="bg-red-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+            <Shield className="h-10 w-10 text-red-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-red-900 mb-4">Access Blocked</h2>
+          <p className="text-red-700 mb-6">
+            Your account has been temporarily restricted. Please contact support if you believe this is an error.
+          </p>
+          <p className="text-sm text-red-600 mb-8">
+            User ID: {user?.id || 'Unknown'}
+          </p>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-sm text-red-700">
+              If you need assistance, please reach out to our support team with your User ID.
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -47,8 +74,8 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
     );
   }
 
-  // Always render if we have a user
-  if (user) {
+  // Always render if we have a user and they're not blocked
+  if (user && !isBlocked) {
     return <>{children}</>;
   }
 

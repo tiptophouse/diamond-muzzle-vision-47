@@ -15,10 +15,10 @@ export default function Dashboard() {
   const [emergencyMode, setEmergencyMode] = useState(false);
   
   // Only use hooks if data fetching is enabled
-  const inventoryHook = useInventoryData();
-  const leadsHook = useLeads();
-  const subscriptionsHook = useSubscriptions();
-  const notificationsHook = useNotifications();
+  const inventoryResult = enableDataFetching ? useInventoryData() : null;
+  const leadsResult = enableDataFetching ? useLeads() : null;
+  const subscriptionsResult = enableDataFetching ? useSubscriptions() : null;
+  const notificationsResult = enableDataFetching ? useNotifications() : null;
 
   // Fallback data for emergency mode
   const fallbackData = {
@@ -30,23 +30,23 @@ export default function Dashboard() {
 
   // Use actual data or fallback based on mode
   const {
-    allDiamonds = fallbackData.allDiamonds,
+    allDiamonds = [],
     loading: inventoryLoading = false
-  } = emergencyMode ? fallbackData : inventoryHook;
+  } = emergencyMode ? fallbackData : (inventoryResult || fallbackData);
   
   const {
-    leads = fallbackData.leads,
+    leads = [],
     isLoading: leadsLoading = false
-  } = emergencyMode ? fallbackData : leadsHook;
+  } = emergencyMode ? fallbackData : (leadsResult || fallbackData);
   
   const {
-    subscriptions = fallbackData.subscriptions,
+    subscriptions = [],
     isLoading: subscriptionsLoading = false
-  } = emergencyMode ? fallbackData : subscriptionsHook;
+  } = emergencyMode ? fallbackData : (subscriptionsResult || fallbackData);
   
   const {
-    notifications = fallbackData.notifications
-  } = emergencyMode ? fallbackData : notificationsHook;
+    notifications = []
+  } = emergencyMode ? fallbackData : (notificationsResult || fallbackData);
 
   // Auto-enable emergency mode if any hook fails
   useEffect(() => {
@@ -71,7 +71,7 @@ export default function Dashboard() {
   const avgPricePerCarat = allDiamonds?.length > 0 ? 
     allDiamonds.reduce((sum, d) => sum + (d.price || 0) / (d.carat || 1), 0) / allDiamonds.length : 0;
 
-  // Safe shape distribution
+  // Safe shape distribution with proper type checking
   const shapeData = allDiamonds?.reduce((acc, diamond) => {
     const shape = diamond.shape || 'Unknown';
     acc[shape] = (acc[shape] || 0) + 1;
@@ -80,7 +80,7 @@ export default function Dashboard() {
   
   const chartData = Object.entries(shapeData).map(([name, value]) => ({
     name,
-    value,
+    value: Number(value), // Ensure value is a number
     color: '#7a63f5'
   }));
 
