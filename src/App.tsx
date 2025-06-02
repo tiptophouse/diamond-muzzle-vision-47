@@ -22,22 +22,25 @@ import NotFound from "./pages/NotFound";
 import DiamondSwipe from "./pages/DiamondSwipe";
 import AdminAnalytics from "./pages/AdminAnalytics";
 
+// Check if we're in Telegram environment
+const isTelegramEnv = typeof window !== 'undefined' && !!window.Telegram?.WebApp;
+
 // Optimized React Query client for Telegram environment
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
-      retryDelay: 1000,
-      staleTime: 5 * 60 * 1000,
-      gcTime: 10 * 60 * 1000,
+      retry: isTelegramEnv ? 0 : 1, // No retries in Telegram to prevent loops
+      retryDelay: 2000,
+      staleTime: isTelegramEnv ? 10 * 60 * 1000 : 5 * 60 * 1000, // Longer stale time in Telegram
+      gcTime: 15 * 60 * 1000,
       refetchOnWindowFocus: false,
-      refetchOnReconnect: true,
-      networkMode: 'offlineFirst',
+      refetchOnReconnect: isTelegramEnv ? false : true, // Disable reconnect refetch in Telegram
+      networkMode: 'online', // Changed from 'offlineFirst' to prevent issues
     },
     mutations: {
-      retry: 1,
-      retryDelay: 1000,
-      networkMode: 'offlineFirst',
+      retry: 0, // No retries for mutations to prevent conflicts
+      retryDelay: 2000,
+      networkMode: 'online',
     },
   },
 });

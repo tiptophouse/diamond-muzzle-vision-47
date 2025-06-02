@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useUserTracking } from '@/hooks/useUserTracking';
@@ -10,6 +10,7 @@ const Index = () => {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
   const { trackPageVisit } = useUserTracking();
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
+  const redirectHandledRef = useRef(false);
 
   useEffect(() => {
     // Add debug info for troubleshooting
@@ -19,14 +20,15 @@ const Index = () => {
       `User ID: ${user?.id || 'none'}`,
       `User Name: ${user?.first_name || 'none'}`,
       `Telegram Env: ${!!window.Telegram?.WebApp}`,
-      `URL: ${window.location.href}`
+      `URL: ${window.location.href}`,
+      `Redirect Handled: ${redirectHandledRef.current}`
     ];
     setDebugInfo(info);
     console.log('🔍 Index Debug Info:', info);
   }, [user, isAuthenticated, isLoading]);
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && !redirectHandledRef.current) {
       trackPageVisit('/', 'Diamond Muzzle - Home');
     }
   }, [trackPageVisit, isLoading]);
@@ -56,6 +58,11 @@ const Index = () => {
     );
   }
 
+  // Prevent multiple redirects
+  if (redirectHandledRef.current) {
+    return null;
+  }
+
   // If user is admin, show admin selection
   if (isAuthenticated && user?.id === ADMIN_TELEGRAM_ID) {
     return (
@@ -73,14 +80,20 @@ const Index = () => {
           
           <div className="space-y-4">
             <button 
-              onClick={() => window.location.hash = '#/admin'} 
+              onClick={() => {
+                redirectHandledRef.current = true;
+                window.location.hash = '#/admin';
+              }} 
               className="block w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 shadow-lg"
             >
               🎯 Admin Control Panel
               <div className="text-sm opacity-90 mt-1">Full user management system</div>
             </button>
             <button 
-              onClick={() => window.location.hash = '#/dashboard'} 
+              onClick={() => {
+                redirectHandledRef.current = true;
+                window.location.hash = '#/dashboard';
+              }} 
               className="block w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 shadow-lg"
             >
               💎 Regular Dashboard
@@ -96,8 +109,9 @@ const Index = () => {
     );
   }
 
-  // For regular users, redirect to dashboard
-  if (isAuthenticated) {
+  // For regular users, redirect to dashboard (only once)
+  if (isAuthenticated && user) {
+    redirectHandledRef.current = true;
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -114,6 +128,14 @@ const Index = () => {
           </h1>
           <p className="text-xl text-gray-600">Loading your personalized experience...</p>
         </div>
+        
+        {/* Emergency manual refresh button */}
+        <button
+          onClick={() => window.location.reload()}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+        >
+          Manual Refresh
+        </button>
         
         {/* Debug info in development */}
         {process.env.NODE_ENV === 'development' && (
