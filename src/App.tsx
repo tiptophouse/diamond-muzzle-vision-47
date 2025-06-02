@@ -16,11 +16,13 @@ import InsightsPage from "./pages/InsightsPage";
 import ReportsPage from "./pages/ReportsPage";
 import DiamondSwipe from "./pages/DiamondSwipe";
 import NotificationsPage from "./pages/NotificationsPage";
+import Index from "./pages/Index";
 import { TelegramAuthProvider } from '@/context/TelegramAuthContext';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { ThemeProvider } from '@/contexts/ThemeContext';
+import { Layout } from '@/components/layout/Layout';
 
 const queryClient = new QueryClient();
 
@@ -35,16 +37,16 @@ function App() {
             <AuthorizationGuard>
               <Router>
                 <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/inventory" element={<Inventory />} />
-                  <Route path="/upload" element={<UploadPage />} />
-                  <Route path="/chat" element={<ChatPage />} />
-                  <Route path="/insights" element={<InsightsPage />} />
-                  <Route path="/reports" element={<ReportsPage />} />
-                  <Route path="/swipe" element={<DiamondSwipe />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/notifications" element={<NotificationsPage />} />
+                  <Route path="/" element={<Index />} />
+                  <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+                  <Route path="/inventory" element={<Layout><Inventory /></Layout>} />
+                  <Route path="/upload" element={<Layout><UploadPage /></Layout>} />
+                  <Route path="/chat" element={<Layout><ChatPage /></Layout>} />
+                  <Route path="/insights" element={<Layout><InsightsPage /></Layout>} />
+                  <Route path="/reports" element={<Layout><ReportsPage /></Layout>} />
+                  <Route path="/swipe" element={<Layout><DiamondSwipe /></Layout>} />
+                  <Route path="/settings" element={<Layout><Settings /></Layout>} />
+                  <Route path="/notifications" element={<Layout><NotificationsPage /></Layout>} />
                   <Route path="/admin" element={
                     <AdminGuard>
                       <Admin />
