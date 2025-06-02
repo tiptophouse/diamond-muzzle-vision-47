@@ -1,152 +1,66 @@
 
-import React, { useEffect } from 'react';
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+} from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Routes, Route } from "react-router-dom";
-import { TelegramAuthProvider } from "@/context/TelegramAuthContext";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import { EnhancedAuthGuard } from "@/components/auth/EnhancedAuthGuard";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { handleTelegramRedirect } from "@/utils/urlHandler";
-import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
-import InventoryPage from "./pages/InventoryPage";
+import Inventory from "./pages/InventoryPage";
+import Settings from "./pages/SettingsPage";
+import Admin from "./pages/Admin";
+import NotFound from "./pages/NotFound";
+import ChatPage from "./pages/ChatPage";
 import UploadPage from "./pages/UploadPage";
-import SettingsPage from "./pages/SettingsPage";
 import InsightsPage from "./pages/InsightsPage";
 import ReportsPage from "./pages/ReportsPage";
-import ChatPage from "./pages/ChatPage";
-import NotificationsPage from "./pages/NotificationsPage";
-import ProfilePage from "./pages/ProfilePage";
-import NotFound from "./pages/NotFound";
 import DiamondSwipe from "./pages/DiamondSwipe";
-import AdminAnalytics from "./pages/AdminAnalytics";
+import NotificationsPage from "./pages/NotificationsPage";
+import Index from "./pages/Index";
+import { TelegramAuthProvider } from '@/context/TelegramAuthContext';
+import { AuthGuard } from '@/components/auth/AuthGuard';
+import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
+import { AdminGuard } from '@/components/admin/AdminGuard';
+import { ThemeProvider } from '@/contexts/ThemeContext';
+import { Layout } from '@/components/layout/Layout';
 
-// Check if we're in Telegram environment
-const isTelegramEnv = typeof window !== 'undefined' && !!window.Telegram?.WebApp;
+const queryClient = new QueryClient();
 
-// Enhanced React Query client for better reliability
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: (failureCount, error) => {
-        // Don't retry on 404s or auth errors
-        if (error?.message?.includes('404') || error?.message?.includes('auth')) {
-          return false;
-        }
-        return failureCount < (isTelegramEnv ? 1 : 2);
-      },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-      staleTime: isTelegramEnv ? 10 * 60 * 1000 : 5 * 60 * 1000,
-      gcTime: 15 * 60 * 1000,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: true,
-      networkMode: 'online',
-    },
-    mutations: {
-      retry: 1,
-      retryDelay: 2000,
-      networkMode: 'online',
-    },
-  },
-});
-
-// Service Worker registration
-const registerServiceWorker = async () => {
-  if ('serviceWorker' in navigator) {
-    try {
-      const registration = await navigator.serviceWorker.register('/sw.js');
-      console.log('✅ Service Worker registered successfully:', registration.scope);
-      
-      // Listen for updates
-      registration.addEventListener('updatefound', () => {
-        console.log('🔄 Service Worker update found');
-        const newWorker = registration.installing;
-        if (newWorker) {
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('🎉 New Service Worker available');
-              // Optionally show update notification to user
-            }
-          });
-        }
-      });
-      
-    } catch (error) {
-      console.warn('⚠️ Service Worker registration failed:', error);
-    }
-  }
-};
-
-const App: React.FC = () => {
-  useEffect(() => {
-    // Handle URL issues early
-    try {
-      handleTelegramRedirect();
-    } catch (error) {
-      console.error('Error handling initial redirect:', error);
-    }
-    
-    // Register service worker for offline support
-    registerServiceWorker();
-    
-    // Handle unhandled promise rejections
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.error('Unhandled promise rejection:', event.reason);
-      // Don't prevent default to allow error reporting
-    };
-    
-    // Handle general errors
-    const handleError = (event: ErrorEvent) => {
-      console.error('Global error caught:', event.error);
-    };
-    
-    window.addEventListener('unhandledrejection', handleUnhandledRejection);
-    window.addEventListener('error', handleError);
-    
-    return () => {
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-      window.removeEventListener('error', handleError);
-    };
-  }, []);
-
+function App() {
+  console.log('🚀 App component rendering');
+  
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
         <TelegramAuthProvider>
-          <ThemeProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <HashRouter>
-                <EnhancedAuthGuard>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/inventory" element={<InventoryPage />} />
-                    <Route path="/upload" element={<UploadPage />} />
-                    <Route path="/reports" element={<ReportsPage />} />
-                    <Route path="/reports/:reportId" element={<ReportsPage />} />
-                    <Route path="/:reportId" element={<ReportsPage />} />
-                    <Route path="/settings" element={<SettingsPage />} />
-                    <Route path="/insights" element={<InsightsPage />} />
-                    <Route path="/chat" element={<ChatPage />} />
-                    <Route path="/swipe" element={<DiamondSwipe />} />
-                    <Route path="/notifications" element={<NotificationsPage />} />
-                    <Route path="/profile" element={<ProfilePage />} />
-                    <Route path="/admin" element={<AdminAnalytics />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </EnhancedAuthGuard>
-              </HashRouter>
-            </TooltipProvider>
-          </ThemeProvider>
+          <AuthGuard>
+            <AuthorizationGuard>
+              <Router>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+                  <Route path="/inventory" element={<Layout><Inventory /></Layout>} />
+                  <Route path="/upload" element={<Layout><UploadPage /></Layout>} />
+                  <Route path="/chat" element={<Layout><ChatPage /></Layout>} />
+                  <Route path="/insights" element={<Layout><InsightsPage /></Layout>} />
+                  <Route path="/reports" element={<Layout><ReportsPage /></Layout>} />
+                  <Route path="/swipe" element={<Layout><DiamondSwipe /></Layout>} />
+                  <Route path="/settings" element={<Layout><Settings /></Layout>} />
+                  <Route path="/notifications" element={<Layout><NotificationsPage /></Layout>} />
+                  <Route path="/admin" element={
+                    <AdminGuard>
+                      <Admin />
+                    </AdminGuard>
+                  } />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Router>
+            </AuthorizationGuard>
+          </AuthGuard>
         </TelegramAuthProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
-};
+}
 
 export default App;

@@ -40,7 +40,7 @@ const Index = () => {
         <div className="text-center space-y-6 p-8 max-w-md">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mx-auto"></div>
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-blue-700">Diamond Muzzle</h1>
+            <h1 className="text-2xl font-bold text-blue-700">mazal-bot</h1>
             <p className="text-blue-600">Initializing your session...</p>
           </div>
           
@@ -124,7 +124,7 @@ const Index = () => {
             <span className="text-3xl">💎</span>
           </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Diamond Muzzle
+            mazal-bot
           </h1>
           <p className="text-xl text-gray-600">Loading your personalized experience...</p>
         </div>
