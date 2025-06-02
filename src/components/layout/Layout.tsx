@@ -31,7 +31,7 @@ export function Layout({ children }: LayoutProps) {
       </div>
       
       <div className="flex-1 w-full min-w-0 flex flex-col bg-background lg:ml-0">
-        {/* Mobile header with menu button */}
+        {/* Mobile header with menu button - only show on mobile */}
         <div className="lg:hidden flex items-center justify-between p-4 border-b border-gray-200 bg-white">
           <Button
             variant="ghost"
