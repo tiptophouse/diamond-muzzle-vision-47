@@ -2,7 +2,7 @@
 import Sidebar from "./Sidebar";
 import { Header } from "./Header";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface LayoutProps {
@@ -45,7 +45,7 @@ export function Layout({ children }: LayoutProps) {
           <div className="w-9" /> {/* Spacer for center alignment */}
         </div>
         
-        {/* Desktop header */}
+        {/* Desktop header - only show on desktop */}
         <div className="hidden lg:block">
           <Header />
         </div>
