@@ -24,6 +24,7 @@ export function useSimpleTelegramAuth() {
 
   const initializeAuth = () => {
     if (initializedRef.current || !mountedRef.current) {
+      console.log('🔄 Auth already initialized or component unmounted');
       return;
     }
 
@@ -86,6 +87,7 @@ export function useSimpleTelegramAuth() {
         }
         
         if (realUser) {
+          console.log('✅ Setting real user:', realUser.first_name);
           setUser(realUser);
           setIsLoading(false);
           initializedRef.current = true;
@@ -127,7 +129,7 @@ export function useSimpleTelegramAuth() {
   useEffect(() => {
     mountedRef.current = true;
     
-    // Set timeout to prevent hanging
+    // Shorter timeout to prevent hanging
     const timeoutId = setTimeout(() => {
       if (isLoading && mountedRef.current && !initializedRef.current) {
         console.warn('⚠️ Auth initialization timeout - using emergency fallback');
@@ -137,8 +139,9 @@ export function useSimpleTelegramAuth() {
         setIsLoading(false);
         initializedRef.current = true;
       }
-    }, 3000); // Reduced from 5000ms
+    }, 2000); // Reduced to 2 seconds
 
+    // Initialize immediately without delay
     initializeAuth();
 
     return () => {
