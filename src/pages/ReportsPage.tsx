@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -17,7 +18,7 @@ import { AlertCircle, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function ReportsPage() {
-  const { isAuthenticated, isLoading: authLoading, user, error: authError, refreshAuth } = useTelegramAuth();
+  const { isAuthenticated, isLoading: authLoading, user, error: authError } = useTelegramAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
@@ -106,11 +107,6 @@ export default function ReportsPage() {
     }
   };
 
-  const handleAuthRetry = () => {
-    console.log('🔄 Retrying authentication...');
-    refreshAuth();
-  };
-
   useEffect(() => {
     if (!authLoading && isAuthenticated && user?.id) {
       fetchData();
@@ -193,9 +189,9 @@ export default function ReportsPage() {
               <p className="text-sm text-gray-600 text-center">
                 Please ensure you're accessing this app through Telegram.
               </p>
-              <Button onClick={handleAuthRetry} className="w-full">
+              <Button onClick={() => window.location.reload()} className="w-full">
                 <RefreshCw className="mr-2 h-4 w-4" />
-                Retry Authentication
+                Refresh Page
               </Button>
             </CardContent>
           </Card>
