@@ -29,7 +29,7 @@ export function useBulletproofTelegramInit() {
           setCurrentUserId(safeUser.id);
           setIsTelegramEnvironment(false);
           setIsLoading(false);
-        }, 3000); // 3 second timeout
+        }, 2000); // Reduced to 2 seconds
 
         // Check if we're in browser environment
         if (typeof window === 'undefined') {

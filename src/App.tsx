@@ -25,10 +25,11 @@ import AdminAnalytics from "./pages/AdminAnalytics";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2, // Reduced retries to prevent hanging
-      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 5000),
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes
+      retry: 1, // Minimal retries
+      retryDelay: 1000,
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+      refetchOnWindowFocus: false, // Prevent unnecessary requests
     },
   },
 });
