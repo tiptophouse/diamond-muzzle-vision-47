@@ -1,12 +1,17 @@
 
 import React from 'react';
 import { AdminGuard } from '@/components/admin/AdminGuard';
-import { AdminUserManager } from '@/components/admin/AdminUserManager';
+import { LightweightAdminManager } from '@/components/admin/LightweightAdminManager';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-export default function AdminAnalytics() {
+const AdminAnalytics = () => {
   return (
-    <AdminGuard>
-      <AdminUserManager />
-    </AdminGuard>
+    <ErrorBoundary>
+      <AdminGuard>
+        <LightweightAdminManager />
+      </AdminGuard>
+    </ErrorBoundary>
   );
-}
+};
+
+export default AdminAnalytics;
