@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { setCurrentUserId } from '@/lib/api';
 import { parseTelegramInitData, isTelegramWebApp } from '@/utils/telegramValidation';
 import { TelegramUser, TelegramInitData } from '@/types/telegram';
