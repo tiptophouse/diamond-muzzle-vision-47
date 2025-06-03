@@ -5,6 +5,7 @@ import { AppErrorFallback } from './AppErrorFallback';
 interface ErrorBoundaryState {
   hasError: boolean;
   error?: Error;
+  errorInfo?: React.ErrorInfo;
 }
 
 interface ErrorBoundaryProps {
@@ -19,7 +20,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    console.error('🚨 ErrorBoundary caught error:', error.name, error.message);
+    console.error('🚨 ErrorBoundary caught error:', error);
     return { hasError: true, error };
   }
 
@@ -29,11 +30,21 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       stack: error.stack,
       componentStack: errorInfo.componentStack
     });
+    
+    this.setState({ errorInfo });
+
+    // Try to recover automatically after a delay
+    setTimeout(() => {
+      if (this.state.hasError) {
+        console.log('🔄 Attempting automatic recovery...');
+        this.handleReset();
+      }
+    }, 5000);
   }
 
   handleReset = () => {
     console.log('🔄 Resetting error boundary...');
-    this.setState({ hasError: false, error: undefined });
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
   };
 
   render() {

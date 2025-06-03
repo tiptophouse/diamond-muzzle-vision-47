@@ -18,20 +18,20 @@ export function useBulletproofTelegramInit() {
 
   useEffect(() => {
     const initializeAuth = async () => {
-      console.log('🛡️ Starting bulletproof Telegram initialization...');
+      console.log('🛡️ Starting optimized Telegram initialization...');
       
       try {
-        // Set a maximum initialization time to prevent hanging
+        // Faster timeout for better UX
         const initTimeout = setTimeout(() => {
-          console.log('⏰ Initialization timeout - using safe fallback');
+          console.log('⏰ Quick initialization timeout - using safe fallback');
           const safeUser = createSafeUser();
           setUser(safeUser);
           setCurrentUserId(safeUser.id);
           setIsTelegramEnvironment(false);
           setIsLoading(false);
-        }, 2000); // Reduced to 2 seconds
+        }, 1000); // Reduced to 1 second for faster startup
 
-        // Check if we're in browser environment
+        // Immediate environment check
         if (typeof window === 'undefined') {
           clearTimeout(initTimeout);
           const safeUser = createSafeUser();
@@ -42,14 +42,14 @@ export function useBulletproofTelegramInit() {
           return;
         }
 
-        // Check for Telegram environment
+        // Quick Telegram detection
         const inTelegram = !!(window.Telegram?.WebApp);
         setIsTelegramEnvironment(inTelegram);
 
         if (inTelegram && window.Telegram?.WebApp) {
           const tg = window.Telegram.WebApp;
           
-          // Safe WebApp initialization
+          // Fast WebApp initialization
           try {
             if (typeof tg.ready === 'function') tg.ready();
             if (typeof tg.expand === 'function') tg.expand();
@@ -57,16 +57,13 @@ export function useBulletproofTelegramInit() {
             console.warn('WebApp initialization warning:', e);
           }
 
-          // Get user data with multiple fallbacks
+          // Quick user data extraction
           let userData: TelegramUser | null = null;
 
-          // Try unsafe data first
           if (tg.initDataUnsafe?.user?.id) {
             userData = tg.initDataUnsafe.user;
-            console.log('✅ Using Telegram unsafe data');
-          }
-          // Try parsing init data
-          else if (tg.initData) {
+            console.log('✅ Using Telegram user data quickly');
+          } else if (tg.initData) {
             try {
               const urlParams = new URLSearchParams(tg.initData);
               const userParam = urlParams.get('user');
@@ -74,7 +71,7 @@ export function useBulletproofTelegramInit() {
                 const parsedUser = JSON.parse(decodeURIComponent(userParam));
                 if (parsedUser?.id) {
                   userData = parsedUser;
-                  console.log('✅ Using parsed Telegram data');
+                  console.log('✅ Parsed Telegram data successfully');
                 }
               }
             } catch (e) {
@@ -91,17 +88,16 @@ export function useBulletproofTelegramInit() {
           }
         }
 
-        // Final fallback - always provide a working user
+        // Fast fallback
         clearTimeout(initTimeout);
         const fallbackUser = createSafeUser();
         setUser(fallbackUser);
         setCurrentUserId(fallbackUser.id);
         setIsLoading(false);
-        console.log('🔧 Using fallback user for app stability');
+        console.log('🔧 Using quick fallback user');
 
       } catch (error) {
-        console.error('❌ Critical initialization error:', error);
-        // Even in catastrophic failure, provide a working user
+        console.error('❌ Initialization error, using emergency user:', error);
         const emergencyUser = createSafeUser(999999999);
         setUser(emergencyUser);
         setCurrentUserId(emergencyUser.id);
@@ -115,7 +111,7 @@ export function useBulletproofTelegramInit() {
   return {
     user,
     isLoading,
-    error: null, // Never return errors to prevent app crashes
+    error: null,
     isTelegramEnvironment,
     isAuthenticated: !!user,
     initData: null,
@@ -126,7 +122,7 @@ export function useBulletproofTelegramInit() {
         setUser(refreshUser);
         setCurrentUserId(refreshUser.id);
         setIsLoading(false);
-      }, 100);
+      }, 50); // Faster refresh
     },
     retryAuth: () => {
       window.location.reload();
