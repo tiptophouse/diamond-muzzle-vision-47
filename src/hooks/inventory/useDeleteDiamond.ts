@@ -31,38 +31,65 @@ export function useDeleteDiamond(onSuccess?: () => void) {
     }
 
     try {
-      console.log('Deleting diamond ID:', diamondId, 'for user:', user.id);
+      console.log('Starting diamond deletion process for ID:', diamondId, 'User:', user.id);
       
-      // First try deleting directly from Supabase for immediate feedback
-      const { error: supabaseError } = await supabase
-        .from('inventory')
-        .delete()
-        .eq('id', diamondId)
-        .eq('user_id', user.id);
-
-      if (supabaseError) {
-        console.error('Supabase delete error:', supabaseError);
-        // Fall back to API deletion
-        const response = await api.delete(apiEndpoints.deleteDiamond(diamondId, user.id));
+      // Primary deletion method: Use FastAPI which is the main data source
+      console.log('Attempting FastAPI deletion...');
+      const response = await api.delete(apiEndpoints.deleteDiamond(diamondId, user.id));
+      
+      if (response.error) {
+        console.error('FastAPI deletion failed:', response.error);
         
-        if (response.error) {
-          throw new Error(response.error);
+        // Fallback: Try Supabase deletion with proper user ID handling
+        console.log('Attempting Supabase fallback deletion...');
+        
+        // For Supabase, we need to handle the user_id field which might be numeric (telegram_id)
+        // First try with the UUID user id
+        let supabaseError = null;
+        const { error: uuidError } = await supabase
+          .from('inventory')
+          .delete()
+          .eq('id', diamondId)
+          .eq('user_id', user.id);
+
+        if (uuidError) {
+          console.log('UUID deletion failed, trying with telegram_id:', uuidError);
+          // If UUID fails, try with numeric telegram_id
+          const { error: telegramIdError } = await supabase
+            .from('inventory')
+            .delete()
+            .eq('id', diamondId)
+            .eq('user_id', parseInt(user.id.toString()));
+
+          supabaseError = telegramIdError;
+        }
+
+        if (supabaseError) {
+          console.error('Both FastAPI and Supabase deletion failed:', supabaseError);
+          throw new Error('Failed to delete diamond from both systems');
         }
       }
+      
+      console.log('Diamond deletion successful');
       
       toast({
         title: "Success",
         description: "Diamond deleted successfully",
       });
       
-      if (onSuccess) onSuccess();
+      // Trigger immediate refresh
+      if (onSuccess) {
+        console.log('Calling onSuccess callback to refresh data');
+        onSuccess();
+      }
+      
       return true;
     } catch (error) {
       console.error('Failed to delete diamond:', error);
       const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond. Please try again.";
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "Deletion Failed",
         description: errorMessage,
       });
       return false;

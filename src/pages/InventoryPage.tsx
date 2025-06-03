@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -49,6 +50,7 @@ export default function InventoryPage() {
     allDiamonds,
     fetchData,
     handleRefresh,
+    removeFromState,
   } = useInventoryData();
 
   const {
@@ -59,7 +61,10 @@ export default function InventoryPage() {
     handleSearch,
   } = useInventorySearch(allDiamonds, currentPage, filters);
 
-  const { addDiamond, updateDiamond, deleteDiamond, isLoading: crudLoading } = useInventoryCrud(handleRefresh);
+  const { addDiamond, updateDiamond, deleteDiamond, isLoading: crudLoading } = useInventoryCrud(() => {
+    console.log('CRUD operation success callback triggered');
+    handleRefresh(true); // Silent refresh after CRUD operations
+  });
 
   useEffect(() => {
     setDiamonds(filteredDiamonds);
@@ -82,6 +87,7 @@ export default function InventoryPage() {
   };
 
   const handleDeleteDiamond = (diamondId: string) => {
+    console.log('Delete initiated for diamond:', diamondId);
     setDiamondToDelete(diamondId);
     setDeleteDialogOpen(true);
   };
@@ -103,10 +109,32 @@ export default function InventoryPage() {
 
   const confirmDelete = async () => {
     if (diamondToDelete) {
-      const success = await deleteDiamond(diamondToDelete);
-      if (success) {
-        setDeleteDialogOpen(false);
-        setDiamondToDelete(null);
+      console.log('Confirming deletion for diamond:', diamondToDelete);
+      
+      // Optimistic update: remove from UI immediately
+      removeFromState(diamondToDelete);
+      
+      // Close dialog immediately for better UX
+      setDeleteDialogOpen(false);
+      const diamondIdToDelete = diamondToDelete;
+      setDiamondToDelete(null);
+      
+      // Perform actual deletion in background
+      const success = await deleteDiamond(diamondIdToDelete);
+      
+      if (!success) {
+        // If deletion failed, show error and refresh to restore correct state
+        toast({
+          variant: "destructive",
+          title: "Deletion Failed",
+          description: "Failed to delete diamond. Refreshing inventory...",
+        });
+        handleRefresh(true);
+      } else {
+        toast({
+          title: "Success",
+          description: "Diamond deleted successfully",
+        });
       }
     }
   };
@@ -177,7 +205,7 @@ export default function InventoryPage() {
       <div className="w-full max-w-full overflow-x-hidden space-y-4">
         <InventoryHeader
           totalDiamonds={allDiamonds.length}
-          onRefresh={handleRefresh}
+          onRefresh={() => handleRefresh(false)}
           onAdd={handleAddDiamond}
           onQRScan={handleQRScan}
           loading={loading}

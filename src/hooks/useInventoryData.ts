@@ -13,7 +13,7 @@ export function useInventoryData() {
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
   const [allDiamonds, setAllDiamonds] = useState<Diamond[]>([]);
   
-  const fetchData = async () => {
+  const fetchData = async (showToast = true) => {
     if (!isAuthenticated || !user?.id) {
       console.log('User not authenticated, skipping data fetch');
       setLoading(false);
@@ -36,17 +36,17 @@ export function useInventoryData() {
         
         setAllDiamonds(convertedDiamonds);
         
-        // Show much smaller, less prominent toast message that auto-dismisses quickly
-        if (convertedDiamonds.length > 0) {
+        // Show toast message only if requested and there are diamonds
+        if (showToast && convertedDiamonds.length > 0) {
           const toastInstance = toast({
             title: `${convertedDiamonds.length} diamonds`,
-            description: "Inventory loaded",
+            description: "Inventory updated",
           });
           
-          // Auto-dismiss after 3 seconds
+          // Auto-dismiss after 2 seconds
           setTimeout(() => {
             toastInstance.dismiss();
-          }, 3000);
+          }, 2000);
         }
       } else {
         console.warn('No inventory data received from FastAPI');
@@ -65,11 +65,18 @@ export function useInventoryData() {
     }
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async (silent = false) => {
     if (isAuthenticated && user?.id) {
       console.log('Manually refreshing inventory data for user:', user.id);
-      fetchData();
+      await fetchData(!silent);
     }
+  };
+
+  // Optimistic delete function for immediate UI updates
+  const removeFromState = (diamondId: string) => {
+    console.log('Optimistically removing diamond from state:', diamondId);
+    setAllDiamonds(prev => prev.filter(d => d.id !== diamondId));
+    setDiamonds(prev => prev.filter(d => d.id !== diamondId));
   };
 
   // Only fetch data when authentication is complete and user is authenticated
@@ -88,5 +95,6 @@ export function useInventoryData() {
     allDiamonds,
     fetchData,
     handleRefresh,
+    removeFromState,
   };
 }
