@@ -62,7 +62,7 @@ export default function InventoryPage() {
   } = useInventorySearch(allDiamonds, currentPage, filters);
 
   const { addDiamond, updateDiamond, deleteDiamond, isLoading: crudLoading } = useInventoryCrud(() => {
-    console.log('CRUD operation success callback triggered');
+    console.log('🔄 CRUD operation success callback triggered');
     handleRefresh(true); // Silent refresh after CRUD operations
   });
 
@@ -87,7 +87,7 @@ export default function InventoryPage() {
   };
 
   const handleDeleteDiamond = (diamondId: string) => {
-    console.log('Delete initiated for diamond:', diamondId);
+    console.log('🗑️ Delete button clicked for diamond:', diamondId);
     setDiamondToDelete(diamondId);
     setDeleteDialogOpen(true);
   };
@@ -109,32 +109,34 @@ export default function InventoryPage() {
 
   const confirmDelete = async () => {
     if (diamondToDelete) {
-      console.log('Confirming deletion for diamond:', diamondToDelete);
+      console.log('🗑️ Confirming deletion for diamond:', diamondToDelete);
       
-      // Optimistic update: remove from UI immediately
+      // Optimistic update: remove from UI immediately for better UX
       removeFromState(diamondToDelete);
       
-      // Close dialog immediately for better UX
+      // Close dialog immediately
       setDeleteDialogOpen(false);
       const diamondIdToDelete = diamondToDelete;
       setDiamondToDelete(null);
+      
+      // Show deleting toast
+      toast({
+        title: "Deleting...",
+        description: "Removing diamond from inventory",
+      });
       
       // Perform actual deletion in background
       const success = await deleteDiamond(diamondIdToDelete);
       
       if (!success) {
         // If deletion failed, show error and refresh to restore correct state
+        console.error('❌ Deletion failed, restoring UI state');
         toast({
           variant: "destructive",
-          title: "Deletion Failed",
+          title: "Deletion Failed", 
           description: "Failed to delete diamond. Refreshing inventory...",
         });
-        handleRefresh(true);
-      } else {
-        toast({
-          title: "Success",
-          description: "Diamond deleted successfully",
-        });
+        await handleRefresh(true);
       }
     }
   };
@@ -202,7 +204,7 @@ export default function InventoryPage() {
 
   return (
     <Layout>
-      <div className="w-full max-w-full overflow-x-hidden space-y-4">
+      <div className="w-full max-w-full overflow-x-hidden space-y-4 p-2 sm:p-4">
         <InventoryHeader
           totalDiamonds={allDiamonds.length}
           onRefresh={() => handleRefresh(false)}
@@ -239,7 +241,7 @@ export default function InventoryPage() {
       </div>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto">
           <DialogHeader>
             <DialogTitle>
               {editingDiamond ? 'Edit Diamond' : 'Add New Diamond'}
@@ -261,18 +263,18 @@ export default function InventoryPage() {
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="mx-4 sm:mx-auto">
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the diamond from your inventory.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
               disabled={crudLoading}
             >
               {crudLoading ? 'Deleting...' : 'Delete'}

@@ -23,10 +23,11 @@ export const apiEndpoints = {
   },
   uploadInventory: () => `/upload-inventory`,
   deleteDiamond: (diamondId: string, userId: number) => {
-    // Ensure proper encoding of parameters
+    // Ensure proper encoding and numeric user ID
     const encodedDiamondId = encodeURIComponent(diamondId);
-    const encodedUserId = encodeURIComponent(userId);
-    return `/delete_diamond?diamond_id=${encodedDiamondId}&user_id=${encodedUserId}`;
+    const numericUserId = Number(userId);
+    console.log('🔗 Building delete endpoint with:', { diamondId: encodedDiamondId, userId: numericUserId });
+    return `/delete_diamond?diamond_id=${encodedDiamondId}&user_id=${numericUserId}`;
   },
   createReport: () => `/create-report`,
   getReport: (reportId: string) => `/get-report?diamond_id=${reportId}`,

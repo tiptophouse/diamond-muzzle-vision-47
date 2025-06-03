@@ -11,6 +11,7 @@ export function useDeleteDiamond(onSuccess?: () => void) {
 
   const deleteDiamond = async (diamondId: string) => {
     if (!user?.id) {
+      console.error('Delete failed: User not authenticated');
       toast({
         variant: "destructive",
         title: "Error",
@@ -21,7 +22,7 @@ export function useDeleteDiamond(onSuccess?: () => void) {
 
     // Validate diamond ID format
     if (!diamondId || !isValidUUID(diamondId)) {
-      console.error('Invalid diamond ID for deletion:', diamondId);
+      console.error('Delete failed: Invalid diamond ID format:', diamondId);
       toast({
         variant: "destructive",
         title: "Error",
@@ -31,62 +32,63 @@ export function useDeleteDiamond(onSuccess?: () => void) {
     }
 
     try {
-      console.log('Starting diamond deletion process for ID:', diamondId, 'User:', user.id);
+      console.log('🗑️ Starting diamond deletion process:');
+      console.log('- Diamond ID:', diamondId);
+      console.log('- User ID:', user.id);
+      console.log('- User type:', typeof user.id);
       
-      // Primary deletion method: Use FastAPI which is the main data source
-      console.log('Attempting FastAPI deletion...');
-      const response = await api.delete(apiEndpoints.deleteDiamond(diamondId, user.id));
+      // Convert user ID to numeric for FastAPI (Telegram ID)
+      const numericUserId = typeof user.id === 'string' ? parseInt(user.id) : user.id;
+      console.log('- Converted numeric user ID:', numericUserId);
+      
+      // Primary deletion: Use FastAPI with proper numeric user ID
+      console.log('🚀 Attempting FastAPI deletion...');
+      const deleteEndpoint = apiEndpoints.deleteDiamond(diamondId, numericUserId);
+      console.log('- Delete endpoint:', deleteEndpoint);
+      
+      const response = await api.delete(deleteEndpoint);
+      console.log('- FastAPI delete response:', response);
       
       if (response.error) {
-        console.error('FastAPI deletion failed:', response.error);
-        
-        // Fallback: Try Supabase deletion with proper user ID handling
-        console.log('Attempting Supabase fallback deletion...');
-        
-        // For Supabase, we need to handle the user_id field which might be numeric (telegram_id)
-        // First try with the UUID user id
-        let supabaseError = null;
-        const { error: uuidError } = await supabase
+        console.error('❌ FastAPI deletion failed:', response.error);
+        throw new Error(`FastAPI deletion failed: ${response.error}`);
+      }
+      
+      console.log('✅ Diamond successfully deleted from FastAPI');
+      
+      // Also try to clean up from Supabase as backup
+      try {
+        console.log('🧹 Attempting Supabase cleanup...');
+        const { error: supabaseError } = await supabase
           .from('inventory')
           .delete()
           .eq('id', diamondId)
-          .eq('user_id', user.id);
-
-        if (uuidError) {
-          console.log('UUID deletion failed, trying with telegram_id:', uuidError);
-          // If UUID fails, try with numeric telegram_id
-          const { error: telegramIdError } = await supabase
-            .from('inventory')
-            .delete()
-            .eq('id', diamondId)
-            .eq('user_id', parseInt(user.id.toString()));
-
-          supabaseError = telegramIdError;
-        }
-
+          .eq('user_id', numericUserId);
+          
         if (supabaseError) {
-          console.error('Both FastAPI and Supabase deletion failed:', supabaseError);
-          throw new Error('Failed to delete diamond from both systems');
+          console.warn('⚠️ Supabase cleanup failed (non-critical):', supabaseError);
+        } else {
+          console.log('✅ Supabase cleanup successful');
         }
+      } catch (supabaseError) {
+        console.warn('⚠️ Supabase cleanup error (non-critical):', supabaseError);
       }
-      
-      console.log('Diamond deletion successful');
       
       toast({
         title: "Success",
         description: "Diamond deleted successfully",
       });
       
-      // Trigger immediate refresh
+      // Trigger refresh immediately
       if (onSuccess) {
-        console.log('Calling onSuccess callback to refresh data');
+        console.log('🔄 Triggering data refresh...');
         onSuccess();
       }
       
       return true;
     } catch (error) {
-      console.error('Failed to delete diamond:', error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond. Please try again.";
+      console.error('❌ Diamond deletion failed:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond from FastAPI";
       toast({
         variant: "destructive",
         title: "Deletion Failed",
