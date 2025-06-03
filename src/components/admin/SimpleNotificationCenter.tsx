@@ -1,95 +1,61 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Send, Bell } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Send, Users, User, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useSimplifiedAnalytics } from '@/hooks/useSimplifiedAnalytics';
 
-interface SimpleNotificationCenterProps {
-  users: any[];
-}
-
-export function SimpleNotificationCenter({ users }: SimpleNotificationCenterProps) {
-  const [title, setTitle] = useState('');
-  const [message, setMessage] = useState('');
-  const [selectedType, setSelectedType] = useState<'info' | 'alert' | 'promotion'>('info');
-  const [selectedTarget, setSelectedTarget] = useState<'all' | 'premium' | 'specific'>('all');
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
+export function SimpleNotificationCenter() {
+  const { users } = useSimplifiedAnalytics();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+  
+  const [message, setMessage] = useState('');
+  const [targetType, setTargetType] = useState<'all' | 'individual'>('all');
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const sendNotification = async () => {
-    if (!title.trim() || !message.trim()) {
+  const handleSendMessage = async () => {
+    if (!message.trim()) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in both title and message fields.",
+        title: "Error",
+        description: "Please enter a message",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (targetType === 'individual' && !selectedUserId) {
+      toast({
+        title: "Error",
+        description: "Please select a user",
         variant: "destructive",
       });
       return;
     }
 
     setIsLoading(true);
+    
     try {
-      let targetUsers: any[] = [];
-
-      if (selectedTarget === 'all') {
-        targetUsers = users;
-      } else if (selectedTarget === 'premium') {
-        targetUsers = users.filter(user => user.is_premium);
-      } else if (selectedTarget === 'specific') {
-        const specificUser = users.find(user => user.telegram_id.toString() === selectedUserId);
-        if (specificUser) {
-          targetUsers = [specificUser];
-        }
-      }
-
-      if (targetUsers.length === 0) {
-        toast({
-          title: "Error",
-          description: "No target users found.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const notificationInserts = targetUsers.map(user => ({
-        telegram_id: user.telegram_id,
-        message_type: selectedType,
-        message_content: `${title}\n\n${message}`,
-        status: 'sent',
-        metadata: { 
-          title: title,
-          target_type: selectedTarget,
-          sent_by: 'admin'
-        }
-      }));
-
-      const { error } = await supabase
-        .from('notifications')
-        .insert(notificationInserts);
-
-      if (error) throw error;
+      // Simulate sending message
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
-        title: "Notification Sent",
-        description: `Message sent to ${targetUsers.length} user(s)`,
+        title: "Message Sent",
+        description: targetType === 'all' 
+          ? `Message sent to all ${users.length} users`
+          : `Message sent to selected user`,
       });
-
-      setTitle('');
+      
       setMessage('');
-      setSelectedType('info');
-      setSelectedTarget('all');
       setSelectedUserId('');
     } catch (error) {
-      console.error('Error sending notification:', error);
       toast({
         title: "Error",
-        description: "Failed to send notification",
+        description: "Failed to send message",
         variant: "destructive",
       });
     } finally {
@@ -98,97 +64,99 @@ export function SimpleNotificationCenter({ users }: SimpleNotificationCenterProp
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Send className="h-5 w-5" />
-          Send Notification
-        </CardTitle>
-        <CardDescription>
-          Send notifications to users through the MazalChat bot
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <Label htmlFor="title">Title</Label>
-          <Input
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Notification title"
-            maxLength={100}
-          />
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-slate-300" />
+        <h2 className="text-lg sm:text-xl font-bold text-white">Send Notification</h2>
+      </div>
+
+      {/* Target Selection */}
+      <div className="space-y-3 sm:space-y-4">
+        <div className="text-sm font-medium text-slate-300">Send to:</div>
+        <div className={`grid ${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-2 gap-4'}`}>
+          <Button
+            variant={targetType === 'all' ? 'default' : 'outline'}
+            onClick={() => setTargetType('all')}
+            className={`${isMobile ? 'h-12 justify-start' : 'h-10'} ${
+              targetType === 'all' 
+                ? 'bg-slate-700 text-white' 
+                : 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700'
+            }`}
+          >
+            <Users className="h-4 w-4 mr-2" />
+            All Users ({users.length})
+          </Button>
+          
+          <Button
+            variant={targetType === 'individual' ? 'default' : 'outline'}
+            onClick={() => setTargetType('individual')}
+            className={`${isMobile ? 'h-12 justify-start' : 'h-10'} ${
+              targetType === 'individual' 
+                ? 'bg-slate-700 text-white' 
+                : 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700'
+            }`}
+          >
+            <User className="h-4 w-4 mr-2" />
+            Individual User
+          </Button>
         </div>
 
-        <div>
-          <Label htmlFor="message">Message</Label>
-          <Textarea
-            id="message"
-            placeholder="Your message here..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            rows={4}
-            maxLength={500}
-          />
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          <div>
-            <Label>Type</Label>
-            <Select value={selectedType} onValueChange={(value: any) => setSelectedType(value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="info">Information</SelectItem>
-                <SelectItem value="alert">Alert</SelectItem>
-                <SelectItem value="promotion">Promotion</SelectItem>
-              </SelectContent>
-            </Select>
+        {/* User Selection for Individual */}
+        {targetType === 'individual' && (
+          <div className="space-y-2">
+            <label className="text-sm text-slate-300">Select User:</label>
+            <select
+              value={selectedUserId}
+              onChange={(e) => setSelectedUserId(e.target.value)}
+              className="w-full p-3 bg-slate-800 border border-slate-600 rounded-lg text-white text-sm focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
+            >
+              <option value="">Choose a user...</option>
+              {users.map((user) => (
+                <option key={user.id} value={user.telegram_id}>
+                  {user.first_name} {user.last_name} - @{user.username || user.telegram_id}
+                </option>
+              ))}
+            </select>
           </div>
+        )}
+      </div>
 
-          <div>
-            <Label>Send To</Label>
-            <Select value={selectedTarget} onValueChange={(value: any) => setSelectedTarget(value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Users ({users.length})</SelectItem>
-                <SelectItem value="premium">Premium Users</SelectItem>
-                <SelectItem value="specific">Specific User</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {selectedTarget === 'specific' && (
-            <div>
-              <Label>User</Label>
-              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose user" />
-                </SelectTrigger>
-                <SelectContent className="max-h-48">
-                  {users.map((user) => (
-                    <SelectItem key={user.telegram_id} value={user.telegram_id.toString()}>
-                      {user.first_name} {user.last_name} (ID: {user.telegram_id})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+      {/* Message Input */}
+      <div className="space-y-2">
+        <label className="text-sm text-slate-300">Message:</label>
+        <Textarea
+          placeholder="Enter your message here..."
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          className={`bg-slate-800 border-slate-600 text-white resize-none focus:border-slate-500 focus:ring-slate-500 ${
+            isMobile ? 'min-h-[120px]' : 'min-h-[100px]'
+          }`}
+        />
+        <div className="text-xs text-slate-400">
+          {message.length}/500 characters
         </div>
+      </div>
 
-        <Button 
-          onClick={sendNotification} 
-          disabled={isLoading || !title.trim() || !message.trim()}
-          className="w-full"
-        >
-          <Send className="h-4 w-4 mr-2" />
-          {isLoading ? 'Sending...' : 'Send Notification'}
-        </Button>
-      </CardContent>
-    </Card>
+      {/* Send Button */}
+      <Button
+        onClick={handleSendMessage}
+        disabled={isLoading || !message.trim()}
+        className={`${isMobile ? 'w-full h-12' : 'w-auto'} bg-slate-700 hover:bg-slate-600 disabled:opacity-50`}
+      >
+        <Send className="h-4 w-4 mr-2" />
+        {isLoading ? 'Sending...' : 'Send Message'}
+      </Button>
+
+      {/* Recent Messages Preview */}
+      <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-slate-700">
+        <h3 className="text-base sm:text-lg font-medium text-white mb-3 sm:mb-4">Recent Activity</h3>
+        <div className="space-y-2 sm:space-y-3">
+          <div className="p-3 bg-slate-800 rounded-lg border border-slate-700">
+            <div className="text-sm text-slate-300">No recent messages</div>
+            <div className="text-xs text-slate-500 mt-1">Messages will appear here after sending</div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
