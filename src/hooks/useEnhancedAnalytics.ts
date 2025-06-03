@@ -133,29 +133,49 @@ export function useEnhancedAnalytics() {
     try {
       console.log('🔔 Fetching notifications...');
       
-      const { data, error } = await supabase
+      // First fetch all notifications
+      const { data: notificationsData, error: notificationsError } = await supabase
         .from('notifications')
-        .select(`
-          *,
-          user_profiles!notifications_telegram_id_fkey (
-            first_name,
-            last_name
-          )
-        `)
+        .select('*')
         .order('sent_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching notifications:', error);
-        throw error;
+      if (notificationsError) {
+        console.error('Error fetching notifications:', notificationsError);
+        throw notificationsError;
       }
 
-      console.log('📬 Fetched notifications:', data?.length, 'notifications');
+      console.log('📬 Fetched notifications:', notificationsData?.length, 'notifications');
 
-      const transformedNotifications = (data || []).map(notification => ({
-        ...notification,
-        user_first_name: notification.user_profiles?.first_name,
-        user_last_name: notification.user_profiles?.last_name
-      }));
+      // Then fetch user profiles separately to avoid foreign key issues
+      const { data: userProfilesData, error: userProfilesError } = await supabase
+        .from('user_profiles')
+        .select('telegram_id, first_name, last_name');
+
+      if (userProfilesError) {
+        console.error('Error fetching user profiles:', userProfilesError);
+        // Continue without user data if profiles can't be fetched
+      }
+
+      // Create a map of telegram_id to user data for quick lookup
+      const userMap = new Map();
+      if (userProfilesData) {
+        userProfilesData.forEach(user => {
+          userMap.set(user.telegram_id, {
+            first_name: user.first_name,
+            last_name: user.last_name
+          });
+        });
+      }
+
+      // Transform notifications and add user data
+      const transformedNotifications = (notificationsData || []).map(notification => {
+        const userData = userMap.get(notification.telegram_id);
+        return {
+          ...notification,
+          user_first_name: userData?.first_name || 'Unknown',
+          user_last_name: userData?.last_name || ''
+        };
+      });
 
       setNotifications(transformedNotifications);
       console.log('✅ Notifications data set:', transformedNotifications.length, 'notifications');
