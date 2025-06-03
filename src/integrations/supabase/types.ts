@@ -9,33 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      app_settings: {
-        Row: {
-          created_at: string | null
-          id: string
-          setting_key: string
-          setting_value: Json
-          updated_at: string | null
-          updated_by_telegram_id: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          setting_key: string
-          setting_value: Json
-          updated_at?: string | null
-          updated_by_telegram_id?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          setting_key?: string
-          setting_value?: Json
-          updated_at?: string | null
-          updated_by_telegram_id?: number | null
-        }
-        Relationships: []
-      }
       blocked_users: {
         Row: {
           blocked_by_telegram_id: number

@@ -1,57 +1,71 @@
 
 import { useState, useEffect } from 'react';
+import { useToast } from '@/components/ui/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
 interface Lead {
   id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  status: 'active' | 'inactive' | 'converted';
-  value: number;
-  source: string;
+  customer_name: string;
+  customer_email?: string;
+  customer_phone?: string;
+  inquiry_type: string;
+  status: string;
+  diamond_interests?: any;
+  notes?: string;
   created_at: string;
+  updated_at: string;
 }
 
 export function useLeads() {
-  const { user, isAuthenticated } = useTelegramAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+  const { user } = useTelegramAuth();
 
-  useEffect(() => {
-    if (!isAuthenticated || !user) return;
-
-    // Simulate loading leads data
-    setIsLoading(true);
-    setTimeout(() => {
-      const mockLeads: Lead[] = [
+  const fetchLeads = async () => {
+    if (!user?.id) return;
+    
+    try {
+      // For now, use sample data since the table types aren't updated yet
+      setLeads([
         {
           id: '1',
-          name: 'John Smith',
-          email: 'john@example.com',
-          phone: '+1234567890',
+          customer_name: 'John Smith',
+          customer_email: 'john@example.com',
+          inquiry_type: 'engagement',
           status: 'active',
-          value: 15000,
-          source: 'website',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         },
         {
           id: '2',
-          name: 'Sarah Johnson',
-          email: 'sarah@example.com',
-          status: 'converted',
-          value: 25000,
-          source: 'referral',
-          created_at: new Date().toISOString()
+          customer_name: 'Sarah Johnson',
+          customer_email: 'sarah@example.com',
+          inquiry_type: 'anniversary',
+          status: 'pending',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         }
-      ];
-      setLeads(mockLeads);
+      ]);
+    } catch (error) {
+      console.error('Error fetching leads:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load leads",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
-  }, [isAuthenticated, user]);
+    }
+  };
+
+  useEffect(() => {
+    fetchLeads();
+  }, [user?.id]);
 
   return {
     leads,
     isLoading,
+    refetch: fetchLeads,
   };
 }
