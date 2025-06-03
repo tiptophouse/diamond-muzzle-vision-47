@@ -61,6 +61,8 @@ export function useEnhancedAnalytics() {
 
   const fetchEnhancedUserData = async () => {
     try {
+      console.log('🔄 Fetching enhanced user data...');
+      
       // Fetch user profiles with analytics data
       const { data: userData, error: userError } = await supabase
         .from('user_profiles')
@@ -81,7 +83,12 @@ export function useEnhancedAnalytics() {
         `)
         .order('created_at', { ascending: false });
 
-      if (userError) throw userError;
+      if (userError) {
+        console.error('Error fetching user data:', userError);
+        throw userError;
+      }
+
+      console.log('📊 Fetched user data:', userData?.length, 'users');
 
       // Transform the data to flatten analytics
       const transformedData = (userData || []).map(user => {
@@ -116,25 +123,33 @@ export function useEnhancedAnalytics() {
       });
 
       setEnhancedUsers(transformedData);
+      console.log('✅ Enhanced users data set:', transformedData.length, 'users');
     } catch (error) {
-      console.error('Error fetching enhanced user data:', error);
+      console.error('❌ Error fetching enhanced user data:', error);
     }
   };
 
   const fetchNotifications = async () => {
     try {
+      console.log('🔔 Fetching notifications...');
+      
       const { data, error } = await supabase
         .from('notifications')
         .select(`
           *,
-          user_profiles!inner (
+          user_profiles!notifications_telegram_id_fkey (
             first_name,
             last_name
           )
         `)
         .order('sent_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching notifications:', error);
+        throw error;
+      }
+
+      console.log('📬 Fetched notifications:', data?.length, 'notifications');
 
       const transformedNotifications = (data || []).map(notification => ({
         ...notification,
@@ -143,8 +158,11 @@ export function useEnhancedAnalytics() {
       }));
 
       setNotifications(transformedNotifications);
+      console.log('✅ Notifications data set:', transformedNotifications.length, 'notifications');
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      console.error('❌ Error fetching notifications:', error);
+      // Set empty array on error to prevent UI issues
+      setNotifications([]);
     }
   };
 
@@ -181,11 +199,21 @@ export function useEnhancedAnalytics() {
     };
   };
 
+  const refetch = async () => {
+    console.log('🔄 Refetching all data...');
+    setIsLoading(true);
+    await Promise.all([fetchEnhancedUserData(), fetchNotifications()]);
+    setIsLoading(false);
+    console.log('✅ Refetch completed');
+  };
+
   useEffect(() => {
     const loadData = async () => {
+      console.log('🚀 Initial data load started...');
       setIsLoading(true);
       await Promise.all([fetchEnhancedUserData(), fetchNotifications()]);
       setIsLoading(false);
+      console.log('✅ Initial data load completed');
     };
 
     loadData();
@@ -198,9 +226,6 @@ export function useEnhancedAnalytics() {
     getUserEngagementScore,
     getTopUsers,
     getUserStats,
-    refetch: () => {
-      fetchEnhancedUserData();
-      fetchNotifications();
-    }
+    refetch
   };
 }

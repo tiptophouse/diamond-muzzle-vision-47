@@ -4,7 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Bell, MessageSquare, Users, Send, TrendingUp } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Bell, MessageSquare, Users, Send, TrendingUp, User } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
@@ -24,36 +27,85 @@ interface NotificationData {
   user_last_name?: string;
 }
 
+interface UserData {
+  id: string;
+  telegram_id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+}
+
 interface NotificationCenterProps {
   notifications: NotificationData[];
+  users: UserData[];
   onRefresh: () => void;
 }
 
-export function NotificationCenter({ notifications, onRefresh }: NotificationCenterProps) {
-  const [newMessage, setNewMessage] = useState('');
+export function NotificationCenter({ notifications, users, onRefresh }: NotificationCenterProps) {
+  const [title, setTitle] = useState('');
+  const [message, setMessage] = useState('');
   const [selectedType, setSelectedType] = useState<'info' | 'alert' | 'promotion' | 'system'>('info');
+  const [selectedTarget, setSelectedTarget] = useState<'all' | 'premium' | 'specific'>('all');
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const sendBroadcastMessage = async () => {
-    if (!newMessage.trim()) return;
+  const sendNotification = async () => {
+    if (!title.trim() || !message.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in both title and message fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (selectedTarget === 'specific' && !selectedUserId) {
+      toast({
+        title: "Validation Error",
+        description: "Please select a specific user when targeting individuals.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsLoading(true);
     try {
-      // Get all user telegram IDs
-      const { data: users, error: usersError } = await supabase
-        .from('user_profiles')
-        .select('telegram_id');
+      let targetUsers: UserData[] = [];
 
-      if (usersError) throw usersError;
+      if (selectedTarget === 'all') {
+        targetUsers = users;
+      } else if (selectedTarget === 'premium') {
+        // Filter premium users (assuming is_premium field exists)
+        targetUsers = users.filter((user: any) => user.is_premium);
+      } else if (selectedTarget === 'specific') {
+        const specificUser = users.find(user => user.telegram_id.toString() === selectedUserId);
+        if (specificUser) {
+          targetUsers = [specificUser];
+        }
+      }
 
-      // Insert notifications for all users
-      const notificationInserts = users.map(user => ({
+      if (targetUsers.length === 0) {
+        toast({
+          title: "Error",
+          description: "No target users found for the selected criteria.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Insert notifications for target users
+      const notificationInserts = targetUsers.map(user => ({
         telegram_id: user.telegram_id,
         message_type: selectedType,
-        message_content: newMessage,
+        message_content: `${title}\n\n${message}`,
         status: 'sent',
-        metadata: { broadcast: true, sent_by: 'admin' }
+        metadata: { 
+          broadcast: selectedTarget !== 'specific', 
+          sent_by: 'admin',
+          title: title,
+          target_type: selectedTarget
+        }
       }));
 
       const { error: insertError } = await supabase
@@ -63,17 +115,23 @@ export function NotificationCenter({ notifications, onRefresh }: NotificationCen
       if (insertError) throw insertError;
       
       toast({
-        title: "Broadcast Sent",
-        description: `Message sent to ${users.length} users as ${selectedType} notification`,
+        title: "Notification Sent",
+        description: `Message "${title}" sent to ${targetUsers.length} user(s) as ${selectedType} notification`,
       });
 
-      setNewMessage('');
+      // Reset form
+      setTitle('');
+      setMessage('');
+      setSelectedType('info');
+      setSelectedTarget('all');
+      setSelectedUserId('');
+      
       onRefresh();
     } catch (error) {
-      console.error('Error sending broadcast:', error);
+      console.error('Error sending notification:', error);
       toast({
         title: "Error",
-        description: "Failed to send broadcast message",
+        description: "Failed to send notification. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -112,54 +170,155 @@ export function NotificationCenter({ notifications, onRefresh }: NotificationCen
     }, {} as Record<string, number>)
   };
 
+  const getUserDisplayName = (user: UserData) => {
+    if (user.first_name && user.first_name !== 'Telegram' && user.first_name !== 'Test') {
+      return `${user.first_name} ${user.last_name || ''}`.trim();
+    }
+    if (user.username) {
+      return `@${user.username}`;
+    }
+    return `User ${user.telegram_id}`;
+  };
+
   return (
     <div className="space-y-6">
-      {/* Broadcast Message */}
+      {/* Send Notification Form */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Send className="h-5 w-5" />
-            Send Broadcast Message
+            Send Notification
           </CardTitle>
           <CardDescription>
-            Send notifications to all users through the MazalChat bot
+            Send notifications to users through the MazalChat bot
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="text-sm font-medium">Message Type</label>
-              <select 
-                value={selectedType} 
-                onChange={(e) => setSelectedType(e.target.value as any)}
-                className="w-full mt-1 p-2 border rounded-md"
-              >
-                <option value="info">Info</option>
-                <option value="alert">Alert</option>
-                <option value="promotion">Promotion</option>
-                <option value="system">System</option>
-              </select>
+              <Label htmlFor="title">Notification Title</Label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter notification title"
+                maxLength={100}
+              />
+            </div>
+            <div>
+              <Label htmlFor="type">Notification Type</Label>
+              <Select value={selectedType} onValueChange={(value: any) => setSelectedType(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="info">
+                    <div className="flex items-center gap-2">
+                      <Bell className="h-4 w-4 text-blue-500" />
+                      Information
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="alert">
+                    <div className="flex items-center gap-2">
+                      <Bell className="h-4 w-4 text-red-500" />
+                      Alert
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="promotion">
+                    <div className="flex items-center gap-2">
+                      <Bell className="h-4 w-4 text-green-500" />
+                      Promotion
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="system">
+                    <div className="flex items-center gap-2">
+                      <Bell className="h-4 w-4 text-gray-500" />
+                      System
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          
+
           <div>
-            <label className="text-sm font-medium">Message</label>
+            <Label htmlFor="message">Message Content</Label>
             <Textarea
-              placeholder="Enter your broadcast message..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              className="mt-1"
-              rows={3}
+              id="message"
+              placeholder="Enter your notification message..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={4}
+              maxLength={500}
             />
+            <p className="text-xs text-gray-500 mt-1">{message.length}/500 characters</p>
           </div>
-          
-          <Button 
-            onClick={sendBroadcastMessage} 
-            disabled={isLoading || !newMessage.trim()}
-            className="w-full"
-          >
-            {isLoading ? 'Sending...' : 'Send Broadcast'}
-          </Button>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <Label htmlFor="target">Send To</Label>
+              <Select value={selectedTarget} onValueChange={(value: any) => setSelectedTarget(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select target" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      All Users ({users.length})
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="premium">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-yellow-500" />
+                      Premium Users Only
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="specific">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-blue-500" />
+                      Specific User
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedTarget === 'specific' && (
+              <div>
+                <Label htmlFor="specificUser">Select User</Label>
+                <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a user" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-48">
+                    {users.map((user) => (
+                      <SelectItem key={user.telegram_id} value={user.telegram_id.toString()}>
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          <span>{getUserDisplayName(user)}</span>
+                          <Badge variant="outline" className="text-xs">
+                            ID: {user.telegram_id}
+                          </Badge>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end pt-4">
+            <Button 
+              onClick={sendNotification} 
+              disabled={isLoading || !title.trim() || !message.trim()}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              {isLoading ? 'Sending...' : 'Send Notification'}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -214,7 +373,7 @@ export function NotificationCenter({ notifications, onRefresh }: NotificationCen
             Notification History
           </CardTitle>
           <CardDescription>
-            All notifications sent through the MazalChat bot
+            Recent notifications sent through the MazalChat bot
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -228,7 +387,7 @@ export function NotificationCenter({ notifications, onRefresh }: NotificationCen
               {notifications.slice(0, 50).map((notification) => (
                 <div key={notification.id} className="flex items-start justify-between p-4 border rounded-lg">
                   <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant="outline">{notification.telegram_id}</Badge>
                       {notification.user_first_name && (
                         <span className="text-sm text-muted-foreground">
@@ -242,7 +401,12 @@ export function NotificationCenter({ notifications, onRefresh }: NotificationCen
                         {notification.status}
                       </Badge>
                     </div>
-                    <p className="text-sm">{notification.message_content}</p>
+                    <div className="text-sm">
+                      {notification.metadata?.title && (
+                        <div className="font-semibold mb-1">{notification.metadata.title}</div>
+                      )}
+                      <p>{notification.message_content}</p>
+                    </div>
                     <div className="flex items-center gap-4 text-xs text-muted-foreground">
                       <span>Sent: {formatDistanceToNow(new Date(notification.sent_at), { addSuffix: true })}</span>
                       {notification.delivered_at && (

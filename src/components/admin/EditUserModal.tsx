@@ -6,235 +6,146 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { useToast } from '@/components/ui/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Edit } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 interface EditUserModalProps {
   user: any;
   isOpen: boolean;
   onClose: () => void;
+  onSave?: () => void;
 }
 
-export function EditUserModal({ user, isOpen, onClose }: EditUserModalProps) {
+export function EditUserModal({ user, isOpen, onClose, onSave }: EditUserModalProps) {
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
     username: '',
     phone_number: '',
-    language_code: '',
     is_premium: false,
-    photo_url: '',
-    status: 'active',
     subscription_plan: 'free',
-    payment_status: 'none',
+    status: 'active',
     notes: ''
   });
 
   useEffect(() => {
-    if (user) {
+    if (user && isOpen) {
       setFormData({
         first_name: user.first_name || '',
         last_name: user.last_name || '',
         username: user.username || '',
         phone_number: user.phone_number || '',
-        language_code: user.language_code || '',
         is_premium: user.is_premium || false,
-        photo_url: user.photo_url || '',
-        status: user.status || 'active',
         subscription_plan: user.subscription_plan || 'free',
-        payment_status: user.payment_status || 'none',
+        status: user.status || 'active',
         notes: user.notes || ''
       });
     }
-  }, [user]);
+  }, [user, isOpen]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+  const handleSave = async () => {
+    if (!user) return;
 
+    setIsLoading(true);
     try {
-      // Update user profile
-      const { error: profileError } = await supabase
+      console.log('💾 Saving user changes for:', user.telegram_id, formData);
+
+      const { error } = await supabase
         .from('user_profiles')
         .update({
           first_name: formData.first_name,
-          last_name: formData.last_name || null,
-          username: formData.username || null,
-          phone_number: formData.phone_number || null,
-          language_code: formData.language_code,
+          last_name: formData.last_name,
+          username: formData.username,
+          phone_number: formData.phone_number,
           is_premium: formData.is_premium,
-          photo_url: formData.photo_url || null,
-          status: formData.status,
           subscription_plan: formData.subscription_plan,
-          payment_status: formData.payment_status,
-          notes: formData.notes || null,
+          status: formData.status,
+          notes: formData.notes,
           updated_at: new Date().toISOString()
         })
         .eq('telegram_id', user.telegram_id);
 
-      if (profileError) throw profileError;
-
-      // Update user analytics subscription status
-      const { error: analyticsError } = await supabase
-        .from('user_analytics')
-        .update({
-          subscription_status: formData.subscription_plan
-        })
-        .eq('telegram_id', user.telegram_id);
-
-      if (analyticsError) console.warn('Failed to update analytics:', analyticsError);
-
-      // Log admin action
-      const { error: logError } = await supabase
-        .from('user_management_log')
-        .insert({
-          admin_telegram_id: 2138564172,
-          action_type: 'updated',
-          target_user_id: user.id,
-          target_telegram_id: user.telegram_id,
-          changes: formData,
-          reason: 'User updated via admin panel'
-        });
-
-      if (logError) console.warn('Failed to log admin action:', logError);
+      if (error) throw error;
 
       toast({
         title: "User Updated",
-        description: `Successfully updated ${formData.first_name} ${formData.last_name}`,
+        description: `${formData.first_name} ${formData.last_name} has been updated successfully`,
       });
 
+      onSave?.();
       onClose();
-      window.location.reload(); // Refresh to show updated user
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating user:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update user",
+        description: "Failed to update user",
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Edit className="h-5 w-5" />
-            Edit User: {user?.first_name} {user?.last_name}
-          </DialogTitle>
+          <DialogTitle>Edit User</DialogTitle>
           <DialogDescription>
-            Update user information and settings. Changes will be logged.
+            Update user information and settings for {user?.first_name} {user?.last_name}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="first_name">First Name *</Label>
+        <div className="space-y-4 py-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="first_name">First Name</Label>
               <Input
                 id="first_name"
                 value={formData.first_name}
                 onChange={(e) => handleInputChange('first_name', e.target.value)}
-                required
+                placeholder="First name"
               />
             </div>
-
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="last_name">Last Name</Label>
               <Input
                 id="last_name"
                 value={formData.last_name}
                 onChange={(e) => handleInputChange('last_name', e.target.value)}
+                placeholder="Last name"
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                value={formData.username}
-                onChange={(e) => handleInputChange('username', e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone_number">Phone Number</Label>
-              <Input
-                id="phone_number"
-                value={formData.phone_number}
-                onChange={(e) => handleInputChange('phone_number', e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="language_code">Language Code</Label>
-              <Input
-                id="language_code"
-                value={formData.language_code}
-                onChange={(e) => handleInputChange('language_code', e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <select
-                id="status"
-                value={formData.status}
-                onChange={(e) => handleInputChange('status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="suspended">Suspended</option>
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="subscription_plan">Subscription Plan</Label>
-              <select
-                id="subscription_plan"
-                value={formData.subscription_plan}
-                onChange={(e) => handleInputChange('subscription_plan', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="free">Free</option>
-                <option value="premium">Premium</option>
-                <option value="pro">Pro</option>
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="payment_status">Payment Status</Label>
-              <select
-                id="payment_status"
-                value={formData.payment_status}
-                onChange={(e) => handleInputChange('payment_status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="none">None</option>
-                <option value="paid">Paid</option>
-                <option value="pending">Pending</option>
-                <option value="failed">Failed</option>
-              </select>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="photo_url">Photo URL</Label>
+          <div>
+            <Label htmlFor="username">Username</Label>
             <Input
-              id="photo_url"
-              value={formData.photo_url}
-              onChange={(e) => handleInputChange('photo_url', e.target.value)}
+              id="username"
+              value={formData.username}
+              onChange={(e) => handleInputChange('username', e.target.value)}
+              placeholder="@username"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="phone_number">Phone Number</Label>
+            <Input
+              id="phone_number"
+              value={formData.phone_number}
+              onChange={(e) => handleInputChange('phone_number', e.target.value)}
+              placeholder="+1234567890"
             />
           </div>
 
@@ -247,7 +158,42 @@ export function EditUserModal({ user, isOpen, onClose }: EditUserModalProps) {
             <Label htmlFor="is_premium">Premium User</Label>
           </div>
 
-          <div className="space-y-2">
+          <div>
+            <Label htmlFor="subscription_plan">Subscription Plan</Label>
+            <Select 
+              value={formData.subscription_plan} 
+              onValueChange={(value) => handleInputChange('subscription_plan', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select plan" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="free">Free</SelectItem>
+                <SelectItem value="basic">Basic</SelectItem>
+                <SelectItem value="premium">Premium</SelectItem>
+                <SelectItem value="enterprise">Enterprise</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="status">Status</Label>
+            <Select 
+              value={formData.status} 
+              onValueChange={(value) => handleInputChange('status', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="suspended">Suspended</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
             <Label htmlFor="notes">Admin Notes</Label>
             <Textarea
               id="notes"
@@ -257,22 +203,17 @@ export function EditUserModal({ user, isOpen, onClose }: EditUserModalProps) {
               rows={3}
             />
           </div>
+        </div>
 
-          <div className="bg-gray-50 p-3 rounded border">
-            <p className="text-sm text-gray-600">
-              <strong>Telegram ID:</strong> {user?.telegram_id} (Cannot be changed)
-            </p>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting} className="bg-red-600 hover:bg-red-700">
-              {isSubmitting ? 'Updating...' : 'Update User'}
-            </Button>
-          </div>
-        </form>
+        <div className="flex justify-end space-x-2">
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Changes
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

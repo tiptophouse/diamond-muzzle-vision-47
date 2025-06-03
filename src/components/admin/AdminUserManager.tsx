@@ -9,7 +9,7 @@ import { EditUserModal } from './EditUserModal';
 import { AdminHeader } from './AdminHeader';
 import { AdminStatsGrid } from './AdminStatsGrid';
 import { AdminUserTable } from './AdminUserTable';
-import { NotificationSender } from './NotificationSender';
+import { NotificationCenter } from './NotificationCenter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,7 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface AdminUserManagerProps {}
 
 export function AdminUserManager({}: AdminUserManagerProps) {
-  const { enhancedUsers, isLoading, getUserEngagementScore, getUserStats, refetch } = useEnhancedAnalytics();
+  const { enhancedUsers, notifications, isLoading, getUserEngagementScore, getUserStats, refetch } = useEnhancedAnalytics();
   const { isUserBlocked, blockUser, unblockUser, blockedUsers } = useBlockedUsers();
   const { toast } = useToast();
   
@@ -42,30 +42,100 @@ export function AdminUserManager({}: AdminUserManagerProps) {
   });
 
   const handleViewUser = (user: any) => {
+    console.log('👁️ View user:', user);
     setSelectedUser(user);
     setShowUserDetails(true);
   };
 
   const handleEditUser = (user: any) => {
+    console.log('✏️ Edit user:', user);
     setEditingUser(user);
     setShowEditUser(true);
   };
 
   const handleDeleteUser = async (user: any) => {
-    if (window.confirm(`Are you sure you want to delete ${user.first_name} ${user.last_name}? This action cannot be undone.`)) {
-      console.log('Delete user:', user.telegram_id);
+    console.log('🗑️ Delete user requested:', user);
+    
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete ${user.first_name} ${user.last_name}? This action cannot be undone and will remove all their data including inventory, analytics, and notifications.`
+    );
+    
+    if (!confirmDelete) return;
+
+    try {
+      // Delete user from all related tables
+      const { error: analyticsError } = await supabase
+        .from('user_analytics')
+        .delete()
+        .eq('telegram_id', user.telegram_id);
+
+      if (analyticsError) console.warn('Analytics deletion error:', analyticsError);
+
+      const { error: notificationsError } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('telegram_id', user.telegram_id);
+
+      if (notificationsError) console.warn('Notifications deletion error:', notificationsError);
+
+      const { error: inventoryError } = await supabase
+        .from('inventory')
+        .delete()
+        .eq('user_id', user.telegram_id);
+
+      if (inventoryError) console.warn('Inventory deletion error:', inventoryError);
+
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('telegram_id', user.telegram_id);
+
+      if (profileError) throw profileError;
+
+      toast({
+        title: "User Deleted",
+        description: `${user.first_name} ${user.last_name} has been permanently deleted`,
+      });
+
+      refetch();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete user",
+        variant: "destructive",
+      });
     }
   };
 
   const handleToggleBlock = async (user: any) => {
+    console.log('🚫 Toggle block for user:', user);
     const blocked = isUserBlocked(user.telegram_id);
-    if (blocked) {
-      const blockedUser = blockedUsers.find(bu => bu.telegram_id === user.telegram_id);
-      if (blockedUser) {
-        await unblockUser(blockedUser.id);
+    
+    try {
+      if (blocked) {
+        const blockedUser = blockedUsers.find(bu => bu.telegram_id === user.telegram_id);
+        if (blockedUser) {
+          await unblockUser(blockedUser.id);
+          toast({
+            title: "User Unblocked",
+            description: `${user.first_name} ${user.last_name} has been unblocked`,
+          });
+        }
+      } else {
+        await blockUser(user.telegram_id, 'Blocked by admin');
+        toast({
+          title: "User Blocked",
+          description: `${user.first_name} ${user.last_name} has been blocked`,
+        });
       }
-    } else {
-      await blockUser(user.telegram_id, 'Blocked by admin');
+    } catch (error) {
+      console.error('Error toggling block status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update block status",
+        variant: "destructive",
+      });
     }
   };
 
@@ -168,7 +238,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
         <Tabs defaultValue="users" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-800 border-slate-700">
             <TabsTrigger value="users" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white">User Management</TabsTrigger>
-            <TabsTrigger value="notifications" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white">Send Notifications</TabsTrigger>
+            <TabsTrigger value="notifications" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white">Notifications & Messaging</TabsTrigger>
           </TabsList>
           
           <TabsContent value="users">
@@ -187,7 +257,11 @@ export function AdminUserManager({}: AdminUserManagerProps) {
           
           <TabsContent value="notifications">
             <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-6 border border-slate-700">
-              <NotificationSender onSendNotification={(notification) => console.log('Sent notification:', notification)} />
+              <NotificationCenter 
+                notifications={notifications} 
+                onRefresh={refetch}
+                users={enhancedUsers}
+              />
             </div>
           </TabsContent>
         </Tabs>
@@ -213,6 +287,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
             user={editingUser}
             isOpen={showEditUser}
             onClose={() => setShowEditUser(false)}
+            onSave={refetch}
           />
         )}
       </div>
