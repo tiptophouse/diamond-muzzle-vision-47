@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useUserTracking } from '@/hooks/useUserTracking';
@@ -7,12 +7,34 @@ import { useUserTracking } from '@/hooks/useUserTracking';
 const ADMIN_TELEGRAM_ID = 2138564172;
 
 const Index = () => {
-  const { user, isAuthenticated } = useTelegramAuth();
+  const { user, isAuthenticated, isLoading } = useTelegramAuth();
   const { trackPageVisit } = useUserTracking();
+  const [hasTracked, setHasTracked] = useState(false);
 
   useEffect(() => {
-    trackPageVisit('/', 'Diamond Muzzle - Home');
-  }, [trackPageVisit]);
+    if (!hasTracked) {
+      try {
+        trackPageVisit('/', 'Diamond Muzzle - Home');
+        setHasTracked(true);
+      } catch (error) {
+        console.warn('Failed to track page visit:', error);
+        setHasTracked(true); // Don't block the app for tracking failures
+      }
+    }
+  }, [trackPageVisit, hasTracked]);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100">
+        <div className="text-center p-8 max-w-sm">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-6"></div>
+          <h3 className="text-xl font-semibold text-blue-700 mb-3">Loading Diamond Muzzle</h3>
+          <p className="text-blue-600 text-sm">Initializing your session...</p>
+        </div>
+      </div>
+    );
+  }
 
   // If user is admin, show admin selection
   if (isAuthenticated && user?.id === ADMIN_TELEGRAM_ID) {
@@ -35,7 +57,7 @@ const Index = () => {
               className="block w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 shadow-lg"
             >
               🎯 Admin Control Panel
-              <div className="text-sm opacity-90 mt-1">Full user management system</div>
+              <div className="text-sm opacity-90 mt-1">Lightweight user management</div>
             </a>
             <a 
               href="#/" 
@@ -54,19 +76,8 @@ const Index = () => {
     );
   }
 
-  // For regular users, redirect to dashboard
-  if (isAuthenticated) {
-    return <Navigate to="/" replace />;
-  }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Diamond Muzzle</h1>
-        <p className="text-xl text-gray-600">Loading your personalized experience...</p>
-      </div>
-    </div>
-  );
+  // For regular users, always show the dashboard
+  return <Navigate to="/" replace />;
 };
 
 export default Index;

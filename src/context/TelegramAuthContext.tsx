@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useTelegramInit } from '@/hooks/useTelegramInit';
+import { useBulletproofTelegramInit } from '@/hooks/useBulletproofTelegramInit';
 import { TelegramUser, TelegramInitData } from '@/types/telegram';
 
 interface TelegramAuthContextType {
@@ -19,16 +19,14 @@ const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(u
 export function TelegramAuthProvider({ children }: { children: ReactNode }) {
   const {
     user,
-    initData,
     isLoading,
     error,
     isTelegramEnvironment,
+    isAuthenticated,
+    initData,
     refreshAuth,
     retryAuth,
-  } = useTelegramInit();
-
-  // Consider authenticated if we have a user (either real or mock)
-  const isAuthenticated = !!user && !error;
+  } = useBulletproofTelegramInit();
 
   return (
     <TelegramAuthContext.Provider
