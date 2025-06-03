@@ -1,45 +1,90 @@
-
+import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import App from './App.tsx'
 import './index.css'
 
-// Enhanced startup with better error handling
-async function initializeApp() {
+// Ultra-minimal emergency app component
+const EmergencyApp = () => (
+  <div style={{
+    minHeight: '100vh',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    color: 'white',
+    padding: '2rem'
+  }}>
+    <div style={{ textAlign: 'center', maxWidth: '400px' }}>
+      <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💎</div>
+      <h1 style={{ fontSize: '1.5rem', marginBottom: '1rem', fontWeight: '600' }}>Diamond Muzzle</h1>
+      <p style={{ marginBottom: '2rem', opacity: 0.9 }}>Loading your diamond management platform...</p>
+      <div style={{
+        width: '100%',
+        height: '4px',
+        background: 'rgba(255,255,255,0.2)',
+        borderRadius: '2px',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          width: '100%',
+          height: '100%',
+          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent)',
+          animation: 'shimmer 2s infinite'
+        }}></div>
+      </div>
+      <style>{`
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+      `}</style>
+    </div>
+  </div>
+);
+
+// Safe initialization with maximum error handling
+async function safeInit() {
   try {
-    console.log('🚀 Starting Diamond Muzzle app initialization...');
-    
-    const rootElement = document.getElementById("root");
+    const rootElement = document.getElementById('root');
     if (!rootElement) {
-      throw new Error("Root element not found");
+      throw new Error('Root element not found');
     }
-    
+
+    // Show emergency app immediately
     const root = createRoot(rootElement);
-    root.render(<App />);
-    
-    console.log('✅ App initialized successfully');
+    root.render(<EmergencyApp />);
+
+    // Try to load the real app after a short delay
+    setTimeout(async () => {
+      try {
+        const { default: App } = await import('./App');
+        root.render(
+          <StrictMode>
+            <App />
+          </StrictMode>
+        );
+        console.log('✅ Full app loaded successfully');
+      } catch (appError) {
+        console.warn('⚠️ Full app failed to load, keeping emergency app', appError);
+        // Keep the emergency app running
+      }
+    }, 100);
+
   } catch (error) {
-    console.error('❌ Critical app initialization error:', error);
+    console.error('❌ Critical initialization error:', error);
     
-    // Emergency fallback UI
-    const rootElement = document.getElementById("root");
+    // Last resort fallback
+    const rootElement = document.getElementById('root');
     if (rootElement) {
       rootElement.innerHTML = `
-        <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-          <div style="text-align: center; padding: 2rem; max-width: 400px;">
+        <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #1a1a1a; color: white; font-family: sans-serif; text-align: center; padding: 2rem;">
+          <div>
             <div style="font-size: 3rem; margin-bottom: 1rem;">💎</div>
-            <h1 style="font-size: 1.5rem; margin-bottom: 1rem; font-weight: 600;">Diamond Muzzle</h1>
-            <p style="margin-bottom: 2rem; opacity: 0.9;">App is temporarily unavailable. Please try again.</p>
-            <button 
-              onclick="window.location.reload()" 
-              style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; font-size: 1rem; backdrop-filter: blur(10px);"
-              onmouseover="this.style.background='rgba(255,255,255,0.3)'"
-              onmouseout="this.style.background='rgba(255,255,255,0.2)'"
-            >
-              🔄 Reload App
+            <h1 style="margin-bottom: 1rem;">Diamond Muzzle</h1>
+            <p style="margin-bottom: 2rem;">System temporarily unavailable</p>
+            <button onclick="window.location.reload()" style="background: #4a90e2; color: white; border: none; padding: 1rem 2rem; border-radius: 8px; cursor: pointer; font-size: 1rem;">
+              🔄 Reload
             </button>
-            <div style="margin-top: 2rem; font-size: 0.875rem; opacity: 0.7;">
-              Error: ${error.message || 'Unknown error'}
-            </div>
           </div>
         </div>
       `;
@@ -47,5 +92,5 @@ async function initializeApp() {
   }
 }
 
-// Start the app
-initializeApp();
+// Start immediately
+safeInit();
