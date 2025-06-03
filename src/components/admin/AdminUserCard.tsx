@@ -2,7 +2,7 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Star, Phone, Shield } from 'lucide-react';
+import { Star, Phone, Shield, DollarSign } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { AdminUserActions } from './AdminUserActions';
 
@@ -49,17 +49,26 @@ export function AdminUserCard({
     return displayName.substring(0, 2).toUpperCase();
   };
 
+  // Calculate user cost (API calls + storage + overhead)
+  const calculateUserCost = () => {
+    const apiCalls = user.api_calls_count || 0;
+    const costPerApiCall = 0.002; // $0.002 per API call
+    const storageCost = (user.storage_used_mb || 0) * 0.001; // $0.001 per MB
+    const totalCost = (apiCalls * costPerApiCall) + storageCost + 0.1; // $0.1 base cost
+    return totalCost.toFixed(3);
+  };
+
   return (
     <div 
-      className={`glass-card rounded-lg p-3 sm:p-4 transition-all duration-300 hover:neon-glow ${
-        isBlocked ? 'border-purple-500/50' : ''
+      className={`bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-4 border transition-all duration-300 hover:border-slate-600 ${
+        isBlocked ? 'border-red-600/50 bg-red-900/10' : 'border-slate-700'
       }`}
     >
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <Avatar className="h-10 w-10 sm:h-12 sm:w-12 neon-glow">
+          <Avatar className="h-12 w-12 border-2 border-slate-600">
             <AvatarImage src={user.photo_url} />
-            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-cyan-500 text-white">
+            <AvatarFallback className="bg-slate-700 text-slate-300">
               {getInitials()}
             </AvatarFallback>
           </Avatar>
@@ -71,18 +80,18 @@ export function AdminUserCard({
               </span>
               {user.is_premium && <Star className="h-4 w-4 text-yellow-400" />}
               {user.phone_number && <Phone className="h-4 w-4 text-green-400" />}
-              {isBlocked && <Shield className="h-4 w-4 text-purple-400" />}
+              {isBlocked && <Shield className="h-4 w-4 text-red-400" />}
             </div>
             
-            <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-300 flex-wrap">
-              <Badge variant="outline" className="border-purple-500/30 text-purple-300">
+            <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-slate-400 flex-wrap">
+              <Badge variant="outline" className="border-slate-600 text-slate-300">
                 ID: {user.telegram_id}
               </Badge>
               {user.username && <span>@{user.username}</span>}
               {user.phone_number && <span className="hidden sm:inline">{user.phone_number}</span>}
               <Badge 
                 variant={user.subscription_status === 'premium' ? 'default' : 'secondary'}
-                className="bg-gradient-to-r from-purple-600 to-cyan-600 text-white"
+                className="bg-slate-700 text-slate-300"
               >
                 {user.subscription_status || 'free'}
               </Badge>
@@ -91,19 +100,27 @@ export function AdminUserCard({
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-4 flex-1 sm:flex-initial">
+          <div className="grid grid-cols-3 gap-2 sm:flex sm:gap-4 flex-1 sm:flex-initial">
             <div className="text-center">
-              <div className="text-sm font-medium text-cyan-400">{user.total_visits}</div>
-              <div className="text-xs text-gray-400">Visits</div>
+              <div className="text-sm font-medium text-slate-300">{user.total_visits}</div>
+              <div className="text-xs text-slate-500">Visits</div>
             </div>
             
             <div className="text-center">
-              <div className="text-sm font-medium text-purple-400">{engagementScore}%</div>
-              <div className="text-xs text-gray-400">Engagement</div>
+              <div className="text-sm font-medium text-slate-300">{engagementScore}%</div>
+              <div className="text-xs text-slate-500">Engagement</div>
+            </div>
+
+            <div className="text-center">
+              <div className="text-sm font-medium text-slate-300 flex items-center gap-1">
+                <DollarSign className="h-3 w-3" />
+                {calculateUserCost()}
+              </div>
+              <div className="text-xs text-slate-500">Cost USD</div>
             </div>
           </div>
 
-          <div className="hidden sm:block text-right text-xs text-gray-400 max-w-[120px]">
+          <div className="hidden sm:block text-right text-xs text-slate-500 max-w-[120px]">
             <div>Joined {formatDistanceToNow(new Date(user.created_at), { addSuffix: true })}</div>
             {user.last_active && (
               <div>Active {formatDistanceToNow(new Date(user.last_active), { addSuffix: true })}</div>
