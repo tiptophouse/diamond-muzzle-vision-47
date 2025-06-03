@@ -12,8 +12,14 @@ const ADMIN_TELEGRAM_ID = 2138564172;
 export function AdminGuard({ children }: AdminGuardProps) {
   const { user, isLoading, isTelegramEnvironment } = useTelegramAuth();
 
+  console.log('🔍 AdminGuard - Current user:', user);
+  console.log('🔍 AdminGuard - User ID:', user?.id);
+  console.log('🔍 AdminGuard - Expected Admin ID:', ADMIN_TELEGRAM_ID);
+  console.log('🔍 AdminGuard - Is Loading:', isLoading);
+
   // Fast loading state
   if (isLoading) {
+    console.log('⏳ AdminGuard - Still loading...');
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
@@ -28,12 +34,13 @@ export function AdminGuard({ children }: AdminGuardProps) {
     );
   }
 
-  console.log('🔍 AdminGuard check - User:', user?.id, 'Expected:', ADMIN_TELEGRAM_ID);
-
-  // Always allow access for the admin user ID or in development
-  const isAdmin = user && (user.id === ADMIN_TELEGRAM_ID || process.env.NODE_ENV === 'development');
+  // Always allow access for the admin user ID
+  const isAdmin = user && user.id === ADMIN_TELEGRAM_ID;
+  
+  console.log('🔍 AdminGuard - Is Admin?', isAdmin);
   
   if (!isAdmin) {
+    console.log('❌ AdminGuard - Access denied for user:', user?.id);
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
@@ -48,19 +55,6 @@ export function AdminGuard({ children }: AdminGuardProps) {
             Current User ID: {user?.id || 'Unknown'}<br/>
             Required Admin ID: {ADMIN_TELEGRAM_ID}
           </p>
-          
-          {/* Development helper */}
-          {process.env.NODE_ENV === 'development' && (
-            <button
-              onClick={() => {
-                console.log('🔧 Development: Forcing admin access');
-                window.location.reload();
-              }}
-              className="bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-6 rounded-lg transition-colors w-full mb-4"
-            >
-              🔧 Force Admin Access (Dev Mode)
-            </button>
-          )}
           
           <button
             onClick={() => {
@@ -77,6 +71,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
   }
 
   // Admin user confirmed - render admin interface
+  console.log('✅ AdminGuard - Access granted to admin user');
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="bg-white border-b sticky top-0 z-50 shadow-sm">
