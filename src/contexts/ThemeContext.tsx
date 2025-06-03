@@ -1,29 +1,32 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-type Theme = 'light' | 'dark';
-
 interface ThemeContextType {
-  theme: Theme;
+  theme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark') => void;
   toggleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('theme');
-      return (saved as Theme) || 'light';
-    }
-    return 'light';
-  });
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove('light', 'dark');
-    root.classList.add(theme);
-    localStorage.setItem('theme', theme);
+    // Initialize theme from Telegram WebApp if available
+    if (window.Telegram?.WebApp) {
+      const tgTheme = window.Telegram.WebApp.colorScheme;
+      setTheme(tgTheme === 'dark' ? 'dark' : 'light');
+    }
+  }, []);
+
+  useEffect(() => {
+    // Apply theme to document
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   }, [theme]);
 
   const toggleTheme = () => {
@@ -31,7 +34,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
