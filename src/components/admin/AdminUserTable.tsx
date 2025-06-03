@@ -28,22 +28,24 @@ export function AdminUserTable({
   onDeleteUser 
 }: AdminUserTableProps) {
   return (
-    <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-6 border border-slate-700">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
-            <Users className="h-6 w-6" />
-            User Management ({filteredUsers.length} users)
-          </h2>
-          <p className="text-slate-400 text-sm mt-1">
-            Complete user database with management controls and cost tracking
-          </p>
+    <div className="bg-gray-50 border border-gray-200">
+      <div className="p-6 border-b border-gray-300 bg-white">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <Users className="h-6 w-6 text-blue-600" />
+              User Management ({filteredUsers.length} users)
+            </h2>
+            <p className="text-gray-600 text-sm mt-1">
+              Complete user database with management controls
+            </p>
+          </div>
         </div>
+        
+        <AdminUserSearch searchTerm={searchTerm} onSearchChange={onSearchChange} />
       </div>
-      
-      <AdminUserSearch searchTerm={searchTerm} onSearchChange={onSearchChange} />
 
-      <div className="space-y-3 max-h-96 overflow-y-auto">
+      <div className="bg-white divide-y divide-gray-200">
         {filteredUsers.map((user) => {
           const blocked = isUserBlocked(user.telegram_id);
           const engagementScore = getUserEngagementScore(user);
