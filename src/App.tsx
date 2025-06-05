@@ -15,7 +15,6 @@ import UploadPage from "./pages/UploadPage";
 import UploadSingleStonePage from "./pages/UploadSingleStonePage";
 import InsightsPage from "./pages/InsightsPage";
 import ReportsPage from "./pages/ReportsPage";
-import DiamondSwipe from "./pages/DiamondSwipe";
 import NotificationsPage from "./pages/NotificationsPage";
 import { TelegramAuthProvider } from '@/context/TelegramAuthContext';
 import { AuthGuard } from '@/components/auth/AuthGuard';
@@ -44,7 +43,6 @@ function App() {
                   <Route path="/chat" element={<ChatPage />} />
                   <Route path="/insights" element={<InsightsPage />} />
                   <Route path="/reports" element={<ReportsPage />} />
-                  <Route path="/swipe" element={<DiamondSwipe />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/notifications" element={<NotificationsPage />} />
                   <Route path="/admin" element={

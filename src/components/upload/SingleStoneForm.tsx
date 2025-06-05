@@ -6,7 +6,7 @@ import { Save, RefreshCw } from 'lucide-react';
 import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
 import { DiamondSelectField } from '@/components/inventory/form/DiamondSelectField';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { shapes, colors, clarities, cuts, statuses } from '@/components/inventory/form/diamondFormConstants';
+import { shapes, colors, clarities, cuts, statuses, fluorescences, polishGrades, symmetryGrades } from '@/components/inventory/form/diamondFormConstants';
 
 interface SingleStoneFormProps {
   initialData?: Partial<DiamondFormData>;
@@ -25,7 +25,10 @@ export function SingleStoneForm({ initialData, onSubmit, isLoading = false }: Si
       shape: 'Round',
       color: 'G',
       clarity: 'VS1',
-      cut: 'Excellent'
+      cut: 'Excellent',
+      fluorescence: 'None',
+      polish: 'Excellent',
+      symmetry: 'Excellent'
     }
   });
 
@@ -72,6 +75,9 @@ export function SingleStoneForm({ initialData, onSubmit, isLoading = false }: Si
       color: data.color || 'G',
       clarity: data.clarity || 'VS1',
       cut: showCutField ? (data.cut || 'Excellent') : 'N/A',
+      fluorescence: data.fluorescence || 'None',
+      polish: data.polish || 'Excellent',
+      symmetry: data.symmetry || 'Excellent',
       status: data.status || 'Available',
       imageUrl: data.imageUrl?.trim() || '',
     };
@@ -90,7 +96,10 @@ export function SingleStoneForm({ initialData, onSubmit, isLoading = false }: Si
       shape: 'Round',
       color: 'G',
       clarity: 'VS1',
-      cut: 'Excellent'
+      cut: 'Excellent',
+      fluorescence: 'None',
+      polish: 'Excellent',
+      symmetry: 'Excellent'
     });
   };
 
@@ -158,6 +167,30 @@ export function SingleStoneForm({ initialData, onSubmit, isLoading = false }: Si
               options={cuts}
             />
           )}
+
+          <DiamondSelectField
+            id="fluorescence"
+            label="Fluorescence"
+            value={watch('fluorescence') || 'None'}
+            onValueChange={(value) => setValue('fluorescence', value)}
+            options={fluorescences}
+          />
+
+          <DiamondSelectField
+            id="polish"
+            label="Polish"
+            value={watch('polish') || 'Excellent'}
+            onValueChange={(value) => setValue('polish', value)}
+            options={polishGrades}
+          />
+
+          <DiamondSelectField
+            id="symmetry"
+            label="Symmetry"
+            value={watch('symmetry') || 'Excellent'}
+            onValueChange={(value) => setValue('symmetry', value)}
+            options={symmetryGrades}
+          />
         </div>
       </div>
 
