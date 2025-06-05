@@ -12,6 +12,7 @@ import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import ChatPage from "./pages/ChatPage";
 import UploadPage from "./pages/UploadPage";
+import UploadSingleStonePage from "./pages/UploadSingleStonePage";
 import InsightsPage from "./pages/InsightsPage";
 import ReportsPage from "./pages/ReportsPage";
 import DiamondSwipe from "./pages/DiamondSwipe";
@@ -39,6 +40,7 @@ function App() {
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/inventory" element={<Inventory />} />
                   <Route path="/upload" element={<UploadPage />} />
+                  <Route path="/upload-single" element={<UploadSingleStonePage />} />
                   <Route path="/chat" element={<ChatPage />} />
                   <Route path="/insights" element={<InsightsPage />} />
                   <Route path="/reports" element={<ReportsPage />} />
