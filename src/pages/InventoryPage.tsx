@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -38,7 +39,7 @@ export default function InventoryPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingDiamond, setEditingDiamond] = useState<Diamond | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [diamondToDelete, setDiamondToDelete] = useState<string | null>(null);
+  const [diamondToDelete, setDiamondToDelete] = useState<Diamond | null>(null);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
   const { toast } = useToast();
 
@@ -49,6 +50,8 @@ export default function InventoryPage() {
     allDiamonds,
     fetchData,
     handleRefresh,
+    removeDiamondFromState,
+    restoreDiamondToState,
   } = useInventoryData();
 
   const {
@@ -59,7 +62,11 @@ export default function InventoryPage() {
     handleSearch,
   } = useInventorySearch(allDiamonds, currentPage, filters);
 
-  const { addDiamond, updateDiamond, deleteDiamond, isLoading: crudLoading } = useInventoryCrud(handleRefresh);
+  const { addDiamond, updateDiamond, deleteDiamond, isLoading: crudLoading } = useInventoryCrud({
+    onSuccess: handleRefresh,
+    removeDiamondFromState,
+    restoreDiamondToState,
+  });
 
   useEffect(() => {
     setDiamonds(filteredDiamonds);
@@ -82,7 +89,8 @@ export default function InventoryPage() {
   };
 
   const handleDeleteDiamond = (diamondId: string) => {
-    setDiamondToDelete(diamondId);
+    const diamond = allDiamonds.find(d => d.id === diamondId);
+    setDiamondToDelete(diamond || null);
     setDeleteDialogOpen(true);
   };
 
@@ -103,7 +111,7 @@ export default function InventoryPage() {
 
   const confirmDelete = async () => {
     if (diamondToDelete) {
-      const success = await deleteDiamond(diamondToDelete);
+      const success = await deleteDiamond(diamondToDelete.id, diamondToDelete);
       if (success) {
         setDeleteDialogOpen(false);
         setDiamondToDelete(null);
@@ -118,9 +126,8 @@ export default function InventoryPage() {
   const handleQRScanSuccess = (giaData: any) => {
     console.log('Received GIA data from scanner:', giaData);
     
-    // Set the diamond data to be used in the form
     setEditingDiamond({
-      id: '', // Will be generated when saving
+      id: '',
       stockNumber: giaData.stockNumber || `GIA-${Date.now()}`,
       shape: giaData.shape || 'Round',
       carat: giaData.carat || 1.0,
@@ -134,7 +141,6 @@ export default function InventoryPage() {
       lab: giaData.lab || 'GIA'
     } as Diamond);
     
-    // Close scanner and open form with populated data
     setIsQRScannerOpen(false);
     setIsFormOpen(true);
     

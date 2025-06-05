@@ -9,7 +9,7 @@ import { useTelegramAuth } from "@/context/TelegramAuthContext";
 export function useInventoryData() {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
-  const [loading, setLoading] = useState(false); // Changed to false initially
+  const [loading, setLoading] = useState(false);
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
   const [allDiamonds, setAllDiamonds] = useState<Diamond[]>([]);
   
@@ -24,7 +24,6 @@ export function useInventoryData() {
     try {
       console.log('Fetching inventory data from FastAPI for user:', user.id);
       
-      // Add timeout to prevent hanging
       const response = await Promise.race([
         api.get<any[]>(apiEndpoints.getAllStones(user.id)),
         new Promise((_, reject) => 
@@ -35,13 +34,11 @@ export function useInventoryData() {
       if (response.data) {
         console.log('Received diamonds from FastAPI:', response.data.length, 'total diamonds');
         
-        // Convert backend data to frontend format with authenticated user filtering
         const convertedDiamonds = convertDiamondsToInventoryFormat(response.data, user.id);
         console.log('Converted diamonds for display:', convertedDiamonds.length, 'diamonds for user', user.id);
         
         setAllDiamonds(convertedDiamonds);
         
-        // Show smaller, auto-dismissing toast
         if (convertedDiamonds.length > 0) {
           const toastInstance = toast({
             title: `${convertedDiamonds.length} diamonds`,
@@ -59,13 +56,23 @@ export function useInventoryData() {
       }
     } catch (error) {
       console.warn("Inventory fetch failed, using fallback:", error);
-      
-      // Use fallback data instead of showing error
       setAllDiamonds([]);
       setDiamonds([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const removeDiamondFromState = (diamondId: string) => {
+    console.log('Optimistically removing diamond from state:', diamondId);
+    setAllDiamonds(prev => prev.filter(diamond => diamond.id !== diamondId));
+    setDiamonds(prev => prev.filter(diamond => diamond.id !== diamondId));
+  };
+
+  const restoreDiamondToState = (diamond: Diamond) => {
+    console.log('Restoring diamond to state:', diamond.id);
+    setAllDiamonds(prev => [...prev, diamond]);
+    setDiamonds(prev => [...prev, diamond]);
   };
 
   const handleRefresh = () => {
@@ -75,13 +82,11 @@ export function useInventoryData() {
     }
   };
 
-  // Only fetch data when authentication is complete and user is authenticated
-  // Add delay to prevent simultaneous API calls
   useEffect(() => {
     if (!authLoading && isAuthenticated && user?.id) {
       const timer = setTimeout(() => {
         fetchData();
-      }, 2500); // Stagger after other hooks
+      }, 2500);
       
       return () => clearTimeout(timer);
     } else if (!authLoading && !isAuthenticated) {
@@ -96,5 +101,7 @@ export function useInventoryData() {
     allDiamonds,
     fetchData,
     handleRefresh,
+    removeDiamondFromState,
+    restoreDiamondToState,
   };
 }

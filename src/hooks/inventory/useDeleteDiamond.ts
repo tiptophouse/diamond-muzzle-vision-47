@@ -4,12 +4,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { api, apiEndpoints } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { isValidUUID } from '@/utils/diamondUtils';
+import { Diamond } from '@/components/inventory/InventoryTable';
 
-export function useDeleteDiamond(onSuccess?: () => void) {
+interface UseDeleteDiamondProps {
+  onSuccess?: () => void;
+  removeDiamondFromState?: (diamondId: string) => void;
+  restoreDiamondToState?: (diamond: Diamond) => void;
+}
+
+export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDiamondToState }: UseDeleteDiamondProps = {}) {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
 
-  const deleteDiamond = async (diamondId: string) => {
+  const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
     if (!user?.id) {
       toast({
         variant: "destructive",
@@ -19,7 +26,6 @@ export function useDeleteDiamond(onSuccess?: () => void) {
       return false;
     }
 
-    // Validate diamond ID format
     if (!diamondId || !isValidUUID(diamondId)) {
       console.error('Invalid diamond ID for deletion:', diamondId);
       toast({
@@ -28,6 +34,11 @@ export function useDeleteDiamond(onSuccess?: () => void) {
         description: "Invalid diamond ID format",
       });
       return false;
+    }
+
+    // Optimistic UI update - remove diamond immediately
+    if (removeDiamondFromState) {
+      removeDiamondFromState(diamondId);
     }
 
     try {
@@ -53,7 +64,6 @@ export function useDeleteDiamond(onSuccess?: () => void) {
 
       if (supabaseError) {
         console.warn('Supabase delete warning:', supabaseError);
-        // Don't throw error here since backend deletion succeeded
       }
       
       toast({
@@ -65,6 +75,12 @@ export function useDeleteDiamond(onSuccess?: () => void) {
       return true;
     } catch (error) {
       console.error('Failed to delete diamond:', error);
+      
+      // Restore diamond to state if deletion failed
+      if (restoreDiamondToState && diamondData) {
+        restoreDiamondToState(diamondData);
+      }
+      
       const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond. Please try again.";
       toast({
         variant: "destructive",
