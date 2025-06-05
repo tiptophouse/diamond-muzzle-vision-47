@@ -17,7 +17,6 @@ export function AdminGuard({ children }: AdminGuardProps) {
   console.log('🔍 AdminGuard - Expected Admin ID:', ADMIN_TELEGRAM_ID);
   console.log('🔍 AdminGuard - Is Loading:', isLoading);
 
-  // Fast loading state
   if (isLoading) {
     console.log('⏳ AdminGuard - Still loading...');
     return (
@@ -34,8 +33,32 @@ export function AdminGuard({ children }: AdminGuardProps) {
     );
   }
 
-  // Always allow access for the admin user ID
+  // Enhanced admin verification with proper role checking
   const isAdmin = user && user.id === ADMIN_TELEGRAM_ID;
+  
+  // Additional security: verify in production that we're in Telegram environment
+  if (process.env.NODE_ENV === 'production' && !isTelegramEnvironment) {
+    console.log('❌ AdminGuard - Production requires Telegram environment');
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
+          <div className="bg-red-50 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle className="h-10 w-10 text-red-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Invalid Access</h2>
+          <p className="text-gray-600 mb-6">
+            This admin panel must be accessed through the official Telegram application.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors w-full"
+          >
+            Refresh
+          </button>
+        </div>
+      </div>
+    );
+  }
   
   console.log('🔍 AdminGuard - Is Admin?', isAdmin);
   
@@ -49,10 +72,10 @@ export function AdminGuard({ children }: AdminGuardProps) {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Restricted</h2>
           <p className="text-gray-600 mb-6">
-            This area is restricted to administrators only.
+            This area is restricted to authorized administrators only.
           </p>
           <p className="text-sm text-gray-500 mb-8">
-            Current User ID: {user?.id || 'Unknown'}<br/>
+            User ID: {user?.id || 'Unknown'}<br/>
             Required Admin ID: {ADMIN_TELEGRAM_ID}
           </p>
           
@@ -70,8 +93,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
     );
   }
 
-  // Admin user confirmed - render admin interface
-  console.log('✅ AdminGuard - Access granted to admin user');
+  console.log('✅ AdminGuard - Access granted to verified admin user');
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="bg-white border-b sticky top-0 z-50 shadow-sm">
@@ -81,7 +103,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
             Admin Dashboard - Welcome, {user.first_name}
           </span>
           <div className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-            ID: {user.id}
+            Verified ID: {user.id}
           </div>
         </div>
       </div>

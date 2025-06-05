@@ -1,3 +1,4 @@
+
 import { ReactNode, useEffect, useState } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
@@ -11,7 +12,7 @@ interface AuthorizationGuardProps {
 const ADMIN_TELEGRAM_ID = 2138564172;
 
 export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
-  const { user, isLoading: authLoading } = useTelegramAuth();
+  const { user, isLoading: authLoading, isTelegramEnvironment } = useTelegramAuth();
   const { isUserBlocked, isLoading: blockedLoading } = useBlockedUsers();
   const { settings, isLoading: settingsLoading } = useAppSettings();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
@@ -22,6 +23,13 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
     }
 
     console.log('🔍 Authorization check for user:', user.id, 'Admin ID:', ADMIN_TELEGRAM_ID);
+
+    // Enhanced security: verify environment in production
+    if (process.env.NODE_ENV === 'production' && !isTelegramEnvironment) {
+      console.log('❌ Production requires Telegram environment');
+      setIsAuthorized(false);
+      return;
+    }
 
     // Admin always gets access - highest priority
     if (user.id === ADMIN_TELEGRAM_ID) {
@@ -47,7 +55,7 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
     // Otherwise, user is authorized
     console.log('✅ User authorized');
     setIsAuthorized(true);
-  }, [user, isUserBlocked, settings, authLoading, blockedLoading, settingsLoading]);
+  }, [user, isUserBlocked, settings, authLoading, blockedLoading, settingsLoading, isTelegramEnvironment]);
 
   // Loading state
   if (authLoading || blockedLoading || settingsLoading || isAuthorized === null) {
@@ -72,6 +80,7 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
   if (!isAuthorized) {
     const isBlocked = user && isUserBlocked(user.id);
     const isAdminUser = user && user.id === ADMIN_TELEGRAM_ID;
+    const invalidEnvironment = process.env.NODE_ENV === 'production' && !isTelegramEnvironment;
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -89,19 +98,26 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
           </div>
           
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            {isBlocked ? 'Access Denied' : 'Authorization Required'}
+            {invalidEnvironment 
+              ? 'Invalid Access Method'
+              : isBlocked 
+                ? 'Access Denied' 
+                : 'Authorization Required'
+            }
           </h2>
           
           <p className="text-gray-600 mb-6">
-            {isBlocked 
-              ? 'Your access to this application has been restricted by the administrator.'
-              : 'This application now requires manual authorization. Please contact the administrator to request access.'
+            {invalidEnvironment
+              ? 'This application must be accessed through the official Telegram application for security reasons.'
+              : isBlocked 
+                ? 'Your access to this application has been restricted by the administrator.'
+                : 'This application now requires manual authorization. Please contact the administrator to request access.'
             }
           </p>
           
           <div className="text-sm text-gray-500 mb-8 space-y-1">
             <p>User ID: {user?.id || 'Unknown'}</p>
-            <p>Status: {isBlocked ? 'Blocked' : 'Pending Authorization'}</p>
+            <p>Status: {invalidEnvironment ? 'Invalid Environment' : isBlocked ? 'Blocked' : 'Pending Authorization'}</p>
             {isAdminUser && <p className="text-yellow-600 font-medium">⚠️ Admin user detected but authorization failed</p>}
           </div>
           

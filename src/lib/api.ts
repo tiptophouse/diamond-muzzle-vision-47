@@ -36,6 +36,29 @@ interface ApiResponse<T> {
   error?: string;
 }
 
+// Get auth token from Supabase edge function instead of hardcoded value
+async function getAuthToken(): Promise<string> {
+  try {
+    // Call edge function to get secure auth token
+    const response = await fetch('/functions/v1/get-api-token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to get auth token');
+    }
+    
+    const { token } = await response.json();
+    return token;
+  } catch (error) {
+    console.error('Error getting auth token:', error);
+    throw new Error('Authentication failed');
+  }
+}
+
 export async function fetchApi<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -44,19 +67,19 @@ export async function fetchApi<T>(
   
   try {
     console.log('Making API request to:', url);
-    console.log('Request options:', { ...options, body: options.body ? '[FormData/Body]' : undefined });
+    
+    // Get secure auth token
+    const authToken = await getAuthToken();
     
     const response = await fetch(url, {
       ...options,
       headers: {
-        "Authorization": `Bearer ifj9ov1rh20fslfp`, // Your backend access token
+        "Authorization": `Bearer ${authToken}`,
         ...options.headers,
-        // Don't override Content-Type for FormData uploads
       },
     });
 
     console.log('API Response status:', response.status);
-    console.log('API Response headers:', Object.fromEntries(response.headers.entries()));
 
     let data;
     const contentType = response.headers.get('content-type');
@@ -76,7 +99,7 @@ export async function fetchApi<T>(
       throw new Error(errorMessage);
     }
 
-    console.log('API Response data:', data);
+    console.log('API Response data received');
     return { data: data as T };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
@@ -117,11 +140,14 @@ export const api = {
   uploadCsv: async <T>(endpoint: string, csvData: any[], userId: number): Promise<ApiResponse<T>> => {
     console.log('Uploading CSV data to FastAPI:', { endpoint, dataLength: csvData.length, userId });
     
+    // Get secure auth token
+    const authToken = await getAuthToken();
+    
     return fetchApi<T>(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ifj9ov1rh20fslfp`,
+        "Authorization": `Bearer ${authToken}`,
       },
       body: JSON.stringify({
         user_id: userId,
