@@ -1,3 +1,4 @@
+
 import { toast } from "@/components/ui/use-toast";
 
 // Update this to point to your FastAPI backend
@@ -59,6 +60,22 @@ async function getAuthToken(): Promise<string> {
   }
 }
 
+// Helper function to set database context for RLS
+async function setDatabaseContext(userId: number) {
+  try {
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    // Set the current user context for RLS policies
+    await supabase.rpc('set_session_config', {
+      setting_name: 'app.current_user_id',
+      setting_value: userId.toString()
+    });
+  } catch (error) {
+    console.warn('Failed to set database context:', error);
+    // Don't throw - this is not critical for API calls
+  }
+}
+
 export async function fetchApi<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -67,6 +84,11 @@ export async function fetchApi<T>(
   
   try {
     console.log('Making API request to:', url);
+    
+    // Set database context if we have a current user
+    if (currentUserId) {
+      await setDatabaseContext(currentUserId);
+    }
     
     // Get secure auth token
     const authToken = await getAuthToken();
@@ -139,6 +161,9 @@ export const api = {
     
   uploadCsv: async <T>(endpoint: string, csvData: any[], userId: number): Promise<ApiResponse<T>> => {
     console.log('Uploading CSV data to FastAPI:', { endpoint, dataLength: csvData.length, userId });
+    
+    // Set database context for RLS
+    await setDatabaseContext(userId);
     
     // Get secure auth token
     const authToken = await getAuthToken();

@@ -1,6 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { setCurrentUserId, getCurrentUserId } from '@/lib/api';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
 interface AppSettings {
   manual_authorization_enabled: boolean;
@@ -11,9 +13,15 @@ export function useAppSettings() {
     manual_authorization_enabled: false
   });
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useTelegramAuth();
 
   const fetchSettings = async () => {
     try {
+      // Set current user context for RLS
+      if (user?.id && user.id !== getCurrentUserId()) {
+        setCurrentUserId(user.id);
+      }
+
       const { data, error } = await supabase
         .from('app_settings')
         .select('setting_key, setting_value')
@@ -37,8 +45,12 @@ export function useAppSettings() {
   };
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
+    if (user?.id) {
+      fetchSettings();
+    } else {
+      setIsLoading(false);
+    }
+  }, [user?.id]);
 
   return {
     settings,

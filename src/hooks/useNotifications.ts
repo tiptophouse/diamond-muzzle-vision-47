@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { setCurrentUserId, getCurrentUserId } from '@/lib/api';
 
 interface Notification {
   id: string;
@@ -29,6 +30,11 @@ export function useNotifications() {
     setIsLoading(true);
     
     try {
+      // Set current user context for RLS
+      if (user.id !== getCurrentUserId()) {
+        setCurrentUserId(user.id);
+      }
+
       // Try to fetch from Supabase, but with timeout and error handling
       const { data, error } = await Promise.race([
         supabase
@@ -76,6 +82,11 @@ export function useNotifications() {
 
   const markAsRead = async (notificationId: string) => {
     try {
+      // Set current user context for RLS
+      if (user?.id) {
+        setCurrentUserId(user.id);
+      }
+
       const { error } = await supabase
         .from('notifications')
         .update({ 

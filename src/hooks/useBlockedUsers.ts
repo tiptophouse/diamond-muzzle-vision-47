@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { setCurrentUserId, getCurrentUserId } from '@/lib/api';
 
 interface BlockedUser {
   id: string;
@@ -21,6 +22,11 @@ export function useBlockedUsers() {
 
   const fetchBlockedUsers = async () => {
     try {
+      // Set current user context for RLS
+      if (user?.id && user.id !== getCurrentUserId()) {
+        setCurrentUserId(user.id);
+      }
+
       const { data, error } = await supabase
         .from('blocked_users')
         .select('*')
@@ -51,6 +57,9 @@ export function useBlockedUsers() {
     }
 
     try {
+      // Set current user context for RLS
+      setCurrentUserId(user.id);
+
       const { error } = await supabase
         .from('blocked_users')
         .insert({
@@ -81,6 +90,11 @@ export function useBlockedUsers() {
 
   const unblockUser = async (blockedUserId: string) => {
     try {
+      // Set current user context for RLS
+      if (user?.id) {
+        setCurrentUserId(user.id);
+      }
+
       const { error } = await supabase
         .from('blocked_users')
         .delete()
@@ -111,8 +125,12 @@ export function useBlockedUsers() {
   };
 
   useEffect(() => {
-    fetchBlockedUsers();
-  }, []);
+    if (user?.id) {
+      fetchBlockedUsers();
+    } else {
+      setIsLoading(false);
+    }
+  }, [user?.id]);
 
   return {
     blockedUsers,
