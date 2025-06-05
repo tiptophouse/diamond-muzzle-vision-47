@@ -67,10 +67,7 @@ const Sidebar = ({
       <div className="p-4 border-b border-gray-200 flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold text-gray-900">mazal-bot</h1>
-          {isAdmin && <div className="mt-1 px-2 py-1 bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 text-white text-xs font-semibold rounded-full inline-flex items-center gap-1">
-              <Star className="h-3 w-3" />
-              COSMIC ADMIN
-            </div>}
+          {isAdmin}
         </div>
         {onClose && <Button variant="ghost" size="sm" onClick={onClose} className="lg:hidden p-1">
             <X className="h-4 w-4" />
