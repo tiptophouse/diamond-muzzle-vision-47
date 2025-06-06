@@ -1,8 +1,9 @@
 
+
 import { toast } from "@/components/ui/use-toast";
 
 // Update this to point to your FastAPI backend
-const API_BASE_URL = "https://api.mazalbot.com/api/v1";
+const API_BASE_URL = "https://api.mazalbot.com/api/v1"; // Your production FastAPI URL
 
 let currentUserId: number | null = null;
 
@@ -17,9 +18,8 @@ export function getCurrentUserId(): number | null {
 
 export const apiEndpoints = {
   getAllStones: (userId: number) => {
-    const endpoint = `/get_all_stones?user_id=${userId}`;
-    console.log('Building getAllStones endpoint:', endpoint);
-    return endpoint;
+    const userParam = `?user_id=${userId}`;
+    return `/get_all_stones${userParam}`;
   },
   uploadInventory: () => `/upload-inventory`,
   deleteDiamond: (diamondId: string, userId: number) => `/delete_diamond?diamond_id=${diamondId}&user_id=${userId}`,
@@ -50,8 +50,9 @@ export async function fetchApi<T>(
     const response = await fetch(url, {
       ...options,
       headers: {
-        "Authorization": `Bearer ifj9ov1rh20fslfp`,
+        "Authorization": `Bearer ifj9ov1rh20fslfp`, // Your backend access token
         ...options.headers,
+        // Don't override Content-Type for FormData uploads
       },
     });
 
@@ -76,18 +77,16 @@ export async function fetchApi<T>(
       throw new Error(errorMessage);
     }
 
-    console.log('API Response data length:', Array.isArray(data) ? data.length : 'Not an array');
+    console.log('API Response data:', data);
     return { data: data as T };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     console.error('API Error:', errorMessage);
-    
     toast({
       title: "API Error",
       description: errorMessage,
       variant: "destructive",
     });
-    
     return { error: errorMessage };
   }
 }

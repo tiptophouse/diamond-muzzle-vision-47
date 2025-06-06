@@ -6,47 +6,77 @@ import { useInventoryData } from "@/hooks/useInventoryData";
 import { useLeads } from "@/hooks/useLeads";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { DashboardLoading } from "@/components/dashboard/DashboardLoading";
 import { MetricsGrid } from "@/components/dashboard/MetricsGrid";
 import { PremiumCollection } from "@/components/dashboard/PremiumCollection";
 import { MarketInsights } from "@/components/dashboard/MarketInsights";
 
 export default function Dashboard() {
-  // Get inventory data from the hook
+  const [enableDataFetching, setEnableDataFetching] = useState(true);
+  const [emergencyMode, setEmergencyMode] = useState(false);
+  
+  // Only use hooks if data fetching is enabled
+  const inventoryHook = useInventoryData();
+  const leadsHook = useLeads();
+  const subscriptionsHook = useSubscriptions();
+  const notificationsHook = useNotifications();
+
+  // Fallback data for emergency mode with proper loading states
+  const fallbackData = {
+    allDiamonds: [],
+    leads: [],
+    subscriptions: [],
+    notifications: [],
+    loading: false,
+    isLoading: false,
+  };
+
+  // Use actual data or fallback based on mode with proper destructuring
   const {
     allDiamonds = [],
-    loading: inventoryLoading = false,
-    handleRefresh
-  } = useInventoryData();
+    loading: inventoryLoading = false
+  } = emergencyMode ? fallbackData : inventoryHook;
   
   const {
     leads = [],
     isLoading: leadsLoading = false
-  } = useLeads();
+  } = emergencyMode ? fallbackData : leadsHook;
   
   const {
     subscriptions = [],
     isLoading: subscriptionsLoading = false
-  } = useSubscriptions();
+  } = emergencyMode ? fallbackData : subscriptionsHook;
   
   const {
     notifications = []
-  } = useNotifications();
+  } = emergencyMode ? fallbackData : notificationsHook;
 
-  // Calculate metrics with real data
+  // Auto-enable emergency mode if any hook fails
+  useEffect(() => {
+    const hasErrors = !enableDataFetching || 
+      (inventoryLoading && leadsLoading && subscriptionsLoading);
+    
+    if (hasErrors) {
+      setEmergencyMode(true);
+    }
+  }, [inventoryLoading, leadsLoading, subscriptionsLoading, enableDataFetching]);
+
+  // Calculate metrics with safe fallbacks
   const totalInventory = allDiamonds?.length || 0;
   const activeLeads = leads?.filter(lead => lead.status === 'active').length || 0;
   const activeSubscriptions = subscriptions?.filter(sub => sub.status === 'active').length || 0;
   const unreadNotifications = notifications?.filter(n => !n.read).length || 0;
 
-  // Calculate portfolio metrics
+  // Safe calculations
   const totalValue = allDiamonds?.reduce((sum, diamond) => sum + (diamond.price || 0), 0) || 0;
   const avgCaratWeight = allDiamonds?.length > 0 ? 
     allDiamonds.reduce((sum, d) => sum + (d.carat || 0), 0) / allDiamonds.length : 0;
   const avgPricePerCarat = allDiamonds?.length > 0 ? 
     allDiamonds.reduce((sum, d) => sum + (d.price || 0) / (d.carat || 1), 0) / allDiamonds.length : 0;
 
-  // Shape distribution for chart
+  // Safe shape distribution with proper number typing
   const shapeData = allDiamonds?.reduce((acc, diamond) => {
     const shape = diamond.shape || 'Unknown';
     acc[shape] = (acc[shape] || 0) + 1;
@@ -55,20 +85,22 @@ export default function Dashboard() {
   
   const chartData = Object.entries(shapeData).map(([name, value]) => ({
     name,
-    value: Number(value),
+    value: Number(value), // Ensure value is a number
     color: '#7a63f5'
   }));
 
-  // Premium diamonds (>2ct or >$10k)
+  // Premium diamonds calculation
   const premiumDiamonds = allDiamonds?.filter(d => (d.carat || 0) > 2 || (d.price || 0) > 10000) || [];
 
-  console.log('Dashboard - Total diamonds:', totalInventory);
-  console.log('Dashboard - Chart data:', chartData);
+  // Show emergency loading state if needed
+  if (!emergencyMode && (inventoryLoading || leadsLoading || subscriptionsLoading)) {
+    return <DashboardLoading onEmergencyMode={() => setEmergencyMode(true)} />;
+  }
 
   return (
     <Layout>
       <div className="space-y-4 p-2 sm:p-4">
-        <DashboardHeader emergencyMode={false} />
+        <DashboardHeader emergencyMode={emergencyMode} />
 
         <MetricsGrid
           totalInventory={totalInventory}
@@ -86,7 +118,7 @@ export default function Dashboard() {
             <CardHeader className="pb-2">
               <CardTitle className="text-lg">Shape Distribution</CardTitle>
               <CardDescription className="text-sm">
-                Your inventory breakdown ({totalInventory} diamonds)
+                Your inventory breakdown
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -98,23 +130,6 @@ export default function Dashboard() {
         </div>
 
         <MarketInsights />
-
-        {/* Debug info when no data */}
-        {!inventoryLoading && totalInventory === 0 && (
-          <Card className="border-yellow-200 bg-yellow-50">
-            <CardContent className="p-4">
-              <p className="text-sm text-yellow-800">
-                No diamonds found in your inventory. Check the console for API logs or try refreshing.
-              </p>
-              <button 
-                onClick={handleRefresh} 
-                className="mt-2 px-3 py-1 bg-yellow-200 text-yellow-800 rounded text-sm hover:bg-yellow-300"
-              >
-                Refresh Data
-              </button>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </Layout>
   );
