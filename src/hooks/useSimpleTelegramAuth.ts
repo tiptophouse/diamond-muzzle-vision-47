@@ -1,19 +1,16 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { setCurrentUserId } from '@/lib/api';
+import { TelegramUser } from '@/types/telegram';
 import { parseTelegramInitData, isTelegramWebApp } from '@/utils/telegramValidation';
-import { TelegramUser, TelegramInitData } from '@/types/telegram';
 
-export function useTelegramInit() {
+export function useSimpleTelegramAuth() {
   const [user, setUser] = useState<TelegramUser | null>(null);
-  const [initData, setInitData] = useState<TelegramInitData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isTelegramEnvironment, setIsTelegramEnvironment] = useState(false);
   
   const mountedRef = useRef(true);
   const initializedRef = useRef(false);
-  const initializationLockRef = useRef(false);
 
   const createMockUser = (): TelegramUser => {
     return {
@@ -25,60 +22,30 @@ export function useTelegramInit() {
     };
   };
 
-  // Background database operations (non-blocking)
-  const saveUserToDatabase = async (userData: TelegramUser, isRealData: boolean = false) => {
-    try {
-      console.log('💾 Background: Saving user data to database');
-      const { extractTelegramUserData, upsertUserProfile, initializeUserAnalytics } = await import('@/utils/telegramUserData');
-      const extractedData = extractTelegramUserData(userData);
-      await upsertUserProfile(extractedData);
-      await initializeUserAnalytics(userData.id);
-      console.log('✅ Background: User data saved successfully');
-    } catch (error) {
-      console.warn('⚠️ Background: Failed to save user data, but continuing...', error);
-      // Don't throw - this is background operation
-    }
-  };
-
-  const safeSetState = (userData: TelegramUser, telegramEnv: boolean, isRealData: boolean = false, errorMsg: string | null = null) => {
-    if (!mountedRef.current || initializedRef.current) return;
-    
-    console.log('✅ Setting auth state with user:', userData.first_name);
-    
-    // Set state immediately for fast UI
-    setUser(userData);
-    setCurrentUserId(userData.id);
-    setIsTelegramEnvironment(telegramEnv);
-    setError(errorMsg);
-    setIsLoading(false);
-    initializedRef.current = true;
-    
-    // Save to database in background (non-blocking)
-    setTimeout(() => {
-      saveUserToDatabase(userData, isRealData);
-    }, 100);
-  };
-
   const initializeAuth = () => {
-    if (initializationLockRef.current || initializedRef.current || !mountedRef.current) {
+    if (initializedRef.current || !mountedRef.current) {
+      console.log('🔄 Auth already initialized or component unmounted');
       return;
     }
 
-    initializationLockRef.current = true;
-    console.log('🔄 Starting fast auth initialization...');
+    console.log('🔄 Starting simplified auth initialization...');
     
     try {
       // Server-side check
       if (typeof window === 'undefined') {
         console.log('⚠️ Server-side rendering - using fallback');
         const mockUser = createMockUser();
-        safeSetState(mockUser, false, false);
+        setUser(mockUser);
+        setIsTelegramEnvironment(false);
+        setIsLoading(false);
+        initializedRef.current = true;
         return;
       }
 
       // Enhanced Telegram detection
       const inTelegram = isTelegramWebApp();
       console.log('📱 Telegram environment detected:', inTelegram);
+      setIsTelegramEnvironment(inTelegram);
 
       if (inTelegram && window.Telegram?.WebApp) {
         const tg = window.Telegram.WebApp;
@@ -87,11 +54,6 @@ export function useTelegramInit() {
         try {
           if (typeof tg.ready === 'function') tg.ready();
           if (typeof tg.expand === 'function') tg.expand();
-          
-          // Apply theme safely
-          if (tg.themeParams?.bg_color) {
-            document.body.style.backgroundColor = tg.themeParams.bg_color;
-          }
         } catch (themeError) {
           console.warn('⚠️ Theme setup failed, continuing...', themeError);
         }
@@ -116,7 +78,6 @@ export function useTelegramInit() {
               const user = parsedInitData.user;
               if (user.first_name && user.first_name !== 'Test' && user.first_name !== 'Telegram') {
                 console.log('✅ Found REAL user data from parsed initData');
-                setInitData(parsedInitData);
                 realUser = user;
               }
             }
@@ -126,7 +87,10 @@ export function useTelegramInit() {
         }
         
         if (realUser) {
-          safeSetState(realUser, true, true);
+          console.log('✅ Setting real user:', realUser.first_name);
+          setUser(realUser);
+          setIsLoading(false);
+          initializedRef.current = true;
           return;
         }
         
@@ -139,69 +103,58 @@ export function useTelegramInit() {
           username: "telegram_user_" + Math.floor(Math.random() * 1000),
           language_code: "en"
         };
-        safeSetState(telegramFallback, true, false);
+        setUser(telegramFallback);
+        setIsLoading(false);
+        initializedRef.current = true;
         return;
       }
 
       // Development mode fallback
       console.log('🔧 Development mode - using mock user');
       const mockUser = createMockUser();
-      safeSetState(mockUser, false, false);
+      setUser(mockUser);
+      setIsLoading(false);
+      initializedRef.current = true;
 
     } catch (err) {
       console.error('❌ Initialization error, using emergency fallback:', err);
-      const emergencyUser = {
-        id: 999999999,
-        first_name: "Emergency",
-        last_name: "User",
-        username: "emergency_user",
-        language_code: "en"
-      };
-      safeSetState(emergencyUser, false, false);
-    } finally {
-      initializationLockRef.current = false;
+      const emergencyUser = createMockUser();
+      setUser(emergencyUser);
+      setError('Auth initialization failed, using fallback');
+      setIsLoading(false);
+      initializedRef.current = true;
     }
-  };
-
-  const refreshAuth = () => {
-    if (initializationLockRef.current) return;
-    
-    console.log('🔄 Refreshing auth...');
-    initializedRef.current = false;
-    setIsLoading(true);
-    setError(null);
-    
-    setTimeout(initializeAuth, 100);
   };
 
   useEffect(() => {
     mountedRef.current = true;
     
-    // Set timeout to prevent hanging
+    // Shorter timeout to prevent hanging
     const timeoutId = setTimeout(() => {
-      if (isLoading && mountedRef.current) {
+      if (isLoading && mountedRef.current && !initializedRef.current) {
         console.warn('⚠️ Auth initialization timeout - using emergency fallback');
         const emergencyUser = createMockUser();
-        safeSetState(emergencyUser, false, false);
+        setUser(emergencyUser);
+        setError('Auth timeout');
+        setIsLoading(false);
+        initializedRef.current = true;
       }
-    }, 5000);
-    
+    }, 2000); // Reduced to 2 seconds
+
+    // Initialize immediately without delay
     initializeAuth();
 
     return () => {
       mountedRef.current = false;
-      initializationLockRef.current = false;
       clearTimeout(timeoutId);
     };
   }, []);
 
   return {
     user,
-    initData,
     isLoading,
     error,
     isTelegramEnvironment,
-    refreshAuth,
-    retryAuth: refreshAuth,
+    isAuthenticated: !!user && !error,
   };
 }

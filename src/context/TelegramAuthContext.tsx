@@ -1,16 +1,14 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useTelegramInit } from '@/hooks/useTelegramInit';
-import { TelegramUser, TelegramInitData } from '@/types/telegram';
+import { useSimpleTelegramAuth } from '@/hooks/useSimpleTelegramAuth';
+import { useUserDataPersistence } from '@/hooks/useUserDataPersistence';
+import { TelegramUser } from '@/types/telegram';
 
 interface TelegramAuthContextType {
   user: TelegramUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  refreshAuth: () => void;
-  retryAuth: () => void;
-  initData: TelegramInitData | null;
   isTelegramEnvironment: boolean;
 }
 
@@ -19,29 +17,14 @@ const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(u
 export function TelegramAuthProvider({ children }: { children: ReactNode }) {
   const {
     user,
-    initData,
     isLoading,
     error,
     isTelegramEnvironment,
-    refreshAuth,
-    retryAuth,
-  } = useTelegramInit();
-
-  // Enhanced authentication check - prioritize real users
-  const isAuthenticated = !!user && !error;
-
-  // Enhanced logging for debugging
-  console.log('🔍 TelegramAuthContext status:', {
-    hasUser: !!user,
-    userId: user?.id,
-    userName: user ? `${user.first_name} ${user.last_name || ''}`.trim() : 'None',
     isAuthenticated,
-    isLoading,
-    error,
-    isTelegramEnvironment,
-    isRealUser: user && user.id !== 2138564172,
-    isMockUser: user?.id === 2138564172
-  });
+  } = useSimpleTelegramAuth();
+
+  // Handle user data persistence in background
+  useUserDataPersistence(user, isTelegramEnvironment);
 
   return (
     <TelegramAuthContext.Provider
@@ -50,9 +33,6 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated,
         isLoading,
         error,
-        refreshAuth,
-        retryAuth,
-        initData,
         isTelegramEnvironment,
       }}
     >

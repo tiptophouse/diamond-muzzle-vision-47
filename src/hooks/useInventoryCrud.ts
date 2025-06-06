@@ -37,19 +37,9 @@ export function useInventoryCrud(onSuccess?: () => void) {
   };
 
   const deleteDiamond = async (diamondId: string) => {
-    console.log('CRUD deleteDiamond called for ID:', diamondId);
     setIsLoading(true);
     try {
       const result = await deleteDiamondFn(diamondId);
-      console.log('CRUD deleteDiamond result:', result);
-      
-      // Force an immediate refresh regardless of the result
-      // This ensures the UI updates even if there are sync issues
-      if (onSuccess) {
-        console.log('Forcing immediate refresh after delete operation');
-        setTimeout(() => onSuccess(), 100);
-      }
-      
       return result;
     } finally {
       setIsLoading(false);

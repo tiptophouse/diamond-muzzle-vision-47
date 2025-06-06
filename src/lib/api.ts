@@ -22,13 +22,7 @@ export const apiEndpoints = {
     return `/get_all_stones${userParam}`;
   },
   uploadInventory: () => `/upload-inventory`,
-  deleteDiamond: (diamondId: string, userId: number) => {
-    // Ensure proper encoding and numeric user ID
-    const encodedDiamondId = encodeURIComponent(diamondId);
-    const numericUserId = Number(userId);
-    console.log('🔗 Building delete endpoint with:', { diamondId: encodedDiamondId, userId: numericUserId });
-    return `/delete_diamond?diamond_id=${encodedDiamondId}&user_id=${numericUserId}`;
-  },
+  deleteDiamond: (diamondId: string, userId: number) => `/delete_diamond?diamond_id=${diamondId}&user_id=${userId}`,
   createReport: () => `/create-report`,
   getReport: (reportId: string) => `/get-report?diamond_id=${reportId}`,
   // Legacy endpoints for compatibility
@@ -118,10 +112,8 @@ export const api = {
       body: JSON.stringify(body),
     }),
   
-  delete: <T>(endpoint: string) => {
-    console.log('API delete called for endpoint:', endpoint);
-    return fetchApi<T>(endpoint, { method: "DELETE" });
-  },
+  delete: <T>(endpoint: string) =>
+    fetchApi<T>(endpoint, { method: "DELETE" }),
     
   uploadCsv: async <T>(endpoint: string, csvData: any[], userId: number): Promise<ApiResponse<T>> => {
     console.log('Uploading CSV data to FastAPI:', { endpoint, dataLength: csvData.length, userId });
