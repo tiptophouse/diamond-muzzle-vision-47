@@ -3,18 +3,29 @@ import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
+import { Diamond } from '@/components/inventory/InventoryTable';
 import { useAddDiamond } from './inventory/useAddDiamond';
 import { useUpdateDiamond } from './inventory/useUpdateDiamond';
 import { useDeleteDiamond } from './inventory/useDeleteDiamond';
 
-export function useInventoryCrud(onSuccess?: () => void) {
+interface UseInventoryCrudProps {
+  onSuccess?: () => void;
+  removeDiamondFromState?: (diamondId: string) => void;
+  restoreDiamondToState?: (diamond: Diamond) => void;
+}
+
+export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDiamondToState }: UseInventoryCrudProps = {}) {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const { addDiamond: addDiamondFn } = useAddDiamond(onSuccess);
   const { updateDiamond: updateDiamondFn } = useUpdateDiamond(onSuccess);
-  const { deleteDiamond: deleteDiamondFn } = useDeleteDiamond(onSuccess);
+  const { deleteDiamond: deleteDiamondFn } = useDeleteDiamond({ 
+    onSuccess, 
+    removeDiamondFromState, 
+    restoreDiamondToState 
+  });
 
   const addDiamond = async (data: DiamondFormData) => {
     setIsLoading(true);
@@ -36,20 +47,10 @@ export function useInventoryCrud(onSuccess?: () => void) {
     }
   };
 
-  const deleteDiamond = async (diamondId: string) => {
-    console.log('CRUD deleteDiamond called for ID:', diamondId);
+  const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
     setIsLoading(true);
     try {
-      const result = await deleteDiamondFn(diamondId);
-      console.log('CRUD deleteDiamond result:', result);
-      
-      // Force an immediate refresh regardless of the result
-      // This ensures the UI updates even if there are sync issues
-      if (onSuccess) {
-        console.log('Forcing immediate refresh after delete operation');
-        setTimeout(() => onSuccess(), 100);
-      }
-      
+      const result = await deleteDiamondFn(diamondId, diamondData);
       return result;
     } finally {
       setIsLoading(false);

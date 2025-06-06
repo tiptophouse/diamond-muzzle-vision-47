@@ -1,5 +1,4 @@
 
-
 import { toast } from "@/components/ui/use-toast";
 
 // Update this to point to your FastAPI backend
@@ -22,13 +21,8 @@ export const apiEndpoints = {
     return `/get_all_stones${userParam}`;
   },
   uploadInventory: () => `/upload-inventory`,
-  deleteDiamond: (diamondId: string, userId: number) => {
-    // Ensure proper encoding and numeric user ID
-    const encodedDiamondId = encodeURIComponent(diamondId);
-    const numericUserId = Number(userId);
-    console.log('🔗 Building delete endpoint with:', { diamondId: encodedDiamondId, userId: numericUserId });
-    return `/delete_diamond?diamond_id=${encodedDiamondId}&user_id=${numericUserId}`;
-  },
+  deleteDiamond: (diamondId: string, userId: number) => `/delete_diamond?diamond_id=${diamondId}&user_id=${userId}`,
+  soldDiamond: () => `/sold`, // New endpoint for marking diamonds as sold/deleted
   createReport: () => `/create-report`,
   getReport: (reportId: string) => `/get-report?diamond_id=${reportId}`,
   // Legacy endpoints for compatibility
@@ -43,6 +37,51 @@ interface ApiResponse<T> {
   error?: string;
 }
 
+// Get auth token from Supabase edge function instead of hardcoded value
+async function getAuthToken(): Promise<string> {
+  try {
+    // Call edge function to get secure auth token
+    const response = await fetch('/functions/v1/get-api-token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to get auth token');
+    }
+    
+    const { token } = await response.json();
+    return token;
+  } catch (error) {
+    console.error('Error getting auth token:', error);
+    throw new Error('Authentication failed');
+  }
+}
+
+// Helper function to set database context for RLS
+async function setDatabaseContext(userId: number) {
+  try {
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    // Use the edge function to set session context instead of RPC
+    const { error } = await supabase.functions.invoke('set-session-context', {
+      body: {
+        setting_name: 'app.current_user_id',
+        setting_value: userId.toString()
+      }
+    });
+
+    if (error) {
+      console.warn('Failed to set database context via edge function:', error);
+    }
+  } catch (error) {
+    console.warn('Failed to set database context:', error);
+    // Don't throw - this is not critical for API calls
+  }
+}
+
 export async function fetchApi<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -51,19 +90,24 @@ export async function fetchApi<T>(
   
   try {
     console.log('Making API request to:', url);
-    console.log('Request options:', { ...options, body: options.body ? '[FormData/Body]' : undefined });
+    
+    // Set database context if we have a current user
+    if (currentUserId) {
+      await setDatabaseContext(currentUserId);
+    }
+    
+    // Get secure auth token
+    const authToken = await getAuthToken();
     
     const response = await fetch(url, {
       ...options,
       headers: {
-        "Authorization": `Bearer ifj9ov1rh20fslfp`, // Your backend access token
+        "Authorization": `Bearer ${authToken}`,
         ...options.headers,
-        // Don't override Content-Type for FormData uploads
       },
     });
 
     console.log('API Response status:', response.status);
-    console.log('API Response headers:', Object.fromEntries(response.headers.entries()));
 
     let data;
     const contentType = response.headers.get('content-type');
@@ -83,7 +127,7 @@ export async function fetchApi<T>(
       throw new Error(errorMessage);
     }
 
-    console.log('API Response data:', data);
+    console.log('API Response data received');
     return { data: data as T };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
@@ -118,19 +162,23 @@ export const api = {
       body: JSON.stringify(body),
     }),
   
-  delete: <T>(endpoint: string) => {
-    console.log('API delete called for endpoint:', endpoint);
-    return fetchApi<T>(endpoint, { method: "DELETE" });
-  },
+  delete: <T>(endpoint: string) =>
+    fetchApi<T>(endpoint, { method: "DELETE" }),
     
   uploadCsv: async <T>(endpoint: string, csvData: any[], userId: number): Promise<ApiResponse<T>> => {
     console.log('Uploading CSV data to FastAPI:', { endpoint, dataLength: csvData.length, userId });
+    
+    // Set database context for RLS
+    await setDatabaseContext(userId);
+    
+    // Get secure auth token
+    const authToken = await getAuthToken();
     
     return fetchApi<T>(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ifj9ov1rh20fslfp`,
+        "Authorization": `Bearer ${authToken}`,
       },
       body: JSON.stringify({
         user_id: userId,

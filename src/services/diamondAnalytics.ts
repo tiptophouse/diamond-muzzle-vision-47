@@ -31,14 +31,15 @@ export function processDiamondDataForDashboard(diamonds: DiamondData[], currentU
   inventoryByShape: InventoryData[];
   salesByCategory: InventoryData[];
 } {
-  console.log('🔍 Processing dashboard data - Input diamonds:', diamonds.length);
-  console.log('🔍 Current user ID:', currentUserId);
-  console.log('🔍 First few diamonds:', diamonds.slice(0, 3));
+  // Filter diamonds for current user if user ID is provided
+  const userDiamonds = currentUserId 
+    ? diamonds.filter(diamond => {
+        console.log('Checking diamond:', diamond.id, 'owners:', diamond.owners, 'against user:', currentUserId);
+        return diamond.owners?.includes(currentUserId) || diamond.owner_id === currentUserId;
+      })
+    : diamonds;
   
-  // Use ALL diamonds since the FastAPI backend already filters by user
-  const userDiamonds = diamonds;
-  
-  console.log('📊 Dashboard processing - Total diamonds to process:', userDiamonds.length);
+  console.log('Processing dashboard data for user:', currentUserId, 'User diamonds:', userDiamonds.length, 'Total diamonds:', diamonds.length);
   
   // Calculate basic stats
   const totalDiamonds = userDiamonds.length;
@@ -71,8 +72,6 @@ export function processDiamondDataForDashboard(diamonds: DiamondData[], currentU
     activeSubscriptions: highValueDiamonds,
   };
   
-  console.log('📈 Calculated stats:', stats);
-  
   // Group diamonds by shape for inventory chart
   const shapeMap = new Map<string, number>();
   userDiamonds.forEach(diamond => {
@@ -85,8 +84,6 @@ export function processDiamondDataForDashboard(diamonds: DiamondData[], currentU
   const inventoryByShape: InventoryData[] = Array.from(shapeMap.entries())
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value);
-  
-  console.log('📊 Inventory by shape:', inventoryByShape);
   
   // Group diamonds by color for sales chart
   const colorMap = new Map<string, number>();
@@ -102,8 +99,6 @@ export function processDiamondDataForDashboard(diamonds: DiamondData[], currentU
     .sort((a, b) => b.value - a.value)
     .slice(0, 8);
   
-  console.log('💰 Sales by category:', salesByCategory);
-  
   return {
     stats,
     inventoryByShape,
@@ -112,17 +107,17 @@ export function processDiamondDataForDashboard(diamonds: DiamondData[], currentU
 }
 
 export function convertDiamondsToInventoryFormat(diamonds: DiamondData[], currentUserId?: number) {
-  console.log('🔄 Converting diamonds to inventory format');
-  console.log('🔄 Input diamonds count:', diamonds.length);
-  console.log('🔄 Current user ID:', currentUserId);
-  console.log('🔄 Sample diamond structure:', diamonds[0]);
+  // Filter diamonds for current user if user ID is provided
+  const userDiamonds = currentUserId 
+    ? diamonds.filter(diamond => {
+        console.log('Converting - checking diamond:', diamond.id, 'owners:', diamond.owners, 'against user:', currentUserId);
+        return diamond.owners?.includes(currentUserId) || diamond.owner_id === currentUserId;
+      })
+    : diamonds;
   
-  // Use ALL diamonds since the FastAPI backend already filters by user
-  const userDiamonds = diamonds;
+  console.log('Converting diamonds to inventory format for user:', currentUserId, 'Filtered diamonds:', userDiamonds.length);
   
-  console.log('✅ Diamonds after processing:', userDiamonds.length);
-  
-  const converted = userDiamonds.map(diamond => {
+  return userDiamonds.map(diamond => {
     const weight = diamond.weight || diamond.carat || 0;
     const pricePerCarat = diamond.price_per_carat || 0;
     const totalPrice = Math.round(pricePerCarat * weight);
@@ -139,8 +134,4 @@ export function convertDiamondsToInventoryFormat(diamonds: DiamondData[], curren
       status: diamond.status || 'Available',
     };
   });
-  
-  console.log('📝 Converted diamonds for display:', converted.length);
-  
-  return converted;
 }

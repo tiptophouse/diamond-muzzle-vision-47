@@ -1,17 +1,22 @@
 
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { api, apiEndpoints } from '@/lib/api';
+import { api } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { isValidUUID } from '@/utils/diamondUtils';
+import { Diamond } from '@/components/inventory/InventoryTable';
 
-export function useDeleteDiamond(onSuccess?: () => void) {
+interface UseDeleteDiamondProps {
+  onSuccess?: () => void;
+  removeDiamondFromState?: (diamondId: string) => void;
+  restoreDiamondToState?: (diamond: Diamond) => void;
+}
+
+export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDiamondToState }: UseDeleteDiamondProps = {}) {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
 
-  const deleteDiamond = async (diamondId: string) => {
+  const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
     if (!user?.id) {
-      console.error('Delete failed: User not authenticated');
       toast({
         variant: "destructive",
         title: "Error",
@@ -20,9 +25,8 @@ export function useDeleteDiamond(onSuccess?: () => void) {
       return false;
     }
 
-    // Validate diamond ID format
     if (!diamondId || !isValidUUID(diamondId)) {
-      console.error('Delete failed: Invalid diamond ID format:', diamondId);
+      console.error('Invalid diamond ID for deletion:', diamondId);
       toast({
         variant: "destructive",
         title: "Error",
@@ -31,47 +35,19 @@ export function useDeleteDiamond(onSuccess?: () => void) {
       return false;
     }
 
+    // Optimistic UI update - remove diamond immediately
+    if (removeDiamondFromState) {
+      removeDiamondFromState(diamondId);
+    }
+
     try {
-      console.log('🗑️ Starting diamond deletion process:');
-      console.log('- Diamond ID:', diamondId);
-      console.log('- User ID:', user.id);
-      console.log('- User type:', typeof user.id);
+      console.log('Deleting diamond ID:', diamondId, 'for user:', user.id);
       
-      // Convert user ID to numeric for FastAPI (Telegram ID)
-      const numericUserId = typeof user.id === 'string' ? parseInt(user.id) : user.id;
-      console.log('- Converted numeric user ID:', numericUserId);
-      
-      // Primary deletion: Use FastAPI with proper numeric user ID
-      console.log('🚀 Attempting FastAPI deletion...');
-      const deleteEndpoint = apiEndpoints.deleteDiamond(diamondId, numericUserId);
-      console.log('- Delete endpoint:', deleteEndpoint);
-      
-      const response = await api.delete(deleteEndpoint);
-      console.log('- FastAPI delete response:', response);
+      // Use the new secure DELETE endpoint with query parameters
+      const response = await api.delete(`/delete_diamond?diamond_id=${diamondId}&user_id=${user.id}`);
       
       if (response.error) {
-        console.error('❌ FastAPI deletion failed:', response.error);
-        throw new Error(`FastAPI deletion failed: ${response.error}`);
-      }
-      
-      console.log('✅ Diamond successfully deleted from FastAPI');
-      
-      // Also try to clean up from Supabase as backup
-      try {
-        console.log('🧹 Attempting Supabase cleanup...');
-        const { error: supabaseError } = await supabase
-          .from('inventory')
-          .delete()
-          .eq('id', diamondId)
-          .eq('user_id', numericUserId);
-          
-        if (supabaseError) {
-          console.warn('⚠️ Supabase cleanup failed (non-critical):', supabaseError);
-        } else {
-          console.log('✅ Supabase cleanup successful');
-        }
-      } catch (supabaseError) {
-        console.warn('⚠️ Supabase cleanup error (non-critical):', supabaseError);
+        throw new Error(response.error);
       }
       
       toast({
@@ -79,19 +55,20 @@ export function useDeleteDiamond(onSuccess?: () => void) {
         description: "Diamond deleted successfully",
       });
       
-      // Trigger refresh immediately
-      if (onSuccess) {
-        console.log('🔄 Triggering data refresh...');
-        onSuccess();
-      }
-      
+      if (onSuccess) onSuccess();
       return true;
     } catch (error) {
-      console.error('❌ Diamond deletion failed:', error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond from FastAPI";
+      console.error('Failed to delete diamond:', error);
+      
+      // Restore diamond to state if deletion failed
+      if (restoreDiamondToState && diamondData) {
+        restoreDiamondToState(diamondData);
+      }
+      
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond. Please try again.";
       toast({
         variant: "destructive",
-        title: "Deletion Failed",
+        title: "Error",
         description: errorMessage,
       });
       return false;
