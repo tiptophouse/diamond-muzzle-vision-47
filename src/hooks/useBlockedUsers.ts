@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { setCurrentUserId, getCurrentUserId } from '@/lib/api';
 
 interface BlockedUser {
   id: string;
@@ -20,24 +19,8 @@ export function useBlockedUsers() {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
 
-  const setUserContext = async () => {
-    if (user?.id && user.id !== getCurrentUserId()) {
-      setCurrentUserId(user.id);
-      
-      // Set database context via edge function
-      await supabase.functions.invoke('set-session-context', {
-        body: {
-          setting_name: 'app.current_user_id',
-          setting_value: user.id.toString()
-        }
-      });
-    }
-  };
-
   const fetchBlockedUsers = async () => {
     try {
-      await setUserContext();
-
       const { data, error } = await supabase
         .from('blocked_users')
         .select('*')
@@ -68,8 +51,6 @@ export function useBlockedUsers() {
     }
 
     try {
-      await setUserContext();
-
       const { error } = await supabase
         .from('blocked_users')
         .insert({
@@ -100,8 +81,6 @@ export function useBlockedUsers() {
 
   const unblockUser = async (blockedUserId: string) => {
     try {
-      await setUserContext();
-
       const { error } = await supabase
         .from('blocked_users')
         .delete()
@@ -132,12 +111,8 @@ export function useBlockedUsers() {
   };
 
   useEffect(() => {
-    if (user?.id) {
-      fetchBlockedUsers();
-    } else {
-      setIsLoading(false);
-    }
-  }, [user?.id]);
+    fetchBlockedUsers();
+  }, []);
 
   return {
     blockedUsers,

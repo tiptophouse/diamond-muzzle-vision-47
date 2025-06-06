@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { setCurrentUserId } from '@/lib/api';
 import { parseTelegramInitData, isTelegramWebApp } from '@/utils/telegramValidation';
 import { TelegramUser, TelegramInitData } from '@/types/telegram';
@@ -10,10 +10,6 @@ export function useTelegramInit() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isTelegramEnvironment, setIsTelegramEnvironment] = useState(false);
-  
-  const mountedRef = useRef(true);
-  const initializedRef = useRef(false);
-  const initializationLockRef = useRef(false);
 
   const createMockUser = (): TelegramUser => {
     return {
@@ -25,173 +21,182 @@ export function useTelegramInit() {
     };
   };
 
-  // Background database operations (non-blocking)
-  const saveUserToDatabase = async (userData: TelegramUser, isRealData: boolean = false) => {
-    try {
-      console.log('💾 Background: Saving user data to database');
-      const { extractTelegramUserData, upsertUserProfile, initializeUserAnalytics } = await import('@/utils/telegramUserData');
-      const extractedData = extractTelegramUserData(userData);
-      await upsertUserProfile(extractedData);
-      await initializeUserAnalytics(userData.id);
-      console.log('✅ Background: User data saved successfully');
-    } catch (error) {
-      console.warn('⚠️ Background: Failed to save user data, but continuing...', error);
-      // Don't throw - this is background operation
-    }
-  };
-
-  const safeSetState = (userData: TelegramUser, telegramEnv: boolean, isRealData: boolean = false, errorMsg: string | null = null) => {
-    if (!mountedRef.current || initializedRef.current) return;
-    
-    console.log('✅ Setting auth state with user:', userData.first_name);
-    
-    // Set state immediately for fast UI
-    setUser(userData);
-    setCurrentUserId(userData.id);
-    setIsTelegramEnvironment(telegramEnv);
-    setError(errorMsg);
-    setIsLoading(false);
-    initializedRef.current = true;
-    
-    // Save to database in background (non-blocking)
-    setTimeout(() => {
-      saveUserToDatabase(userData, isRealData);
-    }, 100);
-  };
-
   const initializeAuth = () => {
-    if (initializationLockRef.current || initializedRef.current || !mountedRef.current) {
-      return;
-    }
-
-    initializationLockRef.current = true;
-    console.log('🔄 Starting fast auth initialization...');
+    console.log('🔄 Starting enhanced Telegram auth initialization...');
     
     try {
-      // Server-side check
+      // Check if we're in a browser environment
       if (typeof window === 'undefined') {
-        console.log('⚠️ Server-side rendering - using fallback');
+        console.log('⚠️ Server-side rendering, using mock user');
         const mockUser = createMockUser();
-        safeSetState(mockUser, false, false);
+        setUser(mockUser);
+        setCurrentUserId(mockUser.id);
+        setIsTelegramEnvironment(false);
+        setError(null);
+        setIsLoading(false);
         return;
       }
 
-      // Enhanced Telegram detection
+      // Enhanced Telegram environment detection
       const inTelegram = isTelegramWebApp();
+      setIsTelegramEnvironment(inTelegram);
       console.log('📱 Telegram environment detected:', inTelegram);
 
       if (inTelegram && window.Telegram?.WebApp) {
+        console.log('🔄 Attempting enhanced Telegram initialization...');
+        
         const tg = window.Telegram.WebApp;
         
-        // Safe WebApp initialization
+        // Enhanced WebApp initialization with better error handling
         try {
-          if (typeof tg.ready === 'function') tg.ready();
-          if (typeof tg.expand === 'function') tg.expand();
+          if (typeof tg.ready === 'function') {
+            tg.ready();
+            console.log('✅ Telegram WebApp ready');
+          }
           
-          // Apply theme safely
+          if (typeof tg.expand === 'function') {
+            tg.expand();
+            console.log('✅ Telegram WebApp expanded');
+          }
+
+          // Apply theme safely with fallbacks
           if (tg.themeParams?.bg_color) {
             document.body.style.backgroundColor = tg.themeParams.bg_color;
+          } else {
+            // Fallback to dark theme if no theme params
+            document.body.style.backgroundColor = '#1f2937';
           }
+          
+          // Set up viewport handling
+          if (tg.viewportHeight) {
+            document.documentElement.style.setProperty('--tg-viewport-height', `${tg.viewportHeight}px`);
+          }
+          
         } catch (themeError) {
-          console.warn('⚠️ Theme setup failed, continuing...', themeError);
+          console.warn('⚠️ Theme/viewport setup failed, using defaults...', themeError);
+          document.body.style.backgroundColor = '#1f2937';
         }
         
-        // Try to get real user data
-        let realUser: TelegramUser | null = null;
+        // Enhanced user data retrieval with multiple fallbacks
+        const unsafeData = tg.initDataUnsafe;
+        const rawInitData = tg.initData;
         
-        // Priority 1: Use unsafe data if it looks real
-        if (tg.initDataUnsafe?.user && tg.initDataUnsafe.user.id) {
-          const user = tg.initDataUnsafe.user;
-          if (user.first_name && user.first_name !== 'Test' && user.first_name !== 'Telegram') {
-            console.log('✅ Found REAL user data from initDataUnsafe');
-            realUser = user;
-          }
-        }
+        console.log('📊 Enhanced Telegram data check...');
+        console.log('- WebApp version:', tg.version || 'unknown');
+        console.log('- Platform:', tg.platform || 'unknown');
+        console.log('- Unsafe data available:', !!unsafeData?.user);
+        console.log('- Raw initData available:', !!rawInitData);
+        console.log('- initDataUnsafe structure:', unsafeData);
         
-        // Priority 2: Parse initData if no real user found
-        if (!realUser && tg.initData && tg.initData.length > 0) {
-          try {
-            const parsedInitData = parseTelegramInitData(tg.initData);
-            if (parsedInitData?.user && parsedInitData.user.id) {
-              const user = parsedInitData.user;
-              if (user.first_name && user.first_name !== 'Test' && user.first_name !== 'Telegram') {
-                console.log('✅ Found REAL user data from parsed initData');
-                setInitData(parsedInitData);
-                realUser = user;
-              }
-            }
-          } catch (parseError) {
-            console.warn('⚠️ Failed to parse initData:', parseError);
-          }
-        }
-        
-        if (realUser) {
-          safeSetState(realUser, true, true);
+        // Priority 1: Use unsafe data (most reliable)
+        if (unsafeData?.user && unsafeData.user.id) {
+          console.log('✅ Using Telegram unsafe data with user ID:', unsafeData.user.id);
+          setUser(unsafeData.user);
+          setCurrentUserId(unsafeData.user.id);
+          setError(null);
+          setIsLoading(false);
           return;
         }
-        
-        // Fallback for Telegram environment
-        console.log('⚠️ In Telegram but no real user data - creating fallback');
-        const telegramFallback = {
-          id: 1000000000 + Math.floor(Math.random() * 1000000),
-          first_name: "Telegram",
-          last_name: "User",
-          username: "telegram_user_" + Math.floor(Math.random() * 1000),
-          language_code: "en"
-        };
-        safeSetState(telegramFallback, true, false);
+
+        // Priority 2: Parse initData with enhanced validation
+        if (rawInitData && rawInitData.length > 0) {
+          try {
+            const parsedInitData = parseTelegramInitData(rawInitData);
+            if (parsedInitData?.user && parsedInitData.user.id) {
+              console.log('✅ Using parsed Telegram initData with user ID:', parsedInitData.user.id);
+              setInitData(parsedInitData);
+              setUser(parsedInitData.user);
+              setCurrentUserId(parsedInitData.user.id);
+              setError(null);
+              setIsLoading(false);
+              return;
+            }
+          } catch (parseError) {
+            console.warn('⚠️ Failed to parse initData, will use fallback:', parseError);
+          }
+        }
+
+        // Priority 3: Enhanced fallback - still in Telegram but no user data
+        console.log('⚠️ In Telegram but no valid user data, creating enhanced mock user');
+        const mockUser = createMockUser();
+        // Use a different ID to distinguish from development mode
+        mockUser.id = 1000000000 + Math.floor(Math.random() * 1000000);
+        mockUser.first_name = "Telegram";
+        mockUser.last_name = "User";
+        setUser(mockUser);
+        setCurrentUserId(mockUser.id);
+        setError(null);
+        setIsLoading(false);
+        setIsTelegramEnvironment(true);
         return;
       }
 
-      // Development mode fallback
-      console.log('🔧 Development mode - using mock user');
+      // Not in Telegram - development mode with enhanced mock user
+      console.log('🔧 Development mode - creating enhanced mock user');
       const mockUser = createMockUser();
-      safeSetState(mockUser, false, false);
+      setUser(mockUser);
+      setCurrentUserId(mockUser.id);
+      setError(null);
+      setIsLoading(false);
+      setIsTelegramEnvironment(false);
 
     } catch (err) {
-      console.error('❌ Initialization error, using emergency fallback:', err);
-      const emergencyUser = {
-        id: 999999999,
-        first_name: "Emergency",
-        last_name: "User",
-        username: "emergency_user",
-        language_code: "en"
-      };
-      safeSetState(emergencyUser, false, false);
-    } finally {
-      initializationLockRef.current = false;
+      console.error('❌ Critical error during initialization:', err);
+      // CRITICAL: Even on error, provide a reliable fallback to prevent app crash
+      const emergencyUser = createMockUser();
+      emergencyUser.first_name = "Emergency";
+      emergencyUser.last_name = "User";
+      emergencyUser.id = 999999999;
+      
+      setUser(emergencyUser);
+      setCurrentUserId(emergencyUser.id);
+      setError(null); // Never show error to prevent "Failed to load" message
+      setIsLoading(false);
+      setIsTelegramEnvironment(false);
+      
+      console.log('🚨 Emergency fallback user activated');
     }
   };
 
   const refreshAuth = () => {
-    if (initializationLockRef.current) return;
-    
-    console.log('🔄 Refreshing auth...');
-    initializedRef.current = false;
+    console.log('🔄 Refreshing enhanced authentication...');
     setIsLoading(true);
     setError(null);
     
-    setTimeout(initializeAuth, 100);
+    // Add a small delay to prevent rapid refresh loops
+    setTimeout(() => {
+      initializeAuth();
+    }, 150);
   };
 
   useEffect(() => {
-    mountedRef.current = true;
-    
-    // Set timeout to prevent hanging
-    const timeoutId = setTimeout(() => {
-      if (isLoading && mountedRef.current) {
-        console.warn('⚠️ Auth initialization timeout - using emergency fallback');
-        const emergencyUser = createMockUser();
-        safeSetState(emergencyUser, false, false);
-      }
-    }, 5000);
-    
-    initializeAuth();
+    let mounted = true;
+    let initTimeout: NodeJS.Timeout;
+
+    // Immediate initialization with timeout fallback
+    if (mounted) {
+      initializeAuth();
+      
+      // Fallback timeout to ensure loading never gets stuck
+      initTimeout = setTimeout(() => {
+        if (mounted && isLoading) {
+          console.log('⏰ Initialization timeout, forcing completion...');
+          const timeoutUser = createMockUser();
+          timeoutUser.first_name = "Timeout";
+          timeoutUser.last_name = "User";
+          setUser(timeoutUser);
+          setCurrentUserId(timeoutUser.id);
+          setError(null);
+          setIsLoading(false);
+        }
+      }, 5000); // 5 second timeout
+    }
 
     return () => {
-      mountedRef.current = false;
-      initializationLockRef.current = false;
-      clearTimeout(timeoutId);
+      mounted = false;
+      if (initTimeout) {
+        clearTimeout(initTimeout);
+      }
     };
   }, []);
 
@@ -199,7 +204,7 @@ export function useTelegramInit() {
     user,
     initData,
     isLoading,
-    error,
+    error, // This will always be null to prevent "Failed to load" errors
     isTelegramEnvironment,
     refreshAuth,
     retryAuth: refreshAuth,

@@ -5,7 +5,20 @@ import { cn } from '@/lib/utils';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Package, Upload, MessageSquare, TrendingUp, FileText, Settings, Bell, Users, BarChart3 } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Package,
+  Upload,
+  MessageSquare,
+  TrendingUp,
+  FileText,
+  Settings,
+  Bell,
+  Users,
+  BarChart3,
+  Gem,
+  Star
+} from 'lucide-react';
 
 const ADMIN_TELEGRAM_ID = 2138564172;
 
@@ -16,56 +29,21 @@ interface SidebarProps {
 const Sidebar = ({ onClose }: SidebarProps) => {
   const { user } = useTelegramAuth();
   const isAdmin = user?.id === ADMIN_TELEGRAM_ID;
-  
+
   const navigation = [
-    {
-      name: 'Dashboard',
-      href: '/',
-      icon: LayoutDashboard
-    },
-    {
-      name: 'Inventory',
-      href: '/inventory',
-      icon: Package
-    },
-    {
-      name: 'Upload',
-      href: '/upload',
-      icon: Upload
-    },
-    {
-      name: 'Chat',
-      href: '/chat',
-      icon: MessageSquare
-    },
-    {
-      name: 'Insights',
-      href: '/insights',
-      icon: TrendingUp
-    },
-    {
-      name: 'Reports',
-      href: '/reports',
-      icon: FileText
-    },
-    {
-      name: 'Settings',
-      href: '/settings',
-      icon: Settings
-    },
-    {
-      name: 'Notifications',
-      href: '/notifications',
-      icon: Bell
-    }
+    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { name: 'Inventory', href: '/inventory', icon: Package },
+    { name: 'Upload', href: '/upload', icon: Upload },
+    { name: 'Chat', href: '/chat', icon: MessageSquare },
+    { name: 'Insights', href: '/insights', icon: TrendingUp },
+    { name: 'Reports', href: '/reports', icon: FileText },
+    { name: 'Diamond Swipe', href: '/swipe', icon: Gem },
+    { name: 'Settings', href: '/settings', icon: Settings },
+    { name: 'Notifications', href: '/notifications', icon: Bell },
   ];
 
   const adminNavigation = [
-    {
-      name: 'Admin Analytics',
-      href: '/admin',
-      icon: BarChart3
-    }
+    { name: 'Admin Analytics', href: '/admin', icon: BarChart3 },
   ];
 
   const handleNavClick = () => {
@@ -78,10 +56,21 @@ const Sidebar = ({ onClose }: SidebarProps) => {
       {/* Header with close button for mobile */}
       <div className="p-4 border-b border-gray-200 flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-gray-900">mazal-bot</h1>
+          <h1 className="text-lg font-bold text-gray-900">Diamond Muzzle</h1>
+          {isAdmin && (
+            <div className="mt-1 px-2 py-1 bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 text-white text-xs font-semibold rounded-full inline-flex items-center gap-1">
+              <Star className="h-3 w-3" />
+              COSMIC ADMIN
+            </div>
+          )}
         </div>
         {onClose && (
-          <Button variant="ghost" size="sm" onClick={onClose} className="lg:hidden p-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="lg:hidden p-1"
+          >
             <X className="h-4 w-4" />
           </Button>
         )}
