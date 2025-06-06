@@ -70,7 +70,6 @@ export type Database = {
           id: string
           role: string
           session_id: string | null
-          telegram_id: number | null
           user_id: string | null
         }
         Insert: {
@@ -79,7 +78,6 @@ export type Database = {
           id?: string
           role: string
           session_id?: string | null
-          telegram_id?: number | null
           user_id?: string | null
         }
         Update: {
@@ -88,7 +86,6 @@ export type Database = {
           id?: string
           role?: string
           session_id?: string | null
-          telegram_id?: number | null
           user_id?: string | null
         }
         Relationships: [
@@ -674,10 +671,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      delete_diamond: {
-        Args: { p_stock_number: string; p_user_id: number }
-        Returns: boolean
-      }
       get_user_statistics: {
         Args: Record<PropertyKey, never>
         Returns: {

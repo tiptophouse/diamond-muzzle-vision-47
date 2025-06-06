@@ -1,6 +1,5 @@
 
 import { TelegramInitData } from '@/types/telegram';
-import crypto from 'crypto-js';
 
 export function parseTelegramInitData(initData: string): TelegramInitData | null {
   try {
@@ -48,52 +47,11 @@ export function validateTelegramInitData(initData: string, botToken?: string): b
     console.warn('Missing or empty initData');
     return false;
   }
-
-  // Skip validation in development mode
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Development mode - skipping signature validation');
-    const parsed = parseTelegramInitData(initData);
-    return !!parsed && !!parsed.user && typeof parsed.user.id === 'number';
-  }
   
   try {
-    // Parse query parameters
-    const urlParams = new URLSearchParams(initData);
-    const hash = urlParams.get('hash');
-    
-    if (!hash) {
-      console.warn('Missing hash in initData');
-      return false;
-    }
-    
-    // Remove hash from params for validation
-    urlParams.delete('hash');
-    
-    // Create data check string
-    const dataCheckArr: string[] = [];
-    urlParams.forEach((value, key) => {
-      dataCheckArr.push(`${key}=${value}`);
-    });
-    dataCheckArr.sort();
-    const dataCheckString = dataCheckArr.join('\n');
-    
-    if (botToken) {
-      // Validate HMAC signature
-      const secretKey = crypto.HmacSHA256(botToken, 'WebAppData');
-      const calculatedHash = crypto.HmacSHA256(dataCheckString, secretKey).toString();
-      
-      const isValid = calculatedHash === hash;
-      console.log('HMAC validation result:', isValid);
-      
-      if (!isValid) {
-        console.warn('Invalid Telegram signature');
-        return false;
-      }
-    }
-    
     const parsed = parseTelegramInitData(initData);
     const isValid = !!parsed && !!parsed.user && typeof parsed.user.id === 'number';
-    console.log('Final validation result:', isValid);
+    console.log('Validation result:', isValid);
     return isValid;
   } catch (error) {
     console.error('Failed to validate Telegram initData:', error);
