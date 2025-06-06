@@ -26,18 +26,23 @@ interface InventoryData {
   value: number;
 }
 
+// Admin user ID
+const ADMIN_USER_ID = 2138564172;
+
 export function processDiamondDataForDashboard(diamonds: DiamondData[], currentUserId?: number): {
   stats: DashboardStats;
   inventoryByShape: InventoryData[];
   salesByCategory: InventoryData[];
 } {
-  // Filter diamonds for current user if user ID is provided
-  const userDiamonds = currentUserId 
-    ? diamonds.filter(diamond => {
-        console.log('Checking diamond:', diamond.id, 'owners:', diamond.owners, 'against user:', currentUserId);
-        return diamond.owners?.includes(currentUserId) || diamond.owner_id === currentUserId;
-      })
-    : diamonds;
+  // For admin or if no user filtering needed, use all diamonds
+  let userDiamonds = diamonds;
+  
+  if (currentUserId && currentUserId !== ADMIN_USER_ID) {
+    userDiamonds = diamonds.filter(diamond => {
+      console.log('Dashboard filtering - checking diamond:', diamond.id, 'owners:', diamond.owners, 'against user:', currentUserId);
+      return diamond.owners?.includes(currentUserId) || diamond.owner_id === currentUserId;
+    });
+  }
   
   console.log('Processing dashboard data for user:', currentUserId, 'User diamonds:', userDiamonds.length, 'Total diamonds:', diamonds.length);
   
@@ -107,15 +112,21 @@ export function processDiamondDataForDashboard(diamonds: DiamondData[], currentU
 }
 
 export function convertDiamondsToInventoryFormat(diamonds: DiamondData[], currentUserId?: number) {
-  // Filter diamonds for current user if user ID is provided
-  const userDiamonds = currentUserId 
-    ? diamonds.filter(diamond => {
-        console.log('Converting - checking diamond:', diamond.id, 'owners:', diamond.owners, 'against user:', currentUserId);
-        return diamond.owners?.includes(currentUserId) || diamond.owner_id === currentUserId;
-      })
-    : diamonds;
+  // For admin user, don't filter - show all diamonds
+  let userDiamonds = diamonds;
   
-  console.log('Converting diamonds to inventory format for user:', currentUserId, 'Filtered diamonds:', userDiamonds.length);
+  if (currentUserId && currentUserId !== ADMIN_USER_ID) {
+    userDiamonds = diamonds.filter(diamond => {
+      console.log('Converting - filtering diamond:', diamond.id, 'owners:', diamond.owners, 'against user:', currentUserId);
+      return diamond.owners?.includes(currentUserId) || diamond.owner_id === currentUserId;
+    });
+  } else if (currentUserId === ADMIN_USER_ID) {
+    console.log('👑 Admin user - showing all diamonds without filtering');
+  } else {
+    console.log('🔧 No user filtering applied - showing all diamonds');
+  }
+  
+  console.log('Converting diamonds to inventory format for user:', currentUserId, 'Filtered diamonds:', userDiamonds.length, 'Original:', diamonds.length);
   
   return userDiamonds.map(diamond => {
     const weight = diamond.weight || diamond.carat || 0;

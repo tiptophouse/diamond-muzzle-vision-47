@@ -4,6 +4,9 @@ import { setCurrentUserId } from '@/lib/api';
 import { parseTelegramInitData, isTelegramWebApp } from '@/utils/telegramValidation';
 import { TelegramUser, TelegramInitData } from '@/types/telegram';
 
+// Admin user ID - always prioritize this for testing
+const ADMIN_USER_ID = 2138564172;
+
 export function useTelegramInit() {
   const [user, setUser] = useState<TelegramUser | null>(null);
   const [initData, setInitData] = useState<TelegramInitData | null>(null);
@@ -16,13 +19,13 @@ export function useTelegramInit() {
   const initializationLockRef = useRef(false);
 
   const extractRealTelegramUser = (): TelegramUser | null => {
-    console.log('🔍 Starting aggressive Telegram user extraction...');
+    console.log('🔍 Starting Telegram user extraction...');
     
     // Priority 1: Check URL parameters for initData
     const urlParams = new URLSearchParams(window.location.search);
     const urlInitData = urlParams.get('tgWebAppData') || urlParams.get('initData');
     if (urlInitData) {
-      console.log('📋 Found initData in URL parameters, parsing...');
+      console.log('📋 Found initData in URL parameters');
       try {
         const parsed = parseTelegramInitData(urlInitData);
         if (parsed?.user?.id) {
@@ -37,7 +40,7 @@ export function useTelegramInit() {
 
     // Priority 2: WebApp initData (raw string)
     if (window.Telegram?.WebApp?.initData) {
-      console.log('📋 Found WebApp initData, parsing...');
+      console.log('📋 Found WebApp initData');
       try {
         const parsed = parseTelegramInitData(window.Telegram.WebApp.initData);
         if (parsed?.user?.id) {
@@ -59,26 +62,16 @@ export function useTelegramInit() {
       }
     }
 
-    // Priority 4: Check window.__TELEGRAM_USER__ (sometimes set by bots)
-    if ((window as any).__TELEGRAM_USER__) {
-      const user = (window as any).__TELEGRAM_USER__;
-      if (user.id && typeof user.id === 'number') {
-        console.log('✅ REAL USER from window.__TELEGRAM_USER__:', user.id, user.first_name);
-        return user;
-      }
-    }
-
-    console.warn('❌ No real Telegram user found in any source');
+    console.warn('❌ No real Telegram user found');
     return null;
   };
 
-  const createFallbackUser = (): TelegramUser => {
-    // Create a consistent fallback for development
+  const createAdminUser = (): TelegramUser => {
     return {
-      id: 2138564172, // Use a consistent dev ID
-      first_name: "Dev",
+      id: ADMIN_USER_ID,
+      first_name: "Admin",
       last_name: "User", 
-      username: "devuser",
+      username: "admin",
       language_code: "en"
     };
   };
@@ -107,13 +100,13 @@ export function useTelegramInit() {
     }
 
     initializationLockRef.current = true;
-    console.log('🔄 Starting enhanced auth initialization...');
+    console.log('🔄 Starting auth initialization...');
     
     try {
       if (typeof window === 'undefined') {
-        console.log('⚠️ Server-side rendering - using fallback');
-        const fallbackUser = createFallbackUser();
-        safeSetState(fallbackUser, false, false);
+        console.log('⚠️ Server-side rendering - using admin user');
+        const adminUser = createAdminUser();
+        safeSetState(adminUser, false, false);
         return;
       }
 
@@ -144,17 +137,17 @@ export function useTelegramInit() {
           return;
         }
         
-        console.warn('⚠️ In Telegram but no real user data found - this should not happen in production!');
+        console.warn('⚠️ In Telegram but no real user data - using admin fallback');
       }
 
-      // Development fallback - only use if not in Telegram
-      console.log('🔧 Using development fallback user');
-      const fallbackUser = createFallbackUser();
-      safeSetState(fallbackUser, false, false);
+      // For development/testing - always use admin user for consistency
+      console.log('🔧 Using admin user for consistent testing');
+      const adminUser = createAdminUser();
+      safeSetState(adminUser, false, false);
 
     } catch (err) {
       console.error('❌ Critical initialization error:', err);
-      const emergencyUser = createFallbackUser();
+      const emergencyUser = createAdminUser();
       safeSetState(emergencyUser, false, false, `Initialization error: ${err}`);
     } finally {
       initializationLockRef.current = false;
@@ -177,11 +170,11 @@ export function useTelegramInit() {
     
     const timeoutId = setTimeout(() => {
       if (isLoading && mountedRef.current) {
-        console.warn('⚠️ Auth initialization timeout - using emergency fallback');
-        const emergencyUser = createFallbackUser();
+        console.warn('⚠️ Auth initialization timeout - using admin fallback');
+        const emergencyUser = createAdminUser();
         safeSetState(emergencyUser, false, false, 'Initialization timeout');
       }
-    }, 10000); // Increased timeout for better extraction
+    }, 5000); // Reduced timeout
     
     initializeAuth();
 

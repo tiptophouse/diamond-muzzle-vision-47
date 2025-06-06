@@ -14,11 +14,16 @@ import { PremiumCollection } from "@/components/dashboard/PremiumCollection";
 import { MarketInsights } from "@/components/dashboard/MarketInsights";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { RefreshCw, Bug } from "lucide-react";
+
+const ADMIN_USER_ID = 2138564172;
 
 export default function Dashboard() {
   const { user, isAuthenticated, isTelegramEnvironment } = useTelegramAuth();
   const [enableDataFetching, setEnableDataFetching] = useState(true);
   const [emergencyMode, setEmergencyMode] = useState(false);
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
   
   // Only use hooks if data fetching is enabled
   const inventoryHook = useInventoryData();
@@ -39,7 +44,8 @@ export default function Dashboard() {
   // Use actual data or fallback based on mode
   const {
     allDiamonds = [],
-    loading: inventoryLoading = false
+    loading: inventoryLoading = false,
+    handleRefresh
   } = emergencyMode ? fallbackData : inventoryHook;
   
   const {
@@ -100,26 +106,82 @@ export default function Dashboard() {
     return <DashboardLoading onEmergencyMode={() => setEmergencyMode(true)} />;
   }
 
+  const isAdminUser = user?.id === ADMIN_USER_ID;
+
   return (
     <Layout>
       <div className="space-y-4 p-2 sm:p-4">
         <DashboardHeader emergencyMode={emergencyMode} />
         
-        {/* User Debug Info */}
+        {/* Enhanced User Debug Info */}
         {user && (
-          <div className="flex flex-wrap gap-2 items-center justify-center mb-4">
-            <Badge variant="outline" className="bg-blue-50">
-              👤 User ID: {user.id}
-            </Badge>
-            <Badge variant="outline" className="bg-green-50">
-              📱 {user.first_name} {user.last_name}
-            </Badge>
-            <Badge variant="outline" className={isTelegramEnvironment ? "bg-purple-50" : "bg-yellow-50"}>
-              🌐 {isTelegramEnvironment ? "Telegram" : "Dev Mode"}
-            </Badge>
-            <Badge variant="outline" className="bg-orange-50">
-              💎 {totalInventory} diamonds
-            </Badge>
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-2 items-center justify-center">
+              <Badge variant="outline" className={isAdminUser ? "bg-red-50 border-red-200" : "bg-blue-50"}>
+                👤 User ID: {user.id} {isAdminUser && "👑 ADMIN"}
+              </Badge>
+              <Badge variant="outline" className="bg-green-50">
+                📱 {user.first_name} {user.last_name}
+              </Badge>
+              <Badge variant="outline" className={isTelegramEnvironment ? "bg-purple-50" : "bg-yellow-50"}>
+                🌐 {isTelegramEnvironment ? "Telegram" : "Dev Mode"}
+              </Badge>
+              <Badge variant="outline" className={totalInventory > 0 ? "bg-green-50" : "bg-red-50"}>
+                💎 {totalInventory} diamonds
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={inventoryLoading}
+                className="h-6 px-2 text-xs"
+              >
+                <RefreshCw className={`h-3 w-3 mr-1 ${inventoryLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDebugInfo(!showDebugInfo)}
+                className="h-6 px-2 text-xs"
+              >
+                <Bug className="h-3 w-3 mr-1" />
+                {showDebugInfo ? 'Hide' : 'Show'} Debug
+              </Button>
+            </div>
+            
+            {/* Debug Information Panel */}
+            {showDebugInfo && (
+              <Card className="bg-gray-50 border-gray-200">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Debug Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-xs">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <strong>Auth Status:</strong> {isAuthenticated ? '✅ Authenticated' : '❌ Not Authenticated'}
+                    </div>
+                    <div>
+                      <strong>Loading:</strong> {inventoryLoading ? '⏳ Loading...' : '✅ Complete'}
+                    </div>
+                    <div>
+                      <strong>Emergency Mode:</strong> {emergencyMode ? '🚨 Active' : '✅ Normal'}
+                    </div>
+                    <div>
+                      <strong>Environment:</strong> {isTelegramEnvironment ? '📱 Telegram' : '💻 Development'}
+                    </div>
+                  </div>
+                  <div className="mt-2 pt-2 border-t">
+                    <strong>API Endpoint:</strong> https://api.mazalbot.com/api/v1/get_all_stones?user_id={user.id}
+                  </div>
+                  {isAdminUser && (
+                    <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
+                      <strong>👑 Admin User Detected:</strong> You should see ALL diamonds in the system without filtering.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
 
