@@ -21,6 +21,20 @@ export function useNotifications() {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
 
+  const setUserContext = async () => {
+    if (user?.id && user.id !== getCurrentUserId()) {
+      setCurrentUserId(user.id);
+      
+      // Set database context via edge function
+      await supabase.functions.invoke('set-session-context', {
+        body: {
+          setting_name: 'app.current_user_id',
+          setting_value: user.id.toString()
+        }
+      });
+    }
+  };
+
   const fetchNotifications = async () => {
     if (!user?.id) {
       setIsLoading(false);
@@ -30,10 +44,7 @@ export function useNotifications() {
     setIsLoading(true);
     
     try {
-      // Set current user context for RLS
-      if (user.id !== getCurrentUserId()) {
-        setCurrentUserId(user.id);
-      }
+      await setUserContext();
 
       // Try to fetch from Supabase, but with timeout and error handling
       const { data, error } = await Promise.race([
@@ -82,10 +93,7 @@ export function useNotifications() {
 
   const markAsRead = async (notificationId: string) => {
     try {
-      // Set current user context for RLS
-      if (user?.id) {
-        setCurrentUserId(user.id);
-      }
+      await setUserContext();
 
       const { error } = await supabase
         .from('notifications')
