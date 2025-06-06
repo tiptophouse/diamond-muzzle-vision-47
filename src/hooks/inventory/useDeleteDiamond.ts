@@ -44,12 +44,8 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
     try {
       console.log('Deleting diamond ID:', diamondId, 'for user:', user.id);
       
-      // Call the backend /sold endpoint to delete the diamond
-      const response = await api.post('/sold', {
-        diamond_id: diamondId,
-        user_id: user.id,
-        action: 'delete'
-      });
+      // Use the new secure DELETE endpoint with query parameters
+      const response = await api.delete(`/delete_diamond?diamond_id=${diamondId}&user_id=${user.id}`);
       
       if (response.error) {
         throw new Error(response.error);
