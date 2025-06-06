@@ -65,10 +65,10 @@ async function setDatabaseContext(userId: number) {
   try {
     const { supabase } = await import('@/integrations/supabase/client');
     
-    // Set the current user context for RLS policies
-    await supabase.rpc('set_session_config', {
-      setting_name: 'app.current_user_id',
-      setting_value: userId.toString()
+    // Set the current user context for RLS policies - using raw SQL
+    await supabase.rpc('sql', {
+      query: `SELECT set_config('app.current_user_id', $1, false)`,
+      params: [userId.toString()]
     });
   } catch (error) {
     console.warn('Failed to set database context:', error);
