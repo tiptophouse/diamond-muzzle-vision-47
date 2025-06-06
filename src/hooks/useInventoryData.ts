@@ -26,25 +26,31 @@ export function useInventoryData() {
       
       const response = await api.get<any[]>(apiEndpoints.getAllStones(user.id));
       
-      if (response.data) {
+      if (response.data && Array.isArray(response.data)) {
         console.log('Received diamonds from FastAPI:', response.data.length, 'total diamonds');
         
-        // Convert backend data to frontend format with authenticated user filtering
-        const convertedDiamonds = convertDiamondsToInventoryFormat(response.data, user.id);
-        console.log('Converted diamonds for display:', convertedDiamonds.length, 'diamonds for user', user.id);
+        // Convert all diamonds to inventory format (don't filter by user here)
+        const convertedDiamonds = convertDiamondsToInventoryFormat(response.data);
+        console.log('Converted diamonds for display:', convertedDiamonds.length, 'diamonds');
         
         setAllDiamonds(convertedDiamonds);
         
-        // Show smaller, auto-dismissing toast
+        // Show success toast
         if (convertedDiamonds.length > 0) {
           const toastInstance = toast({
-            title: `${convertedDiamonds.length} diamonds`,
+            title: `${convertedDiamonds.length} diamonds loaded`,
             description: "Inventory loaded successfully",
           });
           
           setTimeout(() => {
             toastInstance.dismiss();
           }, 3000);
+        } else {
+          toast({
+            title: "No diamonds found",
+            description: "Your inventory appears to be empty",
+            variant: "destructive",
+          });
         }
       } else if (response.error) {
         console.error('API Error:', response.error);
@@ -57,6 +63,11 @@ export function useInventoryData() {
         setDiamonds([]);
       } else {
         console.warn('No inventory data received from FastAPI');
+        toast({
+          title: "No data",
+          description: "No inventory data received from server",
+          variant: "destructive",
+        });
         setDiamonds([]);
         setAllDiamonds([]);
       }
