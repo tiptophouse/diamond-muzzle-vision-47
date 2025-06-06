@@ -9,12 +9,23 @@ import { InventoryChart } from "./InventoryChart";
 import { useMemo } from "react";
 
 export default function DataDrivenDashboard() {
-  const { user, isTelegramEnvironment } = useTelegramAuth();
+  const { user, isTelegramEnvironment, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
   const { loading, allDiamonds } = useInventoryData();
+
+  // Debug logging
+  console.log('🔍 Dashboard Debug Info:');
+  console.log('- User:', user);
+  console.log('- Is Authenticated:', isAuthenticated);
+  console.log('- Auth Loading:', authLoading);
+  console.log('- Data Loading:', loading);
+  console.log('- All Diamonds:', allDiamonds);
+  console.log('- Diamonds Count:', allDiamonds?.length || 0);
+  console.log('- Is Telegram Environment:', isTelegramEnvironment);
 
   // Calculate dashboard metrics from real data
   const dashboardMetrics = useMemo(() => {
     if (!allDiamonds || allDiamonds.length === 0) {
+      console.log('⚠️ No diamonds available for metrics calculation');
       return {
         totalInventory: 0,
         portfolioValue: 0,
@@ -26,6 +37,8 @@ export default function DataDrivenDashboard() {
         recentTrends: []
       };
     }
+
+    console.log('📊 Calculating metrics from', allDiamonds.length, 'diamonds');
 
     const totalInventory = allDiamonds.length;
     const portfolioValue = allDiamonds.reduce((sum, diamond) => sum + (diamond.price || 0), 0);
@@ -69,7 +82,7 @@ export default function DataDrivenDashboard() {
       .sort((a, b) => b.value - a.value)
       .slice(0, 6);
 
-    return {
+    const metrics = {
       totalInventory,
       portfolioValue,
       activeLeads: uniqueShapes,
@@ -79,6 +92,9 @@ export default function DataDrivenDashboard() {
       inventoryByShape,
       recentTrends
     };
+
+    console.log('✅ Calculated metrics:', metrics);
+    return metrics;
   }, [allDiamonds]);
 
   return (
@@ -99,90 +115,149 @@ export default function DataDrivenDashboard() {
               </p>
             </div>
           )}
-        </div>
-
-        {/* Main Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            title="Total Inventory"
-            value={dashboardMetrics.totalInventory}
-            icon={Diamond}
-            description="Total diamonds"
-            loading={loading}
-          />
           
-          <StatCard
-            title="Portfolio Value"
-            value={dashboardMetrics.portfolioValue}
-            prefix="$"
-            icon={DollarSign}
-            description="Total value"
-            loading={loading}
-          />
-
-          <StatCard
-            title="Active Leads"
-            value={dashboardMetrics.activeLeads}
-            icon={Users}
-            description="Unique shapes"
-            loading={loading}
-          />
-
-          <StatCard
-            title="Growth"
-            value={12}
-            suffix="%"
-            icon={TrendingUp}
-            description="This month"
-            trend={12}
-            trendLabel="this month"
-            className="text-green-600"
-          />
+          {/* Debug Info Card */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+            <p className="text-blue-800 text-sm font-semibold mb-2">Debug Information:</p>
+            <div className="text-xs text-blue-700 space-y-1">
+              <div>Auth Status: {isAuthenticated ? '✅ Authenticated' : '❌ Not Authenticated'}</div>
+              <div>User ID: {user?.id || 'None'}</div>
+              <div>Loading State: {loading ? '⏳ Loading' : '✅ Complete'}</div>
+              <div>Diamonds Found: {allDiamonds?.length || 0}</div>
+              <div>Environment: {isTelegramEnvironment ? 'Telegram' : 'Development'}</div>
+            </div>
+          </div>
         </div>
 
-        {/* Secondary Stats */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <StatCard
-            title="Avg Price/Ct"
-            value={dashboardMetrics.avgPricePerCarat}
-            prefix="$"
-            icon={BarChart3}
-            description="Per carat average"
-            loading={loading}
-          />
-          
-          <StatCard
-            title="Avg Carat"
-            value={dashboardMetrics.avgCarat}
-            suffix=" ct"
-            icon={Gem}
-            description="Average weight"
-            loading={loading}
-          />
+        {/* Loading State */}
+        {(authLoading || loading) && (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">
+              {authLoading ? 'Authenticating...' : 'Loading diamond data...'}
+            </p>
+          </div>
+        )}
 
-          <StatCard
-            title="Premium Stones"
-            value={dashboardMetrics.premiumStones}
-            icon={Diamond}
-            description=">$10k or >2ct"
-            loading={loading}
-          />
-        </div>
+        {/* Not Authenticated State */}
+        {!authLoading && !isAuthenticated && (
+          <div className="text-center py-8">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-red-800 mb-2">Authentication Required</h3>
+              <p className="text-red-600">Please make sure you're accessing this app through Telegram.</p>
+            </div>
+          </div>
+        )}
 
-        {/* Charts */}
-        <div className="grid gap-6 md:grid-cols-2">
-          <InventoryChart
-            data={dashboardMetrics.inventoryByShape}
-            title="Inventory by Shape"
-            loading={loading}
-          />
-          
-          <InventoryChart
-            data={dashboardMetrics.recentTrends}
-            title="Distribution by Color"
-            loading={loading}
-          />
-        </div>
+        {/* No Data State */}
+        {!authLoading && !loading && isAuthenticated && (!allDiamonds || allDiamonds.length === 0) && (
+          <div className="text-center py-8">
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-orange-800 mb-2">No Diamond Data Found</h3>
+              <p className="text-orange-600 mb-4">
+                No diamonds were found for user {user?.id}. This could mean:
+              </p>
+              <ul className="text-sm text-orange-600 text-left max-w-md mx-auto space-y-1">
+                <li>• No diamonds have been uploaded to your account</li>
+                <li>• Your user ID doesn't match any diamond records</li>
+                <li>• There's an issue with the API connection</li>
+              </ul>
+              <div className="mt-4">
+                <a href="#/upload" className="inline-block bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                  Upload Diamond Data
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Data Available - Show Dashboard */}
+        {!authLoading && !loading && isAuthenticated && allDiamonds && allDiamonds.length > 0 && (
+          <>
+            {/* Main Stats Grid */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <StatCard
+                title="Total Inventory"
+                value={dashboardMetrics.totalInventory}
+                icon={Diamond}
+                description="Total diamonds"
+                loading={loading}
+              />
+              
+              <StatCard
+                title="Portfolio Value"
+                value={dashboardMetrics.portfolioValue}
+                prefix="$"
+                icon={DollarSign}
+                description="Total value"
+                loading={loading}
+              />
+
+              <StatCard
+                title="Active Leads"
+                value={dashboardMetrics.activeLeads}
+                icon={Users}
+                description="Unique shapes"
+                loading={loading}
+              />
+
+              <StatCard
+                title="Growth"
+                value={12}
+                suffix="%"
+                icon={TrendingUp}
+                description="This month"
+                trend={12}
+                trendLabel="this month"
+                className="text-green-600"
+              />
+            </div>
+
+            {/* Secondary Stats */}
+            <div className="grid gap-4 md:grid-cols-3">
+              <StatCard
+                title="Avg Price/Ct"
+                value={dashboardMetrics.avgPricePerCarat}
+                prefix="$"
+                icon={BarChart3}
+                description="Per carat average"
+                loading={loading}
+              />
+              
+              <StatCard
+                title="Avg Carat"
+                value={dashboardMetrics.avgCarat}
+                suffix=" ct"
+                icon={Gem}
+                description="Average weight"
+                loading={loading}
+              />
+
+              <StatCard
+                title="Premium Stones"
+                value={dashboardMetrics.premiumStones}
+                icon={Diamond}
+                description=">$10k or >2ct"
+                loading={loading}
+              />
+            </div>
+
+            {/* Charts */}
+            <div className="grid gap-6 md:grid-cols-2">
+              <InventoryChart
+                data={dashboardMetrics.inventoryByShape}
+                title="Inventory by Shape"
+                loading={loading}
+              />
+              
+              <InventoryChart
+                data={dashboardMetrics.recentTrends}
+                title="Distribution by Color"
+                loading={loading}
+              />
+            </div>
+          </>
+        )}
 
         {/* Quick Actions */}
         <div className="grid gap-4 md:grid-cols-2">
@@ -217,7 +292,9 @@ export default function DataDrivenDashboard() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Authentication</span>
-                  <span className="text-sm font-medium text-green-600">✓ Authenticated</span>
+                  <span className={`text-sm font-medium ${isAuthenticated ? 'text-green-600' : 'text-red-600'}`}>
+                    {isAuthenticated ? '✓ Authenticated' : '❌ Not Auth'}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Last Updated</span>
