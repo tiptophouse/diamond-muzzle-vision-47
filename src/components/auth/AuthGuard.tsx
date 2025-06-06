@@ -1,7 +1,7 @@
 
 import { ReactNode } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { AlertTriangle, RefreshCw, Bug } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Bug, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -29,8 +29,8 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
     );
   }
 
-  // Enhanced error state for Telegram environment
-  if (isTelegramEnvironment && (!isAuthenticated || error)) {
+  // Show error if in Telegram but authentication failed
+  if (isTelegramEnvironment && error && !user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-red-50 to-orange-50 p-4">
         <Card className="w-full max-w-md">
@@ -40,7 +40,7 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
             </div>
             <CardTitle className="text-red-600">Telegram Data Error</CardTitle>
             <CardDescription>
-              {error || "Unable to extract real user data from Telegram"}
+              {error || "Unable to extract user data from Telegram"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -52,13 +52,12 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
               <ul className="text-xs text-yellow-700 space-y-1">
                 <li>• In Telegram: {isTelegramEnvironment ? 'Yes' : 'No'}</li>
                 <li>• User ID: {user?.id || 'None'}</li>
-                <li>• Is Mock User: {user?.id === 2138564172 ? 'Yes' : 'No'}</li>
                 <li>• User Name: {user?.first_name} {user?.last_name}</li>
+                <li>• Error: {error}</li>
               </ul>
             </div>
             <p className="text-sm text-gray-600 text-center">
-              The app needs your real Telegram user data to show your diamonds. 
-              Please try refreshing or restarting the app from Telegram.
+              The app needs your real Telegram user data. Please try refreshing.
             </p>
             <Button onClick={refreshAuth} className="w-full">
               <RefreshCw className="mr-2 h-4 w-4" />
@@ -70,15 +69,15 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
     );
   }
 
-  // Development mode indicator for non-Telegram environment
-  if (!isTelegramEnvironment && user) {
+  // Show success indicator for real users in Telegram
+  if (isTelegramEnvironment && user && user.id !== 2138564172) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="bg-gradient-to-r from-yellow-100 to-amber-100 border-b border-yellow-200 p-3">
-          <div className="flex items-center justify-center gap-2 text-yellow-800">
-            <AlertTriangle size={16} />
+        <div className="bg-gradient-to-r from-green-100 to-emerald-100 border-b border-green-200 p-3">
+          <div className="flex items-center justify-center gap-2 text-green-800">
+            <CheckCircle size={16} />
             <span className="text-sm font-medium">
-              Development Mode - User: {user.first_name} {user.last_name} (ID: {user.id})
+              Real User: {user.first_name} {user.last_name} (ID: {user.id})
             </span>
             <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse ml-2"></div>
           </div>
@@ -88,7 +87,25 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
     );
   }
 
-  // Always render the app if we have a real authenticated user
+  // Development mode indicator for non-Telegram environment or mock users
+  if ((!isTelegramEnvironment || user?.id === 2138564172) && user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="bg-gradient-to-r from-yellow-100 to-amber-100 border-b border-yellow-200 p-3">
+          <div className="flex items-center justify-center gap-2 text-yellow-800">
+            <AlertTriangle size={16} />
+            <span className="text-sm font-medium">
+              {isTelegramEnvironment ? 'Test Mode' : 'Development Mode'} - User: {user.first_name} {user.last_name} (ID: {user.id})
+            </span>
+            <div className="h-2 w-2 bg-yellow-500 rounded-full animate-pulse ml-2"></div>
+          </div>
+        </div>
+        {children}
+      </div>
+    );
+  }
+
+  // Always render the app if we have any authenticated user
   if (isAuthenticated) {
     return <>{children}</>;
   }

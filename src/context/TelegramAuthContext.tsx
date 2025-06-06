@@ -27,18 +27,20 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
     retryAuth,
   } = useTelegramInit();
 
-  // Enhanced authentication check - require real user in Telegram environment
-  const isAuthenticated = !!user && !error && (!isTelegramEnvironment || user.id !== 2138564172);
+  // Enhanced authentication check - prioritize real users
+  const isAuthenticated = !!user && !error;
 
-  // Log authentication status for debugging
+  // Enhanced logging for debugging
   console.log('🔍 TelegramAuthContext status:', {
     hasUser: !!user,
     userId: user?.id,
+    userName: user ? `${user.first_name} ${user.last_name || ''}`.trim() : 'None',
     isAuthenticated,
     isLoading,
     error,
     isTelegramEnvironment,
-    isUsingMockUser: user?.id === 2138564172
+    isRealUser: user && user.id !== 2138564172,
+    isMockUser: user?.id === 2138564172
   });
 
   return (

@@ -21,8 +21,90 @@ export function useTelegramInit() {
     };
   };
 
+  const extractUserFromAllSources = (tg: any): TelegramUser | null => {
+    console.log('🔍 COMPREHENSIVE Telegram data extraction starting...');
+    
+    // Log all available data sources
+    console.log('📊 Available Telegram data sources:');
+    console.log('- initDataUnsafe:', JSON.stringify(tg.initDataUnsafe, null, 2));
+    console.log('- initData (raw):', tg.initData);
+    console.log('- WebApp version:', tg.version);
+    console.log('- Platform:', tg.platform);
+    
+    // Priority 1: initDataUnsafe (most reliable)
+    if (tg.initDataUnsafe?.user) {
+      const user = tg.initDataUnsafe.user;
+      console.log('✅ Found user in initDataUnsafe:', user);
+      if (user.id && typeof user.id === 'number') {
+        console.log('🎯 SUCCESS: Real user ID from initDataUnsafe:', user.id);
+        return user;
+      }
+    }
+
+    // Priority 2: Parse raw initData
+    if (tg.initData && tg.initData.length > 0) {
+      console.log('🔍 Parsing raw initData string...');
+      const parsed = parseTelegramInitData(tg.initData);
+      if (parsed?.user?.id) {
+        console.log('🎯 SUCCESS: Real user ID from parsed initData:', parsed.user.id);
+        setInitData(parsed);
+        return parsed.user;
+      }
+    }
+
+    // Priority 3: Check URL parameters
+    console.log('🔍 Checking URL parameters for user data...');
+    const urlParams = new URLSearchParams(window.location.search);
+    const userParam = urlParams.get('user');
+    if (userParam) {
+      try {
+        const urlUser = JSON.parse(decodeURIComponent(userParam));
+        if (urlUser?.id) {
+          console.log('🎯 SUCCESS: Real user ID from URL params:', urlUser.id);
+          return urlUser;
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to parse URL user param:', e);
+      }
+    }
+
+    // Priority 4: Check hash parameters
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const hashUser = hashParams.get('user');
+    if (hashUser) {
+      try {
+        const user = JSON.parse(decodeURIComponent(hashUser));
+        if (user?.id) {
+          console.log('🎯 SUCCESS: Real user ID from hash params:', user.id);
+          return user;
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to parse hash user param:', e);
+      }
+    }
+
+    // Priority 5: Check for alternative Telegram properties
+    console.log('🔍 Checking alternative Telegram properties...');
+    const altSources = [
+      tg.WebAppUser,
+      tg.WebAppInitData?.user,
+      (window as any).TelegramWebviewProxy?.user,
+      tg.user
+    ];
+
+    for (const source of altSources) {
+      if (source?.id) {
+        console.log('🎯 SUCCESS: Real user ID from alternative source:', source.id);
+        return source;
+      }
+    }
+
+    console.log('❌ No real user data found in any Telegram source');
+    return null;
+  };
+
   const initializeAuth = () => {
-    console.log('🔄 Enhanced Telegram auth initialization with aggressive real data extraction...');
+    console.log('🚀 ENHANCED Telegram auth initialization...');
     
     try {
       // Check if we're in a browser environment
@@ -43,8 +125,6 @@ export function useTelegramInit() {
       console.log('📱 Telegram environment detected:', inTelegram);
 
       if (inTelegram && window.Telegram?.WebApp) {
-        console.log('🔄 AGGRESSIVE Telegram data extraction starting...');
-        
         const tg = window.Telegram.WebApp;
         
         // Enhanced WebApp initialization
@@ -62,117 +142,34 @@ export function useTelegramInit() {
           // Apply theme safely
           if (tg.themeParams?.bg_color) {
             document.body.style.backgroundColor = tg.themeParams.bg_color;
-          } else {
-            document.body.style.backgroundColor = '#1f2937';
-          }
-          
-          if (tg.viewportHeight) {
-            document.documentElement.style.setProperty('--tg-viewport-height', `${tg.viewportHeight}px`);
           }
           
         } catch (themeError) {
-          console.warn('⚠️ Theme setup failed, using defaults...', themeError);
-          document.body.style.backgroundColor = '#1f2937';
+          console.warn('⚠️ Theme setup failed:', themeError);
         }
         
-        // AGGRESSIVE user data extraction with comprehensive logging
-        const unsafeData = tg.initDataUnsafe;
-        const rawInitData = tg.initData;
+        // ENHANCED USER EXTRACTION
+        const realUser = extractUserFromAllSources(tg);
         
-        console.log('🔍 COMPREHENSIVE Telegram data analysis:');
-        console.log('- WebApp version:', tg.version || 'unknown');
-        console.log('- Platform:', tg.platform || 'unknown');
-        console.log('- Full initDataUnsafe object:', JSON.stringify(unsafeData, null, 2));
-        console.log('- Raw initData string:', rawInitData);
-        console.log('- initDataUnsafe.user:', unsafeData?.user);
-        console.log('- User ID from unsafe data:', unsafeData?.user?.id);
-        console.log('- User object keys:', unsafeData?.user ? Object.keys(unsafeData.user) : 'no user');
-        
-        // Check for additional Telegram data sources
-        console.log('🔍 Additional Telegram data sources:');
-        console.log('- tg.WebAppUser:', (tg as any).WebAppUser);
-        console.log('- tg.WebAppInitData:', (tg as any).WebAppInitData);
-        console.log('- window.TelegramWebviewProxy:', (window as any).TelegramWebviewProxy);
-        
-        // Priority 1: Use unsafe data (most reliable)
-        if (unsafeData?.user && unsafeData.user.id) {
-          console.log('✅ SUCCESS: Using Telegram unsafe data with REAL user ID:', unsafeData.user.id);
-          console.log('✅ Real user data:', JSON.stringify(unsafeData.user, null, 2));
-          setUser(unsafeData.user);
-          setCurrentUserId(unsafeData.user.id);
+        if (realUser) {
+          console.log('🎉 REAL USER DATA EXTRACTED SUCCESSFULLY!');
+          console.log('👤 Real user:', JSON.stringify(realUser, null, 2));
+          setUser(realUser);
+          setCurrentUserId(realUser.id);
           setError(null);
           setIsLoading(false);
           return;
         }
 
-        // Priority 2: Parse initData with enhanced validation
-        if (rawInitData && rawInitData.length > 0) {
-          console.log('🔍 Attempting to parse raw initData:', rawInitData.substring(0, 100) + '...');
-          try {
-            const parsedInitData = parseTelegramInitData(rawInitData);
-            console.log('🔍 Parsed initData result:', JSON.stringify(parsedInitData, null, 2));
-            if (parsedInitData?.user && parsedInitData.user.id) {
-              console.log('✅ SUCCESS: Using parsed Telegram initData with REAL user ID:', parsedInitData.user.id);
-              setInitData(parsedInitData);
-              setUser(parsedInitData.user);
-              setCurrentUserId(parsedInitData.user.id);
-              setError(null);
-              setIsLoading(false);
-              return;
-            }
-          } catch (parseError) {
-            console.error('❌ Failed to parse initData:', parseError);
-          }
-        }
-
-        // Priority 3: Check for alternative data sources
-        console.log('🔍 Checking alternative Telegram data sources...');
+        // If we're in Telegram but no user data - this is unusual
+        console.log('⚠️ In Telegram environment but no user data found');
+        console.log('🔧 This might be a development/testing scenario');
         
-        // Check if there's user data in URL parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        const userParam = urlParams.get('user');
-        if (userParam) {
-          try {
-            const urlUser = JSON.parse(decodeURIComponent(userParam));
-            console.log('🔍 Found user data in URL params:', urlUser);
-            if (urlUser && urlUser.id) {
-              console.log('✅ SUCCESS: Using URL param user data with ID:', urlUser.id);
-              setUser(urlUser);
-              setCurrentUserId(urlUser.id);
-              setError(null);
-              setIsLoading(false);
-              return;
-            }
-          } catch (e) {
-            console.warn('⚠️ Failed to parse URL user param:', e);
-          }
-        }
-
-        // Priority 4: Check hash parameters
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const hashUser = hashParams.get('user');
-        if (hashUser) {
-          try {
-            const user = JSON.parse(decodeURIComponent(hashUser));
-            if (user && user.id) {
-              console.log('✅ SUCCESS: Using hash param user data with ID:', user.id);
-              setUser(user);
-              setCurrentUserId(user.id);
-              setError(null);
-              setIsLoading(false);
-              return;
-            }
-          } catch (e) {
-            console.warn('⚠️ Failed to parse hash user param:', e);
-          }
-        }
-
-        // Priority 5: Enhanced fallback - ONLY if we couldn't find real data
-        console.log('❌ FAILED to extract real user data from Telegram!');
-        console.log('⚠️ All Telegram data sources exhausted, this should NOT happen in production');
-        
-        // In Telegram but no user data - show error instead of mock user
-        setError("Could not extract user data from Telegram. Please restart the app or contact support.");
+        // For development, still use mock but flag it clearly
+        const devUser = createMockUser();
+        setUser(devUser);
+        setCurrentUserId(devUser.id);
+        setError("Development mode: Using test user data");
         setIsLoading(false);
         return;
       }
@@ -194,7 +191,7 @@ export function useTelegramInit() {
   };
 
   const refreshAuth = () => {
-    console.log('🔄 Refreshing enhanced authentication...');
+    console.log('🔄 Refreshing authentication...');
     setIsLoading(true);
     setError(null);
     
@@ -210,22 +207,21 @@ export function useTelegramInit() {
     if (mounted) {
       initializeAuth();
       
-      // Fallback timeout - but don't force completion with mock data
+      // Timeout for initialization
       initTimeout = setTimeout(() => {
         if (mounted && isLoading) {
           console.log('⏰ Initialization timeout reached');
-          if (isTelegramEnvironment) {
-            setError("Timeout extracting user data from Telegram. Please refresh or restart the app.");
-          } else {
-            // Only use mock in non-Telegram environment
+          if (!isTelegramEnvironment) {
             const timeoutUser = createMockUser();
             setUser(timeoutUser);
             setCurrentUserId(timeoutUser.id);
             setError(null);
+          } else {
+            setError("Timeout extracting user data from Telegram");
           }
           setIsLoading(false);
         }
-      }, 10000); // 10 second timeout
+      }, 8000);
     }
 
     return () => {
