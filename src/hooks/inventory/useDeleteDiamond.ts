@@ -35,19 +35,25 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
       return false;
     }
 
-    // Optimistic UI update - remove diamond immediately
-    if (removeDiamondFromState) {
-      removeDiamondFromState(diamondId);
-    }
+    // Don't remove from state optimistically - wait for API confirmation
+    console.log('Starting deletion for diamond ID:', diamondId, 'for user:', user.id);
 
     try {
-      console.log('Deleting diamond ID:', diamondId, 'for user:', user.id);
+      console.log('Making DELETE request to:', `/delete_diamond?diamond_id=${diamondId}&user_id=${user.id}`);
       
       // Use the new secure DELETE endpoint with query parameters
       const response = await api.delete(`/delete_diamond?diamond_id=${diamondId}&user_id=${user.id}`);
       
+      console.log('Delete API response:', response);
+      
       if (response.error) {
         throw new Error(response.error);
+      }
+      
+      // Only remove from state after successful API response
+      if (removeDiamondFromState) {
+        console.log('Removing diamond from state after successful deletion');
+        removeDiamondFromState(diamondId);
       }
       
       toast({
@@ -55,20 +61,19 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
         description: "Diamond deleted successfully",
       });
       
-      if (onSuccess) onSuccess();
+      if (onSuccess) {
+        console.log('Calling onSuccess callback');
+        onSuccess();
+      }
+      
       return true;
     } catch (error) {
       console.error('Failed to delete diamond:', error);
       
-      // Restore diamond to state if deletion failed
-      if (restoreDiamondToState && diamondData) {
-        restoreDiamondToState(diamondData);
-      }
-      
       const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond. Please try again.";
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "Error", 
         description: errorMessage,
       });
       return false;
