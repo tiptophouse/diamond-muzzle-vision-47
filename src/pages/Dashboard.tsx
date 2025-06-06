@@ -1,3 +1,3 @@
 
-// Temporarily use simplified dashboard for stability
-export { default } from "./SimpleDashboard";
+// Use the new data-driven dashboard instead of simplified version
+export { default } from "../components/dashboard/DataDrivenDashboard";
