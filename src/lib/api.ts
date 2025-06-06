@@ -1,15 +1,14 @@
 
-
 import { toast } from "@/components/ui/use-toast";
 
-// Update this to point to your FastAPI backend
-const API_BASE_URL = "https://api.mazalbot.com/api/v1"; // Your production FastAPI URL
+// Production FastAPI URL
+const API_BASE_URL = "https://api.mazalbot.com/api/v1";
 
 let currentUserId: number | null = null;
 
 export function setCurrentUserId(userId: number) {
   currentUserId = userId;
-  console.log('Current user ID set to:', userId);
+  console.log('🔧 Current user ID set to:', userId);
 }
 
 export function getCurrentUserId(): number | null {
@@ -18,14 +17,14 @@ export function getCurrentUserId(): number | null {
 
 export const apiEndpoints = {
   getAllStones: (userId: number) => {
-    const userParam = `?user_id=${userId}`;
-    return `/get_all_stones${userParam}`;
+    const endpoint = `/get_all_stones?user_id=${userId}`;
+    console.log('🔗 Building getAllStones endpoint:', { userId, endpoint, fullUrl: `${API_BASE_URL}${endpoint}` });
+    return endpoint;
   },
   uploadInventory: () => `/upload-inventory`,
   deleteDiamond: (diamondId: string, userId: number) => `/delete_diamond?diamond_id=${diamondId}&user_id=${userId}`,
   createReport: () => `/create-report`,
   getReport: (reportId: string) => `/get-report?diamond_id=${reportId}`,
-  // Legacy endpoints for compatibility
   getDashboardStats: (userId: number) => `/users/${userId}/dashboard/stats`,
   getInventoryByShape: (userId: number) => `/users/${userId}/inventory/by-shape`,
   getRecentSales: (userId: number) => `/users/${userId}/sales/recent`,
@@ -43,21 +42,28 @@ export async function fetchApi<T>(
 ): Promise<ApiResponse<T>> {
   const url = `${API_BASE_URL}${endpoint}`;
   
+  console.log('📡 API REQUEST:', {
+    url,
+    method: options.method || 'GET',
+    currentUserId,
+    hasAuth: !!options.headers
+  });
+  
   try {
-    console.log('Making API request to:', url);
-    console.log('Request options:', { ...options, body: options.body ? '[FormData/Body]' : undefined });
-    
     const response = await fetch(url, {
       ...options,
       headers: {
-        "Authorization": `Bearer ifj9ov1rh20fslfp`, // Your backend access token
+        "Authorization": `Bearer ifj9ov1rh20fslfp`,
         ...options.headers,
-        // Don't override Content-Type for FormData uploads
       },
     });
 
-    console.log('API Response status:', response.status);
-    console.log('API Response headers:', Object.fromEntries(response.headers.entries()));
+    console.log('📨 API RESPONSE:', {
+      url,
+      status: response.status,
+      statusText: response.statusText,
+      contentType: response.headers.get('content-type')
+    });
 
     let data;
     const contentType = response.headers.get('content-type');
@@ -66,7 +72,7 @@ export async function fetchApi<T>(
       data = await response.json();
     } else {
       const text = await response.text();
-      console.log('Non-JSON response:', text);
+      console.log('📄 Non-JSON response:', text);
       data = text;
     }
 
@@ -74,19 +80,38 @@ export async function fetchApi<T>(
       const errorMessage = typeof data === 'object' && data 
         ? (data.detail || data.message || `HTTP ${response.status}: ${response.statusText}`)
         : `HTTP ${response.status}: ${response.statusText}`;
+      
+      console.error('❌ API ERROR:', {
+        url,
+        status: response.status,
+        error: errorMessage,
+        data
+      });
+      
       throw new Error(errorMessage);
     }
 
-    console.log('API Response data:', data);
+    console.log('✅ API SUCCESS:', {
+      url,
+      dataType: typeof data,
+      dataLength: Array.isArray(data) ? data.length : 'N/A'
+    });
+
     return { data: data as T };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error('API Error:', errorMessage);
+    console.error('💥 API FETCH ERROR:', {
+      url,
+      error: errorMessage,
+      currentUserId
+    });
+    
     toast({
       title: "API Error",
       description: errorMessage,
       variant: "destructive",
     });
+    
     return { error: errorMessage };
   }
 }
@@ -116,7 +141,7 @@ export const api = {
     fetchApi<T>(endpoint, { method: "DELETE" }),
     
   uploadCsv: async <T>(endpoint: string, csvData: any[], userId: number): Promise<ApiResponse<T>> => {
-    console.log('Uploading CSV data to FastAPI:', { endpoint, dataLength: csvData.length, userId });
+    console.log('📤 Uploading CSV data:', { endpoint, dataLength: csvData.length, userId });
     
     return fetchApi<T>(endpoint, {
       method: "POST",

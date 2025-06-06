@@ -12,8 +12,11 @@ import { DashboardLoading } from "@/components/dashboard/DashboardLoading";
 import { MetricsGrid } from "@/components/dashboard/MetricsGrid";
 import { PremiumCollection } from "@/components/dashboard/PremiumCollection";
 import { MarketInsights } from "@/components/dashboard/MarketInsights";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { Badge } from "@/components/ui/badge";
 
 export default function Dashboard() {
+  const { user, isAuthenticated, isTelegramEnvironment } = useTelegramAuth();
   const [enableDataFetching, setEnableDataFetching] = useState(true);
   const [emergencyMode, setEmergencyMode] = useState(false);
   
@@ -23,7 +26,7 @@ export default function Dashboard() {
   const subscriptionsHook = useSubscriptions();
   const notificationsHook = useNotifications();
 
-  // Fallback data for emergency mode with proper loading states
+  // Fallback data for emergency mode
   const fallbackData = {
     allDiamonds: [],
     leads: [],
@@ -33,7 +36,7 @@ export default function Dashboard() {
     isLoading: false,
   };
 
-  // Use actual data or fallback based on mode with proper destructuring
+  // Use actual data or fallback based on mode
   const {
     allDiamonds = [],
     loading: inventoryLoading = false
@@ -76,7 +79,7 @@ export default function Dashboard() {
   const avgPricePerCarat = allDiamonds?.length > 0 ? 
     allDiamonds.reduce((sum, d) => sum + (d.price || 0) / (d.carat || 1), 0) / allDiamonds.length : 0;
 
-  // Safe shape distribution with proper number typing
+  // Safe shape distribution
   const shapeData = allDiamonds?.reduce((acc, diamond) => {
     const shape = diamond.shape || 'Unknown';
     acc[shape] = (acc[shape] || 0) + 1;
@@ -85,14 +88,14 @@ export default function Dashboard() {
   
   const chartData = Object.entries(shapeData).map(([name, value]) => ({
     name,
-    value: Number(value), // Ensure value is a number
+    value: Number(value),
     color: '#7a63f5'
   }));
 
   // Premium diamonds calculation
   const premiumDiamonds = allDiamonds?.filter(d => (d.carat || 0) > 2 || (d.price || 0) > 10000) || [];
 
-  // Show emergency loading state if needed
+  // Show loading state if needed
   if (!emergencyMode && (inventoryLoading || leadsLoading || subscriptionsLoading)) {
     return <DashboardLoading onEmergencyMode={() => setEmergencyMode(true)} />;
   }
@@ -101,6 +104,24 @@ export default function Dashboard() {
     <Layout>
       <div className="space-y-4 p-2 sm:p-4">
         <DashboardHeader emergencyMode={emergencyMode} />
+        
+        {/* User Debug Info */}
+        {user && (
+          <div className="flex flex-wrap gap-2 items-center justify-center mb-4">
+            <Badge variant="outline" className="bg-blue-50">
+              👤 User ID: {user.id}
+            </Badge>
+            <Badge variant="outline" className="bg-green-50">
+              📱 {user.first_name} {user.last_name}
+            </Badge>
+            <Badge variant="outline" className={isTelegramEnvironment ? "bg-purple-50" : "bg-yellow-50"}>
+              🌐 {isTelegramEnvironment ? "Telegram" : "Dev Mode"}
+            </Badge>
+            <Badge variant="outline" className="bg-orange-50">
+              💎 {totalInventory} diamonds
+            </Badge>
+          </div>
+        )}
 
         <MetricsGrid
           totalInventory={totalInventory}
