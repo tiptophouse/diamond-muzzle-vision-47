@@ -60,28 +60,6 @@ async function getAuthToken(): Promise<string> {
   }
 }
 
-// Helper function to set database context for RLS
-async function setDatabaseContext(userId: number) {
-  try {
-    const { supabase } = await import('@/integrations/supabase/client');
-    
-    // Use the edge function to set session context instead of RPC
-    const { error } = await supabase.functions.invoke('set-session-context', {
-      body: {
-        setting_name: 'app.current_user_id',
-        setting_value: userId.toString()
-      }
-    });
-
-    if (error) {
-      console.warn('Failed to set database context via edge function:', error);
-    }
-  } catch (error) {
-    console.warn('Failed to set database context:', error);
-    // Don't throw - this is not critical for API calls
-  }
-}
-
 export async function fetchApi<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -90,11 +68,6 @@ export async function fetchApi<T>(
   
   try {
     console.log('Making API request to:', url);
-    
-    // Set database context if we have a current user
-    if (currentUserId) {
-      await setDatabaseContext(currentUserId);
-    }
     
     // Get secure auth token
     const authToken = await getAuthToken();
@@ -127,7 +100,7 @@ export async function fetchApi<T>(
       throw new Error(errorMessage);
     }
 
-    console.log('API Response data received');
+    console.log('API Response data received successfully');
     return { data: data as T };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
@@ -167,9 +140,6 @@ export const api = {
     
   uploadCsv: async <T>(endpoint: string, csvData: any[], userId: number): Promise<ApiResponse<T>> => {
     console.log('Uploading CSV data to FastAPI:', { endpoint, dataLength: csvData.length, userId });
-    
-    // Set database context for RLS
-    await setDatabaseContext(userId);
     
     // Get secure auth token
     const authToken = await getAuthToken();
