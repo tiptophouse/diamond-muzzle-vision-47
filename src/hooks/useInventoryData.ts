@@ -9,7 +9,7 @@ import { useTelegramAuth } from "@/context/TelegramAuthContext";
 export function useInventoryData() {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
-  const [loading, setLoading] = useState(false); // Changed to false initially
+  const [loading, setLoading] = useState(false);
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
   const [allDiamonds, setAllDiamonds] = useState<Diamond[]>([]);
   
@@ -24,13 +24,7 @@ export function useInventoryData() {
     try {
       console.log('Fetching inventory data from FastAPI for user:', user.id);
       
-      // Add timeout to prevent hanging
-      const response = await Promise.race([
-        api.get<any[]>(apiEndpoints.getAllStones(user.id)),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('API timeout')), 5000)
-        )
-      ]) as any;
+      const response = await api.get<any[]>(apiEndpoints.getAllStones(user.id));
       
       if (response.data) {
         console.log('Received diamonds from FastAPI:', response.data.length, 'total diamonds');
@@ -45,22 +39,36 @@ export function useInventoryData() {
         if (convertedDiamonds.length > 0) {
           const toastInstance = toast({
             title: `${convertedDiamonds.length} diamonds`,
-            description: "Inventory loaded",
+            description: "Inventory loaded successfully",
           });
           
           setTimeout(() => {
             toastInstance.dismiss();
           }, 3000);
         }
+      } else if (response.error) {
+        console.error('API Error:', response.error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: response.error,
+        });
+        setAllDiamonds([]);
+        setDiamonds([]);
       } else {
         console.warn('No inventory data received from FastAPI');
         setDiamonds([]);
         setAllDiamonds([]);
       }
     } catch (error) {
-      console.warn("Inventory fetch failed, using fallback:", error);
+      console.error("Inventory fetch failed:", error);
       
-      // Use fallback data instead of showing error
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load inventory data",
+      });
+      
       setAllDiamonds([]);
       setDiamonds([]);
     } finally {
@@ -76,15 +84,12 @@ export function useInventoryData() {
   };
 
   // Only fetch data when authentication is complete and user is authenticated
-  // Add delay to prevent simultaneous API calls
   useEffect(() => {
     if (!authLoading && isAuthenticated && user?.id) {
-      const timer = setTimeout(() => {
-        fetchData();
-      }, 2500); // Stagger after other hooks
-      
-      return () => clearTimeout(timer);
+      console.log('Authentication complete, fetching inventory data');
+      fetchData();
     } else if (!authLoading && !isAuthenticated) {
+      console.log('User not authenticated, clearing loading state');
       setLoading(false);
     }
   }, [authLoading, isAuthenticated, user?.id]);

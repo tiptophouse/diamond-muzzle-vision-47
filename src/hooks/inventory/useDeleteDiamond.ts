@@ -33,21 +33,11 @@ export function useDeleteDiamond(onSuccess?: () => void) {
     try {
       console.log('Deleting diamond ID:', diamondId, 'for user:', user.id);
       
-      // First try deleting directly from Supabase for immediate feedback
-      const { error: supabaseError } = await supabase
-        .from('inventory')
-        .delete()
-        .eq('id', diamondId)
-        .eq('user_id', user.id);
-
-      if (supabaseError) {
-        console.error('Supabase delete error:', supabaseError);
-        // Fall back to API deletion
-        const response = await api.delete(apiEndpoints.deleteDiamond(diamondId, user.id));
-        
-        if (response.error) {
-          throw new Error(response.error);
-        }
+      // Use API deletion endpoint
+      const response = await api.delete(apiEndpoints.deleteDiamond(diamondId, user.id));
+      
+      if (response.error) {
+        throw new Error(response.error);
       }
       
       toast({
