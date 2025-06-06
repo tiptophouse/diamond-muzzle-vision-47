@@ -4,6 +4,7 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { ChatHeader } from './ChatHeader';
 import { ChatMessages } from './ChatMessages';
 import { ChatInput } from './ChatInput';
+import { ChatQuickPrompts } from './ChatQuickPrompts';
 import { useOpenAIChat } from '@/hooks/useOpenAIChat';
 
 export const ChatContainer = () => {
@@ -18,6 +19,10 @@ export const ChatContainer = () => {
     clearMessages();
   };
 
+  const handleQuickPrompt = (prompt: string) => {
+    handleSendMessage(prompt);
+  };
+
   return (
     <div className="flex flex-col h-full bg-white">
       <ChatHeader 
@@ -26,7 +31,13 @@ export const ChatContainer = () => {
         onNewChat={handleNewChat}
       />
       
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden flex flex-col">
+        {messages.length === 0 && (
+          <div className="p-4">
+            <ChatQuickPrompts onPromptClick={handleQuickPrompt} />
+          </div>
+        )}
+        
         <ChatMessages 
           messages={messages.map(msg => ({
             id: msg.id,

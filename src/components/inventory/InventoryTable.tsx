@@ -39,7 +39,7 @@ export function InventoryTable({ data, loading = false, onEdit, onDelete }: Inve
 
   if (isMobile) {
     return (
-      <div className="w-full space-y-3 bg-background px-2">
+      <div className="w-full space-y-3 bg-background">
         {data.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             No diamonds found. Upload your inventory to get started.

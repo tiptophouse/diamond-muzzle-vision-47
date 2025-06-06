@@ -2,7 +2,7 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Star, Phone, Shield, DollarSign } from 'lucide-react';
+import { Star, Phone, Shield, AlertCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { AdminUserActions } from './AdminUserActions';
 
@@ -25,105 +25,145 @@ export function AdminUserCard({
   onToggleBlock, 
   onDeleteUser 
 }: AdminUserCardProps) {
-  // Get the display name - prioritize actual names over default
+  // Get the real display name from actual data
   const getDisplayName = () => {
-    if (user.first_name && user.first_name !== 'Telegram' && user.first_name !== 'Test' && user.first_name !== 'Timeout' && user.first_name !== 'Emergency') {
-      return `${user.first_name} ${user.last_name || ''}`.trim();
+    // Check if this is real user data vs mock/placeholder data
+    const isRealData = user.first_name && 
+      user.first_name.trim() && 
+      !['Test', 'Telegram', 'Emergency', 'Unknown'].includes(user.first_name.trim());
+    
+    if (isRealData) {
+      const lastName = user.last_name ? ` ${user.last_name.trim()}` : '';
+      return `${user.first_name.trim()}${lastName}`;
     }
-    if (user.username) {
+    
+    // For mock data, try username first
+    if (user.username && !user.username.includes('testuser') && !user.username.includes('telegram_user')) {
       return `@${user.username}`;
     }
+    
+    // Fallback: Show telegram ID with indicator
     return `User ${user.telegram_id}`;
+  };
+
+  // Check if this is real user data
+  const isRealUserData = () => {
+    return user.first_name && 
+      user.first_name.trim() && 
+      !['Test', 'Telegram', 'Emergency', 'Unknown'].includes(user.first_name.trim());
   };
 
   // Get initials for avatar
   const getInitials = () => {
-    const displayName = getDisplayName();
-    if (displayName.startsWith('@')) {
-      return displayName.substring(1, 3).toUpperCase();
+    if (isRealUserData() && user.first_name) {
+      const lastName = user.last_name || '';
+      if (lastName) {
+        return `${user.first_name.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+      }
+      return user.first_name.substring(0, 2).toUpperCase();
     }
-    const nameParts = displayName.split(' ');
-    if (nameParts.length >= 2) {
-      return `${nameParts[0].charAt(0)}${nameParts[1].charAt(0)}`.toUpperCase();
+    
+    if (user.username && !user.username.includes('testuser')) {
+      return user.username.substring(0, 2).toUpperCase();
     }
-    return displayName.substring(0, 2).toUpperCase();
+    
+    return 'U?';
   };
 
-  // Calculate user cost (API calls + storage + overhead)
-  const calculateUserCost = () => {
-    const apiCalls = user.api_calls_count || 0;
-    const costPerApiCall = 0.002; // $0.002 per API call
-    const storageCost = (user.storage_used_mb || 0) * 0.001; // $0.001 per MB
-    const totalCost = (apiCalls * costPerApiCall) + storageCost + 0.1; // $0.1 base cost
-    return totalCost.toFixed(3);
+  // Get real user status
+  const getUserStatus = () => {
+    if (isBlocked) return 'Blocked';
+    if (user.last_active) {
+      const lastActive = new Date(user.last_active);
+      const hoursSinceActive = (Date.now() - lastActive.getTime()) / (1000 * 60 * 60);
+      if (hoursSinceActive < 1) return 'Online';
+      if (hoursSinceActive < 24) return 'Active Today';
+      if (hoursSinceActive < 168) return 'Active This Week';
+      return 'Inactive';
+    }
+    return 'New User';
+  };
+
+  const statusColor = () => {
+    const status = getUserStatus();
+    switch (status) {
+      case 'Online': return 'bg-green-500 text-white';
+      case 'Active Today': return 'bg-blue-500 text-white';
+      case 'Active This Week': return 'bg-yellow-500 text-white';
+      case 'Blocked': return 'bg-red-500 text-white';
+      case 'New User': return 'bg-purple-500 text-white';
+      default: return 'bg-gray-500 text-white';
+    }
   };
 
   return (
-    <div 
-      className={`bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-4 border transition-all duration-300 hover:border-slate-600 ${
-        isBlocked ? 'border-red-600/50 bg-red-900/10' : 'border-slate-700'
-      }`}
-    >
+    <div className={`p-4 hover:bg-gray-50 transition-colors ${isBlocked ? 'bg-red-50' : ''}`}>
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <Avatar className="h-12 w-12 border-2 border-slate-600">
+          <Avatar className="h-12 w-12 border-2 border-gray-200">
             <AvatarImage src={user.photo_url} />
-            <AvatarFallback className="bg-slate-700 text-slate-300">
+            <AvatarFallback className={`font-semibold ${isRealUserData() ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
               {getInitials()}
             </AvatarFallback>
           </Avatar>
           
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <span className="font-semibold text-white text-sm sm:text-base truncate">
+              <span className="font-semibold text-gray-900 text-sm sm:text-base">
                 {getDisplayName()}
               </span>
-              {user.is_premium && <Star className="h-4 w-4 text-yellow-400" />}
-              {user.phone_number && <Phone className="h-4 w-4 text-green-400" />}
-              {isBlocked && <Shield className="h-4 w-4 text-red-400" />}
+              {!isRealUserData() && <AlertCircle className="h-4 w-4 text-orange-500" />}
+              {user.is_premium && <Star className="h-4 w-4 text-yellow-500" />}
+              {user.phone_number && <Phone className="h-4 w-4 text-green-500" />}
+              {isBlocked && <Shield className="h-4 w-4 text-red-500" />}
             </div>
             
-            <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-slate-400 flex-wrap">
-              <Badge variant="outline" className="border-slate-600 text-slate-300">
+            <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 flex-wrap">
+              <Badge variant="outline" className="border-gray-300 text-gray-700">
                 ID: {user.telegram_id}
               </Badge>
               {user.username && <span>@{user.username}</span>}
               {user.phone_number && <span className="hidden sm:inline">{user.phone_number}</span>}
+              <Badge className={statusColor()}>
+                {getUserStatus()}
+              </Badge>
               <Badge 
                 variant={user.subscription_status === 'premium' ? 'default' : 'secondary'}
-                className="bg-slate-700 text-slate-300"
+                className={user.subscription_status === 'premium' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}
               >
                 {user.subscription_status || 'free'}
               </Badge>
+              {!isRealUserData() && (
+                <Badge variant="outline" className="border-orange-300 text-orange-700 bg-orange-50">
+                  Mock Data
+                </Badge>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
-          <div className="grid grid-cols-3 gap-2 sm:flex sm:gap-4 flex-1 sm:flex-initial">
+        <div className="flex items-center gap-2 sm:gap-6 w-full sm:w-auto">
+          <div className="grid grid-cols-2 gap-4 sm:flex sm:gap-6 flex-1 sm:flex-initial">
             <div className="text-center">
-              <div className="text-sm font-medium text-slate-300">{user.total_visits}</div>
-              <div className="text-xs text-slate-500">Visits</div>
+              <div className="text-sm font-semibold text-blue-600">{user.total_visits || 0}</div>
+              <div className="text-xs text-gray-500">Visits</div>
             </div>
             
             <div className="text-center">
-              <div className="text-sm font-medium text-slate-300">{engagementScore}%</div>
-              <div className="text-xs text-slate-500">Engagement</div>
+              <div className="text-sm font-semibold text-purple-600">{engagementScore}%</div>
+              <div className="text-xs text-gray-500">Engagement</div>
             </div>
 
-            <div className="text-center">
-              <div className="text-sm font-medium text-slate-300 flex items-center gap-1">
-                <DollarSign className="h-3 w-3" />
-                {calculateUserCost()}
-              </div>
-              <div className="text-xs text-slate-500">Cost USD</div>
+            <div className="text-center hidden sm:block">
+              <div className="text-sm font-semibold text-green-600">{user.api_calls_count || 0}</div>
+              <div className="text-xs text-gray-500">API Calls</div>
             </div>
           </div>
 
-          <div className="hidden sm:block text-right text-xs text-slate-500 max-w-[120px]">
+          <div className="hidden sm:block text-right text-xs text-gray-500 max-w-[120px]">
             <div>Joined {formatDistanceToNow(new Date(user.created_at), { addSuffix: true })}</div>
             {user.last_active && (
-              <div>Active {formatDistanceToNow(new Date(user.last_active), { addSuffix: true })}</div>
+              <div>Last seen {formatDistanceToNow(new Date(user.last_active), { addSuffix: true })}</div>
             )}
           </div>
 

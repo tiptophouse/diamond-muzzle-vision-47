@@ -34,7 +34,7 @@ export function StatCard({
   useEffect(() => {
     if (loading) return;
     
-    const duration = 1500;
+    const duration = 1000;
     const startTime = Date.now();
     const startValue = displayValue;
     
@@ -52,7 +52,7 @@ export function StatCard({
     };
     
     requestAnimationFrame(updateValue);
-  }, [value, loading, displayValue]);
+  }, [value, loading]);
   
   const trendClassName = trend 
     ? trend > 0 
@@ -65,45 +65,34 @@ export function StatCard({
       ? "+" 
       : "" 
     : "";
-
-  const formatDisplayValue = (val: number) => {
-    if (prefix === "$" && val > 999999) {
-      return `${prefix}${(val / 1000000).toFixed(1)}M`;
-    } else if (prefix === "$" && val > 999) {
-      return `${prefix}${(val / 1000).toFixed(0)}K`;
-    }
-    return `${prefix}${val.toLocaleString()}${suffix}`;
-  };
   
   return (
-    <Card className={cn("transition-all duration-300 hover:shadow-lg", className)}>
+    <Card className={cn("diamond-card", className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-gray-600">{title}</CardTitle>
-        <Icon className="h-5 w-5 text-blue-600" />
+        <CardTitle className="text-sm font-medium text-gray-500">{title}</CardTitle>
+        <Icon className="h-4 w-4 text-diamond-500" />
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="space-y-2">
-            <div className="h-8 w-20 bg-gray-200 animate-pulse rounded" />
-            <div className="h-3 w-16 bg-gray-100 animate-pulse rounded" />
-          </div>
+          <div className="h-9 w-24 bg-gray-200 animate-pulse rounded" />
         ) : (
-          <>
-            <div className="text-2xl font-bold text-gray-900 mb-1">
-              {formatDisplayValue(displayValue)}
-            </div>
+          <div className="stat-value animate-counter">
+            {prefix}
+            {displayValue.toLocaleString()}
+            {suffix}
+          </div>
+        )}
+        
+        {(description || trend !== undefined) && (
+          <p className="text-xs text-muted-foreground mt-2">
+            {description}
             
-            {(description || trend !== undefined) && (
-              <p className="text-xs text-gray-500">
-                {description}
-                {trend !== undefined && (
-                  <span className={cn("ml-1 font-medium", trendClassName)}>
-                    {trendSign}{trend}% {trendLabel}
-                  </span>
-                )}
-              </p>
+            {trend !== undefined && (
+              <span className={cn("ml-1", trendClassName)}>
+                {trendSign}{trend}% {trendLabel}
+              </span>
             )}
-          </>
+          </p>
         )}
       </CardContent>
     </Card>
