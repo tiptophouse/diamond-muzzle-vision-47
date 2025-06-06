@@ -1,14 +1,16 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useSimpleTelegramAuth } from '@/hooks/useSimpleTelegramAuth';
-import { useUserDataPersistence } from '@/hooks/useUserDataPersistence';
-import { TelegramUser } from '@/types/telegram';
+import { useTelegramInit } from '@/hooks/useTelegramInit';
+import { TelegramUser, TelegramInitData } from '@/types/telegram';
 
 interface TelegramAuthContextType {
   user: TelegramUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  refreshAuth: () => void;
+  retryAuth: () => void;
+  initData: TelegramInitData | null;
   isTelegramEnvironment: boolean;
 }
 
@@ -17,14 +19,16 @@ const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(u
 export function TelegramAuthProvider({ children }: { children: ReactNode }) {
   const {
     user,
+    initData,
     isLoading,
     error,
     isTelegramEnvironment,
-    isAuthenticated,
-  } = useSimpleTelegramAuth();
+    refreshAuth,
+    retryAuth,
+  } = useTelegramInit();
 
-  // Handle user data persistence in background
-  useUserDataPersistence(user, isTelegramEnvironment);
+  // Consider authenticated if we have a user (either real or mock)
+  const isAuthenticated = !!user && !error;
 
   return (
     <TelegramAuthContext.Provider
@@ -33,6 +37,9 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated,
         isLoading,
         error,
+        refreshAuth,
+        retryAuth,
+        initData,
         isTelegramEnvironment,
       }}
     >

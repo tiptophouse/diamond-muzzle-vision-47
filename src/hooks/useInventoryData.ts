@@ -9,11 +9,11 @@ import { useTelegramAuth } from "@/context/TelegramAuthContext";
 export function useInventoryData() {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
   const [allDiamonds, setAllDiamonds] = useState<Diamond[]>([]);
   
-  const fetchData = async () => {
+  const fetchData = async (showToast = true) => {
     if (!isAuthenticated || !user?.id) {
       console.log('User not authenticated, skipping data fetch');
       setLoading(false);
@@ -24,83 +24,66 @@ export function useInventoryData() {
     try {
       console.log('Fetching inventory data from FastAPI for user:', user.id);
       
+      // Use the authenticated user's ID
       const response = await api.get<any[]>(apiEndpoints.getAllStones(user.id));
       
-      if (response.data && Array.isArray(response.data)) {
+      if (response.data) {
         console.log('Received diamonds from FastAPI:', response.data.length, 'total diamonds');
         
-        // Convert all diamonds to inventory format (don't filter by user here)
-        const convertedDiamonds = convertDiamondsToInventoryFormat(response.data);
-        console.log('Converted diamonds for display:', convertedDiamonds.length, 'diamonds');
+        // Convert backend data to frontend format with authenticated user filtering
+        const convertedDiamonds = convertDiamondsToInventoryFormat(response.data, user.id);
+        console.log('Converted diamonds for display:', convertedDiamonds.length, 'diamonds for user', user.id);
         
         setAllDiamonds(convertedDiamonds);
         
-        // Show success toast
-        if (convertedDiamonds.length > 0) {
+        // Show toast message only if requested and there are diamonds
+        if (showToast && convertedDiamonds.length > 0) {
           const toastInstance = toast({
-            title: `${convertedDiamonds.length} diamonds loaded`,
-            description: "Inventory loaded successfully",
+            title: `${convertedDiamonds.length} diamonds`,
+            description: "Inventory updated",
           });
           
+          // Auto-dismiss after 2 seconds
           setTimeout(() => {
             toastInstance.dismiss();
-          }, 3000);
-        } else {
-          toast({
-            title: "No diamonds found",
-            description: "Your inventory appears to be empty",
-            variant: "destructive",
-          });
+          }, 2000);
         }
-      } else if (response.error) {
-        console.error('API Error:', response.error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: response.error,
-        });
-        setAllDiamonds([]);
-        setDiamonds([]);
       } else {
         console.warn('No inventory data received from FastAPI');
-        toast({
-          title: "No data",
-          description: "No inventory data received from server",
-          variant: "destructive",
-        });
         setDiamonds([]);
         setAllDiamonds([]);
       }
     } catch (error) {
-      console.error("Inventory fetch failed:", error);
-      
+      console.error("Failed to fetch inventory data", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to load inventory data",
+        description: "Failed to fetch inventory data. Please check your connection.",
       });
-      
-      setAllDiamonds([]);
-      setDiamonds([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async (silent = false) => {
     if (isAuthenticated && user?.id) {
       console.log('Manually refreshing inventory data for user:', user.id);
-      fetchData();
+      await fetchData(!silent);
     }
+  };
+
+  // Optimistic delete function for immediate UI updates
+  const removeFromState = (diamondId: string) => {
+    console.log('Optimistically removing diamond from state:', diamondId);
+    setAllDiamonds(prev => prev.filter(d => d.id !== diamondId));
+    setDiamonds(prev => prev.filter(d => d.id !== diamondId));
   };
 
   // Only fetch data when authentication is complete and user is authenticated
   useEffect(() => {
     if (!authLoading && isAuthenticated && user?.id) {
-      console.log('Authentication complete, fetching inventory data');
       fetchData();
     } else if (!authLoading && !isAuthenticated) {
-      console.log('User not authenticated, clearing loading state');
       setLoading(false);
     }
   }, [authLoading, isAuthenticated, user?.id]);
@@ -112,5 +95,6 @@ export function useInventoryData() {
     allDiamonds,
     fetchData,
     handleRefresh,
+    removeFromState,
   };
 }

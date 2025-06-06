@@ -18,22 +18,15 @@ interface Lead {
 
 export function useLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [isLoading, setIsLoading] = useState(false); // Changed to false
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useTelegramAuth();
 
   const fetchLeads = async () => {
-    if (!user?.id) {
-      setIsLoading(false);
-      return;
-    }
-    
-    setIsLoading(true);
+    if (!user?.id) return;
     
     try {
-      // For now, use safe sample data to prevent crashes
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
-      
+      // For now, use sample data since the table types aren't updated yet
       setLeads([
         {
           id: '1',
@@ -55,22 +48,19 @@ export function useLeads() {
         }
       ]);
     } catch (error) {
-      console.warn('Leads fetch failed, using fallback:', error);
-      setLeads([]);
+      console.error('Error fetching leads:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load leads",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    // Add delay to prevent simultaneous calls
-    const timer = setTimeout(() => {
-      if (user?.id) {
-        fetchLeads();
-      }
-    }, 1500); // Stagger after notifications
-
-    return () => clearTimeout(timer);
+    fetchLeads();
   }, [user?.id]);
 
   return {

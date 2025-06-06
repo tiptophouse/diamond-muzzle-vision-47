@@ -1,6 +1,7 @@
 
 import { ReactNode } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { Navigate } from 'react-router-dom';
 import { Shield, AlertTriangle, Settings } from 'lucide-react';
 
 interface AdminGuardProps {
@@ -12,7 +13,6 @@ const ADMIN_TELEGRAM_ID = 2138564172;
 export function AdminGuard({ children }: AdminGuardProps) {
   const { user, isLoading, isTelegramEnvironment } = useTelegramAuth();
 
-  // Reduced loading time to prevent hanging
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -28,7 +28,6 @@ export function AdminGuard({ children }: AdminGuardProps) {
     );
   }
 
-  // Check if user is admin
   if (!user || user.id !== ADMIN_TELEGRAM_ID) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -44,10 +43,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
             User ID: {user?.id || 'Unknown'}
           </p>
           <button
-            onClick={() => {
-              console.log('🔄 Redirecting to dashboard');
-              window.location.hash = '#/dashboard';
-            }}
+            onClick={() => window.location.href = '#/'}
             className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors w-full"
           >
             Return to Dashboard
@@ -57,7 +53,6 @@ export function AdminGuard({ children }: AdminGuardProps) {
     );
   }
 
-  // Admin user confirmed - render admin interface
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="bg-white border-b sticky top-0 z-50 shadow-sm">
