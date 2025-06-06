@@ -16,8 +16,12 @@ export default function Dashboard() {
   console.log('- Diamonds count:', allDiamonds.length);
   console.log('- Debug info:', debugInfo);
 
+  const handleEmergencyMode = () => {
+    console.log('Emergency mode activated - skipping to basic dashboard');
+  };
+
   if (authLoading || loading) {
-    return <DashboardLoading />;
+    return <DashboardLoading onEmergencyMode={handleEmergencyMode} />;
   }
 
   if (!isAuthenticated || !user) {
