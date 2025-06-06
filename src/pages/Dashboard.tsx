@@ -1,136 +1,60 @@
 
-import { Layout } from "@/components/layout/Layout";
-import { InventoryChart } from "@/components/dashboard/InventoryChart";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useInventoryData } from "@/hooks/useInventoryData";
-import { useLeads } from "@/hooks/useLeads";
-import { useSubscriptions } from "@/hooks/useSubscriptions";
-import { useNotifications } from "@/hooks/useNotifications";
-import { useState, useEffect } from "react";
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { DashboardLoading } from "@/components/dashboard/DashboardLoading";
-import { MetricsGrid } from "@/components/dashboard/MetricsGrid";
-import { PremiumCollection } from "@/components/dashboard/PremiumCollection";
-import { MarketInsights } from "@/components/dashboard/MarketInsights";
+import { useInventoryData } from '@/hooks/useInventoryData';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { DataDrivenDashboard } from '@/components/dashboard/DataDrivenDashboard';
+import { DashboardLoading } from '@/components/dashboard/DashboardLoading';
 
 export default function Dashboard() {
-  const [enableDataFetching, setEnableDataFetching] = useState(true);
-  const [emergencyMode, setEmergencyMode] = useState(false);
-  
-  // Only use hooks if data fetching is enabled
-  const inventoryHook = useInventoryData();
-  const leadsHook = useLeads();
-  const subscriptionsHook = useSubscriptions();
-  const notificationsHook = useNotifications();
+  const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
+  const { loading, allDiamonds, debugInfo } = useInventoryData();
 
-  // Fallback data for emergency mode with proper loading states
-  const fallbackData = {
-    allDiamonds: [],
-    leads: [],
-    subscriptions: [],
-    notifications: [],
-    loading: false,
-    isLoading: false,
-  };
+  console.log('🔍 DASHBOARD DEBUG:');
+  console.log('- Auth loading:', authLoading);
+  console.log('- Is authenticated:', isAuthenticated);
+  console.log('- User:', user);
+  console.log('- Inventory loading:', loading);
+  console.log('- Diamonds count:', allDiamonds.length);
+  console.log('- Debug info:', debugInfo);
 
-  // Use actual data or fallback based on mode with proper destructuring
-  const {
-    allDiamonds = [],
-    loading: inventoryLoading = false
-  } = emergencyMode ? fallbackData : inventoryHook;
-  
-  const {
-    leads = [],
-    isLoading: leadsLoading = false
-  } = emergencyMode ? fallbackData : leadsHook;
-  
-  const {
-    subscriptions = [],
-    isLoading: subscriptionsLoading = false
-  } = emergencyMode ? fallbackData : subscriptionsHook;
-  
-  const {
-    notifications = []
-  } = emergencyMode ? fallbackData : notificationsHook;
+  if (authLoading || loading) {
+    return <DashboardLoading />;
+  }
 
-  // Auto-enable emergency mode if any hook fails
-  useEffect(() => {
-    const hasErrors = !enableDataFetching || 
-      (inventoryLoading && leadsLoading && subscriptionsLoading);
-    
-    if (hasErrors) {
-      setEmergencyMode(true);
-    }
-  }, [inventoryLoading, leadsLoading, subscriptionsLoading, enableDataFetching]);
-
-  // Calculate metrics with safe fallbacks
-  const totalInventory = allDiamonds?.length || 0;
-  const activeLeads = leads?.filter(lead => lead.status === 'active').length || 0;
-  const activeSubscriptions = subscriptions?.filter(sub => sub.status === 'active').length || 0;
-  const unreadNotifications = notifications?.filter(n => !n.read).length || 0;
-
-  // Safe calculations
-  const totalValue = allDiamonds?.reduce((sum, diamond) => sum + (diamond.price || 0), 0) || 0;
-  const avgCaratWeight = allDiamonds?.length > 0 ? 
-    allDiamonds.reduce((sum, d) => sum + (d.carat || 0), 0) / allDiamonds.length : 0;
-  const avgPricePerCarat = allDiamonds?.length > 0 ? 
-    allDiamonds.reduce((sum, d) => sum + (d.price || 0) / (d.carat || 1), 0) / allDiamonds.length : 0;
-
-  // Safe shape distribution with proper number typing
-  const shapeData = allDiamonds?.reduce((acc, diamond) => {
-    const shape = diamond.shape || 'Unknown';
-    acc[shape] = (acc[shape] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>) || {};
-  
-  const chartData = Object.entries(shapeData).map(([name, value]) => ({
-    name,
-    value: Number(value), // Ensure value is a number
-    color: '#7a63f5'
-  }));
-
-  // Premium diamonds calculation
-  const premiumDiamonds = allDiamonds?.filter(d => (d.carat || 0) > 2 || (d.price || 0) > 10000) || [];
-
-  // Show emergency loading state if needed
-  if (!emergencyMode && (inventoryLoading || leadsLoading || subscriptionsLoading)) {
-    return <DashboardLoading onEmergencyMode={() => setEmergencyMode(true)} />;
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Authentication Required</h2>
+          <p className="text-gray-600 mb-4">Please authenticate to access your dashboard.</p>
+          <div className="text-sm text-gray-500 space-y-1">
+            <p>Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
+            <p>Is Authenticated: {isAuthenticated ? 'Yes' : 'No'}</p>
+            <p>User: {user ? `${user.first_name} (${user.id})` : 'None'}</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <Layout>
-      <div className="space-y-4 p-2 sm:p-4">
-        <DashboardHeader emergencyMode={emergencyMode} />
-
-        <MetricsGrid
-          totalInventory={totalInventory}
-          totalValue={totalValue}
-          activeLeads={activeLeads}
-          avgPricePerCarat={avgPricePerCarat}
-          avgCaratWeight={avgCaratWeight}
-          premiumDiamondsCount={premiumDiamonds.length}
-          unreadNotifications={unreadNotifications}
-        />
-
-        {/* Charts and Detailed Info */}
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Shape Distribution</CardTitle>
-              <CardDescription className="text-sm">
-                Your inventory breakdown
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <InventoryChart data={chartData} title="" loading={inventoryLoading} />
-            </CardContent>
-          </Card>
-
-          <PremiumCollection premiumDiamonds={premiumDiamonds} />
+    <div className="min-h-screen bg-gray-50">
+      <DataDrivenDashboard />
+      
+      {/* Debug Panel - Remove this after debugging */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed bottom-4 right-4 bg-gray-900 text-white p-4 rounded-lg shadow-lg max-w-sm text-xs">
+          <h4 className="font-bold mb-2">🔍 Debug Info</h4>
+          <div className="space-y-1">
+            <p>User ID: {user.id}</p>
+            <p>Diamonds: {allDiamonds.length}</p>
+            <p>Loading: {loading ? 'Yes' : 'No'}</p>
+            <p>Debug Step: {debugInfo.step || 'None'}</p>
+            {debugInfo.error && <p className="text-red-300">Error: {debugInfo.error}</p>}
+            {debugInfo.rawDataCount && <p>Raw API Count: {debugInfo.rawDataCount}</p>}
+            {debugInfo.convertedCount && <p>Converted Count: {debugInfo.convertedCount}</p>}
+          </div>
         </div>
-
-        <MarketInsights />
-      </div>
-    </Layout>
+      )}
+    </div>
   );
 }
