@@ -4,11 +4,9 @@ import { TelegramInitData } from '@/types/telegram';
 export function parseTelegramInitData(initData: string): TelegramInitData | null {
   try {
     if (!initData || initData.length === 0) {
-      console.warn('❌ Empty initData provided');
+      console.warn('Empty initData provided');
       return null;
     }
-    
-    console.log('🔍 Parsing initData:', initData.substring(0, 100) + '...');
     
     const urlParams = new URLSearchParams(initData);
     const data: any = {};
@@ -17,15 +15,10 @@ export function parseTelegramInitData(initData: string): TelegramInitData | null
       if (key === 'user') {
         try {
           const decodedValue = decodeURIComponent(value);
-          const parsedUser = JSON.parse(decodedValue);
-          data[key] = parsedUser;
-          console.log('✅ Successfully parsed user data:', {
-            id: parsedUser.id,
-            first_name: parsedUser.first_name,
-            username: parsedUser.username
-          });
+          data[key] = JSON.parse(decodedValue);
+          console.log('Successfully parsed user data:', data[key]);
         } catch (userParseError) {
-          console.error('❌ Failed to parse user data:', userParseError);
+          console.error('Failed to parse user data:', userParseError);
           return null;
         }
       } else {
@@ -33,67 +26,49 @@ export function parseTelegramInitData(initData: string): TelegramInitData | null
       }
     });
     
-    // Enhanced validation with logging
+    // Enhanced validation
     if (data.user && data.user.id && typeof data.user.id === 'number') {
-      console.log('✅ Valid Telegram initData parsed:', {
-        userId: data.user.id,
-        userName: data.user.first_name,
-        hasAuthDate: !!data.auth_date,
-        hasHash: !!data.hash
-      });
+      console.log('✅ Valid Telegram initData parsed with user ID:', data.user.id);
       return data as TelegramInitData;
     } else {
-      console.warn('❌ Invalid user data in initData:', {
-        hasUser: !!data.user,
-        userId: data.user?.id,
-        userIdType: typeof data.user?.id
-      });
+      console.warn('⚠️ Parsed initData but missing valid user ID');
       return null;
     }
   } catch (error) {
-    console.error('💥 Failed to parse Telegram initData:', error);
+    console.error('Failed to parse Telegram initData:', error);
     return null;
   }
 }
 
 export function validateTelegramInitData(initData: string, botToken?: string): boolean {
-  console.log('🔍 Validating Telegram initData...');
+  console.log('Enhanced Telegram initData validation');
   
   if (!initData || initData.length === 0) {
-    console.warn('❌ Missing or empty initData');
+    console.warn('Missing or empty initData');
     return false;
   }
   
   try {
     const parsed = parseTelegramInitData(initData);
     const isValid = !!parsed && !!parsed.user && typeof parsed.user.id === 'number';
-    
-    console.log('✅ Validation result:', {
-      isValid,
-      userId: parsed?.user?.id,
-      userName: parsed?.user?.first_name
-    });
-    
+    console.log('Validation result:', isValid);
     return isValid;
   } catch (error) {
-    console.error('💥 Failed to validate Telegram initData:', error);
+    console.error('Failed to validate Telegram initData:', error);
     return false;
   }
 }
 
 export function isTelegramWebApp(): boolean {
-  const hasWindow = typeof window !== 'undefined';
-  const hasTelegram = hasWindow && !!window.Telegram;
-  const hasWebApp = hasTelegram && !!window.Telegram?.WebApp;
-  const isWebApp = hasWebApp && typeof window.Telegram.WebApp === 'object';
+  const isWebApp = typeof window !== 'undefined' && 
+    !!window.Telegram?.WebApp && 
+    typeof window.Telegram.WebApp === 'object';
   
-  console.log('🔍 Telegram WebApp detection:', {
-    hasWindow,
-    hasTelegram,
-    hasWebApp,
-    isWebApp,
-    platform: window.Telegram?.WebApp?.platform,
-    version: window.Telegram?.WebApp?.version
+  console.log('Telegram WebApp detection:', {
+    hasWindow: typeof window !== 'undefined',
+    hasTelegram: !!window.Telegram,
+    hasWebApp: !!window.Telegram?.WebApp,
+    result: isWebApp
   });
   
   return isWebApp;

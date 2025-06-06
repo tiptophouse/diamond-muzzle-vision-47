@@ -1,5 +1,5 @@
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useUserTracking } from '@/hooks/useUserTracking';
@@ -9,58 +9,31 @@ const ADMIN_TELEGRAM_ID = 2138564172;
 const Index = () => {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
   const { trackPageVisit } = useUserTracking();
-  const [debugInfo, setDebugInfo] = useState<string[]>([]);
-  const redirectHandledRef = useRef(false);
+  const [hasTracked, setHasTracked] = useState(false);
 
   useEffect(() => {
-    // Add debug info for troubleshooting
-    const info = [
-      `Loading: ${isLoading}`,
-      `Authenticated: ${isAuthenticated}`,
-      `User ID: ${user?.id || 'none'}`,
-      `User Name: ${user?.first_name || 'none'}`,
-      `Telegram Env: ${!!window.Telegram?.WebApp}`,
-      `URL: ${window.location.href}`,
-      `Redirect Handled: ${redirectHandledRef.current}`
-    ];
-    setDebugInfo(info);
-    console.log('🔍 Index Debug Info:', info);
-  }, [user, isAuthenticated, isLoading]);
-
-  useEffect(() => {
-    if (!isLoading && !redirectHandledRef.current) {
-      trackPageVisit('/', 'Diamond Muzzle - Home');
+    if (!hasTracked) {
+      try {
+        trackPageVisit('/', 'Diamond Muzzle - Home');
+        setHasTracked(true);
+      } catch (error) {
+        console.warn('Failed to track page visit:', error);
+        setHasTracked(true); // Don't block the app for tracking failures
+      }
     }
-  }, [trackPageVisit, isLoading]);
+  }, [trackPageVisit, hasTracked]);
 
-  // Show loading state while auth is initializing
+  // Show loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
-        <div className="text-center space-y-6 p-8 max-w-md">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mx-auto"></div>
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-blue-700">Diamond Muzzle</h1>
-            <p className="text-blue-600">Initializing your session...</p>
-          </div>
-          
-          {/* Debug info in development */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="text-xs text-left bg-gray-100 p-3 rounded mt-4">
-              <div className="font-semibold mb-2">Debug Info:</div>
-              {debugInfo.map((info, i) => (
-                <div key={i} className="text-gray-600">{info}</div>
-              ))}
-            </div>
-          )}
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100">
+        <div className="text-center p-8 max-w-sm">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-6"></div>
+          <h3 className="text-xl font-semibold text-blue-700 mb-3">Loading Diamond Muzzle</h3>
+          <p className="text-blue-600 text-sm">Initializing your session...</p>
         </div>
       </div>
     );
-  }
-
-  // Prevent multiple redirects
-  if (redirectHandledRef.current) {
-    return null;
   }
 
   // If user is admin, show admin selection
@@ -79,26 +52,20 @@ const Index = () => {
           </div>
           
           <div className="space-y-4">
-            <button 
-              onClick={() => {
-                redirectHandledRef.current = true;
-                window.location.hash = '#/admin';
-              }} 
+            <a 
+              href="#/admin" 
               className="block w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 shadow-lg"
             >
               🎯 Admin Control Panel
-              <div className="text-sm opacity-90 mt-1">Full user management system</div>
-            </button>
-            <button 
-              onClick={() => {
-                redirectHandledRef.current = true;
-                window.location.hash = '#/dashboard';
-              }} 
+              <div className="text-sm opacity-90 mt-1">Lightweight user management</div>
+            </a>
+            <a 
+              href="#/" 
               className="block w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 shadow-lg"
             >
               💎 Regular Dashboard
               <div className="text-sm opacity-90 mt-1">Standard user interface</div>
-            </button>
+            </a>
           </div>
           
           <div className="text-sm text-gray-500 mt-6">
@@ -109,46 +76,8 @@ const Index = () => {
     );
   }
 
-  // For regular users, redirect to dashboard (only once)
-  if (isAuthenticated && user) {
-    redirectHandledRef.current = true;
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  // Fallback for unauthenticated users
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="text-center space-y-6 p-8 max-w-md">
-        <div className="space-y-4">
-          <div className="bg-blue-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto">
-            <span className="text-3xl">💎</span>
-          </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Diamond Muzzle
-          </h1>
-          <p className="text-xl text-gray-600">Loading your personalized experience...</p>
-        </div>
-        
-        {/* Emergency manual refresh button */}
-        <button
-          onClick={() => window.location.reload()}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
-        >
-          Manual Refresh
-        </button>
-        
-        {/* Debug info in development */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="text-xs text-left bg-gray-100 p-3 rounded mt-4">
-            <div className="font-semibold mb-2">Debug Info:</div>
-            {debugInfo.map((info, i) => (
-              <div key={i} className="text-gray-600">{info}</div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  // For regular users, always show the dashboard
+  return <Navigate to="/" replace />;
 };
 
 export default Index;

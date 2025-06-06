@@ -15,22 +15,15 @@ interface Subscription {
 
 export function useSubscriptions() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [isLoading, setIsLoading] = useState(false); // Changed to false
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useTelegramAuth();
 
   const fetchSubscriptions = async () => {
-    if (!user?.id) {
-      setIsLoading(false);
-      return;
-    }
-    
-    setIsLoading(true);
+    if (!user?.id) return;
     
     try {
-      // Safe sample data to prevent crashes
-      await new Promise(resolve => setTimeout(resolve, 300)); // Simulate API call
-      
+      // For now, use sample data since the table types aren't updated yet
       setSubscriptions([
         {
           id: '1',
@@ -42,22 +35,19 @@ export function useSubscriptions() {
         }
       ]);
     } catch (error) {
-      console.warn('Subscriptions fetch failed, using fallback:', error);
-      setSubscriptions([]);
+      console.error('Error fetching subscriptions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load subscriptions",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    // Add delay to prevent simultaneous calls
-    const timer = setTimeout(() => {
-      if (user?.id) {
-        fetchSubscriptions();
-      }
-    }, 2000); // Stagger after leads
-
-    return () => clearTimeout(timer);
+    fetchSubscriptions();
   }, [user?.id]);
 
   return {
