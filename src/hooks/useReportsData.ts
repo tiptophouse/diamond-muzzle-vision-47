@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { api, apiEndpoints } from "@/lib/api";
@@ -37,8 +36,8 @@ export function useReportsData() {
       if (response.data) {
         console.log('✅ Received diamonds from API:', response.data.length, 'total diamonds');
         
-        const convertedDiamonds = convertDiamondsToInventoryFormat(response.data, user.id);
-        console.log('✅ Converted diamonds for display:', convertedDiamonds.length, 'diamonds for user', user.id);
+        const convertedDiamonds = convertDiamondsToInventoryFormat(response.data);
+        console.log('✅ Converted diamonds for display:', convertedDiamonds.length, 'diamonds');
         
         setAllDiamonds(convertedDiamonds);
         setDiamonds(convertedDiamonds);
