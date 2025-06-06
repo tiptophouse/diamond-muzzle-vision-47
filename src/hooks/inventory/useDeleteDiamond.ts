@@ -1,6 +1,7 @@
 
 import { useToast } from '@/components/ui/use-toast';
-import { api } from '@/lib/api';
+import { supabase } from '@/integrations/supabase/client';
+import { api, apiEndpoints } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { isValidUUID } from '@/utils/diamondUtils';
 import { Diamond } from '@/components/inventory/InventoryTable';
@@ -35,25 +36,34 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
       return false;
     }
 
-    // Don't remove from state optimistically - wait for API confirmation
-    console.log('Starting deletion for diamond ID:', diamondId, 'for user:', user.id);
+    // Optimistic UI update - remove diamond immediately
+    if (removeDiamondFromState) {
+      removeDiamondFromState(diamondId);
+    }
 
     try {
-      console.log('Making DELETE request to:', `/delete_diamond?diamond_id=${diamondId}&user_id=${user.id}`);
+      console.log('Deleting diamond ID:', diamondId, 'for user:', user.id);
       
-      // Use the new secure DELETE endpoint with query parameters
-      const response = await api.delete(`/delete_diamond?diamond_id=${diamondId}&user_id=${user.id}`);
-      
-      console.log('Delete API response:', response);
+      // Call the backend /sold endpoint to delete the diamond
+      const response = await api.post('/sold', {
+        diamond_id: diamondId,
+        user_id: user.id,
+        action: 'delete'
+      });
       
       if (response.error) {
         throw new Error(response.error);
       }
       
-      // Only remove from state after successful API response
-      if (removeDiamondFromState) {
-        console.log('Removing diamond from state after successful deletion');
-        removeDiamondFromState(diamondId);
+      // Also delete from Supabase as backup
+      const { error: supabaseError } = await supabase
+        .from('inventory')
+        .delete()
+        .eq('id', diamondId)
+        .eq('user_id', user.id);
+
+      if (supabaseError) {
+        console.warn('Supabase delete warning:', supabaseError);
       }
       
       toast({
@@ -61,19 +71,20 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
         description: "Diamond deleted successfully",
       });
       
-      if (onSuccess) {
-        console.log('Calling onSuccess callback');
-        onSuccess();
-      }
-      
+      if (onSuccess) onSuccess();
       return true;
     } catch (error) {
       console.error('Failed to delete diamond:', error);
       
+      // Restore diamond to state if deletion failed
+      if (restoreDiamondToState && diamondData) {
+        restoreDiamondToState(diamondData);
+      }
+      
       const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond. Please try again.";
       toast({
         variant: "destructive",
-        title: "Error", 
+        title: "Error",
         description: errorMessage,
       });
       return false;

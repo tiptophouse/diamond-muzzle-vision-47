@@ -64,17 +64,9 @@ export function useInventoryData() {
   };
 
   const removeDiamondFromState = (diamondId: string) => {
-    console.log('Removing diamond from state:', diamondId);
-    setAllDiamonds(prev => {
-      const filtered = prev.filter(diamond => diamond.id !== diamondId);
-      console.log('AllDiamonds before removal:', prev.length, 'after removal:', filtered.length);
-      return filtered;
-    });
-    setDiamonds(prev => {
-      const filtered = prev.filter(diamond => diamond.id !== diamondId);
-      console.log('Diamonds before removal:', prev.length, 'after removal:', filtered.length);
-      return filtered;
-    });
+    console.log('Optimistically removing diamond from state:', diamondId);
+    setAllDiamonds(prev => prev.filter(diamond => diamond.id !== diamondId));
+    setDiamonds(prev => prev.filter(diamond => diamond.id !== diamondId));
   };
 
   const restoreDiamondToState = (diamond: Diamond) => {
