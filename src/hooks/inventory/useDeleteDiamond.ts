@@ -1,7 +1,6 @@
 
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { api, apiEndpoints } from '@/lib/api';
+import { api } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { isValidUUID } from '@/utils/diamondUtils';
 import { Diamond } from '@/components/inventory/InventoryTable';
@@ -49,17 +48,6 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
       
       if (response.error) {
         throw new Error(response.error);
-      }
-      
-      // Also delete from Supabase as backup
-      const { error: supabaseError } = await supabase
-        .from('inventory')
-        .delete()
-        .eq('id', diamondId)
-        .eq('user_id', user.id);
-
-      if (supabaseError) {
-        console.warn('Supabase delete warning:', supabaseError);
       }
       
       toast({
