@@ -9,7 +9,7 @@ import { useTelegramAuth } from "@/context/TelegramAuthContext";
 export function useInventoryData() {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
-  const [loading, setLoading] = useState(false); // Changed to false initially
+  const [loading, setLoading] = useState(false);
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
   const [allDiamonds, setAllDiamonds] = useState<Diamond[]>([]);
   
@@ -21,48 +21,59 @@ export function useInventoryData() {
     }
 
     setLoading(true);
+    console.log('Fetching inventory data from FastAPI for user:', user.id);
+    
     try {
-      console.log('Fetching inventory data from FastAPI for user:', user.id);
+      // Make API call to get_all_stones endpoint
+      const response = await api.get<any[]>(apiEndpoints.getAllStones(user.id));
       
-      // Add timeout to prevent hanging
-      const response = await Promise.race([
-        api.get<any[]>(apiEndpoints.getAllStones(user.id)),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('API timeout')), 5000)
-        )
-      ]) as any;
-      
-      if (response.data) {
-        console.log('Received diamonds from FastAPI:', response.data.length, 'total diamonds');
+      if (response.data && Array.isArray(response.data)) {
+        console.log('Successfully received diamonds from FastAPI:', response.data.length, 'total diamonds');
         
-        // Convert backend data to frontend format with authenticated user filtering
+        // Convert backend data to frontend format
         const convertedDiamonds = convertDiamondsToInventoryFormat(response.data, user.id);
-        console.log('Converted diamonds for display:', convertedDiamonds.length, 'diamonds for user', user.id);
+        console.log('Converted diamonds for user', user.id, ':', convertedDiamonds.length, 'diamonds');
         
+        // Update state with converted diamonds
         setAllDiamonds(convertedDiamonds);
+        setDiamonds(convertedDiamonds);
         
-        // Show smaller, auto-dismissing toast
+        // Show success toast
         if (convertedDiamonds.length > 0) {
-          const toastInstance = toast({
-            title: `${convertedDiamonds.length} diamonds`,
-            description: "Inventory loaded",
+          toast({
+            title: "Inventory Loaded",
+            description: `Found ${convertedDiamonds.length} diamonds in your inventory`,
           });
-          
-          setTimeout(() => {
-            toastInstance.dismiss();
-          }, 3000);
+        } else {
+          toast({
+            title: "No Diamonds Found",
+            description: "Your inventory appears to be empty",
+            variant: "destructive",
+          });
         }
       } else {
-        console.warn('No inventory data received from FastAPI');
-        setDiamonds([]);
+        console.warn('No valid data received from FastAPI');
         setAllDiamonds([]);
+        setDiamonds([]);
+        
+        toast({
+          title: "No Data",
+          description: "No inventory data found",
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      console.warn("Inventory fetch failed, using fallback:", error);
+      console.error("Failed to fetch inventory data:", error);
       
-      // Use fallback data instead of showing error
+      // Set empty arrays on error
       setAllDiamonds([]);
       setDiamonds([]);
+      
+      toast({
+        title: "Error Loading Inventory",
+        description: "Failed to load your diamond inventory. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -75,17 +86,15 @@ export function useInventoryData() {
     }
   };
 
-  // Only fetch data when authentication is complete and user is authenticated
-  // Add delay to prevent simultaneous API calls
+  // Fetch data when authentication is complete
   useEffect(() => {
     if (!authLoading && isAuthenticated && user?.id) {
-      const timer = setTimeout(() => {
-        fetchData();
-      }, 2500); // Stagger after other hooks
-      
-      return () => clearTimeout(timer);
+      console.log('Authentication complete, fetching inventory data...');
+      fetchData();
     } else if (!authLoading && !isAuthenticated) {
       setLoading(false);
+      setAllDiamonds([]);
+      setDiamonds([]);
     }
   }, [authLoading, isAuthenticated, user?.id]);
 
