@@ -1,7 +1,6 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useSimpleTelegramAuth } from '@/hooks/useSimpleTelegramAuth';
-import { useUserDataPersistence } from '@/hooks/useUserDataPersistence';
+import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { TelegramUser } from '@/types/telegram';
 
 interface TelegramAuthContextType {
@@ -21,10 +20,7 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
     error,
     isTelegramEnvironment,
     isAuthenticated,
-  } = useSimpleTelegramAuth();
-
-  // Handle user data persistence in background
-  useUserDataPersistence(user, isTelegramEnvironment);
+  } = useTelegramAuth();
 
   return (
     <TelegramAuthContext.Provider

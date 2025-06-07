@@ -1,7 +1,8 @@
+
 import { toast } from "@/components/ui/use-toast";
 
-// Update this to point to your FastAPI backend
-const API_BASE_URL = "https://api.mazalbot.com/api/v1"; // Your production FastAPI URL
+// Updated to point to your actual FastAPI backend
+const API_BASE_URL = "https://mazalbot.app/api/v1";
 
 let currentUserId: number | null = null;
 
@@ -22,9 +23,10 @@ export const apiEndpoints = {
     console.log('🔧 API: Building getAllStones endpoint:', endpoint, 'for user:', userId);
     return endpoint;
   },
+  verifyTelegram: () => `/verify-telegram`,
   uploadInventory: () => `/upload-inventory`,
   deleteDiamond: (diamondId: string, userId: number) => `/delete_diamond?diamond_id=${diamondId}&user_id=${userId}`,
-  soldDiamond: () => `/sold`, // New endpoint for marking diamonds as sold/deleted
+  soldDiamond: () => `/sold`,
   createReport: () => `/create-report`,
   getReport: (reportId: string) => `/get-report?diamond_id=${reportId}`,
   // Legacy endpoints for compatibility
@@ -39,53 +41,68 @@ interface ApiResponse<T> {
   error?: string;
 }
 
-// Get auth token from Supabase edge function instead of hardcoded value
-async function getAuthToken(): Promise<string> {
+interface TelegramVerificationResponse {
+  success: boolean;
+  user_id: number;
+  user_data: any;
+  message?: string;
+}
+
+// Store verification result
+let verificationResult: TelegramVerificationResponse | null = null;
+
+export function getVerificationResult(): TelegramVerificationResponse | null {
+  return verificationResult;
+}
+
+// Verify Telegram user with backend
+export async function verifyTelegramUser(initData: string): Promise<TelegramVerificationResponse | null> {
   try {
-    console.log('🔧 API: Fetching auth token from edge function');
-    // Call edge function to get secure auth token
-    const response = await fetch('/functions/v1/get-api-token', {
+    console.log('🔐 API: Verifying Telegram user with backend');
+    
+    const response = await fetch(`${API_BASE_URL}${apiEndpoints.verifyTelegram()}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        init_data: initData
+      }),
     });
-    
+
     if (!response.ok) {
-      throw new Error('Failed to get auth token');
+      throw new Error(`Verification failed: ${response.status}`);
+    }
+
+    const result: TelegramVerificationResponse = await response.json();
+    console.log('✅ API: Telegram verification successful:', result);
+    
+    verificationResult = result;
+    if (result.success && result.user_id) {
+      setCurrentUserId(result.user_id);
     }
     
-    const { token } = await response.json();
-    console.log('✅ API: Auth token received successfully');
-    return token;
+    return result;
   } catch (error) {
-    console.error('❌ API: Error getting auth token:', error);
-    throw new Error('Authentication failed');
+    console.error('❌ API: Telegram verification failed:', error);
+    return null;
   }
 }
 
-// Helper function to set database context for RLS
-async function setDatabaseContext(userId: number) {
+// Get auth token - simplified for FastAPI integration
+async function getAuthToken(): Promise<string> {
   try {
-    console.log('🔧 API: Setting database context for user:', userId);
-    const { supabase } = await import('@/integrations/supabase/client');
+    console.log('🔧 API: Using verification result for auth');
     
-    // Use the edge function to set session context instead of RPC
-    const { error } = await supabase.functions.invoke('set-session-context', {
-      body: {
-        setting_name: 'app.current_user_id',
-        setting_value: userId.toString()
-      }
-    });
-
-    if (error) {
-      console.warn('⚠️ API: Failed to set database context via edge function:', error);
-    } else {
-      console.log('✅ API: Database context set successfully');
+    if (!verificationResult || !verificationResult.success) {
+      throw new Error('No valid Telegram verification');
     }
+    
+    // For now, we'll use a simple approach - you can enhance this based on your backend's auth mechanism
+    return `telegram_verified_${verificationResult.user_id}`;
   } catch (error) {
-    console.warn('⚠️ API: Failed to set database context:', error);
-    // Don't throw - this is not critical for API calls
+    console.error('❌ API: Error getting auth token:', error);
+    throw new Error('Authentication failed');
   }
 }
 
@@ -99,24 +116,19 @@ export async function fetchApi<T>(
     console.log('🚀 API: Making request to:', url);
     console.log('🚀 API: Current user ID:', currentUserId);
     
-    // Set database context if we have a current user
-    if (currentUserId) {
-      await setDatabaseContext(currentUserId);
-    }
-    
-    // Get secure auth token
+    // Get auth token
     const authToken = await getAuthToken();
     
     const response = await fetch(url, {
       ...options,
       headers: {
         "Authorization": `Bearer ${authToken}`,
+        "Content-Type": "application/json",
         ...options.headers,
       },
     });
 
     console.log('📡 API: Response status:', response.status);
-    console.log('📡 API: Response headers:', Object.fromEntries(response.headers.entries()));
 
     let data;
     const contentType = response.headers.get('content-type');
@@ -182,17 +194,10 @@ export const api = {
   uploadCsv: async <T>(endpoint: string, csvData: any[], userId: number): Promise<ApiResponse<T>> => {
     console.log('📤 API: Uploading CSV data to FastAPI:', { endpoint, dataLength: csvData.length, userId });
     
-    // Set database context for RLS
-    await setDatabaseContext(userId);
-    
-    // Get secure auth token
-    const authToken = await getAuthToken();
-    
     return fetchApi<T>(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${authToken}`,
       },
       body: JSON.stringify({
         user_id: userId,

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { api, apiEndpoints, setCurrentUserId } from "@/lib/api";
+import { api, apiEndpoints } from "@/lib/api";
 import { convertDiamondsToInventoryFormat } from "@/services/diamondAnalytics";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
@@ -16,8 +16,6 @@ export function useInventoryData() {
   const fetchData = async () => {
     if (!isAuthenticated || !user?.id) {
       console.log('🔍 INVENTORY: User not authenticated, skipping data fetch');
-      console.log('🔍 INVENTORY: isAuthenticated:', isAuthenticated);
-      console.log('🔍 INVENTORY: user:', user);
       setDebugInfo({ 
         error: 'User not authenticated', 
         isAuthenticated, 
@@ -29,19 +27,16 @@ export function useInventoryData() {
     }
 
     setLoading(true);
-    console.log('🔍 INVENTORY: Starting fetch for user:', user.id, 'type:', typeof user.id);
-    
-    // Ensure user ID is set in API client
-    setCurrentUserId(user.id);
+    console.log('🔍 INVENTORY: Starting fetch for verified user:', user.id);
     
     try {
       const endpoint = apiEndpoints.getAllStones(user.id);
       console.log('🔍 INVENTORY: API endpoint:', endpoint);
-      console.log('🔍 INVENTORY: Full API URL:', `https://api.mazalbot.com/api/v1${endpoint}`);
+      console.log('🔍 INVENTORY: Full API URL:', `https://mazalbot.app/api/v1${endpoint}`);
       
       setDebugInfo(prev => ({ 
         ...prev, 
-        step: 'Making API request', 
+        step: 'Making API request to FastAPI backend', 
         endpoint,
         userId: user.id,
         userIdType: typeof user.id
@@ -54,22 +49,20 @@ export function useInventoryData() {
         )
       ]) as any;
       
-      console.log('🔍 INVENTORY: Raw API response received');
-      console.log('🔍 INVENTORY: Response type:', typeof response);
-      console.log('🔍 INVENTORY: Response keys:', Object.keys(response));
+      console.log('🔍 INVENTORY: FastAPI response received');
       console.log('🔍 INVENTORY: Response:', response);
       
       setDebugInfo(prev => ({ 
         ...prev, 
-        step: 'API response received', 
+        step: 'FastAPI response received', 
         response,
         responseType: typeof response,
         responseKeys: Object.keys(response)
       }));
       
       if (response.error) {
-        console.error('🔍 INVENTORY: API returned error:', response.error);
-        setDebugInfo(prev => ({ ...prev, error: response.error, step: 'API error' }));
+        console.error('🔍 INVENTORY: FastAPI returned error:', response.error);
+        setDebugInfo(prev => ({ ...prev, error: response.error, step: 'FastAPI error' }));
         toast({
           title: "API Error",
           description: response.error,
@@ -85,28 +78,24 @@ export function useInventoryData() {
         console.log('🔍 INVENTORY: Data type:', typeof response.data);
         console.log('🔍 INVENTORY: Data is array:', Array.isArray(response.data));
         console.log('🔍 INVENTORY: Data length:', Array.isArray(response.data) ? response.data.length : 'N/A');
-        console.log('🔍 INVENTORY: Sample raw data:', response.data.slice ? response.data.slice(0, 3) : response.data);
         
         setDebugInfo(prev => ({ 
           ...prev, 
-          step: 'Processing data', 
+          step: 'Processing FastAPI data', 
           rawDataCount: Array.isArray(response.data) ? response.data.length : 0,
-          rawDataType: typeof response.data,
-          sampleRawData: response.data.slice ? response.data.slice(0, 3) : response.data
+          sampleRawData: response.data.slice ? response.data.slice(0, 2) : response.data
         }));
         
         // Convert diamonds for display
         const convertedDiamonds = convertDiamondsToInventoryFormat(response.data, user.id);
         console.log('🔍 INVENTORY: Converted diamonds for display');
         console.log('🔍 INVENTORY: Converted count:', convertedDiamonds.length);
-        console.log('🔍 INVENTORY: Sample converted diamond:', convertedDiamonds[0]);
         
         setDebugInfo(prev => ({ 
           ...prev, 
           step: 'Data converted successfully', 
           convertedCount: convertedDiamonds.length,
-          sampleConverted: convertedDiamonds[0],
-          allRawData: response.data
+          sampleConverted: convertedDiamonds[0]
         }));
         
         setAllDiamonds(convertedDiamonds);
@@ -115,60 +104,45 @@ export function useInventoryData() {
         if (convertedDiamonds.length > 0) {
           toast({
             title: `✅ ${convertedDiamonds.length} diamonds loaded`,
-            description: "Inventory data successfully fetched",
+            description: "Inventory data successfully fetched from FastAPI",
           });
         } else {
-          console.warn('🔍 INVENTORY: No diamonds after conversion - checking filtering logic');
-          console.log('🔍 INVENTORY: User ID for filtering:', user.id);
-          console.log('🔍 INVENTORY: Raw data sample for debugging:', response.data.slice(0, 5));
-          
           toast({
             title: "⚠️ No diamonds found",
-            description: `No diamonds found for user ${user.id}. Check filtering logic.`,
+            description: `No diamonds found for user ${user.id} in FastAPI backend`,
             variant: "destructive",
           });
         }
       } else {
-        console.warn('🔍 INVENTORY: No data property in response');
-        console.log('🔍 INVENTORY: Full response structure:', response);
+        console.warn('🔍 INVENTORY: No data property in FastAPI response');
         setDebugInfo(prev => ({ 
           ...prev, 
-          error: 'No data property in response', 
-          fullResponse: response,
-          step: 'No data in response'
+          error: 'No data property in FastAPI response', 
+          step: 'No data in FastAPI response'
         }));
         setDiamonds([]);
         setAllDiamonds([]);
         
         toast({
           title: "⚠️ No Data",
-          description: "No inventory data received from server",
+          description: "No inventory data received from FastAPI backend",
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error("🔍 INVENTORY: Fetch failed with error:", error);
-      console.error("🔍 INVENTORY: Error details:", {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      });
+      console.error("🔍 INVENTORY: FastAPI fetch failed:", error);
       
       setDebugInfo(prev => ({ 
         ...prev, 
         error: error.message || 'Unknown error', 
-        step: 'Error occurred',
-        errorDetails: {
-          message: error.message,
-          name: error.name
-        }
+        step: 'FastAPI request failed'
       }));
       setAllDiamonds([]);
       setDiamonds([]);
       
       toast({
-        title: "❌ Fetch Failed",
-        description: `Failed to load inventory: ${error.message || 'Unknown error'}`,
+        title: "❌ FastAPI Connection Failed",
+        description: `Failed to connect to FastAPI backend: ${error.message || 'Unknown error'}`,
         variant: "destructive",
       });
     } finally {
@@ -190,7 +164,7 @@ export function useInventoryData() {
 
   const handleRefresh = () => {
     if (isAuthenticated && user?.id) {
-      console.log('🔍 INVENTORY: Manual refresh triggered for user:', user.id);
+      console.log('🔍 INVENTORY: Manual refresh triggered for verified user:', user.id);
       setDebugInfo({ step: 'Manual refresh triggered' });
       fetchData();
     }
@@ -201,7 +175,6 @@ export function useInventoryData() {
     console.log('🔍 INVENTORY: authLoading:', authLoading);
     console.log('🔍 INVENTORY: isAuthenticated:', isAuthenticated);
     console.log('🔍 INVENTORY: user:', user);
-    console.log('🔍 INVENTORY: user.id:', user?.id, 'type:', typeof user?.id);
     
     if (!authLoading && isAuthenticated && user?.id) {
       console.log('🔍 INVENTORY: Conditions met, starting fetch timer...');
@@ -215,7 +188,7 @@ export function useInventoryData() {
         clearTimeout(timer);
       };
     } else if (!authLoading && !isAuthenticated) {
-      console.log('🔍 INVENTORY: Not authenticated, setting loading to false');
+      console.log('🔍 INVENTORY: Not authenticated with FastAPI backend');
       setLoading(false);
     }
   }, [authLoading, isAuthenticated, user?.id]);
