@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useTelegramAuth } from '@/hooks/useTelegramAuth';
+import { useTelegramAuth as useTelegramAuthHook } from '@/hooks/useTelegramAuth';
 import { TelegramUser } from '@/types/telegram';
 
 interface TelegramAuthContextType {
@@ -20,7 +20,7 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
     error,
     isTelegramEnvironment,
     isAuthenticated,
-  } = useTelegramAuth();
+  } = useTelegramAuthHook();
 
   return (
     <TelegramAuthContext.Provider
