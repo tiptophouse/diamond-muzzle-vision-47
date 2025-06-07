@@ -1,3 +1,3 @@
 
 // Re-export everything from the refactored API modules
-export * from './api';
+export * from './api/index';
