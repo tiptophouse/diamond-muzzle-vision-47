@@ -1,3 +1,4 @@
+
 import { toast } from "@/components/ui/use-toast";
 
 // Updated to point to your actual FastAPI backend
@@ -105,6 +106,9 @@ export async function fetchApi<T>(
     let headers: Record<string, string> = {
       "Content-Type": "application/json",
       "Accept": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
       ...options.headers as Record<string, string>,
     };
     
@@ -160,7 +164,15 @@ export async function fetchApi<T>(
     console.error('❌ API: Request error:', errorMessage);
     console.error('❌ API: Error details:', error);
     
-    // Don't show toast here since we handle it in the hook
+    // Show toast for critical errors
+    if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+      toast({
+        title: "🌐 Network Error",
+        description: "Cannot reach server. Check your internet connection.",
+        variant: "destructive",
+      });
+    }
+    
     return { error: errorMessage };
   }
 }

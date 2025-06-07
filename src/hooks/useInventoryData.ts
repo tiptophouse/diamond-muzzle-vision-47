@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { api, apiEndpoints, getCurrentUserId } from "@/lib/api";
@@ -14,153 +15,154 @@ export function useInventoryData() {
   const [debugInfo, setDebugInfo] = useState<any>({});
   
   const fetchData = async () => {
-    // Force the specific user ID for testing
     const userId = 2138564172;
     
-    console.log('🔍 INVENTORY: Starting fetch with FORCED user ID:', userId);
+    console.log('🔍 INVENTORY: Starting fetch with user ID:', userId);
     setLoading(true);
+    setDebugInfo({ step: 'Starting fetch', userId });
     
     try {
-      const endpoint = apiEndpoints.getAllStones(userId);
-      const fullUrl = `https://mazalbot.app/api/v1${endpoint}`;
+      // Test multiple endpoints to see what works
+      const endpoints = [
+        `https://mazalbot.app/api/v1/get_all_stones?user_id=${userId}`,
+        `https://mazalbot.app/api/v1/users/${userId}/inventory`,
+        `https://mazalbot.app/api/v1/inventory/${userId}`,
+      ];
       
-      console.log('🔍 INVENTORY: API endpoint:', endpoint);
-      console.log('🔍 INVENTORY: Full API URL:', fullUrl);
+      let responseData = null;
+      let workingEndpoint = null;
       
-      setDebugInfo(prev => ({ 
-        ...prev, 
-        step: 'Making direct fetch to FastAPI backend', 
-        endpoint,
-        fullUrl,
-        userId: userId,
-        userIdType: typeof userId
-      }));
-      
-      // Try direct fetch first with detailed error handling
-      let response;
-      try {
-        console.log('🔍 INVENTORY: Making direct fetch request...');
-        const fetchResponse = await fetch(fullUrl, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          mode: 'cors',
-        });
-        
-        console.log('🔍 INVENTORY: Direct fetch response status:', fetchResponse.status);
-        console.log('🔍 INVENTORY: Direct fetch response headers:', Object.fromEntries(fetchResponse.headers.entries()));
-        
-        if (!fetchResponse.ok) {
-          const errorText = await fetchResponse.text();
-          console.error('🔍 INVENTORY: Direct fetch failed:', fetchResponse.status, errorText);
-          throw new Error(`HTTP ${fetchResponse.status}: ${errorText}`);
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`🔍 INVENTORY: Trying endpoint: ${endpoint}`);
+          
+          const response = await fetch(endpoint, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+            },
+            mode: 'cors',
+          });
+          
+          console.log(`🔍 INVENTORY: Response status for ${endpoint}:`, response.status);
+          console.log(`🔍 INVENTORY: Response headers:`, Object.fromEntries(response.headers.entries()));
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log(`✅ INVENTORY: Success with ${endpoint}:`, data);
+            responseData = data;
+            workingEndpoint = endpoint;
+            break;
+          } else {
+            const errorText = await response.text();
+            console.log(`❌ INVENTORY: Failed ${endpoint}:`, response.status, errorText);
+          }
+        } catch (fetchError) {
+          console.log(`❌ INVENTORY: Network error for ${endpoint}:`, fetchError);
         }
-        
-        const responseData = await fetchResponse.json();
-        console.log('🔍 INVENTORY: Direct fetch response data:', responseData);
-        
-        // Wrap in expected format if needed
-        response = Array.isArray(responseData) ? { data: responseData } : responseData;
-      } catch (fetchError) {
-        console.error('🔍 INVENTORY: Direct fetch failed, trying api.get...', fetchError);
-        
-        // Fallback to api.get method
-        response = await api.get<any[]>(endpoint);
       }
       
-      console.log('🔍 INVENTORY: Final response:', response);
-      
       setDebugInfo(prev => ({ 
         ...prev, 
-        step: 'Response received', 
-        response,
-        responseType: typeof response,
-        responseKeys: Object.keys(response || {})
+        step: 'Tested all endpoints',
+        workingEndpoint,
+        responseData,
+        hasData: !!responseData
       }));
       
-      if (response?.error) {
-        console.error('🔍 INVENTORY: API returned error:', response.error);
-        setDebugInfo(prev => ({ ...prev, error: response.error, step: 'API error' }));
+      if (!responseData) {
+        // Try a simple test endpoint to check if server is reachable
+        try {
+          const testResponse = await fetch('https://mazalbot.app/api/v1/', {
+            method: 'GET',
+            mode: 'cors',
+          });
+          console.log('🔍 INVENTORY: Test root endpoint response:', testResponse.status);
+          
+          setDebugInfo(prev => ({ 
+            ...prev, 
+            testEndpointStatus: testResponse.status,
+            serverReachable: testResponse.ok
+          }));
+        } catch (testError) {
+          console.log('🔍 INVENTORY: Server unreachable:', testError);
+          setDebugInfo(prev => ({ 
+            ...prev, 
+            serverReachable: false,
+            testError: testError.message
+          }));
+        }
+        
         toast({
-          title: "API Error",
-          description: response.error,
+          title: "❌ API Connection Failed",
+          description: "Unable to connect to backend server. Check console for details.",
           variant: "destructive",
         });
+        
         setAllDiamonds([]);
         setDiamonds([]);
         return;
       }
       
-      const dataToProcess = response?.data || response;
+      // Process the response data
+      const dataArray = Array.isArray(responseData) ? responseData : responseData.data || responseData.diamonds || [];
       
-      if (dataToProcess && Array.isArray(dataToProcess)) {
-        console.log('🔍 INVENTORY: Processing data');
-        console.log('🔍 INVENTORY: Data count:', dataToProcess.length);
-        console.log('🔍 INVENTORY: Sample data:', dataToProcess.slice(0, 2));
-        
-        setDebugInfo(prev => ({ 
-          ...prev, 
-          step: 'Processing data', 
-          rawDataCount: dataToProcess.length,
-          sampleRawData: dataToProcess.slice(0, 2)
-        }));
+      if (dataArray && dataArray.length > 0) {
+        console.log('🔍 INVENTORY: Processing', dataArray.length, 'diamonds');
         
         // Convert diamonds for display
-        const convertedDiamonds = convertDiamondsToInventoryFormat(dataToProcess, userId);
-        console.log('🔍 INVENTORY: Converted diamonds count:', convertedDiamonds.length);
-        
-        setDebugInfo(prev => ({ 
-          ...prev, 
-          step: 'Data converted successfully', 
-          convertedCount: convertedDiamonds.length,
-          sampleConverted: convertedDiamonds[0]
-        }));
+        const convertedDiamonds = convertDiamondsToInventoryFormat(dataArray, userId);
+        console.log('🔍 INVENTORY: Converted', convertedDiamonds.length, 'diamonds');
         
         setAllDiamonds(convertedDiamonds);
         setDiamonds(convertedDiamonds);
         
-        toast({
-          title: `✅ ${convertedDiamonds.length} diamonds loaded`,
-          description: "Inventory data successfully fetched",
-        });
-      } else {
-        console.warn('🔍 INVENTORY: No valid data in response');
         setDebugInfo(prev => ({ 
           ...prev, 
-          error: 'No valid data in response', 
-          step: 'No data received'
+          step: 'Data processed successfully',
+          totalDiamonds: convertedDiamonds.length,
+          sampleDiamond: convertedDiamonds[0]
         }));
-        setDiamonds([]);
-        setAllDiamonds([]);
         
         toast({
-          title: "⚠️ No Data",
-          description: "No inventory data received from backend",
+          title: `✅ ${convertedDiamonds.length} diamonds loaded`,
+          description: `Successfully loaded from ${workingEndpoint}`,
+        });
+      } else {
+        console.log('🔍 INVENTORY: No diamonds in response data');
+        setDebugInfo(prev => ({ 
+          ...prev, 
+          step: 'No diamonds found',
+          responseStructure: Object.keys(responseData || {})
+        }));
+        
+        setAllDiamonds([]);
+        setDiamonds([]);
+        
+        toast({
+          title: "⚠️ No Inventory Data",
+          description: "Server responded but no diamonds found for your account",
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error("🔍 INVENTORY: Fetch failed:", error);
+      console.error("🔍 INVENTORY: Critical error:", error);
       
       setDebugInfo(prev => ({ 
         ...prev, 
-        error: error.message || 'Unknown error', 
-        step: 'Request failed',
-        errorDetails: {
-          name: error.name,
-          message: error.message,
-          stack: error.stack
-        }
+        step: 'Critical error',
+        error: error.message,
+        errorStack: error.stack
       }));
       
       setAllDiamonds([]);
       setDiamonds([]);
       
       toast({
-        title: "❌ Connection Failed",
-        description: `Failed to connect to backend: ${error.message || 'Network error'}`,
+        title: "❌ System Error",
+        description: `Critical error: ${error.message}`,
         variant: "destructive",
       });
     } finally {
@@ -191,7 +193,6 @@ export function useInventoryData() {
   useEffect(() => {
     console.log('🔍 INVENTORY: useEffect triggered');
     
-    // Always try to fetch data after a brief delay
     const timer = setTimeout(() => {
       console.log('🔍 INVENTORY: Timer executed, calling fetchData');
       fetchData();
@@ -201,7 +202,7 @@ export function useInventoryData() {
       console.log('🔍 INVENTORY: Cleaning up timer');
       clearTimeout(timer);
     };
-  }, []); // Remove dependency to avoid re-fetching
+  }, []);
 
   return {
     loading: loading || authLoading,
