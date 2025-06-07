@@ -27,15 +27,24 @@ export function useTelegramAuth() {
         typeof window.Telegram.WebApp === 'object';
       
       console.log('📱 Telegram environment detected:', inTelegram);
+      console.log('📱 Window.Telegram:', !!window.Telegram);
+      console.log('📱 Window.Telegram.WebApp:', !!window.Telegram?.WebApp);
       setIsTelegramEnvironment(inTelegram);
 
       if (inTelegram && window.Telegram?.WebApp) {
         const tg = window.Telegram.WebApp;
         
+        console.log('🔍 Telegram WebApp object:', tg);
+        console.log('🔍 InitData available:', !!tg.initData);
+        console.log('🔍 InitData length:', tg.initData?.length || 0);
+        console.log('🔍 InitData content (first 100 chars):', tg.initData?.substring(0, 100) || 'EMPTY');
+        console.log('🔍 InitDataUnsafe:', tg.initDataUnsafe);
+        
         // Initialize Telegram WebApp
         try {
           if (typeof tg.ready === 'function') tg.ready();
           if (typeof tg.expand === 'function') tg.expand();
+          console.log('✅ Telegram WebApp ready() and expand() called');
         } catch (themeError) {
           console.warn('⚠️ WebApp setup failed, continuing...', themeError);
         }
@@ -43,11 +52,12 @@ export function useTelegramAuth() {
         // Get initData and verify with backend
         if (tg.initData && tg.initData.length > 0) {
           console.log('🔐 Found initData, verifying with backend...');
+          console.log('🔐 Sending initData to mazalbot.app/api/v1/verify-telegram');
           
           const verificationResult = await verifyTelegramUser(tg.initData);
           
           if (verificationResult && verificationResult.success) {
-            console.log('✅ Backend verification successful');
+            console.log('✅ Backend verification successful:', verificationResult);
             
             // Create user object from verification result
             const verifiedUser: TelegramUser = {
@@ -58,17 +68,36 @@ export function useTelegramAuth() {
               language_code: verificationResult.user_data?.language_code || 'en'
             };
             
+            console.log('👤 Setting verified user:', verifiedUser);
             setUser(verifiedUser);
             setCurrentUserId(verificationResult.user_id);
             setIsAuthenticated(true);
             setError(null);
           } else {
-            console.error('❌ Backend verification failed');
+            console.error('❌ Backend verification failed:', verificationResult);
             setError('Failed to verify Telegram user with backend');
             setIsAuthenticated(false);
           }
+        } else if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+          // Fallback to initDataUnsafe if initData is not available (development/testing)
+          console.warn('⚠️ No initData, using initDataUnsafe for development');
+          const unsafeUser = tg.initDataUnsafe.user;
+          
+          const fallbackUser: TelegramUser = {
+            id: unsafeUser.id,
+            first_name: unsafeUser.first_name || 'User',
+            last_name: unsafeUser.last_name || '',
+            username: unsafeUser.username || '',
+            language_code: unsafeUser.language_code || 'en'
+          };
+          
+          console.log('👤 Using fallback user from initDataUnsafe:', fallbackUser);
+          setUser(fallbackUser);
+          setCurrentUserId(fallbackUser.id);
+          setIsAuthenticated(true);
+          setError(null);
         } else {
-          console.warn('⚠️ No initData available');
+          console.warn('⚠️ No initData and no initDataUnsafe available');
           setError('No Telegram initialization data available');
           setIsAuthenticated(false);
         }
@@ -116,11 +145,15 @@ export function useTelegramAuth() {
       }
     }, 10000);
 
-    initializeAuth();
+    // Wait a bit for Telegram WebApp to fully initialize
+    const initTimer = setTimeout(() => {
+      initializeAuth();
+    }, 500);
 
     return () => {
       mountedRef.current = false;
       clearTimeout(timeoutId);
+      clearTimeout(initTimer);
     };
   }, []);
 

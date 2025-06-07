@@ -8,7 +8,7 @@ let currentUserId: number | null = null;
 
 export function setCurrentUserId(userId: number) {
   currentUserId = userId;
-  console.log('🔧 API: Current user ID set to:', userId);
+  console.log('🔧 API: Current user ID set to:', userId, 'type:', typeof userId);
 }
 
 export function getCurrentUserId(): number | null {
@@ -18,9 +18,8 @@ export function getCurrentUserId(): number | null {
 
 export const apiEndpoints = {
   getAllStones: (userId: number) => {
-    const userParam = `?user_id=${userId}`;
-    const endpoint = `/get_all_stones${userParam}`;
-    console.log('🔧 API: Building getAllStones endpoint:', endpoint, 'for user:', userId);
+    const endpoint = `/get_all_stones?user_id=${userId}`;
+    console.log('🔧 API: Building getAllStones endpoint:', endpoint, 'for user:', userId, 'type:', typeof userId);
     return endpoint;
   },
   verifyTelegram: () => `/verify-telegram`,
@@ -59,6 +58,8 @@ export function getVerificationResult(): TelegramVerificationResponse | null {
 export async function verifyTelegramUser(initData: string): Promise<TelegramVerificationResponse | null> {
   try {
     console.log('🔐 API: Verifying Telegram user with backend');
+    console.log('🔐 API: Sending to:', `${API_BASE_URL}${apiEndpoints.verifyTelegram()}`);
+    console.log('🔐 API: InitData length:', initData.length);
     
     const response = await fetch(`${API_BASE_URL}${apiEndpoints.verifyTelegram()}`, {
       method: 'POST',
@@ -70,8 +71,12 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
       }),
     });
 
+    console.log('🔐 API: Verification response status:', response.status);
+
     if (!response.ok) {
-      throw new Error(`Verification failed: ${response.status}`);
+      const errorText = await response.text();
+      console.error('🔐 API: Verification failed with status:', response.status, 'body:', errorText);
+      throw new Error(`Verification failed: ${response.status} - ${errorText}`);
     }
 
     const result: TelegramVerificationResponse = await response.json();
@@ -114,21 +119,34 @@ export async function fetchApi<T>(
   
   try {
     console.log('🚀 API: Making request to:', url);
-    console.log('🚀 API: Current user ID:', currentUserId);
+    console.log('🚀 API: Current user ID:', currentUserId, 'type:', typeof currentUserId);
     
-    // Get auth token
-    const authToken = await getAuthToken();
+    // For public endpoints like get_all_stones, we might not need auth token
+    // But let's try to get it if verification was successful
+    let headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...options.headers as Record<string, string>,
+    };
+    
+    if (verificationResult && verificationResult.success) {
+      try {
+        const authToken = await getAuthToken();
+        headers["Authorization"] = `Bearer ${authToken}`;
+        console.log('🚀 API: Added auth token to request');
+      } catch (authError) {
+        console.warn('⚠️ API: Could not get auth token, proceeding without it:', authError);
+      }
+    } else {
+      console.log('🚀 API: No verification result available, making request without auth');
+    }
     
     const response = await fetch(url, {
       ...options,
-      headers: {
-        "Authorization": `Bearer ${authToken}`,
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
+      headers,
     });
 
     console.log('📡 API: Response status:', response.status);
+    console.log('📡 API: Response headers:', Object.fromEntries(response.headers.entries()));
 
     let data;
     const contentType = response.headers.get('content-type');
@@ -138,6 +156,8 @@ export async function fetchApi<T>(
       console.log('📡 API: JSON response received, data type:', typeof data, 'length:', Array.isArray(data) ? data.length : 'not array');
       if (Array.isArray(data)) {
         console.log('📡 API: Sample data (first 2 items):', data.slice(0, 2));
+      } else {
+        console.log('📡 API: Response data:', data);
       }
     } else {
       const text = await response.text();

@@ -27,30 +27,55 @@
     
     <!-- Initialize Telegram WebApp immediately -->
     <script>
-      // Initialize Telegram WebApp as soon as possible
-      if (window.Telegram && window.Telegram.WebApp) {
-        console.log('✅ Telegram WebApp script loaded successfully');
-        console.log('📱 WebApp version:', window.Telegram.WebApp.version);
-        console.log('🔍 InitData length:', window.Telegram.WebApp.initData?.length || 0);
+      // Wait for script to fully load
+      let initAttempts = 0;
+      const maxInitAttempts = 10;
+      
+      function initializeTelegramWebApp() {
+        initAttempts++;
         
-        // Ready the app
-        try {
-          window.Telegram.WebApp.ready();
-          console.log('✅ Telegram WebApp ready() called');
-        } catch (e) {
-          console.error('❌ Failed to call ready():', e);
+        if (window.Telegram && window.Telegram.WebApp) {
+          console.log('✅ Telegram WebApp script loaded successfully');
+          console.log('📱 WebApp version:', window.Telegram.WebApp.version);
+          console.log('🔍 InitData available:', !!window.Telegram.WebApp.initData);
+          console.log('🔍 InitData length:', window.Telegram.WebApp.initData?.length || 0);
+          console.log('🔍 InitDataUnsafe available:', !!window.Telegram.WebApp.initDataUnsafe);
+          console.log('🔍 InitDataUnsafe user:', window.Telegram.WebApp.initDataUnsafe?.user);
+          
+          // Ready the app
+          try {
+            window.Telegram.WebApp.ready();
+            console.log('✅ Telegram WebApp ready() called');
+          } catch (e) {
+            console.error('❌ Failed to call ready():', e);
+          }
+          
+          // Expand to full height
+          try {
+            window.Telegram.WebApp.expand();
+            console.log('✅ Telegram WebApp expand() called');
+          } catch (e) {
+            console.error('❌ Failed to call expand():', e);
+          }
+          
+          // Set header color
+          try {
+            window.Telegram.WebApp.setHeaderColor('#1f2937');
+            console.log('✅ Telegram WebApp header color set');
+          } catch (e) {
+            console.warn('⚠️ Failed to set header color:', e);
+          }
+          
+        } else if (initAttempts < maxInitAttempts) {
+          console.log(`⏳ Telegram WebApp not ready yet, attempt ${initAttempts}/${maxInitAttempts}`);
+          setTimeout(initializeTelegramWebApp, 100);
+        } else {
+          console.warn('⚠️ Telegram WebApp not available after maximum attempts');
         }
-        
-        // Expand to full height
-        try {
-          window.Telegram.WebApp.expand();
-          console.log('✅ Telegram WebApp expand() called');
-        } catch (e) {
-          console.error('❌ Failed to call expand():', e);
-        }
-      } else {
-        console.warn('⚠️ Telegram WebApp not available');
       }
+      
+      // Start initialization
+      initializeTelegramWebApp();
       
       // Global error handling
       window.addEventListener('error', function(e) {
