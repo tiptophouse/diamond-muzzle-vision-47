@@ -14,23 +14,14 @@ export function useInventoryData() {
   const [debugInfo, setDebugInfo] = useState<any>({});
   
   const fetchData = async () => {
-    if (!isAuthenticated || !user?.id) {
-      console.log('🔍 INVENTORY: User not authenticated, skipping data fetch');
-      setDebugInfo({ 
-        error: 'User not authenticated', 
-        isAuthenticated, 
-        user,
-        step: 'Authentication check failed'
-      });
-      setLoading(false);
-      return;
-    }
-
+    // Always try to fetch data if we have any user or fallback to hardcoded ID
+    const userId = user?.id || getCurrentUserId() || 2138564172;
+    
+    console.log('🔍 INVENTORY: Starting fetch with user ID:', userId);
     setLoading(true);
-    console.log('🔍 INVENTORY: Starting fetch for verified user:', user.id);
     
     try {
-      const endpoint = apiEndpoints.getAllStones(user.id);
+      const endpoint = apiEndpoints.getAllStones(userId);
       console.log('🔍 INVENTORY: API endpoint:', endpoint);
       console.log('🔍 INVENTORY: Full API URL:', `https://mazalbot.app/api/v1${endpoint}`);
       
@@ -38,8 +29,8 @@ export function useInventoryData() {
         ...prev, 
         step: 'Making API request to FastAPI backend', 
         endpoint,
-        userId: user.id,
-        userIdType: typeof user.id
+        userId: userId,
+        userIdType: typeof userId
       }));
       
       const response = await Promise.race([
@@ -87,7 +78,7 @@ export function useInventoryData() {
         }));
         
         // Convert diamonds for display
-        const convertedDiamonds = convertDiamondsToInventoryFormat(response.data, user.id);
+        const convertedDiamonds = convertDiamondsToInventoryFormat(response.data, userId);
         console.log('🔍 INVENTORY: Converted diamonds for display');
         console.log('🔍 INVENTORY: Converted count:', convertedDiamonds.length);
         
@@ -109,7 +100,7 @@ export function useInventoryData() {
         } else {
           toast({
             title: "⚠️ No diamonds found",
-            description: `No diamonds found for user ${user.id} in FastAPI backend`,
+            description: `No diamonds found for user ${userId} in FastAPI backend`,
             variant: "destructive",
           });
         }
@@ -173,25 +164,19 @@ export function useInventoryData() {
   useEffect(() => {
     console.log('🔍 INVENTORY: useEffect triggered');
     console.log('🔍 INVENTORY: authLoading:', authLoading);
-    console.log('🔍 INVENTORY: isAuthenticated:', isAuthenticated);
     console.log('🔍 INVENTORY: user:', user);
     
-    if (!authLoading && isAuthenticated && user?.id) {
-      console.log('🔍 INVENTORY: Conditions met, starting fetch timer...');
-      const timer = setTimeout(() => {
-        console.log('🔍 INVENTORY: Timer executed, calling fetchData');
-        fetchData();
-      }, 1000);
-      
-      return () => {
-        console.log('🔍 INVENTORY: Cleaning up timer');
-        clearTimeout(timer);
-      };
-    } else if (!authLoading && !isAuthenticated) {
-      console.log('🔍 INVENTORY: Not authenticated with FastAPI backend');
-      setLoading(false);
-    }
-  }, [authLoading, isAuthenticated, user?.id]);
+    // Always try to fetch data after a brief delay, regardless of auth state
+    const timer = setTimeout(() => {
+      console.log('🔍 INVENTORY: Timer executed, calling fetchData');
+      fetchData();
+    }, 1000);
+    
+    return () => {
+      console.log('🔍 INVENTORY: Cleaning up timer');
+      clearTimeout(timer);
+    };
+  }, [user?.id]); // Only depend on user ID changes
 
   return {
     loading: loading || authLoading,

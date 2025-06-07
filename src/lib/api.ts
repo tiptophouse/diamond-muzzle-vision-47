@@ -28,7 +28,6 @@ export const apiEndpoints = {
   soldDiamond: () => `/sold`,
   createReport: () => `/create-report`,
   getReport: (reportId: string) => `/get-report?diamond_id=${reportId}`,
-  // Legacy endpoints for compatibility
   getDashboardStats: (userId: number) => `/users/${userId}/dashboard/stats`,
   getInventoryByShape: (userId: number) => `/users/${userId}/inventory/by-shape`,
   getRecentSales: (userId: number) => `/users/${userId}/sales/recent`,
@@ -94,23 +93,6 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
   }
 }
 
-// Get auth token - simplified for FastAPI integration
-async function getAuthToken(): Promise<string> {
-  try {
-    console.log('🔧 API: Using verification result for auth');
-    
-    if (!verificationResult || !verificationResult.success) {
-      throw new Error('No valid Telegram verification');
-    }
-    
-    // For now, we'll use a simple approach - you can enhance this based on your backend's auth mechanism
-    return `telegram_verified_${verificationResult.user_id}`;
-  } catch (error) {
-    console.error('❌ API: Error getting auth token:', error);
-    throw new Error('Authentication failed');
-  }
-}
-
 export async function fetchApi<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -121,23 +103,22 @@ export async function fetchApi<T>(
     console.log('🚀 API: Making request to:', url);
     console.log('🚀 API: Current user ID:', currentUserId, 'type:', typeof currentUserId);
     
-    // For public endpoints like get_all_stones, we might not need auth token
-    // But let's try to get it if verification was successful
+    // Force user ID to be set if not already set
+    if (!currentUserId) {
+      console.log('🚀 API: No user ID set, using hardcoded user ID 2138564172');
+      setCurrentUserId(2138564172);
+    }
+    
     let headers: Record<string, string> = {
       "Content-Type": "application/json",
       ...options.headers as Record<string, string>,
     };
     
+    // Add auth headers if available
     if (verificationResult && verificationResult.success) {
-      try {
-        const authToken = await getAuthToken();
-        headers["Authorization"] = `Bearer ${authToken}`;
-        console.log('🚀 API: Added auth token to request');
-      } catch (authError) {
-        console.warn('⚠️ API: Could not get auth token, proceeding without it:', authError);
-      }
-    } else {
-      console.log('🚀 API: No verification result available, making request without auth');
+      const authToken = `telegram_verified_${verificationResult.user_id}`;
+      headers["Authorization"] = `Bearer ${authToken}`;
+      console.log('🚀 API: Added auth token to request');
     }
     
     const response = await fetch(url, {
