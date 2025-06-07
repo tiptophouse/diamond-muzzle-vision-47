@@ -18,18 +18,24 @@ export function useInventoryData() {
     const userId = getCurrentUserId() || 2138564172;
     
     console.log('🔍 INVENTORY: Starting fetch with user ID:', userId);
+    console.log('🔍 INVENTORY: Backend URL: https://api.mazalbot.com');
+    console.log('🔍 INVENTORY: Expected diamonds: 566');
     setLoading(true);
-    setDebugInfo({ step: 'Starting fetch', userId, timestamp: new Date().toISOString() });
+    setDebugInfo({ step: 'Starting fetch', userId, expectedCount: 566, timestamp: new Date().toISOString() });
     
     try {
       console.log('🔍 INVENTORY: Using API client to fetch data');
-      const result = await api.get(apiEndpoints.getAllStones(userId));
+      const endpoint = apiEndpoints.getAllStones(userId);
+      console.log('🔍 INVENTORY: Full endpoint URL: https://api.mazalbot.com' + endpoint);
+      
+      const result = await api.get(endpoint);
       
       setDebugInfo(prev => ({ 
         ...prev, 
         step: 'API call completed',
         hasError: !!result.error,
         hasData: !!result.data,
+        endpoint: endpoint,
         timestamp: new Date().toISOString()
       }));
       
@@ -44,8 +50,8 @@ export function useInventoryData() {
         }));
         
         toast({
-          title: "❌ API Error",
-          description: `Failed to load inventory: ${result.error}`,
+          title: "❌ Backend Connection Error",
+          description: `Failed to connect to api.mazalbot.com: ${result.error}`,
           variant: "destructive",
         });
         
@@ -55,10 +61,10 @@ export function useInventoryData() {
       }
       
       if (!result.data) {
-        console.log('🔍 INVENTORY: No data returned from API');
+        console.log('🔍 INVENTORY: No data returned from backend');
         setDebugInfo(prev => ({ 
           ...prev, 
-          step: 'No data returned',
+          step: 'No data returned from backend',
           timestamp: new Date().toISOString()
         }));
         
@@ -66,8 +72,8 @@ export function useInventoryData() {
         setDiamonds([]);
         
         toast({
-          title: "⚠️ No Data",
-          description: "No response data from server",
+          title: "⚠️ No Response Data",
+          description: "Backend returned no data - check if user has inventory",
           variant: "destructive",
         });
         return;
@@ -87,6 +93,8 @@ export function useInventoryData() {
           dataArray = dataObj.diamonds;
         } else if (Array.isArray(dataObj.items)) {
           dataArray = dataObj.items;
+        } else if (Array.isArray(dataObj.stones)) {
+          dataArray = dataObj.stones;
         }
       }
       
@@ -94,37 +102,43 @@ export function useInventoryData() {
         rawDataType: typeof result.data,
         isArray: Array.isArray(result.data),
         dataArrayLength: dataArray.length,
+        expectedLength: 566,
         sampleItem: dataArray[0]
       });
       
       if (dataArray && dataArray.length > 0) {
-        console.log('🔍 INVENTORY: Processing', dataArray.length, 'diamonds');
+        console.log('🔍 INVENTORY: SUCCESS! Processing', dataArray.length, 'diamonds (expected 566)');
         
         // Convert diamonds for display
         const convertedDiamonds = convertDiamondsToInventoryFormat(dataArray, userId);
-        console.log('🔍 INVENTORY: Converted', convertedDiamonds.length, 'diamonds');
+        console.log('🔍 INVENTORY: Converted', convertedDiamonds.length, 'diamonds for display');
         
         setAllDiamonds(convertedDiamonds);
         setDiamonds(convertedDiamonds);
         
         setDebugInfo(prev => ({ 
           ...prev, 
-          step: 'Data processed successfully',
+          step: 'SUCCESS: Data processed',
           totalDiamonds: convertedDiamonds.length,
+          expectedDiamonds: 566,
+          backendResponse: dataArray.length,
           sampleDiamond: convertedDiamonds[0],
           timestamp: new Date().toISOString()
         }));
         
         toast({
-          title: `✅ ${convertedDiamonds.length} diamonds loaded`,
-          description: `Successfully loaded your inventory`,
+          title: `✅ SUCCESS: ${convertedDiamonds.length} diamonds loaded`,
+          description: `Connected to api.mazalbot.com and loaded your inventory!`,
         });
       } else {
-        console.log('🔍 INVENTORY: No diamonds in response data');
+        console.log('🔍 INVENTORY: Backend responded but no diamonds found in data');
+        console.log('🔍 INVENTORY: Response structure:', result.data);
+        
         setDebugInfo(prev => ({ 
           ...prev, 
-          step: 'No diamonds found',
+          step: 'Backend responded but no diamonds found',
           responseStructure: result.data && typeof result.data === 'object' ? Object.keys(result.data) : [],
+          fullResponse: result.data,
           timestamp: new Date().toISOString()
         }));
         
@@ -132,17 +146,17 @@ export function useInventoryData() {
         setDiamonds([]);
         
         toast({
-          title: "⚠️ No Inventory Data",
-          description: "Your inventory appears to be empty",
+          title: "⚠️ No Diamonds Found",
+          description: "Connected to backend but found no diamonds for this user",
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error("🔍 INVENTORY: Critical error:", error);
+      console.error("🔍 INVENTORY: Critical error connecting to backend:", error);
       
       setDebugInfo(prev => ({ 
         ...prev, 
-        step: 'Critical error',
+        step: 'Critical backend connection error',
         error: error instanceof Error ? error.message : String(error),
         errorStack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString()
@@ -152,8 +166,8 @@ export function useInventoryData() {
       setDiamonds([]);
       
       toast({
-        title: "❌ System Error",
-        description: `Critical error: ${error instanceof Error ? error.message : String(error)}`,
+        title: "❌ Backend Connection Failed",
+        description: `Cannot connect to api.mazalbot.com: ${error instanceof Error ? error.message : String(error)}`,
         variant: "destructive",
       });
     } finally {

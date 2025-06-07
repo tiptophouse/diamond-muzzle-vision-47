@@ -1,6 +1,6 @@
 
 import { toast } from "@/components/ui/use-toast";
-import { API_BASE_URL, getCurrentUserId, isDevelopment } from './config';
+import { API_BASE_URL, getCurrentUserId, BACKEND_ACCESS_TOKEN } from './config';
 import { getAuthHeaders } from './auth';
 
 interface ApiResponse<T> {
@@ -11,7 +11,7 @@ interface ApiResponse<T> {
 // Test backend connectivity
 async function testBackendConnectivity(): Promise<boolean> {
   try {
-    console.log('🔍 API: Testing backend connectivity...');
+    console.log('🔍 API: Testing backend connectivity to:', API_BASE_URL);
     
     // Try different test endpoints
     const testUrls = [
@@ -27,6 +27,7 @@ async function testBackendConnectivity(): Promise<boolean> {
           mode: 'cors',
           headers: {
             'Accept': 'application/json',
+            'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
           },
         });
         
@@ -35,7 +36,7 @@ async function testBackendConnectivity(): Promise<boolean> {
           return true;
         }
       } catch (error) {
-        console.log('❌ API: Failed to reach:', url, error.message);
+        console.log('❌ API: Failed to reach:', url, error instanceof Error ? error.message : String(error));
       }
     }
     
@@ -81,7 +82,7 @@ export async function fetchApi<T>(
     console.log('🚀 API: Fetch options:', {
       url,
       method: fetchOptions.method || 'GET',
-      headers: fetchOptions.headers,
+      hasAuth: !!headers.Authorization,
       hasBody: !!fetchOptions.body,
     });
     

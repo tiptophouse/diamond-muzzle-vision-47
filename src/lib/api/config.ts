@@ -1,6 +1,6 @@
 
 // Updated to point to your actual FastAPI backend
-export const API_BASE_URL = "https://mazalbot.app/api/v1";
+export const API_BASE_URL = "https://api.mazalbot.com";
 
 let currentUserId: number | null = 2138564172; // Force set for testing
 
@@ -19,3 +19,6 @@ export function isDevelopment(): boolean {
   return window.location.hostname === 'localhost' || 
          window.location.hostname.includes('lovableproject.com');
 }
+
+// Your backend access token
+export const BACKEND_ACCESS_TOKEN = "ifj9ov1rh20fslfp";

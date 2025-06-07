@@ -1,5 +1,5 @@
 
-import { API_BASE_URL } from './config';
+import { API_BASE_URL, BACKEND_ACCESS_TOKEN } from './config';
 import { apiEndpoints } from './endpoints';
 import { setCurrentUserId } from './config';
 
@@ -17,28 +17,6 @@ export function getVerificationResult(): TelegramVerificationResponse | null {
   return verificationResult;
 }
 
-// Get Bearer token from Supabase secrets
-async function getBearerToken(): Promise<string | null> {
-  try {
-    // Try to get token from Supabase edge function
-    const response = await fetch('/functions/v1/get-api-token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      return data.token;
-    }
-  } catch (error) {
-    console.warn('⚠️ Could not get bearer token from Supabase:', error);
-  }
-  
-  return null;
-}
-
 // Verify Telegram user with backend
 export async function verifyTelegramUser(initData: string): Promise<TelegramVerificationResponse | null> {
   try {
@@ -46,16 +24,13 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     console.log('🔐 API: Sending to:', `${API_BASE_URL}${apiEndpoints.verifyTelegram()}`);
     console.log('🔐 API: InitData length:', initData.length);
     
-    const bearerToken = await getBearerToken();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
+      'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
     };
     
-    if (bearerToken) {
-      headers['Authorization'] = `Bearer ${bearerToken}`;
-      console.log('🔐 API: Added bearer token to verification request');
-    }
+    console.log('🔐 API: Using backend access token for verification');
     
     const response = await fetch(`${API_BASE_URL}${apiEndpoints.verifyTelegram()}`, {
       method: 'POST',
@@ -90,14 +65,11 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
 }
 
 export async function getAuthHeaders(): Promise<Record<string, string>> {
-  let headers: Record<string, string> = {};
+  const headers: Record<string, string> = {
+    "Authorization": `Bearer ${BACKEND_ACCESS_TOKEN}`,
+  };
   
-  // Try to get bearer token from Supabase
-  const bearerToken = await getBearerToken();
-  if (bearerToken) {
-    headers["Authorization"] = `Bearer ${bearerToken}`;
-    console.log('🚀 API: Added bearer token to request');
-  }
+  console.log('🚀 API: Using backend access token for requests');
   
   // Add auth headers if available from verification
   if (verificationResult && verificationResult.success) {
