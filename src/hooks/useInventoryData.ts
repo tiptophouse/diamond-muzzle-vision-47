@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { api, apiEndpoints } from "@/lib/api";
+import { api, apiEndpoints, getCurrentUserId } from "@/lib/api";
 import { convertDiamondsToInventoryFormat } from "@/services/diamondAnalytics";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
@@ -14,46 +14,75 @@ export function useInventoryData() {
   const [debugInfo, setDebugInfo] = useState<any>({});
   
   const fetchData = async () => {
-    // Always try to fetch data if we have any user or fallback to hardcoded ID
-    const userId = user?.id || getCurrentUserId() || 2138564172;
+    // Force the specific user ID for testing
+    const userId = 2138564172;
     
-    console.log('🔍 INVENTORY: Starting fetch with user ID:', userId);
+    console.log('🔍 INVENTORY: Starting fetch with FORCED user ID:', userId);
     setLoading(true);
     
     try {
       const endpoint = apiEndpoints.getAllStones(userId);
+      const fullUrl = `https://mazalbot.app/api/v1${endpoint}`;
+      
       console.log('🔍 INVENTORY: API endpoint:', endpoint);
-      console.log('🔍 INVENTORY: Full API URL:', `https://mazalbot.app/api/v1${endpoint}`);
+      console.log('🔍 INVENTORY: Full API URL:', fullUrl);
       
       setDebugInfo(prev => ({ 
         ...prev, 
-        step: 'Making API request to FastAPI backend', 
+        step: 'Making direct fetch to FastAPI backend', 
         endpoint,
+        fullUrl,
         userId: userId,
         userIdType: typeof userId
       }));
       
-      const response = await Promise.race([
-        api.get<any[]>(endpoint),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('API timeout after 15 seconds')), 15000)
-        )
-      ]) as any;
+      // Try direct fetch first with detailed error handling
+      let response;
+      try {
+        console.log('🔍 INVENTORY: Making direct fetch request...');
+        const fetchResponse = await fetch(fullUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          mode: 'cors',
+        });
+        
+        console.log('🔍 INVENTORY: Direct fetch response status:', fetchResponse.status);
+        console.log('🔍 INVENTORY: Direct fetch response headers:', Object.fromEntries(fetchResponse.headers.entries()));
+        
+        if (!fetchResponse.ok) {
+          const errorText = await fetchResponse.text();
+          console.error('🔍 INVENTORY: Direct fetch failed:', fetchResponse.status, errorText);
+          throw new Error(`HTTP ${fetchResponse.status}: ${errorText}`);
+        }
+        
+        const responseData = await fetchResponse.json();
+        console.log('🔍 INVENTORY: Direct fetch response data:', responseData);
+        
+        // Wrap in expected format if needed
+        response = Array.isArray(responseData) ? { data: responseData } : responseData;
+      } catch (fetchError) {
+        console.error('🔍 INVENTORY: Direct fetch failed, trying api.get...', fetchError);
+        
+        // Fallback to api.get method
+        response = await api.get<any[]>(endpoint);
+      }
       
-      console.log('🔍 INVENTORY: FastAPI response received');
-      console.log('🔍 INVENTORY: Response:', response);
+      console.log('🔍 INVENTORY: Final response:', response);
       
       setDebugInfo(prev => ({ 
         ...prev, 
-        step: 'FastAPI response received', 
+        step: 'Response received', 
         response,
         responseType: typeof response,
-        responseKeys: Object.keys(response)
+        responseKeys: Object.keys(response || {})
       }));
       
-      if (response.error) {
-        console.error('🔍 INVENTORY: FastAPI returned error:', response.error);
-        setDebugInfo(prev => ({ ...prev, error: response.error, step: 'FastAPI error' }));
+      if (response?.error) {
+        console.error('🔍 INVENTORY: API returned error:', response.error);
+        setDebugInfo(prev => ({ ...prev, error: response.error, step: 'API error' }));
         toast({
           title: "API Error",
           description: response.error,
@@ -64,23 +93,23 @@ export function useInventoryData() {
         return;
       }
       
-      if (response.data) {
-        console.log('🔍 INVENTORY: Processing data from FastAPI');
-        console.log('🔍 INVENTORY: Data type:', typeof response.data);
-        console.log('🔍 INVENTORY: Data is array:', Array.isArray(response.data));
-        console.log('🔍 INVENTORY: Data length:', Array.isArray(response.data) ? response.data.length : 'N/A');
+      const dataToProcess = response?.data || response;
+      
+      if (dataToProcess && Array.isArray(dataToProcess)) {
+        console.log('🔍 INVENTORY: Processing data');
+        console.log('🔍 INVENTORY: Data count:', dataToProcess.length);
+        console.log('🔍 INVENTORY: Sample data:', dataToProcess.slice(0, 2));
         
         setDebugInfo(prev => ({ 
           ...prev, 
-          step: 'Processing FastAPI data', 
-          rawDataCount: Array.isArray(response.data) ? response.data.length : 0,
-          sampleRawData: response.data.slice ? response.data.slice(0, 2) : response.data
+          step: 'Processing data', 
+          rawDataCount: dataToProcess.length,
+          sampleRawData: dataToProcess.slice(0, 2)
         }));
         
         // Convert diamonds for display
-        const convertedDiamonds = convertDiamondsToInventoryFormat(response.data, userId);
-        console.log('🔍 INVENTORY: Converted diamonds for display');
-        console.log('🔍 INVENTORY: Converted count:', convertedDiamonds.length);
+        const convertedDiamonds = convertDiamondsToInventoryFormat(dataToProcess, userId);
+        console.log('🔍 INVENTORY: Converted diamonds count:', convertedDiamonds.length);
         
         setDebugInfo(prev => ({ 
           ...prev, 
@@ -92,48 +121,46 @@ export function useInventoryData() {
         setAllDiamonds(convertedDiamonds);
         setDiamonds(convertedDiamonds);
         
-        if (convertedDiamonds.length > 0) {
-          toast({
-            title: `✅ ${convertedDiamonds.length} diamonds loaded`,
-            description: "Inventory data successfully fetched from FastAPI",
-          });
-        } else {
-          toast({
-            title: "⚠️ No diamonds found",
-            description: `No diamonds found for user ${userId} in FastAPI backend`,
-            variant: "destructive",
-          });
-        }
+        toast({
+          title: `✅ ${convertedDiamonds.length} diamonds loaded`,
+          description: "Inventory data successfully fetched",
+        });
       } else {
-        console.warn('🔍 INVENTORY: No data property in FastAPI response');
+        console.warn('🔍 INVENTORY: No valid data in response');
         setDebugInfo(prev => ({ 
           ...prev, 
-          error: 'No data property in FastAPI response', 
-          step: 'No data in FastAPI response'
+          error: 'No valid data in response', 
+          step: 'No data received'
         }));
         setDiamonds([]);
         setAllDiamonds([]);
         
         toast({
           title: "⚠️ No Data",
-          description: "No inventory data received from FastAPI backend",
+          description: "No inventory data received from backend",
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error("🔍 INVENTORY: FastAPI fetch failed:", error);
+      console.error("🔍 INVENTORY: Fetch failed:", error);
       
       setDebugInfo(prev => ({ 
         ...prev, 
         error: error.message || 'Unknown error', 
-        step: 'FastAPI request failed'
+        step: 'Request failed',
+        errorDetails: {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        }
       }));
+      
       setAllDiamonds([]);
       setDiamonds([]);
       
       toast({
-        title: "❌ FastAPI Connection Failed",
-        description: `Failed to connect to FastAPI backend: ${error.message || 'Unknown error'}`,
+        title: "❌ Connection Failed",
+        description: `Failed to connect to backend: ${error.message || 'Network error'}`,
         variant: "destructive",
       });
     } finally {
@@ -163,10 +190,8 @@ export function useInventoryData() {
 
   useEffect(() => {
     console.log('🔍 INVENTORY: useEffect triggered');
-    console.log('🔍 INVENTORY: authLoading:', authLoading);
-    console.log('🔍 INVENTORY: user:', user);
     
-    // Always try to fetch data after a brief delay, regardless of auth state
+    // Always try to fetch data after a brief delay
     const timer = setTimeout(() => {
       console.log('🔍 INVENTORY: Timer executed, calling fetchData');
       fetchData();
@@ -176,7 +201,7 @@ export function useInventoryData() {
       console.log('🔍 INVENTORY: Cleaning up timer');
       clearTimeout(timer);
     };
-  }, [user?.id]); // Only depend on user ID changes
+  }, []); // Remove dependency to avoid re-fetching
 
   return {
     loading: loading || authLoading,

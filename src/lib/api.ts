@@ -1,10 +1,9 @@
-
 import { toast } from "@/components/ui/use-toast";
 
 // Updated to point to your actual FastAPI backend
 const API_BASE_URL = "https://mazalbot.app/api/v1";
 
-let currentUserId: number | null = null;
+let currentUserId: number | null = 2138564172; // Force set for testing
 
 export function setCurrentUserId(userId: number) {
   currentUserId = userId;
@@ -103,14 +102,9 @@ export async function fetchApi<T>(
     console.log('🚀 API: Making request to:', url);
     console.log('🚀 API: Current user ID:', currentUserId, 'type:', typeof currentUserId);
     
-    // Force user ID to be set if not already set
-    if (!currentUserId) {
-      console.log('🚀 API: No user ID set, using hardcoded user ID 2138564172');
-      setCurrentUserId(2138564172);
-    }
-    
     let headers: Record<string, string> = {
       "Content-Type": "application/json",
+      "Accept": "application/json",
       ...options.headers as Record<string, string>,
     };
     
@@ -121,10 +115,15 @@ export async function fetchApi<T>(
       console.log('🚀 API: Added auth token to request');
     }
     
-    const response = await fetch(url, {
+    const fetchOptions: RequestInit = {
       ...options,
       headers,
-    });
+      mode: 'cors',
+    };
+    
+    console.log('🚀 API: Fetch options:', fetchOptions);
+    
+    const response = await fetch(url, fetchOptions);
 
     console.log('📡 API: Response status:', response.status);
     console.log('📡 API: Response headers:', Object.fromEntries(response.headers.entries()));
@@ -159,11 +158,9 @@ export async function fetchApi<T>(
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     console.error('❌ API: Request error:', errorMessage);
-    toast({
-      title: "API Error",
-      description: errorMessage,
-      variant: "destructive",
-    });
+    console.error('❌ API: Error details:', error);
+    
+    // Don't show toast here since we handle it in the hook
     return { error: errorMessage };
   }
 }
