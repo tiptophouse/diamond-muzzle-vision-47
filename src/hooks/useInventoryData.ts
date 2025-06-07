@@ -73,10 +73,22 @@ export function useInventoryData() {
         return;
       }
       
-      // Process the response data
-      const dataArray = Array.isArray(result.data) ? result.data : 
-                       result.data.data || result.data.diamonds || 
-                       (result.data.items ? result.data.items : []);
+      // Process the response data with proper type checking
+      let dataArray: any[] = [];
+      
+      if (Array.isArray(result.data)) {
+        dataArray = result.data;
+      } else if (typeof result.data === 'object' && result.data !== null) {
+        // Check for common data structure patterns
+        const dataObj = result.data as Record<string, any>;
+        if (Array.isArray(dataObj.data)) {
+          dataArray = dataObj.data;
+        } else if (Array.isArray(dataObj.diamonds)) {
+          dataArray = dataObj.diamonds;
+        } else if (Array.isArray(dataObj.items)) {
+          dataArray = dataObj.items;
+        }
+      }
       
       console.log('🔍 INVENTORY: Processing response data:', {
         rawDataType: typeof result.data,
@@ -112,7 +124,7 @@ export function useInventoryData() {
         setDebugInfo(prev => ({ 
           ...prev, 
           step: 'No diamonds found',
-          responseStructure: Object.keys(result.data || {}),
+          responseStructure: result.data && typeof result.data === 'object' ? Object.keys(result.data) : [],
           timestamp: new Date().toISOString()
         }));
         
@@ -131,8 +143,8 @@ export function useInventoryData() {
       setDebugInfo(prev => ({ 
         ...prev, 
         step: 'Critical error',
-        error: error.message,
-        errorStack: error.stack,
+        error: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString()
       }));
       
@@ -141,7 +153,7 @@ export function useInventoryData() {
       
       toast({
         title: "❌ System Error",
-        description: `Critical error: ${error.message}`,
+        description: `Critical error: ${error instanceof Error ? error.message : String(error)}`,
         variant: "destructive",
       });
     } finally {
