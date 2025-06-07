@@ -12,6 +12,7 @@ export default function Dashboard() {
   console.log('- Auth loading:', authLoading);
   console.log('- Is authenticated:', isAuthenticated);
   console.log('- User:', user);
+  console.log('- User ID:', user?.id, 'type:', typeof user?.id);
   console.log('- Inventory loading:', loading);
   console.log('- Diamonds count:', allDiamonds.length);
   console.log('- Debug info:', debugInfo);
@@ -44,21 +45,41 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50">
       <DataDrivenDashboard />
       
-      {/* Debug Panel - Remove this after debugging */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-4 right-4 bg-gray-900 text-white p-4 rounded-lg shadow-lg max-w-sm text-xs">
-          <h4 className="font-bold mb-2">🔍 Debug Info</h4>
-          <div className="space-y-1">
-            <p>User ID: {user.id}</p>
-            <p>Diamonds: {allDiamonds.length}</p>
-            <p>Loading: {loading ? 'Yes' : 'No'}</p>
-            <p>Debug Step: {debugInfo.step || 'None'}</p>
-            {debugInfo.error && <p className="text-red-300">Error: {debugInfo.error}</p>}
-            {debugInfo.rawDataCount && <p>Raw API Count: {debugInfo.rawDataCount}</p>}
-            {debugInfo.convertedCount && <p>Converted Count: {debugInfo.convertedCount}</p>}
-          </div>
+      {/* Enhanced Debug Panel - Visible in production for troubleshooting */}
+      <div className="fixed bottom-4 left-4 bg-gray-900 text-white p-4 rounded-lg shadow-lg max-w-sm text-xs max-h-96 overflow-y-auto">
+        <h4 className="font-bold mb-2">🔍 Telegram Debug Info</h4>
+        <div className="space-y-1">
+          <p><strong>User ID:</strong> {user.id} ({typeof user.id})</p>
+          <p><strong>User Name:</strong> {user.first_name} {user.last_name}</p>
+          <p><strong>Diamonds:</strong> {allDiamonds.length}</p>
+          <p><strong>Loading:</strong> {loading ? 'Yes' : 'No'}</p>
+          <p><strong>Auth:</strong> {isAuthenticated ? 'Yes' : 'No'}</p>
+          
+          {debugInfo.step && <p><strong>Step:</strong> {debugInfo.step}</p>}
+          {debugInfo.error && <p className="text-red-300"><strong>Error:</strong> {debugInfo.error}</p>}
+          {debugInfo.endpoint && <p><strong>Endpoint:</strong> {debugInfo.endpoint}</p>}
+          {debugInfo.rawDataCount !== undefined && <p><strong>Raw API Count:</strong> {debugInfo.rawDataCount}</p>}
+          {debugInfo.convertedCount !== undefined && <p><strong>Converted Count:</strong> {debugInfo.convertedCount}</p>}
+          
+          {debugInfo.sampleRawData && (
+            <div className="mt-2">
+              <p><strong>Sample Raw Data:</strong></p>
+              <pre className="text-xs bg-gray-800 p-1 rounded mt-1 overflow-x-auto">
+                {JSON.stringify(debugInfo.sampleRawData, null, 1)}
+              </pre>
+            </div>
+          )}
+          
+          {debugInfo.sampleConverted && (
+            <div className="mt-2">
+              <p><strong>Sample Converted:</strong></p>
+              <pre className="text-xs bg-gray-800 p-1 rounded mt-1 overflow-x-auto">
+                {JSON.stringify(debugInfo.sampleConverted, null, 1)}
+              </pre>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

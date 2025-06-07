@@ -1,4 +1,3 @@
-
 import { toast } from "@/components/ui/use-toast";
 
 // Update this to point to your FastAPI backend
@@ -8,17 +7,20 @@ let currentUserId: number | null = null;
 
 export function setCurrentUserId(userId: number) {
   currentUserId = userId;
-  console.log('Current user ID set to:', userId);
+  console.log('🔧 API: Current user ID set to:', userId);
 }
 
 export function getCurrentUserId(): number | null {
+  console.log('🔧 API: Getting current user ID:', currentUserId);
   return currentUserId;
 }
 
 export const apiEndpoints = {
   getAllStones: (userId: number) => {
     const userParam = `?user_id=${userId}`;
-    return `/get_all_stones${userParam}`;
+    const endpoint = `/get_all_stones${userParam}`;
+    console.log('🔧 API: Building getAllStones endpoint:', endpoint, 'for user:', userId);
+    return endpoint;
   },
   uploadInventory: () => `/upload-inventory`,
   deleteDiamond: (diamondId: string, userId: number) => `/delete_diamond?diamond_id=${diamondId}&user_id=${userId}`,
@@ -40,6 +42,7 @@ interface ApiResponse<T> {
 // Get auth token from Supabase edge function instead of hardcoded value
 async function getAuthToken(): Promise<string> {
   try {
+    console.log('🔧 API: Fetching auth token from edge function');
     // Call edge function to get secure auth token
     const response = await fetch('/functions/v1/get-api-token', {
       method: 'POST',
@@ -53,9 +56,10 @@ async function getAuthToken(): Promise<string> {
     }
     
     const { token } = await response.json();
+    console.log('✅ API: Auth token received successfully');
     return token;
   } catch (error) {
-    console.error('Error getting auth token:', error);
+    console.error('❌ API: Error getting auth token:', error);
     throw new Error('Authentication failed');
   }
 }
@@ -63,6 +67,7 @@ async function getAuthToken(): Promise<string> {
 // Helper function to set database context for RLS
 async function setDatabaseContext(userId: number) {
   try {
+    console.log('🔧 API: Setting database context for user:', userId);
     const { supabase } = await import('@/integrations/supabase/client');
     
     // Use the edge function to set session context instead of RPC
@@ -74,10 +79,12 @@ async function setDatabaseContext(userId: number) {
     });
 
     if (error) {
-      console.warn('Failed to set database context via edge function:', error);
+      console.warn('⚠️ API: Failed to set database context via edge function:', error);
+    } else {
+      console.log('✅ API: Database context set successfully');
     }
   } catch (error) {
-    console.warn('Failed to set database context:', error);
+    console.warn('⚠️ API: Failed to set database context:', error);
     // Don't throw - this is not critical for API calls
   }
 }
@@ -89,7 +96,8 @@ export async function fetchApi<T>(
   const url = `${API_BASE_URL}${endpoint}`;
   
   try {
-    console.log('Making API request to:', url);
+    console.log('🚀 API: Making request to:', url);
+    console.log('🚀 API: Current user ID:', currentUserId);
     
     // Set database context if we have a current user
     if (currentUserId) {
@@ -107,16 +115,21 @@ export async function fetchApi<T>(
       },
     });
 
-    console.log('API Response status:', response.status);
+    console.log('📡 API: Response status:', response.status);
+    console.log('📡 API: Response headers:', Object.fromEntries(response.headers.entries()));
 
     let data;
     const contentType = response.headers.get('content-type');
     
     if (contentType && contentType.includes('application/json')) {
       data = await response.json();
+      console.log('📡 API: JSON response received, data type:', typeof data, 'length:', Array.isArray(data) ? data.length : 'not array');
+      if (Array.isArray(data)) {
+        console.log('📡 API: Sample data (first 2 items):', data.slice(0, 2));
+      }
     } else {
       const text = await response.text();
-      console.log('Non-JSON response:', text);
+      console.log('📡 API: Non-JSON response:', text);
       data = text;
     }
 
@@ -124,14 +137,15 @@ export async function fetchApi<T>(
       const errorMessage = typeof data === 'object' && data 
         ? (data.detail || data.message || `HTTP ${response.status}: ${response.statusText}`)
         : `HTTP ${response.status}: ${response.statusText}`;
+      console.error('❌ API: Request failed:', errorMessage);
       throw new Error(errorMessage);
     }
 
-    console.log('API Response data received');
+    console.log('✅ API: Request successful');
     return { data: data as T };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error('API Error:', errorMessage);
+    console.error('❌ API: Request error:', errorMessage);
     toast({
       title: "API Error",
       description: errorMessage,
@@ -166,7 +180,7 @@ export const api = {
     fetchApi<T>(endpoint, { method: "DELETE" }),
     
   uploadCsv: async <T>(endpoint: string, csvData: any[], userId: number): Promise<ApiResponse<T>> => {
-    console.log('Uploading CSV data to FastAPI:', { endpoint, dataLength: csvData.length, userId });
+    console.log('📤 API: Uploading CSV data to FastAPI:', { endpoint, dataLength: csvData.length, userId });
     
     // Set database context for RLS
     await setDatabaseContext(userId);
