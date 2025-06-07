@@ -17,6 +17,28 @@ export function getVerificationResult(): TelegramVerificationResponse | null {
   return verificationResult;
 }
 
+// Get Bearer token from Supabase secrets
+async function getBearerToken(): Promise<string | null> {
+  try {
+    // Try to get token from Supabase edge function
+    const response = await fetch('/functions/v1/get-api-token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.token;
+    }
+  } catch (error) {
+    console.warn('⚠️ Could not get bearer token from Supabase:', error);
+  }
+  
+  return null;
+}
+
 // Verify Telegram user with backend
 export async function verifyTelegramUser(initData: string): Promise<TelegramVerificationResponse | null> {
   try {
@@ -24,11 +46,21 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     console.log('🔐 API: Sending to:', `${API_BASE_URL}${apiEndpoints.verifyTelegram()}`);
     console.log('🔐 API: InitData length:', initData.length);
     
+    const bearerToken = await getBearerToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    
+    if (bearerToken) {
+      headers['Authorization'] = `Bearer ${bearerToken}`;
+      console.log('🔐 API: Added bearer token to verification request');
+    }
+    
     const response = await fetch(`${API_BASE_URL}${apiEndpoints.verifyTelegram()}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
+      mode: 'cors',
       body: JSON.stringify({
         init_data: initData
       }),
@@ -57,14 +89,21 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
   }
 }
 
-export function getAuthHeaders(): Record<string, string> {
+export async function getAuthHeaders(): Promise<Record<string, string>> {
   let headers: Record<string, string> = {};
   
-  // Add auth headers if available
+  // Try to get bearer token from Supabase
+  const bearerToken = await getBearerToken();
+  if (bearerToken) {
+    headers["Authorization"] = `Bearer ${bearerToken}`;
+    console.log('🚀 API: Added bearer token to request');
+  }
+  
+  // Add auth headers if available from verification
   if (verificationResult && verificationResult.success) {
     const authToken = `telegram_verified_${verificationResult.user_id}`;
-    headers["Authorization"] = `Bearer ${authToken}`;
-    console.log('🚀 API: Added auth token to request');
+    headers["X-Telegram-Auth"] = authToken;
+    console.log('🚀 API: Added telegram auth token to request');
   }
   
   return headers;

@@ -15,89 +15,37 @@ export function useInventoryData() {
   const [debugInfo, setDebugInfo] = useState<any>({});
   
   const fetchData = async () => {
-    const userId = 2138564172;
+    const userId = getCurrentUserId() || 2138564172;
     
     console.log('🔍 INVENTORY: Starting fetch with user ID:', userId);
     setLoading(true);
-    setDebugInfo({ step: 'Starting fetch', userId });
+    setDebugInfo({ step: 'Starting fetch', userId, timestamp: new Date().toISOString() });
     
     try {
-      // Test multiple endpoints to see what works
-      const endpoints = [
-        `https://mazalbot.app/api/v1/get_all_stones?user_id=${userId}`,
-        `https://mazalbot.app/api/v1/users/${userId}/inventory`,
-        `https://mazalbot.app/api/v1/inventory/${userId}`,
-      ];
-      
-      let responseData = null;
-      let workingEndpoint = null;
-      
-      for (const endpoint of endpoints) {
-        try {
-          console.log(`🔍 INVENTORY: Trying endpoint: ${endpoint}`);
-          
-          const response = await fetch(endpoint, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Access-Control-Allow-Origin': '*',
-            },
-            mode: 'cors',
-          });
-          
-          console.log(`🔍 INVENTORY: Response status for ${endpoint}:`, response.status);
-          console.log(`🔍 INVENTORY: Response headers:`, Object.fromEntries(response.headers.entries()));
-          
-          if (response.ok) {
-            const data = await response.json();
-            console.log(`✅ INVENTORY: Success with ${endpoint}:`, data);
-            responseData = data;
-            workingEndpoint = endpoint;
-            break;
-          } else {
-            const errorText = await response.text();
-            console.log(`❌ INVENTORY: Failed ${endpoint}:`, response.status, errorText);
-          }
-        } catch (fetchError) {
-          console.log(`❌ INVENTORY: Network error for ${endpoint}:`, fetchError);
-        }
-      }
+      console.log('🔍 INVENTORY: Using API client to fetch data');
+      const result = await api.get(apiEndpoints.getAllStones(userId));
       
       setDebugInfo(prev => ({ 
         ...prev, 
-        step: 'Tested all endpoints',
-        workingEndpoint,
-        responseData,
-        hasData: !!responseData
+        step: 'API call completed',
+        hasError: !!result.error,
+        hasData: !!result.data,
+        timestamp: new Date().toISOString()
       }));
       
-      if (!responseData) {
-        // Try a simple test endpoint to check if server is reachable
-        try {
-          const testResponse = await fetch('https://mazalbot.app/api/v1/', {
-            method: 'GET',
-            mode: 'cors',
-          });
-          console.log('🔍 INVENTORY: Test root endpoint response:', testResponse.status);
-          
-          setDebugInfo(prev => ({ 
-            ...prev, 
-            testEndpointStatus: testResponse.status,
-            serverReachable: testResponse.ok
-          }));
-        } catch (testError) {
-          console.log('🔍 INVENTORY: Server unreachable:', testError);
-          setDebugInfo(prev => ({ 
-            ...prev, 
-            serverReachable: false,
-            testError: testError.message
-          }));
-        }
+      if (result.error) {
+        console.error('🔍 INVENTORY: API error:', result.error);
+        
+        setDebugInfo(prev => ({ 
+          ...prev, 
+          step: 'API error occurred',
+          error: result.error,
+          timestamp: new Date().toISOString()
+        }));
         
         toast({
-          title: "❌ API Connection Failed",
-          description: "Unable to connect to backend server. Check console for details.",
+          title: "❌ API Error",
+          description: `Failed to load inventory: ${result.error}`,
           variant: "destructive",
         });
         
@@ -106,8 +54,36 @@ export function useInventoryData() {
         return;
       }
       
+      if (!result.data) {
+        console.log('🔍 INVENTORY: No data returned from API');
+        setDebugInfo(prev => ({ 
+          ...prev, 
+          step: 'No data returned',
+          timestamp: new Date().toISOString()
+        }));
+        
+        setAllDiamonds([]);
+        setDiamonds([]);
+        
+        toast({
+          title: "⚠️ No Data",
+          description: "No response data from server",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       // Process the response data
-      const dataArray = Array.isArray(responseData) ? responseData : responseData.data || responseData.diamonds || [];
+      const dataArray = Array.isArray(result.data) ? result.data : 
+                       result.data.data || result.data.diamonds || 
+                       (result.data.items ? result.data.items : []);
+      
+      console.log('🔍 INVENTORY: Processing response data:', {
+        rawDataType: typeof result.data,
+        isArray: Array.isArray(result.data),
+        dataArrayLength: dataArray.length,
+        sampleItem: dataArray[0]
+      });
       
       if (dataArray && dataArray.length > 0) {
         console.log('🔍 INVENTORY: Processing', dataArray.length, 'diamonds');
@@ -123,19 +99,21 @@ export function useInventoryData() {
           ...prev, 
           step: 'Data processed successfully',
           totalDiamonds: convertedDiamonds.length,
-          sampleDiamond: convertedDiamonds[0]
+          sampleDiamond: convertedDiamonds[0],
+          timestamp: new Date().toISOString()
         }));
         
         toast({
           title: `✅ ${convertedDiamonds.length} diamonds loaded`,
-          description: `Successfully loaded from ${workingEndpoint}`,
+          description: `Successfully loaded your inventory`,
         });
       } else {
         console.log('🔍 INVENTORY: No diamonds in response data');
         setDebugInfo(prev => ({ 
           ...prev, 
           step: 'No diamonds found',
-          responseStructure: Object.keys(responseData || {})
+          responseStructure: Object.keys(result.data || {}),
+          timestamp: new Date().toISOString()
         }));
         
         setAllDiamonds([]);
@@ -143,7 +121,7 @@ export function useInventoryData() {
         
         toast({
           title: "⚠️ No Inventory Data",
-          description: "Server responded but no diamonds found for your account",
+          description: "Your inventory appears to be empty",
           variant: "destructive",
         });
       }
@@ -154,7 +132,8 @@ export function useInventoryData() {
         ...prev, 
         step: 'Critical error',
         error: error.message,
-        errorStack: error.stack
+        errorStack: error.stack,
+        timestamp: new Date().toISOString()
       }));
       
       setAllDiamonds([]);
@@ -185,7 +164,7 @@ export function useInventoryData() {
   const handleRefresh = () => {
     if (isAuthenticated && user?.id) {
       console.log('🔍 INVENTORY: Manual refresh triggered for verified user:', user.id);
-      setDebugInfo({ step: 'Manual refresh triggered' });
+      setDebugInfo({ step: 'Manual refresh triggered', timestamp: new Date().toISOString() });
       fetchData();
     }
   };

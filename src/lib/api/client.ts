@@ -1,11 +1,49 @@
 
 import { toast } from "@/components/ui/use-toast";
-import { API_BASE_URL, getCurrentUserId } from './config';
+import { API_BASE_URL, getCurrentUserId, isDevelopment } from './config';
 import { getAuthHeaders } from './auth';
 
 interface ApiResponse<T> {
   data?: T;
   error?: string;
+}
+
+// Test backend connectivity
+async function testBackendConnectivity(): Promise<boolean> {
+  try {
+    console.log('🔍 API: Testing backend connectivity...');
+    
+    // Try different test endpoints
+    const testUrls = [
+      `${API_BASE_URL}/`,
+      `${API_BASE_URL}/health`,
+      `${API_BASE_URL}/docs`,
+    ];
+    
+    for (const url of testUrls) {
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          mode: 'cors',
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
+        
+        if (response.ok || response.status === 404) {
+          console.log('✅ API: Backend is reachable at:', url);
+          return true;
+        }
+      } catch (error) {
+        console.log('❌ API: Failed to reach:', url, error.message);
+      }
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('❌ API: Backend connectivity test failed:', error);
+    return false;
+  }
 }
 
 export async function fetchApi<T>(
@@ -18,13 +56,18 @@ export async function fetchApi<T>(
     console.log('🚀 API: Making request to:', url);
     console.log('🚀 API: Current user ID:', getCurrentUserId(), 'type:', typeof getCurrentUserId());
     
+    // Test connectivity first if this is the first request
+    const isBackendReachable = await testBackendConnectivity();
+    if (!isBackendReachable) {
+      throw new Error('Backend server is not reachable. Please check if the server is running.');
+    }
+    
+    const authHeaders = await getAuthHeaders();
     let headers: Record<string, string> = {
       "Content-Type": "application/json",
       "Accept": "application/json",
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      ...getAuthHeaders(),
+      "Origin": window.location.origin,
+      ...authHeaders,
       ...options.headers as Record<string, string>,
     };
     
@@ -32,9 +75,15 @@ export async function fetchApi<T>(
       ...options,
       headers,
       mode: 'cors',
+      credentials: 'omit', // Don't send cookies
     };
     
-    console.log('🚀 API: Fetch options:', fetchOptions);
+    console.log('🚀 API: Fetch options:', {
+      url,
+      method: fetchOptions.method || 'GET',
+      headers: fetchOptions.headers,
+      hasBody: !!fetchOptions.body,
+    });
     
     const response = await fetch(url, fetchOptions);
 
@@ -54,14 +103,19 @@ export async function fetchApi<T>(
       }
     } else {
       const text = await response.text();
-      console.log('📡 API: Non-JSON response:', text);
+      console.log('📡 API: Non-JSON response:', text.substring(0, 200));
       data = text;
     }
 
     if (!response.ok) {
-      const errorMessage = typeof data === 'object' && data 
-        ? (data.detail || data.message || `HTTP ${response.status}: ${response.statusText}`)
-        : `HTTP ${response.status}: ${response.statusText}`;
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      
+      if (typeof data === 'object' && data) {
+        errorMessage = data.detail || data.message || errorMessage;
+      } else if (typeof data === 'string') {
+        errorMessage = data || errorMessage;
+      }
+      
       console.error('❌ API: Request failed:', errorMessage);
       throw new Error(errorMessage);
     }
@@ -77,7 +131,19 @@ export async function fetchApi<T>(
     if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
       toast({
         title: "🌐 Network Error",
-        description: "Cannot reach server. Check your internet connection.",
+        description: "Cannot reach the diamond inventory server. Please check your connection and try again.",
+        variant: "destructive",
+      });
+    } else if (errorMessage.includes('not reachable')) {
+      toast({
+        title: "🔌 Server Unavailable",
+        description: "The backend server appears to be offline. Please contact support.",
+        variant: "destructive",
+      });
+    } else if (errorMessage.includes('CORS')) {
+      toast({
+        title: "🚫 Access Blocked",
+        description: "Server configuration issue. Please contact support about CORS settings.",
         variant: "destructive",
       });
     }

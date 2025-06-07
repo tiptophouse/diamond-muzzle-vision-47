@@ -13,3 +13,9 @@ export function getCurrentUserId(): number | null {
   console.log('🔧 API: Getting current user ID:', currentUserId);
   return currentUserId;
 }
+
+// Helper function to check if we're in development
+export function isDevelopment(): boolean {
+  return window.location.hostname === 'localhost' || 
+         window.location.hostname.includes('lovableproject.com');
+}
