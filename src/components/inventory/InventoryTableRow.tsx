@@ -2,116 +2,34 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Diamond } from "./InventoryTable";
-import { Edit, Trash, ImageIcon, Upload, MessageCircle } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
-import { useState, useRef } from "react";
+import { Edit, Trash, ImageIcon } from "lucide-react";
 
 interface InventoryTableRowProps {
   diamond: Diamond;
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
-  onToggleStoreVisibility?: (diamondId: string, visible: boolean) => void;
-  onImageUpload?: (diamondId: string, file: File) => void;
 }
 
-export function InventoryTableRow({ 
-  diamond, 
-  onEdit, 
-  onDelete, 
-  onToggleStoreVisibility,
-  onImageUpload 
-}: InventoryTableRowProps) {
-  const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isStoreVisible, setIsStoreVisible] = useState(diamond.status === "Available");
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && onImageUpload) {
-      onImageUpload(diamond.id, file);
-      toast({
-        title: "Image uploaded",
-        description: "Diamond image has been updated successfully.",
-      });
-    }
-  };
-
-  const handleStoreToggle = (checked: boolean) => {
-    setIsStoreVisible(checked);
-    if (onToggleStoreVisibility) {
-      onToggleStoreVisibility(diamond.id, checked);
-    }
-    toast({
-      title: checked ? "Shown in store" : "Hidden from store",
-      description: `Diamond ${diamond.stockNumber} is now ${checked ? 'visible' : 'hidden'} in the store.`,
-    });
-  };
-
-  const handleContactSeller = () => {
-    const telegramUrl = `https://t.me/DiamondMuzzleBot?start=diamond_${diamond.id}`;
-    
-    // Use Telegram WebApp API if available
-    if (window.Telegram?.WebApp) {
-      try {
-        // Try to use Telegram's native method to open links
-        if (typeof (window.Telegram.WebApp as any).openTelegramLink === 'function') {
-          (window.Telegram.WebApp as any).openTelegramLink(telegramUrl);
-        } else {
-          // Fallback to window.open
-          window.open(telegramUrl, '_blank');
-        }
-      } catch (error) {
-        console.log('Telegram WebApp method failed, using fallback');
-        window.open(telegramUrl, '_blank');
-      }
-    } else {
-      // Fallback for non-Telegram environments
-      window.open(telegramUrl, '_blank');
-    }
-    
-    toast({
-      title: "Opening Telegram",
-      description: `Starting conversation about diamond ${diamond.stockNumber}`,
-    });
-  };
-
+export function InventoryTableRow({ diamond, onEdit, onDelete }: InventoryTableRowProps) {
   return (
     <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-800">
       <TableCell className="w-16">
-        <div className="relative group">
-          {diamond.imageUrl ? (
-            <img 
-              src={diamond.imageUrl} 
-              alt={`Diamond ${diamond.stockNumber}`}
-              className="w-12 h-12 object-cover rounded border border-slate-200 dark:border-slate-600"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-              }}
-            />
-          ) : (
-            <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 flex items-center justify-center">
-              <ImageIcon className="h-4 w-4 text-slate-400" />
-            </div>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 text-white"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Upload className="h-3 w-3" />
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleImageUpload}
+        {diamond.imageUrl ? (
+          <img 
+            src={diamond.imageUrl} 
+            alt={`Diamond ${diamond.stockNumber}`}
+            className="w-12 h-12 object-cover rounded border border-slate-200 dark:border-slate-600"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+            }}
           />
-        </div>
+        ) : (
+          <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 flex items-center justify-center">
+            <ImageIcon className="h-4 w-4 text-slate-400" />
+          </div>
+        )}
       </TableCell>
       <TableCell className="font-mono text-xs font-medium text-slate-900 dark:text-slate-100">
         {diamond.stockNumber}
@@ -153,23 +71,7 @@ export function InventoryTableRow({
         </Badge>
       </TableCell>
       <TableCell>
-        <Switch
-          checked={isStoreVisible}
-          onCheckedChange={handleStoreToggle}
-          disabled={diamond.status !== "Available"}
-        />
-      </TableCell>
-      <TableCell>
         <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleContactSeller}
-            className="h-8 w-8 p-0 hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-600 dark:text-blue-400"
-            title="Contact via Telegram"
-          >
-            <MessageCircle className="h-4 w-4" />
-          </Button>
           {onEdit && (
             <Button
               variant="ghost"

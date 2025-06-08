@@ -42,16 +42,16 @@ export function parseTelegramInitData(initData: string): TelegramInitData | null
 }
 
 export function validateTelegramInitData(initData: string, botToken?: string): boolean {
-  console.log('Telegram initData validation');
+  console.log('Enhanced Telegram initData validation');
   
   if (!initData || initData.length === 0) {
     console.warn('Missing or empty initData');
     return false;
   }
 
-  // In development mode or when no bot token, just validate format
-  if (process.env.NODE_ENV === 'development' || !botToken) {
-    console.log('Development mode or no bot token - skipping signature validation');
+  // Skip validation in development mode
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Development mode - skipping signature validation');
     const parsed = parseTelegramInitData(initData);
     return !!parsed && !!parsed.user && typeof parsed.user.id === 'number';
   }
@@ -77,22 +77,24 @@ export function validateTelegramInitData(initData: string, botToken?: string): b
     dataCheckArr.sort();
     const dataCheckString = dataCheckArr.join('\n');
     
-    // Validate HMAC signature
-    const secretKey = crypto.HmacSHA256(botToken, 'WebAppData');
-    const calculatedHash = crypto.HmacSHA256(dataCheckString, secretKey).toString();
-    
-    const isValid = calculatedHash === hash;
-    console.log('HMAC validation result:', isValid);
-    
-    if (!isValid) {
-      console.warn('Invalid Telegram signature');
-      return false;
+    if (botToken) {
+      // Validate HMAC signature
+      const secretKey = crypto.HmacSHA256(botToken, 'WebAppData');
+      const calculatedHash = crypto.HmacSHA256(dataCheckString, secretKey).toString();
+      
+      const isValid = calculatedHash === hash;
+      console.log('HMAC validation result:', isValid);
+      
+      if (!isValid) {
+        console.warn('Invalid Telegram signature');
+        return false;
+      }
     }
     
     const parsed = parseTelegramInitData(initData);
-    const isValidData = !!parsed && !!parsed.user && typeof parsed.user.id === 'number';
-    console.log('Final validation result:', isValidData);
-    return isValidData;
+    const isValid = !!parsed && !!parsed.user && typeof parsed.user.id === 'number';
+    console.log('Final validation result:', isValid);
+    return isValid;
   } catch (error) {
     console.error('Failed to validate Telegram initData:', error);
     return false;
