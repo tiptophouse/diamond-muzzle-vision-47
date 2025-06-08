@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +17,9 @@ interface StoreProductModalProps {
 }
 
 export function StoreProductModal({ diamond, isOpen, onClose }: StoreProductModalProps) {
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -36,6 +40,19 @@ export function StoreProductModal({ diamond, isOpen, onClose }: StoreProductModa
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const handleImageLoad = () => {
+    setImageLoading(false);
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    setImageLoading(false);
+    setImageError(true);
+  };
+
+  // Get image URL from multiple possible fields
+  const imageUrl = diamond.imageUrl || diamond.picture || diamond.image || diamond.photo;
 
   const specifications = [
     { label: 'Shape', value: diamond.shape },
@@ -69,12 +86,24 @@ export function StoreProductModal({ diamond, isOpen, onClose }: StoreProductModa
           {/* Diamond Image */}
           <div className="space-y-4">
             <div className="aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center overflow-hidden relative">
-              {diamond.imageUrl ? (
-                <img
-                  src={diamond.imageUrl}
-                  alt={`${diamond.shape} Diamond`}
-                  className="w-full h-full object-cover"
-                />
+              {imageUrl && !imageError ? (
+                <>
+                  {imageLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-12 h-12 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  )}
+                  <img
+                    src={imageUrl}
+                    alt={`${diamond.shape} Diamond`}
+                    className={`w-full h-full object-cover cursor-zoom-in transition-opacity duration-300 ${
+                      imageLoading ? 'opacity-0' : 'opacity-100'
+                    }`}
+                    onLoad={handleImageLoad}
+                    onError={handleImageError}
+                    onClick={() => window.open(imageUrl, '_blank')}
+                  />
+                </>
               ) : (
                 <div className="w-32 h-32 bg-gradient-to-br from-blue-200 to-purple-200 rounded-full flex items-center justify-center">
                   <div className="w-24 h-24 bg-white rounded-full shadow-lg flex items-center justify-center">

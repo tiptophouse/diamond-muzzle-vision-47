@@ -1,7 +1,9 @@
 
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ImageIcon } from "lucide-react";
 
 interface StoreProductCardProps {
   diamond: any;
@@ -9,6 +11,9 @@ interface StoreProductCardProps {
 }
 
 export function StoreProductCard({ diamond, onClick }: StoreProductCardProps) {
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -30,17 +35,41 @@ export function StoreProductCard({ diamond, onClick }: StoreProductCardProps) {
     }
   };
 
+  const handleImageLoad = () => {
+    setImageLoading(false);
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    setImageLoading(false);
+    setImageError(true);
+  };
+
+  // Get image URL from multiple possible fields
+  const imageUrl = diamond.imageUrl || diamond.picture || diamond.image || diamond.photo;
+
   return (
     <Card className="group cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1" onClick={onClick}>
       <CardContent className="p-0">
         {/* Diamond Image */}
-        <div className="aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-t-lg flex items-center justify-center overflow-hidden">
-          {diamond.imageUrl ? (
-            <img
-              src={diamond.imageUrl}
-              alt={`${diamond.shape} Diamond`}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-            />
+        <div className="aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-t-lg flex items-center justify-center overflow-hidden relative">
+          {imageUrl && !imageError ? (
+            <>
+              {imageLoading && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
+              <img
+                src={imageUrl}
+                alt={`${diamond.shape} Diamond`}
+                className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-200 ${
+                  imageLoading ? 'opacity-0' : 'opacity-100'
+                }`}
+                onLoad={handleImageLoad}
+                onError={handleImageError}
+              />
+            </>
           ) : (
             <div className="w-20 h-20 bg-gradient-to-br from-blue-200 to-purple-200 rounded-full flex items-center justify-center">
               <div className="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center">

@@ -3,7 +3,7 @@ import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface DashboardLoadingProps {
-  onEmergencyMode: () => void;
+  onEmergencyMode?: () => void;
 }
 
 export function DashboardLoading({ onEmergencyMode }: DashboardLoadingProps) {
@@ -14,13 +14,15 @@ export function DashboardLoading({ onEmergencyMode }: DashboardLoadingProps) {
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Dashboard</h1>
           <p className="text-sm text-muted-foreground mt-1">Loading your data safely...</p>
           
-          {/* Emergency mode toggle */}
-          <button 
-            onClick={onEmergencyMode}
-            className="mt-2 text-xs bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded"
-          >
-            Skip to Emergency Mode
-          </button>
+          {/* Emergency mode toggle - only show if handler is provided */}
+          {onEmergencyMode && (
+            <button 
+              onClick={onEmergencyMode}
+              className="mt-2 text-xs bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded"
+            >
+              Skip to Emergency Mode
+            </button>
+          )}
         </div>
         
         <div className="grid gap-2 grid-cols-2 lg:grid-cols-4">

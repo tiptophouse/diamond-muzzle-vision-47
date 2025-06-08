@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,18 +13,24 @@ interface InventoryTableRowProps {
 }
 
 export function InventoryTableRow({ diamond, onEdit, onDelete }: InventoryTableRowProps) {
+  const [imageError, setImageError] = useState(false);
+
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
+  // Get image URL from multiple possible sources
+  const imageUrl = diamond.imageUrl || (diamond as any).picture || (diamond as any).image;
+
   return (
     <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-800">
       <TableCell className="w-16">
-        {diamond.imageUrl ? (
+        {imageUrl && !imageError ? (
           <img 
-            src={diamond.imageUrl} 
+            src={imageUrl} 
             alt={`Diamond ${diamond.stockNumber}`}
             className="w-12 h-12 object-cover rounded border border-slate-200 dark:border-slate-600"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.nextElementSibling?.classList.remove('hidden');
-            }}
+            onError={handleImageError}
           />
         ) : (
           <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 flex items-center justify-center">
