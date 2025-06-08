@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { fetchInventoryData } from "@/services/inventoryDataService";
 import { convertDiamondsToInventoryFormat } from "@/services/diamondAnalytics";
 
-export function useLuxuryStoreData(filters: any, sortBy: string) {
+export function useStoreData(filters: any, sortBy: string) {
   const [loading, setLoading] = useState(true);
   const [allDiamonds, setAllDiamonds] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -23,21 +23,16 @@ export function useLuxuryStoreData(filters: any, sortBy: string) {
         }
         
         if (result.data && result.data.length > 0) {
-          // Convert to display format and filter for store visible items only
+          // Convert to display format and filter out sold/unavailable items
           const convertedDiamonds = convertDiamondsToInventoryFormat(result.data, 0)
-            .filter((diamond: any) => {
-              // Check if diamond is available and store_visible is true
-              const isAvailable = diamond.status?.toLowerCase() === 'available';
-              const isStoreVisible = diamond.store_visible === true;
-              return isAvailable && isStoreVisible;
-            });
+            .filter(diamond => diamond.status?.toLowerCase() === 'available');
           
           setAllDiamonds(convertedDiamonds);
         } else {
           setAllDiamonds([]);
         }
       } catch (err) {
-        console.error('Luxury store data loading error:', err);
+        console.error('Store data loading error:', err);
         setError('Failed to load diamond collection');
         setAllDiamonds([]);
       } finally {

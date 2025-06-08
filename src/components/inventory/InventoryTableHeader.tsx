@@ -1,24 +1,19 @@
 
-import {
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export function InventoryTableHeader() {
   return (
     <TableHeader>
-      <TableRow>
-        <TableHead className="font-semibold">Stock #</TableHead>
-        <TableHead className="font-semibold">Shape</TableHead>
-        <TableHead className="font-semibold">Carat</TableHead>
-        <TableHead className="font-semibold">Color</TableHead>
-        <TableHead className="font-semibold">Clarity</TableHead>
-        <TableHead className="font-semibold">Cut</TableHead>
-        <TableHead className="font-semibold">Price</TableHead>
-        <TableHead className="font-semibold">Status</TableHead>
-        <TableHead className="font-semibold">Store</TableHead>
-        <TableHead className="font-semibold">Actions</TableHead>
+      <TableRow className="hover:bg-transparent border-slate-200">
+        <TableHead className="font-semibold text-slate-900 bg-slate-50">Stock #</TableHead>
+        <TableHead className="font-semibold text-slate-900 bg-slate-50">Shape</TableHead>
+        <TableHead className="font-semibold text-slate-900 bg-slate-50 text-right">Carat</TableHead>
+        <TableHead className="font-semibold text-slate-900 bg-slate-50">Color</TableHead>
+        <TableHead className="font-semibold text-slate-900 bg-slate-50">Clarity</TableHead>
+        <TableHead className="font-semibold text-slate-900 bg-slate-50">Cut</TableHead>
+        <TableHead className="font-semibold text-slate-900 bg-slate-50 text-right">Price</TableHead>
+        <TableHead className="font-semibold text-slate-900 bg-slate-50">Status</TableHead>
+        <TableHead className="font-semibold text-slate-900 bg-slate-50">Actions</TableHead>
       </TableRow>
     </TableHeader>
   );

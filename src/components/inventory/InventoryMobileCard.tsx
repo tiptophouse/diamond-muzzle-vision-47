@@ -1,4 +1,4 @@
-import { useState } from "react";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,34 +12,29 @@ interface InventoryMobileCardProps {
 }
 
 export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobileCardProps) {
-  const [imageError, setImageError] = useState(false);
-
-  const handleImageError = () => {
-    setImageError(true);
-  };
-
-  // Get image URL from multiple possible sources
-  const imageUrl = diamond.imageUrl || (diamond as any).picture || (diamond as any).image;
-
   return (
     <Card className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors">
       <CardContent className="p-4 w-full">
         {/* Image section */}
-        {imageUrl && !imageError ? (
+        {diamond.imageUrl && (
           <div className="mb-4 w-full">
             <img 
-              src={imageUrl} 
+              src={diamond.imageUrl} 
               alt={`Diamond ${diamond.stockNumber}`}
               className="w-full h-32 object-cover rounded-lg border border-slate-200 dark:border-slate-600"
-              onError={handleImageError}
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
             />
           </div>
-        ) : (
+        )}
+        
+        {!diamond.imageUrl && (
           <div className="mb-4 w-full h-32 bg-slate-100 dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center">
             <ImageIcon className="h-8 w-8 text-slate-400" />
           </div>
         )}
-        
+
         <div className="flex justify-between items-start mb-4 w-full">
           <div className="flex-1 min-w-0">
             <h3 className="font-mono text-sm font-semibold text-slate-900 dark:text-slate-100 truncate mb-1">

@@ -21,7 +21,6 @@ export type Diamond = {
   price: number;
   status: string;
   imageUrl?: string;
-  store_visible?: boolean;
 };
 
 interface InventoryTableProps {

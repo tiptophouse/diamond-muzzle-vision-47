@@ -390,7 +390,6 @@ export type Database = {
           shape: string
           status: string | null
           stock_number: string
-          store_visible: boolean | null
           symmetry: string | null
           table_percentage: number | null
           updated_at: string
@@ -422,7 +421,6 @@ export type Database = {
           shape: string
           status?: string | null
           stock_number: string
-          store_visible?: boolean | null
           symmetry?: string | null
           table_percentage?: number | null
           updated_at?: string
@@ -454,7 +452,6 @@ export type Database = {
           shape?: string
           status?: string | null
           stock_number?: string
-          store_visible?: boolean | null
           symmetry?: string | null
           table_percentage?: number | null
           updated_at?: string

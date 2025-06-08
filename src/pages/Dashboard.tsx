@@ -1,46 +1,51 @@
 
-import { useEffect, useState } from "react";
-import { Layout } from "@/components/layout/Layout";
-import { DataDrivenDashboard } from "@/components/dashboard/DataDrivenDashboard";
-import { DashboardLoading } from "@/components/dashboard/DashboardLoading";
-import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { getVerificationResult } from "@/lib/api";
-import { useUserDataPersistence } from "@/hooks/useUserDataPersistence";
+import { useInventoryData } from '@/hooks/useInventoryData';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { DataDrivenDashboard } from '@/components/dashboard/DataDrivenDashboard';
+import { DashboardLoading } from '@/components/dashboard/DashboardLoading';
+import { getVerificationResult } from '@/lib/api';
 
 export default function Dashboard() {
-  console.log('🏠 Dashboard component rendering');
-  
-  const { user, isAuthenticated, isLoading, isTelegramEnvironment } = useTelegramAuth();
-  const [showDashboard, setShowDashboard] = useState(false);
-  
-  // Handle user data persistence in background
-  useUserDataPersistence(user, isTelegramEnvironment);
-  
-  useEffect(() => {
-    if (!isLoading) {
-      // Small delay to ensure smooth transition
-      const timer = setTimeout(() => {
-        setShowDashboard(true);
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isLoading]);
+  const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
+  const { loading, allDiamonds, debugInfo } = useInventoryData();
+  const verificationResult = getVerificationResult();
 
-  // Don't show anything while auth is loading
-  if (isLoading || !showDashboard) {
-    return <DashboardLoading />;
+  console.log('🔍 DASHBOARD DEBUG:');
+  console.log('- Auth loading:', authLoading);
+  console.log('- Is authenticated:', isAuthenticated);
+  console.log('- User:', user);
+  console.log('- FastAPI verification:', verificationResult);
+  console.log('- Inventory loading:', loading);
+  console.log('- Diamonds count:', allDiamonds.length);
+
+  const handleEmergencyMode = () => {
+    console.log('Emergency mode activated - skipping to basic dashboard');
+  };
+
+  if (authLoading || loading) {
+    return <DashboardLoading onEmergencyMode={handleEmergencyMode} />;
   }
 
-  // Show dashboard for authenticated users
-  if (isAuthenticated && user) {
+  if (!isAuthenticated || !user) {
     return (
-      <Layout>
-        <DataDrivenDashboard />
-      </Layout>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">FastAPI Authentication Required</h2>
+          <p className="text-gray-600 mb-4">Please authenticate through Telegram to access your dashboard.</p>
+          <div className="text-sm text-gray-500 space-y-1">
+            <p>Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
+            <p>Is Authenticated: {isAuthenticated ? 'Yes' : 'No'}</p>
+            <p>User: {user ? `${user.first_name} (${user.id})` : 'None'}</p>
+            <p>FastAPI Verification: {verificationResult ? 'Success' : 'Failed'}</p>
+          </div>
+        </div>
+      </div>
     );
   }
 
-  // Fallback - should not reach here due to AuthGuard
-  return <DashboardLoading />;
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <DataDrivenDashboard />
+    </div>
+  );
 }
