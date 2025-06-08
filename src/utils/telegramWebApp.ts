@@ -169,10 +169,10 @@ export function initializeTelegramWebApp(): Promise<boolean> {
             console.log('📱 Telegram WebApp expand() called');
           }
           
-          // Set theme
-          if (typeof tg.setHeaderColor === 'function') {
-            tg.setHeaderColor('#1f2937');
-            console.log('📱 Telegram WebApp header color set');
+          // Apply theme color to document if available
+          if (tg.themeParams?.bg_color) {
+            document.body.style.backgroundColor = tg.themeParams.bg_color;
+            console.log('📱 Telegram WebApp theme applied');
           }
           
           console.log('📱 Telegram WebApp initialized successfully');
