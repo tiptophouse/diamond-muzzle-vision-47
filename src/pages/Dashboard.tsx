@@ -46,32 +46,6 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <DataDrivenDashboard />
-      
-      {/* FastAPI Integration Debug Panel */}
-      <div className="fixed bottom-4 left-4 bg-gray-900 text-white p-4 rounded-lg shadow-lg max-w-sm text-xs max-h-96 overflow-y-auto">
-        <h4 className="font-bold mb-2">🔍 FastAPI Integration Debug</h4>
-        <div className="space-y-1">
-          <p><strong>Backend:</strong> mazalbot.app/api/v1</p>
-          <p><strong>User ID:</strong> {user.id} ({typeof user.id})</p>
-          <p><strong>Verified:</strong> {verificationResult?.success ? 'Yes' : 'No'}</p>
-          <p><strong>Diamonds:</strong> {allDiamonds.length}</p>
-          <p><strong>Loading:</strong> {loading ? 'Yes' : 'No'}</p>
-          <p><strong>Auth:</strong> {isAuthenticated ? 'Yes' : 'No'}</p>
-          
-          {debugInfo.step && <p><strong>Step:</strong> {debugInfo.step}</p>}
-          {debugInfo.error && <p className="text-red-300"><strong>Error:</strong> {debugInfo.error}</p>}
-          {debugInfo.endpoint && <p><strong>Endpoint:</strong> {debugInfo.endpoint}</p>}
-          
-          {verificationResult && (
-            <div className="mt-2">
-              <p><strong>Verification Result:</strong></p>
-              <pre className="text-xs bg-gray-800 p-1 rounded mt-1 overflow-x-auto">
-                {JSON.stringify(verificationResult, null, 1)}
-              </pre>
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
