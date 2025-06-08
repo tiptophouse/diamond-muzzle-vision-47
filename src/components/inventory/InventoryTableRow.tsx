@@ -1,10 +1,10 @@
 
-import { useState } from "react";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Edit, Trash2, Store } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Diamond } from "./InventoryTable";
-import { Edit, Trash, ImageIcon } from "lucide-react";
+import { useStoreVisibilityToggle } from "@/hooks/useStoreVisibilityToggle";
 
 interface InventoryTableRowProps {
   diamond: Diamond;
@@ -13,90 +13,85 @@ interface InventoryTableRowProps {
 }
 
 export function InventoryTableRow({ diamond, onEdit, onDelete }: InventoryTableRowProps) {
-  const [imageError, setImageError] = useState(false);
+  const { toggleStoreVisibility, loading } = useStoreVisibilityToggle();
 
-  const handleImageError = () => {
-    setImageError(true);
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(price);
   };
 
-  // Get image URL from multiple possible sources
-  const imageUrl = diamond.imageUrl || (diamond as any).picture || (diamond as any).image;
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'available':
+        return 'bg-green-100 text-green-800';
+      case 'sold':
+        return 'bg-red-100 text-red-800';
+      case 'reserved':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleStoreToggle = async () => {
+    const success = await toggleStoreVisibility(diamond.id, diamond.store_visible || false);
+    if (success) {
+      // Refresh the data or update the local state
+      window.location.reload();
+    }
+  };
 
   return (
-    <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-800">
-      <TableCell className="w-16">
-        {imageUrl && !imageError ? (
-          <img 
-            src={imageUrl} 
-            alt={`Diamond ${diamond.stockNumber}`}
-            className="w-12 h-12 object-cover rounded border border-slate-200 dark:border-slate-600"
-            onError={handleImageError}
-          />
-        ) : (
-          <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 flex items-center justify-center">
-            <ImageIcon className="h-4 w-4 text-slate-400" />
-          </div>
-        )}
-      </TableCell>
-      <TableCell className="font-mono text-xs font-medium text-slate-900 dark:text-slate-100">
-        {diamond.stockNumber}
-      </TableCell>
-      <TableCell className="font-medium text-slate-900 dark:text-slate-100">{diamond.shape}</TableCell>
-      <TableCell className="text-right font-medium text-slate-900 dark:text-slate-100">
-        {diamond.carat.toFixed(2)}
-      </TableCell>
+    <TableRow className="hover:bg-gray-50">
+      <TableCell className="font-medium">{diamond.stockNumber}</TableCell>
+      <TableCell>{diamond.shape}</TableCell>
+      <TableCell>{diamond.carat}</TableCell>
+      <TableCell>{diamond.color}</TableCell>
+      <TableCell>{diamond.clarity}</TableCell>
+      <TableCell>{diamond.cut}</TableCell>
+      <TableCell>{formatPrice(diamond.price)}</TableCell>
       <TableCell>
-        <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">
-          {diamond.color}
-        </Badge>
-      </TableCell>
-      <TableCell>
-        <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">
-          {diamond.clarity}
-        </Badge>
-      </TableCell>
-      <TableCell>
-        <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">
-          {diamond.cut}
-        </Badge>
-      </TableCell>
-      <TableCell className="text-right font-bold text-slate-900 dark:text-slate-100">
-        ${diamond.price.toLocaleString()}
-      </TableCell>
-      <TableCell>
-        <Badge 
-          className={`${
-            diamond.status === "Available" 
-              ? "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900 dark:text-emerald-200" 
-              : diamond.status === "Reserved" 
-              ? "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900 dark:text-blue-200" 
-              : "bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-700 dark:text-slate-200"
-          }`}
-          variant="outline"
-        >
+        <Badge className={getStatusColor(diamond.status)}>
           {diamond.status}
         </Badge>
       </TableCell>
       <TableCell>
-        <div className="flex gap-1">
+        <Badge variant={diamond.store_visible ? "default" : "secondary"}>
+          {diamond.store_visible ? "In Store" : "Not in Store"}
+        </Badge>
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleStoreToggle}
+            disabled={loading}
+            className={diamond.store_visible ? "bg-red-50 hover:bg-red-100" : "bg-green-50 hover:bg-green-100"}
+          >
+            <Store className="h-4 w-4" />
+            {diamond.store_visible ? "Remove" : "Add"}
+          </Button>
           {onEdit && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => onEdit(diamond)}
-              className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700"
             >
               <Edit className="h-4 w-4" />
             </Button>
           )}
           {onDelete && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => onDelete(diamond.id)}
-              className="h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400"
+              className="text-red-600 hover:text-red-700"
             >
-              <Trash className="h-4 w-4" />
+              <Trash2 className="h-4 w-4" />
             </Button>
           )}
         </div>

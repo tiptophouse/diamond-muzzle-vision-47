@@ -23,9 +23,12 @@ export function useStoreData(filters: any, sortBy: string) {
         }
         
         if (result.data && result.data.length > 0) {
-          // Convert to display format and filter out sold/unavailable items
+          // Convert to display format and filter for store visible items only
           const convertedDiamonds = convertDiamondsToInventoryFormat(result.data, 0)
-            .filter(diamond => diamond.status?.toLowerCase() === 'available');
+            .filter(diamond => 
+              diamond.status?.toLowerCase() === 'available' && 
+              diamond.store_visible === true
+            );
           
           setAllDiamonds(convertedDiamonds);
         } else {
