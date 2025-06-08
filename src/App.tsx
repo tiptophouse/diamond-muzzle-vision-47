@@ -16,6 +16,7 @@ import UploadSingleStonePage from "./pages/UploadSingleStonePage";
 import InsightsPage from "./pages/InsightsPage";
 import ReportsPage from "./pages/ReportsPage";
 import NotificationsPage from "./pages/NotificationsPage";
+import StorePage from "./pages/StorePage";
 import { TelegramAuthProvider } from '@/context/TelegramAuthContext';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
@@ -30,32 +31,40 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <TelegramAuthProvider>
-          <AuthGuard>
-            <AuthorizationGuard>
-              <Router>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/inventory" element={<Inventory />} />
-                  <Route path="/upload" element={<UploadPage />} />
-                  <Route path="/upload-single" element={<UploadSingleStonePage />} />
-                  <Route path="/chat" element={<ChatPage />} />
-                  <Route path="/insights" element={<InsightsPage />} />
-                  <Route path="/reports" element={<ReportsPage />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/notifications" element={<NotificationsPage />} />
-                  <Route path="/admin" element={
-                    <AdminGuard>
-                      <Admin />
-                    </AdminGuard>
-                  } />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Router>
-            </AuthorizationGuard>
-          </AuthGuard>
-        </TelegramAuthProvider>
+        <Router>
+          <Routes>
+            {/* Public store route - no auth required */}
+            <Route path="/store" element={<StorePage />} />
+            
+            {/* Protected routes */}
+            <Route path="/*" element={
+              <TelegramAuthProvider>
+                <AuthGuard>
+                  <AuthorizationGuard>
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/inventory" element={<Inventory />} />
+                      <Route path="/upload" element={<UploadPage />} />
+                      <Route path="/upload-single" element={<UploadSingleStonePage />} />
+                      <Route path="/chat" element={<ChatPage />} />
+                      <Route path="/insights" element={<InsightsPage />} />
+                      <Route path="/reports" element={<ReportsPage />} />
+                      <Route path="/settings" element={<Settings />} />
+                      <Route path="/notifications" element={<NotificationsPage />} />
+                      <Route path="/admin" element={
+                        <AdminGuard>
+                          <Admin />
+                        </AdminGuard>
+                      } />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </AuthorizationGuard>
+                </AuthGuard>
+              </TelegramAuthProvider>
+            } />
+          </Routes>
+        </Router>
       </ThemeProvider>
     </QueryClientProvider>
   );
