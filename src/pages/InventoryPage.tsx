@@ -1,37 +1,15 @@
 
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
-import { InventoryTable } from "@/components/inventory/InventoryTable";
-import { InventoryFilters } from "@/components/inventory/InventoryFilters";
-import { InventoryHeader } from "@/components/inventory/InventoryHeader";
-import { InventorySearch } from "@/components/inventory/InventorySearch";
-import { InventoryPagination } from "@/components/inventory/InventoryPagination";
-import { DiamondForm } from "@/components/inventory/DiamondForm";
-import { DiamondFormData } from "@/components/inventory/form/types";
 import { useInventoryData } from "@/hooks/useInventoryData";
 import { useInventorySearch } from "@/hooks/useInventorySearch";
 import { useInventoryCrud } from "@/hooks/useInventoryCrud";
 import { useStoreVisibilityToggle } from "@/hooks/useStoreVisibilityToggle";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { Diamond } from "@/components/inventory/InventoryTable";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
-import { useToast } from "@/components/ui/use-toast";
+import { InventoryContent } from "@/components/inventory/InventoryContent";
+import { InventoryDialogs } from "@/components/inventory/InventoryDialogs";
+import { useInventoryActions } from "@/components/inventory/InventoryActions";
 
 export default function InventoryPage() {
   const { isAuthenticated, isLoading: authLoading, user, error: authError } = useTelegramAuth();
@@ -42,7 +20,6 @@ export default function InventoryPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [diamondToDelete, setDiamondToDelete] = useState<Diamond | null>(null);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
-  const { toast } = useToast();
 
   const {
     loading,
@@ -71,6 +48,29 @@ export default function InventoryPage() {
 
   const { toggleStoreVisibility } = useStoreVisibilityToggle();
 
+  const {
+    handleAddDiamond,
+    handleEditDiamond,
+    handleDeleteDiamond,
+    handleToggleStoreVisibility,
+    handleFormSubmit,
+    confirmDelete,
+    handleQRScan,
+    handleQRScanSuccess,
+  } = useInventoryActions({
+    allDiamonds,
+    addDiamond,
+    updateDiamond,
+    deleteDiamond,
+    toggleStoreVisibility,
+    handleRefresh,
+    setIsFormOpen,
+    setEditingDiamond,
+    setDeleteDialogOpen,
+    setDiamondToDelete,
+    setIsQRScannerOpen,
+  });
+
   useEffect(() => {
     setDiamonds(filteredDiamonds);
   }, [filteredDiamonds, setDiamonds]);
@@ -81,83 +81,16 @@ export default function InventoryPage() {
     setCurrentPage(1);
   };
 
-  const handleAddDiamond = () => {
-    setEditingDiamond(null);
-    setIsFormOpen(true);
+  const onFormSubmit = async (data: any) => {
+    await handleFormSubmit(editingDiamond, data, setIsFormOpen, setEditingDiamond);
   };
 
-  const handleEditDiamond = (diamond: Diamond) => {
-    setEditingDiamond(diamond);
-    setIsFormOpen(true);
+  const onConfirmDelete = async () => {
+    await confirmDelete(diamondToDelete, setDeleteDialogOpen, setDiamondToDelete);
   };
 
-  const handleDeleteDiamond = (diamondId: string) => {
-    const diamond = allDiamonds.find(d => d.id === diamondId);
-    setDiamondToDelete(diamond || null);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleToggleStoreVisibility = async (diamond: Diamond) => {
-    const success = await toggleStoreVisibility(diamond);
-    if (success) {
-      handleRefresh();
-    }
-  };
-
-  const handleFormSubmit = async (data: DiamondFormData) => {
-    let success = false;
-    
-    if (editingDiamond) {
-      success = await updateDiamond(editingDiamond.id, data);
-    } else {
-      success = await addDiamond(data);
-    }
-
-    if (success) {
-      setIsFormOpen(false);
-      setEditingDiamond(null);
-    }
-  };
-
-  const confirmDelete = async () => {
-    if (diamondToDelete) {
-      const success = await deleteDiamond(diamondToDelete.id, diamondToDelete);
-      if (success) {
-        setDeleteDialogOpen(false);
-        setDiamondToDelete(null);
-      }
-    }
-  };
-
-  const handleQRScan = () => {
-    setIsQRScannerOpen(true);
-  };
-
-  const handleQRScanSuccess = (giaData: any) => {
-    console.log('Received GIA data from scanner:', giaData);
-    
-    setEditingDiamond({
-      id: '',
-      stockNumber: giaData.stockNumber || `GIA-${Date.now()}`,
-      shape: giaData.shape || 'Round',
-      carat: giaData.carat || 1.0,
-      color: giaData.color || 'G',
-      clarity: giaData.clarity || 'VS1',
-      cut: giaData.cut || 'Excellent',
-      price: giaData.price || 5000,
-      status: giaData.status || 'Available',
-      imageUrl: giaData.imageUrl || '',
-      certificateNumber: giaData.certificateNumber || '',
-      lab: giaData.lab || 'GIA'
-    } as Diamond);
-    
-    setIsQRScannerOpen(false);
-    setIsFormOpen(true);
-    
-    toast({
-      title: "GIA Data Loaded",
-      description: `Certificate ${giaData.certificateNumber} data has been loaded into the form`,
-    });
+  const onQRScanSuccess = (giaData: any) => {
+    handleQRScanSuccess(giaData, setEditingDiamond, setIsQRScannerOpen, setIsFormOpen);
   };
 
   if (authLoading) {
@@ -190,85 +123,39 @@ export default function InventoryPage() {
 
   return (
     <Layout>
-      <div className="w-full max-w-full overflow-x-hidden space-y-4">
-        <InventoryHeader
-          totalDiamonds={allDiamonds.length}
-          onRefresh={handleRefresh}
-          onAdd={handleAddDiamond}
-          onQRScan={handleQRScan}
-          loading={loading}
-        />
-        
-        <div className="w-full space-y-4">
-          <InventorySearch
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onSubmit={handleSearch}
-            allDiamonds={allDiamonds}
-          />
-          
-          <InventoryFilters onFilterChange={handleFilterChange} />
-        </div>
-        
-        <div className="w-full overflow-x-hidden">
-          <InventoryTable
-            data={diamonds}
-            loading={loading}
-            onEdit={handleEditDiamond}
-            onDelete={handleDeleteDiamond}
-            onToggleStoreVisibility={handleToggleStoreVisibility}
-          />
-        </div>
-        
-        <InventoryPagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
-      </div>
-
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {editingDiamond ? 'Edit Diamond' : 'Add New Diamond'}
-            </DialogTitle>
-          </DialogHeader>
-          <DiamondForm
-            diamond={editingDiamond || undefined}
-            onSubmit={handleFormSubmit}
-            onCancel={() => setIsFormOpen(false)}
-            isLoading={crudLoading}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <QRCodeScanner
-        isOpen={isQRScannerOpen}
-        onClose={() => setIsQRScannerOpen(false)}
-        onScanSuccess={handleQRScanSuccess}
+      <InventoryContent
+        diamonds={diamonds}
+        allDiamonds={allDiamonds}
+        loading={loading}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+        totalPages={totalPages}
+        onFilterChange={handleFilterChange}
+        onEdit={handleEditDiamond}
+        onDelete={handleDeleteDiamond}
+        onToggleStoreVisibility={handleToggleStoreVisibility}
+        onRefresh={handleRefresh}
+        onAdd={handleAddDiamond}
+        onQRScan={handleQRScan}
+        handleSearch={handleSearch}
       />
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the diamond from your inventory.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-red-600 hover:bg-red-700"
-              disabled={crudLoading}
-            >
-              {crudLoading ? 'Deleting...' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <InventoryDialogs
+        isFormOpen={isFormOpen}
+        setIsFormOpen={setIsFormOpen}
+        editingDiamond={editingDiamond}
+        deleteDialogOpen={deleteDialogOpen}
+        setDeleteDialogOpen={setDeleteDialogOpen}
+        diamondToDelete={diamondToDelete}
+        isQRScannerOpen={isQRScannerOpen}
+        setIsQRScannerOpen={setIsQRScannerOpen}
+        onFormSubmit={onFormSubmit}
+        onConfirmDelete={onConfirmDelete}
+        onQRScanSuccess={onQRScanSuccess}
+        isLoading={crudLoading}
+      />
     </Layout>
   );
 }
