@@ -50,15 +50,19 @@ export function InventoryTableRow({
   };
 
   const handleContactSeller = () => {
-    // Open Telegram chat with seller
+    // Use Telegram WebApp API to open external link
     if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.openTelegramLink(`https://t.me/your_bot_username?start=diamond_${diamond.id}`);
+      const telegramUrl = `https://t.me/DiamondMuzzleBot?start=diamond_${diamond.id}`;
+      window.Telegram.WebApp.openLink(telegramUrl);
     } else {
-      toast({
-        title: "Contact seller",
-        description: `Interested in diamond ${diamond.stockNumber}. Opening Telegram chat...`,
-      });
+      // Fallback for non-Telegram environments
+      window.open(`https://t.me/DiamondMuzzleBot?start=diamond_${diamond.id}`, '_blank');
     }
+    
+    toast({
+      title: "Opening Telegram",
+      description: `Starting conversation about diamond ${diamond.stockNumber}`,
+    });
   };
 
   return (
