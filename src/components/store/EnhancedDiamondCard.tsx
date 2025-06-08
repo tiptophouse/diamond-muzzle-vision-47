@@ -5,15 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { AdminStoreControls } from "./AdminStoreControls";
 
-interface DiamondCardProps {
+const ADMIN_TELEGRAM_ID = 2138564172;
+
+interface EnhancedDiamondCardProps {
   diamond: Diamond;
   index: number;
+  onUpdate?: () => void;
+  onDelete?: () => void;
 }
 
-export function DiamondCard({ diamond, index }: DiamondCardProps) {
+export function EnhancedDiamondCard({ diamond, index, onUpdate, onDelete }: EnhancedDiamondCardProps) {
   const [imageError, setImageError] = useState(false);
   const { user } = useTelegramAuth();
+  const isAdmin = user?.id === ADMIN_TELEGRAM_ID;
 
   const handleContactOwner = () => {
     const message = `Hi! I'm interested in your diamond:\n\n` +
@@ -26,25 +32,25 @@ export function DiamondCard({ diamond, index }: DiamondCardProps) {
       `Could you please provide more details?`;
 
     const encodedMessage = encodeURIComponent(message);
-    
-    // Try to open Telegram first
     const telegramUrl = `https://t.me/share/url?url=${encodedMessage}`;
     
-    try {
-      // Simple fallback approach - just open the URL
-      window.open(telegramUrl, '_blank');
-    } catch (error) {
-      console.error('Failed to open Telegram:', error);
-      // Fallback to regular window.open
-      window.open(telegramUrl, '_blank');
-    }
+    window.open(telegramUrl, '_blank');
   };
 
   return (
     <div 
-      className="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group animate-fade-in"
+      className="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group animate-fade-in relative"
       style={{ animationDelay: `${index * 100}ms` }}
     >
+      {/* Admin Controls */}
+      {isAdmin && onUpdate && onDelete && (
+        <AdminStoreControls 
+          diamond={diamond}
+          onUpdate={onUpdate}
+          onDelete={onDelete}
+        />
+      )}
+
       {/* Image Container */}
       <div className="relative h-48 bg-gradient-to-br from-slate-50 to-slate-100 rounded-t-xl overflow-hidden">
         {diamond.imageUrl && !imageError ? (

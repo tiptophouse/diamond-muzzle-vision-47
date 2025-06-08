@@ -9,7 +9,7 @@ import { useStoreFilters } from "@/hooks/useStoreFilters";
 
 export default function StorePage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const { diamonds, loading, error } = useStoreData();
+  const { diamonds, loading, error, refetch } = useStoreData();
   const { filters, filteredDiamonds, updateFilter, clearFilters } = useStoreFilters(diamonds);
 
   return (
@@ -40,6 +40,7 @@ export default function StorePage() {
                 diamonds={filteredDiamonds}
                 loading={loading}
                 error={error}
+                onUpdate={refetch}
               />
             </div>
           </div>
