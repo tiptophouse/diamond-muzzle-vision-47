@@ -28,9 +28,18 @@ interface InventoryTableProps {
   loading?: boolean;
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
+  onToggleStoreVisibility?: (diamondId: string, visible: boolean) => void;
+  onImageUpload?: (diamondId: string, file: File) => void;
 }
 
-export function InventoryTable({ data, loading = false, onEdit, onDelete }: InventoryTableProps) {
+export function InventoryTable({ 
+  data, 
+  loading = false, 
+  onEdit, 
+  onDelete,
+  onToggleStoreVisibility,
+  onImageUpload
+}: InventoryTableProps) {
   const isMobile = useIsMobile();
 
   if (loading) {
@@ -73,6 +82,8 @@ export function InventoryTable({ data, loading = false, onEdit, onDelete }: Inve
                   diamond={diamond} 
                   onEdit={onEdit}
                   onDelete={onDelete}
+                  onToggleStoreVisibility={onToggleStoreVisibility}
+                  onImageUpload={onImageUpload}
                 />
               ))
             )}

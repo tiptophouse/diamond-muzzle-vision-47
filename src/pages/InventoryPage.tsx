@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -92,6 +91,33 @@ export default function InventoryPage() {
     const diamond = allDiamonds.find(d => d.id === diamondId);
     setDiamondToDelete(diamond || null);
     setDeleteDialogOpen(true);
+  };
+
+  const handleToggleStoreVisibility = (diamondId: string, visible: boolean) => {
+    console.log(`Toggling store visibility for diamond ${diamondId}: ${visible}`);
+    // This would typically update the database
+    // For now, we'll just show a toast
+  };
+
+  const handleImageUpload = async (diamondId: string, file: File) => {
+    console.log(`Uploading image for diamond ${diamondId}:`, file.name);
+    
+    // Create a temporary URL for preview
+    const imageUrl = URL.createObjectURL(file);
+    
+    // Update the diamond in the local state
+    setDiamonds(prev => prev.map(diamond => 
+      diamond.id === diamondId 
+        ? { ...diamond, imageUrl }
+        : diamond
+    ));
+
+    // Here you would typically upload to your storage service
+    // For now, we'll just show success
+    toast({
+      title: "Image uploaded",
+      description: `Image for diamond ${diamondId} has been uploaded successfully.`,
+    });
   };
 
   const handleFormSubmit = async (data: DiamondFormData) => {
@@ -206,6 +232,8 @@ export default function InventoryPage() {
             loading={loading}
             onEdit={handleEditDiamond}
             onDelete={handleDeleteDiamond}
+            onToggleStoreVisibility={handleToggleStoreVisibility}
+            onImageUpload={handleImageUpload}
           />
         </div>
         
