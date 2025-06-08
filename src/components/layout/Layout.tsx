@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import Header from './Header';
+import { Header } from './Header';
 import Sidebar from './Sidebar';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 
@@ -48,7 +48,7 @@ export function Layout({ children, className }: LayoutProps) {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Header - only show once */}
+        {/* Header */}
         <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
         
         {/* Page content */}
