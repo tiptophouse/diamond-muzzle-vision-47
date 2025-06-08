@@ -1,132 +1,114 @@
 
-import { useState, useEffect, useMemo } from "react";
-import { fetchInventoryData } from "@/services/inventoryDataService";
-import { convertDiamondsToInventoryFormat } from "@/services/diamondAnalytics";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { StoreFilters } from '@/pages/StorePage';
 
-export function useStoreData(filters: any, sortBy: string) {
+export function useStoreData(filters: StoreFilters, sortBy: string) {
+  const [diamonds, setDiamonds] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [allDiamonds, setAllDiamonds] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadStoreData = async () => {
+    const fetchStoreData = async () => {
+      setLoading(true);
+      setError(null);
+
       try {
-        setLoading(true);
-        setError(null);
-        
-        const result = await fetchInventoryData();
-        
-        if (result.error) {
-          setError(result.error);
-          setAllDiamonds([]);
+        let query = supabase
+          .from('inventory')
+          .select('*')
+          .eq('store_visible', true);
+
+        // Apply shape filter
+        if (filters.shape.length > 0) {
+          query = query.in('shape', filters.shape);
+        }
+
+        // Apply color filter
+        if (filters.color[0] !== 'D' || filters.color[1] !== 'Z') {
+          // For color filtering, we need to handle the range properly
+          // This is a simplified version - you might want to create a proper color ordering
+          query = query.gte('color', filters.color[0]).lte('color', filters.color[1]);
+        }
+
+        // Apply clarity filter
+        if (filters.clarity.length > 0) {
+          query = query.in('clarity', filters.clarity);
+        }
+
+        // Apply carat range filter
+        query = query.gte('weight', filters.carat[0]).lte('weight', filters.carat[1]);
+
+        // Apply price range filter (assuming we have a calculated price)
+        // For now, we'll use price_per_carat * weight as price
+        query = query.gte('price_per_carat', Math.floor(filters.price[0] / 5));
+        query = query.lte('price_per_carat', Math.ceil(filters.price[1] / 5));
+
+        // Apply cut filter
+        if (filters.cut.length > 0) {
+          query = query.in('cut', filters.cut);
+        }
+
+        // Apply search filter
+        if (filters.search) {
+          query = query.or(`stock_number.ilike.%${filters.search}%,shape.ilike.%${filters.search}%,color.ilike.%${filters.search}%`);
+        }
+
+        // Apply sorting
+        switch (sortBy) {
+          case 'price-asc':
+            query = query.order('price_per_carat', { ascending: true });
+            break;
+          case 'price-desc':
+            query = query.order('price_per_carat', { ascending: false });
+            break;
+          case 'carat-asc':
+            query = query.order('weight', { ascending: true });
+            break;
+          case 'carat-desc':
+            query = query.order('weight', { ascending: false });
+            break;
+          default:
+            query = query.order('created_at', { ascending: false });
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          console.error('Error fetching store data:', error);
+          setError('Failed to load diamonds');
+          setDiamonds([]);
           return;
         }
-        
-        if (result.data && result.data.length > 0) {
-          // Convert to display format and filter out sold/unavailable items
-          const convertedDiamonds = convertDiamondsToInventoryFormat(result.data, 0)
-            .filter(diamond => diamond.status?.toLowerCase() === 'available');
-          
-          setAllDiamonds(convertedDiamonds);
-        } else {
-          setAllDiamonds([]);
-        }
+
+        // Transform the data to match the expected format
+        const transformedData = (data || []).map(item => ({
+          id: item.id,
+          stockNumber: item.stock_number,
+          shape: item.shape,
+          carat: item.weight,
+          color: item.color,
+          clarity: item.clarity,
+          cut: item.cut || 'Excellent',
+          price: (item.price_per_carat || 0) * item.weight,
+          status: item.status || 'Available',
+          imageUrl: item.picture,
+          lab: item.lab || 'GIA',
+          certificateNumber: item.certificate_number,
+        }));
+
+        setDiamonds(transformedData);
       } catch (err) {
-        console.error('Store data loading error:', err);
-        setError('Failed to load diamond collection');
-        setAllDiamonds([]);
+        console.error('Unexpected error fetching store data:', err);
+        setError('An unexpected error occurred');
+        setDiamonds([]);
       } finally {
         setLoading(false);
       }
     };
 
-    loadStoreData();
-  }, []);
+    fetchStoreData();
+  }, [filters, sortBy]);
 
-  const filteredAndSortedDiamonds = useMemo(() => {
-    let filtered = [...allDiamonds];
-
-    // Apply search filter
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(diamond =>
-        diamond.shape?.toLowerCase().includes(searchLower) ||
-        diamond.color?.toLowerCase().includes(searchLower) ||
-        diamond.clarity?.toLowerCase().includes(searchLower) ||
-        diamond.cut?.toLowerCase().includes(searchLower) ||
-        diamond.lab?.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // Apply shape filter
-    if (filters.shape.length > 0) {
-      filtered = filtered.filter(diamond => 
-        filters.shape.includes(diamond.shape)
-      );
-    }
-
-    // Apply color filter
-    const colorIndex = (color: string) => {
-      const colors = ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
-      return colors.indexOf(color);
-    };
-    
-    const minColorIndex = colorIndex(filters.color[0]);
-    const maxColorIndex = colorIndex(filters.color[1]);
-    
-    filtered = filtered.filter(diamond => {
-      const diamondColorIndex = colorIndex(diamond.color);
-      return diamondColorIndex >= minColorIndex && diamondColorIndex <= maxColorIndex;
-    });
-
-    // Apply clarity filter
-    if (filters.clarity.length > 0) {
-      filtered = filtered.filter(diamond => 
-        filters.clarity.includes(diamond.clarity)
-      );
-    }
-
-    // Apply cut filter
-    if (filters.cut.length > 0) {
-      filtered = filtered.filter(diamond => 
-        filters.cut.includes(diamond.cut)
-      );
-    }
-
-    // Apply carat filter
-    filtered = filtered.filter(diamond => 
-      diamond.carat >= filters.carat[0] && diamond.carat <= filters.carat[1]
-    );
-
-    // Apply price filter
-    filtered = filtered.filter(diamond => 
-      diamond.price >= filters.price[0] && diamond.price <= filters.price[1]
-    );
-
-    // Apply sorting
-    switch (sortBy) {
-      case 'price-asc':
-        filtered.sort((a, b) => a.price - b.price);
-        break;
-      case 'price-desc':
-        filtered.sort((a, b) => b.price - a.price);
-        break;
-      case 'carat-asc':
-        filtered.sort((a, b) => a.carat - b.carat);
-        break;
-      case 'carat-desc':
-        filtered.sort((a, b) => b.carat - a.carat);
-        break;
-      default:
-        break;
-    }
-
-    return filtered;
-  }, [allDiamonds, filters, sortBy]);
-
-  return {
-    diamonds: filteredAndSortedDiamonds,
-    loading,
-    error,
-  };
+  return { diamonds, loading, error };
 }

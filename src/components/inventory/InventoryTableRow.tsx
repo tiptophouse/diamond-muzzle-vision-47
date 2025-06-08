@@ -4,19 +4,31 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Diamond } from "./InventoryTable";
-import { Edit, Trash, ImageIcon } from "lucide-react";
+import { Edit, Trash, ImageIcon, Eye, EyeOff, Share2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface InventoryTableRowProps {
   diamond: Diamond;
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
+  onToggleStoreVisibility?: (diamond: Diamond) => void;
 }
 
-export function InventoryTableRow({ diamond, onEdit, onDelete }: InventoryTableRowProps) {
+export function InventoryTableRow({ diamond, onEdit, onDelete, onToggleStoreVisibility }: InventoryTableRowProps) {
   const [imageError, setImageError] = useState(false);
+  const { toast } = useToast();
 
   const handleImageError = () => {
     setImageError(true);
+  };
+
+  const handleShareLink = () => {
+    const storeUrl = `${window.location.origin}/store?item=${diamond.id}`;
+    navigator.clipboard.writeText(storeUrl);
+    toast({
+      title: "Link copied!",
+      description: "Store link copied to clipboard",
+    });
   };
 
   // Get image URL from multiple possible sources
@@ -78,7 +90,43 @@ export function InventoryTableRow({ diamond, onEdit, onDelete }: InventoryTableR
         </Badge>
       </TableCell>
       <TableCell>
+        <Badge 
+          className={`${
+            (diamond as any).store_visible
+              ? "bg-green-100 text-green-800 border-green-300 dark:bg-green-900 dark:text-green-200" 
+              : "bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-700 dark:text-gray-200"
+          }`}
+          variant="outline"
+        >
+          {(diamond as any).store_visible ? "Visible" : "Hidden"}
+        </Badge>
+      </TableCell>
+      <TableCell>
         <div className="flex gap-1">
+          {onToggleStoreVisibility && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onToggleStoreVisibility(diamond)}
+              className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700"
+              title={`${(diamond as any).store_visible ? 'Hide from' : 'Show in'} store`}
+            >
+              {(diamond as any).store_visible ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleShareLink}
+            className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700"
+            title="Copy store link"
+          >
+            <Share2 className="h-4 w-4" />
+          </Button>
           {onEdit && (
             <Button
               variant="ghost"

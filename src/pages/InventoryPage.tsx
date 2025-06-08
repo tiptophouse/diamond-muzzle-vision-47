@@ -11,6 +11,7 @@ import { DiamondFormData } from "@/components/inventory/form/types";
 import { useInventoryData } from "@/hooks/useInventoryData";
 import { useInventorySearch } from "@/hooks/useInventorySearch";
 import { useInventoryCrud } from "@/hooks/useInventoryCrud";
+import { useStoreVisibilityToggle } from "@/hooks/useStoreVisibilityToggle";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import {
@@ -68,6 +69,8 @@ export default function InventoryPage() {
     restoreDiamondToState,
   });
 
+  const { toggleStoreVisibility } = useStoreVisibilityToggle();
+
   useEffect(() => {
     setDiamonds(filteredDiamonds);
   }, [filteredDiamonds, setDiamonds]);
@@ -92,6 +95,13 @@ export default function InventoryPage() {
     const diamond = allDiamonds.find(d => d.id === diamondId);
     setDiamondToDelete(diamond || null);
     setDeleteDialogOpen(true);
+  };
+
+  const handleToggleStoreVisibility = async (diamond: Diamond) => {
+    const success = await toggleStoreVisibility(diamond);
+    if (success) {
+      handleRefresh();
+    }
   };
 
   const handleFormSubmit = async (data: DiamondFormData) => {
@@ -206,6 +216,7 @@ export default function InventoryPage() {
             loading={loading}
             onEdit={handleEditDiamond}
             onDelete={handleDeleteDiamond}
+            onToggleStoreVisibility={handleToggleStoreVisibility}
           />
         </div>
         

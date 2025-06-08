@@ -1,21 +1,34 @@
+
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Diamond } from "./InventoryTable";
-import { Edit, Trash, ImageIcon } from "lucide-react";
+import { Edit, Trash, ImageIcon, Eye, EyeOff, Share2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface InventoryMobileCardProps {
   diamond: Diamond;
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
+  onToggleStoreVisibility?: (diamond: Diamond) => void;
 }
 
-export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobileCardProps) {
+export function InventoryMobileCard({ diamond, onEdit, onDelete, onToggleStoreVisibility }: InventoryMobileCardProps) {
   const [imageError, setImageError] = useState(false);
+  const { toast } = useToast();
 
   const handleImageError = () => {
     setImageError(true);
+  };
+
+  const handleShareLink = () => {
+    const storeUrl = `${window.location.origin}/store?item=${diamond.id}`;
+    navigator.clipboard.writeText(storeUrl);
+    toast({
+      title: "Link copied!",
+      description: "Store link copied to clipboard",
+    });
   };
 
   // Get image URL from multiple possible sources
@@ -51,18 +64,30 @@ export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobi
             <p className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-1">
               ${diamond.price.toLocaleString()}
             </p>
-            <Badge 
-              className={`${
-                diamond.status === "Available" 
-                  ? "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900 dark:text-emerald-200" 
-                  : diamond.status === "Reserved" 
-                  ? "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900 dark:text-blue-200" 
-                  : "bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-700 dark:text-slate-200"
-              }`}
-              variant="outline"
-            >
-              {diamond.status}
-            </Badge>
+            <div className="flex gap-2">
+              <Badge 
+                className={`${
+                  diamond.status === "Available" 
+                    ? "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900 dark:text-emerald-200" 
+                    : diamond.status === "Reserved" 
+                    ? "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900 dark:text-blue-200" 
+                    : "bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-700 dark:text-slate-200"
+                }`}
+                variant="outline"
+              >
+                {diamond.status}
+              </Badge>
+              <Badge 
+                className={`${
+                  (diamond as any).store_visible
+                    ? "bg-green-100 text-green-800 border-green-300" 
+                    : "bg-gray-100 text-gray-800 border-gray-300"
+                }`}
+                variant="outline"
+              >
+                {(diamond as any).store_visible ? "Store" : "Hidden"}
+              </Badge>
+            </div>
           </div>
         </div>
         
@@ -96,32 +121,54 @@ export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobi
           </div>
         </div>
 
-        {(onEdit || onDelete) && (
-          <div className="flex gap-2 pt-3 border-t border-slate-200 dark:border-slate-700 w-full">
-            {onEdit && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onEdit(diamond)}
-                className="flex-1 h-9 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
-            )}
-            {onDelete && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onDelete(diamond.id)}
-                className="flex-1 h-9 text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
-              >
-                <Trash className="h-4 w-4 mr-2" />
-                Delete
-              </Button>
-            )}
-          </div>
-        )}
+        <div className="flex gap-2 pt-3 border-t border-slate-200 dark:border-slate-700 w-full">
+          {onToggleStoreVisibility && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onToggleStoreVisibility(diamond)}
+              className="flex-1 h-9 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+            >
+              {(diamond as any).store_visible ? (
+                <EyeOff className="h-4 w-4 mr-2" />
+              ) : (
+                <Eye className="h-4 w-4 mr-2" />
+              )}
+              {(diamond as any).store_visible ? "Hide" : "Show"}
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleShareLink}
+            className="flex-1 h-9 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+          >
+            <Share2 className="h-4 w-4 mr-2" />
+            Share
+          </Button>
+          {onEdit && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(diamond)}
+              className="flex-1 h-9 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+          )}
+          {onDelete && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDelete(diamond.id)}
+              className="flex-1 h-9 text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+            >
+              <Trash className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
