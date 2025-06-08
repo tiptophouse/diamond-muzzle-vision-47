@@ -50,13 +50,25 @@ export function InventoryTableRow({
   };
 
   const handleContactSeller = () => {
-    // Use Telegram WebApp API to open external link
+    const telegramUrl = `https://t.me/DiamondMuzzleBot?start=diamond_${diamond.id}`;
+    
+    // Use Telegram WebApp API if available
     if (window.Telegram?.WebApp) {
-      const telegramUrl = `https://t.me/DiamondMuzzleBot?start=diamond_${diamond.id}`;
-      window.Telegram.WebApp.openLink(telegramUrl);
+      try {
+        // Try to use Telegram's native method to open links
+        if (typeof (window.Telegram.WebApp as any).openTelegramLink === 'function') {
+          (window.Telegram.WebApp as any).openTelegramLink(telegramUrl);
+        } else {
+          // Fallback to window.open
+          window.open(telegramUrl, '_blank');
+        }
+      } catch (error) {
+        console.log('Telegram WebApp method failed, using fallback');
+        window.open(telegramUrl, '_blank');
+      }
     } else {
       // Fallback for non-Telegram environments
-      window.open(`https://t.me/DiamondMuzzleBot?start=diamond_${diamond.id}`, '_blank');
+      window.open(telegramUrl, '_blank');
     }
     
     toast({
