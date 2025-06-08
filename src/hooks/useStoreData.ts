@@ -25,7 +25,7 @@ export function useStoreData(filters: any, sortBy: string) {
         if (result.data && result.data.length > 0) {
           // Convert to display format and filter for store visible items only
           const convertedDiamonds = convertDiamondsToInventoryFormat(result.data, 0)
-            .filter(diamond => {
+            .filter((diamond: any) => {
               // Check if diamond is available and store_visible is true
               const isAvailable = diamond.status?.toLowerCase() === 'available';
               const isStoreVisible = diamond.store_visible === true;
