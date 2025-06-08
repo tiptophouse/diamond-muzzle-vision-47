@@ -1,4 +1,3 @@
-
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,15 +49,24 @@ export function InventoryTableRow({
   };
 
   const handleContactSeller = () => {
-    // Open Telegram chat with seller
+    // Create Telegram deep link for contacting about this diamond
+    const message = `Hi! I'm interested in diamond ${diamond.stockNumber} (${diamond.carat}ct ${diamond.shape}, ${diamond.color}/${diamond.clarity}) priced at $${diamond.price.toLocaleString()}`;
+    const encodedMessage = encodeURIComponent(message);
+    
     if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.openTelegramLink(`https://t.me/your_bot_username?start=diamond_${diamond.id}`);
+      // Use Telegram Web App to open chat
+      const telegramUrl = `https://t.me/share/url?url=${encodedMessage}`;
+      window.open(telegramUrl, '_blank');
     } else {
-      toast({
-        title: "Contact seller",
-        description: `Interested in diamond ${diamond.stockNumber}. Opening Telegram chat...`,
-      });
+      // Fallback for non-Telegram environments
+      const telegramUrl = `https://t.me/share/url?url=${encodedMessage}`;
+      window.open(telegramUrl, '_blank');
     }
+    
+    toast({
+      title: "Opening Telegram",
+      description: `Opening chat for diamond ${diamond.stockNumber}`,
+    });
   };
 
   return (

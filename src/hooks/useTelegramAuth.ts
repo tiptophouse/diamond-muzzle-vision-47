@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { verifyTelegramUser, setCurrentUserId } from '@/lib/api';
 import { TelegramUser } from '@/types/telegram';
+import { parseTelegramInitData, validateTelegramInitData } from '@/utils/telegramValidation';
 
 export function useTelegramAuth() {
   const [user, setUser] = useState<TelegramUser | null>(null);
@@ -18,7 +19,7 @@ export function useTelegramAuth() {
       return;
     }
 
-    console.log('🔄 Starting Telegram auth initialization...');
+    console.log('🔄 Starting Telegram auth initialization with initData validation...');
     
     try {
       // Check if we're in a Telegram environment
@@ -35,7 +36,6 @@ export function useTelegramAuth() {
         console.log('🔍 Telegram WebApp object:', tg);
         console.log('🔍 InitData available:', !!tg.initData);
         console.log('🔍 InitData length:', tg.initData?.length || 0);
-        console.log('🔍 InitDataUnsafe:', tg.initDataUnsafe);
         
         // Initialize Telegram WebApp
         try {
@@ -46,10 +46,26 @@ export function useTelegramAuth() {
           console.warn('⚠️ WebApp setup failed, continuing...', themeError);
         }
         
-        // Try to get real user data from initData first
+        // STRICT initData validation - only proceed with valid initData
         if (tg.initData && tg.initData.length > 0) {
-          console.log('🔐 Found initData, verifying with backend...');
+          console.log('🔐 Validating initData...');
           
+          // Parse and validate initData
+          const parsedData = parseTelegramInitData(tg.initData);
+          const isValidData = validateTelegramInitData(tg.initData);
+          
+          if (!parsedData || !parsedData.user || !isValidData) {
+            console.error('❌ Invalid or missing initData - authentication failed');
+            setError('Invalid Telegram authentication data. Please ensure you are accessing this app through Telegram.');
+            setIsAuthenticated(false);
+            setIsLoading(false);
+            initializedRef.current = true;
+            return;
+          }
+          
+          console.log('✅ InitData validation successful');
+          
+          // Try to verify with backend
           const verificationResult = await verifyTelegramUser(tg.initData);
           
           if (verificationResult && verificationResult.success) {
@@ -57,10 +73,10 @@ export function useTelegramAuth() {
             
             const verifiedUser: TelegramUser = {
               id: verificationResult.user_id,
-              first_name: verificationResult.user_data?.first_name || 'User',
-              last_name: verificationResult.user_data?.last_name || '',
-              username: verificationResult.user_data?.username || '',
-              language_code: verificationResult.user_data?.language_code || 'en'
+              first_name: verificationResult.user_data?.first_name || parsedData.user.first_name,
+              last_name: verificationResult.user_data?.last_name || parsedData.user.last_name,
+              username: verificationResult.user_data?.username || parsedData.user.username,
+              language_code: verificationResult.user_data?.language_code || parsedData.user.language_code || 'en'
             };
             
             console.log('👤 Setting verified user:', verifiedUser);
@@ -69,84 +85,45 @@ export function useTelegramAuth() {
             setIsAuthenticated(true);
             setError(null);
           } else {
-            console.error('❌ Backend verification failed, falling back...');
-            // Fall back to using initDataUnsafe or hardcoded user
-            await handleFallbackAuth(tg);
+            console.error('❌ Backend verification failed');
+            setError('Failed to verify your Telegram authentication with our servers.');
+            setIsAuthenticated(false);
           }
         } else {
-          console.warn('⚠️ No initData available, using fallback auth');
-          await handleFallbackAuth(tg);
+          console.error('❌ No initData available - authentication denied');
+          setError('No authentication data available. Please ensure you are accessing this app through the official Telegram application.');
+          setIsAuthenticated(false);
         }
       } else {
-        // Not in Telegram environment - use development user
-        console.log('🔧 Not in Telegram - using development user');
-        const devUser: TelegramUser = {
-          id: 2138564172, // Your specific user ID
-          first_name: "Dev",
-          last_name: "User",
-          username: "devuser",
-          language_code: "en"
-        };
-        
-        setUser(devUser);
-        setCurrentUserId(devUser.id);
-        setIsAuthenticated(true);
-        setError(null);
+        // Not in Telegram environment - deny access in production
+        if (process.env.NODE_ENV === 'production') {
+          console.log('❌ Production mode requires Telegram environment');
+          setError('This application must be accessed through Telegram.');
+          setIsAuthenticated(false);
+        } else {
+          // Development mode fallback
+          console.log('🔧 Development mode - using fallback user');
+          const devUser: TelegramUser = {
+            id: 2138564172,
+            first_name: "Dev",
+            last_name: "User",
+            username: "devuser",
+            language_code: "en"
+          };
+          
+          setUser(devUser);
+          setCurrentUserId(devUser.id);
+          setIsAuthenticated(true);
+          setError(null);
+        }
       }
     } catch (err) {
       console.error('❌ Auth initialization error:', err);
-      // Even on error, set up a working user for development
-      const fallbackUser: TelegramUser = {
-        id: 2138564172, // Your specific user ID
-        first_name: "Fallback",
-        last_name: "User",
-        username: "fallbackuser",
-        language_code: "en"
-      };
-      
-      setUser(fallbackUser);
-      setCurrentUserId(fallbackUser.id);
-      setIsAuthenticated(true);
-      setError('Using fallback authentication');
+      setError('Authentication failed. Please try again.');
+      setIsAuthenticated(false);
     } finally {
       setIsLoading(false);
       initializedRef.current = true;
-    }
-  };
-
-  const handleFallbackAuth = async (tg: any) => {
-    // Try initDataUnsafe first
-    if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-      console.log('⚠️ Using initDataUnsafe for auth');
-      const unsafeUser = tg.initDataUnsafe.user;
-      
-      const fallbackUser: TelegramUser = {
-        id: unsafeUser.id,
-        first_name: unsafeUser.first_name || 'User',
-        last_name: unsafeUser.last_name || '',
-        username: unsafeUser.username || '',
-        language_code: unsafeUser.language_code || 'en'
-      };
-      
-      setUser(fallbackUser);
-      setCurrentUserId(fallbackUser.id);
-      setIsAuthenticated(true);
-      setError(null);
-    } else {
-      // Use your specific user ID as ultimate fallback
-      console.log('🆘 Using hardcoded user ID for auth');
-      const hardcodedUser: TelegramUser = {
-        id: 2138564172, // Your specific user ID
-        first_name: "Telegram",
-        last_name: "User",
-        username: "telegramuser",
-        language_code: "en"
-      };
-      
-      setUser(hardcodedUser);
-      setCurrentUserId(hardcodedUser.id);
-      setIsAuthenticated(true);
-      setError(null);
     }
   };
 
@@ -155,23 +132,12 @@ export function useTelegramAuth() {
     
     const timeoutId = setTimeout(() => {
       if (isLoading && mountedRef.current && !initializedRef.current) {
-        console.warn('⚠️ Auth initialization timeout - using emergency user');
-        const emergencyUser: TelegramUser = {
-          id: 2138564172, // Your specific user ID
-          first_name: "Emergency",
-          last_name: "User",
-          username: "emergencyuser",
-          language_code: "en"
-        };
-        
-        setUser(emergencyUser);
-        setCurrentUserId(emergencyUser.id);
-        setIsAuthenticated(true);
-        setError('Authentication timeout - using emergency user');
+        console.warn('⚠️ Auth initialization timeout');
+        setError('Authentication timeout. Please refresh and try again.');
         setIsLoading(false);
         initializedRef.current = true;
       }
-    }, 5000);
+    }, 10000); // Increased timeout for validation
 
     // Start initialization after a brief delay
     const initTimer = setTimeout(() => {
