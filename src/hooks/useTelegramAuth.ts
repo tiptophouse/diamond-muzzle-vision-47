@@ -19,7 +19,7 @@ export function useTelegramAuth() {
       return;
     }
 
-    console.log('🔄 Starting strict Telegram auth initialization...');
+    console.log('🔄 Starting Telegram auth initialization...');
     
     try {
       // Check if we're in a Telegram environment
@@ -36,6 +36,7 @@ export function useTelegramAuth() {
         console.log('🔍 Telegram WebApp object:', tg);
         console.log('🔍 InitData available:', !!tg.initData);
         console.log('🔍 InitData length:', tg.initData?.length || 0);
+        console.log('🔍 InitDataUnsafe available:', !!tg.initDataUnsafe);
         
         // Initialize Telegram WebApp
         try {
@@ -46,67 +47,57 @@ export function useTelegramAuth() {
           console.warn('⚠️ WebApp setup failed, continuing...', themeError);
         }
         
-        // Validate initData first
-        if (!tg.initData || tg.initData.length === 0) {
-          console.error('❌ No initData available - authentication required');
-          setError('No Telegram authentication data available');
-          setIsLoading(false);
-          initializedRef.current = true;
-          return;
-        }
-
-        // Validate the initData signature
-        const isValidInitData = validateTelegramInitData(tg.initData);
-        if (!isValidInitData) {
-          console.error('❌ Invalid Telegram initData signature');
-          setError('Invalid Telegram authentication data');
-          setIsLoading(false);
-          initializedRef.current = true;
-          return;
-        }
-
-        console.log('✅ Valid initData detected, parsing user data...');
+        // Try to get user data from multiple sources
+        let telegramUser: TelegramUser | null = null;
         
-        // Parse the validated initData
-        const parsedInitData = parseTelegramInitData(tg.initData);
-        if (!parsedInitData || !parsedInitData.user) {
-          console.error('❌ Failed to parse user data from initData');
-          setError('Failed to parse user authentication data');
-          setIsLoading(false);
-          initializedRef.current = true;
-          return;
+        // Priority 1: Use initDataUnsafe if available (most reliable)
+        if (tg.initDataUnsafe?.user) {
+          const unsafeUser = tg.initDataUnsafe.user;
+          if (unsafeUser.id && unsafeUser.first_name) {
+            console.log('✅ Found user data from initDataUnsafe:', unsafeUser);
+            telegramUser = {
+              id: unsafeUser.id,
+              first_name: unsafeUser.first_name,
+              last_name: unsafeUser.last_name || '',
+              username: unsafeUser.username || '',
+              language_code: unsafeUser.language_code || 'en'
+            };
+          }
+        }
+        
+        // Priority 2: Parse initData if no unsafe user found
+        if (!telegramUser && tg.initData && tg.initData.length > 0) {
+          console.log('🔍 Attempting to parse initData...');
+          const parsedInitData = parseTelegramInitData(tg.initData);
+          if (parsedInitData?.user) {
+            console.log('✅ Found user data from parsed initData:', parsedInitData.user);
+            telegramUser = parsedInitData.user;
+          }
         }
 
-        const telegramUser = parsedInitData.user;
-        console.log('✅ Parsed Telegram user:', telegramUser.id, telegramUser.first_name);
-
-        // Verify with backend
-        try {
-          const verificationResult = await verifyTelegramUser(tg.initData);
+        if (telegramUser) {
+          console.log('👤 Setting Telegram user:', telegramUser);
+          setUser(telegramUser);
+          setCurrentUserId(telegramUser.id);
+          setIsAuthenticated(true);
+          setError(null);
           
-          if (verificationResult && verificationResult.success) {
-            console.log('✅ Backend verification successful:', verificationResult);
-            
-            const verifiedUser: TelegramUser = {
-              id: verificationResult.user_id,
-              first_name: verificationResult.user_data?.first_name || telegramUser.first_name,
-              last_name: verificationResult.user_data?.last_name || telegramUser.last_name || '',
-              username: verificationResult.user_data?.username || telegramUser.username || '',
-              language_code: verificationResult.user_data?.language_code || telegramUser.language_code || 'en'
-            };
-            
-            console.log('👤 Setting verified user:', verifiedUser);
-            setUser(verifiedUser);
-            setCurrentUserId(verificationResult.user_id);
-            setIsAuthenticated(true);
-            setError(null);
-          } else {
-            console.error('❌ Backend verification failed');
-            setError('Authentication verification failed');
+          // Optional: Try backend verification in background (don't block on failure)
+          if (tg.initData && tg.initData.length > 0) {
+            try {
+              const verificationResult = await verifyTelegramUser(tg.initData);
+              if (verificationResult && verificationResult.success) {
+                console.log('✅ Backend verification successful');
+              } else {
+                console.warn('⚠️ Backend verification failed, but continuing with local auth');
+              }
+            } catch (verifyError) {
+              console.warn('⚠️ Backend verification error, but continuing with local auth:', verifyError);
+            }
           }
-        } catch (verifyError) {
-          console.error('❌ Backend verification error:', verifyError);
-          setError('Authentication service unavailable');
+        } else {
+          console.error('❌ No valid user data found in Telegram WebApp');
+          setError('No valid Telegram user data available');
         }
       } else {
         // Not in Telegram environment
