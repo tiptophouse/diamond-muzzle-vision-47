@@ -13,10 +13,15 @@ export function useStoreVisibilityToggle() {
     try {
       const newVisibility = !(diamond as any).store_visible;
       
+      // Ensure we're using the correct UUID format
+      const diamondId = diamond.id;
+      
+      console.log('Toggling store visibility for diamond:', diamondId, 'to:', newVisibility);
+      
       const { error } = await supabase
         .from('inventory')
         .update({ store_visible: newVisibility })
-        .eq('id', diamond.id);
+        .eq('id', diamondId);
 
       if (error) {
         console.error('Error updating store visibility:', error);
@@ -29,8 +34,8 @@ export function useStoreVisibilityToggle() {
       }
 
       toast({
-        title: "Store visibility updated",
-        description: `Diamond ${newVisibility ? 'added to' : 'removed from'} store`,
+        title: newVisibility ? "✅ Published to Store" : "📦 Removed from Store",
+        description: `Diamond ${diamond.stockNumber} ${newVisibility ? 'is now visible in your store' : 'has been removed from store'}`,
       });
 
       return true;

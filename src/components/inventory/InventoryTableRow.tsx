@@ -1,11 +1,9 @@
 
-import { useState } from "react";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Edit, Trash2, Eye, EyeOff } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Diamond } from "./InventoryTable";
-import { Edit, Trash, ImageIcon, Eye, EyeOff, Share2 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
 
 interface InventoryTableRowProps {
   diamond: Diamond;
@@ -15,138 +13,112 @@ interface InventoryTableRowProps {
 }
 
 export function InventoryTableRow({ diamond, onEdit, onDelete, onToggleStoreVisibility }: InventoryTableRowProps) {
-  const [imageError, setImageError] = useState(false);
-  const { toast } = useToast();
+  const isStoreVisible = (diamond as any).store_visible || false;
 
-  const handleImageError = () => {
-    setImageError(true);
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(price);
   };
 
-  const handleShareLink = () => {
-    const storeUrl = `${window.location.origin}/store?item=${diamond.id}`;
-    navigator.clipboard.writeText(storeUrl);
-    toast({
-      title: "Link copied!",
-      description: "Store link copied to clipboard",
-    });
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'available':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'sold':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      case 'reserved':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+    }
   };
-
-  // Get image URL from multiple possible sources
-  const imageUrl = diamond.imageUrl || (diamond as any).picture || (diamond as any).image;
 
   return (
-    <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-800">
+    <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
       <TableCell className="w-16">
-        {imageUrl && !imageError ? (
+        {diamond.imageUrl && (
           <img 
-            src={imageUrl} 
+            src={diamond.imageUrl} 
             alt={`Diamond ${diamond.stockNumber}`}
-            className="w-12 h-12 object-cover rounded border border-slate-200 dark:border-slate-600"
-            onError={handleImageError}
+            className="w-10 h-10 rounded object-cover border border-slate-200 dark:border-slate-700"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+            }}
           />
-        ) : (
-          <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 flex items-center justify-center">
-            <ImageIcon className="h-4 w-4 text-slate-400" />
-          </div>
         )}
       </TableCell>
-      <TableCell className="font-mono text-xs font-medium text-slate-900 dark:text-slate-100">
+      <TableCell className="font-medium text-slate-900 dark:text-slate-100">
         {diamond.stockNumber}
       </TableCell>
-      <TableCell className="font-medium text-slate-900 dark:text-slate-100">{diamond.shape}</TableCell>
-      <TableCell className="text-right font-medium text-slate-900 dark:text-slate-100">
+      <TableCell className="text-slate-700 dark:text-slate-300 capitalize">
+        {diamond.shape}
+      </TableCell>
+      <TableCell className="text-right font-semibold text-slate-900 dark:text-slate-100">
         {diamond.carat.toFixed(2)}
       </TableCell>
-      <TableCell>
-        <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">
-          {diamond.color}
-        </Badge>
+      <TableCell className="text-slate-700 dark:text-slate-300 font-medium">
+        {diamond.color}
       </TableCell>
-      <TableCell>
-        <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">
-          {diamond.clarity}
-        </Badge>
+      <TableCell className="text-slate-700 dark:text-slate-300 font-medium">
+        {diamond.clarity}
       </TableCell>
-      <TableCell>
-        <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">
-          {diamond.cut}
-        </Badge>
+      <TableCell className="text-slate-700 dark:text-slate-300">
+        {diamond.cut}
       </TableCell>
       <TableCell className="text-right font-bold text-slate-900 dark:text-slate-100">
-        ${diamond.price.toLocaleString()}
+        {formatPrice(diamond.price)}
       </TableCell>
       <TableCell>
-        <Badge 
-          className={`${
-            diamond.status === "Available" 
-              ? "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900 dark:text-emerald-200" 
-              : diamond.status === "Reserved" 
-              ? "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900 dark:text-blue-200" 
-              : "bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-700 dark:text-slate-200"
-          }`}
-          variant="outline"
-        >
+        <Badge className={getStatusColor(diamond.status)}>
           {diamond.status}
         </Badge>
       </TableCell>
       <TableCell>
-        <Badge 
-          className={`${
-            (diamond as any).store_visible
-              ? "bg-green-100 text-green-800 border-green-300 dark:bg-green-900 dark:text-green-200" 
-              : "bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-700 dark:text-gray-200"
-          }`}
-          variant="outline"
+        <Button
+          variant={isStoreVisible ? "default" : "outline"}
+          size="sm"
+          onClick={() => onToggleStoreVisibility?.(diamond)}
+          className={isStoreVisible 
+            ? "bg-green-600 hover:bg-green-700 text-white" 
+            : "text-gray-600 hover:text-green-600 hover:border-green-600"
+          }
         >
-          {(diamond as any).store_visible ? "Visible" : "Hidden"}
-        </Badge>
+          {isStoreVisible ? (
+            <>
+              <Eye className="h-4 w-4 mr-1" />
+              Published
+            </>
+          ) : (
+            <>
+              <EyeOff className="h-4 w-4 mr-1" />
+              Publish to Store
+            </>
+          )}
+        </Button>
       </TableCell>
       <TableCell>
-        <div className="flex gap-1">
-          {onToggleStoreVisibility && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onToggleStoreVisibility(diamond)}
-              className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700"
-              title={`${(diamond as any).store_visible ? 'Hide from' : 'Show in'} store`}
-            >
-              {(diamond as any).store_visible ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-            </Button>
-          )}
+        <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleShareLink}
-            className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700"
-            title="Copy store link"
+            onClick={() => onEdit?.(diamond)}
+            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-950"
           >
-            <Share2 className="h-4 w-4" />
+            <Edit className="h-4 w-4" />
           </Button>
-          {onEdit && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onEdit(diamond)}
-              className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700"
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-          )}
-          {onDelete && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onDelete(diamond.id)}
-              className="h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400"
-            >
-              <Trash className="h-4 w-4" />
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDelete?.(diamond.id)}
+            className="text-red-600 hover:text-red-800 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
       </TableCell>
     </TableRow>
