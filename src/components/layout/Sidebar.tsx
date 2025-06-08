@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Package, Upload, MessageSquare, TrendingUp, FileText, Settings, Bell, Users, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Package, Upload, MessageSquare, TrendingUp, FileText, Settings, Bell, Users, BarChart3, Store } from 'lucide-react';
 
 const ADMIN_TELEGRAM_ID = 2138564172;
 
@@ -27,6 +27,11 @@ const Sidebar = ({ onClose }: SidebarProps) => {
       name: 'Inventory',
       href: '/inventory',
       icon: Package
+    },
+    {
+      name: 'Store',
+      href: '/store',
+      icon: Store
     },
     {
       name: 'Upload',

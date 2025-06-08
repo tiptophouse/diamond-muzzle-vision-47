@@ -4,14 +4,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Diamond } from "./InventoryTable";
 import { Edit, Trash, ImageIcon } from "lucide-react";
+import { StoreVisibilityToggle } from "./StoreVisibilityToggle";
 
 interface InventoryTableRowProps {
-  diamond: Diamond;
+  diamond: Diamond & { store_visible?: boolean };
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
+  onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
 }
 
-export function InventoryTableRow({ diamond, onEdit, onDelete }: InventoryTableRowProps) {
+export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle }: InventoryTableRowProps) {
   return (
     <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-800">
       <TableCell className="w-16">
@@ -72,6 +74,13 @@ export function InventoryTableRow({ diamond, onEdit, onDelete }: InventoryTableR
       </TableCell>
       <TableCell>
         <div className="flex gap-1">
+          {onStoreToggle && (
+            <StoreVisibilityToggle 
+              stockNumber={diamond.stockNumber}
+              isVisible={diamond.store_visible || false}
+              onToggle={onStoreToggle}
+            />
+          )}
           {onEdit && (
             <Button
               variant="ghost"

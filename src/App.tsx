@@ -7,6 +7,7 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Dashboard from "./pages/Dashboard";
 import Inventory from "./pages/InventoryPage";
+import StorePage from "./pages/StorePage";
 import Settings from "./pages/SettingsPage";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -38,6 +39,7 @@ function App() {
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/inventory" element={<Inventory />} />
+                  <Route path="/store" element={<StorePage />} />
                   <Route path="/upload" element={<UploadPage />} />
                   <Route path="/upload-single" element={<UploadSingleStonePage />} />
                   <Route path="/chat" element={<ChatPage />} />

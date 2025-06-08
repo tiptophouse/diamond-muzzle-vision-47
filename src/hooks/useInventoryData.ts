@@ -80,6 +80,17 @@ export function useInventoryData() {
     }
   };
 
+  const handleStoreToggle = (stockNumber: string, isVisible: boolean) => {
+    // Update the diamond's store_visible status in local state
+    setDiamonds(prevDiamonds => 
+      prevDiamonds.map(diamond => 
+        diamond.stockNumber === stockNumber 
+          ? { ...diamond, store_visible: isVisible }
+          : diamond
+      )
+    );
+  };
+
   useEffect(() => {
     console.log('🔍 INVENTORY: useEffect triggered');
     
@@ -101,6 +112,7 @@ export function useInventoryData() {
     allDiamonds,
     fetchData,
     handleRefresh,
+    handleStoreToggle,
     removeDiamondFromState,
     restoreDiamondToState,
     debugInfo,

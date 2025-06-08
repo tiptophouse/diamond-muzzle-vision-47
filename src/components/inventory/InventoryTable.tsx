@@ -21,6 +21,7 @@ export type Diamond = {
   price: number;
   status: string;
   imageUrl?: string;
+  store_visible?: boolean;
 };
 
 interface InventoryTableProps {
@@ -28,9 +29,10 @@ interface InventoryTableProps {
   loading?: boolean;
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
+  onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
 }
 
-export function InventoryTable({ data, loading = false, onEdit, onDelete }: InventoryTableProps) {
+export function InventoryTable({ data, loading = false, onEdit, onDelete, onStoreToggle }: InventoryTableProps) {
   const isMobile = useIsMobile();
 
   if (loading) {
@@ -73,6 +75,7 @@ export function InventoryTable({ data, loading = false, onEdit, onDelete }: Inve
                   diamond={diamond} 
                   onEdit={onEdit}
                   onDelete={onDelete}
+                  onStoreToggle={onStoreToggle}
                 />
               ))
             )}

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -50,6 +49,7 @@ export default function InventoryPage() {
     allDiamonds,
     fetchData,
     handleRefresh,
+    handleStoreToggle,
     removeDiamondFromState,
     restoreDiamondToState,
   } = useInventoryData();
@@ -206,6 +206,7 @@ export default function InventoryPage() {
             loading={loading}
             onEdit={handleEditDiamond}
             onDelete={handleDeleteDiamond}
+            onStoreToggle={handleStoreToggle}
           />
         </div>
         
