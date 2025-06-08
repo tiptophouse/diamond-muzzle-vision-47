@@ -46,7 +46,10 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     if (!response.ok) {
       const errorText = await response.text();
       console.error('🔐 API: Verification failed with status:', response.status, 'body:', errorText);
-      throw new Error(`Verification failed: ${response.status} - ${errorText}`);
+      
+      // Return null instead of throwing to allow fallback handling
+      verificationResult = null;
+      return null;
     }
 
     const result: TelegramVerificationResponse = await response.json();
@@ -60,6 +63,7 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     return result;
   } catch (error) {
     console.error('❌ API: Telegram verification failed:', error);
+    verificationResult = null;
     return null;
   }
 }

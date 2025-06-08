@@ -2,7 +2,7 @@
 // Updated to point to your actual FastAPI backend
 export const API_BASE_URL = "https://api.mazalbot.com";
 
-let currentUserId: number | null = 2138564172; // Force set for testing
+let currentUserId: number | null = null; // Remove hardcoded value
 
 export function setCurrentUserId(userId: number) {
   currentUserId = userId;
