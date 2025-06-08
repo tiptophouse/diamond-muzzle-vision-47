@@ -16,6 +16,8 @@ export interface LuxuryStoreFilters {
   search: string;
 }
 
+type SortOption = 'price-asc' | 'price-desc' | 'carat-desc' | 'carat-asc';
+
 export default function LuxuryStorePage() {
   const [filters, setFilters] = useState<LuxuryStoreFilters>({
     shape: [],
@@ -27,7 +29,7 @@ export default function LuxuryStorePage() {
     search: '',
   });
   
-  const [sortBy, setSortBy] = useState<'price-asc' | 'price-desc' | 'carat-desc' | 'carat-asc'>('price-asc');
+  const [sortBy, setSortBy] = useState<SortOption>('price-asc');
   const [selectedDiamond, setSelectedDiamond] = useState<any>(null);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -49,6 +51,12 @@ export default function LuxuryStorePage() {
     });
   };
 
+  const handleSortChange = (value: string) => {
+    if (value === 'price-asc' || value === 'price-desc' || value === 'carat-asc' || value === 'carat-desc') {
+      setSortBy(value as SortOption);
+    }
+  };
+
   const handlePurchaseClick = (diamond: any) => {
     // Open Telegram chat - we'll implement this
     console.log('Opening Telegram chat for diamond:', diamond.id);
@@ -63,7 +71,7 @@ export default function LuxuryStorePage() {
       onToggleFilters={() => setShowFilters(!showFilters)}
       resultsCount={diamonds.length}
       sortBy={sortBy}
-      onSortChange={setSortBy}
+      onSortChange={handleSortChange}
     >
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Luxury Filters Sidebar */}
