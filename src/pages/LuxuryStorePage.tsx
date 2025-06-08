@@ -1,12 +1,12 @@
 
 import { useState } from "react";
-import { PublicStoreLayout } from "@/components/store/PublicStoreLayout";
-import { StoreFilters } from "@/components/store/StoreFilters";
-import { StoreProductGrid } from "@/components/store/StoreProductGrid";
-import { StoreProductModal } from "@/components/store/StoreProductModal";
-import { useStoreData } from "@/hooks/useStoreData";
+import { LuxuryStoreLayout } from "@/components/luxury-store/LuxuryStoreLayout";
+import { LuxuryFilters } from "@/components/luxury-store/LuxuryFilters";
+import { LuxuryProductGrid } from "@/components/luxury-store/LuxuryProductGrid";
+import { LuxuryProductModal } from "@/components/luxury-store/LuxuryProductModal";
+import { useLuxuryStoreData } from "@/hooks/useLuxuryStoreData";
 
-export interface StoreFilters {
+export interface LuxuryStoreFilters {
   shape: string[];
   color: [string, string];
   clarity: string[];
@@ -16,8 +16,8 @@ export interface StoreFilters {
   search: string;
 }
 
-export default function StorePage() {
-  const [filters, setFilters] = useState<StoreFilters>({
+export default function LuxuryStorePage() {
+  const [filters, setFilters] = useState<LuxuryStoreFilters>({
     shape: [],
     color: ['D', 'Z'],
     clarity: [],
@@ -31,9 +31,9 @@ export default function StorePage() {
   const [selectedDiamond, setSelectedDiamond] = useState<any>(null);
   const [showFilters, setShowFilters] = useState(false);
 
-  const { diamonds, loading, error } = useStoreData(filters, sortBy);
+  const { diamonds, loading, error } = useLuxuryStoreData(filters, sortBy);
 
-  const handleFilterChange = (newFilters: Partial<StoreFilters>) => {
+  const handleFilterChange = (newFilters: Partial<LuxuryStoreFilters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
   };
 
@@ -49,8 +49,15 @@ export default function StorePage() {
     });
   };
 
+  const handlePurchaseClick = (diamond: any) => {
+    // Open Telegram chat - we'll implement this
+    console.log('Opening Telegram chat for diamond:', diamond.id);
+    // For now, we'll show an alert - will replace with actual Telegram integration
+    alert(`Contacting seller about ${diamond.shape} ${diamond.carat}ct diamond...`);
+  };
+
   return (
-    <PublicStoreLayout
+    <LuxuryStoreLayout
       onSearch={(search) => handleFilterChange({ search })}
       searchQuery={filters.search}
       onToggleFilters={() => setShowFilters(!showFilters)}
@@ -58,10 +65,10 @@ export default function StorePage() {
       sortBy={sortBy}
       onSortChange={setSortBy}
     >
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Filters Sidebar */}
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Luxury Filters Sidebar */}
         <div className={`${showFilters ? 'block' : 'hidden'} lg:block w-full lg:w-80 flex-shrink-0`}>
-          <StoreFilters
+          <LuxuryFilters
             filters={filters}
             onFilterChange={handleFilterChange}
             onClearFilters={clearFilters}
@@ -69,25 +76,27 @@ export default function StorePage() {
           />
         </div>
 
-        {/* Product Grid */}
+        {/* Luxury Product Grid */}
         <div className="flex-1 min-w-0">
-          <StoreProductGrid
+          <LuxuryProductGrid
             diamonds={diamonds}
             loading={loading}
             error={error}
             onDiamondClick={setSelectedDiamond}
+            onPurchaseClick={handlePurchaseClick}
           />
         </div>
       </div>
 
-      {/* Product Detail Modal */}
+      {/* Luxury Product Detail Modal */}
       {selectedDiamond && (
-        <StoreProductModal
+        <LuxuryProductModal
           diamond={selectedDiamond}
           isOpen={!!selectedDiamond}
           onClose={() => setSelectedDiamond(null)}
+          onPurchaseClick={() => handlePurchaseClick(selectedDiamond)}
         />
       )}
-    </PublicStoreLayout>
+    </LuxuryStoreLayout>
   );
 }

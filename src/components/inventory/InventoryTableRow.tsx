@@ -1,7 +1,7 @@
 
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Store } from "lucide-react";
+import { Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Diamond } from "./InventoryTable";
 import { useStoreVisibilityToggle } from "@/hooks/useStoreVisibilityToggle";
@@ -45,22 +45,25 @@ export function InventoryTableRow({ diamond, onEdit, onDelete }: InventoryTableR
   };
 
   return (
-    <TableRow className="hover:bg-gray-50">
-      <TableCell className="font-medium">{diamond.stockNumber}</TableCell>
-      <TableCell>{diamond.shape}</TableCell>
-      <TableCell>{diamond.carat}</TableCell>
-      <TableCell>{diamond.color}</TableCell>
-      <TableCell>{diamond.clarity}</TableCell>
-      <TableCell>{diamond.cut}</TableCell>
-      <TableCell>{formatPrice(diamond.price)}</TableCell>
+    <TableRow className="hover:bg-slate-50/50 transition-colors duration-150">
+      <TableCell className="font-medium text-slate-900">{diamond.stockNumber}</TableCell>
+      <TableCell className="text-slate-700">{diamond.shape}</TableCell>
+      <TableCell className="text-slate-700">{diamond.carat}</TableCell>
+      <TableCell className="text-slate-700">{diamond.color}</TableCell>
+      <TableCell className="text-slate-700">{diamond.clarity}</TableCell>
+      <TableCell className="text-slate-700">{diamond.cut}</TableCell>
+      <TableCell className="font-medium text-slate-900">{formatPrice(diamond.price)}</TableCell>
       <TableCell>
         <Badge className={getStatusColor(diamond.status)}>
           {diamond.status}
         </Badge>
       </TableCell>
       <TableCell>
-        <Badge variant={diamond.store_visible ? "default" : "secondary"}>
-          {diamond.store_visible ? "In Store" : "Not in Store"}
+        <Badge 
+          variant={diamond.store_visible ? "default" : "secondary"}
+          className={diamond.store_visible ? "bg-emerald-100 text-emerald-800 border-emerald-200" : "bg-slate-100 text-slate-600 border-slate-200"}
+        >
+          {diamond.store_visible ? "Visible in Store" : "Hidden from Store"}
         </Badge>
       </TableCell>
       <TableCell>
@@ -70,16 +73,30 @@ export function InventoryTableRow({ diamond, onEdit, onDelete }: InventoryTableR
             size="sm"
             onClick={handleStoreToggle}
             disabled={loading}
-            className={diamond.store_visible ? "bg-red-50 hover:bg-red-100" : "bg-green-50 hover:bg-green-100"}
+            className={`transition-all duration-200 ${
+              diamond.store_visible 
+                ? "border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300" 
+                : "border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300"
+            }`}
           >
-            <Store className="h-4 w-4" />
-            {diamond.store_visible ? "Remove" : "Add"}
+            {diamond.store_visible ? (
+              <>
+                <EyeOff className="h-4 w-4 mr-1" />
+                Hide
+              </>
+            ) : (
+              <>
+                <Eye className="h-4 w-4 mr-1" />
+                Show
+              </>
+            )}
           </Button>
           {onEdit && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => onEdit(diamond)}
+              className="border-slate-300 text-slate-700 hover:bg-slate-50"
             >
               <Edit className="h-4 w-4" />
             </Button>
@@ -89,7 +106,7 @@ export function InventoryTableRow({ diamond, onEdit, onDelete }: InventoryTableR
               variant="outline"
               size="sm"
               onClick={() => onDelete(diamond.id)}
-              className="text-red-600 hover:text-red-700"
+              className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

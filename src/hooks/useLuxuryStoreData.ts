@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { fetchInventoryData } from "@/services/inventoryDataService";
 import { convertDiamondsToInventoryFormat } from "@/services/diamondAnalytics";
 
-export function useStoreData(filters: any, sortBy: string) {
+export function useLuxuryStoreData(filters: any, sortBy: string) {
   const [loading, setLoading] = useState(true);
   const [allDiamonds, setAllDiamonds] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +37,7 @@ export function useStoreData(filters: any, sortBy: string) {
           setAllDiamonds([]);
         }
       } catch (err) {
-        console.error('Store data loading error:', err);
+        console.error('Luxury store data loading error:', err);
         setError('Failed to load diamond collection');
         setAllDiamonds([]);
       } finally {
