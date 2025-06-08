@@ -53,7 +53,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
         if (!alternativeResult.error && alternativeResult.data) {
           console.log('🔍 INVENTORY SERVICE: Alternative endpoint worked!');
           return {
-            data: alternativeResult.data,
+            data: Array.isArray(alternativeResult.data) ? alternativeResult.data : [],
             debugInfo: {
               ...updatedDebugInfo,
               step: 'SUCCESS: Alternative endpoint worked',
@@ -66,6 +66,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       }
       
       return {
+        data: [],
         error: result.error,
         debugInfo: {
           ...updatedDebugInfo,
@@ -78,6 +79,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     if (!result.data) {
       console.log('🔍 INVENTORY SERVICE: No data returned from backend');
       return {
+        data: [],
         error: 'No data returned from backend',
         debugInfo: {
           ...updatedDebugInfo,
@@ -132,6 +134,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       console.log('🔍 INVENTORY SERVICE: Response structure:', result.data);
       
       return {
+        data: [],
         error: 'No diamonds found in response',
         debugInfo: {
           ...updatedDebugInfo,
@@ -145,6 +148,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     console.error("🔍 INVENTORY SERVICE: Critical error connecting to backend:", error);
     
     return {
+      data: [],
       error: error instanceof Error ? error.message : String(error),
       debugInfo: {
         ...debugInfo,
