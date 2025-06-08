@@ -22,3 +22,10 @@ export function isDevelopment(): boolean {
 
 // Your backend access token
 export const BACKEND_ACCESS_TOKEN = "ifj9ov1rh20fslfp";
+
+// Add a function to test the exact endpoint format
+export function getFullApiUrl(endpoint: string): string {
+  const fullUrl = `${API_BASE_URL}${endpoint}`;
+  console.log('🔧 API: Full URL constructed:', fullUrl);
+  return fullUrl;
+}

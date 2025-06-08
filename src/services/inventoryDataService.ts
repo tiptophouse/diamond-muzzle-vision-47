@@ -11,7 +11,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   const userId = getCurrentUserId() || 2138564172;
   
   console.log('🔍 INVENTORY SERVICE: Starting fetch with user ID:', userId);
-  console.log('🔍 INVENTORY SERVICE: Backend URL: https://api.mazalbot.com');
+  console.log('🔍 INVENTORY SERVICE: Backend URL:', 'https://api.mazalbot.com');
   console.log('🔍 INVENTORY SERVICE: Expected diamonds: 566');
   
   const debugInfo = { 
@@ -24,7 +24,9 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   try {
     console.log('🔍 INVENTORY SERVICE: Using API client to fetch data');
     const endpoint = apiEndpoints.getAllStones(userId);
-    console.log('🔍 INVENTORY SERVICE: Full endpoint URL: https://api.mazalbot.com' + endpoint);
+    const fullUrl = `https://api.mazalbot.com${endpoint}`;
+    console.log('🔍 INVENTORY SERVICE: Full endpoint URL:', fullUrl);
+    console.log('🔍 INVENTORY SERVICE: Expected format: GET https://api.mazalbot.com/api/v1/get_all_stones?user_id=' + userId);
     
     const result = await api.get(endpoint);
     
@@ -34,11 +36,35 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       hasError: !!result.error,
       hasData: !!result.data,
       endpoint: endpoint,
+      fullUrl: fullUrl,
       timestamp: new Date().toISOString()
     };
     
     if (result.error) {
       console.error('🔍 INVENTORY SERVICE: API error:', result.error);
+      
+      // Try alternative endpoint if the first one fails
+      console.log('🔍 INVENTORY SERVICE: Trying alternative endpoint without /api/v1 prefix...');
+      try {
+        const alternativeEndpoint = `/get_all_stones?user_id=${userId}`;
+        console.log('🔍 INVENTORY SERVICE: Alternative endpoint:', `https://api.mazalbot.com${alternativeEndpoint}`);
+        const alternativeResult = await api.get(alternativeEndpoint);
+        
+        if (!alternativeResult.error && alternativeResult.data) {
+          console.log('🔍 INVENTORY SERVICE: Alternative endpoint worked!');
+          return {
+            data: alternativeResult.data,
+            debugInfo: {
+              ...updatedDebugInfo,
+              step: 'SUCCESS: Alternative endpoint worked',
+              endpoint: alternativeEndpoint,
+            }
+          };
+        }
+      } catch (altError) {
+        console.error('🔍 INVENTORY SERVICE: Alternative endpoint also failed:', altError);
+      }
+      
       return {
         error: result.error,
         debugInfo: {
