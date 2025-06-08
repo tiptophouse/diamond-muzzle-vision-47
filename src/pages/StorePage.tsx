@@ -18,7 +18,7 @@ export interface StoreFilters {
 }
 
 export default function StorePage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [filters, setFilters] = useState<StoreFilters>({
     shape: [],
     color: ['D', 'Z'],
@@ -33,7 +33,7 @@ export default function StorePage() {
   const [selectedDiamond, setSelectedDiamond] = useState<any>(null);
   const [showFilters, setShowFilters] = useState(false);
 
-  const { diamonds, loading, error } = useStoreData(filters, sortBy);
+  const { diamonds, loading, error, refetch } = useStoreData(filters, sortBy);
 
   // Handle direct links to specific diamonds
   useEffect(() => {
@@ -45,6 +45,11 @@ export default function StorePage() {
       }
     }
   }, [searchParams, diamonds]);
+
+  // Refresh data when component mounts to ensure latest store items
+  useEffect(() => {
+    refetch();
+  }, []);
 
   const handleFilterChange = (newFilters: Partial<StoreFilters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
@@ -60,6 +65,18 @@ export default function StorePage() {
       cut: [],
       search: '',
     });
+  };
+
+  const handleDiamondClick = (diamond: any) => {
+    setSelectedDiamond(diamond);
+    // Update URL to include the diamond ID for sharing
+    setSearchParams({ item: diamond.id });
+  };
+
+  const handleModalClose = () => {
+    setSelectedDiamond(null);
+    // Remove item parameter from URL
+    setSearchParams({});
   };
 
   return (
@@ -88,7 +105,7 @@ export default function StorePage() {
             diamonds={diamonds}
             loading={loading}
             error={error}
-            onDiamondClick={setSelectedDiamond}
+            onDiamondClick={handleDiamondClick}
           />
         </div>
       </div>
@@ -98,7 +115,7 @@ export default function StorePage() {
         <StoreProductModal
           diamond={selectedDiamond}
           isOpen={!!selectedDiamond}
-          onClose={() => setSelectedDiamond(null)}
+          onClose={handleModalClose}
         />
       )}
     </PublicStoreLayout>

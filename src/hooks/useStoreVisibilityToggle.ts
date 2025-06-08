@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Diamond } from '@/components/inventory/InventoryTable';
 
@@ -13,15 +13,12 @@ export function useStoreVisibilityToggle() {
     try {
       const newVisibility = !(diamond as any).store_visible;
       
-      // Ensure we're using the correct UUID format
-      const diamondId = diamond.id;
-      
-      console.log('Toggling store visibility for diamond:', diamondId, 'to:', newVisibility);
+      console.log('Toggling store visibility for diamond:', diamond.id, 'to:', newVisibility);
       
       const { error } = await supabase
         .from('inventory')
         .update({ store_visible: newVisibility })
-        .eq('id', diamondId);
+        .eq('id', diamond.id);
 
       if (error) {
         console.error('Error updating store visibility:', error);
@@ -31,6 +28,12 @@ export function useStoreVisibilityToggle() {
           description: "Failed to update store visibility",
         });
         return false;
+      }
+
+      // Force a page refresh to ensure the store page shows updated data
+      if (newVisibility) {
+        // If publishing to store, also update the store cache by triggering a reload
+        window.dispatchEvent(new CustomEvent('store-data-refresh'));
       }
 
       toast({

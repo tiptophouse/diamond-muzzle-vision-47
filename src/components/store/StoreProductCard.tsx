@@ -3,7 +3,8 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ImageIcon } from "lucide-react";
+import { Share, MessageCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface StoreProductCardProps {
   diamond: any;
@@ -13,6 +14,7 @@ interface StoreProductCardProps {
 export function StoreProductCard({ diamond, onClick }: StoreProductCardProps) {
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
+  const { toast } = useToast();
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -45,7 +47,43 @@ export function StoreProductCard({ diamond, onClick }: StoreProductCardProps) {
     setImageError(true);
   };
 
-  // Get image URL from multiple possible fields
+  const handleShare = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const shareUrl = `${window.location.origin}/store?item=${diamond.id}`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: `${diamond.carat}ct ${diamond.shape} Diamond`,
+        text: `Check out this beautiful ${diamond.carat}ct ${diamond.shape} diamond for ${formatPrice(diamond.price)}`,
+        url: shareUrl
+      });
+    } else {
+      navigator.clipboard.writeText(shareUrl);
+      toast({
+        title: "Link Copied!",
+        description: "Diamond link has been copied to clipboard",
+      });
+    }
+  };
+
+  const handleContactSeller = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // Create Telegram deep link
+    const message = `Hi! I'm interested in this diamond:\n\n${diamond.carat}ct ${diamond.shape}\nColor: ${diamond.color}, Clarity: ${diamond.clarity}\nPrice: ${formatPrice(diamond.price)}\nStock: ${diamond.stockNumber}\n\nCould you please provide more information?`;
+    
+    // Get seller's Telegram ID (you'll need to fetch this from user_profiles table)
+    // For now, we'll use a generic approach
+    const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(window.location.origin + '/store?item=' + diamond.id)}&text=${encodeURIComponent(message)}`;
+    
+    window.open(telegramUrl, '_blank');
+    
+    toast({
+      title: "Opening Telegram...",
+      description: "Opening Telegram to contact the seller",
+    });
+  };
+
   const imageUrl = diamond.imageUrl || diamond.picture || diamond.image || diamond.photo;
 
   return (
@@ -84,6 +122,18 @@ export function StoreProductCard({ diamond, onClick }: StoreProductCardProps) {
               {diamond.status || 'Available'}
             </Badge>
           </div>
+
+          {/* Share Button */}
+          <div className="absolute top-2 right-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="bg-white/80 backdrop-blur-sm"
+              onClick={handleShare}
+            >
+              <Share className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Diamond Details */}
@@ -101,12 +151,24 @@ export function StoreProductCard({ diamond, onClick }: StoreProductCardProps) {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-3">
             <div className="text-lg font-bold text-gray-900">
               {formatPrice(diamond.price)}
             </div>
-            <Button size="sm" variant="outline" className="text-xs">
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" className="flex-1 text-xs">
               View Details
+            </Button>
+            <Button 
+              size="sm" 
+              className="flex-1 text-xs bg-green-600 hover:bg-green-700"
+              onClick={handleContactSeller}
+            >
+              <MessageCircle className="h-3 w-3 mr-1" />
+              I Want This
             </Button>
           </div>
         </div>
