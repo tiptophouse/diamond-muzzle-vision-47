@@ -1,6 +1,5 @@
 
-import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useState } from "react";
 import { PublicStoreLayout } from "@/components/store/PublicStoreLayout";
 import { StoreFilters } from "@/components/store/StoreFilters";
 import { StoreProductGrid } from "@/components/store/StoreProductGrid";
@@ -18,7 +17,6 @@ export interface StoreFilters {
 }
 
 export default function StorePage() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [filters, setFilters] = useState<StoreFilters>({
     shape: [],
     color: ['D', 'Z'],
@@ -33,23 +31,7 @@ export default function StorePage() {
   const [selectedDiamond, setSelectedDiamond] = useState<any>(null);
   const [showFilters, setShowFilters] = useState(false);
 
-  const { diamonds, loading, error, refetch } = useStoreData(filters, sortBy);
-
-  // Handle direct links to specific diamonds
-  useEffect(() => {
-    const itemId = searchParams.get('item');
-    if (itemId && diamonds.length > 0) {
-      const targetDiamond = diamonds.find(d => d.id === itemId);
-      if (targetDiamond) {
-        setSelectedDiamond(targetDiamond);
-      }
-    }
-  }, [searchParams, diamonds]);
-
-  // Refresh data when component mounts to ensure latest store items
-  useEffect(() => {
-    refetch();
-  }, []);
+  const { diamonds, loading, error } = useStoreData(filters, sortBy);
 
   const handleFilterChange = (newFilters: Partial<StoreFilters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
@@ -65,18 +47,6 @@ export default function StorePage() {
       cut: [],
       search: '',
     });
-  };
-
-  const handleDiamondClick = (diamond: any) => {
-    setSelectedDiamond(diamond);
-    // Update URL to include the diamond ID for sharing
-    setSearchParams({ item: diamond.id });
-  };
-
-  const handleModalClose = () => {
-    setSelectedDiamond(null);
-    // Remove item parameter from URL
-    setSearchParams({});
   };
 
   return (
@@ -105,7 +75,7 @@ export default function StorePage() {
             diamonds={diamonds}
             loading={loading}
             error={error}
-            onDiamondClick={handleDiamondClick}
+            onDiamondClick={setSelectedDiamond}
           />
         </div>
       </div>
@@ -115,7 +85,7 @@ export default function StorePage() {
         <StoreProductModal
           diamond={selectedDiamond}
           isOpen={!!selectedDiamond}
-          onClose={handleModalClose}
+          onClose={() => setSelectedDiamond(null)}
         />
       )}
     </PublicStoreLayout>

@@ -1,6 +1,6 @@
 
 import { ReactNode } from "react";
-import { Search, Filter, SortAsc, Share } from "lucide-react";
+import { Search, Filter, SortAsc } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,7 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
 
 interface PublicStoreLayoutProps {
   children: ReactNode;
@@ -31,26 +30,6 @@ export function PublicStoreLayout({
   sortBy,
   onSortChange,
 }: PublicStoreLayoutProps) {
-  const { toast } = useToast();
-
-  const handleShareStore = () => {
-    const storeUrl = `${window.location.origin}/store`;
-    
-    if (navigator.share) {
-      navigator.share({
-        title: "Diamond Collection",
-        text: "Check out our premium diamond collection",
-        url: storeUrl
-      });
-    } else {
-      navigator.clipboard.writeText(storeUrl);
-      toast({
-        title: "Store Link Copied!",
-        description: "Store link has been copied to clipboard",
-      });
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -75,20 +54,9 @@ export function PublicStoreLayout({
               </div>
             </div>
 
-            {/* Share Store & Contact Info */}
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleShareStore}
-                className="hidden md:flex"
-              >
-                <Share className="h-4 w-4 mr-2" />
-                Share Store
-              </Button>
-              <div className="hidden md:flex text-sm text-gray-600">
-                <span>Contact: +1 (555) 123-4567</span>
-              </div>
+            {/* Contact Info */}
+            <div className="hidden md:flex text-sm text-gray-600">
+              <span>Contact: +1 (555) 123-4567</span>
             </div>
           </div>
         </div>
@@ -114,14 +82,6 @@ export function PublicStoreLayout({
             </div>
 
             <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleShareStore}
-                className="md:hidden"
-              >
-                <Share className="h-4 w-4" />
-              </Button>
               <div className="flex items-center space-x-2">
                 <SortAsc className="h-4 w-4 text-gray-400" />
                 <Select value={sortBy} onValueChange={onSortChange}>

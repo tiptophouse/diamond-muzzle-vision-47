@@ -3,7 +3,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { X, ShoppingBag } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LayoutDashboard, Package, Upload, MessageSquare, TrendingUp, FileText, Settings, Bell, Users, BarChart3 } from 'lucide-react';
 
@@ -27,11 +27,6 @@ const Sidebar = ({ onClose }: SidebarProps) => {
       name: 'Inventory',
       href: '/inventory',
       icon: Package
-    },
-    {
-      name: 'Store',
-      href: '/store',
-      icon: ShoppingBag
     },
     {
       name: 'Upload',

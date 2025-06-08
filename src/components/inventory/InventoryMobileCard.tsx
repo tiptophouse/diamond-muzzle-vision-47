@@ -1,137 +1,127 @@
-
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Diamond } from "./InventoryTable";
+import { Edit, Trash, ImageIcon } from "lucide-react";
 
 interface InventoryMobileCardProps {
   diamond: Diamond;
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
-  onToggleStoreVisibility?: (diamond: Diamond) => void;
 }
 
-export function InventoryMobileCard({ diamond, onEdit, onDelete, onToggleStoreVisibility }: InventoryMobileCardProps) {
-  const isStoreVisible = (diamond as any).store_visible || false;
+export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobileCardProps) {
+  const [imageError, setImageError] = useState(false);
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price);
+  const handleImageError = () => {
+    setImageError(true);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'available':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'sold':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-      case 'reserved':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
-    }
-  };
+  // Get image URL from multiple possible sources
+  const imageUrl = diamond.imageUrl || (diamond as any).picture || (diamond as any).image;
 
   return (
-    <Card className="w-full border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-3">
-            {diamond.imageUrl && (
-              <img 
-                src={diamond.imageUrl} 
-                alt={`Diamond ${diamond.stockNumber}`}
-                className="w-12 h-12 rounded object-cover border border-slate-200 dark:border-slate-700"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                }}
-              />
-            )}
-            <div>
-              <h3 className="font-semibold text-slate-900 dark:text-slate-100">
-                {diamond.stockNumber}
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 capitalize">
-                {diamond.shape}
-              </p>
+    <Card className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors">
+      <CardContent className="p-4 w-full">
+        {/* Image section */}
+        {imageUrl && !imageError ? (
+          <div className="mb-4 w-full">
+            <img 
+              src={imageUrl} 
+              alt={`Diamond ${diamond.stockNumber}`}
+              className="w-full h-32 object-cover rounded-lg border border-slate-200 dark:border-slate-600"
+              onError={handleImageError}
+            />
+          </div>
+        ) : (
+          <div className="mb-4 w-full h-32 bg-slate-100 dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center">
+            <ImageIcon className="h-8 w-8 text-slate-400" />
+          </div>
+        )}
+        
+        <div className="flex justify-between items-start mb-4 w-full">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-mono text-sm font-semibold text-slate-900 dark:text-slate-100 truncate mb-1">
+              {diamond.stockNumber}
+            </h3>
+            <p className="text-lg font-bold text-slate-800 dark:text-slate-200 capitalize">{diamond.shape}</p>
+          </div>
+          <div className="text-right flex-shrink-0 ml-4">
+            <p className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-1">
+              ${diamond.price.toLocaleString()}
+            </p>
+            <Badge 
+              className={`${
+                diamond.status === "Available" 
+                  ? "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900 dark:text-emerald-200" 
+                  : diamond.status === "Reserved" 
+                  ? "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900 dark:text-blue-200" 
+                  : "bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-700 dark:text-slate-200"
+              }`}
+              variant="outline"
+            >
+              {diamond.status}
+            </Badge>
+          </div>
+        </div>
+        
+        <div className="space-y-3 mb-4 w-full">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">CARAT</span>
+              <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{diamond.carat.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">CLARITY</span>
+              <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 text-xs">
+                {diamond.clarity}
+              </Badge>
             </div>
           </div>
-          <Badge className={getStatusColor(diamond.status)}>
-            {diamond.status}
-          </Badge>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
-          <div>
-            <span className="text-slate-600 dark:text-slate-400">Carat:</span>
-            <span className="ml-1 font-semibold text-slate-900 dark:text-slate-100">
-              {diamond.carat.toFixed(2)}
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-600 dark:text-slate-400">Color:</span>
-            <span className="ml-1 font-semibold text-slate-900 dark:text-slate-100">
-              {diamond.color}
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-600 dark:text-slate-400">Clarity:</span>
-            <span className="ml-1 font-semibold text-slate-900 dark:text-slate-100">
-              {diamond.clarity}
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-600 dark:text-slate-400">Cut:</span>
-            <span className="ml-1 font-semibold text-slate-900 dark:text-slate-100">
-              {diamond.cut}
-            </span>
+          
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">COLOR</span>
+              <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 text-xs">
+                {diamond.color}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">CUT</span>
+              <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 text-xs">
+                {diamond.cut}
+              </Badge>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            {formatPrice(diamond.price)}
+        {(onEdit || onDelete) && (
+          <div className="flex gap-2 pt-3 border-t border-slate-200 dark:border-slate-700 w-full">
+            {onEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onEdit(diamond)}
+                className="flex-1 h-9 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onDelete(diamond.id)}
+                className="flex-1 h-9 text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+              >
+                <Trash className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            )}
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant={isStoreVisible ? "default" : "outline"}
-              size="sm"
-              onClick={() => onToggleStoreVisibility?.(diamond)}
-              className={isStoreVisible 
-                ? "bg-green-600 hover:bg-green-700 text-white" 
-                : "text-gray-600 hover:text-green-600 hover:border-green-600"
-              }
-            >
-              {isStoreVisible ? (
-                <Eye className="h-4 w-4" />
-              ) : (
-                <EyeOff className="h-4 w-4" />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onEdit?.(diamond)}
-              className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-950"
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onDelete?.(diamond.id)}
-              className="text-red-600 hover:text-red-800 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );

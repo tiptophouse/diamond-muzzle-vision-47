@@ -1,25 +1,19 @@
 
-import {
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export function InventoryTableHeader() {
   return (
     <TableHeader>
-      <TableRow className="bg-slate-100 dark:bg-slate-800">
-        <TableHead className="w-16"></TableHead>
-        <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Stock #</TableHead>
-        <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Shape</TableHead>
-        <TableHead className="text-right font-semibold text-slate-700 dark:text-slate-300">Carat</TableHead>
-        <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Color</TableHead>
-        <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Clarity</TableHead>
-        <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Cut</TableHead>
-        <TableHead className="text-right font-semibold text-slate-700 dark:text-slate-300">Price</TableHead>
-        <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Status</TableHead>
-        <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Store Visibility</TableHead>
-        <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Actions</TableHead>
+      <TableRow className="hover:bg-transparent border-slate-200">
+        <TableHead className="font-semibold text-slate-900 bg-slate-50">Stock #</TableHead>
+        <TableHead className="font-semibold text-slate-900 bg-slate-50">Shape</TableHead>
+        <TableHead className="font-semibold text-slate-900 bg-slate-50 text-right">Carat</TableHead>
+        <TableHead className="font-semibold text-slate-900 bg-slate-50">Color</TableHead>
+        <TableHead className="font-semibold text-slate-900 bg-slate-50">Clarity</TableHead>
+        <TableHead className="font-semibold text-slate-900 bg-slate-50">Cut</TableHead>
+        <TableHead className="font-semibold text-slate-900 bg-slate-50 text-right">Price</TableHead>
+        <TableHead className="font-semibold text-slate-900 bg-slate-50">Status</TableHead>
+        <TableHead className="font-semibold text-slate-900 bg-slate-50">Actions</TableHead>
       </TableRow>
     </TableHeader>
   );

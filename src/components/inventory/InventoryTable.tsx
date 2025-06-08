@@ -28,10 +28,9 @@ interface InventoryTableProps {
   loading?: boolean;
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
-  onToggleStoreVisibility?: (diamond: Diamond) => void;
 }
 
-export function InventoryTable({ data, loading = false, onEdit, onDelete, onToggleStoreVisibility }: InventoryTableProps) {
+export function InventoryTable({ data, loading = false, onEdit, onDelete }: InventoryTableProps) {
   const isMobile = useIsMobile();
 
   if (loading) {
@@ -52,7 +51,6 @@ export function InventoryTable({ data, loading = false, onEdit, onDelete, onTogg
               diamond={diamond} 
               onEdit={onEdit}
               onDelete={onDelete}
-              onToggleStoreVisibility={onToggleStoreVisibility}
             />
           ))
         )}
@@ -75,7 +73,6 @@ export function InventoryTable({ data, loading = false, onEdit, onDelete, onTogg
                   diamond={diamond} 
                   onEdit={onEdit}
                   onDelete={onDelete}
-                  onToggleStoreVisibility={onToggleStoreVisibility}
                 />
               ))
             )}
