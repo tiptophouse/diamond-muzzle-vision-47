@@ -4,6 +4,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
 interface UploadResultData {
+  success: boolean;
+  message: string;
   totalItems: number;
   successCount: number;
   errors: string[];
@@ -80,7 +82,7 @@ export function UploadResult({ result }: UploadResultProps) {
         </Alert>
       )}
 
-      {hasErrors && (
+      {hasErrors && !hasSuccess && (
         <Alert variant="destructive">
           <XCircle className="h-4 w-4" />
           <AlertDescription>

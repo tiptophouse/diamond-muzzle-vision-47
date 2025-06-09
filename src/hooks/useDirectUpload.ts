@@ -8,8 +8,10 @@ import { useEnhancedCsvProcessor, InventoryItem } from "./useEnhancedCsvProcesso
 interface UploadResult {
   success: boolean;
   message: string;
-  itemsProcessed?: number;
-  errors?: string[];
+  totalItems: number;
+  successCount: number;
+  errors: string[];
+  failedRows?: number[];
 }
 
 export function useDirectUpload() {
@@ -56,7 +58,7 @@ export function useDirectUpload() {
         cut: item.cut || 'Excellent',
         price_per_carat: item.price_per_carat,
         lab: item.lab || 'GIA',
-        certificate_number: item.certificate_number ? String(item.certificate_number) : null,
+        certificate_number: item.certificate_number ? parseInt(String(item.certificate_number)) || null : null,
         polish: item.polish || 'Excellent',
         symmetry: item.symmetry || 'Excellent',
         fluorescence: item.fluorescence || 'None',
@@ -89,7 +91,9 @@ export function useDirectUpload() {
       const successResult: UploadResult = {
         success: true,
         message: `Successfully uploaded ${inventoryItems.length} diamonds to your inventory!`,
-        itemsProcessed: inventoryItems.length,
+        totalItems: inventoryItems.length,
+        successCount: inventoryItems.length,
+        errors: [],
       };
 
       setResult(successResult);
@@ -107,6 +111,8 @@ export function useDirectUpload() {
       const errorResult: UploadResult = {
         success: false,
         message: error instanceof Error ? error.message : 'An unexpected error occurred',
+        totalItems: 0,
+        successCount: 0,
         errors: [error instanceof Error ? error.message : 'Unknown error'],
       };
 
