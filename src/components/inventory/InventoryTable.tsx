@@ -1,4 +1,3 @@
-
 import {
   Table,
   TableBody,
@@ -10,7 +9,7 @@ import { InventoryTableEmpty } from "./InventoryTableEmpty";
 import { InventoryMobileCard } from "./InventoryMobileCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-export type Diamond = {
+export interface Diamond {
   id: string;
   stockNumber: string;
   shape: string;
@@ -22,7 +21,17 @@ export type Diamond = {
   status: string;
   imageUrl?: string;
   store_visible?: boolean;
-};
+  fluorescence?: string;
+  lab?: string;
+  certificate_number?: string;
+  polish?: string;
+  symmetry?: string;
+  table_percentage?: number;
+  depth_percentage?: number;
+  measurements?: string;
+  ratio?: number;
+  description?: string;
+}
 
 interface InventoryTableProps {
   data: Diamond[];
