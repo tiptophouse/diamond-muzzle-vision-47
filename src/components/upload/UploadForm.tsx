@@ -5,7 +5,7 @@ import { Upload, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useCsvProcessor } from "@/hooks/useCsvProcessor";
-import { useUploadHandler } from "@/hooks/useUploadHandler";
+import { useDirectUpload } from "@/hooks/useDirectUpload";
 import { FileUploadArea } from "./FileUploadArea";
 import { UploadProgress } from "./UploadProgress";
 import { UploadResult } from "./UploadResult";
@@ -15,7 +15,7 @@ export function UploadForm() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { user, isAuthenticated } = useTelegramAuth();
   const { validateFile } = useCsvProcessor();
-  const { uploading, progress, result, handleUpload, resetState } = useUploadHandler();
+  const { uploading, progress, result, handleUpload, resetState } = useDirectUpload();
 
   const handleFileChange = (file: File | null) => {
     if (!validateFile(file)) {

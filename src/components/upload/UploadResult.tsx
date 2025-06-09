@@ -1,44 +1,57 @@
 
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+interface UploadResultData {
+  totalItems: number;
+  successCount: number;
+  errors: string[];
+}
 
 interface UploadResultProps {
-  result: {
-    totalItems: number;
-    matchedPairs: number;
-    errors: string[];
-  } | null;
+  result: UploadResultData | null;
 }
 
 export function UploadResult({ result }: UploadResultProps) {
   if (!result) return null;
 
+  const hasErrors = result.errors.length > 0;
+  const hasSuccess = result.successCount > 0;
+
   return (
-    <div className="bg-diamond-50 border border-diamond-100 rounded-lg p-4 space-y-3">
-      <div className="flex items-center">
-        <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
-        <p className="text-sm font-medium">File processed</p>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-2 text-sm">
-        <div>
-          <p className="text-gray-500">Total Items</p>
-          <p className="font-medium">{result.totalItems}</p>
-        </div>
-        <div>
-          <p className="text-gray-500">Status</p>
-          <p className="font-medium text-green-600">Uploaded Successfully</p>
-        </div>
-      </div>
-      
-      {result.errors.length > 0 && (
-        <div className="text-sm">
-          <p className="text-gray-500">Errors</p>
-          <ul className="list-disc list-inside text-red-600 text-xs mt-1">
-            {result.errors.map((error, index) => (
-              <li key={index}>{error}</li>
-            ))}
-          </ul>
-        </div>
+    <div className="space-y-4">
+      {hasSuccess && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-700">
+            Successfully processed {result.successCount} out of {result.totalItems} diamonds.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {hasErrors && (
+        <Alert variant="destructive">
+          <XCircle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-2">
+              <p className="font-medium">Upload completed with errors:</p>
+              <ul className="list-disc pl-4 space-y-1">
+                {result.errors.map((error, index) => (
+                  <li key={index} className="text-sm">{error}</li>
+                ))}
+              </ul>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {result.totalItems === 0 && (
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            No data was processed. Please check your CSV file format.
+          </AlertDescription>
+        </Alert>
       )}
     </div>
   );
