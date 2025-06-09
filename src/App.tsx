@@ -1,6 +1,5 @@
 
 import {
-  BrowserRouter as Router,
   Route,
   Routes,
 } from "react-router-dom";
@@ -34,27 +33,25 @@ function App() {
         <TelegramAuthProvider>
           <AuthGuard>
             <AuthorizationGuard>
-              <Router>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/inventory" element={<Inventory />} />
-                  <Route path="/store" element={<StorePage />} />
-                  <Route path="/upload" element={<UploadPage />} />
-                  <Route path="/upload-single" element={<UploadSingleStonePage />} />
-                  <Route path="/chat" element={<ChatPage />} />
-                  <Route path="/insights" element={<InsightsPage />} />
-                  <Route path="/reports" element={<ReportsPage />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/notifications" element={<NotificationsPage />} />
-                  <Route path="/admin" element={
-                    <AdminGuard>
-                      <Admin />
-                    </AdminGuard>
-                  } />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Router>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/inventory" element={<Inventory />} />
+                <Route path="/store" element={<StorePage />} />
+                <Route path="/upload" element={<UploadPage />} />
+                <Route path="/upload-single" element={<UploadSingleStonePage />} />
+                <Route path="/chat" element={<ChatPage />} />
+                <Route path="/insights" element={<InsightsPage />} />
+                <Route path="/reports" element={<ReportsPage />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/admin" element={
+                  <AdminGuard>
+                    <Admin />
+                  </AdminGuard>
+                } />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
             </AuthorizationGuard>
           </AuthGuard>
         </TelegramAuthProvider>
