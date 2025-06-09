@@ -3,7 +3,6 @@ import {
   Route,
   Routes,
 } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Dashboard from "./pages/Dashboard";
 import Inventory from "./pages/InventoryPage";
 import StorePage from "./pages/StorePage";
@@ -22,41 +21,37 @@ import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 
-const queryClient = new QueryClient();
-
 function App() {
   console.log('🚀 App component rendering');
   
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <TelegramAuthProvider>
-          <AuthGuard>
-            <AuthorizationGuard>
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/inventory" element={<Inventory />} />
-                <Route path="/store" element={<StorePage />} />
-                <Route path="/upload" element={<UploadPage />} />
-                <Route path="/upload-single" element={<UploadSingleStonePage />} />
-                <Route path="/chat" element={<ChatPage />} />
-                <Route path="/insights" element={<InsightsPage />} />
-                <Route path="/reports" element={<ReportsPage />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/notifications" element={<NotificationsPage />} />
-                <Route path="/admin" element={
-                  <AdminGuard>
-                    <Admin />
-                  </AdminGuard>
-                } />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </AuthorizationGuard>
-          </AuthGuard>
-        </TelegramAuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <TelegramAuthProvider>
+        <AuthGuard>
+          <AuthorizationGuard>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/inventory" element={<Inventory />} />
+              <Route path="/store" element={<StorePage />} />
+              <Route path="/upload" element={<UploadPage />} />
+              <Route path="/upload-single" element={<UploadSingleStonePage />} />
+              <Route path="/chat" element={<ChatPage />} />
+              <Route path="/insights" element={<InsightsPage />} />
+              <Route path="/reports" element={<ReportsPage />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/admin" element={
+                <AdminGuard>
+                  <Admin />
+                </AdminGuard>
+              } />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthorizationGuard>
+        </AuthGuard>
+      </TelegramAuthProvider>
+    </ThemeProvider>
   );
 }
 

@@ -5,8 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DiamondFormData, diamondFormSchema } from "@/components/inventory/form/types";
-import { DiamondDetailsSection } from "./form/DiamondDetailsSection";
-import { FormActions } from "./form/FormActions";
 import { ImageUploadManager } from "./ImageUploadManager";
 import { Sparkles, Camera } from "lucide-react";
 
@@ -61,6 +59,11 @@ export function SingleStoneForm({ initialData, onSubmit, isLoading = false }: Si
     }
   };
 
+  const handleReset = () => {
+    form.reset();
+    setUploadedImages([]);
+  };
+
   return (
     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
       {/* Premium Image Upload Section */}
@@ -99,15 +102,112 @@ export function SingleStoneForm({ initialData, onSubmit, isLoading = false }: Si
             <CardTitle className="text-xl text-slate-900">Diamond Specifications</CardTitle>
           </div>
         </CardHeader>
-        <CardContent>
-          <DiamondDetailsSection />
+        <CardContent className="space-y-4">
+          {/* Basic form fields */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Stock Number</label>
+              <input
+                {...form.register('stockNumber')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter stock number"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Shape</label>
+              <select
+                {...form.register('shape')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="Round">Round</option>
+                <option value="Princess">Princess</option>
+                <option value="Emerald">Emerald</option>
+                <option value="Oval">Oval</option>
+                <option value="Cushion">Cushion</option>
+                <option value="Pear">Pear</option>
+                <option value="Marquise">Marquise</option>
+                <option value="Heart">Heart</option>
+                <option value="Radiant">Radiant</option>
+                <option value="Asscher">Asscher</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Carat</label>
+              <input
+                {...form.register('carat', { valueAsNumber: true })}
+                type="number"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter carat weight"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Color</label>
+              <select
+                {...form.register('color')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="D">D</option>
+                <option value="E">E</option>
+                <option value="F">F</option>
+                <option value="G">G</option>
+                <option value="H">H</option>
+                <option value="I">I</option>
+                <option value="J">J</option>
+                <option value="K">K</option>
+                <option value="L">L</option>
+                <option value="M">M</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Clarity</label>
+              <select
+                {...form.register('clarity')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="FL">FL</option>
+                <option value="IF">IF</option>
+                <option value="VVS1">VVS1</option>
+                <option value="VVS2">VVS2</option>
+                <option value="VS1">VS1</option>
+                <option value="VS2">VS2</option>
+                <option value="SI1">SI1</option>
+                <option value="SI2">SI2</option>
+                <option value="I1">I1</option>
+                <option value="I2">I2</option>
+                <option value="I3">I3</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Price ($)</label>
+              <input
+                {...form.register('price', { valueAsNumber: true })}
+                type="number"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter price"
+              />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
       {/* Form Actions */}
-      <FormActions 
-        isLoading={isLoading}
-      />
+      <div className="flex justify-end gap-3">
+        <Button 
+          type="button"
+          variant="outline" 
+          onClick={handleReset}
+          disabled={isLoading}
+        >
+          Reset
+        </Button>
+        <Button 
+          type="submit"
+          disabled={isLoading}
+        >
+          {isLoading ? "Saving..." : "Save Diamond"}
+        </Button>
+      </div>
     </form>
   );
 }

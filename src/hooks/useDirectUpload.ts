@@ -1,183 +1,130 @@
 
 import { useState } from "react";
-import { toast } from "@/components/ui/use-toast";
-import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useEnhancedCsvProcessor } from "./useEnhancedCsvProcessor";
+import { toast } from "@/hooks/use-toast";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { useEnhancedCsvProcessor, InventoryItem } from "./useEnhancedCsvProcessor";
 
-interface UploadResultData {
-  totalItems: number;
-  successCount: number;
-  errors: string[];
-  failedRows?: number[];
+interface UploadResult {
+  success: boolean;
+  message: string;
+  itemsProcessed?: number;
+  errors?: string[];
 }
 
-export const useDirectUpload = () => {
+export function useDirectUpload() {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [result, setResult] = useState<UploadResultData | null>(null);
-  const { user, isAuthenticated } = useTelegramAuth();
-  const { parseCSVFile, mapCsvToInventory, validateFile } = useEnhancedCsvProcessor();
+  const [result, setResult] = useState<UploadResult | null>(null);
+  const { user } = useTelegramAuth();
+  const { processCSV } = useEnhancedCsvProcessor();
 
-  const simulateProgress = () => {
-    let currentProgress = 0;
-    const interval = setInterval(() => {
-      currentProgress += Math.random() * 15;
-      if (currentProgress > 85) {
-        clearInterval(interval);
-        currentProgress = 85;
-      }
-      setProgress(Math.min(currentProgress, 85));
-    }, 200);
-
-    return () => clearInterval(interval);
-  };
-
-  const handleUpload = async (selectedFile: File) => {
-    if (!selectedFile || !isAuthenticated || !user) {
+  const handleUpload = async (file: File) => {
+    if (!user?.id) {
       toast({
         variant: "destructive",
         title: "Authentication required",
-        description: "Please make sure you're logged in to upload files.",
+        description: "Please log in to upload inventory files.",
       });
-      return;
-    }
-
-    if (!validateFile(selectedFile)) {
       return;
     }
 
     setUploading(true);
     setProgress(0);
     setResult(null);
-    
-    const cleanup = simulateProgress();
 
     try {
-      console.log('Starting direct upload for user:', user.id);
-      console.log('File details:', { name: selectedFile.name, size: selectedFile.size, type: selectedFile.type });
+      console.log('🔄 Starting CSV processing...');
       
-      toast({
-        title: "Processing file...",
-        description: "Parsing your CSV file and validating data.",
-      });
-
-      // Parse CSV file
-      const csvData = await parseCSVFile(selectedFile);
-      console.log('Parsed CSV data:', csvData.length, 'rows');
+      // Process the CSV file
+      const inventoryItems = await processCSV(file);
       
-      if (csvData.length === 0) {
-        throw new Error('No data found in CSV file');
+      if (!inventoryItems || inventoryItems.length === 0) {
+        throw new Error('No valid items found in the CSV file');
       }
 
-      setProgress(40);
-      
-      // Map to inventory format
-      const inventoryData = mapCsvToInventory(csvData, user.id);
-      console.log('Mapped inventory data:', inventoryData.length, 'items');
-      
-      setProgress(60);
+      console.log(`📊 Processing ${inventoryItems.length} items...`);
+      setProgress(25);
 
-      toast({
-        title: "Uploading to database...",
-        description: `Processing ${inventoryData.length} diamonds.`,
-      });
-      
-      // Insert into Supabase in batches
-      const batchSize = 50; // Smaller batches for better reliability
-      let successCount = 0;
-      let errors: string[] = [];
-      let failedRows: number[] = [];
-      
-      for (let i = 0; i < inventoryData.length; i += batchSize) {
-        const batch = inventoryData.slice(i, i + batchSize);
-        const batchNumber = Math.floor(i / batchSize) + 1;
-        console.log(`Inserting batch ${batchNumber}:`, batch.length, 'items');
-        
-        try {
-          const { data, error } = await supabase
-            .from('inventory')
-            .insert(batch)
-            .select();
-          
-          if (error) {
-            console.error('Batch insert error:', error);
-            errors.push(`Batch ${batchNumber}: ${error.message}`);
-            
-            // Track failed rows
-            for (let j = 0; j < batch.length; j++) {
-              failedRows.push(i + j + 1);
-            }
-          } else {
-            successCount += data?.length || 0;
-            console.log(`Batch ${batchNumber} success:`, data?.length, 'items inserted');
-          }
-        } catch (batchError) {
-          console.error('Batch processing error:', batchError);
-          errors.push(`Batch ${batchNumber}: ${batchError instanceof Error ? batchError.message : 'Unknown error'}`);
-          
-          // Track failed rows
-          for (let j = 0; j < batch.length; j++) {
-            failedRows.push(i + j + 1);
-          }
-        }
+      // Transform the data for database insertion
+      const dbItems = inventoryItems.map(item => ({
+        stock_number: item.stock_number,
+        shape: item.shape,
+        weight: item.weight,
+        color: item.color,
+        clarity: item.clarity,
+        cut: item.cut || 'Excellent',
+        price_per_carat: item.price_per_carat,
+        lab: item.lab || 'GIA',
+        certificate_number: item.certificate_number ? String(item.certificate_number) : null,
+        polish: item.polish || 'Excellent',
+        symmetry: item.symmetry || 'Excellent',
+        fluorescence: item.fluorescence || 'None',
+        table_percentage: item.table_percentage || null,
+        depth_percentage: item.depth_percentage || null,
+        picture: item.picture || null,
+        status: item.status || 'Available',
+        store_visible: item.store_visible !== undefined ? item.store_visible : true,
+        user_id: user.id,
+      }));
 
-        // Update progress
-        const progressPercent = 60 + ((i + batchSize) / inventoryData.length) * 35;
-        setProgress(Math.min(progressPercent, 95));
+      setProgress(50);
+
+      // Insert into database using upsert for better handling of duplicates
+      const { data, error } = await supabase
+        .from('inventory')
+        .upsert(dbItems, { 
+          onConflict: 'stock_number,user_id',
+          ignoreDuplicates: false 
+        })
+        .select();
+
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
       }
-      
+
       setProgress(100);
-      
-      const uploadResult: UploadResultData = {
-        totalItems: inventoryData.length,
-        successCount: successCount,
-        errors: errors,
-        failedRows: failedRows,
+
+      const successResult: UploadResult = {
+        success: true,
+        message: `Successfully uploaded ${inventoryItems.length} diamonds to your inventory!`,
+        itemsProcessed: inventoryItems.length,
       };
-      
-      setResult(uploadResult);
-      
-      if (successCount > 0) {
-        toast({
-          title: "Upload successful! 🎉",
-          description: `Successfully uploaded ${successCount} of ${inventoryData.length} diamonds to your inventory.`,
-        });
-      }
-      
-      if (errors.length > 0) {
-        toast({
-          variant: "destructive",
-          title: "Partial upload failure",
-          description: `${errors.length} batches failed. Check the upload results for details.`,
-        });
-      }
-      
+
+      setResult(successResult);
+
+      toast({
+        title: "Upload successful! 🎉",
+        description: successResult.message,
+      });
+
+      console.log('✅ Upload completed successfully');
+
     } catch (error) {
-      console.error('Upload failed:', error);
+      console.error('Upload error:', error);
       
-      const uploadResult: UploadResultData = {
-        totalItems: 0,
-        successCount: 0,
-        errors: [error instanceof Error ? error.message : 'Unknown error occurred'],
+      const errorResult: UploadResult = {
+        success: false,
+        message: error instanceof Error ? error.message : 'An unexpected error occurred',
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
       };
-      
-      setResult(uploadResult);
-      
+
+      setResult(errorResult);
+
       toast({
         variant: "destructive",
         title: "Upload failed",
-        description: error instanceof Error ? error.message : "There was an error uploading your CSV file.",
+        description: errorResult.message,
       });
     } finally {
       setUploading(false);
-      cleanup();
     }
   };
 
   const resetState = () => {
-    setResult(null);
     setProgress(0);
+    setResult(null);
   };
 
   return {
@@ -185,6 +132,6 @@ export const useDirectUpload = () => {
     progress,
     result,
     handleUpload,
-    resetState
+    resetState,
   };
-};
+}
