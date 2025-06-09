@@ -59,32 +59,8 @@ export function AdminGuard({ children }: AdminGuardProps) {
     );
   }
 
-  // Enhanced admin verification
+  // Enhanced admin verification - ADMIN ALWAYS GETS ACCESS
   const isAdmin = user.id === ADMIN_TELEGRAM_ID;
-  
-  // Additional security: verify in production that we're in Telegram environment for the real admin
-  if (process.env.NODE_ENV === 'production' && !isTelegramEnvironment && isAdmin) {
-    console.log('❌ AdminGuard - Production admin access requires Telegram environment');
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
-          <div className="bg-red-50 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-            <AlertTriangle className="h-10 w-10 text-red-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Invalid Access Method</h2>
-          <p className="text-gray-600 mb-6">
-            Admin access must be through the official Telegram application for security reasons.
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors w-full"
-          >
-            Refresh
-          </button>
-        </div>
-      </div>
-    );
-  }
   
   console.log('🔍 AdminGuard - Is Admin?', isAdmin);
   

@@ -1,4 +1,3 @@
-
 import { ReactNode, useEffect, useState } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
@@ -18,27 +17,32 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (authLoading || blockedLoading || settingsLoading || !user) {
+    if (authLoading || !user) {
       return;
     }
 
     console.log('🔍 Authorization check for user:', user.id, 'Admin ID:', ADMIN_TELEGRAM_ID);
 
-    // Enhanced security: verify environment in production
-    if (process.env.NODE_ENV === 'production' && !isTelegramEnvironment) {
-      console.log('❌ Production requires Telegram environment');
-      setIsAuthorized(false);
-      return;
-    }
-
-    // Admin always gets access - highest priority
+    // Admin always gets access - HIGHEST PRIORITY
     if (user.id === ADMIN_TELEGRAM_ID) {
-      console.log('✅ Admin user detected - granting full access');
+      console.log('✅ Admin user detected - granting IMMEDIATE access');
       setIsAuthorized(true);
       return;
     }
 
-    // Check if user is blocked
+    // Wait for other data to load for non-admin users
+    if (blockedLoading || settingsLoading) {
+      return;
+    }
+
+    // Enhanced security: verify environment in production for non-admin users
+    if (process.env.NODE_ENV === 'production' && !isTelegramEnvironment) {
+      console.log('❌ Production requires Telegram environment for non-admin users');
+      setIsAuthorized(false);
+      return;
+    }
+
+    // Check if user is blocked (only applies to non-admin users)
     if (isUserBlocked(user.id)) {
       console.log('❌ User is blocked');
       setIsAuthorized(false);
@@ -58,7 +62,7 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
   }, [user, isUserBlocked, settings, authLoading, blockedLoading, settingsLoading, isTelegramEnvironment]);
 
   // Loading state
-  if (authLoading || blockedLoading || settingsLoading || isAuthorized === null) {
+  if (authLoading || isAuthorized === null) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
