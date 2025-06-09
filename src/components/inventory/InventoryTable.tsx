@@ -1,3 +1,4 @@
+
 import {
   Table,
   TableBody,
@@ -20,6 +21,7 @@ export interface Diamond {
   price: number;
   status: string;
   imageUrl?: string;
+  additional_images?: string[];
   store_visible?: boolean;
   fluorescence?: string;
   lab?: string;

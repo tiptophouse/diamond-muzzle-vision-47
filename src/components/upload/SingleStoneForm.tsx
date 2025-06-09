@@ -36,7 +36,7 @@ export function SingleStoneForm({ initialData, onSubmit, isLoading = false }: Si
       lab: initialData?.lab || 'GIA',
       polish: initialData?.polish || 'Excellent',
       symmetry: initialData?.symmetry || 'Excellent',
-      certificate_number: initialData?.certificate_number || '',
+      certificateNumber: initialData?.certificateNumber || initialData?.certificate_number || '',
       store_visible: initialData?.store_visible ?? true,
       imageUrl: initialData?.imageUrl || '',
       additional_images: uploadedImages,
@@ -100,15 +100,13 @@ export function SingleStoneForm({ initialData, onSubmit, isLoading = false }: Si
           </div>
         </CardHeader>
         <CardContent>
-          <DiamondDetailsSection form={form} />
+          <DiamondDetailsSection />
         </CardContent>
       </Card>
 
       {/* Form Actions */}
       <FormActions 
-        onCancel={() => form.reset()} 
         isLoading={isLoading}
-        hasChanges={form.formState.isDirty}
       />
     </form>
   );
