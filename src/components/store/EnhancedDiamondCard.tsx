@@ -1,136 +1,159 @@
 
 import { useState } from "react";
-import { MessageCircle, ImageIcon, Gem } from "lucide-react";
+import { Heart, Eye, Plus, Edit, Trash, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Diamond } from "@/components/inventory/InventoryTable";
+import { Card, CardContent } from "@/components/ui/card";
+import { useInventoryCrud } from "@/hooks/useInventoryCrud";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { Diamond } from "@/components/inventory/InventoryTable";
 import { AdminStoreControls } from "./AdminStoreControls";
-
-const ADMIN_TELEGRAM_ID = 2138564172;
 
 interface EnhancedDiamondCardProps {
   diamond: Diamond;
-  index: number;
+  index?: number;
   onUpdate?: () => void;
   onDelete?: () => void;
 }
 
-export function EnhancedDiamondCard({ diamond, index, onUpdate, onDelete }: EnhancedDiamondCardProps) {
-  const [imageError, setImageError] = useState(false);
+export function EnhancedDiamondCard({ diamond, index = 0, onUpdate, onDelete }: EnhancedDiamondCardProps) {
+  const [isLiked, setIsLiked] = useState(false);
+  const [showAdminControls, setShowAdminControls] = useState(false);
   const { user } = useTelegramAuth();
-  const isAdmin = user?.id === ADMIN_TELEGRAM_ID;
+  const { deleteDiamond } = useInventoryCrud({ onSuccess: onUpdate });
 
-  const handleContactOwner = () => {
-    const message = `Hi! I'm interested in your diamond:\n\n` +
-      `Stock #: ${diamond.stockNumber}\n` +
-      `Shape: ${diamond.shape}\n` +
-      `Carat: ${diamond.carat}\n` +
-      `Color: ${diamond.color}\n` +
-      `Clarity: ${diamond.clarity}\n` +
-      `Price: $${diamond.price.toLocaleString()}\n\n` +
-      `Could you please provide more details?`;
+  const isManager = user?.id === 101;
 
-    const encodedMessage = encodeURIComponent(message);
-    const telegramUrl = `https://t.me/share/url?url=${encodedMessage}`;
-    
-    window.open(telegramUrl, '_blank');
+  const handleDelete = async () => {
+    if (confirm('Are you sure you want to delete this diamond?')) {
+      await deleteDiamond(diamond.id, diamond);
+      if (onDelete) onDelete();
+    }
   };
 
+  const formattedPrice = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(diamond.price);
+
   return (
-    <div 
-      className="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group animate-fade-in relative"
-      style={{ animationDelay: `${index * 100}ms` }}
+    <Card 
+      className="group relative overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02] bg-white border border-slate-200"
+      style={{
+        animationDelay: `${index * 100}ms`,
+        animation: 'fadeIn 0.6s ease-out forwards',
+      }}
+      onMouseEnter={() => setShowAdminControls(true)}
+      onMouseLeave={() => setShowAdminControls(false)}
     >
-      {/* Admin Controls */}
-      {isAdmin && onUpdate && onDelete && (
-        <AdminStoreControls 
-          diamond={diamond}
-          onUpdate={onUpdate}
-          onDelete={onDelete}
-        />
-      )}
-
-      {/* Image Container */}
-      <div className="relative h-48 bg-gradient-to-br from-slate-50 to-slate-100 rounded-t-xl overflow-hidden">
-        {diamond.imageUrl && !imageError ? (
-          <img
-            src={diamond.imageUrl}
-            alt={`Diamond ${diamond.stockNumber}`}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <div className="relative">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
-                <Gem className="h-8 w-8 text-white" />
-              </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
-              </div>
+      <CardContent className="p-0">
+        {/* Image Section */}
+        <div className="relative aspect-square bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center overflow-hidden">
+          {diamond.imageUrl ? (
+            <img 
+              src={diamond.imageUrl} 
+              alt={`${diamond.shape} Diamond`}
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
+              <ImageIcon className="h-16 w-16 text-slate-300" />
             </div>
-          </div>
-        )}
-        
-        {/* Status Badge */}
-        <div className="absolute top-3 left-3">
-          <Badge 
-            className={`${
-              diamond.status === "Available" 
-                ? "bg-emerald-100 text-emerald-800 border-emerald-300" 
-                : "bg-blue-100 text-blue-800 border-blue-300"
-            }`}
-            variant="outline"
-          >
-            {diamond.status}
-          </Badge>
-        </div>
-      </div>
-
-      {/* Card Content */}
-      <div className="p-4 space-y-3">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded">
-            #{diamond.stockNumber}
-          </span>
-          <span className="text-lg font-bold text-slate-900">
-            ${diamond.price.toLocaleString()}
-          </span>
-        </div>
-
-        {/* Diamond Details */}
-        <div className="space-y-2">
-          <h3 className="font-semibold text-slate-900 text-lg">
-            {diamond.carat} ct {diamond.shape}
-          </h3>
+          )}
           
-          <div className="grid grid-cols-3 gap-2 text-sm">
-            <div className="text-center">
-              <p className="text-slate-500">Color</p>
-              <Badge variant="outline" className="text-xs">{diamond.color}</Badge>
-            </div>
-            <div className="text-center">
-              <p className="text-slate-500">Clarity</p>
-              <Badge variant="outline" className="text-xs">{diamond.clarity}</Badge>
-            </div>
-            <div className="text-center">
-              <p className="text-slate-500">Cut</p>
-              <Badge variant="outline" className="text-xs">{diamond.cut}</Badge>
-            </div>
+          {/* Status Badge */}
+          <div className="absolute top-3 left-3">
+            <Badge 
+              variant={diamond.status === "Available" ? "default" : "secondary"}
+              className={`${
+                diamond.status === "Available" 
+                  ? "bg-green-500 hover:bg-green-600 text-white" 
+                  : "bg-yellow-500 text-white"
+              }`}
+            >
+              {diamond.status}
+            </Badge>
           </div>
+
+          {/* Manager Controls */}
+          {isManager && showAdminControls && (
+            <AdminStoreControls 
+              diamond={diamond} 
+              onUpdate={onUpdate || (() => {})} 
+              onDelete={onDelete || (() => {})} 
+            />
+          )}
+
+          {/* Like Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute top-3 right-3 h-8 w-8 p-0 bg-white/80 hover:bg-white opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={() => setIsLiked(!isLiked)}
+          >
+            <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : 'text-slate-600'}`} />
+          </Button>
+
+          {/* Quick View Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute bottom-3 right-3 h-8 w-8 p-0 bg-white/80 hover:bg-white opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <Eye className="h-4 w-4 text-slate-600" />
+          </Button>
         </div>
 
-        {/* Contact Button */}
-        <Button 
-          onClick={handleContactOwner}
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-        >
-          <MessageCircle className="h-4 w-4 mr-2" />
-          Contact Owner
-        </Button>
-      </div>
-    </div>
+        {/* Content Section */}
+        <div className="p-4 space-y-3">
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="font-semibold text-slate-900 text-lg">
+                {diamond.carat}ct {diamond.shape}
+              </h3>
+              <p className="text-sm text-slate-600">#{diamond.stockNumber}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xl font-bold text-slate-900">{formattedPrice}</p>
+              <p className="text-xs text-slate-500">
+                ${Math.round(diamond.price / diamond.carat).toLocaleString()}/ct
+              </p>
+            </div>
+          </div>
+
+          {/* 4Cs Grid */}
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="bg-slate-50 rounded-lg p-2">
+              <p className="text-xs text-slate-500">Color</p>
+              <p className="font-semibold text-slate-900">{diamond.color}</p>
+            </div>
+            <div className="bg-slate-50 rounded-lg p-2">
+              <p className="text-xs text-slate-500">Clarity</p>
+              <p className="font-semibold text-slate-900">{diamond.clarity}</p>
+            </div>
+            <div className="bg-slate-50 rounded-lg p-2">
+              <p className="text-xs text-slate-500">Cut</p>
+              <p className="font-semibold text-slate-900">{diamond.cut}</p>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-2 pt-2">
+            <Button size="sm" className="flex-1">
+              View Details
+            </Button>
+            {isManager && (
+              <Button variant="outline" size="sm" className="px-3">
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

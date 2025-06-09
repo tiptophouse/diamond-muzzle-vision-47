@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { StoreHeader } from "@/components/store/StoreHeader";
-import { StoreFilters } from "@/components/store/StoreFilters";
+import { EnhancedStoreFilters } from "@/components/store/EnhancedStoreFilters";
 import { StoreGrid } from "@/components/store/StoreGrid";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
@@ -25,7 +25,7 @@ export default function StorePage() {
             {/* Desktop Filters Sidebar */}
             <div className="hidden lg:block w-80 flex-shrink-0">
               <div className="sticky top-8">
-                <StoreFilters
+                <EnhancedStoreFilters
                   filters={filters}
                   onUpdateFilter={updateFilter}
                   onClearFilters={clearFilters}
@@ -36,6 +36,12 @@ export default function StorePage() {
             
             {/* Main Content */}
             <div className="flex-1 min-w-0">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="text-sm text-slate-600">
+                  Showing {filteredDiamonds.length} of {diamonds.length} diamonds
+                </div>
+              </div>
+              
               <StoreGrid 
                 diamonds={filteredDiamonds}
                 loading={loading}
@@ -47,7 +53,7 @@ export default function StorePage() {
         </div>
 
         {/* Mobile Filter Drawer */}
-        <StoreFilters
+        <EnhancedStoreFilters
           filters={filters}
           onUpdateFilter={updateFilter}
           onClearFilters={clearFilters}

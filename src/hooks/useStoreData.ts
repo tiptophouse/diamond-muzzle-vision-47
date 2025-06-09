@@ -17,7 +17,7 @@ export function useStoreData() {
       setLoading(true);
       setError(null);
 
-      // Fetch ALL inventory items, not just store_visible ones
+      // Fetch ALL inventory items to display in store
       const { data, error: fetchError } = await supabase
         .from('inventory')
         .select('*')
@@ -43,6 +43,7 @@ export function useStoreData() {
       }));
 
       setDiamonds(transformedDiamonds);
+      console.log(`✅ Loaded ${transformedDiamonds.length} diamonds for store`);
     } catch (err) {
       console.error('Error fetching store data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load diamonds');
