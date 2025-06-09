@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Heart, Eye, Plus, Edit, Trash, ImageIcon } from "lucide-react";
+import { Heart, Eye, Plus, Edit, Trash, ImageIcon, Award, Gem } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,6 +38,8 @@ export function EnhancedDiamondCard({ diamond, index = 0, onUpdate, onDelete }: 
     maximumFractionDigits: 0,
   }).format(diamond.price);
 
+  const pricePerCarat = Math.round(diamond.price / diamond.carat);
+
   return (
     <Card 
       className="group relative overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02] bg-white border border-slate-200"
@@ -54,18 +56,21 @@ export function EnhancedDiamondCard({ diamond, index = 0, onUpdate, onDelete }: 
           {diamond.imageUrl ? (
             <img 
               src={diamond.imageUrl} 
-              alt={`${diamond.shape} Diamond`}
+              alt={`${diamond.carat}ct ${diamond.shape} Diamond ${diamond.color} ${diamond.clarity} - Stock #${diamond.stockNumber}`}
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
               loading="lazy"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
-              <ImageIcon className="h-16 w-16 text-slate-300" />
+              <div className="text-center">
+                <Gem className="h-16 w-16 text-slate-300 mx-auto mb-2" />
+                <p className="text-xs text-slate-400">No Image Available</p>
+              </div>
             </div>
           )}
           
-          {/* Status Badge */}
-          <div className="absolute top-3 left-3">
+          {/* Status and Certification Badges */}
+          <div className="absolute top-3 left-3 flex flex-col gap-2">
             <Badge 
               variant={diamond.status === "Available" ? "default" : "secondary"}
               className={`${
@@ -76,6 +81,12 @@ export function EnhancedDiamondCard({ diamond, index = 0, onUpdate, onDelete }: 
             >
               {diamond.status}
             </Badge>
+            {diamond.lab && (
+              <Badge variant="outline" className="bg-white/90 text-slate-700 border-slate-300">
+                <Award className="h-3 w-3 mr-1" />
+                {diamond.lab}
+              </Badge>
+            )}
           </div>
 
           {/* Manager Controls */}
@@ -116,17 +127,20 @@ export function EnhancedDiamondCard({ diamond, index = 0, onUpdate, onDelete }: 
                 {diamond.carat}ct {diamond.shape}
               </h3>
               <p className="text-sm text-slate-600">#{diamond.stockNumber}</p>
+              {diamond.certificate_number && (
+                <p className="text-xs text-slate-500">Cert: {diamond.certificate_number}</p>
+              )}
             </div>
             <div className="text-right">
               <p className="text-xl font-bold text-slate-900">{formattedPrice}</p>
               <p className="text-xs text-slate-500">
-                ${Math.round(diamond.price / diamond.carat).toLocaleString()}/ct
+                ${pricePerCarat.toLocaleString()}/ct
               </p>
             </div>
           </div>
 
           {/* 4Cs Grid */}
-          <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="grid grid-cols-2 gap-2 text-center">
             <div className="bg-slate-50 rounded-lg p-2">
               <p className="text-xs text-slate-500">Color</p>
               <p className="font-semibold text-slate-900">{diamond.color}</p>
@@ -139,7 +153,34 @@ export function EnhancedDiamondCard({ diamond, index = 0, onUpdate, onDelete }: 
               <p className="text-xs text-slate-500">Cut</p>
               <p className="font-semibold text-slate-900">{diamond.cut}</p>
             </div>
+            <div className="bg-slate-50 rounded-lg p-2">
+              <p className="text-xs text-slate-500">Fluorescence</p>
+              <p className="font-semibold text-slate-900 text-xs">{diamond.fluorescence || 'None'}</p>
+            </div>
           </div>
+
+          {/* Additional Details */}
+          {(diamond.polish || diamond.symmetry) && (
+            <div className="grid grid-cols-2 gap-2 text-center text-xs">
+              {diamond.polish && (
+                <div className="bg-blue-50 rounded p-1">
+                  <span className="text-blue-600">Polish: {diamond.polish}</span>
+                </div>
+              )}
+              {diamond.symmetry && (
+                <div className="bg-purple-50 rounded p-1">
+                  <span className="text-purple-600">Symm: {diamond.symmetry}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* SEO Description if available */}
+          {diamond.description && (
+            <div className="text-xs text-slate-600 line-clamp-2">
+              {diamond.description}
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex gap-2 pt-2">
