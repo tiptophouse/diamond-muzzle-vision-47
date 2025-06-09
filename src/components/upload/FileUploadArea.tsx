@@ -1,7 +1,8 @@
 
 import { useRef } from "react";
-import { Upload, File, XCircle } from "lucide-react";
+import { Upload, File, XCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface FileUploadAreaProps {
   selectedFile: File | null;
@@ -29,24 +30,41 @@ export function FileUploadArea({ selectedFile, onFileChange, onReset }: FileUplo
 
   if (!selectedFile) {
     return (
-      <div 
-        className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-diamond-300 transition-colors cursor-pointer"
-        onClick={() => fileInputRef.current?.click()}
-      >
-        <Upload className="h-12 w-12 mx-auto text-gray-400" />
-        <p className="mt-4 text-sm text-gray-600">
-          Drag and drop your CSV file here, or <span className="text-diamond-600 font-medium">browse</span> to select
-        </p>
-        <p className="mt-2 text-xs text-gray-500">
-          Supported format: CSV
-        </p>
-        <input
-          ref={fileInputRef}
-          type="file"
-          className="hidden"
-          accept=".csv"
-          onChange={handleFileChange}
-        />
+      <div className="space-y-4">
+        <div 
+          className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-diamond-300 transition-colors cursor-pointer"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <Upload className="h-12 w-12 mx-auto text-gray-400" />
+          <p className="mt-4 text-sm text-gray-600">
+            Drag and drop your CSV file here, or <span className="text-diamond-600 font-medium">browse</span> to select
+          </p>
+          <p className="mt-2 text-xs text-gray-500">
+            Supported format: CSV (comma, semicolon, or tab separated)
+          </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            accept=".csv"
+            onChange={handleFileChange}
+          />
+        </div>
+        
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-2">
+              <p className="font-medium">CSV Format Guidelines:</p>
+              <ul className="text-sm space-y-1 ml-4">
+                <li>• Include headers: Shape, Carat/Weight, Color, Clarity, Cut, Price</li>
+                <li>• Optional: Stock Number, Lab, Certificate Number, Fluorescence</li>
+                <li>• Use comma (,), semicolon (;), or tab separation</li>
+                <li>• Each row represents one diamond</li>
+              </ul>
+            </div>
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }

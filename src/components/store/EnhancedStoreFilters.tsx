@@ -1,28 +1,16 @@
 
 import { useState } from "react";
-import { X, RotateCcw, Filter } from "lucide-react";
+import { Filter, X, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Slider } from "@/components/ui/slider";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Diamond } from "@/components/inventory/InventoryTable";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface EnhancedStoreFiltersProps {
-  filters: {
-    shapes: string[];
-    colors: string[];
-    clarities: string[];
-    cuts: string[];
-    caratRange: [number, number];
-    priceRange: [number, number];
-    fluorescence: string[];
-    labs: string[];
-    status: string[];
-    polish: string[];
-    symmetry: string[];
-  };
+  filters: any;
   onUpdateFilter: (key: string, value: any) => void;
   onClearFilters: () => void;
   diamonds: Diamond[];
@@ -31,69 +19,23 @@ interface EnhancedStoreFiltersProps {
   isMobile?: boolean;
 }
 
-const SHAPES = ["Round", "Princess", "Oval", "Emerald", "Cushion", "Pear", "Marquise", "Asscher", "Radiant", "Heart"];
-const COLORS = ["D", "E", "F", "G", "H", "I", "J", "K", "L", "M"];
-const CLARITIES = ["FL", "IF", "VVS1", "VVS2", "VS1", "VS2", "SI1", "SI2", "SI3", "I1"];
-const CUTS = ["Excellent", "Very Good", "Good", "Fair", "Poor"];
-const FLUORESCENCE = ["None", "Faint", "Medium", "Strong", "Very Strong"];
-const LABS = ["GIA", "AGS", "IGI", "GGTL", "SSEF", "Other"];
-const STATUS = ["Available", "Reserved", "Sold", "On Hold"];
-const POLISH = ["Excellent", "Very Good", "Good", "Fair", "Poor"];
-const SYMMETRY = ["Excellent", "Very Good", "Good", "Fair", "Poor"];
-
-export function EnhancedStoreFilters({ 
-  filters, 
-  onUpdateFilter, 
-  onClearFilters, 
-  diamonds,
+export function EnhancedStoreFilters({
+  filters,
+  onUpdateFilter,
+  onClearFilters,
+  diamonds = [], // Provide default empty array
   isOpen = false,
   onClose,
-  isMobile = false
+  isMobile = false,
 }: EnhancedStoreFiltersProps) {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    "4cs": true,
-    "pricing": true,
-    "certification": false,
-    "optical": false,
-    "availability": false
+    shape: true,
+    color: true,
+    clarity: true,
+    cut: true,
+    price: true,
+    carat: true,
   });
-
-  const getMinMaxValues = () => {
-    if (diamonds.length === 0) return { minCarat: 0, maxCarat: 10, minPrice: 0, maxPrice: 100000 };
-    
-    const carats = diamonds.map(d => d.carat);
-    const prices = diamonds.map(d => d.price);
-    
-    return {
-      minCarat: Math.min(...carats),
-      maxCarat: Math.max(...carats),
-      minPrice: Math.min(...prices),
-      maxPrice: Math.max(...prices)
-    };
-  };
-
-  const { minCarat, maxCarat, minPrice, maxPrice } = getMinMaxValues();
-  
-  const activeFiltersCount = 
-    filters.shapes.length + 
-    filters.colors.length + 
-    filters.clarities.length + 
-    filters.cuts.length +
-    filters.fluorescence.length +
-    filters.labs.length +
-    filters.status.length +
-    filters.polish.length +
-    filters.symmetry.length +
-    (filters.caratRange[0] > minCarat || filters.caratRange[1] < maxCarat ? 1 : 0) +
-    (filters.priceRange[0] > minPrice || filters.priceRange[1] < maxPrice ? 1 : 0);
-
-  const toggleFilter = (type: string, value: string) => {
-    const currentValues = filters[type as keyof typeof filters] as string[];
-    const newValues = currentValues.includes(value)
-      ? currentValues.filter(v => v !== value)
-      : [...currentValues, value];
-    onUpdateFilter(type, newValues);
-  };
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
@@ -102,324 +44,271 @@ export function EnhancedStoreFilters({
     }));
   };
 
-  const FilterContent = () => (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Filter className="h-5 w-5" />
-          <h3 className="text-lg font-semibold text-slate-900">Filters</h3>
-          <Badge variant="secondary">{diamonds.length} total</Badge>
-        </div>
-        {activeFiltersCount > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClearFilters}
-            className="text-slate-600 hover:text-slate-900"
-          >
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Clear All ({activeFiltersCount})
-          </Button>
-        )}
-      </div>
+  // Get unique values from diamonds array safely
+  const getUniqueValues = (key: keyof Diamond) => {
+    if (!diamonds || diamonds.length === 0) return [];
+    return [...new Set(diamonds.map(d => d[key]).filter(Boolean))].sort();
+  };
 
-      {/* Active Filters */}
-      {activeFiltersCount > 0 && (
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-slate-700">Active Filters:</p>
-          <div className="flex flex-wrap gap-2">
-            {filters.shapes.map(shape => (
-              <Badge key={shape} variant="secondary" className="cursor-pointer" onClick={() => toggleFilter('shapes', shape)}>
-                {shape} <X className="h-3 w-3 ml-1" />
-              </Badge>
-            ))}
-            {filters.colors.map(color => (
-              <Badge key={color} variant="secondary" className="cursor-pointer" onClick={() => toggleFilter('colors', color)}>
-                {color} <X className="h-3 w-3 ml-1" />
-              </Badge>
-            ))}
-            {filters.clarities.map(clarity => (
-              <Badge key={clarity} variant="secondary" className="cursor-pointer" onClick={() => toggleFilter('clarities', clarity)}>
-                {clarity} <X className="h-3 w-3 ml-1" />
-              </Badge>
-            ))}
-            {filters.cuts.map(cut => (
-              <Badge key={cut} variant="secondary" className="cursor-pointer" onClick={() => toggleFilter('cuts', cut)}>
-                {cut} <X className="h-3 w-3 ml-1" />
-              </Badge>
+  const shapes = getUniqueValues('shape');
+  const colors = getUniqueValues('color');
+  const clarities = getUniqueValues('clarity');
+  const cuts = getUniqueValues('cut');
+  const statuses = getUniqueValues('status');
+  
+  const labs = ['GIA', 'AGS', 'GCAL', 'EGL', 'IGI', 'SSEF', 'Other'];
+  const fluorescenceOptions = ['None', 'Faint', 'Medium', 'Strong', 'Very Strong'];
+  const polishOptions = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'];
+  const symmetryOptions = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'];
+
+  const FilterCheckboxGroup = ({ 
+    title, 
+    options, 
+    selected, 
+    onUpdate, 
+    filterKey 
+  }: {
+    title: string;
+    options: string[];
+    selected: string[];
+    onUpdate: (key: string, value: string[]) => void;
+    filterKey: string;
+  }) => (
+    <Card className="mb-4">
+      <CardHeader 
+        className="pb-3 cursor-pointer"
+        onClick={() => toggleSection(filterKey)}
+      >
+        <CardTitle className="text-sm font-medium flex items-center justify-between">
+          {title}
+          {expandedSections[filterKey] ? 
+            <ChevronUp className="h-4 w-4" /> : 
+            <ChevronDown className="h-4 w-4" />
+          }
+        </CardTitle>
+      </CardHeader>
+      
+      {expandedSections[filterKey] && (
+        <CardContent className="pt-0">
+          <div className="space-y-2 max-h-40 overflow-y-auto">
+            {options.map((option) => (
+              <div key={option} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`${filterKey}-${option}`}
+                  checked={selected.includes(option)}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      onUpdate(filterKey, [...selected, option]);
+                    } else {
+                      onUpdate(filterKey, selected.filter(item => item !== option));
+                    }
+                  }}
+                />
+                <label
+                  htmlFor={`${filterKey}-${option}`}
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                >
+                  {option}
+                </label>
+              </div>
             ))}
           </div>
+        </CardContent>
+      )}
+    </Card>
+  );
+
+  const RangeSlider = ({ 
+    title, 
+    range, 
+    min, 
+    max, 
+    step = 0.1, 
+    onUpdate, 
+    filterKey,
+    formatValue = (v: number) => v.toString()
+  }: {
+    title: string;
+    range: [number, number];
+    min: number;
+    max: number;
+    step?: number;
+    onUpdate: (key: string, value: [number, number]) => void;
+    filterKey: string;
+    formatValue?: (value: number) => string;
+  }) => (
+    <Card className="mb-4">
+      <CardHeader 
+        className="pb-3 cursor-pointer"
+        onClick={() => toggleSection(filterKey)}
+      >
+        <CardTitle className="text-sm font-medium flex items-center justify-between">
+          {title}
+          {expandedSections[filterKey] ? 
+            <ChevronUp className="h-4 w-4" /> : 
+            <ChevronDown className="h-4 w-4" />
+          }
+        </CardTitle>
+      </CardHeader>
+      
+      {expandedSections[filterKey] && (
+        <CardContent className="pt-0">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between text-sm text-slate-600">
+              <span>{formatValue(range[0])}</span>
+              <span>{formatValue(range[1])}</span>
+            </div>
+            <Slider
+              value={range}
+              onValueChange={(value) => onUpdate(filterKey, value as [number, number])}
+              min={min}
+              max={max}
+              step={step}
+              className="w-full"
+            />
+          </div>
+        </CardContent>
+      )}
+    </Card>
+  );
+
+  const activeFiltersCount = Object.values(filters || {}).filter(value => {
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === 'object' && value !== null) return false; // Skip range objects
+    return value !== null && value !== undefined;
+  }).length;
+
+  const FilterContent = () => (
+    <div className="space-y-4">
+      {/* Active Filters */}
+      {activeFiltersCount > 0 && (
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            <span className="text-sm font-medium">{activeFiltersCount} active filters</span>
+          </div>
+          <Button variant="outline" size="sm" onClick={onClearFilters}>
+            Clear All
+          </Button>
         </div>
       )}
 
-      {/* 4Cs Section */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle 
-            className="text-sm cursor-pointer flex items-center justify-between"
-            onClick={() => toggleSection('4cs')}
-          >
-            The 4Cs
-            <span className="text-xs">{expandedSections['4cs'] ? '−' : '+'}</span>
-          </CardTitle>
-        </CardHeader>
-        {expandedSections['4cs'] && (
-          <CardContent className="space-y-4">
-            {/* Shape */}
-            <div className="space-y-3">
-              <h4 className="font-medium text-slate-900">Shape</h4>
-              <div className="grid grid-cols-2 gap-2">
-                {SHAPES.map(shape => (
-                  <label key={shape} className="flex items-center space-x-2 cursor-pointer">
-                    <Checkbox
-                      checked={filters.shapes.includes(shape)}
-                      onCheckedChange={() => toggleFilter('shapes', shape)}
-                    />
-                    <span className="text-sm text-slate-700">{shape}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+      {/* Shape Filter */}
+      <FilterCheckboxGroup
+        title="Shape"
+        options={shapes}
+        selected={filters?.shapes || []}
+        onUpdate={onUpdateFilter}
+        filterKey="shapes"
+      />
 
-            {/* Carat Weight */}
-            <div className="space-y-3">
-              <h4 className="font-medium text-slate-900">Carat Weight</h4>
-              <div className="px-2">
-                <Slider
-                  value={filters.caratRange}
-                  onValueChange={(value) => onUpdateFilter('caratRange', value as [number, number])}
-                  max={maxCarat}
-                  min={minCarat}
-                  step={0.1}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-sm text-slate-600 mt-1">
-                  <span>{filters.caratRange[0].toFixed(1)} ct</span>
-                  <span>{filters.caratRange[1].toFixed(1)} ct</span>
-                </div>
-              </div>
-            </div>
+      {/* Color Filter */}
+      <FilterCheckboxGroup
+        title="Color"
+        options={colors}
+        selected={filters?.colors || []}
+        onUpdate={onUpdateFilter}
+        filterKey="colors"
+      />
 
-            {/* Color */}
-            <div className="space-y-3">
-              <h4 className="font-medium text-slate-900">Color</h4>
-              <div className="grid grid-cols-5 gap-2">
-                {COLORS.map(color => (
-                  <label key={color} className="flex items-center space-x-2 cursor-pointer">
-                    <Checkbox
-                      checked={filters.colors.includes(color)}
-                      onCheckedChange={() => toggleFilter('colors', color)}
-                    />
-                    <span className="text-sm text-slate-700">{color}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+      {/* Clarity Filter */}
+      <FilterCheckboxGroup
+        title="Clarity"
+        options={clarities}
+        selected={filters?.clarities || []}
+        onUpdate={onUpdateFilter}
+        filterKey="clarities"
+      />
 
-            {/* Clarity */}
-            <div className="space-y-3">
-              <h4 className="font-medium text-slate-900">Clarity</h4>
-              <div className="grid grid-cols-3 gap-2">
-                {CLARITIES.map(clarity => (
-                  <label key={clarity} className="flex items-center space-x-2 cursor-pointer">
-                    <Checkbox
-                      checked={filters.clarities.includes(clarity)}
-                      onCheckedChange={() => toggleFilter('clarities', clarity)}
-                    />
-                    <span className="text-sm text-slate-700">{clarity}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+      {/* Cut Filter */}
+      <FilterCheckboxGroup
+        title="Cut"
+        options={cuts}
+        selected={filters?.cuts || []}
+        onUpdate={onUpdateFilter}
+        filterKey="cuts"
+      />
 
-            {/* Cut */}
-            <div className="space-y-3">
-              <h4 className="font-medium text-slate-900">Cut Quality</h4>
-              <div className="grid grid-cols-2 gap-2">
-                {CUTS.map(cut => (
-                  <label key={cut} className="flex items-center space-x-2 cursor-pointer">
-                    <Checkbox
-                      checked={filters.cuts.includes(cut)}
-                      onCheckedChange={() => toggleFilter('cuts', cut)}
-                    />
-                    <span className="text-sm text-slate-700">{cut}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        )}
-      </Card>
+      {/* Carat Range */}
+      <RangeSlider
+        title="Carat Weight"
+        range={filters?.caratRange || [0, 10]}
+        min={0}
+        max={10}
+        step={0.1}
+        onUpdate={onUpdateFilter}
+        filterKey="caratRange"
+        formatValue={(v) => `${v.toFixed(1)}ct`}
+      />
 
-      {/* Pricing Section */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle 
-            className="text-sm cursor-pointer flex items-center justify-between"
-            onClick={() => toggleSection('pricing')}
-          >
-            Pricing
-            <span className="text-xs">{expandedSections['pricing'] ? '−' : '+'}</span>
-          </CardTitle>
-        </CardHeader>
-        {expandedSections['pricing'] && (
-          <CardContent>
-            <div className="space-y-3">
-              <h4 className="font-medium text-slate-900">Price Range</h4>
-              <div className="px-2">
-                <Slider
-                  value={filters.priceRange}
-                  onValueChange={(value) => onUpdateFilter('priceRange', value as [number, number])}
-                  max={maxPrice}
-                  min={minPrice}
-                  step={1000}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-sm text-slate-600 mt-1">
-                  <span>${filters.priceRange[0].toLocaleString()}</span>
-                  <span>${filters.priceRange[1].toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        )}
-      </Card>
+      {/* Price Range */}
+      <RangeSlider
+        title="Price Range"
+        range={filters?.priceRange || [0, 100000]}
+        min={0}
+        max={100000}
+        step={1000}
+        onUpdate={onUpdateFilter}
+        filterKey="priceRange"
+        formatValue={(v) => `$${v.toLocaleString()}`}
+      />
 
-      {/* Certification Section */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle 
-            className="text-sm cursor-pointer flex items-center justify-between"
-            onClick={() => toggleSection('certification')}
-          >
-            Certification & Lab
-            <span className="text-xs">{expandedSections['certification'] ? '−' : '+'}</span>
-          </CardTitle>
-        </CardHeader>
-        {expandedSections['certification'] && (
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <h4 className="font-medium text-slate-900">Laboratory</h4>
-              <div className="grid grid-cols-2 gap-2">
-                {LABS.map(lab => (
-                  <label key={lab} className="flex items-center space-x-2 cursor-pointer">
-                    <Checkbox
-                      checked={filters.labs.includes(lab)}
-                      onCheckedChange={() => toggleFilter('labs', lab)}
-                    />
-                    <span className="text-sm text-slate-700">{lab}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        )}
-      </Card>
+      {/* Fluorescence Filter */}
+      <FilterCheckboxGroup
+        title="Fluorescence"
+        options={fluorescenceOptions}
+        selected={filters?.fluorescence || []}
+        onUpdate={onUpdateFilter}
+        filterKey="fluorescence"
+      />
 
-      {/* Optical Properties */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle 
-            className="text-sm cursor-pointer flex items-center justify-between"
-            onClick={() => toggleSection('optical')}
-          >
-            Optical Properties
-            <span className="text-xs">{expandedSections['optical'] ? '−' : '+'}</span>
-          </CardTitle>
-        </CardHeader>
-        {expandedSections['optical'] && (
-          <CardContent className="space-y-4">
-            {/* Fluorescence */}
-            <div className="space-y-3">
-              <h4 className="font-medium text-slate-900">Fluorescence</h4>
-              <div className="grid grid-cols-2 gap-2">
-                {FLUORESCENCE.map(fluor => (
-                  <label key={fluor} className="flex items-center space-x-2 cursor-pointer">
-                    <Checkbox
-                      checked={filters.fluorescence.includes(fluor)}
-                      onCheckedChange={() => toggleFilter('fluorescence', fluor)}
-                    />
-                    <span className="text-sm text-slate-700">{fluor}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+      {/* Lab Filter */}
+      <FilterCheckboxGroup
+        title="Certification Lab"
+        options={labs}
+        selected={filters?.labs || []}
+        onUpdate={onUpdateFilter}
+        filterKey="labs"
+      />
 
-            {/* Polish */}
-            <div className="space-y-3">
-              <h4 className="font-medium text-slate-900">Polish</h4>
-              <div className="grid grid-cols-2 gap-2">
-                {POLISH.map(polish => (
-                  <label key={polish} className="flex items-center space-x-2 cursor-pointer">
-                    <Checkbox
-                      checked={filters.polish.includes(polish)}
-                      onCheckedChange={() => toggleFilter('polish', polish)}
-                    />
-                    <span className="text-sm text-slate-700">{polish}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+      {/* Polish Filter */}
+      <FilterCheckboxGroup
+        title="Polish"
+        options={polishOptions}
+        selected={filters?.polish || []}
+        onUpdate={onUpdateFilter}
+        filterKey="polish"
+      />
 
-            {/* Symmetry */}
-            <div className="space-y-3">
-              <h4 className="font-medium text-slate-900">Symmetry</h4>
-              <div className="grid grid-cols-2 gap-2">
-                {SYMMETRY.map(symmetry => (
-                  <label key={symmetry} className="flex items-center space-x-2 cursor-pointer">
-                    <Checkbox
-                      checked={filters.symmetry.includes(symmetry)}
-                      onCheckedChange={() => toggleFilter('symmetry', symmetry)}
-                    />
-                    <span className="text-sm text-slate-700">{symmetry}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        )}
-      </Card>
+      {/* Symmetry Filter */}
+      <FilterCheckboxGroup
+        title="Symmetry"
+        options={symmetryOptions}
+        selected={filters?.symmetry || []}
+        onUpdate={onUpdateFilter}
+        filterKey="symmetry"
+      />
 
-      {/* Availability */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle 
-            className="text-sm cursor-pointer flex items-center justify-between"
-            onClick={() => toggleSection('availability')}
-          >
-            Availability
-            <span className="text-xs">{expandedSections['availability'] ? '−' : '+'}</span>
-          </CardTitle>
-        </CardHeader>
-        {expandedSections['availability'] && (
-          <CardContent>
-            <div className="space-y-3">
-              <h4 className="font-medium text-slate-900">Status</h4>
-              <div className="grid grid-cols-2 gap-2">
-                {STATUS.map(status => (
-                  <label key={status} className="flex items-center space-x-2 cursor-pointer">
-                    <Checkbox
-                      checked={filters.status.includes(status)}
-                      onCheckedChange={() => toggleFilter('status', status)}
-                    />
-                    <span className="text-sm text-slate-700">{status}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        )}
-      </Card>
+      {/* Status Filter */}
+      <FilterCheckboxGroup
+        title="Availability"
+        options={statuses}
+        selected={filters?.status || []}
+        onUpdate={onUpdateFilter}
+        filterKey="status"
+      />
     </div>
   );
 
   if (isMobile) {
     return (
       <Sheet open={isOpen} onOpenChange={onClose}>
-        <SheetContent side="bottom" className="h-[80vh] overflow-y-auto">
+        <SheetContent side="left" className="w-80 overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>Filter Diamonds</SheetTitle>
+            <SheetTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filter Diamonds
+            </SheetTitle>
           </SheetHeader>
           <div className="mt-6">
             <FilterContent />
@@ -430,7 +319,13 @@ export function EnhancedStoreFilters({
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+    <div className="w-full">
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          <Filter className="h-5 w-5" />
+          Filter Diamonds
+        </h3>
+      </div>
       <FilterContent />
     </div>
   );
