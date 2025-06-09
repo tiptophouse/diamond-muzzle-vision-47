@@ -44,14 +44,19 @@ export function parseTelegramInitData(initDataRaw: string): TelegramWebAppInitDa
       return null;
     }
 
+    console.log('📱 Parsing initData, length:', initDataRaw.length);
     const urlParams = new URLSearchParams(initDataRaw);
     const data: any = {};
     
     // Parse each parameter
     urlParams.forEach((value, key) => {
+      console.log(`📱 Parsing param: ${key} = ${value.substring(0, 50)}...`);
+      
       if (key === 'user' || key === 'receiver' || key === 'chat') {
         try {
-          data[key] = JSON.parse(decodeURIComponent(value));
+          const decodedValue = decodeURIComponent(value);
+          data[key] = JSON.parse(decodedValue);
+          console.log(`✅ Successfully parsed ${key}:`, data[key]);
         } catch (parseError) {
           console.error(`📱 Failed to parse ${key}:`, parseError);
           return null;
@@ -64,10 +69,27 @@ export function parseTelegramInitData(initDataRaw: string): TelegramWebAppInitDa
     });
 
     // Validate required fields
-    if (!data.hash || !data.auth_date) {
-      console.warn('📱 Missing required fields in initData');
+    if (!data.hash) {
+      console.warn('📱 Missing hash in initData');
       return null;
     }
+    
+    if (!data.auth_date) {
+      console.warn('📱 Missing auth_date in initData');
+      return null;
+    }
+    
+    if (!data.user || !data.user.id) {
+      console.warn('📱 Missing or invalid user in initData');
+      return null;
+    }
+
+    console.log('✅ InitData parsed successfully:', {
+      userId: data.user.id,
+      userName: data.user.first_name,
+      authDate: data.auth_date,
+      hasHash: !!data.hash
+    });
 
     return data as TelegramWebAppInitData;
   } catch (error) {
@@ -86,11 +108,19 @@ export function validateTelegramInitData(
       return false;
     }
 
+    console.log('📱 Validating initData...');
+
+    // Parse first to check basic structure
+    const parsed = parseTelegramInitData(initDataRaw);
+    if (!parsed) {
+      console.warn('📱 Failed to parse initData for validation');
+      return false;
+    }
+
     // In development, we can skip HMAC validation if no bot token is provided
     if (process.env.NODE_ENV === 'development' && !botToken) {
       console.log('📱 Development mode - skipping HMAC validation');
-      const parsed = parseTelegramInitData(initDataRaw);
-      return !!parsed && !!parsed.user && typeof parsed.user.id === 'number';
+      return !!parsed.user && typeof parsed.user.id === 'number';
     }
 
     const urlParams = new URLSearchParams(initDataRaw);
@@ -133,8 +163,8 @@ export function validateTelegramInitData(
       return false;
     }
 
-    const parsed = parseTelegramInitData(initDataRaw);
-    return !!parsed && !!parsed.user && typeof parsed.user.id === 'number';
+    console.log('✅ InitData validation successful');
+    return true;
   } catch (error) {
     console.error('📱 Validation error:', error);
     return false;
@@ -158,6 +188,8 @@ export function initializeTelegramWebApp(): Promise<boolean> {
         const tg = window.Telegram.WebApp;
         
         try {
+          console.log('📱 Initializing Telegram WebApp...');
+          
           // Initialize WebApp
           if (typeof tg.ready === 'function') {
             tg.ready();
@@ -176,7 +208,9 @@ export function initializeTelegramWebApp(): Promise<boolean> {
           }
           
           console.log('📱 Telegram WebApp initialized successfully');
+          console.log('📱 InitData available:', !!tg.initData);
           console.log('📱 InitData length:', tg.initData?.length || 0);
+          console.log('📱 InitDataUnsafe available:', !!tg.initDataUnsafe);
           console.log('📱 User from initDataUnsafe:', tg.initDataUnsafe?.user);
           
           resolve(true);

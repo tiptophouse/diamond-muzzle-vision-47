@@ -50,7 +50,7 @@ export function useSecureTelegramAuth(): AuthState {
       return;
     }
 
-    console.log('🔐 Starting secure Telegram authentication...');
+    console.log('🔐 Starting Telegram authentication...');
     
     try {
       // Check if we're in Telegram environment
@@ -62,13 +62,12 @@ export function useSecureTelegramAuth(): AuthState {
       if (!inTelegram) {
         // Not in Telegram - only allow in development
         if (process.env.NODE_ENV === 'development') {
-          console.log('🔧 Development mode - allowing access without Telegram');
-          // Create a development user (you can customize this)
+          console.log('🔧 Development mode - providing admin access');
           const devUser: TelegramUser = {
-            id: 999999999, // Different from your admin ID for testing
-            first_name: "Dev",
-            last_name: "User",
-            username: "devuser",
+            id: 2138564172, // Your admin ID
+            first_name: "Admin",
+            last_name: "Dev",
+            username: "admin_dev",
             language_code: "en"
           };
           
@@ -99,91 +98,102 @@ export function useSecureTelegramAuth(): AuthState {
         throw new Error('Telegram WebApp not available');
       }
 
-      // Try to get initData
-      if (!tg.initData || tg.initData.length === 0) {
-        console.warn('📱 No initData available from Telegram WebApp');
+      console.log('📱 Telegram WebApp object:', {
+        hasInitData: !!tg.initData,
+        initDataLength: tg.initData?.length || 0,
+        hasInitDataUnsafe: !!tg.initDataUnsafe,
+        unsafeUser: tg.initDataUnsafe?.user
+      });
+
+      // Try to get real initData first
+      if (tg.initData && tg.initData.length > 0) {
+        console.log('🔍 Processing real initData...');
         
-        // Fallback to initDataUnsafe only in development
-        if (process.env.NODE_ENV === 'development' && tg.initDataUnsafe?.user) {
-          console.log('🔧 Development mode - using initDataUnsafe');
-          const unsafeUser = tg.initDataUnsafe.user;
-          
-          updateState({
-            user: {
-              id: unsafeUser.id,
-              first_name: unsafeUser.first_name || 'User',
-              last_name: unsafeUser.last_name,
-              username: unsafeUser.username,
-              language_code: unsafeUser.language_code || 'en',
-              is_premium: unsafeUser.is_premium,
-              photo_url: unsafeUser.photo_url
-            },
-            isAuthenticated: true,
-            isLoading: false,
-            error: null
-          });
-          initializedRef.current = true;
-          return;
-        } else {
-          throw new Error('No valid authentication data available');
+        // Validate initData
+        const isValid = validateTelegramInitData(tg.initData);
+        if (isValid) {
+          // Parse user data
+          const initDataParsed = parseTelegramInitData(tg.initData);
+          if (initDataParsed?.user) {
+            console.log('✅ Valid initData found with user:', initDataParsed.user);
+            
+            // Try backend verification
+            try {
+              const verificationResult = await verifyTelegramUser(tg.initData);
+              
+              if (verificationResult && verificationResult.success) {
+                console.log('✅ Backend verification successful');
+                
+                updateState({
+                  user: {
+                    id: verificationResult.user_id,
+                    first_name: verificationResult.user_data?.first_name || initDataParsed.user.first_name,
+                    last_name: verificationResult.user_data?.last_name || initDataParsed.user.last_name,
+                    username: verificationResult.user_data?.username || initDataParsed.user.username,
+                    language_code: verificationResult.user_data?.language_code || initDataParsed.user.language_code,
+                    is_premium: verificationResult.user_data?.is_premium || initDataParsed.user.is_premium,
+                    photo_url: verificationResult.user_data?.photo_url || initDataParsed.user.photo_url
+                  },
+                  isAuthenticated: true,
+                  isLoading: false,
+                  error: null
+                });
+                initializedRef.current = true;
+                return;
+              }
+            } catch (backendError) {
+              console.warn('⚠️ Backend verification failed:', backendError);
+            }
+            
+            // Use client-side validation in development
+            if (process.env.NODE_ENV === 'development') {
+              console.log('🔧 Using client-side validation in development');
+              updateState({
+                user: {
+                  id: initDataParsed.user.id,
+                  first_name: initDataParsed.user.first_name,
+                  last_name: initDataParsed.user.last_name,
+                  username: initDataParsed.user.username,
+                  language_code: initDataParsed.user.language_code || 'en',
+                  is_premium: initDataParsed.user.is_premium,
+                  photo_url: initDataParsed.user.photo_url
+                },
+                isAuthenticated: true,
+                isLoading: false,
+                error: null
+              });
+              initializedRef.current = true;
+              return;
+            }
+          }
         }
       }
 
-      // Validate initData client-side first
-      const isValid = validateTelegramInitData(tg.initData);
-      if (!isValid) {
-        throw new Error('Invalid Telegram authentication data');
-      }
-
-      // Parse initData to get user
-      const initDataParsed = parseTelegramInitData(tg.initData);
-      if (!initDataParsed?.user) {
-        throw new Error('No user data in Telegram authentication');
-      }
-
-      // Verify with backend
-      console.log('🔐 Verifying with backend...');
-      const verificationResult = await verifyTelegramUser(tg.initData);
-      
-      if (verificationResult && verificationResult.success) {
-        console.log('✅ Backend verification successful');
+      // Try initDataUnsafe as fallback only in development
+      if (process.env.NODE_ENV === 'development' && tg.initDataUnsafe?.user) {
+        console.log('🔧 Development fallback - using initDataUnsafe');
+        const unsafeUser = tg.initDataUnsafe.user;
         
         updateState({
           user: {
-            id: verificationResult.user_id,
-            first_name: verificationResult.user_data?.first_name || initDataParsed.user.first_name,
-            last_name: verificationResult.user_data?.last_name || initDataParsed.user.last_name,
-            username: verificationResult.user_data?.username || initDataParsed.user.username,
-            language_code: verificationResult.user_data?.language_code || initDataParsed.user.language_code,
-            is_premium: verificationResult.user_data?.is_premium || initDataParsed.user.is_premium,
-            photo_url: verificationResult.user_data?.photo_url || initDataParsed.user.photo_url
+            id: unsafeUser.id,
+            first_name: unsafeUser.first_name || 'User',
+            last_name: unsafeUser.last_name,
+            username: unsafeUser.username,
+            language_code: unsafeUser.language_code || 'en',
+            is_premium: unsafeUser.is_premium,
+            photo_url: unsafeUser.photo_url
           },
           isAuthenticated: true,
           isLoading: false,
-          error: null
+          error: 'Using development mode (initDataUnsafe)'
         });
-      } else {
-        // Backend verification failed
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('⚠️ Backend verification failed, using client-side data in development');
-          updateState({
-            user: {
-              id: initDataParsed.user.id,
-              first_name: initDataParsed.user.first_name,
-              last_name: initDataParsed.user.last_name,
-              username: initDataParsed.user.username,
-              language_code: initDataParsed.user.language_code || 'en',
-              is_premium: initDataParsed.user.is_premium,
-              photo_url: initDataParsed.user.photo_url
-            },
-            isAuthenticated: true,
-            isLoading: false,
-            error: 'Backend verification failed (development mode)'
-          });
-        } else {
-          throw new Error('Failed to verify your Telegram authentication with our servers');
-        }
+        initializedRef.current = true;
+        return;
       }
+
+      // No valid authentication data found
+      throw new Error('No valid Telegram authentication data found');
       
     } catch (error) {
       console.error('❌ Authentication error:', error);
