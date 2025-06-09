@@ -1,308 +1,38 @@
-
+import { useState, useCallback } from "react";
 import { toast } from "@/components/ui/use-toast";
 
 interface CsvRow {
-  [key: string]: string;
+  [key: string]: string | number | undefined;
 }
 
-interface ParsedDiamond {
+interface InventoryItem {
   stock_number: string;
   shape: string;
   weight: number;
   color: string;
   clarity: string;
-  cut: string;
-  price_per_carat: number;
+  cut?: string;
+  price_per_carat?: number;
   lab?: string;
-  certificate_number?: number;
+  certificate_number?: string;
   polish?: string;
   symmetry?: string;
   fluorescence?: string;
   table_percentage?: number;
   depth_percentage?: number;
+  measurements?: string;
   ratio?: number;
-  girdle?: string;
-  culet?: string;
-  certificate_comment?: string;
-  picture?: string;
-  status: string;
+  status?: string;
+  store_visible?: boolean;
   user_id: number;
-  store_visible: boolean;
+  picture?: string;
+  additional_images?: string[];
 }
 
-export const useEnhancedCsvProcessor = () => {
-  const parseCSVFile = (file: File): Promise<CsvRow[]> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const text = e.target?.result as string;
-          console.log('CSV file content preview:', text.substring(0, 500));
-          
-          const lines = text.split('\n').filter(line => line.trim());
-          
-          if (lines.length < 2) {
-            reject(new Error('CSV file must have at least a header row and one data row'));
-            return;
-          }
+export function useEnhancedCsvProcessor() {
+  const [isProcessing, setIsProcessing] = useState(false);
 
-          // Auto-detect delimiter
-          const firstLine = lines[0];
-          let delimiter = ',';
-          
-          // Check for tab first (most specific)
-          if (firstLine.includes('\t')) {
-            delimiter = '\t';
-          } 
-          // Then semicolon
-          else if (firstLine.includes(';') && firstLine.split(';').length > firstLine.split(',').length) {
-            delimiter = ';';
-          }
-
-          console.log('Using delimiter:', delimiter === '\t' ? 'TAB' : delimiter);
-
-          // Parse with proper quote handling
-          const parseCSVLine = (line: string): string[] => {
-            const result: string[] = [];
-            let current = '';
-            let inQuotes = false;
-            
-            for (let i = 0; i < line.length; i++) {
-              const char = line[i];
-              
-              if (char === '"') {
-                inQuotes = !inQuotes;
-              } else if (char === delimiter && !inQuotes) {
-                result.push(current.trim());
-                current = '';
-              } else {
-                current += char;
-              }
-            }
-            result.push(current.trim());
-            return result;
-          };
-
-          const headers = parseCSVLine(lines[0]).map(h => h.replace(/"/g, ''));
-          console.log('CSV Headers:', headers);
-          
-          const rows: CsvRow[] = [];
-
-          for (let i = 1; i < lines.length; i++) {
-            const values = parseCSVLine(lines[i]).map(v => v.replace(/"/g, ''));
-            if (values.length >= headers.length && values.some(v => v)) {
-              const row: CsvRow = {};
-              headers.forEach((header, index) => {
-                row[header] = values[index] || '';
-              });
-              rows.push(row);
-            }
-          }
-
-          console.log('Parsed CSV rows:', rows.length);
-          console.log('Sample row:', rows[0]);
-          resolve(rows);
-        } catch (error) {
-          console.error('CSV parsing error:', error);
-          reject(new Error('Failed to parse CSV file. Please check the format.'));
-        }
-      };
-      reader.onerror = () => reject(new Error('Failed to read CSV file'));
-      reader.readAsText(file);
-    });
-  };
-
-  const mapCsvToInventory = (csvData: CsvRow[], userId: number): ParsedDiamond[] => {
-    console.log('Mapping CSV data to inventory format...');
-    
-    // Shape mapping
-    const shapeMapping: Record<string, string> = {
-      'BR': 'Round',
-      'Round': 'Round',
-      'PS': 'Princess',
-      'Princess': 'Princess',
-      'EM': 'Emerald',
-      'Emerald': 'Emerald',
-      'AS': 'Asscher',
-      'Asscher': 'Asscher',
-      'CU': 'Cushion',
-      'Cushion': 'Cushion',
-      'OV': 'Oval',
-      'Oval': 'Oval',
-      'RD': 'Radiant',
-      'Radiant': 'Radiant',
-      'PE': 'Pear',
-      'Pear': 'Pear',
-      'MQ': 'Marquise',
-      'Marquise': 'Marquise',
-      'HT': 'Heart',
-      'Heart': 'Heart'
-    };
-
-    // Fluorescence mapping
-    const fluorescenceMapping: Record<string, string> = {
-      'NON': 'None',
-      'None': 'None',
-      'FNT': 'Faint',
-      'Faint': 'Faint',
-      'MED': 'Medium',
-      'Medium': 'Medium',
-      'STG': 'Strong',
-      'Strong': 'Strong',
-      'VST': 'Very Strong',
-      'Very Strong': 'Very Strong'
-    };
-
-    // Cut/Polish/Symmetry mapping
-    const gradeMapping: Record<string, string> = {
-      'EX': 'Excellent',
-      'Excellent': 'Excellent',
-      'VG': 'Very Good',
-      'Very Good': 'Very Good',
-      'G': 'Good',
-      'Good': 'Good',
-      'F': 'Fair',
-      'Fair': 'Fair',
-      'P': 'Poor',
-      'Poor': 'Poor'
-    };
-    
-    return csvData.map((row, index) => {
-      try {
-        const getColumnValue = (variations: string[]) => {
-          for (const variation of variations) {
-            if (row[variation] !== undefined && row[variation] !== '') {
-              return row[variation];
-            }
-          }
-          return null;
-        };
-
-        const stockNumber = getColumnValue([
-          'Stock#', 'stock_number', 'Stock Number', 'stock', 'Stock', 'ID', 'id'
-        ]) || `STOCK-${Date.now()}-${index}`;
-
-        const shapeRaw = getColumnValue([
-          'Shape', 'shape', 'Cut Shape', 'cut_shape'
-        ]) || 'BR';
-        const shape = shapeMapping[shapeRaw] || shapeRaw || 'Round';
-
-        const weight = parseFloat(getColumnValue([
-          'Weight', 'weight', 'carat', 'Carat', 'Ct', 'ct', 'Size'
-        ]) || '1.0');
-
-        const color = getColumnValue([
-          'Color', 'color', 'Colour'
-        ]) || 'G';
-
-        const clarity = getColumnValue([
-          'Clarity', 'clarity', 'Purity'
-        ]) || 'VS1';
-
-        const cutRaw = getColumnValue([
-          'Cut', 'cut', 'Cut Grade', 'cut_grade'
-        ]) || 'EX';
-        const cut = gradeMapping[cutRaw] || cutRaw || 'Excellent';
-
-        const pricePerCarat = parseInt(getColumnValue([
-          'Price/Crt', 'Price/Carat', 'price_per_carat', 'Price Per Carat', 'price', 'Price'
-        ]) || '5000');
-
-        const lab = getColumnValue([
-          'Lab', 'lab', 'Certificate', 'Cert', 'Laboratory'
-        ]) || 'GIA';
-
-        const certificateNumber = getColumnValue([
-          'CertNumber', 'Certificate Number', 'Cert Number', 'cert_number', 'Report Number'
-        ]);
-
-        const fluorescenceRaw = getColumnValue([
-          'Fluo', 'fluorescence', 'Fluorescence', 'FL'
-        ]) || 'NON';
-        const fluorescence = fluorescenceMapping[fluorescenceRaw] || fluorescenceRaw || 'None';
-
-        const polishRaw = getColumnValue([
-          'Polish', 'polish', 'Pol'
-        ]) || 'EX';
-        const polish = gradeMapping[polishRaw] || polishRaw || 'Excellent';
-
-        const symmRaw = getColumnValue([
-          'Symm', 'symmetry', 'Symmetry', 'Sym'
-        ]) || 'EX';
-        const symmetry = gradeMapping[symmRaw] || symmRaw || 'Excellent';
-
-        const table = getColumnValue([
-          'Table', 'table', 'Table %', 'table_percentage'
-        ]);
-
-        const depth = getColumnValue([
-          'Depth', 'depth', 'Depth %', 'depth_percentage', 'Total Depth'
-        ]);
-
-        const ratio = getColumnValue([
-          'Ratio', 'ratio'
-        ]);
-
-        const girdle = getColumnValue([
-          'Girdle', 'girdle'
-        ]);
-
-        const culet = getColumnValue([
-          'Culet', 'culet'
-        ]);
-
-        const certComments = getColumnValue([
-          'CertComments', 'certificate_comment', 'Comments', 'comments'
-        ]);
-
-        const picture = getColumnValue([
-          'Pic', 'picture', 'Picture', 'Image', 'image'
-        ]);
-
-        const inventoryItem: ParsedDiamond = {
-          stock_number: stockNumber,
-          shape: shape,
-          weight: isNaN(weight) ? 1.0 : weight,
-          color: color,
-          clarity: clarity,
-          cut: cut,
-          price_per_carat: isNaN(pricePerCarat) ? 5000 : pricePerCarat,
-          status: 'Available',
-          lab: lab,
-          certificate_number: certificateNumber ? parseInt(certificateNumber) : undefined,
-          fluorescence: fluorescence,
-          polish: polish,
-          symmetry: symmetry,
-          table_percentage: table ? parseInt(table) : undefined,
-          depth_percentage: depth ? parseFloat(depth) : undefined,
-          ratio: ratio ? parseFloat(ratio) : undefined,
-          girdle: girdle || undefined,
-          culet: culet || undefined,
-          certificate_comment: certComments || undefined,
-          picture: picture || undefined,
-          user_id: userId,
-          store_visible: true,
-        };
-
-        console.log(`Mapped item ${index + 1}:`, inventoryItem);
-        return inventoryItem;
-      } catch (error) {
-        console.error(`Error mapping row ${index + 1}:`, error, row);
-        throw new Error(`Error processing row ${index + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
-    });
-  };
-
-  const validateFile = (file: File | null): boolean => {
-    if (!file) {
-      toast({
-        variant: "destructive",
-        title: "No file selected",
-        description: "Please select a CSV or TXT file.",
-      });
-      return false;
-    }
-
+  const validateFile = useCallback((file: File): boolean => {
     const validExtensions = ['.csv', '.txt'];
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
     
@@ -310,27 +40,140 @@ export const useEnhancedCsvProcessor = () => {
       toast({
         variant: "destructive",
         title: "Invalid file type",
-        description: "Please select a CSV or TXT file.",
+        description: "Please upload a CSV or TXT file.",
       });
       return false;
     }
 
-    // Check file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
       toast({
         variant: "destructive",
         title: "File too large",
-        description: "Please select a file smaller than 10MB.",
+        description: "Please upload a file smaller than 10MB.",
       });
       return false;
     }
 
     return true;
-  };
+  }, []);
+
+  const parseCSVFile = useCallback(async (file: File): Promise<CsvRow[]> => {
+    setIsProcessing(true);
+    
+    try {
+      const text = await file.text();
+      
+      // Auto-detect delimiter
+      const delimiters = [',', ';', '\t'];
+      let bestDelimiter = ',';
+      let maxColumns = 0;
+      
+      for (const delimiter of delimiters) {
+        const lines = text.trim().split('\n');
+        if (lines.length > 0) {
+          const columns = lines[0].split(delimiter).length;
+          if (columns > maxColumns) {
+            maxColumns = columns;
+            bestDelimiter = delimiter;
+          }
+        }
+      }
+
+      console.log('📊 CSV: Using delimiter:', bestDelimiter === '\t' ? 'TAB' : bestDelimiter);
+
+      const lines = text.trim().split('\n');
+      if (lines.length < 2) {
+        throw new Error('CSV file must contain at least a header row and one data row');
+      }
+
+      // Parse header
+      const headers = lines[0].split(bestDelimiter).map(h => h.trim().replace(/['"]/g, ''));
+      console.log('📊 CSV: Headers found:', headers);
+
+      // Parse data rows
+      const rows: CsvRow[] = [];
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        const values = line.split(bestDelimiter).map(v => v.trim().replace(/['"]/g, ''));
+        const row: CsvRow = {};
+        
+        headers.forEach((header, index) => {
+          const value = values[index];
+          if (value !== undefined && value !== '') {
+            // Try to parse as number if it looks like one
+            const numValue = parseFloat(value);
+            row[header] = !isNaN(numValue) && isFinite(numValue) ? numValue : value;
+          }
+        });
+        
+        rows.push(row);
+      }
+
+      console.log('📊 CSV: Parsed rows:', rows.length);
+      return rows;
+    } finally {
+      setIsProcessing(false);
+    }
+  }, []);
+
+  const mapCsvToInventory = useCallback((csvData: CsvRow[], userId: number): InventoryItem[] => {
+    console.log('🔄 CSV: Mapping data for user:', userId);
+    
+    return csvData.map((row, index) => {
+      // Enhanced field mapping with multiple image support
+      const stockNumber = (row['Stock#'] || row['Stock'] || row['stock_number'] || row['StockNumber'] || `STOCK-${index}`) as string;
+      
+      // Handle multiple image fields
+      const additionalImages: string[] = [];
+      const picture2 = row['Picture2'] || row['Pic2'] || row['picture2'];
+      const picture3 = row['Picture3'] || row['Pic3'] || row['picture3'];
+      const picture4 = row['Picture4'] || row['Pic4'] || row['picture4'];
+      
+      if (picture2) additionalImages.push(picture2 as string);
+      if (picture3) additionalImages.push(picture3 as string);
+      if (picture4) additionalImages.push(picture4 as string);
+
+      const item: InventoryItem = {
+        stock_number: stockNumber,
+        shape: (row['Shape'] || row['shape'] || 'Round') as string,
+        weight: Number(row['Weight'] || row['Carat'] || row['weight'] || row['carat'] || 1),
+        color: (row['Color'] || row['color'] || 'G') as string,
+        clarity: (row['Clarity'] || row['clarity'] || 'VS1') as string,
+        cut: (row['Cut'] || row['cut'] || 'Excellent') as string,
+        price_per_carat: Number(row['Price/Crt'] || row['PriceCrt'] || row['price_per_carat'] || row['price'] || 1000),
+        lab: (row['Lab'] || row['lab'] || 'GIA') as string,
+        certificate_number: row['CertNumber'] || row['CertificateNumber'] || row['certificate_number'] as string,
+        polish: (row['Polish'] || row['polish'] || 'Excellent') as string,
+        symmetry: (row['Symm'] || row['Symmetry'] || row['symmetry'] || 'Excellent') as string,
+        fluorescence: (row['Fluo'] || row['Fluorescence'] || row['fluorescence'] || 'None') as string,
+        table_percentage: Number(row['Table'] || row['table_percentage'] || row['table']),
+        depth_percentage: Number(row['Depth'] || row['depth_percentage'] || row['depth']),
+        measurements: (row['Measurements'] || row['measurements']) as string,
+        ratio: Number(row['Ratio'] || row['ratio']),
+        status: (row['Status'] || row['status'] || 'Available') as string,
+        store_visible: true, // Make all imported items visible by default
+        user_id: userId,
+        picture: (row['Picture'] || row['Pic'] || row['picture'] || row['Image']) as string,
+        additional_images: additionalImages.length > 0 ? additionalImages : undefined,
+      };
+
+      // Remove undefined values
+      Object.keys(item).forEach(key => {
+        if (item[key as keyof InventoryItem] === undefined || item[key as keyof InventoryItem] === '') {
+          delete item[key as keyof InventoryItem];
+        }
+      });
+
+      return item;
+    });
+  }, []);
 
   return {
+    validateFile,
     parseCSVFile,
     mapCsvToInventory,
-    validateFile
+    isProcessing
   };
-};
+}
