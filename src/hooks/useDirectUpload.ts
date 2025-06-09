@@ -3,15 +3,13 @@ import { useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useEnhancedCsvProcessor } from "./useEnhancedCsvProcessor";
 
 interface UploadResultData {
   totalItems: number;
   successCount: number;
   errors: string[];
-}
-
-interface CsvRow {
-  [key: string]: string;
+  failedRows?: number[];
 }
 
 export const useDirectUpload = () => {
@@ -19,171 +17,17 @@ export const useDirectUpload = () => {
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<UploadResultData | null>(null);
   const { user, isAuthenticated } = useTelegramAuth();
-
-  const parseCSVFile = (file: File): Promise<CsvRow[]> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const text = e.target?.result as string;
-          console.log('CSV file content preview:', text.substring(0, 500));
-          
-          const lines = text.split('\n').filter(line => line.trim());
-          
-          if (lines.length < 2) {
-            reject(new Error('CSV file must have at least a header row and one data row'));
-            return;
-          }
-
-          // Handle different CSV formats (comma, semicolon, tab)
-          const firstLine = lines[0];
-          let delimiter = ',';
-          if (firstLine.includes(';') && !firstLine.includes(',')) {
-            delimiter = ';';
-          } else if (firstLine.includes('\t')) {
-            delimiter = '\t';
-          }
-
-          console.log('Using delimiter:', delimiter);
-
-          const headers = lines[0].split(delimiter).map(h => h.trim().replace(/"/g, ''));
-          console.log('CSV Headers:', headers);
-          
-          const rows: CsvRow[] = [];
-
-          for (let i = 1; i < lines.length; i++) {
-            const values = lines[i].split(delimiter).map(v => v.trim().replace(/"/g, ''));
-            if (values.length >= headers.length && values.some(v => v)) { // At least some non-empty values
-              const row: CsvRow = {};
-              headers.forEach((header, index) => {
-                row[header] = values[index] || '';
-              });
-              rows.push(row);
-            }
-          }
-
-          console.log('Parsed CSV rows:', rows.length);
-          console.log('Sample row:', rows[0]);
-          resolve(rows);
-        } catch (error) {
-          console.error('CSV parsing error:', error);
-          reject(new Error('Failed to parse CSV file. Please check the format.'));
-        }
-      };
-      reader.onerror = () => reject(new Error('Failed to read CSV file'));
-      reader.readAsText(file);
-    });
-  };
-
-  const mapCsvToInventory = (csvData: CsvRow[]) => {
-    console.log('Mapping CSV data to inventory format...');
-    
-    return csvData.map((row, index) => {
-      try {
-        // Try multiple column name variations for each field
-        const getColumnValue = (variations: string[]) => {
-          for (const variation of variations) {
-            if (row[variation] !== undefined && row[variation] !== '') {
-              return row[variation];
-            }
-          }
-          return null;
-        };
-
-        const stockNumber = getColumnValue([
-          'stock_number', 'Stock Number', 'stock', 'Stock', 'ID', 'id', 'Stock #', 'Stock#'
-        ]) || `STOCK-${Date.now()}-${index}`;
-
-        const shape = getColumnValue([
-          'shape', 'Shape', 'Cut Shape', 'cut_shape'
-        ]) || 'Round';
-
-        const weight = parseFloat(getColumnValue([
-          'weight', 'Weight', 'carat', 'Carat', 'Ct', 'ct', 'Size'
-        ]) || '1.0');
-
-        const color = getColumnValue([
-          'color', 'Color', 'Colour'
-        ]) || 'G';
-
-        const clarity = getColumnValue([
-          'clarity', 'Clarity', 'Purity'
-        ]) || 'VS1';
-
-        const cut = getColumnValue([
-          'cut', 'Cut', 'Cut Grade', 'cut_grade'
-        ]) || 'Excellent';
-
-        const pricePerCarat = parseInt(getColumnValue([
-          'price_per_carat', 'Price Per Carat', 'price', 'Price', 'Price/Ct', 'PricePerCarat'
-        ]) || '5000');
-
-        const lab = getColumnValue([
-          'lab', 'Lab', 'Certificate', 'Cert', 'Laboratory'
-        ]) || 'GIA';
-
-        const certificateNumber = getColumnValue([
-          'certificate_number', 'Certificate Number', 'Cert Number', 'cert_number', 'Report Number'
-        ]);
-
-        const fluorescence = getColumnValue([
-          'fluorescence', 'Fluorescence', 'Fluor', 'FL'
-        ]) || 'None';
-
-        const polish = getColumnValue([
-          'polish', 'Polish', 'Pol'
-        ]) || 'Excellent';
-
-        const symmetry = getColumnValue([
-          'symmetry', 'Symmetry', 'Sym'
-        ]) || 'Excellent';
-
-        const depthPercentage = getColumnValue([
-          'depth_percentage', 'Depth %', 'Depth', 'depth', 'Total Depth'
-        ]);
-
-        const tablePercentage = getColumnValue([
-          'table_percentage', 'Table %', 'Table', 'table'
-        ]);
-
-        const inventoryItem = {
-          stock_number: stockNumber,
-          shape: shape,
-          weight: isNaN(weight) ? 1.0 : weight,
-          color: color,
-          clarity: clarity,
-          cut: cut,
-          price_per_carat: isNaN(pricePerCarat) ? 5000 : pricePerCarat,
-          status: 'Available',
-          lab: lab,
-          certificate_number: certificateNumber ? parseInt(certificateNumber) : null,
-          fluorescence: fluorescence,
-          polish: polish,
-          symmetry: symmetry,
-          depth_percentage: depthPercentage ? parseFloat(depthPercentage) : null,
-          table_percentage: tablePercentage ? parseInt(tablePercentage) : null,
-          user_id: user?.id || 0,
-          store_visible: true, // Make new uploads visible in store by default
-        };
-
-        console.log(`Mapped item ${index + 1}:`, inventoryItem);
-        return inventoryItem;
-      } catch (error) {
-        console.error(`Error mapping row ${index + 1}:`, error, row);
-        throw new Error(`Error processing row ${index + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
-    });
-  };
+  const { parseCSVFile, mapCsvToInventory, validateFile } = useEnhancedCsvProcessor();
 
   const simulateProgress = () => {
     let currentProgress = 0;
     const interval = setInterval(() => {
       currentProgress += Math.random() * 15;
-      if (currentProgress > 90) {
+      if (currentProgress > 85) {
         clearInterval(interval);
-        currentProgress = 90;
+        currentProgress = 85;
       }
-      setProgress(Math.min(currentProgress, 90));
+      setProgress(Math.min(currentProgress, 85));
     }, 200);
 
     return () => clearInterval(interval);
@@ -199,6 +43,10 @@ export const useDirectUpload = () => {
       return;
     }
 
+    if (!validateFile(selectedFile)) {
+      return;
+    }
+
     setUploading(true);
     setProgress(0);
     setResult(null);
@@ -209,6 +57,11 @@ export const useDirectUpload = () => {
       console.log('Starting direct upload for user:', user.id);
       console.log('File details:', { name: selectedFile.name, size: selectedFile.size, type: selectedFile.type });
       
+      toast({
+        title: "Processing file...",
+        description: "Parsing your CSV file and validating data.",
+      });
+
       // Parse CSV file
       const csvData = await parseCSVFile(selectedFile);
       console.log('Parsed CSV data:', csvData.length, 'rows');
@@ -216,19 +69,30 @@ export const useDirectUpload = () => {
       if (csvData.length === 0) {
         throw new Error('No data found in CSV file');
       }
+
+      setProgress(40);
       
       // Map to inventory format
-      const inventoryData = mapCsvToInventory(csvData);
+      const inventoryData = mapCsvToInventory(csvData, user.id);
       console.log('Mapped inventory data:', inventoryData.length, 'items');
       
-      // Insert into Supabase in batches to avoid timeout
-      const batchSize = 100;
+      setProgress(60);
+
+      toast({
+        title: "Uploading to database...",
+        description: `Processing ${inventoryData.length} diamonds.`,
+      });
+      
+      // Insert into Supabase in batches
+      const batchSize = 50; // Smaller batches for better reliability
       let successCount = 0;
       let errors: string[] = [];
+      let failedRows: number[] = [];
       
       for (let i = 0; i < inventoryData.length; i += batchSize) {
         const batch = inventoryData.slice(i, i + batchSize);
-        console.log(`Inserting batch ${Math.floor(i / batchSize) + 1}:`, batch.length, 'items');
+        const batchNumber = Math.floor(i / batchSize) + 1;
+        console.log(`Inserting batch ${batchNumber}:`, batch.length, 'items');
         
         try {
           const { data, error } = await supabase
@@ -238,15 +102,29 @@ export const useDirectUpload = () => {
           
           if (error) {
             console.error('Batch insert error:', error);
-            errors.push(`Batch ${Math.floor(i / batchSize) + 1}: ${error.message}`);
+            errors.push(`Batch ${batchNumber}: ${error.message}`);
+            
+            // Track failed rows
+            for (let j = 0; j < batch.length; j++) {
+              failedRows.push(i + j + 1);
+            }
           } else {
             successCount += data?.length || 0;
-            console.log(`Batch ${Math.floor(i / batchSize) + 1} success:`, data?.length, 'items inserted');
+            console.log(`Batch ${batchNumber} success:`, data?.length, 'items inserted');
           }
         } catch (batchError) {
           console.error('Batch processing error:', batchError);
-          errors.push(`Batch ${Math.floor(i / batchSize) + 1}: ${batchError instanceof Error ? batchError.message : 'Unknown error'}`);
+          errors.push(`Batch ${batchNumber}: ${batchError instanceof Error ? batchError.message : 'Unknown error'}`);
+          
+          // Track failed rows
+          for (let j = 0; j < batch.length; j++) {
+            failedRows.push(i + j + 1);
+          }
         }
+
+        // Update progress
+        const progressPercent = 60 + ((i + batchSize) / inventoryData.length) * 35;
+        setProgress(Math.min(progressPercent, 95));
       }
       
       setProgress(100);
@@ -255,14 +133,15 @@ export const useDirectUpload = () => {
         totalItems: inventoryData.length,
         successCount: successCount,
         errors: errors,
+        failedRows: failedRows,
       };
       
       setResult(uploadResult);
       
       if (successCount > 0) {
         toast({
-          title: "Upload successful",
-          description: `Successfully uploaded ${successCount} diamonds to your inventory.`,
+          title: "Upload successful! 🎉",
+          description: `Successfully uploaded ${successCount} of ${inventoryData.length} diamonds to your inventory.`,
         });
       }
       

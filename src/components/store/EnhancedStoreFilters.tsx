@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Filter, X, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,7 +22,7 @@ export function EnhancedStoreFilters({
   filters,
   onUpdateFilter,
   onClearFilters,
-  diamonds = [], // Provide default empty array
+  diamonds = [],
   isOpen = false,
   onClose,
   isMobile = false,
@@ -44,17 +43,21 @@ export function EnhancedStoreFilters({
     }));
   };
 
-  // Get unique values from diamonds array safely
-  const getUniqueValues = (key: keyof Diamond) => {
+  // Get unique string values from diamonds array safely
+  const getUniqueStringValues = (key: keyof Diamond): string[] => {
     if (!diamonds || diamonds.length === 0) return [];
-    return [...new Set(diamonds.map(d => d[key]).filter(Boolean))].sort();
+    return [...new Set(diamonds
+      .map(d => d[key])
+      .filter(Boolean)
+      .map(value => String(value))
+    )].sort();
   };
 
-  const shapes = getUniqueValues('shape');
-  const colors = getUniqueValues('color');
-  const clarities = getUniqueValues('clarity');
-  const cuts = getUniqueValues('cut');
-  const statuses = getUniqueValues('status');
+  const shapes = getUniqueStringValues('shape');
+  const colors = getUniqueStringValues('color');
+  const clarities = getUniqueStringValues('clarity');
+  const cuts = getUniqueStringValues('cut');
+  const statuses = getUniqueStringValues('status');
   
   const labs = ['GIA', 'AGS', 'GCAL', 'EGL', 'IGI', 'SSEF', 'Other'];
   const fluorescenceOptions = ['None', 'Faint', 'Medium', 'Strong', 'Very Strong'];
@@ -174,13 +177,12 @@ export function EnhancedStoreFilters({
 
   const activeFiltersCount = Object.values(filters || {}).filter(value => {
     if (Array.isArray(value)) return value.length > 0;
-    if (typeof value === 'object' && value !== null) return false; // Skip range objects
+    if (typeof value === 'object' && value !== null) return false;
     return value !== null && value !== undefined;
   }).length;
 
   const FilterContent = () => (
     <div className="space-y-4">
-      {/* Active Filters */}
       {activeFiltersCount > 0 && (
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -193,7 +195,6 @@ export function EnhancedStoreFilters({
         </div>
       )}
 
-      {/* Shape Filter */}
       <FilterCheckboxGroup
         title="Shape"
         options={shapes}
@@ -202,7 +203,6 @@ export function EnhancedStoreFilters({
         filterKey="shapes"
       />
 
-      {/* Color Filter */}
       <FilterCheckboxGroup
         title="Color"
         options={colors}
@@ -211,7 +211,6 @@ export function EnhancedStoreFilters({
         filterKey="colors"
       />
 
-      {/* Clarity Filter */}
       <FilterCheckboxGroup
         title="Clarity"
         options={clarities}
@@ -220,7 +219,6 @@ export function EnhancedStoreFilters({
         filterKey="clarities"
       />
 
-      {/* Cut Filter */}
       <FilterCheckboxGroup
         title="Cut"
         options={cuts}
@@ -229,7 +227,6 @@ export function EnhancedStoreFilters({
         filterKey="cuts"
       />
 
-      {/* Carat Range */}
       <RangeSlider
         title="Carat Weight"
         range={filters?.caratRange || [0, 10]}
@@ -241,7 +238,6 @@ export function EnhancedStoreFilters({
         formatValue={(v) => `${v.toFixed(1)}ct`}
       />
 
-      {/* Price Range */}
       <RangeSlider
         title="Price Range"
         range={filters?.priceRange || [0, 100000]}
@@ -253,7 +249,6 @@ export function EnhancedStoreFilters({
         formatValue={(v) => `$${v.toLocaleString()}`}
       />
 
-      {/* Fluorescence Filter */}
       <FilterCheckboxGroup
         title="Fluorescence"
         options={fluorescenceOptions}
@@ -262,7 +257,6 @@ export function EnhancedStoreFilters({
         filterKey="fluorescence"
       />
 
-      {/* Lab Filter */}
       <FilterCheckboxGroup
         title="Certification Lab"
         options={labs}
@@ -271,7 +265,6 @@ export function EnhancedStoreFilters({
         filterKey="labs"
       />
 
-      {/* Polish Filter */}
       <FilterCheckboxGroup
         title="Polish"
         options={polishOptions}
@@ -280,7 +273,6 @@ export function EnhancedStoreFilters({
         filterKey="polish"
       />
 
-      {/* Symmetry Filter */}
       <FilterCheckboxGroup
         title="Symmetry"
         options={symmetryOptions}
@@ -289,7 +281,6 @@ export function EnhancedStoreFilters({
         filterKey="symmetry"
       />
 
-      {/* Status Filter */}
       <FilterCheckboxGroup
         title="Availability"
         options={statuses}
