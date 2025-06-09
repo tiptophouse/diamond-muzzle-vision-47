@@ -1,7 +1,7 @@
 
 import { Layout } from "@/components/layout/Layout";
 import { PremiumStoreHeader } from "@/components/store/PremiumStoreHeader";
-import { OptimizedStoreGrid } from "@/components/premium/OptimizedStoreGrid";
+import { VirtualizedStoreGrid } from "@/components/premium/VirtualizedStoreGrid";
 import { EnhancedStoreFilters } from "@/components/store/EnhancedStoreFilters";
 import { useEnhancedStoreData } from "@/hooks/useEnhancedStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
@@ -21,7 +21,8 @@ export default function StorePage() {
     setSearchQuery,
     showFilters,
     setShowFilters,
-    handleFilterChange,
+    filters,
+    updateFilter,
     clearFilters,
     activeFilters
   } = useStoreFilters(diamonds);
@@ -43,18 +44,18 @@ export default function StorePage() {
             <div className="hidden lg:block w-80 flex-shrink-0">
               <div className="sticky top-24">
                 <EnhancedStoreFilters
-                  onFilterChange={handleFilterChange}
+                  filters={filters}
+                  onFilterChange={updateFilter}
                   onClearFilters={clearFilters}
-                  activeFilters={activeFilters}
                   totalDiamonds={diamonds.length}
                   filteredCount={filteredDiamonds.length}
                 />
               </div>
             </div>
 
-            {/* Main content */}
+            {/* Main content with virtualized grid */}
             <div className="flex-1 min-w-0">
-              <OptimizedStoreGrid
+              <VirtualizedStoreGrid
                 diamonds={filteredDiamonds}
                 loading={loading}
                 error={error}
@@ -79,9 +80,9 @@ export default function StorePage() {
                   </button>
                 </div>
                 <EnhancedStoreFilters
-                  onFilterChange={handleFilterChange}
+                  filters={filters}
+                  onFilterChange={updateFilter}
                   onClearFilters={clearFilters}
-                  activeFilters={activeFilters}
                   totalDiamonds={diamonds.length}
                   filteredCount={filteredDiamonds.length}
                 />
