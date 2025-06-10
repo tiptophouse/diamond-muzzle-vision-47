@@ -1,8 +1,9 @@
 
-// Updated to point to your actual FastAPI backend
+// Updated to use Supabase secrets for all configuration
 export const API_BASE_URL = "https://api.mazalbot.com";
 
-let currentUserId: number | null = null; // Remove hardcoded value
+// Remove hardcoded values - these will come from Supabase secrets
+let currentUserId: number | null = null;
 
 export function setCurrentUserId(userId: number) {
   currentUserId = userId;
@@ -10,7 +11,6 @@ export function setCurrentUserId(userId: number) {
 }
 
 export function getCurrentUserId(): number | null {
-  console.log('🔧 API: Getting current user ID:', currentUserId);
   return currentUserId;
 }
 
@@ -20,10 +20,7 @@ export function isDevelopment(): boolean {
          window.location.hostname.includes('lovableproject.com');
 }
 
-// Your backend access token
-export const BACKEND_ACCESS_TOKEN = "ifj9ov1rh20fslfp";
-
-// Add a function to test the exact endpoint format
+// Configuration will be loaded from Supabase secrets via edge functions
 export function getFullApiUrl(endpoint: string): string {
   const fullUrl = `${API_BASE_URL}${endpoint}`;
   console.log('🔧 API: Full URL constructed:', fullUrl);
