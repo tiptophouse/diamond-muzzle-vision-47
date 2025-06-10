@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
@@ -15,10 +16,12 @@ import {
   Workflow
 } from 'lucide-react';
 
+const ADMIN_TELEGRAM_ID = 2138564172;
+
 export function Sidebar() {
   const location = useLocation();
   const { user } = useTelegramAuth();
-  const isManager = user?.id === 101;
+  const isAdmin = user?.id === ADMIN_TELEGRAM_ID;
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -32,8 +35,8 @@ export function Sidebar() {
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
-  // Manager-only routes
-  if (isManager) {
+  // Admin-only routes
+  if (isAdmin) {
     navigation.push(
       { name: 'Admin', href: '/admin', icon: Users },
       { name: 'MCP Tools', href: '/mcp', icon: Workflow }

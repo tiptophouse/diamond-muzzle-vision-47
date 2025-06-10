@@ -5,6 +5,8 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { MCPSession, MCPTool, MCPResource, MCPToolCall, MCPToolResult } from '@/lib/mcp/types';
 
+const ADMIN_TELEGRAM_ID = 2138564172;
+
 export function useMCPClient() {
   const [session, setSession] = useState<MCPSession | null>(null);
   const [tools, setTools] = useState<MCPTool[]>([]);
@@ -24,16 +26,27 @@ export function useMCPClient() {
       return false;
     }
 
+    // CRITICAL SECURITY: Only allow admin access
+    if (user.id !== ADMIN_TELEGRAM_ID) {
+      toast({
+        variant: "destructive",
+        title: "Access Denied",
+        description: "MCP is restricted to authorized administrators only",
+      });
+      console.log('❌ MCP: Access denied for user:', user.id, 'Admin ID:', ADMIN_TELEGRAM_ID);
+      return false;
+    }
+
     setIsLoading(true);
     try {
-      console.log('🔄 MCP: Initializing session...');
+      console.log('🔄 MCP: Initializing secure admin session...');
       
       const { data, error } = await supabase.functions.invoke('mcp-client', {
         body: {
           action: 'initialize',
           userId: user.id.toString(),
           clientInfo: {
-            name: 'Mazalbot-Web',
+            name: 'Mazalbot-Admin-Web',
             version: '1.0.0'
           }
         },
@@ -44,7 +57,7 @@ export function useMCPClient() {
       }
 
       if (!data.success) {
-        throw new Error(data.error || 'Failed to initialize MCP session');
+        throw new Error(data.error || 'Failed to initialize secure MCP session');
       }
 
       setSession(data.session);
@@ -52,15 +65,15 @@ export function useMCPClient() {
       setResources(data.resources || []);
       setIsConnected(true);
 
-      console.log('✅ MCP: Session initialized successfully');
+      console.log('✅ MCP: Secure admin session initialized successfully');
       toast({
         title: "MCP Connected",
-        description: "Model Context Protocol session established successfully",
+        description: "Secure admin access to Model Context Protocol established",
       });
 
       return true;
     } catch (error) {
-      console.error('❌ MCP: Session initialization failed:', error);
+      console.error('❌ MCP: Secure session initialization failed:', error);
       toast({
         variant: "destructive",
         title: "MCP Connection Failed",
@@ -82,8 +95,17 @@ export function useMCPClient() {
       return null;
     }
 
+    if (user?.id !== ADMIN_TELEGRAM_ID) {
+      toast({
+        variant: "destructive",
+        title: "Access Denied",
+        description: "Admin access required for tool execution",
+      });
+      return null;
+    }
+
     try {
-      console.log('🛠️ MCP: Calling tool:', toolCall.name);
+      console.log('🛠️ MCP: Admin calling tool:', toolCall.name);
       
       const { data, error } = await supabase.functions.invoke('mcp-client', {
         body: {
@@ -101,10 +123,10 @@ export function useMCPClient() {
         throw new Error(data.error || 'Tool call failed');
       }
 
-      console.log('✅ MCP: Tool call successful');
+      console.log('✅ MCP: Admin tool call successful');
       return data.result;
     } catch (error) {
-      console.error('❌ MCP: Tool call failed:', error);
+      console.error('❌ MCP: Admin tool call failed:', error);
       toast({
         variant: "destructive",
         title: "Tool Call Failed",
@@ -112,15 +134,19 @@ export function useMCPClient() {
       });
       return null;
     }
-  }, [session, isConnected, toast]);
+  }, [session, isConnected, user?.id, toast]);
 
   const getResource = useCallback(async (uri: string): Promise<any | null> => {
     if (!session || !isConnected) {
       return null;
     }
 
+    if (user?.id !== ADMIN_TELEGRAM_ID) {
+      return null;
+    }
+
     try {
-      console.log('📄 MCP: Getting resource:', uri);
+      console.log('📄 MCP: Admin getting resource:', uri);
       
       const { data, error } = await supabase.functions.invoke('mcp-client', {
         body: {
@@ -138,13 +164,13 @@ export function useMCPClient() {
         throw new Error(data.error || 'Resource fetch failed');
       }
 
-      console.log('✅ MCP: Resource retrieved successfully');
+      console.log('✅ MCP: Admin resource retrieved successfully');
       return data.resource;
     } catch (error) {
-      console.error('❌ MCP: Resource fetch failed:', error);
+      console.error('❌ MCP: Admin resource fetch failed:', error);
       return null;
     }
-  }, [session, isConnected]);
+  }, [session, isConnected, user?.id]);
 
   const disconnect = useCallback(async () => {
     if (session) {
@@ -167,7 +193,7 @@ export function useMCPClient() {
     
     toast({
       title: "MCP Disconnected",
-      description: "Session ended successfully",
+      description: "Admin session ended successfully",
     });
   }, [session, toast]);
 

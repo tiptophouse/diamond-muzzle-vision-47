@@ -1,9 +1,9 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
 const FASTAPI_BASE_URL = "https://api.mazalbot.com";
 const BACKEND_ACCESS_TOKEN = "ifj9ov1rh20fslfp";
+const ADMIN_TELEGRAM_ID = 2138564172;
 
 interface MCPRequest {
   jsonrpc: string;
@@ -30,7 +30,25 @@ serve(async (req) => {
 
   try {
     const { action, userId, clientInfo, sessionId, toolCall, uri } = await req.json();
-    console.log('🔄 MCP Client action:', action);
+    console.log('🔄 MCP Client action:', action, 'for user:', userId);
+
+    // CRITICAL SECURITY: Only allow admin user to access MCP
+    const userIdNumber = parseInt(userId);
+    if (userIdNumber !== ADMIN_TELEGRAM_ID) {
+      console.log('❌ MCP: Access denied for user:', userIdNumber, 'Admin ID:', ADMIN_TELEGRAM_ID);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Access denied. MCP is restricted to authorized administrators only.'
+        }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    console.log('✅ MCP: Admin access granted for user:', userIdNumber);
 
     switch (action) {
       case 'initialize':
@@ -64,7 +82,7 @@ serve(async (req) => {
 });
 
 async function initializeSession(userId: string, clientInfo: any) {
-  console.log('🔄 MCP: Initializing session for user:', userId);
+  console.log('🔄 MCP: Initializing secure session for admin user:', userId);
 
   try {
     // Initialize MCP session with FastAPI backend
@@ -81,7 +99,7 @@ async function initializeSession(userId: string, clientInfo: any) {
           logging: true
         },
         clientInfo: {
-          name: clientInfo.name || "Mazalbot-Web",
+          name: clientInfo.name || "Mazalbot-Admin-Web",
           version: clientInfo.version || "1.0.0"
         }
       }
@@ -94,6 +112,7 @@ async function initializeSession(userId: string, clientInfo: any) {
         'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
         'X-User-ID': userId,
+        'X-Admin-Access': 'true',
       },
       body: JSON.stringify(initRequest),
     });
@@ -109,7 +128,7 @@ async function initializeSession(userId: string, clientInfo: any) {
       throw new Error(`MCP Error: ${mcpResponse.error.message}`);
     }
 
-    // Get available tools
+    // Get available tools for diamond management
     const toolsRequest: MCPRequest = {
       jsonrpc: "2.0",
       id: 2,
@@ -123,6 +142,7 @@ async function initializeSession(userId: string, clientInfo: any) {
         'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
         'X-User-ID': userId,
+        'X-Admin-Access': 'true',
       },
       body: JSON.stringify(toolsRequest),
     });
@@ -143,6 +163,7 @@ async function initializeSession(userId: string, clientInfo: any) {
         'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
         'X-User-ID': userId,
+        'X-Admin-Access': 'true',
       },
       body: JSON.stringify(resourcesRequest),
     });
@@ -150,10 +171,10 @@ async function initializeSession(userId: string, clientInfo: any) {
     const resourcesData: MCPResponse = await resourcesResponse.json();
 
     const sessionData = {
-      sessionId: `mcp_${userId}_${Date.now()}`,
+      sessionId: `mcp_admin_${userId}_${Date.now()}`,
       clientInfo,
       serverInfo: mcpResponse.result?.serverInfo || {
-        name: "Mazalbot-FastAPI-MCP",
+        name: "Mazalbot-FastAPI-MCP-Secure",
         version: "1.0.0",
         protocolVersion: "2024-11-05"
       },
@@ -165,7 +186,7 @@ async function initializeSession(userId: string, clientInfo: any) {
       }
     };
 
-    console.log('✅ MCP: Session initialized successfully');
+    console.log('✅ MCP: Secure session initialized successfully for admin');
 
     return new Response(
       JSON.stringify({
@@ -181,13 +202,13 @@ async function initializeSession(userId: string, clientInfo: any) {
     );
 
   } catch (error) {
-    console.error('❌ MCP: Session initialization failed:', error);
+    console.error('❌ MCP: Secure session initialization failed:', error);
     throw error;
   }
 }
 
 async function callTool(sessionId: string, toolCall: any) {
-  console.log('🛠️ MCP: Calling tool:', toolCall.name);
+  console.log('🛠️ MCP: Admin calling tool:', toolCall.name);
 
   try {
     const toolRequest: MCPRequest = {
@@ -200,23 +221,24 @@ async function callTool(sessionId: string, toolCall: any) {
       }
     };
 
-    console.log('📤 MCP: Sending tool call to FastAPI backend');
+    console.log('📤 MCP: Sending admin tool call to FastAPI backend');
     const response = await fetch(`${FASTAPI_BASE_URL}/mcp/tools/execute`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
         'X-Session-ID': sessionId,
+        'X-Admin-Access': 'true',
       },
       body: JSON.stringify(toolRequest),
     });
 
     if (!response.ok) {
-      throw new Error(`Tool call failed: ${response.status}`);
+      throw new Error(`Admin tool call failed: ${response.status}`);
     }
 
     const mcpResponse: MCPResponse = await response.json();
-    console.log('📥 MCP: Received tool response');
+    console.log('📥 MCP: Received admin tool response');
 
     if (mcpResponse.error) {
       return new Response(
@@ -237,7 +259,7 @@ async function callTool(sessionId: string, toolCall: any) {
       );
     }
 
-    console.log('✅ MCP: Tool call successful');
+    console.log('✅ MCP: Admin tool call successful');
 
     return new Response(
       JSON.stringify({
@@ -251,13 +273,13 @@ async function callTool(sessionId: string, toolCall: any) {
     );
 
   } catch (error) {
-    console.error('❌ MCP: Tool call failed:', error);
+    console.error('❌ MCP: Admin tool call failed:', error);
     throw error;
   }
 }
 
 async function getResource(sessionId: string, uri: string) {
-  console.log('📄 MCP: Getting resource:', uri);
+  console.log('📄 MCP: Admin getting resource:', uri);
 
   try {
     const resourceRequest: MCPRequest = {
@@ -269,29 +291,30 @@ async function getResource(sessionId: string, uri: string) {
       }
     };
 
-    console.log('📤 MCP: Sending resource request to FastAPI backend');
+    console.log('📤 MCP: Sending admin resource request to FastAPI backend');
     const response = await fetch(`${FASTAPI_BASE_URL}/mcp/resources/read`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
         'X-Session-ID': sessionId,
+        'X-Admin-Access': 'true',
       },
       body: JSON.stringify(resourceRequest),
     });
 
     if (!response.ok) {
-      throw new Error(`Resource fetch failed: ${response.status}`);
+      throw new Error(`Admin resource fetch failed: ${response.status}`);
     }
 
     const mcpResponse: MCPResponse = await response.json();
-    console.log('📥 MCP: Received resource response');
+    console.log('📥 MCP: Received admin resource response');
 
     if (mcpResponse.error) {
       throw new Error(`MCP Error: ${mcpResponse.error.message}`);
     }
 
-    console.log('✅ MCP: Resource retrieved successfully');
+    console.log('✅ MCP: Admin resource retrieved successfully');
 
     return new Response(
       JSON.stringify({
@@ -305,16 +328,15 @@ async function getResource(sessionId: string, uri: string) {
     );
 
   } catch (error) {
-    console.error('❌ MCP: Resource fetch failed:', error);
+    console.error('❌ MCP: Admin resource fetch failed:', error);
     throw error;
   }
 }
 
 async function disconnect(sessionId: string) {
-  console.log('🔌 MCP: Disconnecting session:', sessionId);
+  console.log('🔌 MCP: Disconnecting admin session:', sessionId);
 
   try {
-    // Optionally notify FastAPI backend about session termination
     const disconnectRequest: MCPRequest = {
       jsonrpc: "2.0",
       id: Date.now(),
@@ -328,11 +350,12 @@ async function disconnect(sessionId: string) {
         'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
         'X-Session-ID': sessionId,
+        'X-Admin-Access': 'true',
       },
       body: JSON.stringify(disconnectRequest),
-    }).catch(err => console.warn('Session end notification failed:', err));
+    }).catch(err => console.warn('Admin session end notification failed:', err));
 
-    console.log('✅ MCP: Session disconnected');
+    console.log('✅ MCP: Admin session disconnected');
 
     return new Response(
       JSON.stringify({ success: true }),
@@ -343,7 +366,7 @@ async function disconnect(sessionId: string) {
     );
 
   } catch (error) {
-    console.error('❌ MCP: Disconnect failed:', error);
+    console.error('❌ MCP: Admin disconnect failed:', error);
     throw error;
   }
 }
