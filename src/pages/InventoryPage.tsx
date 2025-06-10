@@ -5,9 +5,7 @@ import { InventoryDashboard } from "@/components/inventory/InventoryDashboard";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { EnhancedDiamondForm } from "@/components/inventory/EnhancedDiamondForm";
 import { DiamondFormData } from "@/components/inventory/form/types";
-import { useInventoryData } from "@/hooks/useInventoryData";
-import { useInventorySearch } from "@/hooks/useInventorySearch";
-import { useInventoryCrud } from "@/hooks/useInventoryCrud";
+import { useOptimizedPostgresInventory } from "@/hooks/useOptimizedPostgresInventory";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import {
@@ -38,34 +36,17 @@ export default function InventoryPage() {
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
   const { toast } = useToast();
 
+  // Using the new optimized PostgreSQL inventory hook
   const {
-    loading,
     diamonds,
-    setDiamonds,
-    allDiamonds,
-    fetchData,
-    handleRefresh,
-    handleStoreToggle,
-    removeDiamondFromState,
-    restoreDiamondToState,
-  } = useInventoryData();
-
-  const {
-    searchQuery,
-    setSearchQuery,
-    filteredDiamonds,
-    handleSearch,
-  } = useInventorySearch(allDiamonds, 1, {});
-
-  const { addDiamond, updateDiamond, deleteDiamond, isLoading: crudLoading } = useInventoryCrud({
-    onSuccess: handleRefresh,
-    removeDiamondFromState,
-    restoreDiamondToState,
-  });
-
-  useEffect(() => {
-    setDiamonds(filteredDiamonds);
-  }, [filteredDiamonds, setDiamonds]);
+    loading,
+    error,
+    createDiamond,
+    updateDiamond,
+    deleteDiamond,
+    bulkDelete,
+    refreshInventory,
+  } = useOptimizedPostgresInventory();
 
   const handleAddDiamond = () => {
     setEditingDiamond(null);
@@ -78,12 +59,12 @@ export default function InventoryPage() {
   };
 
   const handleDeleteDiamond = (diamondId: string) => {
-    const diamond = allDiamonds.find(d => d.id === diamondId);
+    const diamond = diamonds.find(d => d.id === diamondId);
     setDiamondToDelete(diamond || null);
     setDeleteDialogOpen(true);
   };
 
-  const handleDuplicateDiamond = (diamond: Diamond) => {
+  const handleDuplicateDiamond = async (diamond: Diamond) => {
     const duplicatedData: DiamondFormData = {
       stockNumber: `${diamond.stockNumber}-COPY`,
       shape: diamond.shape,
@@ -103,12 +84,14 @@ export default function InventoryPage() {
       certificate_number: '',
     };
 
-    addDiamond(duplicatedData);
+    const success = await createDiamond(duplicatedData);
     
-    toast({
-      title: "Diamond Duplicated! 💎",
-      description: `${duplicatedData.stockNumber} has been created as a copy.`,
-    });
+    if (success) {
+      toast({
+        title: "Diamond Duplicated! 💎",
+        description: `${duplicatedData.stockNumber} has been created as a copy.`,
+      });
+    }
   };
 
   const handleBulkEdit = (selectedIds: string[]) => {
@@ -116,26 +99,20 @@ export default function InventoryPage() {
       title: "Bulk Edit Coming Soon",
       description: `Selected ${selectedIds.length} items for bulk editing.`,
     });
-    // TODO: Implement bulk edit functionality
   };
 
   const handleBulkDelete = async (selectedIds: string[]) => {
     const confirmDelete = window.confirm(`Are you sure you want to delete ${selectedIds.length} items?`);
     if (!confirmDelete) return;
 
-    let successCount = 0;
-    for (const id of selectedIds) {
-      const diamond = allDiamonds.find(d => d.id === id);
-      if (diamond) {
-        const success = await deleteDiamond(id, diamond);
-        if (success) successCount++;
-      }
+    const success = await bulkDelete(selectedIds);
+    
+    if (success) {
+      toast({
+        title: `Deleted ${selectedIds.length} items`,
+        description: `Successfully deleted ${selectedIds.length} items from inventory.`,
+      });
     }
-
-    toast({
-      title: `Deleted ${successCount} items`,
-      description: `${successCount} out of ${selectedIds.length} items were successfully deleted.`,
-    });
   };
 
   const handleFormSubmit = async (data: DiamondFormData) => {
@@ -144,7 +121,7 @@ export default function InventoryPage() {
     if (editingDiamond) {
       success = await updateDiamond(editingDiamond.id, data);
     } else {
-      success = await addDiamond(data);
+      success = await createDiamond(data);
     }
 
     if (success) {
@@ -155,7 +132,7 @@ export default function InventoryPage() {
 
   const confirmDelete = async () => {
     if (diamondToDelete) {
-      const success = await deleteDiamond(diamondToDelete.id, diamondToDelete);
+      const success = await deleteDiamond(diamondToDelete.id);
       if (success) {
         setDeleteDialogOpen(false);
         setDiamondToDelete(null);
@@ -226,8 +203,8 @@ export default function InventoryPage() {
     <Layout>
       <div className="w-full max-w-full overflow-x-hidden space-y-6">
         <InventoryHeader
-          totalDiamonds={allDiamonds.length}
-          onRefresh={handleRefresh}
+          totalDiamonds={diamonds.length}
+          onRefresh={refreshInventory}
           onAdd={handleAddDiamond}
           onQRScan={handleQRScan}
           loading={loading}
@@ -242,6 +219,22 @@ export default function InventoryPage() {
           onBulkDelete={handleBulkDelete}
           loading={loading}
         />
+
+        {/* Add sample data button if no diamonds exist */}
+        {!loading && diamonds.length === 0 && (
+          <div className="text-center py-8">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-md mx-auto">
+              <h3 className="text-lg font-semibold text-blue-900 mb-2">No Diamonds Found</h3>
+              <p className="text-blue-700 mb-4">Your inventory is empty. Add your first diamond to get started!</p>
+              <button
+                onClick={handleAddDiamond}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Add First Diamond
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
@@ -255,7 +248,7 @@ export default function InventoryPage() {
             diamond={editingDiamond || undefined}
             onSubmit={handleFormSubmit}
             onCancel={() => setIsFormOpen(false)}
-            isLoading={crudLoading}
+            isLoading={loading}
           />
         </DialogContent>
       </Dialog>
@@ -279,9 +272,9 @@ export default function InventoryPage() {
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-red-600 hover:bg-red-700"
-              disabled={crudLoading}
+              disabled={loading}
             >
-              {crudLoading ? 'Deleting...' : 'Delete'}
+              {loading ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
