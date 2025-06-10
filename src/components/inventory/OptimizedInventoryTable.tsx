@@ -86,13 +86,13 @@ export function OptimizedInventoryTable({ onEdit, onView }: OptimizedInventoryTa
         
         {/* Filters */}
         <div className="flex gap-4 flex-wrap">
-          <div className="flex-1 min-w-[200px]">
+          <div className="flex-1 min-w-[200px] relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Search diamonds..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full"
-              icon={<Search className="h-4 w-4" />}
+              className="pl-10 w-full"
             />
           </div>
           

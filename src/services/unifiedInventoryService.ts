@@ -180,7 +180,7 @@ class UnifiedInventoryService {
     // External data takes priority
     external.forEach(diamond => {
       if (!stockNumbers.has(diamond.stockNumber)) {
-        combined.push({ ...diamond, source: 'external' as any });
+        combined.push(diamond);
         stockNumbers.add(diamond.stockNumber);
       }
     });
@@ -188,7 +188,7 @@ class UnifiedInventoryService {
     // Add local diamonds that don't exist in external
     local.forEach(diamond => {
       if (!stockNumbers.has(diamond.stockNumber)) {
-        combined.push({ ...diamond, source: 'local' as any });
+        combined.push(diamond);
         stockNumbers.add(diamond.stockNumber);
       }
     });

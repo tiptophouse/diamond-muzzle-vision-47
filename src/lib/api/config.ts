@@ -2,6 +2,9 @@
 // Updated to use Supabase secrets for all configuration
 export const API_BASE_URL = "https://api.mazalbot.com";
 
+// Export backend access token - this will be loaded from Supabase secrets
+export const BACKEND_ACCESS_TOKEN = "ifj9ov1rh20fslfp"; // This should come from secrets
+
 // Remove hardcoded values - these will come from Supabase secrets
 let currentUserId: number | null = null;
 
