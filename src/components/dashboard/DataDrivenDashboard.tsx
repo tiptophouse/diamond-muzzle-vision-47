@@ -1,5 +1,5 @@
 
-import { useOptimizedPostgresInventory } from '@/hooks/useOptimizedPostgresInventory';
+import { useInventoryData } from '@/hooks/useInventoryData';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { processDiamondDataForDashboard } from '@/services/diamondAnalytics';
 import { StatCard } from '@/components/dashboard/StatCard';
@@ -11,15 +11,15 @@ import { Button } from '@/components/ui/button';
 
 export function DataDrivenDashboard() {
   const { user } = useTelegramAuth();
-  const { diamonds, loading, error } = useOptimizedPostgresInventory();
+  const { allDiamonds, loading } = useInventoryData();
 
-  console.log('🔍 DataDrivenDashboard: Processing data for user:', user?.id, 'Diamonds:', diamonds.length);
+  console.log('🔍 DataDrivenDashboard: Processing data for user:', user?.id, 'Diamonds:', allDiamonds.length);
 
   // Process the data only if we have diamonds
-  const { stats, inventoryByShape, salesByCategory } = diamonds.length > 0 
+  const { stats, inventoryByShape, salesByCategory } = allDiamonds.length > 0 
     ? processDiamondDataForDashboard(
-        diamonds.map(d => ({
-          id: parseInt(d.id),
+        allDiamonds.map(d => ({
+          id: parseInt(d.id || '0'),
           shape: d.shape,
           color: d.color,
           clarity: d.clarity,
@@ -45,25 +45,8 @@ export function DataDrivenDashboard() {
     // This could trigger a function to add sample diamonds to the database
   };
 
-  // Show error state
-  if (error) {
-    return (
-      <Layout>
-        <div className="space-y-4 p-2 sm:p-4">
-          <DashboardHeader emergencyMode={true} />
-          <div className="text-center py-8">
-            <div className="text-red-600 mb-4">
-              <h3 className="text-lg font-semibold">Database Connection Error</h3>
-              <p className="text-sm">{error}</p>
-            </div>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
-
   // Show empty state when no diamonds
-  if (!loading && diamonds.length === 0) {
+  if (!loading && allDiamonds.length === 0) {
     return (
       <Layout>
         <div className="space-y-4 p-2 sm:p-4">
@@ -135,7 +118,7 @@ export function DataDrivenDashboard() {
             <h4 className="font-bold mb-2">📊 Dashboard Debug</h4>
             <div className="grid gap-2 text-xs">
               <p>User ID: {user?.id}</p>
-              <p>Raw Diamonds: {diamonds.length}</p>
+              <p>Raw Diamonds: {allDiamonds.length}</p>
               <p>Processed Stats: {JSON.stringify(stats)}</p>
               <p>Shape Distribution: {inventoryByShape.length} categories</p>
               <p>Color Distribution: {salesByCategory.length} categories</p>
