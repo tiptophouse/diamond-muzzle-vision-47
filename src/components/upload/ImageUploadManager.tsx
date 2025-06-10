@@ -3,7 +3,7 @@ import { useState, useCallback } from "react";
 import { Upload, X, ImageIcon, Plus, Camera, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
+import { useImageUpload } from "@/hooks/useImageUpload";
 import { toast } from "@/components/ui/use-toast";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 
@@ -20,9 +20,9 @@ export function ImageUploadManager({
   onImagesUpdate,
   maxImages = 15 
 }: ImageUploadManagerProps) {
-  const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const { user } = useTelegramAuth();
+  const { uploadMultipleImages, deleteImage, uploading } = useImageUpload();
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -45,7 +45,7 @@ export function ImageUploadManager({
     if (imageFiles.length > 0) {
       await uploadImages(imageFiles);
     }
-  }, []);
+  }, [existingImages, maxImages, stockNumber]);
 
   const uploadImages = async (files: File[]) => {
     if (!user) {
@@ -66,57 +66,17 @@ export function ImageUploadManager({
       return;
     }
 
-    setUploading(true);
-    const newImageUrls: string[] = [];
-
     try {
-      for (const file of files) {
-        // Check file size (max 10MB)
-        if (file.size > 10 * 1024 * 1024) {
-          toast({
-            variant: "destructive",
-            title: "File too large",
-            description: `${file.name} is too large. Maximum size is 10MB.`,
-          });
-          continue;
-        }
-
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${stockNumber}_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `diamonds/${user.id}/${fileName}`;
-
-        const { data, error } = await supabase.storage
-          .from('diamond-images')
-          .upload(filePath, file, {
-            cacheControl: '3600',
-            upsert: false
-          });
-
-        if (error) throw error;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('diamond-images')
-          .getPublicUrl(filePath);
-
-        newImageUrls.push(publicUrl);
+      console.log('Starting upload for', files.length, 'files');
+      const newImageUrls = await uploadMultipleImages(files, stockNumber);
+      
+      if (newImageUrls.length > 0) {
+        const updatedImages = [...existingImages, ...newImageUrls];
+        onImagesUpdate(updatedImages);
+        console.log('Upload successful, updated images:', updatedImages);
       }
-
-      const updatedImages = [...existingImages, ...newImageUrls];
-      onImagesUpdate(updatedImages);
-
-      toast({
-        title: "Images uploaded successfully! ✨",
-        description: `Added ${newImageUrls.length} image(s) to your diamond gallery.`,
-      });
     } catch (error) {
-      console.error('Upload error:', error);
-      toast({
-        variant: "destructive",
-        title: "Upload failed",
-        description: "Failed to upload images. Please try again.",
-      });
-    } finally {
-      setUploading(false);
+      console.error('Upload failed:', error);
     }
   };
 
@@ -131,29 +91,14 @@ export function ImageUploadManager({
 
   const removeImage = async (imageUrl: string, index: number) => {
     try {
-      // Extract file path from URL for deletion
-      const urlParts = imageUrl.split('/');
-      const fileName = urlParts[urlParts.length - 1];
-      const filePath = `diamonds/${user?.id}/${fileName}`;
-
-      await supabase.storage
-        .from('diamond-images')
-        .remove([filePath]);
-
-      const updatedImages = existingImages.filter((_, i) => i !== index);
-      onImagesUpdate(updatedImages);
-
-      toast({
-        title: "Image removed",
-        description: "Image has been deleted from your gallery.",
-      });
+      const success = await deleteImage(imageUrl);
+      
+      if (success) {
+        const updatedImages = existingImages.filter((_, i) => i !== index);
+        onImagesUpdate(updatedImages);
+      }
     } catch (error) {
       console.error('Delete error:', error);
-      toast({
-        variant: "destructive",
-        title: "Delete failed",
-        description: "Failed to remove image. Please try again.",
-      });
     }
   };
 
@@ -196,7 +141,7 @@ export function ImageUploadManager({
               Supports JPG, PNG, WebP • Max 10MB per file
             </p>
             <p className="text-sm font-medium text-blue-600 mb-6">
-              {remainingSlots > 0 ? `${remainingSlots} more images can be added` : 'Maximum images reached'}
+              {remainingSlots > 0 ? `${remainingSlots} more images can be added (${existingImages.length}/${maxImages})` : 'Maximum images reached'}
             </p>
             
             <input
@@ -238,6 +183,10 @@ export function ImageUploadManager({
                     src={imageUrl}
                     alt={`Diamond ${stockNumber} - Image ${index + 1}`}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      console.error('Image failed to load:', imageUrl);
+                      e.currentTarget.style.display = 'none';
+                    }}
                   />
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300" />
                   

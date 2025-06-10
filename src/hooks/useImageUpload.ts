@@ -18,32 +18,53 @@ export function useImageUpload() {
       return null;
     }
 
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        variant: "destructive",
+        title: "File too large",
+        description: "Maximum file size is 10MB.",
+      });
+      return null;
+    }
+
     setUploading(true);
     
     try {
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split('.').pop()?.toLowerCase();
+      const allowedTypes = ['jpg', 'jpeg', 'png', 'webp'];
+      
+      if (!fileExt || !allowedTypes.includes(fileExt)) {
+        throw new Error('Invalid file type. Please use JPG, PNG, or WebP.');
+      }
+
       const fileName = `${stockNumber}_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `diamonds/${user.id}/${fileName}`;
+
+      console.log('Uploading file:', fileName, 'Size:', file.size, 'Type:', file.type);
 
       // Upload file to Supabase Storage
       const { data, error } = await supabase.storage
         .from('diamond-images')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: false,
+          contentType: file.type
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Storage upload error:', error);
+        throw error;
+      }
+
+      console.log('Upload successful:', data);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('diamond-images')
         .getPublicUrl(filePath);
 
-      toast({
-        title: "Image uploaded successfully! ✨",
-        description: "Your diamond image has been added to the gallery.",
-      });
+      console.log('Public URL:', publicUrl);
 
       return publicUrl;
     } catch (error) {
@@ -51,7 +72,7 @@ export function useImageUpload() {
       toast({
         variant: "destructive",
         title: "Upload failed",
-        description: "Failed to upload image. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to upload image. Please try again.",
       });
       return null;
     } finally {
