@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
@@ -126,27 +127,29 @@ export function useUnifiedInventory(options: UseUnifiedInventoryOptions = {}): U
     }
 
     try {
+      const diamondData = {
+        user_id: Number(user.id), // Ensure user_id is a number
+        stock_number: diamond.stockNumber || `D${Date.now()}`,
+        shape: diamond.shape || 'Round',
+        weight: diamond.carat || 1,
+        color: diamond.color || 'G',
+        clarity: diamond.clarity || 'VS1',
+        cut: diamond.cut || 'Excellent',
+        price_per_carat: diamond.price ? Math.round(diamond.price / (diamond.carat || 1)) : 1000,
+        status: diamond.status || 'Available',
+        store_visible: diamond.store_visible || false,
+        picture: diamond.imageUrl,
+        fluorescence: diamond.fluorescence,
+        polish: diamond.polish,
+        symmetry: diamond.symmetry,
+        certificate_number: diamond.certificateNumber ? Number(diamond.certificateNumber) : null,
+        certificate_url: diamond.certificateUrl,
+        lab: diamond.lab,
+      };
+
       const { error } = await supabase
         .from('inventory')
-        .insert([{
-          user_id: user.id,
-          stock_number: diamond.stockNumber || `D${Date.now()}`,
-          shape: diamond.shape || 'Round',
-          weight: diamond.carat || 1,
-          color: diamond.color || 'G',
-          clarity: diamond.clarity || 'VS1',
-          cut: diamond.cut || 'Excellent',
-          price_per_carat: diamond.price ? Math.round(diamond.price / (diamond.carat || 1)) : 1000,
-          status: diamond.status || 'Available',
-          store_visible: diamond.store_visible || false,
-          picture: diamond.imageUrl,
-          fluorescence: diamond.fluorescence,
-          polish: diamond.polish,
-          symmetry: diamond.symmetry,
-          certificate_number: diamond.certificateNumber,
-          certificate_url: diamond.certificateUrl,
-          lab: diamond.lab,
-        }]);
+        .insert(diamondData); // Pass single object, not array
 
       if (error) throw error;
 
