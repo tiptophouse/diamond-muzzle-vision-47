@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 
@@ -19,7 +18,6 @@ export function useEnhancedStoreData() {
       setLoading(true);
       setError(null);
 
-      // Use the external API to get all stones - default to user 2138564172 if no user
       const userId = user?.id || 2138564172;
       console.log('🔍 ENHANCED STORE: Fetching from external API for user:', userId);
       
@@ -42,12 +40,10 @@ export function useEnhancedStoreData() {
         throw new Error('Invalid response format from API');
       }
 
-      // Enhanced transformation with image gallery support
+      // Fast transformation without any OpenAI calls
       const transformedDiamonds: Diamond[] = data.map((item: any, index: number) => {
-        // Handle multiple images from CSV or API
         const additionalImages: string[] = [];
         
-        // Check for multiple image fields
         if (item.picture2) additionalImages.push(item.picture2);
         if (item.picture3) additionalImages.push(item.picture3);
         if (item.picture4) additionalImages.push(item.picture4);
@@ -77,15 +73,13 @@ export function useEnhancedStoreData() {
           depth_percentage: item.depth_percentage || item.Depth,
           measurements: item.measurements || item.Measurements,
           ratio: item.ratio || item.Ratio,
-          description: item.description || undefined,
+          // Use static descriptions instead of OpenAI generation
+          description: generateStaticDescription(item),
         };
       });
 
-      // Generate SEO descriptions for premium diamonds
-      await generatePremiumDescriptions(transformedDiamonds.slice(0, 20));
-
       setDiamonds(transformedDiamonds);
-      console.log(`✅ ENHANCED STORE: Loaded ${transformedDiamonds.length} diamonds with premium features`);
+      console.log(`✅ ENHANCED STORE: Loaded ${transformedDiamonds.length} diamonds - SUPER FAST!`);
     } catch (err) {
       console.error('Error fetching enhanced store data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load diamonds');
@@ -95,44 +89,30 @@ export function useEnhancedStoreData() {
     }
   };
 
-  const generatePremiumDescriptions = async (diamonds: Diamond[]) => {
-    try {
-      for (const diamond of diamonds) {
-        if (diamond.description) continue; // Skip if already has description
+  // Fast static description generation instead of OpenAI
+  const generateStaticDescription = (item: any): string => {
+    const shape = item.shape || item.Shape || 'Round';
+    const weight = item.weight || item.Weight || item.carat || 1;
+    const color = item.color || item.Color || 'D';
+    const clarity = item.clarity || item.Clarity || 'VS1';
+    const cut = item.cut || item.Cut || 'Excellent';
+    const lab = item.lab || item.Lab || 'GIA';
+    
+    return `Stunning ${weight} carat ${shape} diamond with ${color} color and ${clarity} clarity. ${cut} cut grade certified by ${lab}. A beautiful choice for any jewelry collection.`;
+  };
 
-        // Generate premium SEO description
-        const prompt = `Create a luxurious, premium product description for this exceptional diamond:
-        
-        ${diamond.carat} carat ${diamond.shape} diamond
-        Color: ${diamond.color} | Clarity: ${diamond.clarity} | Cut: ${diamond.cut}
-        Price: $${diamond.price.toLocaleString()}
-        Stock #: ${diamond.stockNumber}
-        ${diamond.lab ? `${diamond.lab} Certified` : ''}
-        ${diamond.fluorescence ? `Fluorescence: ${diamond.fluorescence}` : ''}
-        
-        Write a sophisticated 2-3 sentence description that emphasizes luxury, rarity, and exceptional beauty. Use premium language that appeals to discerning buyers and highlights the diamond's investment value.`;
-
-        const { data, error } = await supabase.functions.invoke('openai-chat', {
-          body: {
-            message: prompt,
-            user_id: user?.id,
-            conversation_history: []
-          },
-        });
-
-        if (!error && data?.response) {
-          diamond.description = data.response;
-        }
-      }
-    } catch (error) {
-      console.warn('Failed to generate premium descriptions:', error);
-    }
+  const stats = {
+    totalDiamonds: diamonds.length,
+    availableDiamonds: diamonds.filter(d => d.status === 'Available').length,
+    averagePrice: diamonds.length > 0 ? Math.round(diamonds.reduce((sum, d) => sum + d.price, 0) / diamonds.length) : 0
   };
 
   return {
     diamonds,
     loading,
     error,
+    stats,
     refetch: fetchStoreData,
+    refreshData: fetchStoreData
   };
 }

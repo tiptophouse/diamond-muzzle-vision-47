@@ -17,6 +17,9 @@ interface StoreFilters {
 }
 
 export function useStoreFilters(diamonds: Diamond[]) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+
   const getInitialRanges = () => {
     if (diamonds.length === 0) {
       return {
@@ -58,7 +61,21 @@ export function useStoreFilters(diamonds: Diamond[]) {
   }, [diamonds]);
 
   const filteredDiamonds = useMemo(() => {
-    return diamonds.filter(diamond => {
+    let filtered = diamonds;
+
+    // Search query filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(diamond => 
+        diamond.stockNumber.toLowerCase().includes(query) ||
+        diamond.shape.toLowerCase().includes(query) ||
+        diamond.color.toLowerCase().includes(query) ||
+        diamond.clarity.toLowerCase().includes(query) ||
+        diamond.cut.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered.filter(diamond => {
       // Shape filter
       if (filters.shapes.length > 0 && !filters.shapes.includes(diamond.shape)) {
         return false;
@@ -96,9 +113,9 @@ export function useStoreFilters(diamonds: Diamond[]) {
 
       return true;
     });
-  }, [diamonds, filters]);
+  }, [diamonds, filters, searchQuery]);
 
-  const updateFilter = (key: keyof StoreFilters, value: any) => {
+  const handleFilterChange = (key: keyof StoreFilters, value: any) => {
     setFilters(prev => ({
       ...prev,
       [key]: value
@@ -119,12 +136,34 @@ export function useStoreFilters(diamonds: Diamond[]) {
       symmetry: [],
       ...ranges
     });
+    setSearchQuery("");
   };
+
+  const activeFilters = useMemo(() => {
+    return {
+      shapes: filters.shapes,
+      colors: filters.colors,
+      clarities: filters.clarities,
+      cuts: filters.cuts,
+      fluorescence: filters.fluorescence,
+      labs: filters.labs,
+      status: filters.status,
+      polish: filters.polish,
+      symmetry: filters.symmetry,
+      caratRange: filters.caratRange,
+      priceRange: filters.priceRange
+    };
+  }, [filters]);
 
   return {
     filters,
     filteredDiamonds,
-    updateFilter,
+    searchQuery,
+    setSearchQuery,
+    showFilters,
+    setShowFilters,
+    handleFilterChange,
     clearFilters,
+    activeFilters
   };
 }

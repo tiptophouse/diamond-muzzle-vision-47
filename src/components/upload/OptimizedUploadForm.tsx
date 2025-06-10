@@ -11,12 +11,18 @@ import { Sparkles, Upload, Zap } from "lucide-react";
 
 export function OptimizedUploadForm() {
   const { uploading, progress, result, handleUpload, resetState } = useOptimizedDirectUpload();
-  const [dragOver, setDragOver] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const onFileSelect = async (file: File) => {
     console.log('📁 File selected for optimized upload:', file.name);
+    setSelectedFile(file);
     resetState();
     await handleUpload(file);
+  };
+
+  const resetForm = () => {
+    setSelectedFile(null);
+    resetState();
   };
 
   if (uploading) {
@@ -63,10 +69,9 @@ export function OptimizedUploadForm() {
           </CardHeader>
           <CardContent>
             <FileUploadArea
-              onFileSelect={onFileSelect}
-              accept=".csv,.xlsx,.xls"
-              dragOver={dragOver}
-              setDragOver={setDragOver}
+              selectedFile={selectedFile}
+              onFileChange={onFileSelect}
+              onReset={resetForm}
             />
           </CardContent>
         </Card>
@@ -75,7 +80,7 @@ export function OptimizedUploadForm() {
         {progress > 0 && (
           <Card className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden">
             <CardContent className="p-6">
-              <UploadProgress progress={progress} />
+              <UploadProgress progress={progress} uploading={uploading} />
             </CardContent>
           </Card>
         )}
