@@ -18,7 +18,7 @@ export function ImageUploadManager({
   stockNumber, 
   existingImages = [], 
   onImagesUpdate,
-  maxImages = 8 
+  maxImages = 15 
 }: ImageUploadManagerProps) {
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -61,7 +61,7 @@ export function ImageUploadManager({
       toast({
         variant: "destructive",
         title: "Too many images",
-        description: `Maximum ${maxImages} images allowed per diamond.`,
+        description: `Maximum ${maxImages} images allowed per diamond. You can upload ${maxImages - existingImages.length} more.`,
       });
       return;
     }
@@ -71,6 +71,16 @@ export function ImageUploadManager({
 
     try {
       for (const file of files) {
+        // Check file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          toast({
+            variant: "destructive",
+            title: "File too large",
+            description: `${file.name} is too large. Maximum size is 10MB.`,
+          });
+          continue;
+        }
+
         const fileExt = file.name.split('.').pop();
         const fileName = `${stockNumber}_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
         const filePath = `diamonds/${user.id}/${fileName}`;
@@ -115,6 +125,8 @@ export function ImageUploadManager({
     if (files.length > 0) {
       await uploadImages(files);
     }
+    // Reset input value to allow selecting same files again
+    e.target.value = '';
   };
 
   const removeImage = async (imageUrl: string, index: number) => {
@@ -144,6 +156,8 @@ export function ImageUploadManager({
       });
     }
   };
+
+  const remainingSlots = maxImages - existingImages.length;
 
   return (
     <div className="space-y-6">
@@ -175,11 +189,14 @@ export function ImageUploadManager({
             <h3 className="text-xl font-semibold text-slate-900 mb-2">
               Upload Diamond Images
             </h3>
-            <p className="text-slate-600 mb-4">
+            <p className="text-slate-600 mb-2">
               Drag and drop images here, or click to browse
             </p>
-            <p className="text-sm text-slate-500 mb-6">
-              Supports JPG, PNG, WebP • Max 10MB per file • Up to {maxImages} images
+            <p className="text-sm text-slate-500 mb-2">
+              Supports JPG, PNG, WebP • Max 10MB per file
+            </p>
+            <p className="text-sm font-medium text-blue-600 mb-6">
+              {remainingSlots > 0 ? `${remainingSlots} more images can be added` : 'Maximum images reached'}
             </p>
             
             <input
@@ -188,16 +205,16 @@ export function ImageUploadManager({
               accept="image/*"
               onChange={handleFileSelect}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              disabled={uploading}
+              disabled={uploading || remainingSlots <= 0}
             />
             
             <Button 
               variant="outline" 
               className="relative pointer-events-none bg-white hover:bg-slate-50"
-              disabled={uploading}
+              disabled={uploading || remainingSlots <= 0}
             >
               <Upload className="h-4 w-4 mr-2" />
-              {uploading ? 'Uploading...' : 'Choose Files'}
+              {uploading ? 'Uploading...' : remainingSlots > 0 ? 'Choose Files' : 'Maximum Reached'}
             </Button>
           </div>
         </CardContent>
@@ -213,7 +230,7 @@ export function ImageUploadManager({
             </h4>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {existingImages.map((imageUrl, index) => (
               <Card key={index} className="relative group overflow-hidden hover:shadow-lg transition-all duration-300">
                 <div className="aspect-square relative">
@@ -242,16 +259,24 @@ export function ImageUploadManager({
                       </span>
                     </div>
                   )}
+
+                  {/* Image Number */}
+                  <div className="absolute bottom-2 right-2">
+                    <span className="bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded-full">
+                      {index + 1}
+                    </span>
+                  </div>
                 </div>
               </Card>
             ))}
             
             {/* Add More Button */}
-            {existingImages.length < maxImages && (
+            {remainingSlots > 0 && (
               <Card className="relative group cursor-pointer border-2 border-dashed border-slate-300 hover:border-blue-400 transition-all duration-300">
                 <div className="aspect-square flex flex-col items-center justify-center text-slate-400 group-hover:text-blue-500 transition-colors">
                   <Plus className="h-8 w-8 mb-2" />
                   <span className="text-sm font-medium">Add More</span>
+                  <span className="text-xs text-slate-400 mt-1">{remainingSlots} left</span>
                   <input
                     type="file"
                     multiple

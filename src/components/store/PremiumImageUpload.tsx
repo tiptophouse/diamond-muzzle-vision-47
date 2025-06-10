@@ -2,7 +2,7 @@
 import { useState, useRef, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Camera, Upload, X, Plus, Edit, Trash2 } from "lucide-react";
+import { Camera, Upload, X, Plus, Trash2 } from "lucide-react";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { toast } from "@/components/ui/use-toast";
 
@@ -17,7 +17,7 @@ export function PremiumImageUpload({
   stockNumber, 
   existingImages = [], 
   onImagesChange,
-  maxImages = 10 
+  maxImages = 20 
 }: PremiumImageUploadProps) {
   const [images, setImages] = useState<string[]>(existingImages);
   const [uploading, setUploading] = useState(false);
@@ -55,7 +55,7 @@ export function PremiumImageUpload({
       toast({
         variant: "destructive",
         title: "Too many images",
-        description: `Maximum ${maxImages} images allowed.`,
+        description: `Maximum ${maxImages} images allowed. You can upload ${maxImages - images.length} more.`,
       });
       return;
     }
@@ -88,6 +88,8 @@ export function PremiumImageUpload({
     if (files.length > 0) {
       await handleFileUpload(files);
     }
+    // Reset input value
+    event.target.value = '';
   };
 
   const removeImage = (index: number) => {
@@ -109,6 +111,8 @@ export function PremiumImageUpload({
     onImagesChange(newImages);
   };
 
+  const remainingSlots = maxImages - images.length;
+
   return (
     <div className="space-y-6">
       {/* Upload Area */}
@@ -126,35 +130,42 @@ export function PremiumImageUpload({
         <CardContent className="p-8">
           <div className="text-center space-y-4">
             <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-              <Upload className="h-8 w-8 text-white" />
+              {uploading ? (
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+              ) : (
+                <Upload className="h-8 w-8 text-white" />
+              )}
             </div>
             
             <div>
               <h3 className="text-lg font-semibold text-slate-900 mb-2">
                 Upload Diamond Images
               </h3>
-              <p className="text-slate-600 mb-4">
+              <p className="text-slate-600 mb-2">
                 Drag and drop images here, or click to browse
               </p>
-              <p className="text-sm text-slate-500">
-                Supports JPG, PNG, WebP • Max {maxImages} images • Up to 10MB each
+              <p className="text-sm text-slate-500 mb-2">
+                Supports JPG, PNG, WebP • Up to 10MB each
+              </p>
+              <p className="text-sm font-medium text-blue-600">
+                {remainingSlots > 0 ? `${remainingSlots} more images can be added (${images.length}/${maxImages})` : 'Maximum images reached'}
               </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button
                 onClick={() => fileInputRef.current?.click()}
-                disabled={uploading || images.length >= maxImages}
+                disabled={uploading || remainingSlots <= 0}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
               >
                 <Upload className="h-4 w-4 mr-2" />
-                {uploading ? "Uploading..." : "Choose Files"}
+                {uploading ? "Uploading..." : remainingSlots > 0 ? "Choose Files" : "Maximum Reached"}
               </Button>
               
               <Button
                 variant="outline"
                 onClick={() => cameraInputRef.current?.click()}
-                disabled={uploading || images.length >= maxImages}
+                disabled={uploading || remainingSlots <= 0}
                 className="border-blue-300 text-blue-600 hover:bg-blue-50"
               >
                 <Camera className="h-4 w-4 mr-2" />
@@ -197,7 +208,7 @@ export function PremiumImageUpload({
             )}
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {images.map((imageUrl, index) => (
               <Card 
                 key={`${imageUrl}-${index}`}
@@ -252,7 +263,7 @@ export function PremiumImageUpload({
             ))}
 
             {/* Add more button */}
-            {images.length < maxImages && (
+            {remainingSlots > 0 && (
               <Card 
                 className="border-2 border-dashed border-slate-300 hover:border-blue-400 hover:bg-slate-50 transition-all duration-300 cursor-pointer"
                 onClick={() => fileInputRef.current?.click()}
@@ -262,6 +273,7 @@ export function PremiumImageUpload({
                     <div className="text-center">
                       <Plus className="h-8 w-8 text-slate-400 mx-auto mb-2" />
                       <p className="text-sm text-slate-500 font-medium">Add More</p>
+                      <p className="text-xs text-slate-400">{remainingSlots} left</p>
                     </div>
                   </div>
                 </CardContent>
