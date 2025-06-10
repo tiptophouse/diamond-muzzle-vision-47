@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Filter, X, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,20 +10,20 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Diamond } from "@/components/inventory/InventoryTable";
 
 interface EnhancedStoreFiltersProps {
-  filters: any;
   onUpdateFilter: (key: string, value: any) => void;
   onClearFilters: () => void;
-  diamonds: Diamond[];
+  totalDiamonds: number;
+  filteredCount: number;
   isOpen?: boolean;
   onClose?: () => void;
   isMobile?: boolean;
 }
 
 export function EnhancedStoreFilters({
-  filters,
   onUpdateFilter,
   onClearFilters,
-  diamonds = [],
+  totalDiamonds,
+  filteredCount,
   isOpen = false,
   onClose,
   isMobile = false,
@@ -36,6 +37,20 @@ export function EnhancedStoreFilters({
     carat: true,
   });
 
+  const [filters, setFilters] = useState({
+    shapes: [] as string[],
+    colors: [] as string[],
+    clarities: [] as string[],
+    cuts: [] as string[],
+    caratRange: [0, 10] as [number, number],
+    priceRange: [0, 100000] as [number, number],
+    fluorescence: [] as string[],
+    labs: [] as string[],
+    status: [] as string[],
+    polish: [] as string[],
+    symmetry: [] as string[],
+  });
+
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
       ...prev,
@@ -43,21 +58,11 @@ export function EnhancedStoreFilters({
     }));
   };
 
-  // Get unique string values from diamonds array safely
-  const getUniqueStringValues = (key: keyof Diamond): string[] => {
-    if (!diamonds || diamonds.length === 0) return [];
-    return [...new Set(diamonds
-      .map(d => d[key])
-      .filter(Boolean)
-      .map(value => String(value))
-    )].sort();
-  };
-
-  const shapes = getUniqueStringValues('shape');
-  const colors = getUniqueStringValues('color');
-  const clarities = getUniqueStringValues('clarity');
-  const cuts = getUniqueStringValues('cut');
-  const statuses = getUniqueStringValues('status');
+  const shapes = ['Round', 'Princess', 'Cushion', 'Emerald', 'Oval', 'Pear', 'Marquise', 'Radiant', 'Asscher', 'Heart'];
+  const colors = ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
+  const clarities = ['FL', 'IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'I1', 'I2', 'I3'];
+  const cuts = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'];
+  const statuses = ['Available', 'Sold', 'Reserved'];
   
   const labs = ['GIA', 'AGS', 'GCAL', 'EGL', 'IGI', 'SSEF', 'Other'];
   const fluorescenceOptions = ['None', 'Faint', 'Medium', 'Strong', 'Very Strong'];
@@ -77,25 +82,25 @@ export function EnhancedStoreFilters({
     onUpdate: (key: string, value: string[]) => void;
     filterKey: string;
   }) => (
-    <Card className="mb-4">
+    <Card className="mb-4 shadow-sm border-slate-200 hover:shadow-md transition-shadow">
       <CardHeader 
-        className="pb-3 cursor-pointer"
+        className="pb-3 cursor-pointer hover:bg-slate-50 transition-colors rounded-t-lg"
         onClick={() => toggleSection(filterKey)}
       >
-        <CardTitle className="text-sm font-medium flex items-center justify-between">
+        <CardTitle className="text-sm font-semibold flex items-center justify-between text-slate-800">
           {title}
           {expandedSections[filterKey] ? 
-            <ChevronUp className="h-4 w-4" /> : 
-            <ChevronDown className="h-4 w-4" />
+            <ChevronUp className="h-4 w-4 text-blue-600" /> : 
+            <ChevronDown className="h-4 w-4 text-slate-400" />
           }
         </CardTitle>
       </CardHeader>
       
       {expandedSections[filterKey] && (
         <CardContent className="pt-0">
-          <div className="space-y-2 max-h-40 overflow-y-auto">
+          <div className="space-y-3 max-h-48 overflow-y-auto">
             {options.map((option) => (
-              <div key={option} className="flex items-center space-x-2">
+              <div key={option} className="flex items-center space-x-3 hover:bg-slate-50 p-2 rounded-md transition-colors">
                 <Checkbox
                   id={`${filterKey}-${option}`}
                   checked={selected.includes(option)}
@@ -106,10 +111,11 @@ export function EnhancedStoreFilters({
                       onUpdate(filterKey, selected.filter(item => item !== option));
                     }
                   }}
+                  className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                 />
                 <label
                   htmlFor={`${filterKey}-${option}`}
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1 text-slate-700"
                 >
                   {option}
                 </label>
@@ -140,16 +146,16 @@ export function EnhancedStoreFilters({
     filterKey: string;
     formatValue?: (value: number) => string;
   }) => (
-    <Card className="mb-4">
+    <Card className="mb-4 shadow-sm border-slate-200 hover:shadow-md transition-shadow">
       <CardHeader 
-        className="pb-3 cursor-pointer"
+        className="pb-3 cursor-pointer hover:bg-slate-50 transition-colors rounded-t-lg"
         onClick={() => toggleSection(filterKey)}
       >
-        <CardTitle className="text-sm font-medium flex items-center justify-between">
+        <CardTitle className="text-sm font-semibold flex items-center justify-between text-slate-800">
           {title}
           {expandedSections[filterKey] ? 
-            <ChevronUp className="h-4 w-4" /> : 
-            <ChevronDown className="h-4 w-4" />
+            <ChevronUp className="h-4 w-4 text-blue-600" /> : 
+            <ChevronDown className="h-4 w-4 text-slate-400" />
           }
         </CardTitle>
       </CardHeader>
@@ -157,9 +163,9 @@ export function EnhancedStoreFilters({
       {expandedSections[filterKey] && (
         <CardContent className="pt-0">
           <div className="space-y-4">
-            <div className="flex items-center justify-between text-sm text-slate-600">
-              <span>{formatValue(range[0])}</span>
-              <span>{formatValue(range[1])}</span>
+            <div className="flex items-center justify-between text-sm text-slate-600 font-medium">
+              <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded">{formatValue(range[0])}</span>
+              <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded">{formatValue(range[1])}</span>
             </div>
             <Slider
               value={range}
@@ -182,18 +188,37 @@ export function EnhancedStoreFilters({
   }).length;
 
   const FilterContent = () => (
-    <div className="space-y-4">
-      {activeFiltersCount > 0 && (
-        <div className="flex items-center justify-between mb-4">
+    <div className="space-y-6">
+      {/* Header with stats */}
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            <span className="text-sm font-medium">{activeFiltersCount} active filters</span>
+            <Filter className="h-5 w-5 text-blue-600" />
+            <span className="font-semibold text-slate-900">Filter Diamonds</span>
           </div>
-          <Button variant="outline" size="sm" onClick={onClearFilters}>
-            Clear All
-          </Button>
+          {activeFiltersCount > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onClearFilters}
+              className="bg-white hover:bg-red-50 text-red-600 border-red-200"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Clear All
+            </Button>
+          )}
         </div>
-      )}
+        <div className="flex items-center gap-4 text-sm">
+          <div className="bg-white px-3 py-1 rounded-full border">
+            <span className="text-slate-600">Total: </span>
+            <span className="font-semibold text-blue-600">{totalDiamonds}</span>
+          </div>
+          <div className="bg-white px-3 py-1 rounded-full border">
+            <span className="text-slate-600">Filtered: </span>
+            <span className="font-semibold text-green-600">{filteredCount}</span>
+          </div>
+        </div>
+      </div>
 
       <FilterCheckboxGroup
         title="Shape"
@@ -294,10 +319,10 @@ export function EnhancedStoreFilters({
   if (isMobile) {
     return (
       <Sheet open={isOpen} onOpenChange={onClose}>
-        <SheetContent side="left" className="w-80 overflow-y-auto">
+        <SheetContent side="left" className="w-80 overflow-y-auto bg-white">
           <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
+            <SheetTitle className="flex items-center gap-2 text-slate-900">
+              <Filter className="h-5 w-5 text-blue-600" />
               Filter Diamonds
             </SheetTitle>
           </SheetHeader>
@@ -310,14 +335,10 @@ export function EnhancedStoreFilters({
   }
 
   return (
-    <div className="w-full">
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Filter className="h-5 w-5" />
-          Filter Diamonds
-        </h3>
+    <div className="w-full bg-white rounded-xl shadow-sm border border-slate-200">
+      <div className="p-6">
+        <FilterContent />
       </div>
-      <FilterContent />
     </div>
   );
 }
