@@ -2,6 +2,11 @@
 // Secure API configuration - no hardcoded secrets
 export const API_BASE_URL = "https://api.mazalbot.com";
 
+// FastAPI backend configuration
+export const FASTAPI_BASE_URL = process.env.NODE_ENV === 'development' 
+  ? "http://localhost:8000" 
+  : "https://your-fastapi-production-url.com"; // Update with your production URL
+
 let currentUserId: number | null = null;
 
 export function setCurrentUserId(userId: number) {
@@ -43,6 +48,13 @@ export async function getSecureAccessToken(): Promise<string | null> {
 export function getFullApiUrl(endpoint: string): string {
   const fullUrl = `${API_BASE_URL}${endpoint}`;
   console.log('🔧 API: Full URL constructed:', fullUrl);
+  return fullUrl;
+}
+
+// FastAPI URL constructor
+export function getFastApiUrl(endpoint: string): string {
+  const fullUrl = `${FASTAPI_BASE_URL}${endpoint}`;
+  console.log('🔧 FastAPI: Full URL constructed:', fullUrl);
   return fullUrl;
 }
 

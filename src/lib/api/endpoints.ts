@@ -17,3 +17,10 @@ export const apiEndpoints = {
   getRecentSales: (userId: number) => `/api/v1/users/${userId}/sales/recent`,
   getInventory: (userId: number, page: number = 1, limit: number = 10) => `/api/v1/users/${userId}/inventory?page=${page}&limit=${limit}`,
 };
+
+// FastAPI endpoints
+export const fastApiEndpoints = {
+  getAllDiamonds: () => `/diamonds`,
+  deleteDiamond: (diamondId: number) => `/diamonds/${diamondId}`,
+  getDiamond: (diamondId: number) => `/diamonds/${diamondId}`,
+};
