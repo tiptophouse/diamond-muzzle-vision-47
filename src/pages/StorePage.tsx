@@ -45,7 +45,7 @@ export default function StorePage() {
               <div className="sticky top-24">
                 <EnhancedStoreFilters
                   filters={filters}
-                  onFilterChange={updateFilter}
+                  onUpdateFilter={updateFilter}
                   onClearFilters={clearFilters}
                   totalDiamonds={diamonds.length}
                   filteredCount={filteredDiamonds.length}
@@ -81,7 +81,7 @@ export default function StorePage() {
                 </div>
                 <EnhancedStoreFilters
                   filters={filters}
-                  onFilterChange={updateFilter}
+                  onUpdateFilter={updateFilter}
                   onClearFilters={clearFilters}
                   totalDiamonds={diamonds.length}
                   filteredCount={filteredDiamonds.length}

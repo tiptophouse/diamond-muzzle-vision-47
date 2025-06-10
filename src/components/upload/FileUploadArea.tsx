@@ -9,9 +9,18 @@ interface FileUploadAreaProps {
   accept?: string;
   dragOver?: boolean;
   setDragOver?: (value: boolean) => void;
+  selectedFile?: File | null;
+  onReset?: () => void;
 }
 
-export function FileUploadArea({ onFileSelect, accept = ".csv,.xlsx,.xls", dragOver = false, setDragOver }: FileUploadAreaProps) {
+export function FileUploadArea({ 
+  onFileSelect, 
+  accept = ".csv,.xlsx,.xls", 
+  dragOver = false, 
+  setDragOver,
+  selectedFile,
+  onReset 
+}: FileUploadAreaProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,6 +63,29 @@ export function FileUploadArea({ onFileSelect, accept = ".csv,.xlsx,.xls", dragO
     e.preventDefault();
     setDragOver?.(false);
   };
+
+  if (selectedFile) {
+    return (
+      <div className="border-2 border-dashed border-green-300 bg-green-50/50 rounded-2xl p-8 text-center">
+        <div className="relative inline-block mb-4">
+          <div className="relative bg-gradient-to-br from-green-500 to-emerald-600 w-16 h-16 rounded-full flex items-center justify-center shadow-lg">
+            <File className="h-8 w-8 text-white" />
+          </div>
+        </div>
+        <h3 className="text-lg font-semibold text-slate-900 mb-2">File Selected</h3>
+        <p className="text-slate-600 mb-4">{selectedFile.name}</p>
+        <p className="text-sm text-slate-500 mb-4">
+          Size: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+        </p>
+        {onReset && (
+          <Button variant="outline" onClick={onReset} className="mt-2">
+            <XCircle className="h-4 w-4 mr-2" />
+            Remove File
+          </Button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
