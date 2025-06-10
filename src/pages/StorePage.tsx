@@ -4,18 +4,12 @@ import { Layout } from "@/components/layout/Layout";
 import { StoreHeader } from "@/components/store/StoreHeader";
 import { StoreFilters } from "@/components/store/StoreFilters";
 import { StoreGrid } from "@/components/store/StoreGrid";
-import { useUnifiedInventory } from "@/hooks/useUnifiedInventory";
+import { useStoreData } from "@/hooks/useStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
 
 export default function StorePage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  
-  // Use unified inventory hook for store-only diamonds
-  const { diamonds, loading, error, refetch } = useUnifiedInventory({ 
-    storeOnly: true,
-    limit: 100 
-  });
-  
+  const { diamonds, loading, error, refetch } = useStoreData();
   const { filters, filteredDiamonds, updateFilter, clearFilters } = useStoreFilters(diamonds);
 
   return (
@@ -46,7 +40,7 @@ export default function StorePage() {
                 diamonds={filteredDiamonds}
                 loading={loading}
                 error={error}
-                onRefresh={refetch}
+                onUpdate={refetch}
               />
             </div>
           </div>

@@ -1,6 +1,14 @@
 
 import { useState, useMemo } from "react";
-import { Diamond, StoreFilters } from "@/types/diamond";
+import { Diamond } from "@/components/inventory/InventoryTable";
+
+interface StoreFilters {
+  shapes: string[];
+  colors: string[];
+  clarities: string[];
+  caratRange: [number, number];
+  priceRange: [number, number];
+}
 
 export function useStoreFilters(diamonds: Diamond[]) {
   const getInitialRanges = () => {
@@ -24,8 +32,6 @@ export function useStoreFilters(diamonds: Diamond[]) {
     shapes: [],
     colors: [],
     clarities: [],
-    cuts: [],
-    statuses: [],
     ...getInitialRanges()
   }));
 
@@ -56,16 +62,6 @@ export function useStoreFilters(diamonds: Diamond[]) {
         return false;
       }
 
-      // Cut filter (if specified)
-      if (filters.cuts && filters.cuts.length > 0 && !filters.cuts.includes(diamond.cut)) {
-        return false;
-      }
-
-      // Status filter (if specified)
-      if (filters.statuses && filters.statuses.length > 0 && !filters.statuses.includes(diamond.status)) {
-        return false;
-      }
-
       // Carat range filter
       if (diamond.carat < filters.caratRange[0] || diamond.carat > filters.caratRange[1]) {
         return false;
@@ -93,8 +89,6 @@ export function useStoreFilters(diamonds: Diamond[]) {
       shapes: [],
       colors: [],
       clarities: [],
-      cuts: [],
-      statuses: [],
       ...ranges
     });
   };

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { setCurrentUserId, getCurrentUserId } from '@/lib/api';
 
 interface Notification {
   id: string;
@@ -20,6 +21,19 @@ export function useNotifications() {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
 
+  const setUserContext = async () => {
+    if (user?.id && user.id !== getCurrentUserId()) {
+      setCurrentUserId(user.id);
+      
+      await supabase.functions.invoke('set-session-context', {
+        body: {
+          setting_name: 'app.current_user_id',
+          setting_value: user.id.toString()
+        }
+      });
+    }
+  };
+
   const fetchNotifications = async () => {
     if (!user?.id) {
       setIsLoading(false);
@@ -29,21 +43,20 @@ export function useNotifications() {
     setIsLoading(true);
     
     try {
-      console.log('🔔 Fetching notifications for user:', user.id);
+      await setUserContext();
 
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('telegram_id', user.id)
-        .order('sent_at', { ascending: false })
-        .limit(50);
+      const { data, error } = await Promise.race([
+        supabase
+          .from('notifications')
+          .select('*')
+          .eq('telegram_id', user.id)
+          .order('sent_at', { ascending: false }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), 3000)
+        )
+      ]) as any;
 
-      if (error) {
-        console.warn('❌ Notifications fetch failed:', error);
-        throw error;
-      }
-
-      console.log('🔔 Notifications fetched:', data?.length || 0);
+      if (error) throw error;
 
       const transformedNotifications = (data || []).map(notification => ({
         id: notification.id,
@@ -57,38 +70,29 @@ export function useNotifications() {
 
       setNotifications(transformedNotifications);
 
-      // Show toast for new important notifications
-      const newImportantNotifications = transformedNotifications.filter(
-        n => !n.read && ['diamond_match', 'inventory_upload', 'price_alert'].includes(n.type)
+      // Show toast for new diamond match notifications
+      const newDiamondMatches = transformedNotifications.filter(
+        n => n.type === 'diamond_match' && !n.read
       );
       
-      if (newImportantNotifications.length > 0) {
+      if (newDiamondMatches.length > 0) {
         toast({
-          title: "🔔 התראות חדשות!",
-          description: `יש לך ${newImportantNotifications.length} התראות חדשות`,
+          title: "🔔 התראת התאמת יהלומים חדשה!",
+          description: `נמצאו ${newDiamondMatches.length} התאמות חדשות לבקשות חיפוש`,
         });
       }
 
     } catch (error) {
-      console.warn('❌ Notifications fetch failed, using sample data:', error);
+      console.warn('Notifications fetch failed, using fallback:', error);
       
-      // Create sample notifications if database fetch fails
       setNotifications([
         {
           id: 'welcome-1',
-          title: 'ברוכים הבאים ל-Diamond Dashboard!',
-          message: 'המערכת מוכנה לעבודה. התחל בהעלאת המלאי שלך',
-          type: 'welcome',
+          title: 'ברוכים הבאים ל-Diamond Muzzle!',
+          message: 'המערכת מוכנה לשלוח לך התראות על יהלומים דומים למלאי שלך',
+          type: 'info',
           read: false,
           created_at: new Date().toISOString(),
-        },
-        {
-          id: 'system-1',
-          title: 'מערכת ההתראות פעילה',
-          message: 'תקבל התראות על פעילות במלאי, הזמנות חדשות ועדכוני מחירים',
-          type: 'system',
-          read: false,
-          created_at: new Date(Date.now() - 3600000).toISOString(),
         }
       ]);
     } finally {
@@ -101,17 +105,12 @@ export function useNotifications() {
       case 'diamond_match':
         const matchCount = metadata?.match_count || 1;
         return `🔍 נמצאו ${matchCount} התאמות לבקשת חיפוש`;
-      case 'inventory_upload':
-        const uploadCount = metadata?.upload_count || 0;
-        return `📁 הועלו ${uploadCount} יהלומים למלאי`;
       case 'customer_inquiry':
         return '👤 פנייה חדשה מלקוח';
       case 'price_alert':
         return '💰 התראת מחיר';
       case 'system':
         return '⚙️ הודעת מערכת';
-      case 'welcome':
-        return '🎉 ברוכים הבאים';
       default:
         return '📢 התראה חדשה';
     }
@@ -119,6 +118,8 @@ export function useNotifications() {
 
   const markAsRead = async (notificationId: string) => {
     try {
+      await setUserContext();
+
       const { error } = await supabase
         .from('notifications')
         .update({ 
@@ -127,9 +128,7 @@ export function useNotifications() {
         })
         .eq('id', notificationId);
 
-      if (error) {
-        console.warn('❌ Mark as read failed:', error);
-      }
+      if (error) throw error;
 
       setNotifications(prev => 
         prev.map(notification => 
@@ -144,9 +143,7 @@ export function useNotifications() {
         description: "ההתראה סומנה כנקראה",
       });
     } catch (error) {
-      console.warn('❌ Mark as read failed:', error);
-      
-      // Update locally even if database update fails
+      console.warn('Mark as read failed:', error);
       setNotifications(prev => 
         prev.map(notification => 
           notification.id === notificationId 
@@ -168,8 +165,6 @@ export function useNotifications() {
   // Set up real-time subscription for new notifications
   useEffect(() => {
     if (!user?.id) return;
-
-    console.log('🔔 Setting up real-time notifications for user:', user.id);
 
     const channel = supabase
       .channel('notifications')
@@ -197,10 +192,12 @@ export function useNotifications() {
           setNotifications(prev => [newNotification, ...prev]);
 
           // Show real-time toast
-          toast({
-            title: "🔔 התראה חדשה!",
-            description: newNotification.message,
-          });
+          if (payload.new.message_type === 'diamond_match') {
+            toast({
+              title: "🔔 התראת התאמה חדשה!",
+              description: "נמצאה התאמה לבקשת חיפוש יהלום",
+            });
+          }
         }
       )
       .subscribe();

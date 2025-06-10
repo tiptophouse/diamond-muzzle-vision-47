@@ -1,5 +1,5 @@
 
-import { API_BASE_URL, getSecureAccessToken } from './config';
+import { API_BASE_URL, BACKEND_ACCESS_TOKEN } from './config';
 import { apiEndpoints } from './endpoints';
 import { setCurrentUserId } from './config';
 
@@ -24,21 +24,13 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     console.log('🔐 API: Sending to:', `${API_BASE_URL}${apiEndpoints.verifyTelegram()}`);
     console.log('🔐 API: InitData length:', initData.length);
     
-    const secureToken = await getSecureAccessToken();
-    
-    if (!secureToken) {
-      console.error('🔐 API: No secure token available for verification');
-      verificationResult = null;
-      return null;
-    }
-    
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'Authorization': `Bearer ${secureToken}`,
+      'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
     };
     
-    console.log('🔐 API: Using secure token for verification');
+    console.log('🔐 API: Using backend access token for verification');
     
     const response = await fetch(`${API_BASE_URL}${apiEndpoints.verifyTelegram()}`, {
       method: 'POST',
@@ -77,16 +69,11 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
 }
 
 export async function getAuthHeaders(): Promise<Record<string, string>> {
-  const secureToken = await getSecureAccessToken();
+  const headers: Record<string, string> = {
+    "Authorization": `Bearer ${BACKEND_ACCESS_TOKEN}`,
+  };
   
-  const headers: Record<string, string> = {};
-  
-  if (secureToken) {
-    headers["Authorization"] = `Bearer ${secureToken}`;
-    console.log('🚀 API: Using secure token for requests');
-  } else {
-    console.warn('🚀 API: No secure token available for request authentication');
-  }
+  console.log('🚀 API: Using backend access token for requests');
   
   // Add auth headers if available from verification
   if (verificationResult && verificationResult.success) {

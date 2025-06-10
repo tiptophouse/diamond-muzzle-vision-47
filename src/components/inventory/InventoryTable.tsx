@@ -9,7 +9,20 @@ import { InventoryTableLoading } from "./InventoryTableLoading";
 import { InventoryTableEmpty } from "./InventoryTableEmpty";
 import { InventoryMobileCard } from "./InventoryMobileCard";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Diamond } from "@/types/diamond";
+
+export type Diamond = {
+  id: string;
+  stockNumber: string;
+  shape: string;
+  carat: number;
+  color: string;
+  clarity: string;
+  cut: string;
+  price: number;
+  status: string;
+  imageUrl?: string;
+  store_visible?: boolean;
+};
 
 interface InventoryTableProps {
   data: Diamond[];
@@ -72,6 +85,3 @@ export function InventoryTable({ data, loading = false, onEdit, onDelete, onStor
     </div>
   );
 }
-
-// Re-export the Diamond type for backward compatibility
-export type { Diamond };

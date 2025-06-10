@@ -6,8 +6,7 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { InventoryChart } from '@/components/dashboard/InventoryChart';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { Layout } from '@/components/layout/Layout';
-import { Gem, Users, TrendingUp, Star, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Gem, Users, TrendingUp, Star } from 'lucide-react';
 
 export function DataDrivenDashboard() {
   const { user } = useTelegramAuth();
@@ -15,55 +14,18 @@ export function DataDrivenDashboard() {
 
   console.log('🔍 DataDrivenDashboard: Processing data for user:', user?.id, 'Diamonds:', allDiamonds.length);
 
-  // Process the data only if we have diamonds
-  const { stats, inventoryByShape, salesByCategory } = allDiamonds.length > 0 
-    ? processDiamondDataForDashboard(
-        allDiamonds.map(d => ({
-          id: parseInt(d.id || '0'),
-          shape: d.shape,
-          color: d.color,
-          clarity: d.clarity,
-          weight: d.carat,
-          price_per_carat: d.price / d.carat,
-          owners: [user?.id || 0],
-        })),
-        user?.id
-      )
-    : { 
-        stats: { 
-          totalDiamonds: 0, 
-          matchedPairs: 0, 
-          totalLeads: 0, 
-          activeSubscriptions: 0 
-        }, 
-        inventoryByShape: [], 
-        salesByCategory: [] 
-      };
-
-  const handleAddSampleData = () => {
-    console.log('Adding sample data...');
-    // This could trigger a function to add sample diamonds to the database
-  };
-
-  // Show empty state when no diamonds
-  if (!loading && allDiamonds.length === 0) {
-    return (
-      <Layout>
-        <div className="space-y-4 p-2 sm:p-4">
-          <DashboardHeader emergencyMode={false} />
-          <div className="text-center py-8">
-            <Gem className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No diamonds in inventory</h3>
-            <p className="text-gray-600 mb-4">Get started by adding some diamonds to your inventory</p>
-            <Button onClick={handleAddSampleData} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Sample Data
-            </Button>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
+  const { stats, inventoryByShape, salesByCategory } = processDiamondDataForDashboard(
+    allDiamonds.map(d => ({
+      id: parseInt(d.id),
+      shape: d.shape,
+      color: d.color,
+      clarity: d.clarity,
+      weight: d.carat,
+      price_per_carat: d.price / d.carat,
+      owners: [user?.id || 0],
+    })),
+    user?.id
+  );
 
   return (
     <Layout>
@@ -74,25 +36,25 @@ export function DataDrivenDashboard() {
         <div className="grid gap-2 grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Total Diamonds"
-            value={Number(stats.totalDiamonds)}
+            value={stats.totalDiamonds}
             icon={Gem}
             loading={loading}
           />
           <StatCard
             title="Matched Pairs"
-            value={Number(stats.matchedPairs)}
+            value={stats.matchedPairs}
             icon={Users}
             loading={loading}
           />
           <StatCard
             title="Market Leads"
-            value={Number(stats.totalLeads)}
+            value={stats.totalLeads}
             icon={TrendingUp}
             loading={loading}
           />
           <StatCard
             title="Premium Items"
-            value={Number(stats.activeSubscriptions)}
+            value={stats.activeSubscriptions}
             icon={Star}
             loading={loading}
           />

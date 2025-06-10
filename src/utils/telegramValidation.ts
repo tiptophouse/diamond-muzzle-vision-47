@@ -1,5 +1,6 @@
 
 import { TelegramInitData } from '@/types/telegram';
+import crypto from 'crypto-js';
 
 export function parseTelegramInitData(initData: string): TelegramInitData | null {
   try {
@@ -40,17 +41,17 @@ export function parseTelegramInitData(initData: string): TelegramInitData | null
   }
 }
 
-export function validateTelegramInitData(initData: string): boolean {
-  console.log('🔍 Validating Telegram initData...');
+export function validateTelegramInitData(initData: string, botToken?: string): boolean {
+  console.log('Enhanced Telegram initData validation');
   
   if (!initData || initData.length === 0) {
     console.warn('Missing or empty initData');
     return false;
   }
 
-  // In development mode, do basic validation only
+  // Skip validation in development mode
   if (process.env.NODE_ENV === 'development') {
-    console.log('🔧 Development mode - basic validation only');
+    console.log('Development mode - skipping signature validation');
     const parsed = parseTelegramInitData(initData);
     return !!parsed && !!parsed.user && typeof parsed.user.id === 'number';
   }
@@ -59,33 +60,40 @@ export function validateTelegramInitData(initData: string): boolean {
     // Parse query parameters
     const urlParams = new URLSearchParams(initData);
     const hash = urlParams.get('hash');
-    const authDate = urlParams.get('auth_date');
     
     if (!hash) {
       console.warn('Missing hash in initData');
       return false;
     }
     
-    if (!authDate) {
-      console.warn('Missing auth_date in initData');
-      return false;
+    // Remove hash from params for validation
+    urlParams.delete('hash');
+    
+    // Create data check string
+    const dataCheckArr: string[] = [];
+    urlParams.forEach((value, key) => {
+      dataCheckArr.push(`${key}=${value}`);
+    });
+    dataCheckArr.sort();
+    const dataCheckString = dataCheckArr.join('\n');
+    
+    if (botToken) {
+      // Validate HMAC signature
+      const secretKey = crypto.HmacSHA256(botToken, 'WebAppData');
+      const calculatedHash = crypto.HmacSHA256(dataCheckString, secretKey).toString();
+      
+      const isValid = calculatedHash === hash;
+      console.log('HMAC validation result:', isValid);
+      
+      if (!isValid) {
+        console.warn('Invalid Telegram signature');
+        return false;
+      }
     }
     
-    // Check if auth_date is not too old (24 hours)
-    const authDateTime = parseInt(authDate) * 1000;
-    const now = Date.now();
-    const maxAge = 24 * 60 * 60 * 1000; // 24 hours
-    
-    if (now - authDateTime > maxAge) {
-      console.warn('InitData is too old');
-      return false;
-    }
-    
-    // Try to parse the user data
     const parsed = parseTelegramInitData(initData);
     const isValid = !!parsed && !!parsed.user && typeof parsed.user.id === 'number';
-    
-    console.log('✅ InitData validation result:', isValid);
+    console.log('Final validation result:', isValid);
     return isValid;
   } catch (error) {
     console.error('Failed to validate Telegram initData:', error);
@@ -98,7 +106,7 @@ export function isTelegramWebApp(): boolean {
     !!window.Telegram?.WebApp && 
     typeof window.Telegram.WebApp === 'object';
   
-  console.log('🔍 Telegram WebApp detection:', {
+  console.log('Telegram WebApp detection:', {
     hasWindow: typeof window !== 'undefined',
     hasTelegram: !!window.Telegram,
     hasWebApp: !!window.Telegram?.WebApp,

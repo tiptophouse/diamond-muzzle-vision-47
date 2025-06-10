@@ -1,9 +1,9 @@
 
 import { useState } from "react";
-import { MessageCircle, Gem } from "lucide-react";
+import { MessageCircle, ImageIcon, Gem } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Diamond } from "@/types/diamond";
+import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { AdminStoreControls } from "./AdminStoreControls";
 

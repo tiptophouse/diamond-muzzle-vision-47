@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { api, apiEndpoints } from "@/lib/api";
 import { toast } from "@/components/ui/use-toast";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useCsvProcessor } from "./useCsvProcessor";
@@ -12,11 +12,8 @@ interface UploadResultData {
 }
 
 interface UploadResponse {
-  success: boolean;
-  totalItems: number;
   matched_pairs?: number;
   errors?: string[];
-  error?: string;
 }
 
 export const useUploadHandler = () => {
@@ -29,13 +26,13 @@ export const useUploadHandler = () => {
   const simulateProgress = () => {
     let currentProgress = 0;
     const interval = setInterval(() => {
-      currentProgress += Math.random() * 15;
-      if (currentProgress > 90) {
+      currentProgress += Math.random() * 10;
+      if (currentProgress > 95) {
         clearInterval(interval);
-        currentProgress = 90;
+        currentProgress = 95;
       }
-      setProgress(Math.min(currentProgress, 90));
-    }, 200);
+      setProgress(Math.min(currentProgress, 95));
+    }, 300);
 
     return () => clearInterval(interval);
   };
@@ -56,51 +53,38 @@ export const useUploadHandler = () => {
     const cleanup = simulateProgress();
 
     try {
-      console.log('🚀 Starting upload for user:', user.id);
+      console.log('Starting upload for user:', user.id);
       
-      // Parse CSV file
       const csvData = await parseCSVFile(selectedFile);
-      console.log('📄 Parsed CSV data:', csvData.length, 'rows');
-      
       const mappedData = mapCsvData(csvData);
-      console.log('🔄 Mapped data:', mappedData.length, 'diamonds');
       
-      setProgress(50);
-      
-      // Call our new Supabase edge function
-      const { data: response, error } = await supabase.functions.invoke('upload-inventory', {
-        body: {
-          diamonds: mappedData,
-          user_id: user.id
-        }
-      });
+      const response = await api.uploadCsv<UploadResponse>(
+        apiEndpoints.uploadInventory(),
+        mappedData,
+        user.id
+      );
       
       setProgress(100);
       
-      if (error) {
-        console.error('❌ Upload error:', error);
-        throw new Error(error.message || 'Upload failed');
-      }
-
-      if (!response?.success) {
-        throw new Error(response?.error || 'Upload failed');
+      if (response.error) {
+        throw new Error(response.error);
       }
       
       const uploadResult: UploadResultData = {
-        totalItems: response.totalItems || mappedData.length,
-        matchedPairs: response.matched_pairs || 0,
-        errors: response.errors || [],
+        totalItems: mappedData.length,
+        matchedPairs: response.data?.matched_pairs || 0,
+        errors: response.data?.errors || [],
       };
       
       setResult(uploadResult);
       
       toast({
-        title: "Upload successful!",
-        description: `Successfully uploaded ${response.totalItems} diamonds to your inventory.`,
+        title: "Upload successful",
+        description: `Successfully uploaded ${mappedData.length} diamonds to your inventory.`,
       });
       
     } catch (error) {
-      console.error('❌ Upload failed:', error);
+      console.error('Upload failed:', error);
       
       toast({
         variant: "destructive",
