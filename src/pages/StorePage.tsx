@@ -37,8 +37,9 @@ export default function StorePage() {
             {/* Main Content */}
             <div className="flex-1 min-w-0">
               <StoreGrid 
-                searchTerm=""
-                filters={filters}
+                diamonds={filteredDiamonds}
+                loading={loading}
+                error={error}
               />
             </div>
           </div>
