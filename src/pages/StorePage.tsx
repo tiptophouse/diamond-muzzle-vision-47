@@ -47,6 +47,7 @@ export default function StorePage() {
                   filters={filters}
                   onUpdateFilter={updateFilter}
                   onClearFilters={clearFilters}
+                  diamonds={diamonds}
                 />
               </div>
             </div>
@@ -81,6 +82,7 @@ export default function StorePage() {
                   filters={filters}
                   onUpdateFilter={updateFilter}
                   onClearFilters={clearFilters}
+                  diamonds={diamonds}
                 />
               </div>
             </div>
