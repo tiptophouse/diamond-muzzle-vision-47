@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { 
   isTelegramWebAppEnvironment,
@@ -7,7 +6,8 @@ import {
   validateTelegramInitData,
   initializeTelegramWebApp
 } from '@/utils/telegramWebApp';
-import { verifyTelegramUser, setCurrentUserId } from '@/lib/api/auth';
+import { verifyTelegramUser } from '@/lib/api/auth';
+import { setCurrentUserId } from '@/lib/api/config';
 
 interface TelegramUser {
   id: number;
