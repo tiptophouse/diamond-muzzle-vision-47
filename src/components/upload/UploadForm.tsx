@@ -17,7 +17,7 @@ export function UploadForm() {
   const { validateFile } = useEnhancedCsvProcessor();
   const { uploading, progress, result, handleUpload, resetState } = useDirectUpload();
 
-  const handleFileSelect = async (file: File) => {
+  const handleFileChange = (file: File | null) => {
     if (file && !validateFile(file)) {
       return;
     }
@@ -57,8 +57,8 @@ export function UploadForm() {
         <CardContent className="pt-6">
           <div className="space-y-4">
             <FileUploadArea
-              onFileSelect={handleFileSelect}
               selectedFile={selectedFile}
+              onFileChange={handleFileChange}
               onReset={resetForm}
             />
             
