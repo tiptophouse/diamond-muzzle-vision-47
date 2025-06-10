@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { TelegramAuthProvider } from '@/context/TelegramAuthContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import { Toaster } from '@/components/ui/toaster';
 import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
@@ -23,30 +25,32 @@ import './App.css';
 function App() {
   return (
     <TelegramAuthProvider>
-      <Router>
-        <div className="min-h-screen bg-gray-50">
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/inventory" element={<InventoryPage />} />
-            <Route path="/store" element={<StorePage />} />
-            <Route path="/upload" element={<UploadPage />} />
-            <Route path="/upload-single" element={<UploadSingleStonePage />} />
-            <Route path="/chat" element={<ChatPage />} />
-            <Route path="/insights" element={<InsightsPage />} />
-            <Route path="/notifications" element={<NotificationsPage />} />
-            <Route path="/reports" element={<ReportsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/admin/analytics" element={<AdminAnalytics />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/mcp" element={<MCPPage />} />
-            <Route path="/404" element={<NotFound />} />
-            <Route path="*" element={<Navigate to="/404" replace />} />
-          </Routes>
-        </div>
-        <Toaster />
-      </Router>
+      <ThemeProvider>
+        <Router>
+          <div className="min-h-screen bg-gray-50">
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/inventory" element={<InventoryPage />} />
+              <Route path="/store" element={<StorePage />} />
+              <Route path="/upload" element={<UploadPage />} />
+              <Route path="/upload-single" element={<UploadSingleStonePage />} />
+              <Route path="/chat" element={<ChatPage />} />
+              <Route path="/insights" element={<InsightsPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/reports" element={<ReportsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/admin/analytics" element={<AdminAnalytics />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/mcp" element={<MCPPage />} />
+              <Route path="/404" element={<NotFound />} />
+              <Route path="*" element={<Navigate to="/404" replace />} />
+            </Routes>
+          </div>
+          <Toaster />
+        </Router>
+      </ThemeProvider>
     </TelegramAuthProvider>
   );
 }
