@@ -1,15 +1,16 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { toast } from "@/components/ui/use-toast";
+import { useEdgeFunctionCrud } from "./useEdgeFunctionCrud";
 
 export function useSupabaseInventory() {
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useTelegramAuth();
+  const { getDiamonds, createDiamond, updateDiamond, deleteDiamond } = useEdgeFunctionCrud();
 
   useEffect(() => {
     if (user?.id) {
@@ -22,14 +23,8 @@ export function useSupabaseInventory() {
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase
-        .from('inventory')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
-
-      if (fetchError) throw fetchError;
-
+      const data = await getDiamonds();
+      
       // Transform Supabase data to Diamond interface
       const transformedDiamonds: Diamond[] = (data || []).map(item => ({
         id: item.id,
@@ -64,141 +59,57 @@ export function useSupabaseInventory() {
 
   const addDiamond = async (diamondData: Partial<Diamond>) => {
     try {
-      const { data, error: insertError } = await supabase
-        .from('inventory')
-        .insert({
-          user_id: user?.id,
-          stock_number: diamondData.stockNumber,
-          shape: diamondData.shape,
-          weight: diamondData.carat,
-          color: diamondData.color,
-          clarity: diamondData.clarity,
-          cut: diamondData.cut,
-          price_per_carat: diamondData.price && diamondData.carat ? Math.round(diamondData.price / diamondData.carat) : 0,
-          status: diamondData.status || 'Available',
-          picture: diamondData.imageUrl,
-          store_visible: diamondData.store_visible ?? true,
-          fluorescence: diamondData.fluorescence,
-          lab: diamondData.lab,
-          polish: diamondData.polish,
-          symmetry: diamondData.symmetry,
-        })
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-
-      await fetchInventory();
-      
-      toast({
-        title: "Diamond Added! ✨",
-        description: `${diamondData.stockNumber} has been added to your inventory.`,
-      });
-
-      return true;
+      const success = await createDiamond(diamondData as any);
+      if (success) {
+        await fetchInventory();
+      }
+      return success;
     } catch (error) {
       console.error('Error adding diamond:', error);
-      toast({
-        variant: "destructive",
-        title: "Failed to add diamond",
-        description: error instanceof Error ? error.message : "Please try again.",
-      });
       return false;
     }
   };
 
-  const updateDiamond = async (id: string, diamondData: Partial<Diamond>) => {
+  const updateDiamondById = async (id: string, diamondData: Partial<Diamond>) => {
     try {
-      const { error: updateError } = await supabase
-        .from('inventory')
-        .update({
-          stock_number: diamondData.stockNumber,
-          shape: diamondData.shape,
-          weight: diamondData.carat,
-          color: diamondData.color,
-          clarity: diamondData.clarity,
-          cut: diamondData.cut,
-          price_per_carat: diamondData.price && diamondData.carat ? Math.round(diamondData.price / diamondData.carat) : 0,
-          status: diamondData.status,
-          picture: diamondData.imageUrl,
-          store_visible: diamondData.store_visible,
-          fluorescence: diamondData.fluorescence,
-          lab: diamondData.lab,
-          polish: diamondData.polish,
-          symmetry: diamondData.symmetry,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id)
-        .eq('user_id', user?.id);
-
-      if (updateError) throw updateError;
-
-      await fetchInventory();
-      
-      toast({
-        title: "Diamond Updated! ✨",
-        description: `${diamondData.stockNumber} has been updated successfully.`,
-      });
-
-      return true;
+      const success = await updateDiamond(id, diamondData as any);
+      if (success) {
+        await fetchInventory();
+      }
+      return success;
     } catch (error) {
       console.error('Error updating diamond:', error);
-      toast({
-        variant: "destructive",
-        title: "Failed to update diamond",
-        description: error instanceof Error ? error.message : "Please try again.",
-      });
       return false;
     }
   };
 
-  const deleteDiamond = async (id: string) => {
+  const deleteDiamondById = async (id: string) => {
     try {
-      const { error: deleteError } = await supabase
-        .from('inventory')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user?.id);
-
-      if (deleteError) throw deleteError;
-
-      await fetchInventory();
-      
-      toast({
-        title: "Diamond Deleted",
-        description: "Diamond has been removed from your inventory.",
-      });
-
-      return true;
+      const success = await deleteDiamond(id);
+      if (success) {
+        await fetchInventory();
+      }
+      return success;
     } catch (error) {
       console.error('Error deleting diamond:', error);
-      toast({
-        variant: "destructive",
-        title: "Failed to delete diamond",
-        description: error instanceof Error ? error.message : "Please try again.",
-      });
       return false;
     }
   };
 
   const toggleStoreVisibility = async (id: string, visible: boolean) => {
     try {
-      const { error: updateError } = await supabase
-        .from('inventory')
-        .update({ store_visible: visible })
-        .eq('id', id)
-        .eq('user_id', user?.id);
+      const diamond = diamonds.find(d => d.id === id);
+      if (!diamond) return false;
 
-      if (updateError) throw updateError;
-
-      await fetchInventory();
-      
-      toast({
-        title: visible ? "Added to Store" : "Removed from Store",
-        description: `Diamond is now ${visible ? 'visible' : 'hidden'} in your store.`,
-      });
-
-      return true;
+      const success = await updateDiamond(id, { ...diamond, store_visible: visible } as any);
+      if (success) {
+        await fetchInventory();
+        toast({
+          title: visible ? "Added to Store" : "Removed from Store",
+          description: `Diamond is now ${visible ? 'visible' : 'hidden'} in your store.`,
+        });
+      }
+      return success;
     } catch (error) {
       console.error('Error updating store visibility:', error);
       return false;
@@ -210,8 +121,8 @@ export function useSupabaseInventory() {
     loading,
     error,
     addDiamond,
-    updateDiamond,
-    deleteDiamond,
+    updateDiamond: updateDiamondById,
+    deleteDiamond: deleteDiamondById,
     toggleStoreVisibility,
     refreshInventory: fetchInventory,
   };
