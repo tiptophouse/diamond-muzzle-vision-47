@@ -3,7 +3,7 @@ import { Layout } from "@/components/layout/Layout";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { EnhancedInventoryActions } from "@/components/inventory/EnhancedInventoryActions";
-import { useOptimizedInventory } from "@/hooks/useOptimizedInventory";
+import { useUnifiedInventory } from "@/hooks/useUnifiedInventory";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Gem, TrendingUp, Eye, Package } from "lucide-react";
 
@@ -18,8 +18,7 @@ export default function OptimizedInventoryPage() {
     updateDiamond,
     deleteDiamond,
     toggleStoreVisibility,
-    uploadImage,
-  } = useOptimizedInventory();
+  } = useUnifiedInventory();
 
   const storeVisibleCount = diamonds.filter(d => d.store_visible).length;
   const totalValue = diamonds.reduce((sum, d) => sum + d.price, 0);
@@ -96,7 +95,7 @@ export default function OptimizedInventoryPage() {
             const diamond = diamonds.find(d => d.id === diamondId);
             return diamond ? deleteDiamond(diamond.stockNumber) : Promise.resolve();
           }}
-          onStoreToggle={toggleStoreVisibility}
+          onStoreToggle={(stockNumber, isVisible) => toggleStoreVisibility(stockNumber)}
         />
 
         {error && (

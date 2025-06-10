@@ -5,62 +5,22 @@ import { EnhancedDiamondCard } from "./EnhancedDiamondCard";
 import { DiamondCardSkeleton } from "./DiamondCardSkeleton";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Gem } from "lucide-react";
-import { useStoreData } from "@/hooks/useStoreData";
 
 interface StoreGridProps {
-  searchTerm: string;
-  filters: {
-    minPrice: number;
-    maxPrice: number;
-    minCarat: number;
-    maxCarat: number;
-    shapes: string[];
-    colors: string[];
-    clarities: string[];
-  };
+  diamonds: Diamond[];
+  loading: boolean;
+  error: string | null;
+  onRefresh?: () => void;
 }
 
-export function StoreGrid({ searchTerm, filters }: StoreGridProps) {
-  const { diamonds, loading, error, refetch } = useStoreData();
+export function StoreGrid({ diamonds, loading, error, onRefresh }: StoreGridProps) {
   const [animationDelay, setAnimationDelay] = useState(0);
-
-  // Filter diamonds based on search and filters
-  const filteredDiamonds = diamonds.filter(diamond => {
-    // Search filter
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      const matches = 
-        diamond.stockNumber.toLowerCase().includes(searchLower) ||
-        diamond.shape.toLowerCase().includes(searchLower) ||
-        diamond.color.toLowerCase().includes(searchLower) ||
-        diamond.clarity.toLowerCase().includes(searchLower);
-      
-      if (!matches) return false;
-    }
-
-    // Price filter
-    if (filters.minPrice > 0 && diamond.price < filters.minPrice) return false;
-    if (filters.maxPrice > 0 && diamond.price > filters.maxPrice) return false;
-
-    // Carat filter
-    if (filters.minCarat > 0 && diamond.carat < filters.minCarat) return false;
-    if (filters.maxCarat > 0 && diamond.carat > filters.maxCarat) return false;
-
-    // Shape filter
-    if (filters.shapes.length > 0 && !filters.shapes.includes(diamond.shape)) return false;
-
-    // Color filter
-    if (filters.colors.length > 0 && !filters.colors.includes(diamond.color)) return false;
-
-    // Clarity filter
-    if (filters.clarities.length > 0 && !filters.clarities.includes(diamond.clarity)) return false;
-
-    return true;
-  });
 
   const handleRefresh = () => {
     setAnimationDelay(0);
-    refetch();
+    if (onRefresh) {
+      onRefresh();
+    }
   };
 
   if (error) {
@@ -88,26 +48,19 @@ export function StoreGrid({ searchTerm, filters }: StoreGridProps) {
     );
   }
 
-  if (filteredDiamonds.length === 0) {
+  if (diamonds.length === 0) {
     return (
       <div className="text-center py-16 animate-fade-in">
         <div className="max-w-md mx-auto">
           <Gem className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">
-            {diamonds.length === 0 ? 'No diamonds available' : 'No matching diamonds'}
-          </h3>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">No diamonds available</h3>
           <p className="text-gray-600 mb-6">
-            {diamonds.length === 0 
-              ? 'The store inventory is currently empty. Please check back later.'
-              : 'Try adjusting your search terms or filters to find more diamonds.'
-            }
+            The store inventory is currently empty. Please check back later.
           </p>
-          {diamonds.length === 0 && (
-            <Button onClick={handleRefresh} className="bg-blue-600 hover:bg-blue-700">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh Store
-            </Button>
-          )}
+          <Button onClick={handleRefresh} className="bg-blue-600 hover:bg-blue-700">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh Store
+          </Button>
         </div>
       </div>
     );
@@ -117,7 +70,7 @@ export function StoreGrid({ searchTerm, filters }: StoreGridProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-600">
-          Showing {filteredDiamonds.length} of {diamonds.length} diamonds
+          Showing {diamonds.length} diamonds
         </p>
         <Button 
           onClick={handleRefresh} 
@@ -131,7 +84,7 @@ export function StoreGrid({ searchTerm, filters }: StoreGridProps) {
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filteredDiamonds.map((diamond, index) => (
+        {diamonds.map((diamond, index) => (
           <div
             key={diamond.id}
             className="animate-fade-in"
@@ -143,8 +96,8 @@ export function StoreGrid({ searchTerm, filters }: StoreGridProps) {
             <EnhancedDiamondCard
               diamond={diamond}
               index={index}
-              onUpdate={refetch}
-              onDelete={refetch}
+              onUpdate={handleRefresh}
+              onDelete={handleRefresh}
             />
           </div>
         ))}
