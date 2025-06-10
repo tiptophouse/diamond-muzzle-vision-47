@@ -53,18 +53,28 @@ export function useAnalyticsDashboard() {
       ]);
 
       const totalUsers = userProfilesResult.data?.length || 0;
-      const activeUsers = userSessionsResult.data?.filter(session => 
-        session.is_active && 
-        new Date(session.session_start) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-      ).length || 0;
+      const activeUsers = userSessionsResult.data?.filter(session => {
+        if (!session.session_start) return false;
+        const sessionDate = new Date(session.session_start);
+        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        return session.is_active && sessionDate > weekAgo;
+      }).length || 0;
 
       const totalVisits = pageVisitsResult.data?.length || 0;
       
       const avgSessionTime = userSessionsResult.data?.reduce((sum, session) => {
         if (session.total_duration) {
-          // Parse interval to minutes
+          // Parse interval to minutes - handle interval type properly
           const duration = session.total_duration;
-          return sum + (duration ? 30 : 0); // Default 30 minutes if no duration
+          if (typeof duration === 'string') {
+            // Simple parsing for interval format like "00:30:00"
+            const parts = duration.split(':');
+            if (parts.length >= 2) {
+              const minutes = parseInt(parts[1]) || 0;
+              return sum + minutes;
+            }
+          }
+          return sum + 30; // Default 30 minutes if parsing fails
         }
         return sum;
       }, 0) / Math.max(userSessionsResult.data?.length || 1, 1);
