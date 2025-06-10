@@ -74,11 +74,11 @@ export function useArchiveData() {
   };
 
   useEffect(() => {
-    fetchData();
+    fetchArchivedData();
   }, [user?.id]);
 
   const refreshData = () => {
-    fetchData();
+    fetchArchivedData();
   };
 
   return {

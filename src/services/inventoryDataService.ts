@@ -40,7 +40,8 @@ export const fetchInventoryData = async () => {
     externalData.forEach(item => {
       const stockNumber = item.stock_number || item.Stock;
       if (stockNumber && !existingStockNumbers.has(stockNumber)) {
-        combinedData.push({
+        // Map external data to match our database schema
+        const mappedItem = {
           id: item.id || `ext-${stockNumber}`,
           stock_number: stockNumber,
           shape: item.shape || item.Shape || 'Round',
@@ -54,15 +55,27 @@ export const fetchInventoryData = async () => {
           store_visible: true,
           fluorescence: item.fluorescence || item.Fluo || 'None',
           lab: item.lab || item.Lab || 'GIA',
-          certificate_number: item.certificate_number || item.CertNumber,
+          certificate_number: item.certificate_number || item.CertNumber || null,
           polish: item.polish || item.Polish || 'Excellent',
           symmetry: item.symmetry || item.Symm || 'Excellent',
-          table_percentage: item.table_percentage || item.Table,
-          depth_percentage: item.depth_percentage || item.Depth,
+          table_percentage: item.table_percentage || item.Table || null,
+          depth_percentage: item.depth_percentage || item.Depth || null,
           user_id: 2138564172, // Default external user
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        });
+          // Add missing required fields with defaults
+          certificate_comment: null,
+          certificate_url: null,
+          culet: null,
+          deleted_at: null,
+          depth: null,
+          gridle: null,
+          length: null,
+          rapnet: null,
+          ratio: null,
+          width: null,
+        };
+        combinedData.push(mappedItem);
       }
     });
 

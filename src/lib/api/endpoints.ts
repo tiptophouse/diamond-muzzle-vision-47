@@ -10,6 +10,7 @@ export const apiEndpoints = {
   uploadInventory: () => `/api/v1/upload-inventory`,
   deleteDiamond: (diamondId: string, userId: number) => `/api/v1/delete_diamond?diamond_id=${diamondId}&user_id=${userId}`,
   soldDiamond: () => `/api/v1/sold`,
+  archiveDiamond: () => `/api/v1/archive`,
   createReport: () => `/api/v1/create-report`,
   getReport: (reportId: string) => `/api/v1/get-report?diamond_id=${reportId}`,
   getDashboardStats: (userId: number) => `/api/v1/users/${userId}/dashboard/stats`,
