@@ -2,8 +2,9 @@
 import Sidebar from "./Sidebar";
 import { Header } from "./Header";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/providers/AuthProvider";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,6 +12,7 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, isAdmin } = useAuth();
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden flex bg-background">
@@ -49,6 +51,18 @@ export function Layout({ children }: LayoutProps) {
         <div className="hidden lg:block">
           <Header />
         </div>
+        
+        {/* Admin indicator */}
+        {isAdmin && (
+          <div className="bg-gradient-to-r from-yellow-100 to-amber-100 border-b border-yellow-200 p-2">
+            <div className="flex items-center justify-center gap-2 text-yellow-800">
+              <span className="text-sm font-medium">
+                Admin Mode - {user?.first_name} {user?.last_name}
+              </span>
+              <div className="h-2 w-2 bg-yellow-500 rounded-full animate-pulse"></div>
+            </div>
+          </div>
+        )}
         
         <main className="flex-1 w-full min-w-0 p-2 sm:p-4 md:p-6 overflow-x-hidden bg-background">
           <div className="w-full max-w-full overflow-x-hidden">

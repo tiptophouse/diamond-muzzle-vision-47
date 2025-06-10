@@ -2,12 +2,12 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Diamond } from "./InventoryTable";
+import { Diamond } from "@/types/diamond";
 import { Edit, Trash, ImageIcon } from "lucide-react";
 import { StoreVisibilityToggle } from "./StoreVisibilityToggle";
 
 interface InventoryTableRowProps {
-  diamond: Diamond & { store_visible?: boolean };
+  diamond: Diamond;
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
   onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
