@@ -1,70 +1,119 @@
 
-import {
-  BrowserRouter as Router,
-  Route,
-  Routes,
-} from "react-router-dom";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { TelegramAuthProvider } from "@/context/TelegramAuthContext";
+import { AuthProvider } from "@/providers/AuthProvider";
+import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard";
+import { AdminRoute } from "@/components/routing/AdminRoute";
+import { Layout } from "@/components/layout/Layout";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+
+// Import pages
+import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
-import Inventory from "./pages/InventoryPage";
-import StorePage from "./pages/StorePage";
-import Settings from "./pages/SettingsPage";
-import Admin from "./pages/Admin";
-import NotFound from "./pages/NotFound";
-import ChatPage from "./pages/ChatPage";
+import InventoryPage from "./pages/InventoryPage";
 import UploadPage from "./pages/UploadPage";
-import UploadSingleStonePage from "./pages/UploadSingleStonePage";
+import ChatPage from "./pages/ChatPage";
 import InsightsPage from "./pages/InsightsPage";
 import ReportsPage from "./pages/ReportsPage";
+import SettingsPage from "./pages/SettingsPage";
 import NotificationsPage from "./pages/NotificationsPage";
-import Index from "./pages/Index";
-import { TelegramAuthProvider } from '@/context/TelegramAuthContext';
-import { AuthProvider } from '@/providers/AuthProvider';
-import { AdminRoute } from '@/components/routing/AdminRoute';
-import { Layout } from '@/components/layout/Layout';
-import { ThemeProvider } from '@/contexts/ThemeContext';
+import Admin from "./pages/Admin";
+import StorePage from "./pages/StorePage";
+import AdvertisementPage from "./pages/AdvertisementPage";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 30, // 30 minutes
+    },
+  },
+});
 
 function App() {
-  console.log('🚀 App component rendering');
-  
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <TelegramAuthProvider>
-          <AuthProvider>
-            <Router>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <TelegramAuthProvider>
               <Routes>
-                <Route path="/" element={<Index />} />
+                {/* Public advertisement page - no auth required */}
+                <Route path="/advertisement" element={<AdvertisementPage />} />
+                <Route path="/ad" element={<AdvertisementPage />} />
+                
+                {/* Protected routes */}
                 <Route path="/*" element={
-                  <Layout>
-                    <Routes>
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/inventory" element={<Inventory />} />
-                      <Route path="/store" element={<StorePage />} />
-                      <Route path="/upload" element={<UploadPage />} />
-                      <Route path="/upload-single" element={<UploadSingleStonePage />} />
-                      <Route path="/chat" element={<ChatPage />} />
-                      <Route path="/insights" element={<InsightsPage />} />
-                      <Route path="/reports" element={<ReportsPage />} />
-                      <Route path="/settings" element={<Settings />} />
-                      <Route path="/notifications" element={<NotificationsPage />} />
-                      <Route path="/admin" element={
-                        <AdminRoute>
-                          <Admin />
-                        </AdminRoute>
-                      } />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </Layout>
+                  <AuthProvider>
+                    <AuthorizationGuard>
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/dashboard" element={
+                          <Layout>
+                            <Dashboard />
+                          </Layout>
+                        } />
+                        <Route path="/inventory" element={
+                          <Layout>
+                            <InventoryPage />
+                          </Layout>
+                        } />
+                        <Route path="/store" element={
+                          <Layout>
+                            <StorePage />
+                          </Layout>
+                        } />
+                        <Route path="/upload" element={
+                          <Layout>
+                            <UploadPage />
+                          </Layout>
+                        } />
+                        <Route path="/chat" element={
+                          <Layout>
+                            <ChatPage />
+                          </Layout>
+                        } />
+                        <Route path="/insights" element={
+                          <Layout>
+                            <InsightsPage />
+                          </Layout>
+                        } />
+                        <Route path="/reports" element={
+                          <Layout>
+                            <ReportsPage />
+                          </Layout>
+                        } />
+                        <Route path="/settings" element={
+                          <Layout>
+                            <SettingsPage />
+                          </Layout>
+                        } />
+                        <Route path="/notifications" element={
+                          <Layout>
+                            <NotificationsPage />
+                          </Layout>
+                        } />
+                        <Route path="/admin" element={
+                          <AdminRoute>
+                            <Admin />
+                          </AdminRoute>
+                        } />
+                      </Routes>
+                    </AuthorizationGuard>
+                  </AuthProvider>
                 } />
               </Routes>
-            </Router>
-          </AuthProvider>
-        </TelegramAuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+            </TelegramAuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

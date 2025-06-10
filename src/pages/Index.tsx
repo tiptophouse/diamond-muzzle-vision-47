@@ -71,6 +71,16 @@ const Index = () => {
               💎 Regular Dashboard
               <div className="text-sm opacity-90 mt-1">Standard user interface</div>
             </button>
+            <button 
+              onClick={() => {
+                redirectHandledRef.current = true;
+                window.location.hash = '#/advertisement';
+              }} 
+              className="block w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 shadow-lg"
+            >
+              📢 Advertisement Page
+              <div className="text-sm opacity-90 mt-1">Lead capture landing page</div>
+            </button>
           </div>
           
           <div className="text-sm text-gray-500 mt-6">
