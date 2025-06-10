@@ -6,7 +6,7 @@ import { DiamondFormData } from '@/components/inventory/form/types';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { useAddDiamond } from './inventory/useAddDiamond';
 import { useUpdateDiamond } from './inventory/useUpdateDiamond';
-import { useDeleteDiamond } from './inventory/useDeleteDiamond';
+import { useSoftDeleteDiamond } from './inventory/useSoftDeleteDiamond';
 
 interface UseInventoryCrudProps {
   onSuccess?: () => void;
@@ -21,7 +21,7 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
 
   const { addDiamond: addDiamondFn } = useAddDiamond(onSuccess);
   const { updateDiamond: updateDiamondFn } = useUpdateDiamond(onSuccess);
-  const { deleteDiamond: deleteDiamondFn } = useDeleteDiamond({ 
+  const { softDeleteDiamond: softDeleteDiamondFn } = useSoftDeleteDiamond({ 
     onSuccess, 
     removeDiamondFromState, 
     restoreDiamondToState 
@@ -50,7 +50,7 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
   const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
     setIsLoading(true);
     try {
-      const result = await deleteDiamondFn(diamondId, diamondData);
+      const result = await softDeleteDiamondFn(diamondId, diamondData);
       return result;
     } finally {
       setIsLoading(false);

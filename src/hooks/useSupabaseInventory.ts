@@ -25,28 +25,30 @@ export function useSupabaseInventory() {
 
       const data = await getDiamonds();
       
-      // Transform Supabase data to Diamond interface
-      const transformedDiamonds: Diamond[] = (data || []).map(item => ({
-        id: item.id,
-        stockNumber: item.stock_number,
-        shape: item.shape,
-        carat: item.weight,
-        color: item.color,
-        clarity: item.clarity,
-        cut: item.cut || 'Excellent',
-        price: item.price_per_carat ? item.price_per_carat * item.weight : 0,
-        status: item.status || 'Available',
-        imageUrl: item.picture,
-        store_visible: item.store_visible,
-        fluorescence: item.fluorescence,
-        lab: item.lab,
-        certificate_number: item.certificate_number?.toString(),
-        polish: item.polish,
-        symmetry: item.symmetry,
-        table_percentage: item.table_percentage,
-        depth_percentage: item.depth_percentage,
-        additional_images: [],
-      }));
+      // Transform Supabase data to Diamond interface, filtering out soft-deleted items
+      const transformedDiamonds: Diamond[] = (data || [])
+        .filter(item => !item.deleted_at) // Filter out soft-deleted items
+        .map(item => ({
+          id: item.id,
+          stockNumber: item.stock_number,
+          shape: item.shape,
+          carat: item.weight,
+          color: item.color,
+          clarity: item.clarity,
+          cut: item.cut || 'Excellent',
+          price: item.price_per_carat ? item.price_per_carat * item.weight : 0,
+          status: item.status || 'Available',
+          imageUrl: item.picture,
+          store_visible: item.store_visible,
+          fluorescence: item.fluorescence,
+          lab: item.lab,
+          certificate_number: item.certificate_number?.toString(),
+          polish: item.polish,
+          symmetry: item.symmetry,
+          table_percentage: item.table_percentage,
+          depth_percentage: item.depth_percentage,
+          additional_images: [],
+        }));
 
       setDiamonds(transformedDiamonds);
     } catch (err) {

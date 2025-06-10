@@ -8,6 +8,7 @@ import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
 import InventoryPage from '@/pages/InventoryPage';
 import StorePage from '@/pages/StorePage';
+import ArchivePage from '@/pages/ArchivePage';
 import UploadPage from '@/pages/UploadPage';
 import UploadSingleStonePage from '@/pages/UploadSingleStonePage';
 import ChatPage from '@/pages/ChatPage';
@@ -33,6 +34,7 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/inventory" element={<InventoryPage />} />
               <Route path="/store" element={<StorePage />} />
+              <Route path="/archive" element={<ArchivePage />} />
               <Route path="/upload" element={<UploadPage />} />
               <Route path="/upload-single" element={<UploadSingleStonePage />} />
               <Route path="/chat" element={<ChatPage />} />
