@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Diamond } from "@/components/inventory/InventoryTable";
 
 interface StoreFilters {
@@ -20,22 +20,25 @@ export function useStoreFilters(diamonds: Diamond[]) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
-  const getInitialRanges = () => {
-    if (diamonds.length === 0) {
+  // Memoize the diamonds to prevent infinite re-renders
+  const memoizedDiamonds = useMemo(() => diamonds, [diamonds.length, diamonds.map(d => d.id).join(',')]);
+
+  const getInitialRanges = useCallback(() => {
+    if (memoizedDiamonds.length === 0) {
       return {
         caratRange: [0, 10] as [number, number],
         priceRange: [0, 100000] as [number, number]
       };
     }
 
-    const carats = diamonds.map(d => d.carat);
-    const prices = diamonds.map(d => d.price);
+    const carats = memoizedDiamonds.map(d => d.carat);
+    const prices = memoizedDiamonds.map(d => d.price);
 
     return {
       caratRange: [Math.min(...carats), Math.max(...carats)] as [number, number],
       priceRange: [Math.min(...prices), Math.max(...prices)] as [number, number]
     };
-  };
+  }, [memoizedDiamonds]);
 
   const [filters, setFilters] = useState<StoreFilters>(() => ({
     shapes: [],
@@ -50,18 +53,19 @@ export function useStoreFilters(diamonds: Diamond[]) {
     ...getInitialRanges()
   }));
 
-  // Update ranges when diamonds change
+  // Update ranges when diamonds change - but only when actually needed
+  const initialRanges = useMemo(() => getInitialRanges(), [getInitialRanges]);
+  
   useMemo(() => {
-    const ranges = getInitialRanges();
     setFilters(prev => ({
       ...prev,
-      caratRange: prev.caratRange[0] === 0 && prev.caratRange[1] === 10 ? ranges.caratRange : prev.caratRange,
-      priceRange: prev.priceRange[0] === 0 && prev.priceRange[1] === 100000 ? ranges.priceRange : prev.priceRange
+      caratRange: prev.caratRange[0] === 0 && prev.caratRange[1] === 10 ? initialRanges.caratRange : prev.caratRange,
+      priceRange: prev.priceRange[0] === 0 && prev.priceRange[1] === 100000 ? initialRanges.priceRange : prev.priceRange
     }));
-  }, [diamonds]);
+  }, [initialRanges]);
 
   const filteredDiamonds = useMemo(() => {
-    let filtered = diamonds;
+    let filtered = memoizedDiamonds;
 
     // Search query filter
     if (searchQuery.trim()) {
@@ -113,16 +117,16 @@ export function useStoreFilters(diamonds: Diamond[]) {
 
       return true;
     });
-  }, [diamonds, filters, searchQuery]);
+  }, [memoizedDiamonds, filters, searchQuery]);
 
-  const handleFilterChange = (key: keyof StoreFilters, value: any) => {
+  const handleFilterChange = useCallback((key: keyof StoreFilters, value: any) => {
     setFilters(prev => ({
       ...prev,
       [key]: value
     }));
-  };
+  }, []);
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     const ranges = getInitialRanges();
     setFilters({
       shapes: [],
@@ -137,7 +141,7 @@ export function useStoreFilters(diamonds: Diamond[]) {
       ...ranges
     });
     setSearchQuery("");
-  };
+  }, [getInitialRanges]);
 
   const activeFilters = useMemo(() => {
     return {

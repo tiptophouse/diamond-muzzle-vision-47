@@ -6,7 +6,7 @@ import { EnhancedStoreFilters } from "@/components/store/EnhancedStoreFilters";
 import { useSupabaseInventory } from "@/hooks/useSupabaseInventory";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -29,8 +29,10 @@ export default function StorePage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isAddingDiamond, setIsAddingDiamond] = useState(false);
 
-  // Filter to only show store-visible diamonds for non-managers
-  const visibleDiamonds = isManager ? diamonds : diamonds.filter(d => d.store_visible);
+  // Memoize visible diamonds to prevent infinite re-renders
+  const visibleDiamonds = useMemo(() => {
+    return isManager ? diamonds : diamonds.filter(d => d.store_visible);
+  }, [diamonds, isManager]);
 
   const {
     filteredDiamonds,

@@ -79,9 +79,9 @@ export function useAnalyticsDashboard() {
         return sum;
       }, 0) / Math.max(userSessionsResult.data?.length || 1, 1);
 
-      const totalCosts = costTrackingResult.data?.reduce((sum, cost) => sum + (parseFloat(cost.amount) || 0), 0) || 0;
+      const totalCosts = costTrackingResult.data?.reduce((sum, cost) => sum + (parseFloat(cost.amount?.toString() || '0') || 0), 0) || 0;
       
-      const revenuePerUser = userAnalyticsResult.data?.reduce((sum, analytics) => sum + (parseFloat(analytics.revenue_per_user) || 0), 0) / Math.max(totalUsers, 1) || 0;
+      const revenuePerUser = userAnalyticsResult.data?.reduce((sum, analytics) => sum + (parseFloat(analytics.revenue_per_user?.toString() || '0') || 0), 0) / Math.max(totalUsers, 1) || 0;
 
       setAnalytics({
         pageVisits: pageVisitsResult.data || [],
