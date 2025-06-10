@@ -6,6 +6,11 @@ import { useSupabaseInventory } from "./useSupabaseInventory";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { toast } from "@/components/ui/use-toast";
 
+// Extend Diamond interface to include source information
+interface HybridDiamond extends Diamond {
+  source?: 'external' | 'local';
+}
+
 export function useHybridInventory() {
   const { user } = useTelegramAuth();
   const isManager = user?.id === 101;
@@ -29,7 +34,7 @@ export function useHybridInventory() {
 
   // Combine and deduplicate diamonds
   const combinedDiamonds = useMemo(() => {
-    const allDiamonds: Diamond[] = [];
+    const allDiamonds: HybridDiamond[] = [];
     const stockNumbers = new Set<string>();
 
     // Add external diamonds first (they are the primary source)
@@ -37,8 +42,7 @@ export function useHybridInventory() {
       if (!stockNumbers.has(diamond.stockNumber)) {
         allDiamonds.push({
           ...diamond,
-          // Mark as external source
-          source: 'external' as any
+          source: 'external' as const
         });
         stockNumbers.add(diamond.stockNumber);
       }
@@ -49,8 +53,7 @@ export function useHybridInventory() {
       if (!stockNumbers.has(diamond.stockNumber)) {
         allDiamonds.push({
           ...diamond,
-          // Mark as local source
-          source: 'local' as any
+          source: 'local' as const
         });
         stockNumbers.add(diamond.stockNumber);
       }
