@@ -8,7 +8,7 @@ import { shapes, colors, clarities, cuts, statuses } from './form/diamondFormCon
 import { Diamond } from './InventoryTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AdminImageUpload } from '../admin/AdminImageUpload';
+import { ImageUploadManager } from '../upload/ImageUploadManager';
 import { Camera, Save, X, Sparkles } from 'lucide-react';
 
 interface EnhancedDiamondFormProps {
@@ -164,10 +164,10 @@ export function EnhancedDiamondForm({
           </p>
         </CardHeader>
         <CardContent>
-          <AdminImageUpload
+          <ImageUploadManager
             stockNumber={watch('stockNumber') || 'NEW'}
             existingImages={uploadedImages}
-            onImagesChange={handleImagesUpdate}
+            onImagesUpdate={handleImagesUpdate}
             maxImages={8}
           />
         </CardContent>

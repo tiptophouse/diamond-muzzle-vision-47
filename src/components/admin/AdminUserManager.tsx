@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Settings } from 'lucide-react';
 import { useEnhancedAnalytics } from '@/hooks/useEnhancedAnalytics';
@@ -9,7 +10,6 @@ import { AdminHeader } from './AdminHeader';
 import { AdminStatsGrid } from './AdminStatsGrid';
 import { AdminUserTable } from './AdminUserTable';
 import { NotificationSender } from './NotificationSender';
-import { EnhancedAdminDashboard } from './EnhancedAdminDashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -247,45 +247,41 @@ export function AdminUserManager({}: AdminUserManagerProps) {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
-        <AdminHeader onExportData={() => {}} onAddUser={() => setShowAddUser(true)} />
+        <AdminHeader onExportData={exportUserData} onAddUser={() => setShowAddUser(true)} />
 
-        <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6 bg-white">
-            <TabsTrigger value="dashboard" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-              Backend Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="users" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-              User Management
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-              Send Notifications
-            </TabsTrigger>
+        <div className="flex gap-4 mb-6">
+          <button
+            onClick={deleteMockData}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+          >
+            Delete All Mock Data
+          </button>
+        </div>
+
+        <AdminStatsGrid 
+          stats={stats} 
+          blockedUsersCount={blockedUsers.length} 
+          averageEngagement={averageEngagement} 
+        />
+
+        <Tabs defaultValue="users" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6 bg-white">
+            <TabsTrigger value="users" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">User Management</TabsTrigger>
+            <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Send Notifications</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="dashboard">
-            <EnhancedAdminDashboard />
-          </TabsContent>
-          
           <TabsContent value="users">
-            <div className="space-y-6">
-              <AdminStatsGrid 
-                stats={stats} 
-                blockedUsersCount={blockedUsers.length} 
-                averageEngagement={averageEngagement} 
-              />
-              
-              <AdminUserTable
-                filteredUsers={filteredUsers}
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                getUserEngagementScore={getUserEngagementScore}
-                isUserBlocked={isUserBlocked}
-                onViewUser={handleViewUser}
-                onEditUser={handleEditUser}
-                onToggleBlock={handleToggleBlock}
-                onDeleteUser={handleDeleteUser}
-              />
-            </div>
+            <AdminUserTable
+              filteredUsers={filteredUsers}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              getUserEngagementScore={getUserEngagementScore}
+              isUserBlocked={isUserBlocked}
+              onViewUser={handleViewUser}
+              onEditUser={handleEditUser}
+              onToggleBlock={handleToggleBlock}
+              onDeleteUser={handleDeleteUser}
+            />
           </TabsContent>
           
           <TabsContent value="notifications">
