@@ -1,6 +1,6 @@
 
 import { useEffect, useState, useRef } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useUserTracking } from '@/hooks/useUserTracking';
 
@@ -9,6 +9,7 @@ const ADMIN_TELEGRAM_ID = 2138564172;
 const Index = () => {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
   const { trackPageVisit } = useUserTracking();
+  const navigate = useNavigate();
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
   const redirectHandledRef = useRef(false);
 
@@ -82,7 +83,7 @@ const Index = () => {
             <button 
               onClick={() => {
                 redirectHandledRef.current = true;
-                window.location.hash = '#/admin';
+                navigate('/admin');
               }} 
               className="block w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 shadow-lg"
             >
@@ -92,7 +93,7 @@ const Index = () => {
             <button 
               onClick={() => {
                 redirectHandledRef.current = true;
-                window.location.hash = '#/dashboard';
+                navigate('/dashboard');
               }} 
               className="block w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 shadow-lg"
             >
