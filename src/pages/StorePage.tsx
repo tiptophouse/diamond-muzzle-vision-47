@@ -29,7 +29,7 @@ export default function StorePage() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      <div className="min-h-screen bg-white">
         {/* Premium header */}
         <PremiumStoreHeader
           totalDiamonds={filteredDiamonds.length}
@@ -47,8 +47,6 @@ export default function StorePage() {
                   filters={filters}
                   onUpdateFilter={updateFilter}
                   onClearFilters={clearFilters}
-                  totalDiamonds={diamonds.length}
-                  filteredCount={filteredDiamonds.length}
                 />
               </div>
             </div>
@@ -83,8 +81,6 @@ export default function StorePage() {
                   filters={filters}
                   onUpdateFilter={updateFilter}
                   onClearFilters={clearFilters}
-                  totalDiamonds={diamonds.length}
-                  filteredCount={filteredDiamonds.length}
                 />
               </div>
             </div>
