@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Upload, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { useEnhancedCsvProcessor } from "@/hooks/useEnhancedCsvProcessor";
-import { useDirectUpload } from "@/hooks/useDirectUpload";
+import { useCsvProcessor } from "@/hooks/useCsvProcessor";
+import { useUploadHandler } from "@/hooks/useUploadHandler";
 import { FileUploadArea } from "./FileUploadArea";
 import { UploadProgress } from "./UploadProgress";
 import { UploadResult } from "./UploadResult";
@@ -14,11 +14,11 @@ import { UploadInstructions } from "./UploadInstructions";
 export function UploadForm() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { user, isAuthenticated } = useTelegramAuth();
-  const { validateFile } = useEnhancedCsvProcessor();
-  const { uploading, progress, result, handleUpload, resetState } = useDirectUpload();
+  const { validateFile } = useCsvProcessor();
+  const { uploading, progress, result, handleUpload, resetState } = useUploadHandler();
 
   const handleFileChange = (file: File | null) => {
-    if (file && !validateFile(file)) {
+    if (!validateFile(file)) {
       return;
     }
     
@@ -66,7 +66,7 @@ export function UploadForm() {
             
             <UploadResult result={result} />
             
-            {selectedFile && !result && (
+            {selectedFile && (
               <div className="flex justify-end gap-3">
                 <Button 
                   variant="outline" 
@@ -78,22 +78,10 @@ export function UploadForm() {
                 </Button>
                 <Button 
                   onClick={handleUploadClick}
-                  disabled={uploading}
+                  disabled={uploading || !!result}
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  {uploading ? "Processing..." : "Upload CSV"}
-                </Button>
-              </div>
-            )}
-
-            {result && (
-              <div className="flex justify-center">
-                <Button 
-                  variant="outline" 
-                  onClick={resetForm}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Another File
+                  {uploading ? "Processing..." : "Process CSV"}
                 </Button>
               </div>
             )}

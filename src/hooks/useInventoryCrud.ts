@@ -6,7 +6,7 @@ import { DiamondFormData } from '@/components/inventory/form/types';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { useAddDiamond } from './inventory/useAddDiamond';
 import { useUpdateDiamond } from './inventory/useUpdateDiamond';
-import { useFastAPIDeletion } from './inventory/useFastAPIDeletion';
+import { useDeleteDiamond } from './inventory/useDeleteDiamond';
 
 interface UseInventoryCrudProps {
   onSuccess?: () => void;
@@ -21,7 +21,7 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
 
   const { addDiamond: addDiamondFn } = useAddDiamond(onSuccess);
   const { updateDiamond: updateDiamondFn } = useUpdateDiamond(onSuccess);
-  const { deleteDiamondViaAPI, softDeleteDiamondViaAPI } = useFastAPIDeletion({ 
+  const { deleteDiamond: deleteDiamondFn } = useDeleteDiamond({ 
     onSuccess, 
     removeDiamondFromState, 
     restoreDiamondToState 
@@ -47,18 +47,11 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     }
   };
 
-  const deleteDiamond = async (diamondId: string, diamondData?: Diamond, useHardDelete = false) => {
+  const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
     setIsLoading(true);
     try {
-      if (useHardDelete) {
-        // Use FastAPI for permanent deletion
-        const result = await deleteDiamondViaAPI(diamondId, diamondData);
-        return result;
-      } else {
-        // Use FastAPI for soft deletion (archive)
-        const result = await softDeleteDiamondViaAPI(diamondId, diamondData);
-        return result;
-      }
+      const result = await deleteDiamondFn(diamondId, diamondData);
+      return result;
     } finally {
       setIsLoading(false);
     }

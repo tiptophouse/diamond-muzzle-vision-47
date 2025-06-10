@@ -1,32 +1,17 @@
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { Diamond } from "@/components/inventory/InventoryTable";
 
 interface StoreFilters {
   shapes: string[];
   colors: string[];
   clarities: string[];
-  cuts: string[];
   caratRange: [number, number];
   priceRange: [number, number];
-  fluorescence: string[];
-  labs: string[];
-  status: string[];
-  polish: string[];
-  symmetry: string[];
 }
 
 export function useStoreFilters(diamonds: Diamond[]) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
-
-  // Create a stable reference for diamonds using their IDs and length
-  const diamondsSignature = useMemo(() => 
-    `${diamonds.length}-${diamonds.map(d => d.id).sort().join(',')}`, 
-    [diamonds]
-  );
-
-  const getInitialRanges = useCallback(() => {
+  const getInitialRanges = () => {
     if (diamonds.length === 0) {
       return {
         caratRange: [0, 10] as [number, number],
@@ -41,59 +26,27 @@ export function useStoreFilters(diamonds: Diamond[]) {
       caratRange: [Math.min(...carats), Math.max(...carats)] as [number, number],
       priceRange: [Math.min(...prices), Math.max(...prices)] as [number, number]
     };
-  }, [diamondsSignature]); // Use signature instead of diamonds directly
+  };
 
   const [filters, setFilters] = useState<StoreFilters>(() => ({
     shapes: [],
     colors: [],
     clarities: [],
-    cuts: [],
-    fluorescence: [],
-    labs: [],
-    status: [],
-    polish: [],
-    symmetry: [],
     ...getInitialRanges()
   }));
 
-  // Update ranges when diamonds change significantly
-  const initialRanges = useMemo(() => getInitialRanges(), [getInitialRanges]);
-  
-  // Only update ranges if they are at default values
+  // Update ranges when diamonds change
   useMemo(() => {
-    setFilters(prev => {
-      const needsUpdate = (
-        (prev.caratRange[0] === 0 && prev.caratRange[1] === 10) ||
-        (prev.priceRange[0] === 0 && prev.priceRange[1] === 100000)
-      );
-      
-      if (needsUpdate && diamonds.length > 0) {
-        return {
-          ...prev,
-          caratRange: initialRanges.caratRange,
-          priceRange: initialRanges.priceRange
-        };
-      }
-      return prev;
-    });
-  }, [initialRanges, diamonds.length]);
+    const ranges = getInitialRanges();
+    setFilters(prev => ({
+      ...prev,
+      caratRange: prev.caratRange[0] === 0 && prev.caratRange[1] === 10 ? ranges.caratRange : prev.caratRange,
+      priceRange: prev.priceRange[0] === 0 && prev.priceRange[1] === 100000 ? ranges.priceRange : prev.priceRange
+    }));
+  }, [diamonds]);
 
   const filteredDiamonds = useMemo(() => {
-    let filtered = diamonds;
-
-    // Search query filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(diamond => 
-        diamond.stockNumber.toLowerCase().includes(query) ||
-        diamond.shape.toLowerCase().includes(query) ||
-        diamond.color.toLowerCase().includes(query) ||
-        diamond.clarity.toLowerCase().includes(query) ||
-        diamond.cut.toLowerCase().includes(query)
-      );
-    }
-
-    return filtered.filter(diamond => {
+    return diamonds.filter(diamond => {
       // Shape filter
       if (filters.shapes.length > 0 && !filters.shapes.includes(diamond.shape)) {
         return false;
@@ -109,16 +62,6 @@ export function useStoreFilters(diamonds: Diamond[]) {
         return false;
       }
 
-      // Cut filter
-      if (filters.cuts.length > 0 && !filters.cuts.includes(diamond.cut)) {
-        return false;
-      }
-
-      // Status filter
-      if (filters.status.length > 0 && !filters.status.includes(diamond.status)) {
-        return false;
-      }
-
       // Carat range filter
       if (diamond.carat < filters.caratRange[0] || diamond.carat > filters.caratRange[1]) {
         return false;
@@ -131,57 +74,29 @@ export function useStoreFilters(diamonds: Diamond[]) {
 
       return true;
     });
-  }, [diamonds, filters, searchQuery]);
+  }, [diamonds, filters]);
 
-  const handleFilterChange = useCallback((key: keyof StoreFilters, value: any) => {
+  const updateFilter = (key: keyof StoreFilters, value: any) => {
     setFilters(prev => ({
       ...prev,
       [key]: value
     }));
-  }, []);
+  };
 
-  const clearFilters = useCallback(() => {
+  const clearFilters = () => {
     const ranges = getInitialRanges();
     setFilters({
       shapes: [],
       colors: [],
       clarities: [],
-      cuts: [],
-      fluorescence: [],
-      labs: [],
-      status: [],
-      polish: [],
-      symmetry: [],
       ...ranges
     });
-    setSearchQuery("");
-  }, [getInitialRanges]);
-
-  const activeFilters = useMemo(() => {
-    return {
-      shapes: filters.shapes,
-      colors: filters.colors,
-      clarities: filters.clarities,
-      cuts: filters.cuts,
-      fluorescence: filters.fluorescence,
-      labs: filters.labs,
-      status: filters.status,
-      polish: filters.polish,
-      symmetry: filters.symmetry,
-      caratRange: filters.caratRange,
-      priceRange: filters.priceRange
-    };
-  }, [filters]);
+  };
 
   return {
     filters,
     filteredDiamonds,
-    searchQuery,
-    setSearchQuery,
-    showFilters,
-    setShowFilters,
-    handleFilterChange,
+    updateFilter,
     clearFilters,
-    activeFilters
   };
 }

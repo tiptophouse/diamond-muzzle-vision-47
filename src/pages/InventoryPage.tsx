@@ -1,14 +1,17 @@
-
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
-import { InventoryDashboard } from "@/components/inventory/InventoryDashboard";
+import { InventoryTable } from "@/components/inventory/InventoryTable";
+import { InventoryFilters } from "@/components/inventory/InventoryFilters";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";
-import { EnhancedDiamondForm } from "@/components/inventory/EnhancedDiamondForm";
+import { InventorySearch } from "@/components/inventory/InventorySearch";
+import { InventoryPagination } from "@/components/inventory/InventoryPagination";
+import { DiamondForm } from "@/components/inventory/DiamondForm";
 import { DiamondFormData } from "@/components/inventory/form/types";
-import { useOptimizedPostgresInventory } from "@/hooks/useOptimizedPostgresInventory";
+import { useInventoryData } from "@/hooks/useInventoryData";
+import { useInventorySearch } from "@/hooks/useInventorySearch";
+import { useInventoryCrud } from "@/hooks/useInventoryCrud";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { Diamond } from "@/components/inventory/InventoryTable";
-import { SampleDataButton } from "@/components/inventory/SampleDataButton";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +33,8 @@ import { useToast } from "@/components/ui/use-toast";
 
 export default function InventoryPage() {
   const { isAuthenticated, isLoading: authLoading, user, error: authError } = useTelegramAuth();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filters, setFilters] = useState<Record<string, string>>({});
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingDiamond, setEditingDiamond] = useState<Diamond | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -37,17 +42,41 @@ export default function InventoryPage() {
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
   const { toast } = useToast();
 
-  // Using the optimized PostgreSQL inventory hook
   const {
-    diamonds,
     loading,
-    error,
-    createDiamond,
-    updateDiamond,
-    deleteDiamond,
-    bulkDelete,
-    refreshInventory,
-  } = useOptimizedPostgresInventory();
+    diamonds,
+    setDiamonds,
+    allDiamonds,
+    fetchData,
+    handleRefresh,
+    handleStoreToggle,
+    removeDiamondFromState,
+    restoreDiamondToState,
+  } = useInventoryData();
+
+  const {
+    searchQuery,
+    setSearchQuery,
+    filteredDiamonds,
+    totalPages,
+    handleSearch,
+  } = useInventorySearch(allDiamonds, currentPage, filters);
+
+  const { addDiamond, updateDiamond, deleteDiamond, isLoading: crudLoading } = useInventoryCrud({
+    onSuccess: handleRefresh,
+    removeDiamondFromState,
+    restoreDiamondToState,
+  });
+
+  useEffect(() => {
+    setDiamonds(filteredDiamonds);
+  }, [filteredDiamonds, setDiamonds]);
+
+  const handleFilterChange = (newFilters: Record<string, string>) => {
+    console.log('Applying filters:', newFilters);
+    setFilters(newFilters);
+    setCurrentPage(1);
+  };
 
   const handleAddDiamond = () => {
     setEditingDiamond(null);
@@ -60,60 +89,9 @@ export default function InventoryPage() {
   };
 
   const handleDeleteDiamond = (diamondId: string) => {
-    const diamond = diamonds.find(d => d.id === diamondId);
+    const diamond = allDiamonds.find(d => d.id === diamondId);
     setDiamondToDelete(diamond || null);
     setDeleteDialogOpen(true);
-  };
-
-  const handleDuplicateDiamond = async (diamond: Diamond) => {
-    const duplicatedData: DiamondFormData = {
-      stockNumber: `${diamond.stockNumber}-COPY`,
-      shape: diamond.shape,
-      carat: diamond.carat,
-      color: diamond.color,
-      clarity: diamond.clarity,
-      cut: diamond.cut,
-      price: diamond.price,
-      status: 'Available',
-      imageUrl: diamond.imageUrl || '',
-      additional_images: diamond.additional_images || [],
-      store_visible: diamond.store_visible ?? true,
-      fluorescence: diamond.fluorescence || 'None',
-      lab: diamond.lab || 'GIA',
-      polish: diamond.polish || 'Excellent',
-      symmetry: diamond.symmetry || 'Excellent',
-      certificate_number: '',
-    };
-
-    const success = await createDiamond(duplicatedData);
-    
-    if (success) {
-      toast({
-        title: "Diamond Duplicated! 💎",
-        description: `${duplicatedData.stockNumber} has been created as a copy.`,
-      });
-    }
-  };
-
-  const handleBulkEdit = (selectedIds: string[]) => {
-    toast({
-      title: "Bulk Edit Coming Soon",
-      description: `Selected ${selectedIds.length} items for bulk editing.`,
-    });
-  };
-
-  const handleBulkDelete = async (selectedIds: string[]) => {
-    const confirmDelete = window.confirm(`Are you sure you want to delete ${selectedIds.length} items?`);
-    if (!confirmDelete) return;
-
-    const success = await bulkDelete(selectedIds);
-    
-    if (success) {
-      toast({
-        title: `Deleted ${selectedIds.length} items`,
-        description: `Successfully deleted ${selectedIds.length} items from inventory.`,
-      });
-    }
   };
 
   const handleFormSubmit = async (data: DiamondFormData) => {
@@ -122,7 +100,7 @@ export default function InventoryPage() {
     if (editingDiamond) {
       success = await updateDiamond(editingDiamond.id, data);
     } else {
-      success = await createDiamond(data);
+      success = await addDiamond(data);
     }
 
     if (success) {
@@ -133,7 +111,7 @@ export default function InventoryPage() {
 
   const confirmDelete = async () => {
     if (diamondToDelete) {
-      const success = await deleteDiamond(diamondToDelete.id);
+      const success = await deleteDiamond(diamondToDelete.id, diamondToDelete);
       if (success) {
         setDeleteDialogOpen(false);
         setDiamondToDelete(null);
@@ -159,7 +137,7 @@ export default function InventoryPage() {
       price: giaData.price || 5000,
       status: giaData.status || 'Available',
       imageUrl: giaData.imageUrl || '',
-      certificate_number: giaData.certificateNumber || '',
+      certificateNumber: giaData.certificateNumber || '',
       lab: giaData.lab || 'GIA'
     } as Diamond);
     
@@ -202,79 +180,55 @@ export default function InventoryPage() {
 
   return (
     <Layout>
-      <div className="w-full max-w-full overflow-x-hidden space-y-6">
+      <div className="w-full max-w-full overflow-x-hidden space-y-4">
         <InventoryHeader
-          totalDiamonds={diamonds.length}
-          onRefresh={refreshInventory}
+          totalDiamonds={allDiamonds.length}
+          onRefresh={handleRefresh}
           onAdd={handleAddDiamond}
           onQRScan={handleQRScan}
           loading={loading}
         />
         
-        <InventoryDashboard
-          diamonds={diamonds}
-          onEdit={handleEditDiamond}
-          onDelete={handleDeleteDiamond}
-          onDuplicate={handleDuplicateDiamond}
-          onBulkEdit={handleBulkEdit}
-          onBulkDelete={handleBulkDelete}
-          loading={loading}
+        <div className="w-full space-y-4">
+          <InventorySearch
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onSubmit={handleSearch}
+            allDiamonds={allDiamonds}
+          />
+          
+          <InventoryFilters onFilterChange={handleFilterChange} />
+        </div>
+        
+        <div className="w-full overflow-x-hidden">
+          <InventoryTable
+            data={diamonds}
+            loading={loading}
+            onEdit={handleEditDiamond}
+            onDelete={handleDeleteDiamond}
+            onStoreToggle={handleStoreToggle}
+          />
+        </div>
+        
+        <InventoryPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
         />
-
-        {/* Improved empty state with sample data option */}
-        {!loading && diamonds.length === 0 && (
-          <div className="text-center py-12">
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-8 max-w-lg mx-auto">
-              <div className="text-6xl mb-4">💎</div>
-              <h3 className="text-xl font-semibold text-blue-900 mb-3">Welcome to Your Diamond Inventory</h3>
-              <p className="text-blue-700 mb-6">Your inventory is currently empty. Get started by adding your first diamond or importing sample data to explore the features.</p>
-              
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <button
-                  onClick={handleAddDiamond}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                  ➕ Add Your First Diamond
-                </button>
-                <SampleDataButton />
-              </div>
-              
-              <div className="mt-6 text-sm text-blue-600">
-                <p>✨ Using optimized PostgreSQL for lightning-fast performance</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Error state for database connection issues */}
-        {error && (
-          <div className="text-center py-8">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
-              <h3 className="text-lg font-semibold text-red-900 mb-2">Database Connection Error</h3>
-              <p className="text-red-700 mb-4">{error}</p>
-              <button
-                onClick={refreshInventory}
-                className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Retry Connection
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl">
+            <DialogTitle>
               {editingDiamond ? 'Edit Diamond' : 'Add New Diamond'}
             </DialogTitle>
           </DialogHeader>
-          <EnhancedDiamondForm
+          <DiamondForm
             diamond={editingDiamond || undefined}
             onSubmit={handleFormSubmit}
             onCancel={() => setIsFormOpen(false)}
-            isLoading={loading}
+            isLoading={crudLoading}
           />
         </DialogContent>
       </Dialog>
@@ -298,9 +252,9 @@ export default function InventoryPage() {
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-red-600 hover:bg-red-700"
-              disabled={loading}
+              disabled={crudLoading}
             >
-              {loading ? 'Deleting...' : 'Delete'}
+              {crudLoading ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
