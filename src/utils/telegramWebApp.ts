@@ -66,8 +66,12 @@ export async function initializeTelegramWebApp(): Promise<boolean> {
               document.body.style.backgroundColor = tg.themeParams.bg_color;
             }
             
+            // Safely try to set header color
             if (typeof tg.setHeaderColor === 'function') {
               tg.setHeaderColor('#1f2937');
+              console.log('✅ Header color set');
+            } else {
+              console.log('ℹ️ setHeaderColor method not available');
             }
           } catch (themeError) {
             console.warn('⚠️ Theme setup failed:', themeError);
