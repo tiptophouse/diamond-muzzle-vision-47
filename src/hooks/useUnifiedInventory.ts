@@ -1,9 +1,8 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Diamond } from '@/components/inventory/InventoryTable';
+import { Diamond } from '@/types/diamond';
 
 interface UseUnifiedInventoryOptions {
   storeOnly?: boolean;
@@ -45,6 +44,24 @@ export function useUnifiedInventory(options: UseUnifiedInventoryOptions = {}): U
       status: item.status || 'Available',
       imageUrl: item.picture || undefined,
       store_visible: item.store_visible || false,
+      // Extended properties
+      fluorescence: item.fluorescence,
+      polish: item.polish,
+      symmetry: item.symmetry,
+      certificateNumber: item.certificate_number,
+      certificateUrl: item.certificate_url,
+      lab: item.lab,
+      length: item.length,
+      width: item.width,
+      depth: item.depth,
+      table: item.table_percentage,
+      depthPercentage: item.depth_percentage,
+      ratio: item.ratio,
+      culet: item.culet,
+      gridle: item.gridle,
+      pricePerCarat: item.price_per_carat,
+      rapnet: item.rapnet,
+      certificateComment: item.certificate_comment,
     }));
   }, []);
 
@@ -123,6 +140,12 @@ export function useUnifiedInventory(options: UseUnifiedInventoryOptions = {}): U
           status: diamond.status || 'Available',
           store_visible: diamond.store_visible || false,
           picture: diamond.imageUrl,
+          fluorescence: diamond.fluorescence,
+          polish: diamond.polish,
+          symmetry: diamond.symmetry,
+          certificate_number: diamond.certificateNumber,
+          certificate_url: diamond.certificateUrl,
+          lab: diamond.lab,
         }]);
 
       if (error) throw error;
@@ -158,6 +181,9 @@ export function useUnifiedInventory(options: UseUnifiedInventoryOptions = {}): U
       if (updates.status) updateData.status = updates.status;
       if (updates.imageUrl !== undefined) updateData.picture = updates.imageUrl;
       if (updates.store_visible !== undefined) updateData.store_visible = updates.store_visible;
+      if (updates.fluorescence) updateData.fluorescence = updates.fluorescence;
+      if (updates.polish) updateData.polish = updates.polish;
+      if (updates.symmetry) updateData.symmetry = updates.symmetry;
 
       const { error } = await supabase
         .from('inventory')

@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Diamond } from "@/components/inventory/InventoryTable";
+import { Diamond } from "@/types/diamond";
 import { EnhancedDiamondCard } from "./EnhancedDiamondCard";
 import { DiamondCardSkeleton } from "./DiamondCardSkeleton";
 import { Button } from "@/components/ui/button";
@@ -14,10 +14,7 @@ interface StoreGridProps {
 }
 
 export function StoreGrid({ diamonds, loading, error, onRefresh }: StoreGridProps) {
-  const [animationDelay, setAnimationDelay] = useState(0);
-
   const handleRefresh = () => {
-    setAnimationDelay(0);
     if (onRefresh) {
       onRefresh();
     }
