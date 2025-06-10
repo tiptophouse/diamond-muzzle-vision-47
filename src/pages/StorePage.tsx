@@ -22,8 +22,7 @@ export default function StorePage() {
     showFilters,
     setShowFilters,
     handleFilterChange,
-    clearFilters,
-    activeFilters
+    clearFilters
   } = useStoreFilters(diamonds);
 
   return (
@@ -45,7 +44,6 @@ export default function StorePage() {
                 <EnhancedStoreFilters
                   onUpdateFilter={handleFilterChange}
                   onClearFilters={clearFilters}
-                  activeFilters={activeFilters}
                   totalDiamonds={diamonds.length}
                   filteredCount={filteredDiamonds.length}
                 />
@@ -81,7 +79,6 @@ export default function StorePage() {
                 <EnhancedStoreFilters
                   onUpdateFilter={handleFilterChange}
                   onClearFilters={clearFilters}
-                  activeFilters={activeFilters}
                   totalDiamonds={diamonds.length}
                   filteredCount={filteredDiamonds.length}
                 />
