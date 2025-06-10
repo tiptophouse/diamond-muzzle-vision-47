@@ -1,19 +1,9 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
-import { Client } from 'https://deno.land/x/postgres@v0.17.0/mod.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-// PostgreSQL connection config
-const DB_CONFIG = {
-  hostname: 'database',
-  port: 5434,
-  database: 'diamonds_project',
-  user: 'postgres',
-  password: 'postgres',
 }
 
 Deno.serve(async (req) => {
@@ -24,38 +14,46 @@ Deno.serve(async (req) => {
   try {
     const { action, user_id, data, diamond_id, filters } = await req.json()
     
-    // Create PostgreSQL client connection
-    const client = new Client(DB_CONFIG)
-    await client.connect()
+    console.log(`🚀 PostgreSQL CRUD Action: ${action} for user: ${user_id}`)
+    
+    // Use Supabase client instead of direct PostgreSQL connection
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing Supabase configuration')
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     let result
 
     switch (action) {
       case 'get_inventory':
-        result = await getInventoryOptimized(client, user_id, filters)
+        result = await getInventoryOptimized(supabase, user_id, filters)
         break
       
       case 'create_diamond':
-        result = await createDiamondOptimized(client, user_id, data)
+        result = await createDiamondOptimized(supabase, user_id, data)
         break
       
       case 'update_diamond':
-        result = await updateDiamondOptimized(client, user_id, diamond_id, data)
+        result = await updateDiamondOptimized(supabase, user_id, diamond_id, data)
         break
       
       case 'delete_diamond':
-        result = await deleteDiamondOptimized(client, user_id, diamond_id, data?.hard_delete || false)
+        result = await deleteDiamondOptimized(supabase, user_id, diamond_id, data?.hard_delete || false)
         break
       
       case 'bulk_operations':
-        result = await bulkOperationsOptimized(client, user_id, data)
+        result = await bulkOperationsOptimized(supabase, user_id, data)
         break
       
       default:
         throw new Error(`Unknown action: ${action}`)
     }
 
-    await client.end()
+    console.log(`✅ Action ${action} completed successfully`)
 
     return new Response(
       JSON.stringify({ success: true, data: result }),
@@ -63,7 +61,7 @@ Deno.serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('PostgreSQL CRUD Error:', error)
+    console.error('❌ PostgreSQL CRUD Error:', error)
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
@@ -71,189 +69,220 @@ Deno.serve(async (req) => {
   }
 })
 
-// Ultra-fast inventory retrieval with prepared statements
-async function getInventoryOptimized(client: Client, userId: number, filters: any = {}) {
-  let query = `
-    SELECT 
+// Ultra-fast inventory retrieval using Supabase client
+async function getInventoryOptimized(supabase: any, userId: number, filters: any = {}) {
+  console.log(`📦 Fetching inventory for user ${userId} with filters:`, filters)
+  
+  let query = supabase
+    .from('inventory')
+    .select(`
       id, stock_number, shape, weight, color, clarity, cut,
       price_per_carat, status, picture, store_visible, fluorescence,
       lab, certificate_number, polish, symmetry, table_percentage,
       depth_percentage, created_at, updated_at
-    FROM inventory 
-    WHERE user_id = $1 AND deleted_at IS NULL
-  `
-  
-  const params = [userId]
-  let paramIndex = 2
+    `)
+    .eq('user_id', userId)
+    .is('deleted_at', null)
 
   // Add filters for super-fast querying
   if (filters.shape) {
-    query += ` AND shape = $${paramIndex}`
-    params.push(filters.shape)
-    paramIndex++
+    query = query.eq('shape', filters.shape)
   }
   
   if (filters.status) {
-    query += ` AND status = $${paramIndex}`
-    params.push(filters.status)
-    paramIndex++
+    query = query.eq('status', filters.status)
   }
   
   if (filters.store_visible !== undefined) {
-    query += ` AND store_visible = $${paramIndex}`
-    params.push(filters.store_visible)
-    paramIndex++
+    query = query.eq('store_visible', filters.store_visible)
   }
 
   if (filters.search) {
-    query += ` AND (
-      stock_number ILIKE $${paramIndex} OR 
-      shape ILIKE $${paramIndex} OR 
-      color ILIKE $${paramIndex} OR 
-      clarity ILIKE $${paramIndex}
-    )`
-    params.push(`%${filters.search}%`)
-    paramIndex++
+    query = query.or(`
+      stock_number.ilike.%${filters.search}%,
+      shape.ilike.%${filters.search}%,
+      color.ilike.%${filters.search}%,
+      clarity.ilike.%${filters.search}%
+    `)
   }
 
-  query += ` ORDER BY created_at DESC`
+  query = query.order('created_at', { ascending: false })
   
   if (filters.limit) {
-    query += ` LIMIT $${paramIndex}`
-    params.push(filters.limit)
+    query = query.limit(filters.limit)
   }
 
-  const result = await client.queryObject(query, params)
-  return result.rows
+  const { data, error } = await query
+
+  if (error) {
+    console.error('❌ Get inventory error:', error)
+    throw error
+  }
+
+  console.log(`✅ Retrieved ${data?.length || 0} diamonds`)
+  return data || []
 }
 
-// Optimized diamond creation
-async function createDiamondOptimized(client: Client, userId: number, data: any) {
-  const query = `
-    INSERT INTO inventory (
-      user_id, stock_number, shape, weight, color, clarity, cut,
-      price_per_carat, status, picture, store_visible, fluorescence,
-      lab, certificate_number, polish, symmetry, table_percentage, depth_percentage
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
-    RETURNING id, stock_number
-  `
+// Optimized diamond creation using Supabase client
+async function createDiamondOptimized(supabase: any, userId: number, data: any) {
+  console.log(`➕ Creating diamond for user ${userId}:`, data.stock_number)
   
-  const params = [
-    userId,
-    data.stock_number,
-    data.shape,
-    data.weight || data.carat,
-    data.color,
-    data.clarity,
-    data.cut,
-    data.price_per_carat || Math.round(data.price / (data.weight || data.carat || 1)),
-    data.status || 'Available',
-    data.picture || data.imageUrl,
-    data.store_visible ?? false,
-    data.fluorescence,
-    data.lab,
-    data.certificate_number,
-    data.polish,
-    data.symmetry,
-    data.table_percentage,
-    data.depth_percentage
-  ]
+  const insertData = {
+    user_id: userId,
+    stock_number: data.stockNumber || data.stock_number,
+    shape: data.shape,
+    weight: data.weight || data.carat,
+    color: data.color,
+    clarity: data.clarity,
+    cut: data.cut,
+    price_per_carat: data.price_per_carat || Math.round((data.price || 0) / (data.weight || data.carat || 1)),
+    status: data.status || 'Available',
+    picture: data.picture || data.imageUrl,
+    store_visible: data.store_visible ?? false,
+    fluorescence: data.fluorescence,
+    lab: data.lab,
+    certificate_number: data.certificate_number,
+    polish: data.polish,
+    symmetry: data.symmetry,
+    table_percentage: data.table_percentage,
+    depth_percentage: data.depth_percentage
+  }
 
-  const result = await client.queryObject(query, params)
-  return result.rows[0]
+  const { data: result, error } = await supabase
+    .from('inventory')
+    .insert(insertData)
+    .select('id, stock_number')
+    .single()
+
+  if (error) {
+    console.error('❌ Create diamond error:', error)
+    throw error
+  }
+
+  console.log(`✅ Created diamond: ${result.stock_number}`)
+  return result
 }
 
-// Lightning-fast update
-async function updateDiamondOptimized(client: Client, userId: number, diamondId: string, data: any) {
-  const setParts = []
-  const params = [userId, diamondId]
-  let paramIndex = 3
+// Lightning-fast update using Supabase client
+async function updateDiamondOptimized(supabase: any, userId: number, diamondId: string, data: any) {
+  console.log(`📝 Updating diamond ${diamondId} for user ${userId}`)
+  
+  const updateData: any = {}
+  
+  // Build dynamic update object for maximum performance
+  const fieldMappings = {
+    stockNumber: 'stock_number',
+    stock_number: 'stock_number',
+    shape: 'shape',
+    weight: 'weight',
+    carat: 'weight',
+    color: 'color',
+    clarity: 'clarity',
+    cut: 'cut',
+    price_per_carat: 'price_per_carat',
+    status: 'status',
+    picture: 'picture',
+    imageUrl: 'picture',
+    store_visible: 'store_visible',
+    fluorescence: 'fluorescence',
+    lab: 'lab',
+    certificate_number: 'certificate_number',
+    polish: 'polish',
+    symmetry: 'symmetry',
+    table_percentage: 'table_percentage',
+    depth_percentage: 'depth_percentage'
+  }
 
-  // Build dynamic update query for maximum performance
-  const updateFields = [
-    'stock_number', 'shape', 'weight', 'color', 'clarity', 'cut',
-    'price_per_carat', 'status', 'picture', 'store_visible', 'fluorescence',
-    'lab', 'certificate_number', 'polish', 'symmetry', 'table_percentage', 'depth_percentage'
-  ]
-
-  updateFields.forEach(field => {
-    let value = data[field]
-    
-    // Handle special mappings
-    if (field === 'weight' && data.carat) value = data.carat
-    if (field === 'picture' && data.imageUrl) value = data.imageUrl
-    
-    if (value !== undefined) {
-      setParts.push(`${field} = $${paramIndex}`)
-      params.push(value)
-      paramIndex++
+  Object.keys(fieldMappings).forEach(key => {
+    if (data[key] !== undefined) {
+      updateData[fieldMappings[key]] = data[key]
     }
   })
 
-  if (setParts.length === 0) {
+  // Calculate price_per_carat if price and weight are provided
+  if (data.price && (data.weight || data.carat)) {
+    updateData.price_per_carat = Math.round(data.price / (data.weight || data.carat))
+  }
+
+  if (Object.keys(updateData).length === 0) {
     throw new Error('No fields to update')
   }
 
-  const query = `
-    UPDATE inventory 
-    SET ${setParts.join(', ')}, updated_at = NOW()
-    WHERE user_id = $1 AND id = $2
-    RETURNING id, stock_number
-  `
+  updateData.updated_at = new Date().toISOString()
 
-  const result = await client.queryObject(query, params)
-  return result.rows[0]
-}
+  const { data: result, error } = await supabase
+    .from('inventory')
+    .update(updateData)
+    .eq('user_id', userId)
+    .eq('id', diamondId)
+    .select('id, stock_number')
+    .single()
 
-// Optimized delete (soft/hard)
-async function deleteDiamondOptimized(client: Client, userId: number, diamondId: string, hardDelete: boolean) {
-  let query
-  
-  if (hardDelete) {
-    query = `
-      DELETE FROM inventory 
-      WHERE user_id = $1 AND id = $2
-      RETURNING id, stock_number
-    `
-  } else {
-    query = `
-      UPDATE inventory 
-      SET deleted_at = NOW(), updated_at = NOW()
-      WHERE user_id = $1 AND id = $2
-      RETURNING id, stock_number
-    `
-  }
-
-  const result = await client.queryObject(query, [userId, diamondId])
-  return result.rows[0]
-}
-
-// Super-fast bulk operations
-async function bulkOperationsOptimized(client: Client, userId: number, data: any) {
-  const { operation, items } = data
-  
-  await client.queryObject('BEGIN')
-  
-  try {
-    const results = []
-    
-    if (operation === 'bulk_delete') {
-      for (const itemId of items) {
-        const result = await deleteDiamondOptimized(client, userId, itemId, false)
-        results.push(result)
-      }
-    } else if (operation === 'bulk_update') {
-      for (const item of items) {
-        const result = await updateDiamondOptimized(client, userId, item.id, item.updates)
-        results.push(result)
-      }
-    }
-    
-    await client.queryObject('COMMIT')
-    return { operation, count: results.length, results }
-    
-  } catch (error) {
-    await client.queryObject('ROLLBACK')
+  if (error) {
+    console.error('❌ Update diamond error:', error)
     throw error
   }
+
+  console.log(`✅ Updated diamond: ${result.stock_number}`)
+  return result
+}
+
+// Optimized delete (soft/hard) using Supabase client
+async function deleteDiamondOptimized(supabase: any, userId: number, diamondId: string, hardDelete: boolean) {
+  console.log(`🗑️ ${hardDelete ? 'Hard' : 'Soft'} deleting diamond ${diamondId} for user ${userId}`)
+  
+  let result
+  
+  if (hardDelete) {
+    const { data, error } = await supabase
+      .from('inventory')
+      .delete()
+      .eq('user_id', userId)
+      .eq('id', diamondId)
+      .select('id, stock_number')
+      .single()
+      
+    if (error) throw error
+    result = data
+  } else {
+    const { data, error } = await supabase
+      .from('inventory')
+      .update({ 
+        deleted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId)
+      .eq('id', diamondId)
+      .select('id, stock_number')
+      .single()
+      
+    if (error) throw error
+    result = data
+  }
+
+  console.log(`✅ Deleted diamond: ${result.stock_number}`)
+  return result
+}
+
+// Super-fast bulk operations using Supabase client
+async function bulkOperationsOptimized(supabase: any, userId: number, data: any) {
+  const { operation, items } = data
+  console.log(`🔄 Bulk ${operation} for ${items.length} items`)
+  
+  const results = []
+  
+  if (operation === 'bulk_delete') {
+    for (const itemId of items) {
+      const result = await deleteDiamondOptimized(supabase, userId, itemId, false)
+      results.push(result)
+    }
+  } else if (operation === 'bulk_update') {
+    for (const item of items) {
+      const result = await updateDiamondOptimized(supabase, userId, item.id, item.updates)
+      results.push(result)
+    }
+  }
+  
+  console.log(`✅ Bulk operation completed: ${results.length} items processed`)
+  return { operation, count: results.length, results }
 }

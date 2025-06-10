@@ -8,6 +8,7 @@ import { DiamondFormData } from "@/components/inventory/form/types";
 import { useOptimizedPostgresInventory } from "@/hooks/useOptimizedPostgresInventory";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { Diamond } from "@/components/inventory/InventoryTable";
+import { SampleDataButton } from "@/components/inventory/SampleDataButton";
 import {
   Dialog,
   DialogContent,
@@ -36,7 +37,7 @@ export default function InventoryPage() {
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
   const { toast } = useToast();
 
-  // Using the new optimized PostgreSQL inventory hook
+  // Using the optimized PostgreSQL inventory hook
   const {
     diamonds,
     loading,
@@ -220,17 +221,42 @@ export default function InventoryPage() {
           loading={loading}
         />
 
-        {/* Add sample data button if no diamonds exist */}
+        {/* Improved empty state with sample data option */}
         {!loading && diamonds.length === 0 && (
+          <div className="text-center py-12">
+            <div className="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-8 max-w-lg mx-auto">
+              <div className="text-6xl mb-4">💎</div>
+              <h3 className="text-xl font-semibold text-blue-900 mb-3">Welcome to Your Diamond Inventory</h3>
+              <p className="text-blue-700 mb-6">Your inventory is currently empty. Get started by adding your first diamond or importing sample data to explore the features.</p>
+              
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={handleAddDiamond}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  ➕ Add Your First Diamond
+                </button>
+                <SampleDataButton />
+              </div>
+              
+              <div className="mt-6 text-sm text-blue-600">
+                <p>✨ Using optimized PostgreSQL for lightning-fast performance</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Error state for database connection issues */}
+        {error && (
           <div className="text-center py-8">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-md mx-auto">
-              <h3 className="text-lg font-semibold text-blue-900 mb-2">No Diamonds Found</h3>
-              <p className="text-blue-700 mb-4">Your inventory is empty. Add your first diamond to get started!</p>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
+              <h3 className="text-lg font-semibold text-red-900 mb-2">Database Connection Error</h3>
+              <p className="text-red-700 mb-4">{error}</p>
               <button
-                onClick={handleAddDiamond}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                onClick={refreshInventory}
+                className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
               >
-                Add First Diamond
+                Retry Connection
               </button>
             </div>
           </div>
