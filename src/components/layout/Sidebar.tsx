@@ -2,25 +2,22 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useAuth } from '@/providers/AuthProvider';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LayoutDashboard, Package, Upload, MessageSquare, TrendingUp, FileText, Settings, Bell, Users, BarChart3, Store } from 'lucide-react';
-
-const ADMIN_TELEGRAM_ID = 2138564172;
 
 interface SidebarProps {
   onClose?: () => void;
 }
 
 const Sidebar = ({ onClose }: SidebarProps) => {
-  const { user } = useTelegramAuth();
-  const isAdmin = user?.id === ADMIN_TELEGRAM_ID;
+  const { isAdmin } = useAuth();
   
   const navigation = [
     {
       name: 'Dashboard',
-      href: '/',
+      href: '/dashboard',
       icon: LayoutDashboard
     },
     {
