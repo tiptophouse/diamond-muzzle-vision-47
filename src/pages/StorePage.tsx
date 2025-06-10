@@ -3,10 +3,10 @@ import { Layout } from "@/components/layout/Layout";
 import { PremiumStoreHeader } from "@/components/store/PremiumStoreHeader";
 import { OptimizedStoreGrid } from "@/components/premium/OptimizedStoreGrid";
 import { EnhancedStoreFilters } from "@/components/store/EnhancedStoreFilters";
-import { useSupabaseInventory } from "@/hooks/useSupabaseInventory";
+import { useHybridInventory } from "@/hooks/useHybridInventory";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -21,18 +21,12 @@ export default function StorePage() {
     diamonds, 
     loading, 
     error,
-    addDiamond,
-    updateDiamond,
-    refreshInventory 
-  } = useSupabaseInventory();
+    addLocalDiamond,
+    refreshData 
+  } = useHybridInventory();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isAddingDiamond, setIsAddingDiamond] = useState(false);
-
-  // Memoize visible diamonds to prevent infinite re-renders
-  const visibleDiamonds = useMemo(() => {
-    return isManager ? diamonds : diamonds.filter(d => d.store_visible);
-  }, [diamonds, isManager]);
 
   const {
     filteredDiamonds,
@@ -42,12 +36,12 @@ export default function StorePage() {
     setShowFilters,
     handleFilterChange,
     clearFilters
-  } = useStoreFilters(visibleDiamonds);
+  } = useStoreFilters(diamonds);
 
   const handleAddDiamond = async (data: DiamondFormData) => {
     setIsAddingDiamond(true);
     try {
-      const success = await addDiamond({
+      const success = await addLocalDiamond({
         stockNumber: data.stockNumber,
         shape: data.shape,
         carat: data.carat,
@@ -126,7 +120,7 @@ export default function StorePage() {
                 diamonds={filteredDiamonds}
                 loading={loading}
                 error={error}
-                onUpdate={refreshInventory}
+                onUpdate={refreshData}
               />
             </div>
           </div>

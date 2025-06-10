@@ -20,25 +20,28 @@ export function useStoreFilters(diamonds: Diamond[]) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
-  // Memoize the diamonds to prevent infinite re-renders
-  const memoizedDiamonds = useMemo(() => diamonds, [diamonds.length, diamonds.map(d => d.id).join(',')]);
+  // Create a stable reference for diamonds using their IDs and length
+  const diamondsSignature = useMemo(() => 
+    `${diamonds.length}-${diamonds.map(d => d.id).sort().join(',')}`, 
+    [diamonds]
+  );
 
   const getInitialRanges = useCallback(() => {
-    if (memoizedDiamonds.length === 0) {
+    if (diamonds.length === 0) {
       return {
         caratRange: [0, 10] as [number, number],
         priceRange: [0, 100000] as [number, number]
       };
     }
 
-    const carats = memoizedDiamonds.map(d => d.carat);
-    const prices = memoizedDiamonds.map(d => d.price);
+    const carats = diamonds.map(d => d.carat);
+    const prices = diamonds.map(d => d.price);
 
     return {
       caratRange: [Math.min(...carats), Math.max(...carats)] as [number, number],
       priceRange: [Math.min(...prices), Math.max(...prices)] as [number, number]
     };
-  }, [memoizedDiamonds]);
+  }, [diamondsSignature]); // Use signature instead of diamonds directly
 
   const [filters, setFilters] = useState<StoreFilters>(() => ({
     shapes: [],
@@ -53,19 +56,30 @@ export function useStoreFilters(diamonds: Diamond[]) {
     ...getInitialRanges()
   }));
 
-  // Update ranges when diamonds change - but only when actually needed
+  // Update ranges when diamonds change significantly
   const initialRanges = useMemo(() => getInitialRanges(), [getInitialRanges]);
   
+  // Only update ranges if they are at default values
   useMemo(() => {
-    setFilters(prev => ({
-      ...prev,
-      caratRange: prev.caratRange[0] === 0 && prev.caratRange[1] === 10 ? initialRanges.caratRange : prev.caratRange,
-      priceRange: prev.priceRange[0] === 0 && prev.priceRange[1] === 100000 ? initialRanges.priceRange : prev.priceRange
-    }));
-  }, [initialRanges]);
+    setFilters(prev => {
+      const needsUpdate = (
+        (prev.caratRange[0] === 0 && prev.caratRange[1] === 10) ||
+        (prev.priceRange[0] === 0 && prev.priceRange[1] === 100000)
+      );
+      
+      if (needsUpdate && diamonds.length > 0) {
+        return {
+          ...prev,
+          caratRange: initialRanges.caratRange,
+          priceRange: initialRanges.priceRange
+        };
+      }
+      return prev;
+    });
+  }, [initialRanges, diamonds.length]);
 
   const filteredDiamonds = useMemo(() => {
-    let filtered = memoizedDiamonds;
+    let filtered = diamonds;
 
     // Search query filter
     if (searchQuery.trim()) {
@@ -117,7 +131,7 @@ export function useStoreFilters(diamonds: Diamond[]) {
 
       return true;
     });
-  }, [memoizedDiamonds, filters, searchQuery]);
+  }, [diamonds, filters, searchQuery]);
 
   const handleFilterChange = useCallback((key: keyof StoreFilters, value: any) => {
     setFilters(prev => ({
