@@ -1,7 +1,8 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Diamond } from "@/types/diamond";
+import { Diamond } from "./InventoryTable";
 import { Edit, Trash, ImageIcon } from "lucide-react";
 
 interface InventoryMobileCardProps {

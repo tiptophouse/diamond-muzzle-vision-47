@@ -1,7 +1,8 @@
 
 import { useRef } from "react";
-import { Upload, File, XCircle } from "lucide-react";
+import { Upload, File, XCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface FileUploadAreaProps {
   selectedFile: File | null;
@@ -16,9 +17,11 @@ export function FileUploadArea({ selectedFile, onFileChange, onReset }: FileUplo
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       
-      // Validate file type
-      if (!file.name.toLowerCase().endsWith('.csv')) {
-        // Let parent handle validation error
+      // Accept CSV and text files (including tab-delimited)
+      const validExtensions = ['.csv', '.txt'];
+      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+      
+      if (!validExtensions.includes(fileExtension)) {
         onFileChange(null);
         return;
       }
@@ -27,26 +30,63 @@ export function FileUploadArea({ selectedFile, onFileChange, onReset }: FileUplo
     }
   };
 
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      const validExtensions = ['.csv', '.txt'];
+      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+      
+      if (validExtensions.includes(fileExtension)) {
+        onFileChange(file);
+      }
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
   if (!selectedFile) {
     return (
-      <div 
-        className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-diamond-300 transition-colors cursor-pointer"
-        onClick={() => fileInputRef.current?.click()}
-      >
-        <Upload className="h-12 w-12 mx-auto text-gray-400" />
-        <p className="mt-4 text-sm text-gray-600">
-          Drag and drop your CSV file here, or <span className="text-diamond-600 font-medium">browse</span> to select
-        </p>
-        <p className="mt-2 text-xs text-gray-500">
-          Supported format: CSV
-        </p>
-        <input
-          ref={fileInputRef}
-          type="file"
-          className="hidden"
-          accept=".csv"
-          onChange={handleFileChange}
-        />
+      <div className="space-y-4">
+        <div 
+          className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-diamond-300 transition-colors cursor-pointer"
+          onClick={() => fileInputRef.current?.click()}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+        >
+          <Upload className="h-12 w-12 mx-auto text-gray-400" />
+          <p className="mt-4 text-sm text-gray-600">
+            Drag and drop your CSV file here, or <span className="text-diamond-600 font-medium">browse</span> to select
+          </p>
+          <p className="mt-2 text-xs text-gray-500">
+            Supported formats: CSV, TXT (comma, semicolon, or tab separated)
+          </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            accept=".csv,.txt,text/csv,text/plain,application/csv"
+            onChange={handleFileChange}
+          />
+        </div>
+        
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-2">
+              <p className="font-medium">File Format Guidelines:</p>
+              <ul className="text-sm space-y-1 ml-4">
+                <li>• Headers: Stock#, Shape, Weight, Color, Clarity, Cut, Price/Crt</li>
+                <li>• Optional: Lab, CertNumber, Polish, Symm, Fluo, Table, Depth</li>
+                <li>• Use comma (,), semicolon (;), or tab separation</li>
+                <li>• Each row represents one diamond</li>
+              </ul>
+            </div>
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }

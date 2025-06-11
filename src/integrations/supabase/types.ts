@@ -375,7 +375,6 @@ export type Database = {
           created_at: string
           culet: string | null
           cut: string | null
-          deleted_at: string | null
           depth: number | null
           depth_percentage: number | null
           fluorescence: string | null
@@ -408,7 +407,6 @@ export type Database = {
           created_at?: string
           culet?: string | null
           cut?: string | null
-          deleted_at?: string | null
           depth?: number | null
           depth_percentage?: number | null
           fluorescence?: string | null
@@ -441,7 +439,6 @@ export type Database = {
           created_at?: string
           culet?: string | null
           cut?: string | null
-          deleted_at?: string | null
           depth?: number | null
           depth_percentage?: number | null
           fluorescence?: string | null

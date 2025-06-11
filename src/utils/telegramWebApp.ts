@@ -1,4 +1,3 @@
-
 import { TelegramUser, TelegramInitData, TelegramWebApp } from '@/types/telegram';
 
 // Check if we're in a Telegram WebApp environment
@@ -66,13 +65,8 @@ export async function initializeTelegramWebApp(): Promise<boolean> {
               document.body.style.backgroundColor = tg.themeParams.bg_color;
             }
             
-            // Safely try to set header color
-            if (typeof tg.setHeaderColor === 'function') {
-              tg.setHeaderColor('#1f2937');
-              console.log('✅ Header color set');
-            } else {
-              console.log('ℹ️ setHeaderColor method not available');
-            }
+            // Remove setHeaderColor calls as they don't exist in the API
+            console.log('✅ Theme setup completed');
           } catch (themeError) {
             console.warn('⚠️ Theme setup failed:', themeError);
           }

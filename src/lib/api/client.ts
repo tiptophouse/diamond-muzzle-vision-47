@@ -1,6 +1,6 @@
 
 import { toast } from "@/components/ui/use-toast";
-import { API_BASE_URL, getCurrentUserId, getSecureAccessToken } from './config';
+import { API_BASE_URL, getCurrentUserId, BACKEND_ACCESS_TOKEN } from './config';
 import { getAuthHeaders } from './auth';
 
 interface ApiResponse<T> {
@@ -22,13 +22,12 @@ async function testBackendConnectivity(): Promise<boolean> {
     
     for (const url of testUrls) {
       try {
-        const token = await getSecureAccessToken();
         const response = await fetch(url, {
           method: 'GET',
           mode: 'cors',
           headers: {
             'Accept': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` }),
+            'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
           },
         });
         
@@ -65,14 +64,11 @@ export async function fetchApi<T>(
     }
     
     const authHeaders = await getAuthHeaders();
-    const secureToken = await getSecureAccessToken();
-    
     let headers: Record<string, string> = {
       "Content-Type": "application/json",
       "Accept": "application/json",
       "Origin": window.location.origin,
       ...authHeaders,
-      ...(secureToken && { 'Authorization': `Bearer ${secureToken}` }),
       ...options.headers as Record<string, string>,
     };
     
@@ -182,25 +178,17 @@ export const api = {
     fetchApi<T>(endpoint, { method: "DELETE" }),
     
   uploadCsv: async <T>(endpoint: string, csvData: any[], userId: number): Promise<ApiResponse<T>> => {
-    console.log('📤 API: Uploading CSV data via Supabase edge function:', { dataLength: csvData.length, userId });
+    console.log('📤 API: Uploading CSV data to FastAPI:', { endpoint, dataLength: csvData.length, userId });
     
-    // Use Supabase edge function for secure CSV upload
-    try {
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { data, error } = await supabase.functions.invoke('upload-inventory', {
-        body: {
-          user_id: userId,
-          diamonds: csvData
-        }
-      });
-      
-      if (error) {
-        return { error: error.message };
-      }
-      
-      return { data: data as T };
-    } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Upload failed' };
-    }
+    return fetchApi<T>(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        diamonds: csvData
+      }),
+    });
   },
 };
