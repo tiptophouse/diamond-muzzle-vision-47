@@ -17,18 +17,31 @@ export function useAdvertisementAnalytics() {
     try {
       const urlParams = new URLSearchParams(window.location.search);
       
-      await supabase.from('advertisement_analytics').insert({
-        page_path: event.page_path || window.location.pathname,
-        session_id: sessionId,
-        telegram_id: user?.id || null,
-        event_type: event.event_type,
-        event_data: event.event_data || {},
-        user_agent: navigator.userAgent,
-        referrer: document.referrer || null,
-        utm_source: urlParams.get('utm_source'),
-        utm_medium: urlParams.get('utm_medium'),
-        utm_campaign: urlParams.get('utm_campaign')
+      // Use raw SQL query to insert into advertisement_analytics table
+      const { error } = await supabase.rpc('exec_sql', {
+        query: `
+          INSERT INTO advertisement_analytics (
+            page_path, session_id, telegram_id, event_type, event_data, 
+            user_agent, referrer, utm_source, utm_medium, utm_campaign
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        `,
+        params: [
+          event.page_path || window.location.pathname,
+          sessionId,
+          user?.id || null,
+          event.event_type,
+          JSON.stringify(event.event_data || {}),
+          navigator.userAgent,
+          document.referrer || null,
+          urlParams.get('utm_source'),
+          urlParams.get('utm_medium'),
+          urlParams.get('utm_campaign')
+        ]
       });
+
+      if (error) {
+        console.error('Error tracking analytics event:', error);
+      }
     } catch (error) {
       console.error('Error tracking analytics event:', error);
     }

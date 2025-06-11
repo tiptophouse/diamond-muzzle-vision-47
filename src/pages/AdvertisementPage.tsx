@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Menu, X, Phone, Mail, Bot, MessageCircle, BarChart3, Eye, FileText, Layers, Diamond, Zap, Users, Target, DollarSign, Shield, Globe, ChevronLeft, Bell, TrendingUp } from 'lucide-react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
@@ -42,18 +43,16 @@ const AdvertisementPage = () => {
       const utmMedium = urlParams.get('utm_medium');
       const utmCampaign = urlParams.get('utm_campaign');
       
-      // Track the lead visit
-      const { data, error } = await supabase.rpc('track_advertisement_visit', {
-        p_telegram_id: user.id,
-        p_first_name: user.first_name,
-        p_last_name: user.last_name || null,
-        p_username: user.username || null,
-        p_language_code: user.language_code || 'he',
-        p_user_agent: navigator.userAgent,
-        p_referrer: document.referrer || null,
-        p_utm_source: utmSource,
-        p_utm_medium: utmMedium,
-        p_utm_campaign: utmCampaign
+      // Use a direct SQL query approach for lead capture
+      const { data, error } = await supabase.from('user_profiles').upsert({
+        telegram_id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name || null,
+        username: user.username || null,
+        language_code: user.language_code || 'he',
+        notes: `Advertisement visit: ${new Date().toISOString()}, UTM: ${utmSource || 'none'}/${utmMedium || 'none'}/${utmCampaign || 'none'}`
+      }, {
+        onConflict: 'telegram_id'
       });
 
       if (error) {
@@ -75,14 +74,16 @@ const AdvertisementPage = () => {
   };
 
   const handleTryBot = async () => {
-    // Track conversion event
+    // Track conversion event using user_analytics table
     if (user) {
       try {
-        await supabase.from('advertisement_analytics').insert({
-          page_path: '/advertisement',
+        await supabase.from('user_analytics').upsert({
           telegram_id: user.id,
-          event_type: 'conversion',
-          event_data: { action: 'try_bot_click' }
+          api_calls_count: 1,
+          total_visits: 1,
+          last_active: new Date().toISOString()
+        }, {
+          onConflict: 'telegram_id'
         });
       } catch (error) {
         console.error('Error tracking conversion:', error);
