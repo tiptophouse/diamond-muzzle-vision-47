@@ -1,5 +1,6 @@
 
-import { api, apiEndpoints, getCurrentUserId } from "@/lib/api";
+import { api, apiEndpoints, getCurrentUserId, resetFallbackFlag } from "@/lib/api";
+import { logEnvironmentInfo } from "@/utils/environment";
 
 export interface FetchInventoryResult {
   data?: any[];
@@ -10,23 +11,24 @@ export interface FetchInventoryResult {
 export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   const userId = getCurrentUserId() || 2138564172;
   
+  // Log environment info for debugging
+  logEnvironmentInfo();
+  
   console.log('🔍 INVENTORY SERVICE: Starting fetch with user ID:', userId);
-  console.log('🔍 INVENTORY SERVICE: Backend URL:', 'https://api.mazalbot.com');
   console.log('🔍 INVENTORY SERVICE: Expected diamonds: 566');
   
   const debugInfo = { 
     step: 'Starting fetch', 
     userId, 
     expectedCount: 566, 
-    timestamp: new Date().toISOString() 
+    timestamp: new Date().toISOString(),
+    environment: window.location.hostname,
   };
   
   try {
     console.log('🔍 INVENTORY SERVICE: Using API client to fetch data');
     const endpoint = apiEndpoints.getAllStones(userId);
-    const fullUrl = `https://api.mazalbot.com${endpoint}`;
-    console.log('🔍 INVENTORY SERVICE: Full endpoint URL:', fullUrl);
-    console.log('🔍 INVENTORY SERVICE: Expected format: GET https://api.mazalbot.com/api/v1/get_all_stones?user_id=' + userId);
+    console.log('🔍 INVENTORY SERVICE: Endpoint:', endpoint);
     
     const result = await api.get(endpoint);
     
@@ -36,33 +38,33 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       hasError: !!result.error,
       hasData: !!result.data,
       endpoint: endpoint,
-      fullUrl: fullUrl,
       timestamp: new Date().toISOString()
     };
     
     if (result.error) {
       console.error('🔍 INVENTORY SERVICE: API error:', result.error);
       
-      // Try alternative endpoint if the first one fails
-      console.log('🔍 INVENTORY SERVICE: Trying alternative endpoint without /api/v1 prefix...');
-      try {
-        const alternativeEndpoint = `/get_all_stones?user_id=${userId}`;
-        console.log('🔍 INVENTORY SERVICE: Alternative endpoint:', `https://api.mazalbot.com${alternativeEndpoint}`);
-        const alternativeResult = await api.get(alternativeEndpoint);
+      // If it's a connection error, try resetting the fallback flag and retry once
+      if (result.error.includes('Failed to fetch') || result.error.includes('NetworkError')) {
+        console.log('🔍 INVENTORY SERVICE: Connection error detected, attempting retry...');
+        resetFallbackFlag();
         
-        if (!alternativeResult.error && alternativeResult.data) {
-          console.log('🔍 INVENTORY SERVICE: Alternative endpoint worked!');
-          return {
-            data: Array.isArray(alternativeResult.data) ? alternativeResult.data : [],
-            debugInfo: {
-              ...updatedDebugInfo,
-              step: 'SUCCESS: Alternative endpoint worked',
-              endpoint: alternativeEndpoint,
-            }
-          };
+        try {
+          const retryResult = await api.get(endpoint);
+          if (!retryResult.error && retryResult.data) {
+            console.log('🔍 INVENTORY SERVICE: Retry successful!');
+            return {
+              data: Array.isArray(retryResult.data) ? retryResult.data : [],
+              debugInfo: {
+                ...updatedDebugInfo,
+                step: 'SUCCESS: Retry worked',
+                retryAttempted: true,
+              }
+            };
+          }
+        } catch (retryError) {
+          console.error('🔍 INVENTORY SERVICE: Retry also failed:', retryError);
         }
-      } catch (altError) {
-        console.error('🔍 INVENTORY SERVICE: Alternative endpoint also failed:', altError);
       }
       
       return {

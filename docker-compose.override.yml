@@ -1,0 +1,43 @@
+
+version: '3.8'
+
+services:
+  database:
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  backend:
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@database:5432/mazal_db
+      - BACKEND_ACCESS_TOKEN=ifj9ov1rh20fslfp
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:8080,https://*.lovableproject.com
+    restart: unless-stopped
+
+  clients-bot:
+    depends_on:
+      database:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  sellers-bot:
+    depends_on:
+      database:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
