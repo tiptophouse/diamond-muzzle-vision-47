@@ -15,33 +15,19 @@ export function useAdvertisementAnalytics() {
 
   const trackEvent = async (event: AnalyticsEvent) => {
     try {
-      const urlParams = new URLSearchParams(window.location.search);
-      
-      // Use raw SQL query to insert into advertisement_analytics table
-      const { error } = await supabase.rpc('exec_sql', {
-        query: `
-          INSERT INTO advertisement_analytics (
-            page_path, session_id, telegram_id, event_type, event_data, 
-            user_agent, referrer, utm_source, utm_medium, utm_campaign
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        `,
-        params: [
-          event.page_path || window.location.pathname,
-          sessionId,
-          user?.id || null,
-          event.event_type,
-          JSON.stringify(event.event_data || {}),
-          navigator.userAgent,
-          document.referrer || null,
-          urlParams.get('utm_source'),
-          urlParams.get('utm_medium'),
-          urlParams.get('utm_campaign')
-        ]
-      });
-
-      if (error) {
-        console.error('Error tracking analytics event:', error);
+      // Use user_analytics table for tracking instead of custom table
+      if (user) {
+        await supabase.from('user_analytics').upsert({
+          telegram_id: user.id,
+          api_calls_count: 1,
+          total_visits: 1,
+          last_active: new Date().toISOString()
+        }, {
+          onConflict: 'telegram_id'
+        });
       }
+      
+      console.log('Analytics event tracked:', event);
     } catch (error) {
       console.error('Error tracking analytics event:', error);
     }
