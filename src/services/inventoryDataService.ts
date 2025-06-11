@@ -23,6 +23,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     expectedCount: 566, 
     timestamp: new Date().toISOString(),
     environment: window.location.hostname,
+    backendStatus: 'testing',
   };
   
   try {
@@ -38,14 +39,25 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       hasError: !!result.error,
       hasData: !!result.data,
       endpoint: endpoint,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      backendStatus: result.error ? 'failed' : 'success',
     };
     
     if (result.error) {
       console.error('🔍 INVENTORY SERVICE: API error:', result.error);
       
+      // Provide specific guidance based on error type
+      let userFriendlyError = result.error;
+      if (result.error.includes('No backend available')) {
+        userFriendlyError = 'Both local and external backend servers are unreachable. Please check: 1) Start your local FastAPI server on port 8000, or 2) Ensure api.mazalbot.com is accessible.';
+      } else if (result.error.includes('Failed to fetch')) {
+        userFriendlyError = 'Connection failed. Please check your internet connection and ensure the backend server is running.';
+      } else if (result.error.includes('404')) {
+        userFriendlyError = 'API endpoint not found. The backend server may not have the expected endpoints configured.';
+      }
+      
       // If it's a connection error, try resetting the fallback flag and retry once
-      if (result.error.includes('Failed to fetch') || result.error.includes('NetworkError')) {
+      if (result.error.includes('Failed to fetch') || result.error.includes('NetworkError') || result.error.includes('No backend available')) {
         console.log('🔍 INVENTORY SERVICE: Connection error detected, attempting retry...');
         resetFallbackFlag();
         
@@ -59,6 +71,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
                 ...updatedDebugInfo,
                 step: 'SUCCESS: Retry worked',
                 retryAttempted: true,
+                backendStatus: 'success-after-retry',
               }
             };
           }
@@ -69,11 +82,13 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       
       return {
         data: [],
-        error: result.error,
+        error: userFriendlyError,
         debugInfo: {
           ...updatedDebugInfo,
           step: 'API error occurred',
           error: result.error,
+          userFriendlyError,
+          backendStatus: 'failed',
         }
       };
     }
@@ -82,10 +97,11 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       console.log('🔍 INVENTORY SERVICE: No data returned from backend');
       return {
         data: [],
-        error: 'No data returned from backend',
+        error: 'No data returned from backend. The server may be running but not returning inventory data.',
         debugInfo: {
           ...updatedDebugInfo,
           step: 'No data returned from backend',
+          backendStatus: 'no-data',
         }
       };
     }
@@ -129,6 +145,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
           expectedDiamonds: 566,
           backendResponse: dataArray.length,
           sampleItem: dataArray[0],
+          backendStatus: 'success',
         }
       };
     } else {
@@ -137,26 +154,36 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       
       return {
         data: [],
-        error: 'No diamonds found in response',
+        error: 'Backend is working but returned no diamonds. Check if your user ID has inventory data.',
         debugInfo: {
           ...updatedDebugInfo,
           step: 'Backend responded but no diamonds found',
           responseStructure: result.data && typeof result.data === 'object' ? Object.keys(result.data) : [],
           fullResponse: result.data,
+          backendStatus: 'empty-response',
         }
       };
     }
   } catch (error) {
     console.error("🔍 INVENTORY SERVICE: Critical error connecting to backend:", error);
     
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    let userFriendlyError = errorMessage;
+    
+    if (errorMessage.includes('Failed to fetch')) {
+      userFriendlyError = 'Cannot connect to backend servers. Please ensure: 1) Your internet connection is working, 2) Backend server is running on localhost:8000, or 3) api.mazalbot.com is accessible.';
+    }
+    
     return {
       data: [],
-      error: error instanceof Error ? error.message : String(error),
+      error: userFriendlyError,
       debugInfo: {
         ...debugInfo,
         step: 'Critical backend connection error',
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage,
+        userFriendlyError,
         errorStack: error instanceof Error ? error.stack : undefined,
+        backendStatus: 'critical-error',
       }
     };
   }

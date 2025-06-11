@@ -10,8 +10,8 @@ interface ApiResponse<T> {
 
 let hasTriedFallback = false;
 
-// Test backend connectivity with fallback
-async function testBackendConnectivity(url: string = API_BASE_URL): Promise<boolean> {
+// Enhanced backend connectivity test with more detailed error reporting
+async function testBackendConnectivity(url: string = API_BASE_URL): Promise<{ isReachable: boolean; error?: string }> {
   try {
     console.log('🔍 API: Testing backend connectivity to:', url);
     
@@ -23,6 +23,9 @@ async function testBackendConnectivity(url: string = API_BASE_URL): Promise<bool
     
     for (const testUrl of testUrls) {
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+        
         const response = await fetch(testUrl, {
           method: 'GET',
           mode: 'cors',
@@ -30,22 +33,30 @@ async function testBackendConnectivity(url: string = API_BASE_URL): Promise<bool
             'Accept': 'application/json',
             'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
           },
-          signal: AbortSignal.timeout(5000), // 5 second timeout
+          signal: controller.signal,
         });
+        
+        clearTimeout(timeoutId);
         
         if (response.ok || response.status === 404) {
           console.log('✅ API: Backend is reachable at:', testUrl);
-          return true;
+          return { isReachable: true };
+        } else {
+          console.log(`⚠️ API: Backend responded with status ${response.status} at:`, testUrl);
         }
       } catch (error) {
-        console.log('❌ API: Failed to reach:', testUrl, error instanceof Error ? error.message : String(error));
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.log('❌ API: Failed to reach:', testUrl, errorMsg);
+        if (error instanceof Error && error.name === 'AbortError') {
+          return { isReachable: false, error: 'Connection timeout' };
+        }
       }
     }
     
-    return false;
+    return { isReachable: false, error: 'All endpoints unreachable' };
   } catch (error) {
     console.error('❌ API: Backend connectivity test failed:', error);
-    return false;
+    return { isReachable: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 
@@ -54,14 +65,37 @@ export async function fetchApi<T>(
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   let baseUrl = API_BASE_URL;
+  let connectionError = '';
   
-  // If we're in development and haven't tried fallback yet, test local connection first
+  // Enhanced connection testing for development mode
   if (isDevelopment() && !hasTriedFallback) {
-    const isLocalReachable = await testBackendConnectivity(baseUrl);
-    if (!isLocalReachable) {
-      console.log('🔄 API: Local backend not reachable, switching to fallback URL');
-      baseUrl = getFallbackApiUrl();
-      hasTriedFallback = true;
+    const localTest = await testBackendConnectivity(baseUrl);
+    if (!localTest.isReachable) {
+      console.log('🔄 API: Local backend not reachable, testing fallback URL');
+      connectionError = `Local backend error: ${localTest.error}`;
+      
+      const fallbackUrl = getFallbackApiUrl();
+      const fallbackTest = await testBackendConnectivity(fallbackUrl);
+      
+      if (fallbackTest.isReachable) {
+        console.log('✅ API: Fallback URL is reachable, switching to:', fallbackUrl);
+        baseUrl = fallbackUrl;
+        hasTriedFallback = true;
+      } else {
+        console.error('❌ API: Both local and fallback backends are unreachable');
+        connectionError += ` | Fallback error: ${fallbackTest.error}`;
+        
+        // Show detailed error to user
+        toast({
+          title: "🚨 Backend Connection Failed",
+          description: `Cannot reach any backend servers. Local: ${localTest.error}, External: ${fallbackTest.error}`,
+          variant: "destructive",
+        });
+        
+        return { 
+          error: `No backend available. ${connectionError}` 
+        };
+      }
     }
   }
   
@@ -80,12 +114,15 @@ export async function fetchApi<T>(
       ...options.headers as Record<string, string>,
     };
     
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    
     const fetchOptions: RequestInit = {
       ...options,
       headers,
       mode: 'cors',
       credentials: 'omit',
-      signal: AbortSignal.timeout(30000), // 30 second timeout
+      signal: controller.signal,
     };
     
     console.log('🚀 API: Fetch options:', {
@@ -96,6 +133,7 @@ export async function fetchApi<T>(
     });
     
     const response = await fetch(url, fetchOptions);
+    clearTimeout(timeoutId);
 
     console.log('📡 API: Response status:', response.status);
     console.log('📡 API: Response headers:', Object.fromEntries(response.headers.entries()));
@@ -127,6 +165,22 @@ export async function fetchApi<T>(
       }
       
       console.error('❌ API: Request failed:', errorMessage);
+      
+      // Show specific error messages for different status codes
+      if (response.status === 404) {
+        toast({
+          title: "🔍 Endpoint Not Found",
+          description: `The API endpoint ${endpoint} was not found on the server.`,
+          variant: "destructive",
+        });
+      } else if (response.status >= 500) {
+        toast({
+          title: "🚨 Server Error",
+          description: `The server encountered an error (${response.status}). Please try again.`,
+          variant: "destructive",
+        });
+      }
+      
       throw new Error(errorMessage);
     }
 
@@ -137,31 +191,30 @@ export async function fetchApi<T>(
     console.error('❌ API: Request error:', errorMessage);
     console.error('❌ API: Error details:', error);
     
-    // Try fallback URL if we haven't already and this is a connection error
-    if (!hasTriedFallback && isDevelopment() && 
-        (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError') || errorMessage.includes('timeout'))) {
-      console.log('🔄 API: Trying fallback URL due to connection error');
-      hasTriedFallback = true;
-      return fetchApi(endpoint, options); // Retry with fallback
-    }
-    
-    // Show toast for critical errors
-    if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
-      toast({
-        title: "🌐 Network Error",
-        description: "Cannot reach the diamond inventory server. Please check your connection and try again.",
-        variant: "destructive",
-      });
-    } else if (errorMessage.includes('timeout')) {
+    // Enhanced error handling with specific user guidance
+    if (error instanceof Error && error.name === 'AbortError') {
       toast({
         title: "⏱️ Request Timeout",
-        description: "The server is taking too long to respond. Please try again.",
+        description: "The server is taking too long to respond. Check your connection or try again.",
+        variant: "destructive",
+      });
+    } else if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+      // Try fallback URL if we haven't already and this is a connection error
+      if (!hasTriedFallback && isDevelopment()) {
+        console.log('🔄 API: Trying fallback URL due to connection error');
+        hasTriedFallback = true;
+        return fetchApi(endpoint, options); // Retry with fallback
+      }
+      
+      toast({
+        title: "🌐 Network Connection Error",
+        description: "Cannot reach the diamond inventory server. Please check: 1) Your internet connection, 2) That the backend server is running, 3) Firewall settings.",
         variant: "destructive",
       });
     } else if (errorMessage.includes('CORS')) {
       toast({
         title: "🚫 Access Blocked",
-        description: "Server configuration issue. Please contact support about CORS settings.",
+        description: "Server configuration issue. The API server needs CORS settings updated.",
         variant: "destructive",
       });
     }
@@ -173,6 +226,7 @@ export async function fetchApi<T>(
 // Reset fallback flag function for testing
 export function resetFallbackFlag() {
   hasTriedFallback = false;
+  console.log('🔄 API: Fallback flag reset, will retry local backend first');
 }
 
 export const api = {
