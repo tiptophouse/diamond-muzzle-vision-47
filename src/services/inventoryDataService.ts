@@ -1,6 +1,6 @@
-
 import { api, apiEndpoints, getCurrentUserId, resetFallbackFlag } from "@/lib/api";
 import { logEnvironmentInfo } from "@/utils/environment";
+import { backendHealthService } from "./backendHealthService";
 
 export interface FetchInventoryResult {
   data?: any[];
@@ -14,16 +14,21 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   // Log environment info for debugging
   logEnvironmentInfo();
   
-  console.log('🔍 INVENTORY SERVICE: Starting fetch with user ID:', userId);
+  console.log('🔍 INVENTORY SERVICE: Starting enhanced fetch with user ID:', userId);
   console.log('🔍 INVENTORY SERVICE: Expected diamonds: 566');
   
+  // Check backend health first
+  const healthStatus = await backendHealthService.checkBackendHealth();
+  console.log('🏥 Backend health status:', healthStatus);
+  
   const debugInfo = { 
-    step: 'Starting fetch', 
+    step: 'Starting enhanced fetch', 
     userId, 
     expectedCount: 566, 
     timestamp: new Date().toISOString(),
     environment: window.location.hostname,
     backendStatus: 'testing',
+    healthStatus: healthStatus,
   };
   
   try {
@@ -41,17 +46,18 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       endpoint: endpoint,
       timestamp: new Date().toISOString(),
       backendStatus: result.error ? 'failed' : 'success',
+      recommendedMethod: healthStatus.recommendedMethod,
     };
     
     if (result.error) {
       console.error('🔍 INVENTORY SERVICE: API error:', result.error);
       
-      // Provide specific guidance based on error type
+      // Provide specific guidance based on error type and health status
       let userFriendlyError = result.error;
       if (result.error.includes('No backend available')) {
-        userFriendlyError = 'Both local and external backend servers are unreachable. Please check: 1) Start your local FastAPI server on port 8000, or 2) Ensure api.mazalbot.com is accessible.';
+        userFriendlyError = `Backend services unavailable. Recommended method: ${healthStatus.recommendedMethod}. FastAPI: ${healthStatus.fastApiAvailable ? 'Available' : 'Unavailable'}`;
       } else if (result.error.includes('Failed to fetch')) {
-        userFriendlyError = 'Connection failed. Please check your internet connection and ensure the backend server is running.';
+        userFriendlyError = `Connection failed. Backend health: FastAPI ${healthStatus.fastApiAvailable ? '✅' : '❌'}, Supabase ${healthStatus.supabaseAvailable ? '✅' : '❌'}`;
       } else if (result.error.includes('404')) {
         userFriendlyError = 'API endpoint not found. The backend server may not have the expected endpoints configured.';
       }
@@ -97,7 +103,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       console.log('🔍 INVENTORY SERVICE: No data returned from backend');
       return {
         data: [],
-        error: 'No data returned from backend. The server may be running but not returning inventory data.',
+        error: `No data returned from backend. Backend method: ${healthStatus.recommendedMethod}`,
         debugInfo: {
           ...updatedDebugInfo,
           step: 'No data returned from backend',
@@ -130,7 +136,8 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       isArray: Array.isArray(result.data),
       dataArrayLength: dataArray.length,
       expectedLength: 566,
-      sampleItem: dataArray[0]
+      sampleItem: dataArray[0],
+      recommendedMethod: healthStatus.recommendedMethod
     });
     
     if (dataArray && dataArray.length > 0) {
@@ -146,6 +153,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
           backendResponse: dataArray.length,
           sampleItem: dataArray[0],
           backendStatus: 'success',
+          methodUsed: healthStatus.recommendedMethod,
         }
       };
     } else {
@@ -154,7 +162,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       
       return {
         data: [],
-        error: 'Backend is working but returned no diamonds. Check if your user ID has inventory data.',
+        error: `Backend is working but returned no diamonds. Method: ${healthStatus.recommendedMethod}`,
         debugInfo: {
           ...updatedDebugInfo,
           step: 'Backend responded but no diamonds found',
@@ -171,7 +179,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     let userFriendlyError = errorMessage;
     
     if (errorMessage.includes('Failed to fetch')) {
-      userFriendlyError = 'Cannot connect to backend servers. Please ensure: 1) Your internet connection is working, 2) Backend server is running on localhost:8000, or 3) api.mazalbot.com is accessible.';
+      userFriendlyError = `Cannot connect to backend. Health status: FastAPI ${healthStatus.fastApiAvailable ? '✅' : '❌'}, Supabase ${healthStatus.supabaseAvailable ? '✅' : '❌'}. Using: ${healthStatus.recommendedMethod}`;
     }
     
     return {
@@ -184,6 +192,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
         userFriendlyError,
         errorStack: error instanceof Error ? error.stack : undefined,
         backendStatus: 'critical-error',
+        healthStatus: healthStatus,
       }
     };
   }
