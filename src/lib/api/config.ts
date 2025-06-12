@@ -1,23 +1,8 @@
 
-// Configuration for different environments
-function getApiBaseUrl(): string {
-  // Check if we're in development mode
-  const isDev = window.location.hostname === 'localhost' || 
-                window.location.hostname.includes('lovableproject.com') ||
-                window.location.hostname === '127.0.0.1';
-  
-  if (isDev) {
-    // For local development, try to connect to local backend first
-    return 'http://localhost:8000';
-  } else {
-    // For production, use the external API
-    return 'https://api.mazalbot.com';
-  }
-}
+// Updated to point to your actual FastAPI backend
+export const API_BASE_URL = "https://api.mazalbot.com";
 
-export const API_BASE_URL = getApiBaseUrl();
-
-let currentUserId: number | null = null;
+let currentUserId: number | null = null; // Remove hardcoded value
 
 export function setCurrentUserId(userId: number) {
   currentUserId = userId;
@@ -32,8 +17,7 @@ export function getCurrentUserId(): number | null {
 // Helper function to check if we're in development
 export function isDevelopment(): boolean {
   return window.location.hostname === 'localhost' || 
-         window.location.hostname.includes('lovableproject.com') ||
-         window.location.hostname === '127.0.0.1';
+         window.location.hostname.includes('lovableproject.com');
 }
 
 // Your backend access token
@@ -44,9 +28,4 @@ export function getFullApiUrl(endpoint: string): string {
   const fullUrl = `${API_BASE_URL}${endpoint}`;
   console.log('🔧 API: Full URL constructed:', fullUrl);
   return fullUrl;
-}
-
-// Add fallback configuration for when local backend is not available
-export function getFallbackApiUrl(): string {
-  return 'https://api.mazalbot.com';
 }

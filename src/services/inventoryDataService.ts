@@ -1,6 +1,5 @@
-import { api, apiEndpoints, getCurrentUserId, resetFallbackFlag } from "@/lib/api";
-import { logEnvironmentInfo } from "@/utils/environment";
-import { backendHealthService } from "./backendHealthService";
+
+import { api, apiEndpoints, getCurrentUserId } from "@/lib/api";
 
 export interface FetchInventoryResult {
   data?: any[];
@@ -11,30 +10,23 @@ export interface FetchInventoryResult {
 export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   const userId = getCurrentUserId() || 2138564172;
   
-  // Log environment info for debugging
-  logEnvironmentInfo();
-  
-  console.log('🔍 INVENTORY SERVICE: Starting enhanced fetch with user ID:', userId);
+  console.log('🔍 INVENTORY SERVICE: Starting fetch with user ID:', userId);
+  console.log('🔍 INVENTORY SERVICE: Backend URL:', 'https://api.mazalbot.com');
   console.log('🔍 INVENTORY SERVICE: Expected diamonds: 566');
   
-  // Check backend health first
-  const healthStatus = await backendHealthService.checkBackendHealth();
-  console.log('🏥 Backend health status:', healthStatus);
-  
   const debugInfo = { 
-    step: 'Starting enhanced fetch', 
+    step: 'Starting fetch', 
     userId, 
     expectedCount: 566, 
-    timestamp: new Date().toISOString(),
-    environment: window.location.hostname,
-    backendStatus: 'testing',
-    healthStatus: healthStatus,
+    timestamp: new Date().toISOString() 
   };
   
   try {
     console.log('🔍 INVENTORY SERVICE: Using API client to fetch data');
     const endpoint = apiEndpoints.getAllStones(userId);
-    console.log('🔍 INVENTORY SERVICE: Endpoint:', endpoint);
+    const fullUrl = `https://api.mazalbot.com${endpoint}`;
+    console.log('🔍 INVENTORY SERVICE: Full endpoint URL:', fullUrl);
+    console.log('🔍 INVENTORY SERVICE: Expected format: GET https://api.mazalbot.com/api/v1/get_all_stones?user_id=' + userId);
     
     const result = await api.get(endpoint);
     
@@ -44,57 +36,42 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       hasError: !!result.error,
       hasData: !!result.data,
       endpoint: endpoint,
-      timestamp: new Date().toISOString(),
-      backendStatus: result.error ? 'failed' : 'success',
-      recommendedMethod: healthStatus.recommendedMethod,
+      fullUrl: fullUrl,
+      timestamp: new Date().toISOString()
     };
     
     if (result.error) {
       console.error('🔍 INVENTORY SERVICE: API error:', result.error);
       
-      // Provide specific guidance based on error type and health status
-      let userFriendlyError = result.error;
-      if (result.error.includes('No backend available')) {
-        userFriendlyError = `Backend services unavailable. Recommended method: ${healthStatus.recommendedMethod}. FastAPI: ${healthStatus.fastApiAvailable ? 'Available' : 'Unavailable'}`;
-      } else if (result.error.includes('Failed to fetch')) {
-        userFriendlyError = `Connection failed. Backend health: FastAPI ${healthStatus.fastApiAvailable ? '✅' : '❌'}, Supabase ${healthStatus.supabaseAvailable ? '✅' : '❌'}`;
-      } else if (result.error.includes('404')) {
-        userFriendlyError = 'API endpoint not found. The backend server may not have the expected endpoints configured.';
-      }
-      
-      // If it's a connection error, try resetting the fallback flag and retry once
-      if (result.error.includes('Failed to fetch') || result.error.includes('NetworkError') || result.error.includes('No backend available')) {
-        console.log('🔍 INVENTORY SERVICE: Connection error detected, attempting retry...');
-        resetFallbackFlag();
+      // Try alternative endpoint if the first one fails
+      console.log('🔍 INVENTORY SERVICE: Trying alternative endpoint without /api/v1 prefix...');
+      try {
+        const alternativeEndpoint = `/get_all_stones?user_id=${userId}`;
+        console.log('🔍 INVENTORY SERVICE: Alternative endpoint:', `https://api.mazalbot.com${alternativeEndpoint}`);
+        const alternativeResult = await api.get(alternativeEndpoint);
         
-        try {
-          const retryResult = await api.get(endpoint);
-          if (!retryResult.error && retryResult.data) {
-            console.log('🔍 INVENTORY SERVICE: Retry successful!');
-            return {
-              data: Array.isArray(retryResult.data) ? retryResult.data : [],
-              debugInfo: {
-                ...updatedDebugInfo,
-                step: 'SUCCESS: Retry worked',
-                retryAttempted: true,
-                backendStatus: 'success-after-retry',
-              }
-            };
-          }
-        } catch (retryError) {
-          console.error('🔍 INVENTORY SERVICE: Retry also failed:', retryError);
+        if (!alternativeResult.error && alternativeResult.data) {
+          console.log('🔍 INVENTORY SERVICE: Alternative endpoint worked!');
+          return {
+            data: Array.isArray(alternativeResult.data) ? alternativeResult.data : [],
+            debugInfo: {
+              ...updatedDebugInfo,
+              step: 'SUCCESS: Alternative endpoint worked',
+              endpoint: alternativeEndpoint,
+            }
+          };
         }
+      } catch (altError) {
+        console.error('🔍 INVENTORY SERVICE: Alternative endpoint also failed:', altError);
       }
       
       return {
         data: [],
-        error: userFriendlyError,
+        error: result.error,
         debugInfo: {
           ...updatedDebugInfo,
           step: 'API error occurred',
           error: result.error,
-          userFriendlyError,
-          backendStatus: 'failed',
         }
       };
     }
@@ -103,11 +80,10 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       console.log('🔍 INVENTORY SERVICE: No data returned from backend');
       return {
         data: [],
-        error: `No data returned from backend. Backend method: ${healthStatus.recommendedMethod}`,
+        error: 'No data returned from backend',
         debugInfo: {
           ...updatedDebugInfo,
           step: 'No data returned from backend',
-          backendStatus: 'no-data',
         }
       };
     }
@@ -136,8 +112,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       isArray: Array.isArray(result.data),
       dataArrayLength: dataArray.length,
       expectedLength: 566,
-      sampleItem: dataArray[0],
-      recommendedMethod: healthStatus.recommendedMethod
+      sampleItem: dataArray[0]
     });
     
     if (dataArray && dataArray.length > 0) {
@@ -152,8 +127,6 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
           expectedDiamonds: 566,
           backendResponse: dataArray.length,
           sampleItem: dataArray[0],
-          backendStatus: 'success',
-          methodUsed: healthStatus.recommendedMethod,
         }
       };
     } else {
@@ -162,37 +135,26 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       
       return {
         data: [],
-        error: `Backend is working but returned no diamonds. Method: ${healthStatus.recommendedMethod}`,
+        error: 'No diamonds found in response',
         debugInfo: {
           ...updatedDebugInfo,
           step: 'Backend responded but no diamonds found',
           responseStructure: result.data && typeof result.data === 'object' ? Object.keys(result.data) : [],
           fullResponse: result.data,
-          backendStatus: 'empty-response',
         }
       };
     }
   } catch (error) {
     console.error("🔍 INVENTORY SERVICE: Critical error connecting to backend:", error);
     
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    let userFriendlyError = errorMessage;
-    
-    if (errorMessage.includes('Failed to fetch')) {
-      userFriendlyError = `Cannot connect to backend. Health status: FastAPI ${healthStatus.fastApiAvailable ? '✅' : '❌'}, Supabase ${healthStatus.supabaseAvailable ? '✅' : '❌'}. Using: ${healthStatus.recommendedMethod}`;
-    }
-    
     return {
       data: [],
-      error: userFriendlyError,
+      error: error instanceof Error ? error.message : String(error),
       debugInfo: {
         ...debugInfo,
         step: 'Critical backend connection error',
-        error: errorMessage,
-        userFriendlyError,
+        error: error instanceof Error ? error.message : String(error),
         errorStack: error instanceof Error ? error.stack : undefined,
-        backendStatus: 'critical-error',
-        healthStatus: healthStatus,
       }
     };
   }

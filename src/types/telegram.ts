@@ -40,6 +40,7 @@ export interface TelegramWebApp {
   isExpanded: boolean;
   viewportHeight: number;
   viewportStableHeight: number;
+  setHeaderColor?: (color: string) => void;
   BackButton: {
     show: () => void;
     hide: () => void;

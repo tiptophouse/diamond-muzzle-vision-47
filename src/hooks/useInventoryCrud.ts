@@ -6,7 +6,7 @@ import { DiamondFormData } from '@/components/inventory/form/types';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { useAddDiamond } from './inventory/useAddDiamond';
 import { useUpdateDiamond } from './inventory/useUpdateDiamond';
-import { useEnhancedDeleteDiamond } from './inventory/useEnhancedDeleteDiamond';
+import { useDeleteDiamond } from './inventory/useDeleteDiamond';
 
 interface UseInventoryCrudProps {
   onSuccess?: () => void;
@@ -21,7 +21,7 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
 
   const { addDiamond: addDiamondFn } = useAddDiamond(onSuccess);
   const { updateDiamond: updateDiamondFn } = useUpdateDiamond(onSuccess);
-  const { deleteDiamond: deleteDiamondFn } = useEnhancedDeleteDiamond({ 
+  const { deleteDiamond: deleteDiamondFn } = useDeleteDiamond({ 
     onSuccess, 
     removeDiamondFromState, 
     restoreDiamondToState 
