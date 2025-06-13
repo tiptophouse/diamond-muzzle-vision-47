@@ -8,41 +8,35 @@ interface ApiResponse<T> {
   error?: string;
 }
 
-// Test backend connectivity
+// Enhanced backend connectivity test
 async function testBackendConnectivity(): Promise<boolean> {
   try {
-    console.log('🔍 API: Testing backend connectivity to:', API_BASE_URL);
+    console.log('🔍 API: Testing FastAPI backend connectivity to:', API_BASE_URL);
     
-    // Try different test endpoints
-    const testUrls = [
-      `${API_BASE_URL}/`,
-      `${API_BASE_URL}/health`,
-      `${API_BASE_URL}/docs`,
-    ];
+    // Try the root endpoint first
+    const testUrl = `${API_BASE_URL}/`;
+    console.log('🔍 API: Testing root endpoint:', testUrl);
     
-    for (const url of testUrls) {
-      try {
-        const response = await fetch(url, {
-          method: 'GET',
-          mode: 'cors',
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
-          },
-        });
-        
-        if (response.ok || response.status === 404) {
-          console.log('✅ API: Backend is reachable at:', url);
-          return true;
-        }
-      } catch (error) {
-        console.log('❌ API: Failed to reach:', url, error instanceof Error ? error.message : String(error));
-      }
+    const response = await fetch(testUrl, {
+      method: 'GET',
+      mode: 'cors',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
+      },
+    });
+    
+    console.log('🔍 API: Root endpoint response status:', response.status);
+    
+    if (response.ok || response.status === 404) {
+      console.log('✅ API: FastAPI backend is reachable');
+      return true;
     }
     
+    console.log('❌ API: FastAPI backend not reachable - status:', response.status);
     return false;
   } catch (error) {
-    console.error('❌ API: Backend connectivity test failed:', error);
+    console.error('❌ API: FastAPI backend connectivity test failed:', error);
     return false;
   }
 }
@@ -54,13 +48,13 @@ export async function fetchApi<T>(
   const url = `${API_BASE_URL}${endpoint}`;
   
   try {
-    console.log('🚀 API: Making request to:', url);
+    console.log('🚀 API: Making FastAPI request to:', url);
     console.log('🚀 API: Current user ID:', getCurrentUserId(), 'type:', typeof getCurrentUserId());
     
-    // Test connectivity first if this is the first request
+    // Test connectivity first
     const isBackendReachable = await testBackendConnectivity();
     if (!isBackendReachable) {
-      throw new Error('Backend server is not reachable. Please check if the server is running.');
+      throw new Error('FastAPI backend server is not reachable. Please check if the server is running at ' + API_BASE_URL);
     }
     
     const authHeaders = await getAuthHeaders();
@@ -68,6 +62,7 @@ export async function fetchApi<T>(
       "Content-Type": "application/json",
       "Accept": "application/json",
       "Origin": window.location.origin,
+      "Authorization": `Bearer ${BACKEND_ACCESS_TOKEN}`,
       ...authHeaders,
       ...options.headers as Record<string, string>,
     };
@@ -76,7 +71,7 @@ export async function fetchApi<T>(
       ...options,
       headers,
       mode: 'cors',
-      credentials: 'omit', // Don't send cookies
+      credentials: 'omit',
     };
     
     console.log('🚀 API: Fetch options:', {
@@ -84,11 +79,12 @@ export async function fetchApi<T>(
       method: fetchOptions.method || 'GET',
       hasAuth: !!headers.Authorization,
       hasBody: !!fetchOptions.body,
+      headers: Object.keys(headers),
     });
     
     const response = await fetch(url, fetchOptions);
 
-    console.log('📡 API: Response status:', response.status);
+    console.log('📡 API: FastAPI Response status:', response.status);
     console.log('📡 API: Response headers:', Object.fromEntries(response.headers.entries()));
 
     let data;
@@ -96,20 +92,21 @@ export async function fetchApi<T>(
     
     if (contentType && contentType.includes('application/json')) {
       data = await response.json();
-      console.log('📡 API: JSON response received, data type:', typeof data, 'length:', Array.isArray(data) ? data.length : 'not array');
+      console.log('📡 API: JSON response received from FastAPI');
+      console.log('📡 API: Data type:', typeof data, 'is array:', Array.isArray(data));
       if (Array.isArray(data)) {
-        console.log('📡 API: Sample data (first 2 items):', data.slice(0, 2));
+        console.log('📡 API: Array length:', data.length, 'sample:', data.slice(0, 2));
       } else {
-        console.log('📡 API: Response data:', data);
+        console.log('📡 API: Response data structure:', data);
       }
     } else {
       const text = await response.text();
-      console.log('📡 API: Non-JSON response:', text.substring(0, 200));
+      console.log('📡 API: Non-JSON response from FastAPI:', text.substring(0, 200));
       data = text;
     }
 
     if (!response.ok) {
-      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      let errorMessage = `FastAPI Error ${response.status}: ${response.statusText}`;
       
       if (typeof data === 'object' && data) {
         errorMessage = data.detail || data.message || errorMessage;
@@ -117,34 +114,40 @@ export async function fetchApi<T>(
         errorMessage = data || errorMessage;
       }
       
-      console.error('❌ API: Request failed:', errorMessage);
+      console.error('❌ API: FastAPI request failed:', errorMessage);
       throw new Error(errorMessage);
     }
 
-    console.log('✅ API: Request successful');
+    console.log('✅ API: FastAPI request successful');
     return { data: data as T };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error('❌ API: Request error:', errorMessage);
+    console.error('❌ API: FastAPI request error:', errorMessage);
     console.error('❌ API: Error details:', error);
     
-    // Show toast for critical errors
+    // Show specific toast messages for different error types
     if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
       toast({
-        title: "🌐 Network Error",
-        description: "Cannot reach the diamond inventory server. Please check your connection and try again.",
+        title: "🌐 Connection Error",
+        description: `Cannot reach FastAPI server at ${API_BASE_URL}. Please check if the server is running.`,
         variant: "destructive",
       });
     } else if (errorMessage.includes('not reachable')) {
       toast({
-        title: "🔌 Server Unavailable",
-        description: "The backend server appears to be offline. Please contact support.",
+        title: "🔌 FastAPI Server Offline",
+        description: `The FastAPI backend at ${API_BASE_URL} is not responding. Please start the server.`,
         variant: "destructive",
       });
     } else if (errorMessage.includes('CORS')) {
       toast({
-        title: "🚫 Access Blocked",
-        description: "Server configuration issue. Please contact support about CORS settings.",
+        title: "🚫 CORS Issue",
+        description: "FastAPI server CORS configuration issue. Please check server settings.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "❌ FastAPI Error",
+        description: `FastAPI request failed: ${errorMessage}`,
         variant: "destructive",
       });
     }

@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Plus, QrCode } from "lucide-react";
+import { RefreshCw, Plus, QrCode, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface InventoryHeaderProps {
   totalDiamonds: number;
@@ -19,6 +20,16 @@ export function InventoryHeader({ totalDiamonds, onRefresh, onAdd, onQRScan, loa
           <p className="text-slate-600 text-sm sm:text-base">
             Manage your diamond inventory ({totalDiamonds} total diamonds)
           </p>
+          
+          {totalDiamonds === 0 && !loading && (
+            <Alert className="mt-4 border-orange-200 bg-orange-50">
+              <AlertCircle className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-orange-800">
+                No diamonds found. Check if your FastAPI server at <strong>api.mazalbot.com</strong> is running and accessible.
+                Click "Refresh" to retry the connection.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
         
         <div className="flex flex-col sm:flex-row gap-2 w-full">
@@ -48,7 +59,7 @@ export function InventoryHeader({ totalDiamonds, onRefresh, onAdd, onQRScan, loa
             className="w-full sm:flex-1 border-slate-300 text-slate-700 hover:bg-slate-50"
           >
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            Connect to FastAPI
           </Button>
         </div>
       </div>
