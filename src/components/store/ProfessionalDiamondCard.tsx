@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Heart, Eye, Share } from "lucide-react";
+import { Heart, Eye, Share, Edit, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
@@ -20,6 +20,10 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
   const { user } = useTelegramAuth();
   const isAdmin = user?.id === ADMIN_TELEGRAM_ID;
 
+  console.log('👤 Current user ID:', user?.id);
+  console.log('🔐 Admin ID:', ADMIN_TELEGRAM_ID);
+  console.log('👑 Is Admin:', isAdmin);
+
   // Generate a placeholder diamond image URL or use actual image
   const diamondImageUrl = diamond.imageUrl || `https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop&crop=center`;
 
@@ -28,15 +32,49 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
     if (onUpdate) onUpdate();
   };
 
+  const handleCardClick = () => {
+    if (isAdmin) {
+      console.log('🎯 Admin clicked on diamond:', diamond.stockNumber);
+      // The AdminStoreControls will handle the edit modal
+    }
+  };
+
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 group relative">
-      {/* Admin Controls */}
+    <div 
+      className={`bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 group relative ${
+        isAdmin ? 'cursor-pointer hover:border-blue-400' : ''
+      }`}
+      onClick={isAdmin ? handleCardClick : undefined}
+    >
+      {/* Admin Controls - More prominent for admin */}
       {isAdmin && (
-        <AdminStoreControls 
-          diamond={diamond}
-          onUpdate={onUpdate || (() => {})}
-          onDelete={handleDelete}
-        />
+        <>
+          {/* Admin Badge */}
+          <div className="absolute top-2 left-2 z-10">
+            <Badge className="bg-blue-600 text-white text-xs px-2 py-1">
+              ADMIN
+            </Badge>
+          </div>
+          
+          {/* Admin Controls Component */}
+          <AdminStoreControls 
+            diamond={diamond}
+            onUpdate={onUpdate || (() => {})}
+            onDelete={handleDelete}
+          />
+          
+          {/* Prominent Edit Button */}
+          <div className="absolute top-2 right-2 z-10">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white border-0"
+            >
+              <Edit className="h-4 w-4 mr-1" />
+              Edit
+            </Button>
+          </div>
+        </>
       )}
 
       {/* Image Container */}
@@ -131,6 +169,13 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
         <div className="text-xs text-gray-500 border-t pt-2">
           Stock #{diamond.stockNumber}
         </div>
+
+        {/* Admin Info */}
+        {isAdmin && (
+          <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+            Click to edit diamond details and upload photos
+          </div>
+        )}
       </div>
     </div>
   );
