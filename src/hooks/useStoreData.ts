@@ -20,6 +20,7 @@ export function useStoreData() {
       const { data, error: fetchError } = await supabase
         .from('inventory')
         .select('*')
+        .eq('store_visible', true)
         .order('created_at', { ascending: false });
 
       if (fetchError) {
@@ -38,7 +39,6 @@ export function useStoreData() {
         price: Number(item.price_per_carat * item.weight) || 0,
         status: item.status || 'Available',
         imageUrl: item.picture || undefined,
-        store_visible: item.store_visible || false,
       }));
 
       setDiamonds(transformedDiamonds);

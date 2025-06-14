@@ -1,8 +1,9 @@
 
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { api, apiEndpoints } from '@/lib/api';
+import { isValidUUID } from '@/utils/diamondUtils';
 
 export function useUpdateDiamond(onSuccess?: () => void) {
   const { toast } = useToast();
@@ -19,12 +20,12 @@ export function useUpdateDiamond(onSuccess?: () => void) {
     }
 
     // Validate diamond ID format
-    if (!diamondId || diamondId.trim() === '') {
-      console.error('Invalid diamond ID:', diamondId);
+    if (!diamondId || !isValidUUID(diamondId)) {
+      console.error('Invalid diamond ID format:', diamondId);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Invalid diamond ID. Please refresh and try again.",
+        description: "Invalid diamond ID format. Please refresh and try again.",
       });
       return false;
     }
@@ -32,9 +33,8 @@ export function useUpdateDiamond(onSuccess?: () => void) {
     try {
       console.log('Updating diamond ID:', diamondId, 'with data:', data);
       
-      // Prepare update data in FastAPI format
+      // Prepare update data with proper validation and type conversion
       const updateData = {
-        user_id: user.id,
         stock_number: data.stockNumber?.toString() || '',
         shape: data.shape || 'Round',
         weight: Number(data.carat) || 1,
@@ -43,58 +43,39 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         cut: data.cut || 'Excellent',
         price_per_carat: data.carat > 0 ? Math.round(Number(data.price) / Number(data.carat)) : Math.round(Number(data.price)),
         status: data.status || 'Available',
-        picture: data.picture || null,
-        
-        // Certificate Information
-        certificate_number: data.certificateNumber ? Number(data.certificateNumber) : null,
-        certificate_url: data.certificateUrl || null,
-        certificate_comment: data.certificateComment || null,
-        lab: data.lab || 'GIA',
-        
-        // Physical Measurements
-        length: data.length ? Number(data.length) : null,
-        width: data.width ? Number(data.width) : null,
-        depth: data.depth ? Number(data.depth) : null,
-        ratio: data.ratio ? Number(data.ratio) : null,
-        
-        // Detailed Grading
-        table_percentage: data.tablePercentage ? Number(data.tablePercentage) : null,
-        depth_percentage: data.depthPercentage ? Number(data.depthPercentage) : null,
-        fluorescence: data.fluorescence || 'None',
-        polish: data.polish || 'Excellent',
-        symmetry: data.symmetry || 'Excellent',
-        gridle: data.gridle || 'Medium',
-        culet: data.culet || 'None',
-        
-        // Business Information
-        rapnet: data.rapnet ? Number(data.rapnet) : null,
-        store_visible: data.storeVisible || false,
+        picture: data.imageUrl || null,
+        updated_at: new Date().toISOString(),
       };
 
-      console.log('FastAPI update data:', updateData);
+      console.log('Supabase update data:', updateData);
 
-      const endpoint = apiEndpoints.updateDiamond(diamondId);
-      const { data: responseData, error } = await api.put(endpoint, updateData);
+      const { data: updatedData, error } = await supabase
+        .from('inventory')
+        .update(updateData)
+        .eq('id', diamondId)
+        .eq('user_id', user.id)
+        .select()
+        .single();
 
       if (error) {
-        console.error('FastAPI update error:', error);
+        console.error('Supabase update error:', error);
         
-        if (error.includes('not found')) {
-          throw new Error('Diamond not found. It may have been deleted.');
-        } else if (error.includes('permission') || error.includes('unauthorized')) {
+        if (error.message.includes('invalid input syntax for type uuid')) {
+          throw new Error('Invalid diamond ID format. Please refresh the page and try again.');
+        } else if (error.message.includes('row-level security')) {
           throw new Error('You do not have permission to update this diamond.');
-        } else if (error.includes('validation')) {
-          throw new Error('Invalid data provided. Please check all fields.');
+        } else if (error.message.includes('No rows found')) {
+          throw new Error('Diamond not found. It may have been deleted.');
         } else {
-          throw new Error(`Update failed: ${error}`);
+          throw new Error(`Update failed: ${error.message}`);
         }
       }
 
-      if (!responseData) {
-        throw new Error('No response data received from server');
+      if (!updatedData) {
+        throw new Error('Diamond not found or no changes were made');
       }
 
-      console.log('Diamond updated successfully via FastAPI:', responseData);
+      console.log('Diamond updated successfully:', updatedData);
       
       toast({
         title: "Success",
@@ -104,7 +85,7 @@ export function useUpdateDiamond(onSuccess?: () => void) {
       if (onSuccess) onSuccess();
       return true;
     } catch (error) {
-      console.error('Failed to update diamond via FastAPI:', error);
+      console.error('Failed to update diamond:', error);
       const errorMessage = error instanceof Error ? error.message : "Failed to update diamond. Please try again.";
       toast({
         variant: "destructive",
