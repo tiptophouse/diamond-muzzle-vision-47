@@ -1,8 +1,10 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL');
+const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,10 +30,46 @@ serve(async (req) => {
       });
     }
 
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('❌ Configuration Error: Supabase URL or Anon Key is not set.');
+      return new Response(JSON.stringify({ 
+        error: 'Supabase client configuration error',
+        response: 'I apologize, but I\'m currently unable to access the database. Please contact support.'
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { message, user_id, conversation_history = [] } = await req.json();
     
     console.log(`🤖 Processing message for user: ${user_id}. Message: "${message}"`);
     console.log(`🤖 Conversation history length: ${conversation_history.length}`);
+
+    // Create a Supabase client with user's auth context
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: req.headers.get('Authorization')! } }
+    });
+
+    // Fetch inventory data
+    let inventorySummary = "The user's inventory data is not available at the moment.";
+    if (user_id) {
+        console.log(`🤖 Fetching inventory for user: ${user_id}`);
+        const { count, error: dbError } = await supabase
+            .from('inventory')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user_id);
+
+        if (dbError) {
+            console.error('❌ Database Error fetching inventory:', dbError.message);
+            inventorySummary = `There was an error fetching inventory data: ${dbError.message}.`;
+        } else {
+            console.log(`🤖 Found ${count} diamonds in inventory for user ${user_id}.`);
+            inventorySummary = `The user currently has ${count} diamonds in their inventory.`;
+        }
+    } else {
+        console.log('🤖 No user_id provided, skipping inventory fetch.');
+    }
 
     const messages = [
       {
@@ -43,7 +81,9 @@ serve(async (req) => {
         - Diamond certification questions
         - General diamond knowledge
         
-        Keep responses helpful, professional, and focused on diamonds and jewelry.`
+        Keep responses helpful, professional, and focused on diamonds and jewelry.
+        
+        Here is a summary of the user's current inventory: ${inventorySummary}`
       },
       ...conversation_history,
       { role: 'user', content: message }
