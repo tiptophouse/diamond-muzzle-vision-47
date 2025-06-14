@@ -14,7 +14,7 @@ export function ChatContainer() {
     id: msg.id,
     content: msg.content,
     role: msg.role,
-    user_id: user?.id || null,
+    user_id: user?.id?.toString() || null,
     created_at: msg.timestamp,
   }));
 
@@ -30,7 +30,7 @@ export function ChatContainer() {
         <ChatMessages 
           messages={transformedMessages} 
           isLoading={isLoading} 
-          currentUserId={user?.id}
+          currentUserId={user?.id?.toString()}
         />
         
         {messages.length === 0 && (
