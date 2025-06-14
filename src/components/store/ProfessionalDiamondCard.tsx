@@ -25,12 +25,39 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
   console.log('🔐 Admin ID:', ADMIN_TELEGRAM_ID);
   console.log('👑 Is Admin:', isAdmin);
 
-  // Check if diamond has Gem360 URL
-  const gem360Url = diamond.gem360Url || diamond.certificateUrl;
-  const hasGem360View = gem360Url && gem360Url.includes('gem360.in');
+  // Enhanced Gem360 URL detection - check all possible sources
+  const getGem360Url = () => {
+    // Priority order: dedicated gem360Url field, then certificateUrl, then imageUrl
+    const sources = [
+      diamond.gem360Url,
+      diamond.certificateUrl,
+      diamond.imageUrl
+    ];
 
-  // Generate a placeholder diamond image URL or use actual image
-  const diamondImageUrl = diamond.imageUrl || `https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop&crop=center`;
+    for (const url of sources) {
+      if (url && url.includes('gem360')) {
+        console.log('🔍 Found Gem360 URL in source:', url);
+        return url;
+      }
+    }
+
+    return null;
+  };
+
+  const gem360Url = getGem360Url();
+  const hasGem360View = !!gem360Url;
+
+  console.log('🔍 Diamond:', diamond.stockNumber);
+  console.log('🔍 gem360Url field:', diamond.gem360Url);
+  console.log('🔍 certificateUrl field:', diamond.certificateUrl);
+  console.log('🔍 imageUrl field:', diamond.imageUrl);
+  console.log('🔍 Final gem360Url:', gem360Url);
+  console.log('🔍 hasGem360View:', hasGem360View);
+
+  // Use a fallback diamond image when not showing 3D viewer
+  const diamondImageUrl = !hasGem360View && diamond.imageUrl && !diamond.imageUrl.includes('gem360') 
+    ? diamond.imageUrl 
+    : `https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop&crop=center`;
 
   const handleDelete = () => {
     // Trigger refetch of data
