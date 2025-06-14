@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { AdminStoreControls } from "./AdminStoreControls";
+import { Gem360Viewer } from "./Gem360Viewer";
 
 const ADMIN_TELEGRAM_ID = 2138564172;
 
@@ -23,6 +24,10 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
   console.log('👤 Current user ID:', user?.id);
   console.log('🔐 Admin ID:', ADMIN_TELEGRAM_ID);
   console.log('👑 Is Admin:', isAdmin);
+
+  // Check if diamond has Gem360 URL
+  const gem360Url = diamond.gem360Url || diamond.certificateUrl;
+  const hasGem360View = gem360Url && gem360Url.includes('gem360.in');
 
   // Generate a placeholder diamond image URL or use actual image
   const diamondImageUrl = diamond.imageUrl || `https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop&crop=center`;
@@ -53,25 +58,37 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
         </>
       )}
 
-      {/* Image Container */}
+      {/* Image/3D Viewer Container */}
       <div className="relative aspect-square bg-gray-50 overflow-hidden">
-        {!imageError ? (
-          <img
-            src={diamondImageUrl}
-            alt={`${diamond.shape} Diamond`}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={() => setImageError(true)}
+        {hasGem360View ? (
+          // Show 3D Gem360 viewer
+          <Gem360Viewer 
+            gem360Url={gem360Url!}
+            stockNumber={diamond.stockNumber}
+            isInline={true}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-            <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-200 to-purple-200 rounded-full"></div>
-            </div>
-          </div>
+          // Show regular image
+          <>
+            {!imageError ? (
+              <img
+                src={diamondImageUrl}
+                alt={`${diamond.shape} Diamond`}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-200 to-purple-200 rounded-full"></div>
+                </div>
+              </div>
+            )}
+          </>
         )}
         
-        {/* Action Icons - only show for non-admin users */}
-        {!isAdmin && (
+        {/* Action Icons - only show for non-admin users and when not showing 3D viewer */}
+        {!isAdmin && !hasGem360View && (
           <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
             <Button
               size="icon"
@@ -98,15 +115,17 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
           </div>
         )}
 
-        {/* GIA Badge */}
-        <div className="absolute bottom-3 left-3">
-          <div className="bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
-            <div className="w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-xs font-bold">G</span>
+        {/* GIA Badge - only show when not showing 3D viewer */}
+        {!hasGem360View && (
+          <div className="absolute bottom-3 left-3">
+            <div className="bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
+              <div className="w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-xs font-bold">G</span>
+              </div>
+              <span className="text-xs font-medium text-gray-900">GIA</span>
             </div>
-            <span className="text-xs font-medium text-gray-900">GIA</span>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Content */}
@@ -145,6 +164,13 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
         <div className="text-xs text-gray-500 border-t pt-2">
           Stock #{diamond.stockNumber}
         </div>
+
+        {/* 3D View Badge */}
+        {hasGem360View && (
+          <div className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">
+            ✨ Interactive 3D view available above
+          </div>
+        )}
 
         {/* Admin Info */}
         {isAdmin && (

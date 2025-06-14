@@ -43,11 +43,14 @@ export function useStoreData() {
             imageUrl: item.picture || item.imageUrl || undefined,
             store_visible: item.store_visible !== false, // Default to true for store display
             certificateNumber: item.certificate_number || undefined,
-            lab: item.lab || undefined
+            lab: item.lab || undefined,
+            gem360Url: item.gem360_url || item.gem360Url || undefined,
+            certificateUrl: item.certificate_url || item.certificateUrl || undefined
           }))
           .filter(diamond => diamond.store_visible && diamond.status === 'Available'); // Only show store-visible and available diamonds
 
         console.log('🏪 STORE: Processed', transformedDiamonds.length, 'store-visible diamonds from', result.data.length, 'total diamonds');
+        console.log('🏪 STORE: Found', transformedDiamonds.filter(d => d.gem360Url || (d.certificateUrl && d.certificateUrl.includes('gem360.in'))).length, 'diamonds with 3D viewers');
         setDiamonds(transformedDiamonds);
       } else {
         console.log('🏪 STORE: No diamonds found in response');
