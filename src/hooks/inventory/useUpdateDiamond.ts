@@ -43,7 +43,7 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         cut: data.cut || 'Excellent',
         price_per_carat: data.carat > 0 ? Math.round(Number(data.price) / Number(data.carat)) : Math.round(Number(data.price)),
         status: data.status || 'Available',
-        picture: data.imageUrl || null,
+        picture: data.picture || null,
         updated_at: new Date().toISOString(),
       };
 
@@ -97,4 +97,4 @@ export function useUpdateDiamond(onSuccess?: () => void) {
   };
 
   return { updateDiamond };
-}
+};

@@ -36,7 +36,7 @@ export const useFormValidation = () => {
       polish: data.polish || 'Excellent',
       symmetry: data.symmetry || 'Excellent',
       status: data.status || 'Available',
-      imageUrl: data.imageUrl?.trim() || '',
+      picture: data.picture?.trim() || '',
     };
   };
 
