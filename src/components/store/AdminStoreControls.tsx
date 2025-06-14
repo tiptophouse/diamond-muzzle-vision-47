@@ -28,6 +28,12 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
   });
   const { toast } = useToast();
 
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('🔧 Admin edit button clicked for diamond:', diamond.stockNumber);
+    setIsEditOpen(true);
+  };
+
   const generateDescription = async () => {
     setIsGenerating(true);
     try {
@@ -103,7 +109,8 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (confirm('Are you sure you want to delete this diamond?')) {
       try {
         console.log('🗑️ Deleting diamond via API endpoint:', diamond.id);
@@ -134,12 +141,12 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
 
   return (
     <>
-      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setIsEditOpen(true)}
-          className="h-8 w-8 p-0 bg-white/80 hover:bg-white"
+          onClick={handleEditClick}
+          className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-sm"
         >
           <Edit className="h-4 w-4" />
         </Button>
@@ -147,7 +154,7 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
           variant="ghost"
           size="sm"
           onClick={handleDelete}
-          className="h-8 w-8 p-0 bg-white/80 hover:bg-white text-red-600"
+          className="h-8 w-8 p-0 bg-white/90 hover:bg-white text-red-600 shadow-sm"
         >
           <Trash className="h-4 w-4" />
         </Button>

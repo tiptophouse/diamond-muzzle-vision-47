@@ -32,25 +32,13 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
     if (onUpdate) onUpdate();
   };
 
-  const handleCardClick = () => {
-    if (isAdmin) {
-      console.log('🎯 Admin clicked on diamond:', diamond.stockNumber);
-      // The AdminStoreControls will handle the edit modal
-    }
-  };
-
   return (
-    <div 
-      className={`bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 group relative ${
-        isAdmin ? 'cursor-pointer hover:border-blue-400' : ''
-      }`}
-      onClick={isAdmin ? handleCardClick : undefined}
-    >
-      {/* Admin Controls - More prominent for admin */}
+    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 group relative">
+      {/* Admin Controls - Only show for admin */}
       {isAdmin && (
         <>
           {/* Admin Badge */}
-          <div className="absolute top-2 left-2 z-10">
+          <div className="absolute top-2 left-2 z-20">
             <Badge className="bg-blue-600 text-white text-xs px-2 py-1">
               ADMIN
             </Badge>
@@ -62,18 +50,6 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
             onUpdate={onUpdate || (() => {})}
             onDelete={handleDelete}
           />
-          
-          {/* Prominent Edit Button */}
-          <div className="absolute top-2 right-2 z-10">
-            <Button
-              variant="secondary"
-              size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white border-0"
-            >
-              <Edit className="h-4 w-4 mr-1" />
-              Edit
-            </Button>
-          </div>
         </>
       )}
 
@@ -173,7 +149,7 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
         {/* Admin Info */}
         {isAdmin && (
           <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-            Click to edit diamond details and upload photos
+            Admin: Click edit/delete buttons above to manage this diamond
           </div>
         )}
       </div>
