@@ -26,12 +26,12 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
       return false;
     }
 
-    if (!diamondId || !isValidUUID(diamondId)) {
+    if (!diamondId) {
       console.error('Invalid diamond ID for deletion:', diamondId);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Invalid diamond ID format",
+        description: "Invalid diamond ID",
       });
       return false;
     }
@@ -44,12 +44,9 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
     try {
       console.log('Deleting diamond ID:', diamondId, 'for user:', user.id);
       
-      // Call the backend /sold endpoint to delete the diamond
-      const response = await api.post('/sold', {
-        diamond_id: diamondId,
-        user_id: user.id,
-        action: 'delete'
-      });
+      // Call the new FastAPI endpoint to delete the diamond
+      const endpoint = apiEndpoints.deleteDiamond(diamondId);
+      const response = await api.delete(endpoint);
       
       if (response.error) {
         throw new Error(response.error);

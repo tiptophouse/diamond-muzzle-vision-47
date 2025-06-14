@@ -8,7 +8,7 @@ export const apiEndpoints = {
   },
   verifyTelegram: () => `/api/v1/verify-telegram`,
   uploadInventory: () => `/api/v1/upload-inventory`,
-  deleteDiamond: (diamondId: string, userId: number) => `/api/v1/delete_diamond?diamond_id=${diamondId}&user_id=${userId}`,
+  deleteDiamond: (diamondId: string) => `/api/v1/delete_stone/${diamondId}`,
   soldDiamond: () => `/api/v1/sold`,
   createReport: () => `/api/v1/create-report`,
   getReport: (reportId: string) => `/api/v1/get-report?diamond_id=${reportId}`,
