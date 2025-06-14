@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Diamond } from "@/components/inventory/InventoryTable";
-import { api } from "@/lib/api";
+import { api, apiEndpoints } from "@/lib/api";
 
 interface AdminStoreControlsProps {
   diamond: Diamond;
@@ -70,14 +70,15 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
     try {
       console.log('🔄 Updating diamond via API endpoint:', diamond.id);
       
-      // Use the API endpoint to update the diamond
+      // Use the proper API endpoint to update the diamond
       const updateData = {
         price_per_carat: Math.round(formData.price / diamond.carat),
         picture: formData.imageUrl,
         certificate_comment: formData.description
       };
 
-      const result = await api.put(`/diamonds/${diamond.id}`, updateData);
+      const endpoint = apiEndpoints.updateDiamond(diamond.id);
+      const result = await api.put(endpoint, updateData);
 
       if (result.error) {
         throw new Error(result.error);
@@ -107,7 +108,8 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
       try {
         console.log('🗑️ Deleting diamond via API endpoint:', diamond.id);
         
-        const result = await api.delete(`/diamonds/${diamond.id}`);
+        const endpoint = apiEndpoints.deleteDiamond(diamond.id);
+        const result = await api.delete(endpoint);
 
         if (result.error) {
           throw new Error(result.error);
