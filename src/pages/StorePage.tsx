@@ -12,22 +12,9 @@ import { Upload, Image } from "lucide-react";
 
 export default function StorePage() {
   const { diamonds, loading, error, refetch } = useStoreData();
-  const {
-    filteredDiamonds,
-    selectedShape,
-    setSelectedShape,
-    colorRange,
-    setColorRange,
-    clarityRange,
-    setClarityRange,
-    priceRange,
-    setPriceRange,
-    sortBy,
-    setSortBy,
-    resetFilters,
-  } = useStoreFilters(diamonds);
-
+  const { filters, filteredDiamonds, updateFilter, clearFilters } = useStoreFilters(diamonds);
   const [showUpload, setShowUpload] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   const handleImageUploaded = (imageUrl: string) => {
     console.log('Image uploaded to store:', imageUrl);
@@ -40,7 +27,10 @@ export default function StorePage() {
       <div className="container mx-auto px-4 py-6 space-y-6">
         {/* Header with Upload Button */}
         <div className="flex items-center justify-between">
-          <StoreHeader />
+          <StoreHeader 
+            totalDiamonds={filteredDiamonds.length}
+            onOpenFilters={() => setShowFilters(true)}
+          />
           <Dialog open={showUpload} onOpenChange={setShowUpload}>
             <DialogTrigger asChild>
               <Button className="flex items-center gap-2">
@@ -62,17 +52,13 @@ export default function StorePage() {
 
         {/* Filters */}
         <StoreFilters
-          selectedShape={selectedShape}
-          onShapeChange={setSelectedShape}
-          colorRange={colorRange}
-          onColorChange={setColorRange}
-          clarityRange={clarityRange}
-          onClarityChange={setClarityRange}
-          priceRange={priceRange}
-          onPriceChange={setPriceRange}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          onReset={resetFilters}
+          filters={filters}
+          onUpdateFilter={updateFilter}
+          onClearFilters={clearFilters}
+          diamonds={diamonds}
+          isOpen={showFilters}
+          onClose={() => setShowFilters(false)}
+          isMobile={true}
         />
 
         {/* Store Grid */}

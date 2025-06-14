@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { X, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,7 @@ export function StoreFilters({
   filters, 
   onUpdateFilter, 
   onClearFilters, 
-  diamonds,
+  diamonds = [], // Add default empty array to prevent undefined errors
   isOpen = false,
   onClose,
   isMobile = false,
@@ -44,7 +45,10 @@ export function StoreFilters({
   const [customCaratMax, setCustomCaratMax] = useState("");
 
   const getMinMaxValues = () => {
-    if (diamonds.length === 0) return { minCarat: 0, maxCarat: 10, minPrice: 0, maxPrice: 100000 };
+    // Add safety check for diamonds array
+    if (!diamonds || diamonds.length === 0) {
+      return { minCarat: 0, maxCarat: 10, minPrice: 0, maxPrice: 100000 };
+    }
     
     const carats = diamonds.map(d => d.carat);
     const prices = diamonds.map(d => d.price);
