@@ -2,8 +2,9 @@
 import React from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { SmartNotificationCard } from '@/components/notifications/SmartNotificationCard';
+import { GroupNotificationCard } from '@/components/notifications/GroupNotificationCard';
 import { useNotifications } from '@/hooks/useNotifications';
-import { Bell, BellRing, RefreshCw } from 'lucide-react';
+import { Bell, BellRing, RefreshCw, Users, Diamond } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -11,7 +12,11 @@ const NotificationsPage = () => {
   const { notifications, isLoading, markAsRead, contactCustomer, refetch } = useNotifications();
   
   const unreadCount = notifications.filter(n => !n.read).length;
+  const groupNotifications = notifications.filter(n => n.type === 'group_diamond_request');
   const diamondMatches = notifications.filter(n => n.type === 'diamond_match');
+  const otherNotifications = notifications.filter(n => 
+    n.type !== 'group_diamond_request' && n.type !== 'diamond_match'
+  );
 
   if (isLoading) {
     return (
@@ -24,6 +29,15 @@ const NotificationsPage = () => {
       </Layout>
     );
   }
+
+  const handleContactCustomer = (customerInfo: any) => {
+    // Open Telegram chat with the user
+    if (customerInfo.telegram_username) {
+      window.open(`https://t.me/${customerInfo.telegram_username}`, '_blank');
+    } else if (customerInfo.telegram_id) {
+      window.open(`tg://user?id=${customerInfo.telegram_id}`, '_blank');
+    }
+  };
 
   return (
     <Layout>
@@ -45,7 +59,7 @@ const NotificationsPage = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">התראות חכמות</h1>
               <p className="text-gray-600">
-                קבל התראות כשמישהו מחפש יהלומים דומים למלאי שלך
+                קבל התראות כשמישהו מחפש יהלומים בקבוצות טלגרם או דומים למלאי שלך
               </p>
             </div>
           </div>
@@ -57,7 +71,7 @@ const NotificationsPage = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-center gap-2">
               <BellRing className="h-5 w-5 text-blue-600" />
@@ -68,41 +82,81 @@ const NotificationsPage = () => {
           
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <div className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-green-600" />
-              <span className="font-medium text-green-900">סה"כ התראות</span>
+              <Users className="h-5 w-5 text-green-600" />
+              <span className="font-medium text-green-900">בקשות מקבוצות</span>
             </div>
-            <div className="text-2xl font-bold text-green-600 mt-1">{notifications.length}</div>
+            <div className="text-2xl font-bold text-green-600 mt-1">{groupNotifications.length}</div>
           </div>
           
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
             <div className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-purple-600" />
+              <Diamond className="h-5 w-5 text-purple-600" />
               <span className="font-medium text-purple-900">התאמות יהלומים</span>
             </div>
             <div className="text-2xl font-bold text-purple-600 mt-1">{diamondMatches.length}</div>
           </div>
+
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+            <div className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-orange-600" />
+              <span className="font-medium text-orange-900">סה"כ התראות</span>
+            </div>
+            <div className="text-2xl font-bold text-orange-600 mt-1">{notifications.length}</div>
+          </div>
         </div>
 
         {/* Notifications List */}
-        <div className="space-y-4">
-          {notifications.length === 0 ? (
+        <div className="space-y-6">
+          {/* Group Notifications */}
+          {groupNotifications.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Users className="h-5 w-5 text-green-600" />
+                בקשות מקבוצות B2B
+              </h2>
+              <div className="space-y-4">
+                {groupNotifications.map((notification) => (
+                  <GroupNotificationCard
+                    key={notification.id}
+                    notification={notification}
+                    onMarkAsRead={markAsRead}
+                    onContactCustomer={handleContactCustomer}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Regular Notifications */}
+          {(diamondMatches.length > 0 || otherNotifications.length > 0) && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Bell className="h-5 w-5 text-blue-600" />
+                התראות רגילות
+              </h2>
+              <div className="space-y-4">
+                {[...diamondMatches, ...otherNotifications].map((notification) => (
+                  <SmartNotificationCard
+                    key={notification.id}
+                    notification={notification}
+                    onMarkAsRead={markAsRead}
+                    onContactCustomer={contactCustomer}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {notifications.length === 0 && (
             <div className="text-center py-12">
               <Bell className="h-16 w-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-xl font-medium text-gray-900 mb-2">אין התראות עדיין</h3>
               <p className="text-gray-600 max-w-md mx-auto">
-                כשמישהו יחפש יהלומים דומים למלאי שלך, תקבל התראה כאן. 
+                כשמישהו יחפש יהלומים בקבוצות טלגרם או דומים למלאי שלך, תקבל התראה כאן. 
                 המערכת פועלת באופן אוטומטי ובזמן אמת.
               </p>
             </div>
-          ) : (
-            notifications.map((notification) => (
-              <SmartNotificationCard
-                key={notification.id}
-                notification={notification}
-                onMarkAsRead={markAsRead}
-                onContactCustomer={contactCustomer}
-              />
-            ))
           )}
         </div>
 
@@ -112,19 +166,19 @@ const NotificationsPage = () => {
           <ul className="space-y-2 text-blue-800">
             <li className="flex items-start gap-2">
               <span className="font-bold">•</span>
-              <span>כשמישהו מחפש יהלום בצ'אט, המערכת מנתחת אוטומטי את הבקשה</span>
+              <span>הבוט מנטר את קבוצות הטלגרם B2B שלך ומזהה בקשות יהלומים</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="font-bold">•</span>
-              <span>המערכת מחפשת התאמות במלאי של כל הסוחרים</span>
+              <span>המערכת מנתחת כל הודעה ומחפשת התאמות במלאי שלך</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="font-bold">•</span>
-              <span>אתה מקבל התראה מיידית על יהלומים דומים שיש לך במלאי</span>
+              <span>אתה מקבל התראה מיידית עם פרטי הבקשה וההתאמות שנמצאו</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="font-bold">•</span>
-              <span>ציון ההתאמה מבוסס על צורה, צבע, בהירות, משקל ומחיר</span>
+              <span>ניתן ליצור קשר ישיר עם המבקש דרך טלגרם</span>
             </li>
           </ul>
         </div>
