@@ -49,6 +49,7 @@ serve(async (req) => {
       { role: 'user', content: message }
     ];
 
+    console.log('🤖 Sending the following messages to OpenAI:', JSON.stringify(messages, null, 2));
     console.log('🤖 Sending request to OpenAI API...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -66,12 +67,12 @@ serve(async (req) => {
     console.log('🤖 Received response from OpenAI API with status:', response.status);
 
     if (!response.ok) {
-      const errorBody = await response.json().catch(() => ({ message: response.statusText }));
-      const errorMessage = errorBody?.error?.message || JSON.stringify(errorBody);
-      console.error('❌ OpenAI API Error:', errorMessage);
+      const errorBody = await response.text();
+      console.error('❌ OpenAI API Error Body:', errorBody);
+      const errorMessage = `OpenAI API Error: Status ${response.status} - ${errorBody}`;
       
       return new Response(JSON.stringify({ 
-        error: `OpenAI API Error: ${errorMessage}`,
+        error: errorMessage,
         response: `I'm having trouble connecting to my AI brain (OpenAI). It returned the following error: ${errorMessage}. This could be due to an invalid API key or a problem with the OpenAI service.`
       }), {
         status: 200,
@@ -80,6 +81,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
+    console.log('🤖 OpenAI API response body:', JSON.stringify(data, null, 2));
     const aiResponse = data.choices[0]?.message?.content?.trim() || 'I apologize, but I received an empty response. Please try rephrasing your question.';
 
     console.log('✅ OpenAI response generated successfully.');
