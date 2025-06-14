@@ -1,5 +1,5 @@
 
-import { Circle, Square, Diamond, Oval } from "lucide-react";
+import { Circle, Square, Diamond } from "lucide-react";
 
 interface ShapeSelectorProps {
   selectedShapes: string[];
@@ -11,12 +11,12 @@ const SHAPES = [
   { name: "Princess", icon: Square, label: "Princess" },
   { name: "Cushion", icon: Square, label: "Cushion" },
   { name: "Emerald", icon: Square, label: "Emerald" },
-  { name: "Oval", icon: Oval, label: "Oval" },
+  { name: "Oval", icon: Circle, label: "Oval" },
   { name: "Radiant", icon: Diamond, label: "Radiant" },
   { name: "Asscher", icon: Square, label: "Asscher" },
-  { name: "Marquise", icon: Oval, label: "Marquise" },
+  { name: "Marquise", icon: Circle, label: "Marquise" },
   { name: "Heart", icon: Circle, label: "Heart" },
-  { name: "Pear", icon: Oval, label: "Pear" },
+  { name: "Pear", icon: Circle, label: "Pear" },
 ];
 
 export function ShapeSelector({ selectedShapes, onShapeToggle }: ShapeSelectorProps) {
