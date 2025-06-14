@@ -1,7 +1,9 @@
 
 import { ReactNode } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { Shield, AlertTriangle, Settings, Crown } from 'lucide-react';
+import { Shield, AlertTriangle, Settings, Crown, Home } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 interface AdminGuardProps {
   children: ReactNode;
@@ -12,6 +14,7 @@ const ADMIN_TELEGRAM_ID = 2138564172;
 
 export function AdminGuard({ children }: AdminGuardProps) {
   const { user, isLoading, isTelegramEnvironment, isAuthenticated } = useTelegramAuth();
+  const navigate = useNavigate();
 
   console.log('🔍 AdminGuard - Current user:', user);
   console.log('🔍 AdminGuard - User ID:', user?.id);
@@ -100,11 +103,21 @@ export function AdminGuard({ children }: AdminGuardProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="bg-white border-b sticky top-0 z-50 shadow-sm">
-        <div className="flex items-center justify-center gap-3 p-4">
-          <Crown className="h-5 w-5 text-yellow-600" />
-          <span className="font-semibold text-gray-900">
-            Admin Dashboard - Welcome, {user.first_name}
-          </span>
+        <div className="flex items-center justify-between gap-3 p-4">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/dashboard')}
+              className="h-8 w-8 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+            >
+              <Home className="h-4 w-4" />
+            </Button>
+            <Crown className="h-5 w-5 text-yellow-600" />
+            <span className="font-semibold text-gray-900">
+              Admin Dashboard - Welcome, {user.first_name}
+            </span>
+          </div>
           <div className="text-xs bg-green-100 text-green-800 px-3 py-1 rounded-full">
             Verified ID: {user.id}
           </div>
