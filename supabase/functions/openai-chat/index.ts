@@ -25,7 +25,7 @@ serve(async (req) => {
         error: 'OpenAI API key not configured',
         response: 'I apologize, but I\'m currently unable to access my AI capabilities. The OpenAI API Key is missing. Please contact support to configure the integration.'
       }), {
-        status: 200, // Return 200 to ensure the message is displayed in the chat UI
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -46,10 +46,12 @@ serve(async (req) => {
     console.log(`🤖 Processing message for user: ${user_id}. Message: "${message}"`);
     console.log(`🤖 Conversation history length: ${conversation_history.length}`);
 
-    // Fetch inventory data from FastAPI
-    let inventorySummary = "The user's inventory data is not available at the moment.";
+    // Fetch comprehensive inventory data from FastAPI
+    let inventoryContext = "I don't have access to your current inventory data.";
+    let inventoryStats = {};
+    
     if (user_id) {
-        console.log(`🤖 Fetching inventory from FastAPI for user: ${user_id}`);
+        console.log(`🤖 Fetching comprehensive inventory from FastAPI for user: ${user_id}`);
         try {
           const inventoryEndpoint = `${backendUrl}/api/v1/get_all_stones?user_id=${user_id}`;
           console.log(`🤖 Calling FastAPI endpoint: ${inventoryEndpoint}`);
@@ -82,36 +84,117 @@ serve(async (req) => {
           
           const count = diamonds.length;
           console.log(`🤖 Found ${count} diamonds in inventory for user ${user_id} from FastAPI.`);
-          inventorySummary = `The user currently has ${count} diamonds in their inventory.`;
+          
+          // Generate comprehensive inventory analysis
+          if (count > 0) {
+            // Analyze shapes
+            const shapeCount = diamonds.reduce((acc, d) => {
+              acc[d.shape] = (acc[d.shape] || 0) + 1;
+              return acc;
+            }, {});
+            
+            // Analyze colors
+            const colorCount = diamonds.reduce((acc, d) => {
+              acc[d.color] = (acc[d.color] || 0) + 1;
+              return acc;
+            }, {});
+            
+            // Analyze clarity
+            const clarityCount = diamonds.reduce((acc, d) => {
+              acc[d.clarity] = (acc[d.clarity] || 0) + 1;
+              return acc;
+            }, {});
+            
+            // Calculate price statistics
+            const prices = diamonds.filter(d => d.price_per_carat).map(d => d.price_per_carat);
+            const totalValue = diamonds.reduce((sum, d) => sum + (d.price_per_carat * d.weight || 0), 0);
+            
+            // Size analysis
+            const caratRanges = diamonds.reduce((acc, d) => {
+              const weight = d.weight;
+              if (weight < 1) acc['under_1ct']++;
+              else if (weight < 2) acc['1_to_2ct']++;
+              else if (weight < 3) acc['2_to_3ct']++;
+              else acc['over_3ct']++;
+              return acc;
+            }, { under_1ct: 0, '1_to_2ct': 0, '2_to_3ct': 0, over_3ct: 0 });
+            
+            inventoryStats = {
+              totalCount: count,
+              shapes: shapeCount,
+              colors: colorCount,
+              clarity: clarityCount,
+              caratRanges,
+              averagePrice: prices.length > 0 ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : 0,
+              totalValue: Math.round(totalValue),
+              largestDiamond: Math.max(...diamonds.map(d => d.weight)),
+              mostExpensive: Math.max(...diamonds.filter(d => d.price_per_carat).map(d => d.price_per_carat * d.weight))
+            };
+            
+            inventoryContext = `CURRENT INVENTORY DATA (LIVE FROM DATABASE):
+• Total diamonds: ${count}
+• Shape distribution: ${Object.entries(shapeCount).map(([k,v]) => `${k}: ${v}`).join(', ')}
+• Color grades: ${Object.entries(colorCount).map(([k,v]) => `${k}: ${v}`).join(', ')}
+• Clarity grades: ${Object.entries(clarityCount).map(([k,v]) => `${k}: ${v}`).join(', ')}
+• Size ranges: Under 1ct: ${caratRanges.under_1ct}, 1-2ct: ${caratRanges['1_to_2ct']}, 2-3ct: ${caratRanges['2_to_3ct']}, Over 3ct: ${caratRanges.over_3ct}
+• Portfolio value: $${inventoryStats.totalValue.toLocaleString()}
+• Average price per carat: $${inventoryStats.averagePrice.toLocaleString()}
+• Largest diamond: ${inventoryStats.largestDiamond} carats
+• Most expensive piece: $${inventoryStats.mostExpensive.toLocaleString()}`;
+
+          } else {
+            inventoryContext = "CURRENT INVENTORY: No diamonds found in your inventory.";
+          }
 
         } catch (apiError) {
             console.error('❌ FastAPI Error fetching inventory:', apiError.message);
-            inventorySummary = `There was an error fetching real-time inventory data from the backend. I cannot provide an exact count right now. The error was: ${apiError.message}.`;
+            inventoryContext = `ERROR: Unable to fetch real-time inventory data. Backend connection failed: ${apiError.message}`;
         }
     } else {
         console.log('🤖 No user_id provided, skipping inventory fetch.');
+        inventoryContext = "No user authentication provided - cannot access inventory data.";
     }
+
+    console.log('🤖 Inventory context prepared:', inventoryContext.substring(0, 200) + '...');
 
     const messages = [
       {
         role: 'system',
-        content: `You are a diamond expert AI assistant for a diamond inventory management system. You help with:
-        - Diamond grading and evaluation
-        - Market pricing insights
-        - Inventory management advice
-        - Diamond certification questions
-        - General diamond knowledge
-        
-        Keep responses helpful, professional, and focused on diamonds and jewelry.
-        
-        Here is a summary of the user's current inventory: ${inventorySummary}`
+        content: `You are an expert diamond consultant and inventory analyst. You have LIVE ACCESS to the user's current diamond inventory data.
+
+CRITICAL INSTRUCTIONS:
+- ALWAYS use the provided LIVE inventory data in your responses
+- When asked about inventory, reference the EXACT numbers and details provided
+- Never give generic responses when you have actual data
+- Always acknowledge the specific inventory details when relevant
+
+${inventoryContext}
+
+Your expertise includes:
+- Diamond grading (4Cs: Cut, Carat, Color, Clarity)
+- Market pricing and valuation
+- Inventory analysis and recommendations  
+- Certificate analysis (GIA, AGS, etc.)
+- Investment advice for diamond portfolios
+- Shape popularity and market trends
+
+RESPONSE GUIDELINES:
+- Use the LIVE data provided above when answering questions
+- Be specific with numbers, percentages, and values
+- Provide actionable insights based on the actual inventory
+- When asked "how many diamonds", always reference the exact count from the data
+- For pricing questions, use the actual values and averages provided
+- For shape/color/clarity questions, reference the actual distributions shown
+
+Keep responses professional, knowledgeable, and data-driven using the user's real inventory information.`
       },
       ...conversation_history,
       { role: 'user', content: message }
     ];
 
-    console.log('🤖 Sending the following messages to OpenAI:', JSON.stringify(messages, null, 2));
+    console.log('🤖 Enhanced system prompt prepared with inventory data');
     console.log('🤖 Sending request to OpenAI API...');
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -121,10 +204,11 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: messages,
-        max_tokens: 1000,
+        max_tokens: 1500,
         temperature: 0.7,
       }),
     });
+    
     console.log('🤖 Received response from OpenAI API with status:', response.status);
 
     if (!response.ok) {
@@ -142,14 +226,15 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('🤖 OpenAI API response body:', JSON.stringify(data, null, 2));
+    console.log('🤖 OpenAI API response received successfully');
     const aiResponse = data.choices[0]?.message?.content?.trim() || 'I apologize, but I received an empty response. Please try rephrasing your question.';
 
-    console.log('✅ OpenAI response generated successfully.');
+    console.log('✅ Enhanced OpenAI response generated with inventory context');
 
     return new Response(JSON.stringify({ 
       response: aiResponse,
-      success: true 
+      success: true,
+      inventoryStats: inventoryStats
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
