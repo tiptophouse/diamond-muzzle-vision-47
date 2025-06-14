@@ -1,11 +1,13 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { DiamondInputField } from './form/DiamondInputField';
-import { DiamondSelectField } from './form/DiamondSelectField';
-import { DiamondFormActions } from './form/DiamondFormActions';
 import { DiamondFormData } from './form/types';
-import { shapes, colors, clarities, cuts, statuses } from './form/diamondFormConstants';
+import { DiamondDetailsSection } from '../upload/form/DiamondDetailsSection';
+import { CertificateSection } from '../upload/form/CertificateSection';
+import { MeasurementsSection } from '../upload/form/MeasurementsSection';
+import { DetailedGradingSection } from '../upload/form/DetailedGradingSection';
+import { BusinessInfoSection } from '../upload/form/BusinessInfoSection';
+import { ImageUploadSection } from '../upload/form/ImageUploadSection';
+import { DiamondFormActions } from './form/DiamondFormActions';
 import { Diamond } from './InventoryTable';
 
 interface DiamondFormProps {
@@ -26,17 +28,33 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       cut: diamond.cut || 'Excellent',
       price: diamond.price || 0,
       status: diamond.status || 'Available',
-      imageUrl: diamond.imageUrl || '',
+      picture: diamond.imageUrl || '',
+      // Map additional fields from diamond object if they exist
+      certificateNumber: (diamond as any).certificateNumber || '',
+      lab: (diamond as any).lab || 'GIA',
+      fluorescence: (diamond as any).fluorescence || 'None',
+      polish: (diamond as any).polish || 'Excellent',
+      symmetry: (diamond as any).symmetry || 'Excellent',
+      gridle: (diamond as any).gridle || 'Medium',
+      culet: (diamond as any).culet || 'None',
+      storeVisible: (diamond as any).store_visible || false,
     } : {
       stockNumber: '',
       carat: 1,
       price: 0,
       status: 'Available',
-      imageUrl: '',
+      picture: '',
       shape: 'Round',
       color: 'G',
       clarity: 'VS1',
-      cut: 'Excellent'
+      cut: 'Excellent',
+      fluorescence: 'None',
+      polish: 'Excellent',
+      symmetry: 'Excellent',
+      lab: 'GIA',
+      gridle: 'Medium',
+      culet: 'None',
+      storeVisible: false
     }
   });
 
@@ -52,7 +70,15 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
         cut: diamond.cut || 'Excellent',
         price: diamond.price || 0,
         status: diamond.status || 'Available',
-        imageUrl: diamond.imageUrl || '',
+        picture: diamond.imageUrl || '',
+        certificateNumber: (diamond as any).certificateNumber || '',
+        lab: (diamond as any).lab || 'GIA',
+        fluorescence: (diamond as any).fluorescence || 'None',
+        polish: (diamond as any).polish || 'Excellent',
+        symmetry: (diamond as any).symmetry || 'Excellent',
+        gridle: (diamond as any).gridle || 'Medium',
+        culet: (diamond as any).culet || 'None',
+        storeVisible: (diamond as any).store_visible || false,
       });
     }
   }, [diamond?.id, reset]);
@@ -86,102 +112,75 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       clarity: data.clarity || 'VS1',
       cut: data.cut || 'Excellent',
       status: data.status || 'Available',
-      imageUrl: data.imageUrl?.trim() || '',
+      picture: data.picture?.trim() || '',
+      // Include all the new fields
+      certificateNumber: data.certificateNumber?.trim() || '',
+      certificateUrl: data.certificateUrl?.trim() || '',
+      certificateComment: data.certificateComment?.trim() || '',
+      lab: data.lab || 'GIA',
+      length: data.length ? Number(data.length) : undefined,
+      width: data.width ? Number(data.width) : undefined,
+      depth: data.depth ? Number(data.depth) : undefined,
+      ratio: data.ratio ? Number(data.ratio) : undefined,
+      tablePercentage: data.tablePercentage ? Number(data.tablePercentage) : undefined,
+      depthPercentage: data.depthPercentage ? Number(data.depthPercentage) : undefined,
+      fluorescence: data.fluorescence || 'None',
+      polish: data.polish || 'Excellent',
+      symmetry: data.symmetry || 'Excellent',
+      gridle: data.gridle || 'Medium',
+      culet: data.culet || 'None',
+      pricePerCarat: data.pricePerCarat ? Number(data.pricePerCarat) : undefined,
+      rapnet: data.rapnet ? Number(data.rapnet) : undefined,
+      storeVisible: data.storeVisible || false,
     };
     
     console.log('Formatted form data:', formattedData);
     onSubmit(formattedData);
   };
 
+  const currentShape = watch('shape');
+  const showCutField = currentShape === 'Round';
+
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="md:col-span-2">
-          <DiamondInputField
-            id="imageUrl"
-            label="Image URL"
-            placeholder="Enter image URL (optional)"
-            register={register}
-            errors={errors}
-          />
-        </div>
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+      <DiamondDetailsSection
+        register={register}
+        setValue={setValue}
+        watch={watch}
+        errors={errors}
+      />
 
-        <DiamondInputField
-          id="stockNumber"
-          label="Stock Number"
-          placeholder="Enter stock number"
-          register={register}
-          validation={{ required: 'Stock number is required' }}
-          errors={errors}
-        />
+      <CertificateSection
+        register={register}
+        setValue={setValue}
+        watch={watch}
+        errors={errors}
+      />
 
-        <DiamondSelectField
-          id="shape"
-          label="Shape"
-          value={watch('shape') || 'Round'}
-          onValueChange={(value) => setValue('shape', value)}
-          options={shapes}
-        />
+      <MeasurementsSection
+        register={register}
+        watch={watch}
+        errors={errors}
+      />
 
-        <DiamondInputField
-          id="carat"
-          label="Carat"
-          type="number"
-          step="0.01"
-          placeholder="Enter carat weight"
-          register={register}
-          validation={{ 
-            required: 'Carat is required',
-            min: { value: 0.01, message: 'Carat must be greater than 0' }
-          }}
-          errors={errors}
-        />
+      <DetailedGradingSection
+        register={register}
+        setValue={setValue}
+        watch={watch}
+        errors={errors}
+      />
 
-        <DiamondSelectField
-          id="color"
-          label="Color"
-          value={watch('color') || 'G'}
-          onValueChange={(value) => setValue('color', value)}
-          options={colors}
-        />
+      <BusinessInfoSection
+        register={register}
+        setValue={setValue}
+        watch={watch}
+        errors={errors}
+      />
 
-        <DiamondSelectField
-          id="clarity"
-          label="Clarity"
-          value={watch('clarity') || 'VS1'}
-          onValueChange={(value) => setValue('clarity', value)}
-          options={clarities}
-        />
-
-        <DiamondSelectField
-          id="cut"
-          label="Cut"
-          value={watch('cut') || 'Excellent'}
-          onValueChange={(value) => setValue('cut', value)}
-          options={cuts}
-        />
-
-        <DiamondInputField
-          id="price"
-          label="Price ($)"
-          type="number"
-          placeholder="Enter price"
-          register={register}
-          validation={{ 
-            required: 'Price is required',
-            min: { value: 1, message: 'Price must be greater than 0' }
-          }}
-          errors={errors}
-        />
-
-        <DiamondSelectField
-          id="status"
-          label="Status"
-          value={watch('status') || 'Available'}
-          onValueChange={(value) => setValue('status', value)}
-          options={statuses}
-        />
-      </div>
+      <ImageUploadSection
+        setValue={setValue}
+        watch={watch}
+      />
 
       <DiamondFormActions
         diamond={diamond}
