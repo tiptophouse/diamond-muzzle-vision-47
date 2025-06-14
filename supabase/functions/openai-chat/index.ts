@@ -1,10 +1,10 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const supabaseUrl = Deno.env.get('SUPABASE_URL');
-const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+const backendUrl = Deno.env.get('BACKEND_URL');
+const backendAccessToken = Deno.env.get('BACKEND_ACCESS_TOKEN');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,11 +30,11 @@ serve(async (req) => {
       });
     }
 
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('❌ Configuration Error: Supabase URL or Anon Key is not set.');
+    if (!backendUrl || !backendAccessToken) {
+      console.error('❌ Configuration Error: Backend URL or Access Token is not set in Supabase secrets.');
       return new Response(JSON.stringify({ 
-        error: 'Supabase client configuration error',
-        response: 'I apologize, but I\'m currently unable to access the database. Please contact support.'
+        error: 'Backend service configuration error',
+        response: 'I apologize, but I\'m currently unable to access the main inventory system. The backend service is not configured correctly. Please contact support.'
       }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -46,26 +46,47 @@ serve(async (req) => {
     console.log(`🤖 Processing message for user: ${user_id}. Message: "${message}"`);
     console.log(`🤖 Conversation history length: ${conversation_history.length}`);
 
-    // Create a Supabase client with user's auth context
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: req.headers.get('Authorization')! } }
-    });
-
-    // Fetch inventory data
+    // Fetch inventory data from FastAPI
     let inventorySummary = "The user's inventory data is not available at the moment.";
     if (user_id) {
-        console.log(`🤖 Fetching inventory for user: ${user_id}`);
-        const { count, error: dbError } = await supabase
-            .from('inventory')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user_id);
+        console.log(`🤖 Fetching inventory from FastAPI for user: ${user_id}`);
+        try {
+          const inventoryEndpoint = `${backendUrl}/api/v1/get_all_stones?user_id=${user_id}`;
+          console.log(`🤖 Calling FastAPI endpoint: ${inventoryEndpoint}`);
+          
+          const apiResponse = await fetch(inventoryEndpoint, {
+              headers: {
+                  'Authorization': `Bearer ${backendAccessToken}`,
+                  'Accept': 'application/json',
+              }
+          });
 
-        if (dbError) {
-            console.error('❌ Database Error fetching inventory:', dbError.message);
-            inventorySummary = `There was an error fetching inventory data: ${dbError.message}.`;
-        } else {
-            console.log(`🤖 Found ${count} diamonds in inventory for user ${user_id}.`);
-            inventorySummary = `The user currently has ${count} diamonds in their inventory.`;
+          console.log(`🤖 FastAPI response status: ${apiResponse.status}`);
+
+          if (!apiResponse.ok) {
+              const errorBody = await apiResponse.text();
+              console.error(`❌ FastAPI request failed: ${apiResponse.status}`, errorBody);
+              throw new Error(`FastAPI request failed with status ${apiResponse.status}.`);
+          }
+
+          const inventoryData = await apiResponse.json();
+          
+          let diamonds = [];
+          if(Array.isArray(inventoryData)) {
+              diamonds = inventoryData;
+          } else if (inventoryData && Array.isArray(inventoryData.data)) {
+              diamonds = inventoryData.data;
+          } else if (inventoryData && Array.isArray(inventoryData.diamonds)) {
+              diamonds = inventoryData.diamonds;
+          }
+          
+          const count = diamonds.length;
+          console.log(`🤖 Found ${count} diamonds in inventory for user ${user_id} from FastAPI.`);
+          inventorySummary = `The user currently has ${count} diamonds in their inventory.`;
+
+        } catch (apiError) {
+            console.error('❌ FastAPI Error fetching inventory:', apiError.message);
+            inventorySummary = `There was an error fetching real-time inventory data from the backend. I cannot provide an exact count right now. The error was: ${apiError.message}.`;
         }
     } else {
         console.log('🤖 No user_id provided, skipping inventory fetch.');
