@@ -1,5 +1,5 @@
 
-import { EnhancedDiamondCard } from "./EnhancedDiamondCard";
+import { ProfessionalDiamondCard } from "./ProfessionalDiamondCard";
 import { DiamondCardSkeleton } from "./DiamondCardSkeleton";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { AlertCircle } from "lucide-react";
@@ -14,7 +14,7 @@ interface StoreGridProps {
 export function StoreGrid({ diamonds, loading, error, onUpdate }: StoreGridProps) {
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {Array.from({ length: 12 }, (_, i) => (
           <DiamondCardSkeleton key={i} />
         ))}
@@ -48,21 +48,12 @@ export function StoreGrid({ diamonds, loading, error, onUpdate }: StoreGridProps
     );
   }
 
-  const handleDelete = () => {
-    if (onUpdate) {
-      onUpdate();
-    }
-  };
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {diamonds.map((diamond, index) => (
-        <EnhancedDiamondCard 
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {diamonds.map((diamond) => (
+        <ProfessionalDiamondCard 
           key={diamond.id} 
-          diamond={diamond} 
-          index={index}
-          onUpdate={onUpdate}
-          onDelete={handleDelete}
+          diamond={diamond}
         />
       ))}
     </div>

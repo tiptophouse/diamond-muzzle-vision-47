@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { X, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import { Diamond } from "@/components/inventory/InventoryTable";
 import { ShapeSelector } from "./ShapeSelector";
 import { ColorScroller } from "./ColorScroller";
 import { ClarityScroller } from "./ClarityScroller";
+import { HorizontalStoreFilters } from "./HorizontalStoreFilters";
 
 interface StoreFiltersProps {
   filters: {
@@ -25,6 +25,7 @@ interface StoreFiltersProps {
   isOpen?: boolean;
   onClose?: () => void;
   isMobile?: boolean;
+  isHorizontal?: boolean;
 }
 
 export function StoreFilters({ 
@@ -34,7 +35,8 @@ export function StoreFilters({
   diamonds,
   isOpen = false,
   onClose,
-  isMobile = false
+  isMobile = false,
+  isHorizontal = false
 }: StoreFiltersProps) {
   const [customPriceMin, setCustomPriceMin] = useState("");
   const [customPriceMax, setCustomPriceMax] = useState("");
@@ -83,6 +85,18 @@ export function StoreFilters({
     const maxVal = customCaratMax ? parseFloat(customCaratMax) : maxCarat;
     onUpdateFilter('caratRange', [minVal, maxVal]);
   };
+
+  // If horizontal layout is requested, use the new component
+  if (isHorizontal) {
+    return (
+      <HorizontalStoreFilters
+        filters={filters}
+        onUpdateFilter={onUpdateFilter}
+        onClearFilters={onClearFilters}
+        diamonds={diamonds}
+      />
+    );
+  }
 
   const FilterContent = () => (
     <div className="space-y-8">
