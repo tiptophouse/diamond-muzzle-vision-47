@@ -3,8 +3,8 @@ import { Diamond } from "@/components/inventory/InventoryTable";
 
 const mockDiamonds: Diamond[] = [
   {
-    id: "1",
-    stockNumber: "D001",
+    id: "mock-1",
+    stockNumber: "MOCK-D001",
     shape: "Round",
     carat: 1.25,
     color: "F",
@@ -16,8 +16,8 @@ const mockDiamonds: Diamond[] = [
     store_visible: true
   },
   {
-    id: "2", 
-    stockNumber: "D002",
+    id: "mock-2", 
+    stockNumber: "MOCK-D002",
     shape: "Princess",
     carat: 0.95,
     color: "G",
@@ -29,8 +29,8 @@ const mockDiamonds: Diamond[] = [
     store_visible: true
   },
   {
-    id: "3",
-    stockNumber: "D003", 
+    id: "mock-3",
+    stockNumber: "MOCK-D003", 
     shape: "Emerald",
     carat: 1.50,
     color: "H",
@@ -42,8 +42,8 @@ const mockDiamonds: Diamond[] = [
     store_visible: false
   },
   {
-    id: "4",
-    stockNumber: "D004",
+    id: "mock-4",
+    stockNumber: "MOCK-D004",
     shape: "Oval",
     carat: 2.00,
     color: "E",
@@ -55,8 +55,8 @@ const mockDiamonds: Diamond[] = [
     store_visible: true
   },
   {
-    id: "5",
-    stockNumber: "D005",
+    id: "mock-5",
+    stockNumber: "MOCK-D005",
     shape: "Cushion",
     carat: 1.75,
     color: "D",
@@ -76,7 +76,9 @@ export interface MockInventoryResult {
 }
 
 export async function fetchMockInventoryData(): Promise<MockInventoryResult> {
-  console.log('🔍 MOCK SERVICE: Providing fallback diamond data');
+  console.warn('⚠️ MOCK SERVICE: Using fallback mock data - this is why you see only 5 diamonds instead of your 500 real diamonds');
+  console.warn('⚠️ MOCK SERVICE: Your real diamonds are in the FastAPI backend but connection failed');
+  console.warn('⚠️ MOCK SERVICE: Check FastAPI server status and connectivity to access your 500 diamonds');
   
   // Simulate a small delay like a real API
   await new Promise(resolve => setTimeout(resolve, 500));
@@ -84,10 +86,13 @@ export async function fetchMockInventoryData(): Promise<MockInventoryResult> {
   return {
     data: mockDiamonds,
     debugInfo: {
-      step: 'SUCCESS: Mock data provided',
+      step: 'FALLBACK: Mock data provided (NOT YOUR REAL DATA)',
       totalDiamonds: mockDiamonds.length,
       source: 'mock_service',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      warning: 'This is NOT your real 500 diamonds - FastAPI connection failed',
+      realDataLocation: 'FastAPI backend database',
+      expectedDiamonds: 500
     }
   };
 }
