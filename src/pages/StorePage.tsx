@@ -19,28 +19,30 @@ export default function StorePage() {
   const handleImageUploaded = (imageUrl: string) => {
     console.log('Image uploaded to store:', imageUrl);
     setShowUpload(false);
-    // You can add additional logic here if needed
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Header with Upload Button */}
-        <div className="flex items-center justify-between">
+      <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
+        {/* Header with Upload Button - Responsive */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <StoreHeader 
             totalDiamonds={filteredDiamonds.length}
             onOpenFilters={() => setShowFilters(true)}
           />
+          
+          {/* Upload Button - Full width on mobile */}
           <Dialog open={showUpload} onOpenChange={setShowUpload}>
             <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
+              <Button className="w-full sm:w-auto flex items-center justify-center gap-2 h-10 sm:h-9">
                 <Upload className="h-4 w-4" />
-                Upload Photo
+                <span className="hidden sm:inline">Upload Photo</span>
+                <span className="sm:hidden">Upload</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="w-[95vw] max-w-md mx-auto">
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
+                <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
                   <Image className="h-5 w-5" />
                   Upload Image to Store
                 </DialogTitle>
@@ -50,7 +52,18 @@ export default function StorePage() {
           </Dialog>
         </div>
 
-        {/* Filters */}
+        {/* Desktop Filters - Hidden on mobile */}
+        <div className="hidden lg:block">
+          <StoreFilters
+            filters={filters}
+            onUpdateFilter={updateFilter}
+            onClearFilters={clearFilters}
+            diamonds={diamonds}
+            isHorizontal={true}
+          />
+        </div>
+
+        {/* Mobile Filters - Sheet */}
         <StoreFilters
           filters={filters}
           onUpdateFilter={updateFilter}
@@ -61,7 +74,7 @@ export default function StorePage() {
           isMobile={true}
         />
 
-        {/* Store Grid */}
+        {/* Store Grid - Responsive */}
         <StoreGrid
           diamonds={filteredDiamonds}
           loading={loading}

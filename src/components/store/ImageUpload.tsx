@@ -98,8 +98,8 @@ export function ImageUpload({ onImageUploaded }: ImageUploadProps) {
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <CardContent className="p-6">
+    <Card className="w-full">
+      <CardContent className="p-4 sm:p-6">
         <input
           ref={fileInputRef}
           type="file"
@@ -110,13 +110,13 @@ export function ImageUpload({ onImageUploaded }: ImageUploadProps) {
 
         {!uploadedImage ? (
           <div className="text-center">
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 hover:border-gray-400 transition-colors">
-              <Image className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-4">Upload a photo to the store</p>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 sm:p-8 hover:border-gray-400 transition-colors">
+              <Image className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+              <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">Upload a photo to the store</p>
               <Button
                 onClick={handleUploadClick}
                 disabled={isUploading}
-                className="flex items-center gap-2"
+                className="w-full sm:w-auto flex items-center gap-2"
               >
                 <Upload className="h-4 w-4" />
                 {isUploading ? 'Uploading...' : 'Choose Image'}
@@ -148,7 +148,7 @@ export function ImageUpload({ onImageUploaded }: ImageUploadProps) {
               variant="outline"
               onClick={handleUploadClick}
               disabled={isUploading}
-              className="mt-2"
+              className="mt-2 w-full sm:w-auto"
             >
               Upload Another
             </Button>
