@@ -28,9 +28,9 @@ export function useOpenAIChat(userId?: number) {
     setIsLoading(true);
 
     try {
-      console.log('🤖 Sending message to OpenAI chat function');
+      console.log('🤖 Sending message to OpenAI chat function. History length:', messages.length);
       
-      const { data, error } = await supabase.functions.invoke('openai-chat', {
+      const { data, error: functionInvokeError } = await supabase.functions.invoke('openai-chat', {
         body: {
           message: content,
           user_id: userId,
@@ -41,17 +41,17 @@ export function useOpenAIChat(userId?: number) {
         },
       });
 
-      console.log('🤖 OpenAI function response:', { data, error });
+      console.log('🤖 OpenAI function response received:', { data, functionInvokeError });
 
-      let responseContent = 'I apologize, but I encountered an issue processing your request. Please try again.';
-      
-      if (data?.response) {
-        responseContent = data.response;
-      } else if (error) {
-        console.error('🤖 Supabase function error:', error);
-        responseContent = 'I\'m experiencing connection issues. Please try again in a moment.';
+      if (functionInvokeError) {
+        // This error occurs if the Supabase function itself fails to execute (e.g., network issue, function crash)
+        console.error('🤖 Supabase function invocation error:', functionInvokeError);
+        throw functionInvokeError;
       }
 
+      // The edge function is designed to always return a `response` string.
+      const responseContent = data?.response || 'I apologize, but I encountered an unexpected issue. Please try again.';
+      
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -61,26 +61,35 @@ export function useOpenAIChat(userId?: number) {
 
       setMessages(prev => [...prev, assistantMessage]);
       
-      // Only show error toast for actual failures, not fallback responses
-      if (error && !data?.response) {
+      // If the function returned a specific error message, show it in a toast for debugging.
+      if (data?.error) {
+        console.error('🤖 OpenAI function returned an error message:', data.error);
         toast({
-          title: "Connection Issue",
-          description: "The AI assistant is having connectivity issues, but you can still chat with fallback responses.",
+          title: "AI Assistant Issue",
+          description: `The AI returned an error: ${data.error}. You can continue chatting with fallback responses.`,
           variant: "destructive",
         });
       }
 
     } catch (error) {
-      console.error('🤖 Chat error:', error);
+      // This catch block handles network errors or if the function invoke fails completely.
+      console.error('🤖 Chat hook error:', error);
+      
+      const errorMessageText = 'I\'m currently offline. Please check your internet connection and try again. As your diamond assistant, I can help with grading, pricing, and more once I\'m back online.';
       
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'I\'m currently offline, but I\'m here to help! As your diamond assistant, I can typically help with diamond grading, pricing, inventory management, and general diamond knowledge. Please try asking your question again.',
+        content: errorMessageText,
         timestamp: new Date().toISOString(),
       };
-
       setMessages(prev => [...prev, errorMessage]);
+
+      toast({
+        title: "Connection Error",
+        description: "Could not reach the AI assistant. Please check your network connection.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

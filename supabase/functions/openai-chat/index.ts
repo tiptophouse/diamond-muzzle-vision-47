@@ -18,19 +18,20 @@ serve(async (req) => {
     console.log('🤖 OpenAI Chat: Function called');
     
     if (!openAIApiKey) {
-      console.error('❌ OpenAI API key not configured');
+      console.error('❌ Configuration Error: OPENAI_API_KEY is not set in Supabase secrets.');
       return new Response(JSON.stringify({ 
         error: 'OpenAI API key not configured',
-        response: 'I apologize, but I\'m currently unable to access my AI capabilities. Please contact support to configure the OpenAI integration.'
+        response: 'I apologize, but I\'m currently unable to access my AI capabilities. The OpenAI API Key is missing. Please contact support to configure the integration.'
       }), {
-        status: 200, // Return 200 so frontend gets the fallback message
+        status: 200, // Return 200 to ensure the message is displayed in the chat UI
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const { message, user_id, conversation_history = [] } = await req.json();
     
-    console.log('🤖 Processing message for user:', user_id);
+    console.log(`🤖 Processing message for user: ${user_id}. Message: "${message}"`);
+    console.log(`🤖 Conversation history length: ${conversation_history.length}`);
 
     const messages = [
       {
@@ -48,6 +49,7 @@ serve(async (req) => {
       { role: 'user', content: message }
     ];
 
+    console.log('🤖 Sending request to OpenAI API...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -61,17 +63,26 @@ serve(async (req) => {
         temperature: 0.7,
       }),
     });
+    console.log('🤖 Received response from OpenAI API with status:', response.status);
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ OpenAI API error:', response.status, errorText);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      const errorBody = await response.json().catch(() => ({ message: response.statusText }));
+      const errorMessage = errorBody?.error?.message || JSON.stringify(errorBody);
+      console.error('❌ OpenAI API Error:', errorMessage);
+      
+      return new Response(JSON.stringify({ 
+        error: `OpenAI API Error: ${errorMessage}`,
+        response: `I'm having trouble connecting to my AI brain (OpenAI). It returned the following error: ${errorMessage}. This could be due to an invalid API key or a problem with the OpenAI service.`
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const data = await response.json();
-    const aiResponse = data.choices[0]?.message?.content || 'I apologize, but I encountered an issue processing your request.';
+    const aiResponse = data.choices[0]?.message?.content?.trim() || 'I apologize, but I received an empty response. Please try rephrasing your question.';
 
-    console.log('✅ OpenAI response generated successfully');
+    console.log('✅ OpenAI response generated successfully.');
 
     return new Response(JSON.stringify({ 
       response: aiResponse,
@@ -81,26 +92,16 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('❌ OpenAI Chat function error:', error);
+    console.error('❌ Unhandled error in OpenAI Chat function:', error);
     
-    // Return a helpful fallback response instead of an error
-    const fallbackResponse = `I'm currently experiencing technical difficulties, but I'm here to help with your diamond questions! 
-    
-While I work on reconnecting, here are some things I can usually help with:
-• Diamond grading (4Cs: Cut, Color, Clarity, Carat)
-• Price estimates and market insights
-• Certificate verification
-• Inventory management tips
-• Diamond care and maintenance
-
-Please try your question again in a moment, or feel free to ask about any diamond-related topic!`;
+    const fallbackResponse = `I'm currently experiencing technical difficulties, but I'm here to help with your diamond questions! While I work on reconnecting, feel free to ask about the 4Cs, pricing, or inventory management. Please try your question again in a moment.`;
 
     return new Response(JSON.stringify({ 
       response: fallbackResponse,
       error: error.message,
       success: false
     }), {
-      status: 200, // Return 200 so frontend shows the fallback message
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
