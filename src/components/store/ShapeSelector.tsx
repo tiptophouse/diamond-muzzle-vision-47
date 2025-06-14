@@ -1,5 +1,14 @@
 
-import { Circle, Square, Diamond } from "lucide-react";
+import { RoundIcon } from "./shapes/RoundIcon";
+import { PrincessIcon } from "./shapes/PrincessIcon";
+import { CushionIcon } from "./shapes/CushionIcon";
+import { EmeraldIcon } from "./shapes/EmeraldIcon";
+import { OvalIcon } from "./shapes/OvalIcon";
+import { RadiantIcon } from "./shapes/RadiantIcon";
+import { AsscherIcon } from "./shapes/AsscherIcon";
+import { MarquiseIcon } from "./shapes/MarquiseIcon";
+import { HeartIcon } from "./shapes/HeartIcon";
+import { PearIcon } from "./shapes/PearIcon";
 
 interface ShapeSelectorProps {
   selectedShapes: string[];
@@ -7,16 +16,16 @@ interface ShapeSelectorProps {
 }
 
 const SHAPES = [
-  { name: "Round", icon: Circle, label: "Round" },
-  { name: "Princess", icon: Square, label: "Princess" },
-  { name: "Cushion", icon: Square, label: "Cushion" },
-  { name: "Emerald", icon: Square, label: "Emerald" },
-  { name: "Oval", icon: Circle, label: "Oval" },
-  { name: "Radiant", icon: Diamond, label: "Radiant" },
-  { name: "Asscher", icon: Square, label: "Asscher" },
-  { name: "Marquise", icon: Circle, label: "Marquise" },
-  { name: "Heart", icon: Circle, label: "Heart" },
-  { name: "Pear", icon: Circle, label: "Pear" },
+  { name: "Round", icon: RoundIcon, label: "Round" },
+  { name: "Princess", icon: PrincessIcon, label: "Princess" },
+  { name: "Cushion", icon: CushionIcon, label: "Cushion" },
+  { name: "Emerald", icon: EmeraldIcon, label: "Emerald" },
+  { name: "Oval", icon: OvalIcon, label: "Oval" },
+  { name: "Radiant", icon: RadiantIcon, label: "Radiant" },
+  { name: "Asscher", icon: AsscherIcon, label: "Asscher" },
+  { name: "Marquise", icon: MarquiseIcon, label: "Marquise" },
+  { name: "Heart", icon: HeartIcon, label: "Heart" },
+  { name: "Pear", icon: PearIcon, label: "Pear" },
 ];
 
 export function ShapeSelector({ selectedShapes, onShapeToggle }: ShapeSelectorProps) {
