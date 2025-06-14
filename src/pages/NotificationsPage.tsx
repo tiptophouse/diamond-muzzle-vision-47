@@ -4,25 +4,15 @@ import { Layout } from '@/components/layout/Layout';
 import { SmartNotificationCard } from '@/components/notifications/SmartNotificationCard';
 import { GroupNotificationCard } from '@/components/notifications/GroupNotificationCard';
 import { useNotifications } from '@/hooks/useNotifications';
-import { useGroupNotifications } from '@/hooks/useGroupNotifications';
 import { Bell, BellRing, RefreshCw, Users, Diamond } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 const NotificationsPage = () => {
-  const { notifications, isLoading: isLoadingRegular, markAsRead, contactCustomer, refetch } = useNotifications();
-  const { 
-    notifications: groupNotifications, 
-    isLoading: isLoadingGroup, 
-    markAsRead: markGroupAsRead, 
-    refetch: refetchGroup 
-  } = useGroupNotifications();
+  const { notifications, isLoading, markAsRead, contactCustomer, refetch } = useNotifications();
   
-  const isLoading = isLoadingRegular || isLoadingGroup;
-  
-  // Combine notifications for stats
-  const allNotifications = [...notifications, ...groupNotifications];
-  const unreadCount = allNotifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter(n => !n.read).length;
+  const groupNotifications = notifications.filter(n => n.type === 'group_diamond_request');
   const diamondMatches = notifications.filter(n => n.type === 'diamond_match');
   const otherNotifications = notifications.filter(n => 
     n.type !== 'group_diamond_request' && n.type !== 'diamond_match'
@@ -47,11 +37,6 @@ const NotificationsPage = () => {
     } else if (customerInfo.telegram_id) {
       window.open(`tg://user?id=${customerInfo.telegram_id}`, '_blank');
     }
-  };
-
-  const handleRefresh = () => {
-    refetch();
-    refetchGroup();
   };
 
   return (
@@ -79,7 +64,7 @@ const NotificationsPage = () => {
             </div>
           </div>
           
-          <Button onClick={handleRefresh} variant="outline" size="sm">
+          <Button onClick={refetch} variant="outline" size="sm">
             <RefreshCw className="h-4 w-4 mr-2" />
             רענן
           </Button>
@@ -116,7 +101,7 @@ const NotificationsPage = () => {
               <Bell className="h-5 w-5 text-orange-600" />
               <span className="font-medium text-orange-900">סה"כ התראות</span>
             </div>
-            <div className="text-2xl font-bold text-orange-600 mt-1">{allNotifications.length}</div>
+            <div className="text-2xl font-bold text-orange-600 mt-1">{notifications.length}</div>
           </div>
         </div>
 
@@ -134,7 +119,7 @@ const NotificationsPage = () => {
                   <GroupNotificationCard
                     key={notification.id}
                     notification={notification}
-                    onMarkAsRead={markGroupAsRead}
+                    onMarkAsRead={markAsRead}
                     onContactCustomer={handleContactCustomer}
                   />
                 ))}
@@ -163,7 +148,7 @@ const NotificationsPage = () => {
           )}
 
           {/* Empty State */}
-          {allNotifications.length === 0 && (
+          {notifications.length === 0 && (
             <div className="text-center py-12">
               <Bell className="h-16 w-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-xl font-medium text-gray-900 mb-2">אין התראות עדיין</h3>
