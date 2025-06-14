@@ -4,20 +4,41 @@ import { Heart, Eye, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { AdminStoreControls } from "./AdminStoreControls";
+
+const ADMIN_TELEGRAM_ID = 2138564172;
 
 interface ProfessionalDiamondCardProps {
   diamond: Diamond;
+  onUpdate?: () => void;
 }
 
-export function ProfessionalDiamondCard({ diamond }: ProfessionalDiamondCardProps) {
+export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamondCardProps) {
   const [imageError, setImageError] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+  const { user } = useTelegramAuth();
+  const isAdmin = user?.id === ADMIN_TELEGRAM_ID;
 
   // Generate a placeholder diamond image URL or use actual image
   const diamondImageUrl = diamond.imageUrl || `https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop&crop=center`;
 
+  const handleDelete = () => {
+    // Trigger refetch of data
+    if (onUpdate) onUpdate();
+  };
+
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 group">
+    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 group relative">
+      {/* Admin Controls */}
+      {isAdmin && (
+        <AdminStoreControls 
+          diamond={diamond}
+          onUpdate={onUpdate || (() => {})}
+          onDelete={handleDelete}
+        />
+      )}
+
       {/* Image Container */}
       <div className="relative aspect-square bg-gray-50 overflow-hidden">
         {!imageError ? (
@@ -35,31 +56,33 @@ export function ProfessionalDiamondCard({ diamond }: ProfessionalDiamondCardProp
           </div>
         )}
         
-        {/* Action Icons */}
-        <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            size="icon"
-            variant="secondary"
-            className={`w-8 h-8 rounded-full bg-white/90 hover:bg-white ${isLiked ? 'text-red-500' : 'text-gray-600'}`}
-            onClick={() => setIsLiked(!isLiked)}
-          >
-            <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
-          </Button>
-          <Button
-            size="icon"
-            variant="secondary"
-            className="w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-600"
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="secondary"
-            className="w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-600"
-          >
-            <Share className="h-4 w-4" />
-          </Button>
-        </div>
+        {/* Action Icons - only show for non-admin users */}
+        {!isAdmin && (
+          <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              size="icon"
+              variant="secondary"
+              className={`w-8 h-8 rounded-full bg-white/90 hover:bg-white ${isLiked ? 'text-red-500' : 'text-gray-600'}`}
+              onClick={() => setIsLiked(!isLiked)}
+            >
+              <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
+            </Button>
+            <Button
+              size="icon"
+              variant="secondary"
+              className="w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-600"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="secondary"
+              className="w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-600"
+            >
+              <Share className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
 
         {/* GIA Badge */}
         <div className="absolute bottom-3 left-3">

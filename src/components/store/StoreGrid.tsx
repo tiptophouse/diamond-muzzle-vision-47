@@ -54,6 +54,7 @@ export function StoreGrid({ diamonds, loading, error, onUpdate }: StoreGridProps
         <ProfessionalDiamondCard 
           key={diamond.id} 
           diamond={diamond}
+          onUpdate={onUpdate}
         />
       ))}
     </div>
