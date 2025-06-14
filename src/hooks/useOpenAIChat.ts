@@ -28,6 +28,8 @@ export function useOpenAIChat(userId?: number) {
     setIsLoading(true);
 
     try {
+      console.log('🤖 Sending message to OpenAI chat function');
+      
       const { data, error } = await supabase.functions.invoke('openai-chat', {
         body: {
           message: content,
@@ -39,33 +41,46 @@ export function useOpenAIChat(userId?: number) {
         },
       });
 
-      if (error) throw error;
+      console.log('🤖 OpenAI function response:', { data, error });
+
+      let responseContent = 'I apologize, but I encountered an issue processing your request. Please try again.';
+      
+      if (data?.response) {
+        responseContent = data.response;
+      } else if (error) {
+        console.error('🤖 Supabase function error:', error);
+        responseContent = 'I\'m experiencing connection issues. Please try again in a moment.';
+      }
 
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.response || 'I apologize, but I encountered an issue processing your request.',
+        content: responseContent,
         timestamp: new Date().toISOString(),
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+      
+      // Only show error toast for actual failures, not fallback responses
+      if (error && !data?.response) {
+        toast({
+          title: "Connection Issue",
+          description: "The AI assistant is having connectivity issues, but you can still chat with fallback responses.",
+          variant: "destructive",
+        });
+      }
+
     } catch (error) {
-      console.error('Chat error:', error);
+      console.error('🤖 Chat error:', error);
       
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'I apologize, but I encountered an error. As your diamond assistant, I can help with inventory management, pricing analysis, and diamond insights. Please try asking your question again.',
+        content: 'I\'m currently offline, but I\'m here to help! As your diamond assistant, I can typically help with diamond grading, pricing, inventory management, and general diamond knowledge. Please try asking your question again.',
         timestamp: new Date().toISOString(),
       };
 
       setMessages(prev => [...prev, errorMessage]);
-      
-      toast({
-        title: "Connection Error",
-        description: "Unable to connect to the AI service. Please try again.",
-        variant: "destructive",
-      });
     } finally {
       setIsLoading(false);
     }
