@@ -6,6 +6,7 @@ import { StoreHeader } from "@/components/store/StoreHeader";
 import { PremiumStoreFilters } from "@/components/store/PremiumStoreFilters";
 import { StoreGrid } from "@/components/store/StoreGrid";
 import { ImageUpload } from "@/components/store/ImageUpload";
+import { FloatingShareButton } from "@/components/store/FloatingShareButton";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Upload, Image } from "lucide-react";
@@ -68,6 +69,9 @@ export default function StorePage() {
           onUpdate={refetch}
         />
       </div>
+
+      {/* Floating Share Button */}
+      <FloatingShareButton />
     </div>
   );
 }
