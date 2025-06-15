@@ -1,4 +1,3 @@
-
 import {
   BrowserRouter as Router,
   Route,
@@ -15,7 +14,6 @@ import ChatPage from "./pages/ChatPage";
 import UploadPage from "./pages/UploadPage";
 import UploadSingleStonePage from "./pages/UploadSingleStonePage";
 import InsightsPage from "./pages/InsightsPage";
-import ReportsPage from "./pages/ReportsPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import Index from "./pages/Index";
 import { TelegramAuthProvider } from '@/context/TelegramAuthContext';
@@ -54,7 +52,6 @@ function App() {
                     <Route path="/upload-single" element={<UploadSingleStonePage />} />
                     <Route path="/chat" element={<ChatPage />} />
                     <Route path="/insights" element={<InsightsPage />} />
-                    <Route path="/reports" element={<ReportsPage />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/notifications" element={<NotificationsPage />} />
                     <Route path="/admin" element={

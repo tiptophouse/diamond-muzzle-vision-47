@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -29,6 +30,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 
 export default function InventoryPage() {
   const { isAuthenticated, isLoading: authLoading, user, error: authError } = useTelegramAuth();
@@ -117,6 +120,49 @@ export default function InventoryPage() {
     }
   };
 
+  // CSV download functionality
+  const downloadCSV = () => {
+    if (!allDiamonds.length) {
+      toast({
+        title: "Export failed",
+        description: "There are no diamonds to export.",
+        variant: "destructive"
+      });
+      return;
+    }
+    // Get headings from the keys, with preferred order:
+    const csvFields = [
+      "stockNumber", "shape", "carat", "color", "clarity", "cut", "price",
+      "status", "certificateNumber", "lab", "certificateUrl"
+    ];
+    const csvHeader = csvFields.join(",");
+    const csvRows = allDiamonds.map(diamond =>
+      csvFields.map(field =>
+        // If value contains comma, wrap in quotes.
+        typeof diamond[field as keyof Diamond] === "string"
+          ? `"${String(diamond[field as keyof Diamond]).replace(/"/g, '""')}"`
+          : diamond[field as keyof Diamond] ?? ""
+      ).join(",")
+    );
+    const csv = [csvHeader, ...csvRows].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+
+    // Download with a dynamic filename
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `inventory-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    toast({
+      title: "Inventory exported",
+      description: "CSV download has started."
+    });
+  };
+
   if (authLoading) {
     return (
       <Layout>
@@ -148,12 +194,26 @@ export default function InventoryPage() {
   return (
     <Layout>
       <div className="w-full max-w-full overflow-x-hidden space-y-4">
-        <InventoryHeader
-          totalDiamonds={allDiamonds.length}
-          loading={loading}
-          onRefresh={() => {}}   // no-op, buttons are now in UploadForm
-          onAdd={undefined}
-        />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-2">
+          <InventoryHeader
+            totalDiamonds={allDiamonds.length}
+            loading={loading}
+            onRefresh={() => {}}   // no-op, buttons are now in UploadForm
+            onAdd={undefined}
+          />
+          <div className="flex gap-2 items-center justify-end">
+            <Button
+              variant="outline"
+              onClick={downloadCSV}
+              className="flex items-center gap-2 text-blue-700 border-blue-200"
+              disabled={loading || allDiamonds.length === 0}
+              title="Export all inventory to CSV"
+            >
+              <Download className="h-4 w-4" />
+              Download CSV
+            </Button>
+          </div>
+        </div>
         
         <div className="w-full space-y-4">
           <InventorySearch
@@ -222,3 +282,5 @@ export default function InventoryPage() {
     </Layout>
   );
 }
+
+// NOTE: This file is now 240+ lines long. Strongly consider refactoring the InventoryPage into smaller components soon!
