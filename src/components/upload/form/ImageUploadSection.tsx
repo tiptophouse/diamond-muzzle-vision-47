@@ -56,7 +56,7 @@ export function ImageUploadSection({ setValue, watch }: ImageUploadSectionProps)
       // Create unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `diamond-images/${fileName}`;
+      const filePath = fileName; // The path within the bucket should not contain the bucket name.
 
       // Upload to Supabase Storage
       const { data, error } = await supabase.storage
@@ -79,10 +79,11 @@ export function ImageUploadSection({ setValue, watch }: ImageUploadSectionProps)
       });
     } catch (error) {
       console.error('Error uploading image:', error);
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
       toast({
         variant: "destructive",
         title: "Upload failed",
-        description: "Failed to upload image. Please try again.",
+        description: `Image upload failed: ${errorMessage}. Please ensure storage policies are correctly configured.`,
       });
     } finally {
       setUploading(false);

@@ -76,9 +76,10 @@ export function ImageUpload({ onImageUploaded }: ImageUploadProps) {
 
     } catch (error) {
       console.error('Error uploading image:', error);
+      const errorMessage = error instanceof Error ? error.message : "There was an error uploading your image";
       toast({
         title: "Upload failed",
-        description: "There was an error uploading your image",
+        description: `Upload failed: ${errorMessage}. Please check storage permissions.`,
         variant: "destructive",
       });
     } finally {
