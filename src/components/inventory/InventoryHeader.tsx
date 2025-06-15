@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Plus, AlertCircle, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -12,7 +11,7 @@ interface InventoryHeaderProps {
   loading: boolean;
 }
 
-export function InventoryHeader({ totalDiamonds, onRefresh, onAdd, loading }: InventoryHeaderProps) {
+export function InventoryHeader({ totalDiamonds, loading }: InventoryHeaderProps) {
   return (
     <div className="w-full bg-background">
       <div className="flex flex-col space-y-4">
@@ -27,34 +26,14 @@ export function InventoryHeader({ totalDiamonds, onRefresh, onAdd, loading }: In
               <CheckCircle className="h-4 w-4 text-green-600" />
               <AlertDescription className="text-green-800">
                 {totalDiamonds === 5 ? 
-                  'Showing sample diamonds. Your FastAPI server may be offline - click "Sync Data" to try reconnecting.' :
+                  'Showing sample diamonds. Your FastAPI server may be offline - click "Sync Data" on the Upload page to try reconnecting.' :
                   `Successfully loaded ${totalDiamonds} diamonds from your inventory system.`
                 }
               </AlertDescription>
             </Alert>
           )}
         </div>
-        
-        <div className="flex flex-col sm:flex-row gap-2 w-full">
-          {onAdd && (
-            <Button 
-              onClick={onAdd}
-              className="w-full sm:flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Diamond
-            </Button>
-          )}
-          <Button 
-            variant="outline" 
-            onClick={onRefresh}
-            disabled={loading}
-            className="w-full sm:flex-1 border-slate-300 text-slate-700 hover:bg-slate-50"
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Sync Data
-          </Button>
-        </div>
+        {/* Removed Add Diamond & Sync Data buttons */}
       </div>
     </div>
   );

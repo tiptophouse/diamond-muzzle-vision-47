@@ -150,8 +150,6 @@ export default function InventoryPage() {
       <div className="w-full max-w-full overflow-x-hidden space-y-4">
         <InventoryHeader
           totalDiamonds={allDiamonds.length}
-          onRefresh={handleRefresh}
-          onAdd={handleAddDiamond}
           loading={loading}
         />
         
