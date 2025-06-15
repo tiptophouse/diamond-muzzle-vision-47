@@ -10,6 +10,11 @@ interface SecurityMetrics {
   cleanupInterval: number;
   lastVerification: string | null;
   verificationStatus: boolean;
+  attemptTimestamp: number;
+  environment: string;
+  hasInitData: boolean;
+  initDataLength: number;
+  validationStatus: 'pending' | 'success' | 'failed';
 }
 
 export function SecurityMonitor() {
@@ -24,14 +29,24 @@ export function SecurityMonitor() {
       const authMetrics = getAuthenticationMetrics();
       const apiMetrics = getSecurityMetrics();
       
-      setMetrics({
-        ...authMetrics,
-        ...apiMetrics
-      });
+      const combinedMetrics: SecurityMetrics = {
+        cachedHashes: 0,
+        maxAge: 300,
+        cleanupInterval: 60000,
+        lastVerification: apiMetrics.lastVerification,
+        verificationStatus: apiMetrics.verificationStatus,
+        attemptTimestamp: authMetrics.attemptTimestamp,
+        environment: authMetrics.environment,
+        hasInitData: authMetrics.hasInitData,
+        initDataLength: authMetrics.initDataLength,
+        validationStatus: authMetrics.validationStatus
+      };
+      
+      setMetrics(combinedMetrics);
     };
 
     updateMetrics();
-    const interval = setInterval(updateMetrics, 5000); // Update every 5 seconds
+    const interval = setInterval(updateMetrics, 5000);
 
     return () => clearInterval(interval);
   }, []);
