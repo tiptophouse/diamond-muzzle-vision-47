@@ -6,7 +6,7 @@ import { Camera, Upload, Save } from "lucide-react";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useInventoryCrud } from "@/hooks/useInventoryCrud";
 import { DiamondFormData } from "@/components/inventory/form/types";
-import { GIACertificateScanner } from "./GIACertificateScanner";
+import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
 import { SingleStoneForm } from "./SingleStoneForm";
 import { toast } from "@/components/ui/use-toast";
 
@@ -107,7 +107,7 @@ export function SingleStoneUploadForm() {
         </CardContent>
       </Card>
 
-      <GIACertificateScanner
+      <QRCodeScanner
         isOpen={showScanner}
         onClose={() => setShowScanner(false)}
         onScanSuccess={handleScanSuccess}
