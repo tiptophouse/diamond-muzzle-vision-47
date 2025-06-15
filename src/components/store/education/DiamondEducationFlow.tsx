@@ -3,25 +3,21 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Send, Sparkles, Heart, Diamond, Gem } from "lucide-react";
+import { Send, Sparkles, Heart, Diamond, Gem, ArrowLeft } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface FlowState {
-  step: 'welcome' | 'education' | 'budget' | 'style_selection' | 'design_generation' | 'refinement' | 'final';
-  education_progress: {
-    cut: boolean;
-    color: boolean;
-    clarity: boolean;
-    carat: boolean;
-  };
-  budget?: number;
+  step: 'style_selection' | 'style_refinement' | 'customization' | 'design_generation' | 'final';
+  selected_style?: 'classic' | 'vintage' | 'modern';
+  selected_substyle?: string;
   preferences: {
     cut?: string;
     color?: string;
     clarity?: string;
     carat?: number;
     style?: 'classic' | 'vintage' | 'modern';
+    substyle?: string;
   };
   generated_images: string[];
 }
@@ -38,13 +34,7 @@ export function DiamondEducationFlow() {
   const [currentMessage, setCurrentMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [flowState, setFlowState] = useState<FlowState>({
-    step: 'welcome',
-    education_progress: {
-      cut: false,
-      color: false,
-      clarity: false,
-      carat: false,
-    },
+    step: 'style_selection',
     preferences: {},
     generated_images: [],
   });
@@ -55,11 +45,45 @@ export function DiamondEducationFlow() {
     const welcomeMessage: ChatMessage = {
       id: '1',
       role: 'assistant',
-      content: "Hi there! 👋 I'm your personal diamond expert, and I'm excited to help you learn about diamonds and design your perfect engagement ring! \n\nLet's start with the basics - the 4Cs of diamonds: Cut, Color, Clarity, and Carat. These determine a diamond's beauty and value.\n\nWhat would you like to learn about first? Or do you have a budget in mind? 💎",
+      content: "Welcome! I'm here to help you design your perfect engagement ring! ✨\n\nLet's start by choosing a style that speaks to you. Take a look at these three main styles:",
       timestamp: new Date().toISOString(),
     };
     setMessages([welcomeMessage]);
   }, []);
+
+  const handleStyleSelection = (style: 'classic' | 'vintage' | 'modern') => {
+    setFlowState(prev => ({ 
+      ...prev, 
+      selected_style: style, 
+      step: 'style_refinement',
+      preferences: { ...prev.preferences, style }
+    }));
+
+    const styleMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'assistant',
+      content: `Perfect choice! ${style === 'classic' ? 'Classic' : style === 'vintage' ? 'Vintage' : 'Modern'} rings are beautiful! 💍\n\nNow let's get more specific. Here are some ${style} variations to help narrow down your perfect style:`,
+      timestamp: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, styleMessage]);
+  };
+
+  const handleSubstyleSelection = (substyle: string) => {
+    setFlowState(prev => ({ 
+      ...prev, 
+      selected_substyle: substyle,
+      step: 'customization',
+      preferences: { ...prev.preferences, substyle }
+    }));
+
+    const customizationMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'assistant',
+      content: `Excellent choice! I love the ${substyle} style! ✨\n\nNow you can tell me exactly what you want to change or customize. You can say things like:\n• "Make the diamond bigger"\n• "Add more sparkle"\n• "Change the band to rose gold"\n• "Make it more delicate"\n\nWhat would you like to customize about your ring?`,
+      timestamp: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, customizationMessage]);
+  };
 
   const sendMessage = async (content: string) => {
     if (!content.trim() || isLoading) return;
@@ -83,9 +107,7 @@ export function DiamondEducationFlow() {
         },
       });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -100,7 +122,7 @@ export function DiamondEducationFlow() {
         setFlowState(data.flow_state);
       }
 
-      // Check if we should generate a ring image
+      // Generate ring image when ready
       if (data.flow_state?.step === 'design_generation' && !generatedImage) {
         await generateRingImage(data.flow_state);
       }
@@ -136,9 +158,7 @@ export function DiamondEducationFlow() {
         },
       });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       if (data.image_url) {
         setGeneratedImage(data.image_url);
@@ -151,7 +171,7 @@ export function DiamondEducationFlow() {
         };
         
         setMessages(prev => [...prev, imageMessage]);
-        setFlowState(prev => ({ ...prev, step: 'refinement' }));
+        setFlowState(prev => ({ ...prev, step: 'final' }));
       }
 
     } catch (error) {
@@ -164,18 +184,60 @@ export function DiamondEducationFlow() {
     }
   };
 
-  const getProgressSteps = () => {
-    const steps = [
-      { key: 'cut', label: 'Cut', completed: flowState.education_progress.cut },
-      { key: 'color', label: 'Color', completed: flowState.education_progress.color },
-      { key: 'clarity', label: 'Clarity', completed: flowState.education_progress.clarity },
-      { key: 'carat', label: 'Carat', completed: flowState.education_progress.carat },
+  const getStyleOptions = () => {
+    return [
+      {
+        id: 'classic',
+        name: 'Classic',
+        description: 'Timeless elegance with clean lines',
+        image: '/placeholder.svg?text=Classic+Ring',
+      },
+      {
+        id: 'vintage',
+        name: 'Vintage',
+        description: 'Romantic details with antique charm',
+        image: '/placeholder.svg?text=Vintage+Ring',
+      },
+      {
+        id: 'modern',
+        name: 'Modern',
+        description: 'Contemporary designs with unique flair',
+        image: '/placeholder.svg?text=Modern+Ring',
+      },
     ];
-    return steps;
   };
 
-  const handleQuickAction = (action: string) => {
-    sendMessage(action);
+  const getSubstyleOptions = () => {
+    const style = flowState.selected_style;
+    
+    if (style === 'classic') {
+      return [
+        { id: 'solitaire', name: 'Classic Solitaire', description: 'Single stone perfection', image: '/placeholder.svg?text=Solitaire' },
+        { id: 'three-stone', name: 'Three Stone', description: 'Past, present, future', image: '/placeholder.svg?text=Three+Stone' },
+        { id: 'halo', name: 'Classic Halo', description: 'Center stone with sparkling frame', image: '/placeholder.svg?text=Classic+Halo' },
+      ];
+    } else if (style === 'vintage') {
+      return [
+        { id: 'art-deco', name: 'Art Deco', description: 'Geometric patterns and bold lines', image: '/placeholder.svg?text=Art+Deco' },
+        { id: 'victorian', name: 'Victorian', description: 'Intricate details and romantic elements', image: '/placeholder.svg?text=Victorian' },
+        { id: 'edwardian', name: 'Edwardian', description: 'Delicate filigree and lace-like patterns', image: '/placeholder.svg?text=Edwardian' },
+      ];
+    } else {
+      return [
+        { id: 'geometric', name: 'Geometric', description: 'Bold shapes and clean angles', image: '/placeholder.svg?text=Geometric' },
+        { id: 'tension', name: 'Tension Setting', description: 'Diamond appears to float', image: '/placeholder.svg?text=Tension' },
+        { id: 'asymmetric', name: 'Asymmetric', description: 'Unique and unexpected design', image: '/placeholder.svg?text=Asymmetric' },
+      ];
+    }
+  };
+
+  const goBackToStyleSelection = () => {
+    setFlowState(prev => ({ 
+      ...prev, 
+      step: 'style_selection',
+      selected_style: undefined,
+      selected_substyle: undefined
+    }));
   };
 
   return (
@@ -186,22 +248,20 @@ export function DiamondEducationFlow() {
           <div className="flex items-center gap-2">
             <Diamond className="h-6 w-6 text-pink-600" />
             <div>
-              <h1 className="text-lg font-semibold text-gray-900">Diamond Learning Journey</h1>
-              <p className="text-sm text-gray-500">Your personal diamond expert</p>
+              <h1 className="text-lg font-semibold text-gray-900">Ring Design Assistant</h1>
+              <p className="text-sm text-gray-500">Let's create your perfect ring</p>
             </div>
           </div>
-          {flowState.step === 'education' && (
-            <div className="flex gap-1">
-              {getProgressSteps().map((step) => (
-                <div
-                  key={step.key}
-                  className={`w-3 h-3 rounded-full ${
-                    step.completed ? 'bg-pink-500' : 'bg-gray-200'
-                  }`}
-                  title={step.label}
-                />
-              ))}
-            </div>
+          {flowState.step !== 'style_selection' && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={goBackToStyleSelection}
+              className="border-pink-200 text-pink-700 hover:bg-pink-50"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back
+            </Button>
           )}
         </div>
       </div>
@@ -224,6 +284,71 @@ export function DiamondEducationFlow() {
             </Card>
           </div>
         ))}
+
+        {/* Style Selection Grid */}
+        {flowState.step === 'style_selection' && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4">
+              {getStyleOptions().map((style) => (
+                <Card 
+                  key={style.id}
+                  className="cursor-pointer hover:shadow-lg transition-shadow border-pink-200 hover:border-pink-300"
+                  onClick={() => handleStyleSelection(style.id as 'classic' | 'vintage' | 'modern')}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <img 
+                          src={style.image} 
+                          alt={style.name}
+                          className="w-16 h-16 object-cover rounded"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900">{style.name}</h3>
+                        <p className="text-sm text-gray-600">{style.description}</p>
+                      </div>
+                      <div className="text-pink-500">
+                        <Diamond className="h-5 w-5" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Substyle Selection Grid */}
+        {flowState.step === 'style_refinement' && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3">
+              {getSubstyleOptions().map((substyle) => (
+                <Card 
+                  key={substyle.id}
+                  className="cursor-pointer hover:shadow-lg transition-shadow border-pink-200 hover:border-pink-300"
+                  onClick={() => handleSubstyleSelection(substyle.name)}
+                >
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <img 
+                          src={substyle.image} 
+                          alt={substyle.name}
+                          className="w-12 h-12 object-cover rounded"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900">{substyle.name}</h4>
+                        <p className="text-xs text-gray-600">{substyle.description}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Generated Ring Image */}
         {generatedImage && (
@@ -249,7 +374,7 @@ export function DiamondEducationFlow() {
               <CardContent className="p-3">
                 <div className="flex items-center gap-2">
                   <div className="animate-spin">💎</div>
-                  <span className="text-sm text-gray-600">Thinking...</span>
+                  <span className="text-sm text-gray-600">Creating your design...</span>
                 </div>
               </CardContent>
             </Card>
@@ -257,85 +382,28 @@ export function DiamondEducationFlow() {
         )}
       </div>
 
-      {/* Quick Actions */}
-      {flowState.step === 'welcome' && (
+      {/* Input - Only show during customization phase */}
+      {flowState.step === 'customization' && (
         <div className="p-4 bg-white border-t border-pink-200">
-          <div className="grid grid-cols-2 gap-2 mb-4">
+          <div className="flex gap-2">
+            <Input
+              value={currentMessage}
+              onChange={(e) => setCurrentMessage(e.target.value)}
+              placeholder="Tell me what you'd like to customize..."
+              onKeyPress={(e) => e.key === 'Enter' && sendMessage(currentMessage)}
+              disabled={isLoading}
+              className="border-pink-200 focus:border-pink-400"
+            />
             <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => handleQuickAction("Tell me about diamond cut")}
-              className="border-pink-200 text-pink-700 hover:bg-pink-50"
+              onClick={() => sendMessage(currentMessage)}
+              disabled={isLoading || !currentMessage.trim()}
+              className="bg-pink-500 hover:bg-pink-600"
             >
-              <Gem className="h-4 w-4 mr-1" />
-              Learn Cut
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => handleQuickAction("What's my budget options?")}
-              className="border-pink-200 text-pink-700 hover:bg-pink-50"
-            >
-              <Heart className="h-4 w-4 mr-1" />
-              Budget Guide
+              <Send className="h-4 w-4" />
             </Button>
           </div>
         </div>
       )}
-
-      {/* Style Selection */}
-      {flowState.step === 'style_selection' && !flowState.preferences.style && (
-        <div className="p-4 bg-white border-t border-pink-200">
-          <p className="text-sm text-gray-600 mb-3">Choose your ring style:</p>
-          <div className="grid grid-cols-3 gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => handleQuickAction("I love classic style")}
-              className="border-pink-200 text-pink-700 hover:bg-pink-50"
-            >
-              Classic
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => handleQuickAction("I prefer vintage style")}
-              className="border-pink-200 text-pink-700 hover:bg-pink-50"
-            >
-              Vintage
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => handleQuickAction("I want modern style")}
-              className="border-pink-200 text-pink-700 hover:bg-pink-50"
-            >
-              Modern
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Input */}
-      <div className="p-4 bg-white border-t border-pink-200">
-        <div className="flex gap-2">
-          <Input
-            value={currentMessage}
-            onChange={(e) => setCurrentMessage(e.target.value)}
-            placeholder="Ask me anything about diamonds..."
-            onKeyPress={(e) => e.key === 'Enter' && sendMessage(currentMessage)}
-            disabled={isLoading}
-            className="border-pink-200 focus:border-pink-400"
-          />
-          <Button 
-            onClick={() => sendMessage(currentMessage)}
-            disabled={isLoading || !currentMessage.trim()}
-            className="bg-pink-500 hover:bg-pink-600"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }
