@@ -1,9 +1,9 @@
 
-import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { isValidUUID } from '@/utils/diamondUtils';
+import { api, apiEndpoints } from '@/lib/api';
 
 export function useUpdateDiamond(onSuccess?: () => void) {
   const { toast } = useToast();
@@ -31,51 +31,54 @@ export function useUpdateDiamond(onSuccess?: () => void) {
     }
 
     try {
-      console.log('Updating diamond ID:', diamondId, 'with data:', data);
-      
-      // Prepare update data with proper validation and type conversion
-      const updateData = {
-        stock_number: data.stockNumber?.toString() || '',
-        shape: data.shape || 'Round',
-        weight: Number(data.carat) || 1,
-        color: data.color || 'G',
-        clarity: data.clarity || 'VS1',
-        cut: data.cut || 'Excellent',
+      console.log('Updating diamond via API. ID:', diamondId, 'with data:', data);
+
+      const payload: Record<string, any> = {
+        stock_number: data.stockNumber,
+        shape: data.shape,
+        weight: Number(data.carat),
+        color: data.color,
+        clarity: data.clarity,
+        cut: data.cut,
         price_per_carat: data.carat > 0 ? Math.round(Number(data.price) / Number(data.carat)) : Math.round(Number(data.price)),
-        status: data.status || 'Available',
-        picture: data.picture || null,
-        updated_at: new Date().toISOString(),
+        status: data.status,
+        picture: data.picture,
+        certificate_number: data.certificateNumber,
+        certificate_url: data.certificateUrl,
+        certificate_comment: data.certificateComment,
+        lab: data.lab,
+        length: data.length,
+        width: data.width,
+        depth: data.depth,
+        ratio: data.ratio,
+        table_percentage: data.tablePercentage,
+        depth_percentage: data.depthPercentage,
+        fluorescence: data.fluorescence,
+        polish: data.polish,
+        symmetry: data.symmetry,
+        gridle: data.gridle,
+        culet: data.culet,
+        rapnet: data.rapnet,
+        store_visible: data.storeVisible,
       };
 
-      console.log('Supabase update data:', updateData);
-
-      const { data: updatedData, error } = await supabase
-        .from('inventory')
-        .update(updateData)
-        .eq('id', diamondId)
-        .eq('user_id', user.id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Supabase update error:', error);
-        
-        if (error.message.includes('invalid input syntax for type uuid')) {
-          throw new Error('Invalid diamond ID format. Please refresh the page and try again.');
-        } else if (error.message.includes('row-level security')) {
-          throw new Error('You do not have permission to update this diamond.');
-        } else if (error.message.includes('No rows found')) {
-          throw new Error('Diamond not found. It may have been deleted.');
-        } else {
-          throw new Error(`Update failed: ${error.message}`);
+      // Remove undefined keys to only send fields with values
+      Object.keys(payload).forEach(key => {
+        if (payload[key] === undefined) {
+          delete payload[key];
         }
+      });
+      
+      console.log('API update payload:', payload);
+
+      const endpoint = apiEndpoints.updateDiamond(diamondId);
+      const result = await api.put(endpoint, payload);
+
+      if (result.error) {
+        throw new Error(result.error);
       }
 
-      if (!updatedData) {
-        throw new Error('Diamond not found or no changes were made');
-      }
-
-      console.log('Diamond updated successfully:', updatedData);
+      console.log('Diamond updated successfully via API:', result.data);
       
       toast({
         title: "Success",
