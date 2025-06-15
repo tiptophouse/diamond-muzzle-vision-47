@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Upload, Gem, Search, GraduationCap, ArrowLeft } from "lucide-react";
 import { DiamondEducationFlow } from "./DiamondEducationFlow";
+import { SearchDiamondsFlow } from "./SearchDiamondsFlow";
+import { EducationFlow } from "./EducationFlow";
 
 interface MainMenuFlowProps {
   onClose?: () => void;
@@ -59,7 +61,7 @@ export function MainMenuFlow({ onClose }: MainMenuFlowProps) {
           size="lg"
         >
           <Search className="h-5 w-5 mr-3" />
-          <span className="text-base">Just Search for Diamond</span>
+          <span className="text-base">Search Query</span>
         </Button>
 
         <Button
@@ -104,121 +106,16 @@ export function MainMenuFlow({ onClose }: MainMenuFlowProps) {
     </div>
   );
 
-  const renderSearchDiamonds = () => (
-    <div className="space-y-4 p-6">
-      <Button
-        onClick={() => setCurrentState('main')}
-        variant="outline"
-        className="mb-4"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Main Menu
-      </Button>
-      
-      <Card className="bg-green-50 border-green-200">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <div className="text-xl">🔍</div>
-            <div>
-              <h3 className="font-semibold text-green-900 mb-1">Search Diamonds</h3>
-              <p className="text-sm text-green-700">
-                Here you can write the diamond you're looking for. 💎
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Button
-        onClick={() => setCurrentState('main')}
-        className="w-full h-12 bg-green-600 hover:bg-green-700"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Main Menu
-      </Button>
-      
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="p-4">
-          <p className="text-sm text-blue-700">
-            Now you can look for diamonds 💎 in natural language 🌐. You can type whatever you want ✍️.
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  const renderEducation = () => (
-    <div className="space-y-4 p-6">
-      <Button
-        onClick={() => setCurrentState('main')}
-        variant="outline"
-        className="mb-4"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Main Menu
-      </Button>
-      
-      <Card className="bg-purple-50 border-purple-200">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <div className="text-xl">🎓</div>
-            <div>
-              <h3 className="font-semibold text-purple-900 mb-1">Education Section</h3>
-              <p className="text-sm text-purple-700">
-                Choose a category to learn more: 🎓
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="space-y-3">
-        <Button className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white justify-start px-4">
-          <div className="text-lg mr-3">🖼️</div>
-          <span>Image</span>
-        </Button>
-        
-        <Button className="w-full h-12 bg-yellow-500 hover:bg-yellow-600 text-white justify-start px-4">
-          <div className="text-lg mr-3">✨</div>
-          <span>Clarity</span>
-        </Button>
-        
-        <Button className="w-full h-12 bg-pink-500 hover:bg-pink-600 text-white justify-start px-4">
-          <div className="text-lg mr-3">💎</div>
-          <span>Cuts</span>
-        </Button>
-        
-        <Button className="w-full h-12 bg-purple-500 hover:bg-purple-600 text-white justify-start px-4">
-          <div className="text-lg mr-3">🌸</div>
-          <span>Ct</span>
-        </Button>
-        
-        <Button className="w-full h-12 bg-gray-600 hover:bg-gray-700 text-white justify-start px-4">
-          <div className="text-lg mr-3">➕</div>
-          <span>Additional</span>
-        </Button>
-      </div>
-      
-      <Button
-        onClick={() => setCurrentState('main')}
-        className="w-full h-12 bg-blue-600 hover:bg-blue-700 mt-4"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Main Menu
-      </Button>
-    </div>
-  );
-
   // Render based on current state
   switch (currentState) {
     case 'design_ring':
-      return <DiamondEducationFlow />;
+      return <DiamondEducationFlow onBack={() => setCurrentState('main')} />;
+    case 'search_diamonds':
+      return <SearchDiamondsFlow onBack={() => setCurrentState('main')} />;
+    case 'education':
+      return <EducationFlow onBack={() => setCurrentState('main')} />;
     case 'upload_quote':
       return renderUploadQuote();
-    case 'search_diamonds':
-      return renderSearchDiamonds();
-    case 'education':
-      return renderEducation();
     default:
       return renderMainMenu();
   }

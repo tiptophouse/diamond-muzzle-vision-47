@@ -8,7 +8,7 @@ import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface FlowState {
-  step: 'style_selection' | 'style_refinement' | 'customization' | 'design_generation' | 'final';
+  step: 'intro' | 'style_selection' | 'style_refinement' | 'customization' | 'design_generation' | 'final';
   selected_style?: 'classic' | 'vintage' | 'modern';
   selected_substyle?: string;
   preferences: {
@@ -29,26 +29,35 @@ interface ChatMessage {
   timestamp: string;
 }
 
-export function DiamondEducationFlow() {
+interface DiamondEducationFlowProps {
+  onBack?: () => void;
+}
+
+export function DiamondEducationFlow({ onBack }: DiamondEducationFlowProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentMessage, setCurrentMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [flowState, setFlowState] = useState<FlowState>({
-    step: 'style_selection',
+    step: 'intro',
     preferences: {},
     generated_images: [],
   });
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
 
   useEffect(() => {
-    // Send welcome message
+    // Send welcome message with natural language introduction
     const welcomeMessage: ChatMessage = {
       id: '1',
       role: 'assistant',
-      content: "Welcome! I'm here to help you design your perfect engagement ring! ✨\n\nLet's start by choosing a style that speaks to you. Take a look at these three main styles:",
+      content: "💍 Design Ring with AI\n\nNow you can look for diamonds 💎 in natural language 🌐. You can type whatever you want ✍️\n\nFirst, let me show you different ring styles so you can choose what you love most! ✨",
       timestamp: new Date().toISOString(),
     };
     setMessages([welcomeMessage]);
+    
+    // Auto-advance to style selection after welcome message
+    setTimeout(() => {
+      setFlowState(prev => ({ ...prev, step: 'style_selection' }));
+    }, 1000);
   }, []);
 
   const handleStyleSelection = (style: 'classic' | 'vintage' | 'modern') => {
@@ -62,7 +71,7 @@ export function DiamondEducationFlow() {
     const styleMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'assistant',
-      content: `Perfect choice! ${style === 'classic' ? 'Classic' : style === 'vintage' ? 'Vintage' : 'Modern'} rings are beautiful! 💍\n\nNow let's get more specific. Here are some ${style} variations to help narrow down your perfect style:`,
+      content: `Perfect choice! ${style === 'classic' ? 'Classic' : style === 'vintage' ? 'Vintage' : 'Modern'} rings are absolutely beautiful! 💍\n\nNow let's get more specific. Here are some gorgeous ${style} variations to help you narrow down your perfect style:`,
       timestamp: new Date().toISOString(),
     };
     setMessages(prev => [...prev, styleMessage]);
@@ -79,7 +88,7 @@ export function DiamondEducationFlow() {
     const customizationMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'assistant',
-      content: `Excellent choice! I love the ${substyle} style! ✨\n\nNow you can tell me exactly what you want to change or customize. You can say things like:\n• "Make the diamond bigger"\n• "Add more sparkle"\n• "Change the band to rose gold"\n• "Make it more delicate"\n\nWhat would you like to customize about your ring?`,
+      content: `Excellent choice! I love the ${substyle} style! ✨\n\nNow you can tell me exactly what you want to change or customize using natural language 🌐. You can say things like:\n• "Make the diamond bigger"\n• "Add more sparkle"\n• "Change the band to rose gold"\n• "Make it more delicate"\n• "Add vintage details"\n\nWhat would you like to customize about your ring?`,
       timestamp: new Date().toISOString(),
     };
     setMessages(prev => [...prev, customizationMessage]);
@@ -166,7 +175,7 @@ export function DiamondEducationFlow() {
         const imageMessage: ChatMessage = {
           id: Date.now().toString(),
           role: 'assistant',
-          content: `Here's your custom ring design! ✨ What do you think? You can ask me to make changes like "make it more sparkly" or "add vintage details" - I'll create a new version for you!`,
+          content: `Here's your custom ring design! ✨ What do you think? You can ask me to make changes using natural language like:\n• "make it more sparkly" \n• "add vintage details"\n• "make the band thinner"\n• "change the setting style"\n\nI'll create a new version for you! 💍`,
           timestamp: new Date().toISOString(),
         };
         
@@ -190,19 +199,19 @@ export function DiamondEducationFlow() {
         id: 'classic',
         name: 'Classic',
         description: 'Timeless elegance with clean lines',
-        image: '/placeholder.svg?text=Classic+Ring',
+        image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop&crop=center',
       },
       {
         id: 'vintage',
         name: 'Vintage',
         description: 'Romantic details with antique charm',
-        image: '/placeholder.svg?text=Vintage+Ring',
+        image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop&crop=center',
       },
       {
         id: 'modern',
         name: 'Modern',
         description: 'Contemporary designs with unique flair',
-        image: '/placeholder.svg?text=Modern+Ring',
+        image: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=400&h=400&fit=crop&crop=center',
       },
     ];
   };
@@ -212,32 +221,23 @@ export function DiamondEducationFlow() {
     
     if (style === 'classic') {
       return [
-        { id: 'solitaire', name: 'Classic Solitaire', description: 'Single stone perfection', image: '/placeholder.svg?text=Solitaire' },
-        { id: 'three-stone', name: 'Three Stone', description: 'Past, present, future', image: '/placeholder.svg?text=Three+Stone' },
-        { id: 'halo', name: 'Classic Halo', description: 'Center stone with sparkling frame', image: '/placeholder.svg?text=Classic+Halo' },
+        { id: 'solitaire', name: 'Classic Solitaire', description: 'Single stone perfection', image: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?w=300&h=300&fit=crop&crop=center' },
+        { id: 'three-stone', name: 'Three Stone', description: 'Past, present, future', image: 'https://images.unsplash.com/photo-1506630448388-4e683c67ddb0?w=300&h=300&fit=crop&crop=center' },
+        { id: 'halo', name: 'Classic Halo', description: 'Center stone with sparkling frame', image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&h=300&fit=crop&crop=center' },
       ];
     } else if (style === 'vintage') {
       return [
-        { id: 'art-deco', name: 'Art Deco', description: 'Geometric patterns and bold lines', image: '/placeholder.svg?text=Art+Deco' },
-        { id: 'victorian', name: 'Victorian', description: 'Intricate details and romantic elements', image: '/placeholder.svg?text=Victorian' },
-        { id: 'edwardian', name: 'Edwardian', description: 'Delicate filigree and lace-like patterns', image: '/placeholder.svg?text=Edwardian' },
+        { id: 'art-deco', name: 'Art Deco', description: 'Geometric patterns and bold lines', image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=300&h=300&fit=crop&crop=center' },
+        { id: 'victorian', name: 'Victorian', description: 'Intricate details and romantic elements', image: 'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=300&h=300&fit=crop&crop=center' },
+        { id: 'edwardian', name: 'Edwardian', description: 'Delicate filigree and lace-like patterns', image: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=300&h=300&fit=crop&crop=center' },
       ];
     } else {
       return [
-        { id: 'geometric', name: 'Geometric', description: 'Bold shapes and clean angles', image: '/placeholder.svg?text=Geometric' },
-        { id: 'tension', name: 'Tension Setting', description: 'Diamond appears to float', image: '/placeholder.svg?text=Tension' },
-        { id: 'asymmetric', name: 'Asymmetric', description: 'Unique and unexpected design', image: '/placeholder.svg?text=Asymmetric' },
+        { id: 'geometric', name: 'Geometric', description: 'Bold shapes and clean angles', image: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=300&h=300&fit=crop&crop=center' },
+        { id: 'tension', name: 'Tension Setting', description: 'Diamond appears to float', image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=300&h=300&fit=crop&crop=center' },
+        { id: 'asymmetric', name: 'Asymmetric', description: 'Unique and unexpected design', image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=300&h=300&fit=crop&crop=center' },
       ];
     }
-  };
-
-  const goBackToStyleSelection = () => {
-    setFlowState(prev => ({ 
-      ...prev, 
-      step: 'style_selection',
-      selected_style: undefined,
-      selected_substyle: undefined
-    }));
   };
 
   return (
@@ -249,14 +249,14 @@ export function DiamondEducationFlow() {
             <Diamond className="h-6 w-6 text-pink-600" />
             <div>
               <h1 className="text-lg font-semibold text-gray-900">Ring Design Assistant</h1>
-              <p className="text-sm text-gray-500">Let's create your perfect ring</p>
+              <p className="text-sm text-gray-500">Design your perfect ring with AI</p>
             </div>
           </div>
-          {flowState.step !== 'style_selection' && (
+          {onBack && (
             <Button 
               variant="outline" 
               size="sm"
-              onClick={goBackToStyleSelection}
+              onClick={onBack}
               className="border-pink-200 text-pink-700 hover:bg-pink-50"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
@@ -297,11 +297,11 @@ export function DiamondEducationFlow() {
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden">
                         <img 
                           src={style.image} 
                           alt={style.name}
-                          className="w-16 h-16 object-cover rounded"
+                          className="w-full h-full object-cover"
                         />
                       </div>
                       <div className="flex-1">
@@ -331,11 +331,11 @@ export function DiamondEducationFlow() {
                 >
                   <CardContent className="p-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
                         <img 
                           src={substyle.image} 
                           alt={substyle.name}
-                          className="w-12 h-12 object-cover rounded"
+                          className="w-full h-full object-cover"
                         />
                       </div>
                       <div className="flex-1">
@@ -382,8 +382,8 @@ export function DiamondEducationFlow() {
         )}
       </div>
 
-      {/* Input - Only show during customization phase */}
-      {flowState.step === 'customization' && (
+      {/* Input - Show during customization and final phases */}
+      {(flowState.step === 'customization' || flowState.step === 'final') && (
         <div className="p-4 bg-white border-t border-pink-200">
           <div className="flex gap-2">
             <Input
