@@ -16,23 +16,20 @@ interface ErrorBoundaryProps {
 }
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  private maxRetries = 2;
+  private maxRetries = 2; // Reduced from 3 for production stability
 
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, retryCount: 0 };
-    console.log('🛡️ ErrorBoundary initialized');
   }
 
   static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
-    console.error('🛡️ ErrorBoundary caught error:', error);
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('🚨 ErrorBoundary caught error:', error);
     console.error('🚨 Component stack:', errorInfo.componentStack);
-    console.error('🚨 Error boundary triggered - this might explain blank screen');
     
     this.setState({ errorInfo });
     
@@ -71,8 +68,10 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       retryCount: 0
     });
     
-    // Use direct navigation
-    window.location.href = '/dashboard';
+    // Use hash navigation instead of page reload
+    if (window.location.hash !== '#/') {
+      window.location.hash = '#/';
+    }
   };
 
   handleForceRefresh = () => {
@@ -96,8 +95,6 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     if (this.state.hasError) {
       const { error, errorInfo, retryCount } = this.state;
       const canRetry = retryCount < this.maxRetries;
-      
-      console.log('🛡️ ErrorBoundary rendering error UI');
       
       return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
@@ -155,7 +152,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
                   className="flex-1"
                 >
                   <Home size={16} className="mr-2" />
-                  Go to Dashboard
+                  Go Home
                 </Button>
               </div>
               
@@ -168,7 +165,6 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       );
     }
 
-    console.log('🛡️ ErrorBoundary rendering children normally');
     return this.props.children;
   }
 }
