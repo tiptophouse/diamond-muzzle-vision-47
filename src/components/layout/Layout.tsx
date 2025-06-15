@@ -1,3 +1,4 @@
+
 import Sidebar from "./Sidebar";
 import { Header } from "./Header";
 import { useState } from "react";
@@ -13,23 +14,22 @@ export function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden flex bg-background relative">
-      {/* Hamburger menu button fixed at top-left on mobile, 2cm from the top */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setSidebarOpen(true)}
-        className="fixed left-4 z-[100] p-2 lg:hidden"
-        style={{ top: '2cm' }}
-        aria-label="Open menu"
-      >
-        <Menu size={37} className="h-[37px] w-[37px]" />
-      </Button>
+    <div className="min-h-screen w-full overflow-x-hidden flex bg-background">
       {/* Mobile Sidebar as Sheet */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        {/* Mobile header: only app name, centered */}
-        <div className="lg:hidden flex items-center justify-center p-4 pt-10 border-b border-gray-200 bg-white fixed top-0 left-0 right-0 z-50">
+        {/* Mobile header with menu button */}
+        <div className="lg:hidden flex items-center justify-between p-4 pt-10 border-b border-gray-200 bg-white fixed top-0 left-0 right-0 z-50">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSidebarOpen(true)}
+            className="p-2"
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
           <h1 className="text-lg font-bold text-gray-900">Diamond Muzzle</h1>
+          <div className="w-9" /> {/* Spacer for center alignment */}
         </div>
         {/* SheetContent for Sidebar */}
         <SheetContent
