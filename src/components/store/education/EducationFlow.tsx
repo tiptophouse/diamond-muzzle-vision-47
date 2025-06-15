@@ -14,23 +14,24 @@ export function EducationFlow({ onBack }: EducationFlowProps) {
   const [currentTopic, setCurrentTopic] = useState<EducationTopic>('main');
 
   const renderMainEducation = () => (
-    <div className="space-y-4 p-6">
+    <div className="space-y-4 p-3 sm:p-4 lg:p-6 max-w-2xl mx-auto">
       <Button
         onClick={onBack}
         variant="outline"
         className="mb-4"
+        size="sm"
       >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Main Menu
+        <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+        <span className="text-xs sm:text-sm">Back to Main Menu</span>
       </Button>
       
       <Card className="bg-purple-50 border-purple-200">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <div className="text-xl">🎓</div>
-            <div>
-              <h3 className="font-semibold text-purple-900 mb-1">Education - The 4 Cs</h3>
-              <p className="text-sm text-purple-700">
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex items-start gap-2 sm:gap-3">
+            <div className="text-lg sm:text-xl flex-shrink-0">🎓</div>
+            <div className="min-w-0">
+              <h3 className="font-semibold text-purple-900 mb-1 text-sm sm:text-base">Education - The 4 Cs</h3>
+              <p className="text-xs sm:text-sm text-purple-700">
                 Learn about diamond quality and characteristics. Choose a category to learn more: 🎓
               </p>
             </div>
@@ -39,50 +40,50 @@ export function EducationFlow({ onBack }: EducationFlowProps) {
       </Card>
 
       {/* Education Categories in the specified order */}
-      <div className="space-y-3">
+      <div className="space-y-3 sm:space-y-4">
         <Button 
           onClick={() => setCurrentTopic('image')}
-          className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white justify-start px-4"
+          className="w-full h-10 sm:h-12 bg-orange-500 hover:bg-orange-600 text-white justify-start px-3 sm:px-4"
         >
-          <div className="text-lg mr-3">🖼️</div>
-          <span>Image (Shape)</span>
+          <div className="text-base sm:text-lg mr-2 sm:mr-3 flex-shrink-0">🖼️</div>
+          <span className="text-sm sm:text-base">Image (Shape)</span>
         </Button>
         
         <Button 
           onClick={() => setCurrentTopic('carat')}
-          className="w-full h-12 bg-purple-500 hover:bg-purple-600 text-white justify-start px-4"
+          className="w-full h-10 sm:h-12 bg-purple-500 hover:bg-purple-600 text-white justify-start px-3 sm:px-4"
         >
-          <div className="text-lg mr-3">🌸</div>
-          <span>Carat (Weight)</span>
+          <div className="text-base sm:text-lg mr-2 sm:mr-3 flex-shrink-0">🌸</div>
+          <span className="text-sm sm:text-base">Carat (Weight)</span>
         </Button>
         
         <Button 
           onClick={() => setCurrentTopic('clarity')}
-          className="w-full h-12 bg-yellow-500 hover:bg-yellow-600 text-white justify-start px-4"
+          className="w-full h-10 sm:h-12 bg-yellow-500 hover:bg-yellow-600 text-white justify-start px-3 sm:px-4"
         >
-          <div className="text-lg mr-3">✨</div>
-          <span>Clarity</span>
+          <div className="text-base sm:text-lg mr-2 sm:mr-3 flex-shrink-0">✨</div>
+          <span className="text-sm sm:text-base">Clarity</span>
         </Button>
         
         <Button 
           onClick={() => setCurrentTopic('cut')}
-          className="w-full h-12 bg-pink-500 hover:bg-pink-600 text-white justify-start px-4"
+          className="w-full h-10 sm:h-12 bg-pink-500 hover:bg-pink-600 text-white justify-start px-3 sm:px-4"
         >
-          <div className="text-lg mr-3">💎</div>
-          <span>Cut</span>
+          <div className="text-base sm:text-lg mr-2 sm:mr-3 flex-shrink-0">💎</div>
+          <span className="text-sm sm:text-base">Cut</span>
         </Button>
       </div>
 
       {/* Business Contact Information */}
-      <Card className="bg-gray-50 border-gray-200 mt-6">
-        <CardContent className="p-4">
-          <p className="text-sm text-gray-700 mb-3">
+      <Card className="bg-gray-50 border-gray-200 mt-4 sm:mt-6">
+        <CardContent className="p-3 sm:p-4">
+          <p className="text-xs sm:text-sm text-gray-700 mb-2 sm:mb-3">
             *Please list in the order given in the example (left to right) – shape, weight, color, clarity. The shape must be in English. Once you have selected the diamond details, the message will be sent only to exchange members who have this diamond.
           </p>
-          <p className="text-sm text-gray-700 mb-3">
+          <p className="text-xs sm:text-sm text-gray-700 mb-2 sm:mb-3">
             *Please note that we only trust GIA certificates that truly reflect what is inside the diamonds and provide the actual data.
           </p>
-          <div className="text-sm text-gray-700">
+          <div className="text-xs sm:text-sm text-gray-700">
             <p className="font-medium mb-1">For any questions, feel free to contact us:</p>
             <p>📞 Phone: +972548081663</p>
             <p>🕒 Business hours: Sunday-Thursday between 9:00-17:00</p>
@@ -171,23 +172,24 @@ A well-cut diamond will sparkle more than a poorly cut one of higher color or cl
     if (!data) return null;
 
     return (
-      <div className="space-y-4 p-6">
+      <div className="space-y-4 p-3 sm:p-4 lg:p-6 max-w-3xl mx-auto">
         <Button
           onClick={() => setCurrentTopic('main')}
           variant="outline"
           className="mb-4"
+          size="sm"
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Education Menu
+          <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+          <span className="text-xs sm:text-sm">Back to Education Menu</span>
         </Button>
         
         <Card className={`bg-${data.color}-50 border-${data.color}-200`}>
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <div className="text-xl">{data.icon}</div>
-              <div>
-                <h3 className={`font-semibold text-${data.color}-900 mb-1`}>{data.title}</h3>
-                <p className={`text-sm text-${data.color}-700 whitespace-pre-wrap`}>{data.content}</p>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-start gap-2 sm:gap-3">
+              <div className="text-lg sm:text-xl flex-shrink-0">{data.icon}</div>
+              <div className="min-w-0">
+                <h3 className={`font-semibold text-${data.color}-900 mb-1 text-sm sm:text-base`}>{data.title}</h3>
+                <p className={`text-xs sm:text-sm text-${data.color}-700 whitespace-pre-wrap leading-relaxed`}>{data.content}</p>
               </div>
             </div>
           </CardContent>
@@ -198,14 +200,14 @@ A well-cut diamond will sparkle more than a poorly cut one of higher color or cl
 
   if (currentTopic !== 'main') {
     return (
-      <div className="h-full bg-gradient-to-br from-purple-50 via-white to-purple-50">
+      <div className="h-full bg-gradient-to-br from-purple-50 via-white to-purple-50 overflow-y-auto">
         {renderTopicContent(currentTopic)}
       </div>
     );
   }
 
   return (
-    <div className="h-full bg-gradient-to-br from-purple-50 via-white to-purple-50">
+    <div className="h-full bg-gradient-to-br from-purple-50 via-white to-purple-50 overflow-y-auto">
       {renderMainEducation()}
     </div>
   );
