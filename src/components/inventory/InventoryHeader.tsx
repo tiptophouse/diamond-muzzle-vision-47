@@ -1,17 +1,15 @@
-
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Plus, QrCode, AlertCircle, CheckCircle } from "lucide-react";
+import { RefreshCw, Plus, AlertCircle, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface InventoryHeaderProps {
   totalDiamonds: number;
   onRefresh: () => void;
   onAdd?: () => void;
-  onQRScan?: () => void;
   loading: boolean;
 }
 
-export function InventoryHeader({ totalDiamonds, onRefresh, onAdd, onQRScan, loading }: InventoryHeaderProps) {
+export function InventoryHeader({ totalDiamonds, onRefresh, onAdd, loading }: InventoryHeaderProps) {
   return (
     <div className="w-full bg-background">
       <div className="flex flex-col space-y-4">
@@ -42,16 +40,6 @@ export function InventoryHeader({ totalDiamonds, onRefresh, onAdd, onQRScan, loa
             >
               <Plus className="mr-2 h-4 w-4" />
               Add Diamond
-            </Button>
-          )}
-          {onQRScan && (
-            <Button 
-              onClick={onQRScan}
-              variant="outline"
-              className="w-full sm:flex-1 border-green-300 text-green-700 hover:bg-green-50"
-            >
-              <QrCode className="mr-2 h-4 w-4" />
-              Scan GIA QR
             </Button>
           )}
           <Button 

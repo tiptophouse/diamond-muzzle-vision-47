@@ -28,7 +28,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function InventoryPage() {
@@ -39,7 +38,6 @@ export default function InventoryPage() {
   const [editingDiamond, setEditingDiamond] = useState<Diamond | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [diamondToDelete, setDiamondToDelete] = useState<Diamond | null>(null);
-  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
   const { toast } = useToast();
 
   const {
@@ -120,34 +118,6 @@ export default function InventoryPage() {
   };
 
   const handleQRScan = () => {
-    setIsQRScannerOpen(true);
-  };
-
-  const handleQRScanSuccess = (giaData: any) => {
-    console.log('Received GIA data from scanner:', giaData);
-    
-    setEditingDiamond({
-      id: '',
-      stockNumber: giaData.stockNumber || `GIA-${Date.now()}`,
-      shape: giaData.shape || 'Round',
-      carat: giaData.carat || 1.0,
-      color: giaData.color || 'G',
-      clarity: giaData.clarity || 'VS1',
-      cut: giaData.cut || 'Excellent',
-      price: giaData.price || 5000,
-      status: giaData.status || 'Available',
-      imageUrl: giaData.imageUrl || '',
-      certificateNumber: giaData.certificateNumber || '',
-      lab: giaData.lab || 'GIA'
-    } as Diamond);
-    
-    setIsQRScannerOpen(false);
-    setIsFormOpen(true);
-    
-    toast({
-      title: "GIA Data Loaded",
-      description: `Certificate ${giaData.certificateNumber} data has been loaded into the form`,
-    });
   };
 
   if (authLoading) {
@@ -185,7 +155,6 @@ export default function InventoryPage() {
           totalDiamonds={allDiamonds.length}
           onRefresh={handleRefresh}
           onAdd={handleAddDiamond}
-          onQRScan={handleQRScan}
           loading={loading}
         />
         
@@ -232,12 +201,6 @@ export default function InventoryPage() {
           />
         </DialogContent>
       </Dialog>
-
-      <QRCodeScanner
-        isOpen={isQRScannerOpen}
-        onClose={() => setIsQRScannerOpen(false)}
-        onScanSuccess={handleQRScanSuccess}
-      />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>

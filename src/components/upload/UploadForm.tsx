@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, RefreshCw } from "lucide-react";
+import { Upload, RefreshCw, Camera } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useCsvProcessor } from "@/hooks/useCsvProcessor";
@@ -10,9 +9,14 @@ import { FileUploadArea } from "./FileUploadArea";
 import { UploadProgress } from "./UploadProgress";
 import { UploadResult } from "./UploadResult";
 import { UploadInstructions } from "./UploadInstructions";
+import { UploadGiaQRDialog } from "./UploadGiaQRDialog";
+import { DiamondFormData } from "@/components/inventory/form/types";
+import { SingleStoneForm } from "./SingleStoneForm";
 
 export function UploadForm() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [showQRDialog, setShowQRDialog] = useState(false);
+  const [singleStoneData, setSingleStoneData] = useState<Partial<DiamondFormData> | null>(null);
   const { user, isAuthenticated } = useTelegramAuth();
   const { validateFile } = useCsvProcessor();
   const { uploading, progress, result, handleUpload, resetState } = useUploadHandler();
@@ -37,6 +41,20 @@ export function UploadForm() {
     }
   };
 
+  const handleQRSuccess = (giaData: any) => {
+    setSingleStoneData({
+      stockNumber: giaData.stockNumber || giaData.certificateNumber || "",
+      shape: giaData.shape || "Round",
+      carat: giaData.carat || 1,
+      color: giaData.color || "G",
+      clarity: giaData.clarity || "VS1",
+      cut: giaData.cut || "Excellent",
+      status: "Available",
+      // Add other fields as needed
+    });
+    setShowQRDialog(false);
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="max-w-xl mx-auto">
@@ -56,16 +74,42 @@ export function UploadForm() {
       <Card className="diamond-card mb-6">
         <CardContent className="pt-6">
           <div className="space-y-4">
-            <FileUploadArea
-              selectedFile={selectedFile}
-              onFileChange={handleFileChange}
-              onReset={resetForm}
+            <div className="flex flex-col sm:flex-row gap-3 mb-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowQRDialog(true)}
+                className="flex items-center gap-2 flex-1 border-green-300 text-green-700 hover:bg-green-50"
+              >
+                <Camera className="h-5 w-5" />
+                Scan GIA QR
+              </Button>
+              <FileUploadArea
+                selectedFile={selectedFile}
+                onFileChange={handleFileChange}
+                onReset={resetForm}
+              />
+            </div>
+            
+            <UploadGiaQRDialog
+              open={showQRDialog}
+              onOpenChange={setShowQRDialog}
+              onScanSuccess={handleQRSuccess}
             />
-            
+
+            {singleStoneData && (
+              <div className="pt-4">
+                <h3 className="font-semibold text-lg mb-2">Scan Result: Add Diamond</h3>
+                <SingleStoneForm
+                  initialData={singleStoneData}
+                  onSubmit={() => setSingleStoneData(null)}
+                  isLoading={false}
+                />
+              </div>
+            )}
+
             <UploadProgress progress={progress} uploading={uploading} />
-            
             <UploadResult result={result} />
-            
+
             {selectedFile && (
               <div className="flex justify-end gap-3">
                 <Button 
