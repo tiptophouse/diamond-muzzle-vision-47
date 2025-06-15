@@ -4,10 +4,12 @@ import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { fetchInventoryData } from "@/services/inventoryDataService";
 import { useInventoryProcessor } from "./inventory/useInventoryProcessor";
 import { useInventoryState } from "./inventory/useInventoryState";
+import { useInventoryDataSync } from "./inventory/useInventoryDataSync";
 
 export function useInventoryData() {
   const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
   const { processInventoryData, showSuccessToast, showErrorToast } = useInventoryProcessor();
+  const { triggerInventoryChange } = useInventoryDataSync();
   const {
     loading,
     setLoading,
@@ -91,6 +93,12 @@ export function useInventoryData() {
     );
   };
 
+  // Enhanced delete function that triggers inventory change event
+  const handleInventoryChange = () => {
+    triggerInventoryChange();
+    handleRefresh();
+  };
+
   useEffect(() => {
     console.log('🔍 INVENTORY: useEffect triggered');
     
@@ -116,5 +124,6 @@ export function useInventoryData() {
     removeDiamondFromState,
     restoreDiamondToState,
     debugInfo,
+    handleInventoryChange, // New function to notify other components
   };
 }

@@ -8,12 +8,25 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { Layout } from '@/components/layout/Layout';
 import { Gem, Users, TrendingUp, Star, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
+import { useEffect } from 'react';
 
 export function DataDrivenDashboard() {
   const { user } = useTelegramAuth();
-  const { allDiamonds, loading } = useInventoryData();
+  const { allDiamonds, loading, fetchData } = useInventoryData();
+  const { subscribeToInventoryChanges } = useInventoryDataSync();
 
   console.log('🔍 DataDrivenDashboard: Processing data for user:', user?.id, 'Diamonds:', allDiamonds.length);
+
+  // Listen for inventory changes and refresh dashboard data
+  useEffect(() => {
+    const unsubscribe = subscribeToInventoryChanges(() => {
+      console.log('🔄 Dashboard: Inventory changed, refreshing data...');
+      fetchData();
+    });
+
+    return unsubscribe;
+  }, [subscribeToInventoryChanges, fetchData]);
 
   // Process the data only if we have diamonds
   const { stats, inventoryByShape, salesByCategory } = allDiamonds.length > 0 
