@@ -2,9 +2,9 @@
 import { useState } from "react";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
-import { StoreHeader } from "@/components/store/StoreHeader";
-import { PremiumStoreFilters } from "@/components/store/PremiumStoreFilters";
-import { StoreGrid } from "@/components/store/StoreGrid";
+import { RoleBasedStoreHeader } from "@/components/store/RoleBasedStoreHeader";
+import { RoleBasedStoreFilters } from "@/components/store/RoleBasedStoreFilters";
+import { RoleBasedStoreGrid } from "@/components/store/RoleBasedStoreGrid";
 import { ImageUpload } from "@/components/store/ImageUpload";
 import { FloatingShareButton } from "@/components/store/FloatingShareButton";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ export default function StorePage() {
       <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-6">
         {/* Header with Upload Button */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <StoreHeader 
+          <RoleBasedStoreHeader 
             totalDiamonds={filteredDiamonds.length}
             onOpenFilters={() => {}}
           />
@@ -51,9 +51,9 @@ export default function StorePage() {
           </Dialog>
         </div>
 
-        {/* Premium Fixed Filters */}
+        {/* Role-Based Filters */}
         <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-xl border border-slate-200/50 rounded-2xl shadow-xl shadow-slate-900/5">
-          <PremiumStoreFilters
+          <RoleBasedStoreFilters
             filters={filters}
             onUpdateFilter={updateFilter}
             onClearFilters={clearFilters}
@@ -61,8 +61,8 @@ export default function StorePage() {
           />
         </div>
 
-        {/* Store Grid */}
-        <StoreGrid
+        {/* Role-Based Store Grid */}
+        <RoleBasedStoreGrid
           diamonds={filteredDiamonds}
           loading={loading}
           error={error}
