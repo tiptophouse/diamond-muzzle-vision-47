@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -119,12 +120,10 @@ export function StoreFilters({ filters, onUpdateFilter, onClearFilters, diamonds
           <PriceRangeFilter
             priceRange={filters.priceRange}
             onPriceRangeChange={handlePriceRangeChange}
-            diamonds={diamonds}
           />
           <CaratRangeFilter
             caratRange={filters.caratRange}
             onCaratRangeChange={handleCaratRangeChange}
-            diamonds={diamonds}
           />
           <ShapeFilter
             selectedShapes={filters.shapes || []}
