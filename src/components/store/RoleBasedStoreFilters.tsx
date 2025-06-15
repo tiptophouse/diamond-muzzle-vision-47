@@ -1,7 +1,6 @@
 
 import { useUserRole } from "@/hooks/useUserRole";
 import { PremiumStoreFilters } from "./PremiumStoreFilters";
-import { DiamondLearningFilters } from "./education/DiamondLearningFilters";
 import { Diamond } from "@/components/inventory/InventoryTable";
 
 interface RoleBasedStoreFiltersProps {
@@ -20,11 +19,11 @@ interface RoleBasedStoreFiltersProps {
 export function RoleBasedStoreFilters(props: RoleBasedStoreFiltersProps) {
   const { userRole, isLoading } = useUserRole();
 
-  // Show professional filters while loading or for paid users
-  if (isLoading || userRole === 'PAID_USER') {
-    return <PremiumStoreFilters {...props} />;
+  // For free users in conversational flow, don't show filters
+  if (!isLoading && userRole === 'FREE_USER') {
+    return null;
   }
 
-  // Show educational filters for free users
-  return <DiamondLearningFilters {...props} />;
+  // Show professional filters for paid users or while loading
+  return <PremiumStoreFilters {...props} />;
 }
