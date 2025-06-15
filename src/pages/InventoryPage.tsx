@@ -151,6 +151,8 @@ export default function InventoryPage() {
         <InventoryHeader
           totalDiamonds={allDiamonds.length}
           loading={loading}
+          onRefresh={() => {}}   // no-op, buttons are now in UploadForm
+          onAdd={undefined}
         />
         
         <div className="w-full space-y-4">
