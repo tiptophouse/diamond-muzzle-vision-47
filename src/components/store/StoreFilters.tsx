@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Filter, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
-import { ShapeSelector } from "./ShapeSelector";
 import { PriceRangeFilter } from "./filters/PriceRangeFilter";
 import { CaratRangeFilter } from "./filters/CaratRangeFilter";
 import { ClarityFilter } from "./filters/ClarityFilter";
@@ -23,12 +22,12 @@ export function StoreFilters({ filters, onUpdateFilter, onClearFilters, diamonds
     setIsOpen(!isOpen);
   };
 
-  const handlePriceRangeChange = (min: number | undefined, max: number | undefined) => {
-    onUpdateFilter('priceRange', { min, max });
+  const handlePriceRangeChange = (range: [number, number]) => {
+    onUpdateFilter('priceRange', { min: range[0], max: range[1] });
   };
 
-  const handleCaratRangeChange = (min: number | undefined, max: number | undefined) => {
-    onUpdateFilter('caratRange', { min, max });
+  const handleCaratRangeChange = (range: [number, number]) => {
+    onUpdateFilter('caratRange', { min: range[0], max: range[1] });
   };
 
   const handleShapeToggle = (shape: string) => {
