@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
 import { StoreHeader } from "@/components/store/StoreHeader";
@@ -9,12 +10,14 @@ import { ImageUpload } from "@/components/store/ImageUpload";
 import { FloatingShareButton } from "@/components/store/FloatingShareButton";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Upload, Image } from "lucide-react";
+import { Upload, Image, ArrowLeft } from "lucide-react";
 
 export default function StorePage() {
   const { diamonds, loading, error, refetch } = useStoreData();
   const { filters, filteredDiamonds, updateFilter, clearFilters } = useStoreFilters(diamonds || []);
   const [showUpload, setShowUpload] = useState(false);
+
+  const navigate = useNavigate();
 
   const handleImageUploaded = (imageUrl: string) => {
     console.log('Image uploaded to store:', imageUrl);
@@ -23,6 +26,20 @@ export default function StorePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      {/* Back to Main Menu Button */}
+      <div className="flex items-center pt-4 pb-2 pl-2 sm:pl-0">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="flex items-center gap-2 px-3 py-2 text-slate-700"
+          onClick={() => navigate('/dashboard')}
+        >
+          <ArrowLeft className="h-5 w-5" />
+          <span className="hidden sm:inline">Back to Menu</span>
+          <span className="sm:hidden">Back</span>
+        </Button>
+      </div>
+
       <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-6">
         {/* Header with Upload Button */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -75,3 +92,4 @@ export default function StorePage() {
     </div>
   );
 }
+
