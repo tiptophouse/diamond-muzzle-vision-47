@@ -10,7 +10,7 @@ import { FileUploadArea } from "./FileUploadArea";
 import { UploadProgress } from "./UploadProgress";
 import { UploadResult } from "./UploadResult";
 import { UploadInstructions } from "./UploadInstructions";
-import { UploadGiaQRDialog } from "./UploadGiaQRDialog";
+import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
 import { DiamondFormData } from "@/components/inventory/form/types";
 import { SingleStoneForm } from "./SingleStoneForm";
 import { useInventoryData } from "@/hooks/useInventoryData";
@@ -141,9 +141,9 @@ export function UploadForm() {
                 />
               </DialogContent>
             </Dialog>
-            <UploadGiaQRDialog
-              open={showQRDialog}
-              onOpenChange={setShowQRDialog}
+            <QRCodeScanner
+              isOpen={showQRDialog}
+              onClose={() => setShowQRDialog(false)}
               onScanSuccess={handleQRSuccess}
             />
             {singleStoneData && (
