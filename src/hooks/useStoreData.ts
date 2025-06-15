@@ -2,22 +2,33 @@
 import { useState, useEffect } from "react";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { fetchInventoryData } from "@/services/inventoryDataService";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
 
 export function useStoreData() {
+  const { user, isLoading: authLoading } = useTelegramAuth();
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchStoreData();
-  }, []);
+    if (authLoading) {
+      return;
+    }
+    if (user) {
+      fetchStoreData();
+    } else {
+      setLoading(false);
+      setDiamonds([]);
+      setError("Please log in to view your store items.");
+    }
+  }, [user, authLoading]);
 
   const fetchStoreData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      console.log('🏪 STORE: Fetching data from FastAPI backend');
+      console.log('🏪 STORE: Fetching data from FastAPI backend for authenticated user');
       const result = await fetchInventoryData();
 
       if (result.error) {
@@ -72,7 +83,6 @@ export function useStoreData() {
       } else {
         console.log('🏪 STORE: No diamonds found in response');
         setDiamonds([]);
-        setError("No diamonds available for store display");
       }
     } catch (err) {
       console.error('🏪 STORE: Unexpected error:', err);
@@ -86,7 +96,7 @@ export function useStoreData() {
 
   return {
     diamonds,
-    loading,
+    loading: loading || authLoading,
     error,
     refetch: fetchStoreData,
   };
