@@ -70,11 +70,3 @@ export interface TelegramWebApp {
     selectionChanged: () => void;
   };
 }
-
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp: TelegramWebApp;
-    };
-  }
-}
