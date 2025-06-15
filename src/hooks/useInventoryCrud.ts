@@ -24,7 +24,11 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
   const { addDiamond: addDiamondFn } = useAddDiamond(onSuccess);
   const { updateDiamond: updateDiamondFn } = useUpdateDiamond(onSuccess);
   const { deleteDiamond: deleteDiamondFn } = useDeleteDiamond({ 
-    onSuccess, 
+    onSuccess: () => {
+      console.log('🔄 Diamond deleted successfully, triggering inventory change...');
+      triggerInventoryChange();
+      if (onSuccess) onSuccess();
+    }, 
     removeDiamondFromState, 
     restoreDiamondToState 
   });
@@ -34,7 +38,8 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     try {
       const result = await addDiamondFn(data);
       if (result) {
-        triggerInventoryChange(); // Notify dashboard of changes
+        console.log('🔄 Diamond added successfully, triggering inventory change...');
+        triggerInventoryChange();
       }
       return result;
     } finally {
@@ -47,7 +52,8 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     try {
       const result = await updateDiamondFn(diamondId, data);
       if (result) {
-        triggerInventoryChange(); // Notify dashboard of changes
+        console.log('🔄 Diamond updated successfully, triggering inventory change...');
+        triggerInventoryChange();
       }
       return result;
     } finally {
@@ -58,9 +64,13 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
   const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
     setIsLoading(true);
     try {
+      console.log('🗑️ Starting diamond deletion process for ID:', diamondId);
       const result = await deleteDiamondFn(diamondId, diamondData);
       if (result) {
-        triggerInventoryChange(); // Notify dashboard of changes
+        console.log('✅ Diamond deletion completed successfully');
+        // The triggerInventoryChange is already called in deleteDiamondFn's onSuccess callback
+      } else {
+        console.error('❌ Diamond deletion failed');
       }
       return result;
     } finally {

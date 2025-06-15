@@ -36,23 +36,32 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
       return false;
     }
 
+    console.log('🗑️ Starting deletion process for diamond:', diamondId);
+
     // Optimistic UI update - remove diamond immediately
     if (removeDiamondFromState) {
+      console.log('🔄 Optimistically removing diamond from UI');
       removeDiamondFromState(diamondId);
     }
 
     try {
-      console.log('Deleting diamond ID:', diamondId, 'for user:', user.id);
+      console.log('🌐 Calling FastAPI delete endpoint for diamond:', diamondId, 'user:', user.id);
       
-      // Call the new FastAPI endpoint to delete the diamond
+      // Call the FastAPI endpoint to delete the diamond
       const endpoint = apiEndpoints.deleteDiamond(diamondId);
+      console.log('🔗 Delete endpoint:', endpoint);
+      
       const response = await api.delete(endpoint);
       
       if (response.error) {
+        console.error('❌ FastAPI delete failed:', response.error);
         throw new Error(response.error);
       }
       
-      // Also delete from Supabase as backup
+      console.log('✅ FastAPI delete successful');
+      
+      // Also delete from Supabase as backup/sync
+      console.log('🔄 Syncing delete with Supabase...');
       const { error: supabaseError } = await supabase
         .from('inventory')
         .delete()
@@ -60,28 +69,35 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
         .eq('user_id', user.id);
 
       if (supabaseError) {
-        console.warn('Supabase delete warning:', supabaseError);
+        console.warn('⚠️ Supabase delete warning (non-critical):', supabaseError);
+      } else {
+        console.log('✅ Supabase sync delete successful');
       }
       
       toast({
-        title: "Success",
-        description: "Diamond deleted successfully",
+        title: "✅ Success",
+        description: "Diamond deleted successfully from inventory",
       });
       
-      if (onSuccess) onSuccess();
+      console.log('🎉 Diamond deletion completed successfully');
+      if (onSuccess) {
+        console.log('📢 Calling onSuccess callback');
+        onSuccess();
+      }
       return true;
     } catch (error) {
-      console.error('Failed to delete diamond:', error);
+      console.error('❌ Diamond deletion failed:', error);
       
       // Restore diamond to state if deletion failed
       if (restoreDiamondToState && diamondData) {
+        console.log('🔄 Restoring diamond to UI due to deletion failure');
         restoreDiamondToState(diamondData);
       }
       
       const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond. Please try again.";
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "❌ Deletion Failed", 
         description: errorMessage,
       });
       return false;

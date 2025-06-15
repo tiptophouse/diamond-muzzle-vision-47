@@ -23,10 +23,10 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
 
   console.log('🔍 DataDrivenDashboard: Processing data for user:', user?.id, 'Diamonds:', allDiamonds.length);
 
-  // Listen for inventory changes and refresh dashboard data
+  // Listen for inventory changes and refresh dashboard data immediately
   useEffect(() => {
     const unsubscribe = subscribeToInventoryChanges(() => {
-      console.log('🔄 Dashboard: Inventory changed, refreshing data...');
+      console.log('🔄 Dashboard: Inventory changed detected, refreshing dashboard data...');
       fetchData();
     });
 
@@ -140,6 +140,7 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
               <p>Processed Stats: {JSON.stringify(stats)}</p>
               <p>Shape Distribution: {inventoryByShape.length} categories</p>
               <p>Color Distribution: {salesByCategory.length} categories</p>
+              <p>Last Updated: {new Date().toLocaleTimeString()}</p>
             </div>
           </div>
         )}
