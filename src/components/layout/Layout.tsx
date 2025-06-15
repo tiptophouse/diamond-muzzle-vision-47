@@ -14,13 +14,14 @@ export function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden flex bg-background">
-      {/* Hamburger menu button fixed at top-left on mobile */}
+    <div className="min-h-screen w-full overflow-x-hidden flex bg-background relative">
+      {/* Hamburger menu button fixed at top-left on mobile, 2cm from the top */}
       <Button
         variant="ghost"
         size="sm"
         onClick={() => setSidebarOpen(true)}
-        className="fixed top-4 left-4 z-[100] p-2 lg:hidden"
+        className="fixed left-4 z-[100] p-2 lg:hidden"
+        style={{ top: '2cm' }}
         aria-label="Open menu"
       >
         <Menu className="h-5 w-5" />
@@ -28,7 +29,7 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Mobile Sidebar as Sheet */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        {/* Mobile header is now only app name and center spacer */}
+        {/* Mobile header: only app name, centered */}
         <div className="lg:hidden flex items-center justify-center p-4 pt-10 border-b border-gray-200 bg-white fixed top-0 left-0 right-0 z-50">
           <h1 className="text-lg font-bold text-gray-900">Diamond Muzzle</h1>
         </div>
