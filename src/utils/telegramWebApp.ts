@@ -1,15 +1,23 @@
 
 // Telegram WebApp utility functions for secure authentication
+export interface TelegramWebApp {
+  initData: string;
+  initDataUnsafe: any;
+  ready: () => void;
+  expand: () => void;
+  themeParams: any;
+  BackButton?: {
+    show: () => void;
+    hide: () => void;
+    onClick: (callback: () => void) => void;
+  };
+  close?: () => void;
+}
+
 declare global {
   interface Window {
     Telegram?: {
-      WebApp: {
-        initData: string;
-        initDataUnsafe: any;
-        ready: () => void;
-        expand: () => void;
-        themeParams: any;
-      };
+      WebApp: TelegramWebApp;
     };
   }
 }
@@ -23,7 +31,7 @@ export function isTelegramWebAppEnvironment(): boolean {
   );
 }
 
-export function getTelegramWebApp() {
+export function getTelegramWebApp(): TelegramWebApp | null {
   if (!isTelegramWebAppEnvironment()) {
     return null;
   }

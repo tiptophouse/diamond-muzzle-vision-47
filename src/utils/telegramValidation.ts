@@ -68,7 +68,7 @@ export function parseTelegramInitData(initData: string) {
         is_premium: user.is_premium,
         photo_url: user.photo_url
       },
-      auth_date: urlParams.get('auth_date'),
+      auth_date: parseInt(urlParams.get('auth_date') || '0'),
       hash: urlParams.get('hash')
     };
   } catch (error) {
@@ -111,6 +111,9 @@ export interface TelegramInitData {
     is_premium?: boolean;
     photo_url?: string;
   };
-  auth_date: string | null;
+  auth_date: number;
   hash: string | null;
 }
+
+// Add the missing function that other files expect
+export const validateTelegramInitData = validateTelegramData;

@@ -83,54 +83,16 @@ const Index = () => {
     return null;
   }
 
-  // If user is admin, show admin selection
+  // If user is admin, redirect directly to admin panel
   if (isAuthenticated && user?.id === adminTelegramId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-purple-50">
-        <div className="text-center space-y-8 p-8 max-w-md">
-          <div className="space-y-4">
-            <div className="bg-red-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto">
-              <span className="text-3xl">👑</span>
-            </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-red-600 to-purple-600 bg-clip-text text-transparent">
-              Welcome Admin
-            </h1>
-            <p className="text-xl text-gray-600">Choose your destination</p>
-          </div>
-          
-          <div className="space-y-4">
-            <button 
-              onClick={() => {
-                redirectHandledRef.current = true;
-                window.location.hash = '#/admin';
-              }} 
-              className="block w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 shadow-lg"
-            >
-              🎯 Admin Control Panel
-              <div className="text-sm opacity-90 mt-1">Full user management system</div>
-            </button>
-            <button 
-              onClick={() => {
-                redirectHandledRef.current = true;
-                window.location.hash = '#/dashboard';
-              }} 
-              className="block w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 shadow-lg"
-            >
-              💎 Regular Dashboard
-              <div className="text-sm opacity-90 mt-1">Standard user interface</div>
-            </button>
-          </div>
-          
-          <div className="text-sm text-gray-500 mt-6">
-            Verified admin: {user.first_name} {user.last_name}
-          </div>
-        </div>
-      </div>
-    );
+    console.log('✅ Admin user detected - redirecting to admin panel');
+    redirectHandledRef.current = true;
+    return <Navigate to="/admin" replace />;
   }
 
-  // For regular users, redirect to dashboard (only once)
+  // For regular users, redirect to dashboard
   if (isAuthenticated && user) {
+    console.log('✅ Regular user detected - redirecting to dashboard');
     redirectHandledRef.current = true;
     return <Navigate to="/dashboard" replace />;
   }
