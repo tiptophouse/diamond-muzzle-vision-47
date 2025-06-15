@@ -32,7 +32,7 @@ export function Layout({ children }: LayoutProps) {
       
       <div className="flex-1 w-full min-w-0 flex flex-col bg-background lg:ml-0">
         {/* Mobile header with menu button */}
-        <div className="lg:hidden flex items-center justify-between p-4 border-b border-gray-200 bg-white">
+        <div className="lg:hidden flex items-center justify-between p-4 pt-10 border-b border-gray-200 bg-white">
           <Button
             variant="ghost"
             size="sm"
