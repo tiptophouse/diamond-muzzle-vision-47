@@ -5,10 +5,26 @@ import { AdminStatsGrid } from '@/components/admin/AdminStatsGrid';
 import { AdminUserManager } from '@/components/admin/AdminUserManager';
 import { NotificationCenter } from '@/components/admin/NotificationCenter';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function Admin() {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
+  const { toast } = useToast();
+  const [notifications, setNotifications] = useState([]);
+
+  // Mock stats data
+  const stats = {
+    totalUsers: 1250,
+    activeUsers: 890,
+    premiumUsers: 156,
+    totalRevenue: 25600,
+    totalCosts: 8400,
+    profit: 17200
+  };
+
+  const blockedUsersCount = 23;
+  const averageEngagement = 74;
 
   useEffect(() => {
     console.log('🔍 Admin page mounted');
@@ -16,6 +32,30 @@ export default function Admin() {
     console.log('🔍 Is authenticated:', isAuthenticated);
     console.log('🔍 Is loading:', isLoading);
   }, [user, isAuthenticated, isLoading]);
+
+  const handleExportData = () => {
+    console.log('Exporting data...');
+    toast({
+      title: "Export Started",
+      description: "Your data export is being prepared",
+    });
+  };
+
+  const handleAddUser = () => {
+    console.log('Adding new user...');
+    toast({
+      title: "Add User",
+      description: "User creation feature coming soon",
+    });
+  };
+
+  const handleRefreshNotifications = () => {
+    console.log('Refreshing notifications...');
+    toast({
+      title: "Notifications Refreshed",
+      description: "Notification data has been updated",
+    });
+  };
 
   if (isLoading) {
     return (
@@ -48,14 +88,24 @@ export default function Admin() {
   return (
     <Layout>
       <div className="space-y-6 p-4 sm:p-6">
-        <AdminHeader />
+        <AdminHeader 
+          onExportData={handleExportData}
+          onAddUser={handleAddUser}
+        />
         
         <div className="grid gap-6">
-          <AdminStatsGrid />
+          <AdminStatsGrid 
+            stats={stats}
+            blockedUsersCount={blockedUsersCount}
+            averageEngagement={averageEngagement}
+          />
           
           <div className="grid gap-6 lg:grid-cols-2">
             <AdminUserManager />
-            <NotificationCenter />
+            <NotificationCenter 
+              notifications={notifications}
+              onRefresh={handleRefreshNotifications}
+            />
           </div>
         </div>
 
