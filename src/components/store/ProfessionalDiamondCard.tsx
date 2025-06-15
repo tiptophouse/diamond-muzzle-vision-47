@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Heart, Eye, Share, Edit, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,11 +17,17 @@ interface ProfessionalDiamondCardProps {
 export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamondCardProps) {
   const [imageError, setImageError] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
-  const { user } = useTelegramAuth();
-  const isAdmin = user?.id === ADMIN_TELEGRAM_ID;
+  const { user, isTelegramEnvironment } = useTelegramAuth();
+  
+  // Only show admin controls if:
+  // 1. User is authenticated through Telegram
+  // 2. User ID matches the admin ID
+  // 3. We're in a Telegram environment (for security)
+  const isAdmin = user?.id === ADMIN_TELEGRAM_ID && isTelegramEnvironment;
 
   console.log('👤 Current user ID:', user?.id);
   console.log('🔐 Admin ID:', ADMIN_TELEGRAM_ID);
+  console.log('📱 Telegram Environment:', isTelegramEnvironment);
   console.log('👑 Is Admin:', isAdmin);
 
   // Enhanced Gem360 URL detection - check all possible sources
@@ -66,7 +71,7 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 group relative">
-      {/* Admin Controls - Only show for admin */}
+      {/* Admin Controls - Only show for verified admin in Telegram environment */}
       {isAdmin && (
         <>
           {/* Admin Badge */}
@@ -199,7 +204,7 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
           </div>
         )}
 
-        {/* Admin Info */}
+        {/* Admin Info - only show for admin users */}
         {isAdmin && (
           <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
             Admin: Click edit/delete buttons above to manage this diamond

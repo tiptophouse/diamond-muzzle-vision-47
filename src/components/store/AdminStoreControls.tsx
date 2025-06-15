@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Edit, Trash, Upload, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,9 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { api, apiEndpoints } from "@/lib/api";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
+
+const ADMIN_TELEGRAM_ID = 2138564172;
 
 interface AdminStoreControlsProps {
   diamond: Diamond;
@@ -27,6 +29,15 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
     imageUrl: diamond.imageUrl || ''
   });
   const { toast } = useToast();
+  const { user, isTelegramEnvironment } = useTelegramAuth();
+
+  // Security check: Only render controls for verified admin
+  const isAdmin = user?.id === ADMIN_TELEGRAM_ID && isTelegramEnvironment;
+  
+  if (!isAdmin) {
+    console.warn('🚫 AdminStoreControls: Unauthorized access attempt');
+    return null;
+  }
 
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -76,7 +87,6 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
     try {
       console.log('🔄 Updating diamond via API endpoint:', diamond.id);
       
-      // Use the proper API endpoint to update the diamond
       const updateData = {
         price_per_carat: Math.round(formData.price / diamond.carat),
         picture: formData.imageUrl,

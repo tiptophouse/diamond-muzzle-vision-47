@@ -1,260 +1,146 @@
-
 import { useState } from "react";
-import { X, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Slider } from "@/components/ui/slider";
-import { Input } from "@/components/ui/input";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Diamond } from "@/components/inventory/InventoryTable";
+import { Filter, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
 import { ShapeSelector } from "./ShapeSelector";
-import { ColorScroller } from "./ColorScroller";
-import { ClarityScroller } from "./ClarityScroller";
-import { HorizontalStoreFilters } from "./HorizontalStoreFilters";
+import { PriceRangeFilter } from "./filters/PriceRangeFilter";
+import { CaratRangeFilter } from "./filters/CaratRangeFilter";
+import { ClarityFilter } from "./filters/ClarityFilter";
+import { ColorFilter } from "./filters/ColorFilter";
+import { ShapeFilter } from "./filters/ShapeFilter";
 
 interface StoreFiltersProps {
-  filters: {
-    shapes: string[];
-    colors: string[];
-    clarities: string[];
-    caratRange: [number, number];
-    priceRange: [number, number];
-  };
-  onUpdateFilter: (key: string, value: any) => void;
+  filters: any;
+  onUpdateFilter: (filterName: string, value: any) => void;
   onClearFilters: () => void;
-  diamonds: Diamond[];
-  isOpen?: boolean;
-  onClose?: () => void;
-  isMobile?: boolean;
-  isHorizontal?: boolean;
+  diamonds: any[];
 }
 
-export function StoreFilters({ 
-  filters, 
-  onUpdateFilter, 
-  onClearFilters, 
-  diamonds = [], // Add default empty array to prevent undefined errors
-  isOpen = false,
-  onClose,
-  isMobile = false,
-  isHorizontal = false
-}: StoreFiltersProps) {
-  const [customPriceMin, setCustomPriceMin] = useState("");
-  const [customPriceMax, setCustomPriceMax] = useState("");
-  const [customCaratMin, setCustomCaratMin] = useState("");
-  const [customCaratMax, setCustomCaratMax] = useState("");
+export function StoreFilters({ filters, onUpdateFilter, onClearFilters, diamonds }: StoreFiltersProps) {
+  const [isOpen, setIsOpen] = useState(true);
 
-  const getMinMaxValues = () => {
-    // Add safety check for diamonds array
-    if (!diamonds || diamonds.length === 0) {
-      return { minCarat: 0, maxCarat: 10, minPrice: 0, maxPrice: 100000 };
+  const handleToggle = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const handlePriceRangeChange = (min: number | undefined, max: number | undefined) => {
+    onUpdateFilter('priceRange', { min, max });
+  };
+
+  const handleCaratRangeChange = (min: number | undefined, max: number | undefined) => {
+    onUpdateFilter('caratRange', { min, max });
+  };
+
+  const handleShapeToggle = (shape: string) => {
+    const selectedShapes = new Set(filters.shapes);
+    if (selectedShapes.has(shape)) {
+      selectedShapes.delete(shape);
+    } else {
+      selectedShapes.add(shape);
+    }
+    onUpdateFilter('shapes', Array.from(selectedShapes));
+  };
+
+  const handleClarityToggle = (clarity: string) => {
+    const selectedClarities = new Set(filters.clarities);
+    if (selectedClarities.has(clarity)) {
+      selectedClarities.delete(clarity);
+    } else {
+      selectedClarities.add(clarity);
     }
     
-    const carats = diamonds.map(d => d.carat);
-    const prices = diamonds.map(d => d.price);
+    onUpdateFilter('clarities', Array.from(selectedClarities));
+  };
+
+  const handleColorToggle = (color: string) => {
+    const selectedColors = new Set(filters.colors);
+    if (selectedColors.has(color)) {
+      selectedColors.delete(color);
+    } else {
+      selectedColors.add(color);
+    }
     
-    return {
-      minCarat: Math.min(...carats),
-      maxCarat: Math.max(...carats),
-      minPrice: Math.min(...prices),
-      maxPrice: Math.max(...prices)
-    };
+    onUpdateFilter('colors', Array.from(selectedColors));
   };
 
-  const { minCarat, maxCarat, minPrice, maxPrice } = getMinMaxValues();
-  
-  const activeFiltersCount = 
-    filters.shapes.length + 
-    filters.colors.length + 
-    filters.clarities.length + 
-    (filters.caratRange[0] > minCarat || filters.caratRange[1] < maxCarat ? 1 : 0) +
-    (filters.priceRange[0] > minPrice || filters.priceRange[1] < maxPrice ? 1 : 0);
-
-  const toggleFilter = (type: string, value: string) => {
-    const currentValues = filters[type as keyof typeof filters] as string[];
-    const newValues = currentValues.includes(value)
-      ? currentValues.filter(v => v !== value)
-      : [...currentValues, value];
-    onUpdateFilter(type, newValues);
-  };
-
-  const handlePriceUpdate = () => {
-    const minVal = customPriceMin ? parseFloat(customPriceMin) : minPrice;
-    const maxVal = customPriceMax ? parseFloat(customPriceMax) : maxPrice;
-    onUpdateFilter('priceRange', [minVal, maxVal]);
-  };
-
-  const handleCaratUpdate = () => {
-    const minVal = customCaratMin ? parseFloat(customCaratMin) : minCarat;
-    const maxVal = customCaratMax ? parseFloat(customCaratMax) : maxCarat;
-    onUpdateFilter('caratRange', [minVal, maxVal]);
-  };
-
-  // If horizontal layout is requested, use the new component
-  if (isHorizontal) {
-    return (
-      <HorizontalStoreFilters
-        filters={filters}
-        onUpdateFilter={onUpdateFilter}
-        onClearFilters={onClearFilters}
-        diamonds={diamonds}
-      />
-    );
-  }
-
-  const FilterContent = () => (
-    <div className="space-y-8">
-      {/* Shape Selector */}
-      <div className="space-y-4">
-        <h4 className="font-semibold text-slate-900 text-lg">Shape</h4>
-        <ShapeSelector
-          selectedShapes={filters.shapes}
-          onShapeToggle={(shape) => toggleFilter('shapes', shape)}
-        />
-      </div>
-
-      {/* Price Range */}
-      <div className="space-y-4">
-        <h4 className="font-semibold text-slate-900 text-lg">Price</h4>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm text-slate-600 mb-1 block">Min Price</label>
-            <Input
-              type="number"
-              placeholder="$500"
-              value={customPriceMin}
-              onChange={(e) => setCustomPriceMin(e.target.value)}
-              onBlur={handlePriceUpdate}
-              className="text-center"
-            />
-          </div>
-          <div>
-            <label className="text-sm text-slate-600 mb-1 block">Max Price</label>
-            <Input
-              type="number"
-              placeholder="$50,000"
-              value={customPriceMax}
-              onChange={(e) => setCustomPriceMax(e.target.value)}
-              onBlur={handlePriceUpdate}
-              className="text-center"
-            />
-          </div>
-        </div>
-        <div className="px-2">
-          <Slider
-            value={filters.priceRange}
-            onValueChange={(value) => onUpdateFilter('priceRange', value as [number, number])}
-            max={maxPrice}
-            min={minPrice}
-            step={1000}
-            className="w-full"
-          />
-          <div className="flex justify-between text-sm text-slate-600 mt-1">
-            <span>${filters.priceRange[0].toLocaleString()}</span>
-            <span>${filters.priceRange[1].toLocaleString()}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Carat Range */}
-      <div className="space-y-4">
-        <h4 className="font-semibold text-slate-900 text-lg">Carat</h4>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm text-slate-600 mb-1 block">Min Carat</label>
-            <Input
-              type="number"
-              placeholder="1.00"
-              value={customCaratMin}
-              onChange={(e) => setCustomCaratMin(e.target.value)}
-              onBlur={handleCaratUpdate}
-              className="text-center"
-              step="0.01"
-            />
-          </div>
-          <div>
-            <label className="text-sm text-slate-600 mb-1 block">Max Carat</label>
-            <Input
-              type="number"
-              placeholder="20.00"
-              value={customCaratMax}
-              onChange={(e) => setCustomCaratMax(e.target.value)}
-              onBlur={handleCaratUpdate}
-              className="text-center"
-              step="0.01"
-            />
-          </div>
-        </div>
-        <div className="px-2">
-          <Slider
-            value={filters.caratRange}
-            onValueChange={(value) => onUpdateFilter('caratRange', value as [number, number])}
-            max={maxCarat}
-            min={minCarat}
-            step={0.1}
-            className="w-full"
-          />
-          <div className="flex justify-between text-sm text-slate-600 mt-1">
-            <span>{filters.caratRange[0].toFixed(1)} ct</span>
-            <span>{filters.caratRange[1].toFixed(1)} ct</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Color Scroller */}
-      <div className="space-y-4">
-        <h4 className="font-semibold text-slate-900 text-lg">Color</h4>
-        <ColorScroller
-          selectedColors={filters.colors}
-          onColorToggle={(color) => toggleFilter('colors', color)}
-        />
-      </div>
-
-      {/* Clarity Scroller */}
-      <div className="space-y-4">
-        <h4 className="font-semibold text-slate-900 text-lg">Clarity</h4>
-        <ClarityScroller
-          selectedClarities={filters.clarities}
-          onClarityToggle={(clarity) => toggleFilter('clarities', clarity)}
-        />
-      </div>
-
-      {/* Clear Filters */}
-      {activeFiltersCount > 0 && (
-        <div className="flex items-center justify-between pt-4 border-t">
-          <span className="text-sm text-slate-600">{activeFiltersCount} filters active</span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onClearFilters}
-            className="text-slate-600 hover:text-slate-900"
-          >
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Clear All
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-
-  if (isMobile) {
-    return (
-      <Sheet open={isOpen} onOpenChange={onClose}>
-        <SheetContent side="bottom" className="h-[80vh] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Filter Diamonds</SheetTitle>
-          </SheetHeader>
-          <div className="mt-6">
-            <FilterContent />
-          </div>
-        </SheetContent>
-      </Sheet>
-    );
-  }
+  const activeFiltersCount =
+    (filters.priceRange?.min ? 1 : 0) +
+    (filters.priceRange?.max ? 1 : 0) +
+    (filters.caratRange?.min ? 1 : 0) +
+    (filters.caratRange?.max ? 1 : 0) +
+    (filters.shapes?.length || 0) +
+    (filters.clarities?.length || 0) +
+    (filters.colors?.length || 0);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-      <FilterContent />
+    <div className="bg-white rounded-xl shadow-md p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+            <Filter className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">Refine Your Search</h2>
+            <p className="text-sm text-slate-600">Find your perfect diamond</p>
+          </div>
+        </div>
+        
+        {activeFiltersCount > 0 && (
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              {activeFiltersCount} active
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClearFilters}
+              className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Clear All
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Collapse Button */}
+      <Button
+        variant="ghost"
+        className="w-full justify-between text-slate-700 hover:bg-slate-50 rounded-xl"
+        onClick={handleToggle}
+      >
+        <span>Filters</span>
+        {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+      </Button>
+
+      {/* Collapsible Content */}
+      {isOpen && (
+        <div className="space-y-6 pt-4">
+          <PriceRangeFilter
+            priceRange={filters.priceRange}
+            onPriceRangeChange={handlePriceRangeChange}
+            diamonds={diamonds}
+          />
+          <CaratRangeFilter
+            caratRange={filters.caratRange}
+            onCaratRangeChange={handleCaratRangeChange}
+            diamonds={diamonds}
+          />
+          <ShapeFilter
+            selectedShapes={filters.shapes || []}
+            onShapeToggle={handleShapeToggle}
+          />
+          <ClarityFilter
+            selectedClarities={filters.clarities || []}
+            onClarityToggle={handleClarityToggle}
+          />
+          <ColorFilter
+            selectedColors={filters.colors || []}
+            onColorToggle={handleColorToggle}
+          />
+        </div>
+      )}
     </div>
   );
 }
