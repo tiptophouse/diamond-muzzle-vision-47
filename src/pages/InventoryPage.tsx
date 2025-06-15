@@ -117,9 +117,6 @@ export default function InventoryPage() {
     }
   };
 
-  const handleQRScan = () => {
-  };
-
   if (authLoading) {
     return (
       <Layout>

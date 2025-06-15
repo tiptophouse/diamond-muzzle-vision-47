@@ -1,6 +1,9 @@
+
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Plus, AlertCircle, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+
+// Remove any QR scan functionality from InventoryHeader
 
 interface InventoryHeaderProps {
   totalDiamonds: number;
