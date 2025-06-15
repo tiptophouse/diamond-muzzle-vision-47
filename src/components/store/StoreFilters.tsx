@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -63,25 +62,6 @@ export function StoreFilters({ filters, onUpdateFilter, onClearFilters, diamonds
     onUpdateFilter('colors', Array.from(selectedColors));
   };
 
-  // Calculate min/max values from diamonds array
-  const getMinMaxValues = () => {
-    if (!diamonds || diamonds.length === 0) {
-      return { minCarat: 0, maxCarat: 10, minPrice: 0, maxPrice: 100000 };
-    }
-    
-    const carats = diamonds.map(d => d.carat);
-    const prices = diamonds.map(d => d.price);
-    
-    return {
-      minCarat: Math.min(...carats),
-      maxCarat: Math.max(...carats),
-      minPrice: Math.min(...prices),
-      maxPrice: Math.max(...prices)
-    };
-  };
-
-  const { minCarat, maxCarat, minPrice, maxPrice } = getMinMaxValues();
-
   const activeFiltersCount =
     (filters.priceRange?.min ? 1 : 0) +
     (filters.priceRange?.max ? 1 : 0) +
@@ -138,15 +118,13 @@ export function StoreFilters({ filters, onUpdateFilter, onClearFilters, diamonds
         <div className="space-y-6 pt-4">
           <PriceRangeFilter
             priceRange={filters.priceRange}
-            minPrice={minPrice}
-            maxPrice={maxPrice}
             onPriceRangeChange={handlePriceRangeChange}
+            diamonds={diamonds}
           />
           <CaratRangeFilter
             caratRange={filters.caratRange}
-            minCarat={minCarat}
-            maxCarat={maxCarat}
             onCaratRangeChange={handleCaratRangeChange}
+            diamonds={diamonds}
           />
           <ShapeFilter
             selectedShapes={filters.shapes || []}

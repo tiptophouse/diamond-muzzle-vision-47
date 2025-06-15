@@ -2,10 +2,9 @@
 import { useState } from "react";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
-import { useUserRole } from "@/hooks/useUserRole";
-import { RoleBasedStoreHeader } from "@/components/store/RoleBasedStoreHeader";
-import { RoleBasedStoreFilters } from "@/components/store/RoleBasedStoreFilters";
-import { RoleBasedStoreGrid } from "@/components/store/RoleBasedStoreGrid";
+import { StoreHeader } from "@/components/store/StoreHeader";
+import { PremiumStoreFilters } from "@/components/store/PremiumStoreFilters";
+import { StoreGrid } from "@/components/store/StoreGrid";
 import { ImageUpload } from "@/components/store/ImageUpload";
 import { FloatingShareButton } from "@/components/store/FloatingShareButton";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,6 @@ import { Upload, Image } from "lucide-react";
 export default function StorePage() {
   const { diamonds, loading, error, refetch } = useStoreData();
   const { filters, filteredDiamonds, updateFilter, clearFilters } = useStoreFilters(diamonds || []);
-  const { userRole, isLoading: roleLoading } = useUserRole();
   const [showUpload, setShowUpload] = useState(false);
 
   const handleImageUploaded = (imageUrl: string) => {
@@ -23,38 +21,12 @@ export default function StorePage() {
     setShowUpload(false);
   };
 
-  // For free users, show full-screen conversational experience
-  if (!roleLoading && userRole === 'FREE_USER') {
-    return (
-      <div className="h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
-        <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 h-full flex flex-col gap-6">
-          {/* Header */}
-          <RoleBasedStoreHeader 
-            totalDiamonds={filteredDiamonds.length}
-            onOpenFilters={() => {}}
-          />
-          
-          {/* Conversational Flow - Full Height */}
-          <div className="flex-1 min-h-0">
-            <RoleBasedStoreGrid
-              diamonds={filteredDiamonds}
-              loading={loading}
-              error={error}
-              onUpdate={refetch}
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // For paid users, show traditional grid layout
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
       <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-6">
         {/* Header with Upload Button */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <RoleBasedStoreHeader 
+          <StoreHeader 
             totalDiamonds={filteredDiamonds.length}
             onOpenFilters={() => {}}
           />
@@ -79,16 +51,18 @@ export default function StorePage() {
           </Dialog>
         </div>
 
-        {/* Role-Based Filters */}
-        <RoleBasedStoreFilters
-          filters={filters}
-          onUpdateFilter={updateFilter}
-          onClearFilters={clearFilters}
-          diamonds={diamonds || []}
-        />
+        {/* Premium Fixed Filters */}
+        <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-xl border border-slate-200/50 rounded-2xl shadow-xl shadow-slate-900/5">
+          <PremiumStoreFilters
+            filters={filters}
+            onUpdateFilter={updateFilter}
+            onClearFilters={clearFilters}
+            diamonds={diamonds || []}
+          />
+        </div>
 
-        {/* Role-Based Store Grid */}
-        <RoleBasedStoreGrid
+        {/* Store Grid */}
+        <StoreGrid
           diamonds={filteredDiamonds}
           loading={loading}
           error={error}
