@@ -1,4 +1,3 @@
-
 import Sidebar from "./Sidebar";
 import { Header } from "./Header";
 import { useState } from "react";
@@ -24,7 +23,7 @@ export function Layout({ children }: LayoutProps) {
         style={{ top: '2cm' }}
         aria-label="Open menu"
       >
-        <Menu className="h-5 w-5" />
+        <Menu size={32} className="h-8 w-8" />
       </Button>
 
       {/* Mobile Sidebar as Sheet */}
@@ -65,4 +64,3 @@ export function Layout({ children }: LayoutProps) {
     </div>
   );
 }
-
