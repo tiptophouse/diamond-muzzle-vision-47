@@ -1,7 +1,7 @@
 
 import { useUserRole } from "@/hooks/useUserRole";
 import { StoreGrid } from "./StoreGrid";
-import { DiamondEducationFlow } from "./education/DiamondEducationFlow";
+import { MainMenuFlow } from "./education/MainMenuFlow";
 import { DiamondCardSkeleton } from "./DiamondCardSkeleton";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { AlertCircle } from "lucide-react";
@@ -43,10 +43,10 @@ export function RoleBasedStoreGrid({ diamonds, loading, error, onUpdate }: RoleB
     return <StoreGrid diamonds={diamonds} loading={loading} error={error} onUpdate={onUpdate} />;
   }
 
-  // For free users, show the conversational education flow
+  // For free users, show the main menu flow
   return (
     <div className="h-[calc(100vh-12rem)]">
-      <DiamondEducationFlow />
+      <MainMenuFlow />
     </div>
   );
 }

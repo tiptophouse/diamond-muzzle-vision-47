@@ -21,32 +21,17 @@ export function RoleBasedStoreHeader({ totalDiamonds, onOpenFilters }: RoleBased
     return <StoreHeader totalDiamonds={totalDiamonds} onOpenFilters={onOpenFilters} />;
   }
 
-  // For free users, show conversational header
+  // For free users, show minimal header that doesn't interfere with the menu
   return (
-    <div className="bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-200 rounded-2xl p-6 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="bg-white p-3 rounded-full shadow-sm">
-            <Diamond className="h-8 w-8 text-pink-600" />
+    <div className="bg-white border-b border-gray-200 p-4 sm:p-6">
+      <div className="flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <div className="bg-green-100 p-2 rounded-full">
+            <Diamond className="h-6 w-6 text-green-600" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-              Find Your Perfect Ring
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Learn about diamonds and design your dream engagement ring with AI
-            </p>
-          </div>
-        </div>
-        
-        <div className="hidden sm:flex items-center gap-6 text-sm">
-          <div className="flex items-center gap-2 text-pink-600">
-            <Sparkles className="h-4 w-4" />
-            <span>AI-Powered Design</span>
-          </div>
-          <div className="flex items-center gap-2 text-purple-600">
-            <Heart className="h-4 w-4" />
-            <span>Personalized Journey</span>
+          <div className="text-center">
+            <h1 className="text-xl font-bold text-gray-900">MAZAL Diamond Assistant</h1>
+            <p className="text-sm text-gray-600">Your Personal Diamond Expert</p>
           </div>
         </div>
       </div>
