@@ -19,6 +19,30 @@ interface StoreFiltersProps {
 export function StoreFilters({ filters, onUpdateFilter, onClearFilters, diamonds }: StoreFiltersProps) {
   const [isOpen, setIsOpen] = useState(true);
 
+  // Calculate min/max values from diamonds data
+  const getMinMaxValues = () => {
+    if (!diamonds || diamonds.length === 0) {
+      return {
+        minPrice: 0,
+        maxPrice: 100000,
+        minCarat: 0,
+        maxCarat: 10
+      };
+    }
+
+    const prices = diamonds.map(d => d.price).filter(p => p != null);
+    const carats = diamonds.map(d => d.carat).filter(c => c != null);
+
+    return {
+      minPrice: prices.length > 0 ? Math.min(...prices) : 0,
+      maxPrice: prices.length > 0 ? Math.max(...prices) : 100000,
+      minCarat: carats.length > 0 ? Math.min(...carats) : 0,
+      maxCarat: carats.length > 0 ? Math.max(...carats) : 10
+    };
+  };
+
+  const { minPrice, maxPrice, minCarat, maxCarat } = getMinMaxValues();
+
   const handleToggle = () => {
     setIsOpen(!isOpen);
   };
@@ -119,10 +143,14 @@ export function StoreFilters({ filters, onUpdateFilter, onClearFilters, diamonds
         <div className="space-y-6 pt-4">
           <PriceRangeFilter
             priceRange={filters.priceRange}
+            minPrice={minPrice}
+            maxPrice={maxPrice}
             onPriceRangeChange={handlePriceRangeChange}
           />
           <CaratRangeFilter
             caratRange={filters.caratRange}
+            minCarat={minCarat}
+            maxCarat={maxCarat}
             onCaratRangeChange={handleCaratRangeChange}
           />
           <ShapeFilter
