@@ -40,9 +40,28 @@ export async function getSecureConfig(): Promise<SecureConfig> {
       console.warn('⚠️ Failed to get admin settings:', adminError);
     }
 
+    // Properly handle the JSON setting_value field
+    let adminTelegramId = 2138564172; // fallback
+    if (adminSettings?.setting_value) {
+      // Handle different possible formats of the setting_value
+      if (typeof adminSettings.setting_value === 'number') {
+        adminTelegramId = adminSettings.setting_value;
+      } else if (typeof adminSettings.setting_value === 'object' && adminSettings.setting_value !== null) {
+        // If it's an object, check if it has a value property
+        const settingObj = adminSettings.setting_value as Record<string, any>;
+        adminTelegramId = settingObj.value || settingObj.admin_telegram_id || 2138564172;
+      } else if (typeof adminSettings.setting_value === 'string') {
+        // Try to parse as number
+        const parsed = parseInt(adminSettings.setting_value, 10);
+        if (!isNaN(parsed)) {
+          adminTelegramId = parsed;
+        }
+      }
+    }
+
     const config: SecureConfig = {
       backendAccessToken: tokenData?.token || null,
-      adminTelegramId: adminSettings?.setting_value?.value || 2138564172 // fallback for backward compatibility
+      adminTelegramId
     };
 
     // Cache the configuration
