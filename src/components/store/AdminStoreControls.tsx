@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Edit, Trash, Upload, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,8 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { api, apiEndpoints } from "@/lib/api";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-
-const ADMIN_TELEGRAM_ID = 2138564172;
+import { getAdminTelegramId } from "@/lib/api/secureConfig";
+import { useEffect } from "react";
 
 interface AdminStoreControlsProps {
   diamond: Diamond;
@@ -23,6 +24,7 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [adminTelegramId, setAdminTelegramId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     price: diamond.price,
     description: '',
@@ -31,10 +33,18 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
   const { toast } = useToast();
   const { user, isTelegramEnvironment } = useTelegramAuth();
 
+  useEffect(() => {
+    const loadAdminId = async () => {
+      const adminId = await getAdminTelegramId();
+      setAdminTelegramId(adminId);
+    };
+    loadAdminId();
+  }, []);
+
   // Security check: Only render controls for verified admin
-  const isAdmin = user?.id === ADMIN_TELEGRAM_ID && isTelegramEnvironment;
+  const isAdmin = user?.id === adminTelegramId && isTelegramEnvironment;
   
-  if (!isAdmin) {
+  if (!isAdmin || !adminTelegramId) {
     console.warn('🚫 AdminStoreControls: Unauthorized access attempt');
     return null;
   }

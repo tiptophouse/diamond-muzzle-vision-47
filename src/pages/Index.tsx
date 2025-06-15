@@ -3,14 +3,22 @@ import { useEffect, useState, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useUserTracking } from '@/hooks/useUserTracking';
-
-const ADMIN_TELEGRAM_ID = 2138564172;
+import { getAdminTelegramId } from '@/lib/api/secureConfig';
 
 const Index = () => {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
   const { trackPageVisit } = useUserTracking();
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
+  const [adminTelegramId, setAdminTelegramId] = useState<number | null>(null);
   const redirectHandledRef = useRef(false);
+
+  useEffect(() => {
+    const loadAdminId = async () => {
+      const adminId = await getAdminTelegramId();
+      setAdminTelegramId(adminId);
+    };
+    loadAdminId();
+  }, []);
 
   useEffect(() => {
     // Add debug info for troubleshooting
@@ -19,13 +27,14 @@ const Index = () => {
       `Authenticated: ${isAuthenticated}`,
       `User ID: ${user?.id || 'none'}`,
       `User Name: ${user?.first_name || 'none'}`,
+      `Admin ID: ${adminTelegramId || 'loading...'}`,
       `Telegram Env: ${!!window.Telegram?.WebApp}`,
       `URL: ${window.location.href}`,
       `Redirect Handled: ${redirectHandledRef.current}`
     ];
     setDebugInfo(info);
     console.log('🔍 Index Debug Info:', info);
-  }, [user, isAuthenticated, isLoading]);
+  }, [user, isAuthenticated, isLoading, adminTelegramId]);
 
   useEffect(() => {
     if (!isLoading && !redirectHandledRef.current) {
@@ -34,7 +43,7 @@ const Index = () => {
   }, [trackPageVisit, isLoading]);
 
   // Show loading state while auth is initializing
-  if (isLoading) {
+  if (isLoading || adminTelegramId === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
         <div className="text-center space-y-6 p-8 max-w-md">
@@ -64,7 +73,7 @@ const Index = () => {
   }
 
   // If user is admin, show admin selection
-  if (isAuthenticated && user?.id === ADMIN_TELEGRAM_ID) {
+  if (isAuthenticated && user?.id === adminTelegramId) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-purple-50">
         <div className="text-center space-y-8 p-8 max-w-md">

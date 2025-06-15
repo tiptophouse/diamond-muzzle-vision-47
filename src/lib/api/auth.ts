@@ -1,7 +1,8 @@
 
-import { API_BASE_URL, BACKEND_ACCESS_TOKEN } from './config';
+import { API_BASE_URL } from './config';
 import { apiEndpoints } from './endpoints';
 import { setCurrentUserId } from './config';
+import { getBackendAccessToken } from './secureConfig';
 
 export interface TelegramVerificationResponse {
   success: boolean;
@@ -52,15 +53,23 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
       return null;
     }
     
+    // Get secure backend access token
+    const backendToken = await getBackendAccessToken();
+    if (!backendToken) {
+      console.error('🔐 API: Failed to retrieve secure backend access token');
+      verificationResult = null;
+      return null;
+    }
+    
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
+      'Authorization': `Bearer ${backendToken}`,
       'X-Timestamp': now.toString(),
       'X-Client-Version': '1.0.0'
     };
     
-    console.log('🔐 API: Using backend access token for verification');
+    console.log('🔐 API: Using secure backend access token for verification');
     
     const response = await fetch(`${API_BASE_URL}${apiEndpoints.verifyTelegram()}`, {
       method: 'POST',
@@ -121,12 +130,19 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
 }
 
 export async function getAuthHeaders(): Promise<Record<string, string>> {
+  // Get secure backend access token
+  const backendToken = await getBackendAccessToken();
+  
   const headers: Record<string, string> = {
-    "Authorization": `Bearer ${BACKEND_ACCESS_TOKEN}`,
     "X-Client-Timestamp": Date.now().toString()
   };
   
-  console.log('🚀 API: Using backend access token for requests');
+  if (backendToken) {
+    headers["Authorization"] = `Bearer ${backendToken}`;
+    console.log('🚀 API: Using secure backend access token for requests');
+  } else {
+    console.warn('⚠️ API: No secure backend access token available');
+  }
   
   // Add enhanced auth headers if available from verification
   if (verificationResult && verificationResult.success) {

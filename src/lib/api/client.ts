@@ -1,6 +1,7 @@
 import { toast } from "@/components/ui/use-toast";
-import { API_BASE_URL, getCurrentUserId, BACKEND_ACCESS_TOKEN } from './config';
+import { API_BASE_URL, getCurrentUserId } from './config';
 import { getAuthHeaders } from './auth';
+import { getBackendAccessToken } from './secureConfig';
 
 interface ApiResponse<T> {
   data?: T;
@@ -13,6 +14,12 @@ async function testBackendConnectivity(): Promise<boolean> {
     console.log('🔍 API: Testing FastAPI backend connectivity to:', API_BASE_URL);
     console.log('🔍 API: Expected to connect to your real diamond database with 500+ records');
     
+    const backendToken = await getBackendAccessToken();
+    if (!backendToken) {
+      console.error('❌ API: No secure backend access token available for connectivity test');
+      return false;
+    }
+    
     // Try the root endpoint first
     const testUrl = `${API_BASE_URL}/`;
     console.log('🔍 API: Testing root endpoint:', testUrl);
@@ -22,7 +29,7 @@ async function testBackendConnectivity(): Promise<boolean> {
       mode: 'cors',
       headers: {
         'Accept': 'application/json',
-        'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
+        'Authorization': `Bearer ${backendToken}`,
       },
     });
     
@@ -66,7 +73,6 @@ export async function fetchApi<T>(
       "Content-Type": "application/json",
       "Accept": "application/json",
       "Origin": window.location.origin,
-      "Authorization": `Bearer ${BACKEND_ACCESS_TOKEN}`,
       ...authHeaders,
       ...options.headers as Record<string, string>,
     };
