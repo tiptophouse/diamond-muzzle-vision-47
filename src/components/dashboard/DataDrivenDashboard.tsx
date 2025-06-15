@@ -1,5 +1,4 @@
 
-import { useInventoryData } from '@/hooks/useInventoryData';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { processDiamondDataForDashboard } from '@/services/diamondAnalytics';
 import { StatCard } from '@/components/dashboard/StatCard';
@@ -10,10 +9,16 @@ import { Gem, Users, TrendingUp, Star, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
 import { useEffect } from 'react';
+import { Diamond } from '@/components/inventory/InventoryTable';
 
-export function DataDrivenDashboard() {
+interface DataDrivenDashboardProps {
+  allDiamonds: Diamond[];
+  loading: boolean;
+  fetchData: () => void;
+}
+
+export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDrivenDashboardProps) {
   const { user } = useTelegramAuth();
-  const { allDiamonds, loading, fetchData } = useInventoryData();
   const { subscribeToInventoryChanges } = useInventoryDataSync();
 
   console.log('🔍 DataDrivenDashboard: Processing data for user:', user?.id, 'Diamonds:', allDiamonds.length);
