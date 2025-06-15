@@ -41,9 +41,15 @@ export function useUserRole() {
   const getUserRole = (): UserRole => {
     if (!user?.id) return 'FREE_USER';
     
-    // Admin check (highest priority)
-    if (user.id === ADMIN_TELEGRAM_ID) return 'PAID_USER';
+    // TEMPORARILY FORCE FREE USER EXPERIENCE FOR TESTING
+    // Comment out the admin check to see the free user experience
+    // if (user.id === ADMIN_TELEGRAM_ID) return 'PAID_USER';
     
+    // Force all users to be FREE_USER for testing the B2C experience
+    return 'FREE_USER';
+    
+    // Original logic (commented out for testing):
+    /*
     if (!userProfile) return 'FREE_USER';
     
     // Check if user is paid
@@ -52,6 +58,7 @@ export function useUserRole() {
                    (userProfile.subscription_plan && userProfile.subscription_plan !== 'free');
     
     return isPaid ? 'PAID_USER' : 'FREE_USER';
+    */
   };
 
   return {
