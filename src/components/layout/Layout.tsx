@@ -15,21 +15,22 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden flex bg-background">
+      {/* Hamburger menu button fixed at top-left on mobile */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setSidebarOpen(true)}
+        className="fixed top-4 left-4 z-[100] p-2 lg:hidden"
+        aria-label="Open menu"
+      >
+        <Menu className="h-5 w-5" />
+      </Button>
+
       {/* Mobile Sidebar as Sheet */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        {/* Mobile header with menu button */}
-        <div className="lg:hidden flex items-center justify-between p-4 pt-10 border-b border-gray-200 bg-white fixed top-0 left-0 right-0 z-50">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSidebarOpen(true)}
-            className="p-2"
-            aria-label="Open menu"
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
+        {/* Mobile header is now only app name and center spacer */}
+        <div className="lg:hidden flex items-center justify-center p-4 pt-10 border-b border-gray-200 bg-white fixed top-0 left-0 right-0 z-50">
           <h1 className="text-lg font-bold text-gray-900">Diamond Muzzle</h1>
-          <div className="w-9" /> {/* Spacer for center alignment */}
         </div>
         {/* SheetContent for Sidebar */}
         <SheetContent
@@ -63,3 +64,4 @@ export function Layout({ children }: LayoutProps) {
     </div>
   );
 }
+
