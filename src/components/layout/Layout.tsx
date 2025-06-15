@@ -37,7 +37,7 @@ export function Layout({ children }: LayoutProps) {
             variant="ghost"
             size="sm"
             onClick={() => setSidebarOpen(true)}
-            className="p-2 mt-5"
+            className="p-2"
           >
             <Menu className="h-5 w-5" />
           </Button>
