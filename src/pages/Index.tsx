@@ -10,12 +10,20 @@ const Index = () => {
   const { trackPageVisit } = useUserTracking();
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
   const [adminTelegramId, setAdminTelegramId] = useState<number | null>(null);
+  const [loadingConfig, setLoadingConfig] = useState(true);
   const redirectHandledRef = useRef(false);
 
   useEffect(() => {
     const loadAdminId = async () => {
-      const adminId = await getAdminTelegramId();
-      setAdminTelegramId(adminId);
+      try {
+        const adminId = await getAdminTelegramId();
+        setAdminTelegramId(adminId);
+      } catch (error) {
+        console.error('Failed to load admin ID:', error);
+        setAdminTelegramId(2138564172); // fallback
+      } finally {
+        setLoadingConfig(false);
+      }
     };
     loadAdminId();
   }, []);
@@ -24,6 +32,7 @@ const Index = () => {
     // Add debug info for troubleshooting
     const info = [
       `Loading: ${isLoading}`,
+      `Config Loading: ${loadingConfig}`,
       `Authenticated: ${isAuthenticated}`,
       `User ID: ${user?.id || 'none'}`,
       `User Name: ${user?.first_name || 'none'}`,
@@ -34,23 +43,25 @@ const Index = () => {
     ];
     setDebugInfo(info);
     console.log('🔍 Index Debug Info:', info);
-  }, [user, isAuthenticated, isLoading, adminTelegramId]);
+  }, [user, isAuthenticated, isLoading, adminTelegramId, loadingConfig]);
 
   useEffect(() => {
-    if (!isLoading && !redirectHandledRef.current) {
+    if (!isLoading && !loadingConfig && !redirectHandledRef.current) {
       trackPageVisit('/', 'Diamond Muzzle - Home');
     }
-  }, [trackPageVisit, isLoading]);
+  }, [trackPageVisit, isLoading, loadingConfig]);
 
   // Show loading state while auth is initializing
-  if (isLoading || adminTelegramId === null) {
+  if (isLoading || loadingConfig) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
         <div className="text-center space-y-6 p-8 max-w-md">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mx-auto"></div>
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-blue-700">Diamond Muzzle</h1>
-            <p className="text-blue-600">Initializing your session...</p>
+            <p className="text-blue-600">
+              {loadingConfig ? 'Loading configuration...' : 'Initializing your session...'}
+            </p>
           </div>
           
           {/* Debug info in development */}

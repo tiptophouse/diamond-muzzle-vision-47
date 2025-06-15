@@ -1,166 +1,111 @@
 
-import { TelegramUser, TelegramInitData, TelegramWebApp } from '@/types/telegram';
+// Telegram WebApp utility functions for secure authentication
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp: {
+        initData: string;
+        initDataUnsafe: any;
+        ready: () => void;
+        expand: () => void;
+        themeParams: any;
+      };
+    };
+  }
+}
 
-// Check if we're in a Telegram WebApp environment
 export function isTelegramWebAppEnvironment(): boolean {
   if (typeof window === 'undefined') return false;
   
-  // More comprehensive check
   return !!(
     window.Telegram?.WebApp && 
-    typeof window.Telegram.WebApp === 'object' &&
-    (
-      window.Telegram.WebApp.initData ||
-      window.Telegram.WebApp.initDataUnsafe ||
-      window.location.search.includes('tgWebAppData') ||
-      window.location.hash.includes('tgWebAppData') ||
-      navigator.userAgent.includes('TelegramBot')
-    )
+    typeof window.Telegram.WebApp === 'object'
   );
 }
 
-// Get the Telegram WebApp instance
-export function getTelegramWebApp(): TelegramWebApp | null {
-  if (typeof window === 'undefined') return null;
-  return window.Telegram?.WebApp || null;
+export function getTelegramWebApp() {
+  if (!isTelegramWebAppEnvironment()) {
+    return null;
+  }
+  
+  return window.Telegram!.WebApp;
 }
 
-// Initialize Telegram WebApp
-export async function initializeTelegramWebApp(): Promise<boolean> {
-  return new Promise((resolve) => {
-    if (typeof window === 'undefined') {
-      resolve(false);
-      return;
-    }
-
-    let attempts = 0;
-    const maxAttempts = 20;
-    
-    const checkAndInit = () => {
-      attempts++;
-      
-      if (window.Telegram?.WebApp) {
-        try {
-          const tg = window.Telegram.WebApp;
-          
-          console.log('🔧 Initializing Telegram WebApp...');
-          console.log('📱 WebApp version:', tg.version);
-          console.log('🔍 Has initData:', !!tg.initData);
-          console.log('🔍 Has initDataUnsafe:', !!tg.initDataUnsafe);
-          
-          // Call ready first
-          if (typeof tg.ready === 'function') {
-            tg.ready();
-            console.log('✅ WebApp ready() called');
-          }
-          
-          // Expand the app
-          if (typeof tg.expand === 'function') {
-            tg.expand();
-            console.log('✅ WebApp expand() called');
-          }
-          
-          // Set theme
-          try {
-            if (tg.themeParams?.bg_color) {
-              document.body.style.backgroundColor = tg.themeParams.bg_color;
-            }
-            
-            // Safely try to set header color
-            if (typeof tg.setHeaderColor === 'function') {
-              tg.setHeaderColor('#1f2937');
-              console.log('✅ Header color set');
-            } else {
-              console.log('ℹ️ setHeaderColor method not available');
-            }
-          } catch (themeError) {
-            console.warn('⚠️ Theme setup failed:', themeError);
-          }
-          
-          console.log('✅ Telegram WebApp initialized successfully');
-          resolve(true);
-          return;
-        } catch (error) {
-          console.error('❌ Failed to initialize Telegram WebApp:', error);
-          resolve(false);
-          return;
-        }
-      }
-      
-      if (attempts < maxAttempts) {
-        setTimeout(checkAndInit, 100);
-      } else {
-        console.warn('⚠️ Telegram WebApp not available after', maxAttempts, 'attempts');
-        resolve(false);
-      }
-    };
-    
-    checkAndInit();
-  });
-}
-
-// Parse Telegram initData
-export function parseTelegramInitData(initData: string): TelegramInitData | null {
+export function parseTelegramInitData(initData: string) {
   try {
     const urlParams = new URLSearchParams(initData);
     const userParam = urlParams.get('user');
-    const authDate = urlParams.get('auth_date');
-    const hash = urlParams.get('hash');
     
-    if (!userParam || !authDate || !hash) {
-      console.warn('⚠️ Missing required initData parameters');
+    if (!userParam) {
       return null;
     }
     
-    const user: TelegramUser = JSON.parse(decodeURIComponent(userParam));
+    const user = JSON.parse(decodeURIComponent(userParam));
     
     return {
-      user,
-      auth_date: parseInt(authDate),
-      hash,
-      query_id: urlParams.get('query_id') || undefined
+      user: {
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        username: user.username,
+        language_code: user.language_code,
+        is_premium: user.is_premium,
+        photo_url: user.photo_url
+      },
+      auth_date: urlParams.get('auth_date'),
+      hash: urlParams.get('hash')
     };
   } catch (error) {
-    console.error('❌ Failed to parse initData:', error);
+    console.error('Failed to parse Telegram initData:', error);
     return null;
   }
 }
 
-// Validate Telegram initData (simplified for client-side)
 export function validateTelegramInitData(initData: string): boolean {
   try {
-    // Basic validation - check if required fields exist
     const urlParams = new URLSearchParams(initData);
-    const user = urlParams.get('user');
     const authDate = urlParams.get('auth_date');
     const hash = urlParams.get('hash');
     
-    if (!user || !authDate || !hash) {
-      console.warn('⚠️ InitData validation failed - missing required fields');
+    if (!authDate || !hash) {
       return false;
     }
     
-    // Check if auth_date is not too old (24 hours)
+    // Check if the data is not too old (within 1 minute)
     const authDateTime = parseInt(authDate) * 1000;
     const now = Date.now();
-    const maxAge = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+    const maxAge = 60 * 1000; // 1 minute
     
-    if (now - authDateTime > maxAge) {
-      console.warn('⚠️ InitData validation failed - auth_date is too old');
-      return false;
-    }
-    
-    // Try to parse user data
-    const userData = JSON.parse(decodeURIComponent(user));
-    if (!userData.id || !userData.first_name) {
-      console.warn('⚠️ InitData validation failed - invalid user data');
-      return false;
-    }
-    
-    console.log('✅ InitData validation passed (client-side)');
-    return true;
+    return (now - authDateTime) <= maxAge;
   } catch (error) {
-    console.error('❌ InitData validation error:', error);
+    console.error('Failed to validate Telegram initData:', error);
     return false;
   }
+}
+
+export async function initializeTelegramWebApp(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (!isTelegramWebAppEnvironment()) {
+      resolve(false);
+      return;
+    }
+    
+    try {
+      const tg = getTelegramWebApp();
+      if (tg) {
+        if (typeof tg.ready === 'function') {
+          tg.ready();
+        }
+        if (typeof tg.expand === 'function') {
+          tg.expand();
+        }
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+    } catch (error) {
+      console.error('Failed to initialize Telegram WebApp:', error);
+      resolve(false);
+    }
+  });
 }
