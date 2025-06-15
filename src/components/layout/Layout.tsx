@@ -23,9 +23,8 @@ export function Layout({ children }: LayoutProps) {
         style={{ top: '2cm' }}
         aria-label="Open menu"
       >
-        <Menu size={32} className="h-8 w-8" />
+        <Menu size={37} className="h-[37px] w-[37px]" />
       </Button>
-
       {/* Mobile Sidebar as Sheet */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         {/* Mobile header: only app name, centered */}
