@@ -14,7 +14,6 @@ interface AdminUserTableProps {
   onEditUser: (user: any) => void;
   onToggleBlock: (user: any) => void;
   onDeleteUser: (user: any) => void;
-  onRemovePayments: (user: any) => void;
 }
 
 export function AdminUserTable({ 
@@ -26,8 +25,7 @@ export function AdminUserTable({
   onViewUser, 
   onEditUser, 
   onToggleBlock, 
-  onDeleteUser,
-  onRemovePayments
+  onDeleteUser 
 }: AdminUserTableProps) {
   return (
     <div className="bg-gray-50 border border-gray-200">
@@ -62,7 +60,6 @@ export function AdminUserTable({
               onEditUser={onEditUser}
               onToggleBlock={onToggleBlock}
               onDeleteUser={onDeleteUser}
-              onRemovePayments={onRemovePayments}
             />
           );
         })}

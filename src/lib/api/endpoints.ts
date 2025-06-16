@@ -1,3 +1,4 @@
+
 export const apiEndpoints = {
   getAllStones: (userId: number) => {
     // Try the correct endpoint path for your backend
@@ -24,7 +25,7 @@ export const apiEndpoints = {
   getUserPayments: (userId: number) => `/api/v1/users/${userId}/payments`,
   getPaymentStats: () => `/api/v1/payments/stats`,
 
-  // Client and admin endpoints - these now return all subscribers from FastAPI
+  // New client and admin endpoints
   getAllClients: () => `/api/v1/clients`,
   getClientById: (clientId: number) => `/api/v1/clients/${clientId}`,
   blockUser: () => `/api/v1/admin/block-user`,
