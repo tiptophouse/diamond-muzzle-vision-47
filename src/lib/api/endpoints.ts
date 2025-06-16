@@ -1,3 +1,4 @@
+
 export const apiEndpoints = {
   getAllStones: (userId: number) => {
     // Try the correct endpoint path for your backend
@@ -23,4 +24,15 @@ export const apiEndpoints = {
   removeAllPayments: () => `/api/v1/payments/remove-all`,
   getUserPayments: (userId: number) => `/api/v1/users/${userId}/payments`,
   getPaymentStats: () => `/api/v1/payments/stats`,
+
+  // New client and admin endpoints
+  getAllClients: () => `/api/v1/clients`,
+  getClientById: (clientId: number) => `/api/v1/clients/${clientId}`,
+  blockUser: () => `/api/v1/admin/block-user`,
+  unblockUser: (userId: number) => `/api/v1/admin/unblock-user/${userId}`,
+  sendMessageToUser: () => `/api/v1/admin/send-message`,
+  
+  // Inventory management
+  deleteAllInventory: (userId: number) => `/api/v1/users/${userId}/inventory/delete-all`,
+  updateAllInventory: (userId: number) => `/api/v1/users/${userId}/inventory/update-all`,
 };

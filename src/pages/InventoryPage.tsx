@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -32,6 +31,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
+import { InventoryManagementActions } from "@/components/inventory/InventoryManagementActions";
 
 export default function InventoryPage() {
   const { isAuthenticated, isLoading: authLoading, user, error: authError } = useTelegramAuth();
@@ -202,6 +202,7 @@ export default function InventoryPage() {
             onAdd={undefined}
           />
           <div className="flex gap-2 items-center justify-end">
+            <InventoryManagementActions onRefresh={handleRefresh} />
             <Button
               variant="outline"
               onClick={downloadCSV}
