@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { Settings } from 'lucide-react';
-import { useAdminUsers } from '@/hooks/useAdminUsers';
+import { useEnhancedAnalytics } from '@/hooks/useEnhancedAnalytics';
+import { useBlockedUsers } from '@/hooks/useBlockedUsers';
 import { UserDetailsModal } from './UserDetailsModal';
 import { AddUserModal } from './AddUserModal';
 import { EditUserModal } from './EditUserModal';
@@ -11,22 +12,13 @@ import { AdminUserTable } from './AdminUserTable';
 import { NotificationSender } from './NotificationSender';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AdminUserManagerProps {}
 
 export function AdminUserManager({}: AdminUserManagerProps) {
-  const { 
-    users, 
-    stats, 
-    isLoading, 
-    blockUser, 
-    unblockUser, 
-    sendMessageToUser, 
-    removeUserPayments,
-    getUserEngagementScore, 
-    refetch 
-  } = useAdminUsers();
-  
+  const { enhancedUsers, isLoading, getUserEngagementScore, getUserStats, refetch } = useEnhancedAnalytics();
+  const { isUserBlocked, blockUser, unblockUser, blockedUsers } = useBlockedUsers();
   const { toast } = useToast();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,15 +29,21 @@ export function AdminUserManager({}: AdminUserManagerProps) {
   const [editingUser, setEditingUser] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const filteredUsers = users.filter(user => {
+  const stats = getUserStats();
+
+  const filteredUsers = enhancedUsers.filter(user => {
+    // Create a comprehensive search that includes real names
     const searchLower = searchTerm.toLowerCase();
+    
+    // Primary search fields
     const firstName = (user.first_name || '').toLowerCase();
     const lastName = (user.last_name || '').toLowerCase();
     const fullName = `${firstName} ${lastName}`.trim();
     const username = (user.username || '').toLowerCase();
     const telegramId = user.telegram_id.toString();
-    const phoneNumber = user.phone || '';
+    const phoneNumber = user.phone_number || '';
     
+    // Enhanced search logic
     return (
       firstName.includes(searchLower) ||
       lastName.includes(searchLower) ||
@@ -53,6 +51,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
       username.includes(searchLower) ||
       telegramId.includes(searchTerm) ||
       phoneNumber.includes(searchTerm) ||
+      // Also search by display logic for cases where first_name might be "Telegram" etc
       (user.username && `@${username}`.includes(searchLower))
     );
   });
@@ -76,16 +75,55 @@ export function AdminUserManager({}: AdminUserManagerProps) {
       setIsDeleting(true);
       
       try {
-        // For now, we'll use the block user functionality as a "soft delete"
-        // until the FastAPI backend has a proper delete endpoint
-        const success = await blockUser(user.telegram_id, 'User deleted via admin panel');
+        console.log('Deleting user:', user.telegram_id);
         
-        if (success) {
-          toast({
-            title: "User Blocked",
-            description: `Successfully blocked ${displayName} (delete functionality will be added to FastAPI)`,
-          });
+        // Delete from user_analytics first (foreign key constraint)
+        const { error: analyticsError } = await supabase
+          .from('user_analytics')
+          .delete()
+          .eq('telegram_id', user.telegram_id);
+
+        if (analyticsError) {
+          console.warn('Error deleting analytics:', analyticsError);
         }
+
+        // Delete from blocked_users if exists
+        const { error: blockedError } = await supabase
+          .from('blocked_users')
+          .delete()
+          .eq('telegram_id', user.telegram_id);
+
+        if (blockedError) {
+          console.warn('Error deleting blocked user:', blockedError);
+        }
+
+        // Delete from user_profiles
+        const { error: profileError } = await supabase
+          .from('user_profiles')
+          .delete()
+          .eq('telegram_id', user.telegram_id);
+
+        if (profileError) {
+          throw profileError;
+        }
+
+        // Log admin action
+        await supabase
+          .from('user_management_log')
+          .insert({
+            admin_telegram_id: 2138564172,
+            action_type: 'deleted',
+            target_telegram_id: user.telegram_id,
+            reason: 'User deleted via admin panel'
+          });
+
+        toast({
+          title: "User Deleted",
+          description: `Successfully deleted ${displayName}`,
+        });
+
+        // Refresh the data
+        refetch();
       } catch (error: any) {
         console.error('Error deleting user:', error);
         toast({
@@ -100,27 +138,67 @@ export function AdminUserManager({}: AdminUserManagerProps) {
   };
 
   const handleToggleBlock = async (user: any) => {
-    // Check if user is blocked (you might need to add this info to the user object from FastAPI)
-    const isBlocked = user.status === 'blocked';
-    
-    if (isBlocked) {
-      await unblockUser(user.telegram_id);
+    const blocked = isUserBlocked(user.telegram_id);
+    if (blocked) {
+      const blockedUser = blockedUsers.find(bu => bu.telegram_id === user.telegram_id);
+      if (blockedUser) {
+        const success = await unblockUser(blockedUser.id);
+        if (success) {
+          refetch();
+        }
+      }
     } else {
-      await blockUser(user.telegram_id, 'Blocked by admin');
+      const success = await blockUser(user.telegram_id, 'Blocked by admin');
+      if (success) {
+        refetch();
+      }
     }
   };
 
-  const handleRemovePayments = async (user: any) => {
-    if (window.confirm(`Remove all payments for ${user.first_name} ${user.last_name}?`)) {
-      await removeUserPayments(user.telegram_id);
+  const deleteMockData = async () => {
+    if (window.confirm('Are you sure you want to delete ALL mock/test data? This will remove users with names like "Test", "Telegram", "Emergency", etc.')) {
+      try {
+        console.log('Deleting all mock data...');
+        
+        // Delete mock users from analytics first
+        const { error: analyticsError } = await supabase
+          .from('user_analytics')
+          .delete()
+          .in('telegram_id', [2138564172, 1000000000]); // Known mock IDs
+
+        // Delete mock users where first_name indicates test data
+        const { error: profileError } = await supabase
+          .from('user_profiles')
+          .delete()
+          .or('first_name.ilike.%test%,first_name.ilike.%telegram%,first_name.ilike.%emergency%,first_name.ilike.%unknown%');
+
+        if (profileError) {
+          throw profileError;
+        }
+
+        toast({
+          title: "Mock Data Deleted",
+          description: "All mock/test data has been removed",
+        });
+
+        refetch();
+      } catch (error: any) {
+        console.error('Error deleting mock data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete mock data",
+          variant: "destructive",
+        });
+      }
     }
   };
 
   const exportUserData = () => {
     const csv = [
-      ['ID', 'Telegram ID', 'Name', 'Username', 'Phone', 'Status', 'Premium', 'Created', 'Last Active', 'Subscription'].join(','),
+      ['ID', 'Telegram ID', 'Name', 'Username', 'Phone', 'Status', 'Premium', 'Created', 'Last Active', 'Data Type'].join(','),
       ...filteredUsers.map(user => {
-        const displayName = user.first_name 
+        const isReal = user.first_name && !['Test', 'Telegram', 'Emergency', 'Unknown'].includes(user.first_name);
+        const displayName = isReal 
           ? `${user.first_name} ${user.last_name || ''}`
           : `User ${user.telegram_id}`;
           
@@ -129,12 +207,12 @@ export function AdminUserManager({}: AdminUserManagerProps) {
           user.telegram_id,
           `"${displayName.trim()}"`,
           user.username || '',
-          user.phone || '',
-          user.status || 'active',
+          user.phone_number || '',
+          user.subscription_status || 'free',
           user.is_premium ? 'Yes' : 'No',
           user.created_at,
           user.last_active || 'Never',
-          user.subscription_status || 'free'
+          isReal ? 'Real' : 'Mock'
         ].join(',');
       })
     ].join('\n');
@@ -143,7 +221,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `fastapi_users_export_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `users_export_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -156,14 +234,14 @@ export function AdminUserManager({}: AdminUserManagerProps) {
             <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto mb-6"></div>
             <Settings className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-blue-600" />
           </div>
-          <div className="text-xl font-semibold text-gray-900">Loading users from FastAPI...</div>
+          <div className="text-xl font-semibold text-gray-900">Loading dashboard...</div>
         </div>
       </div>
     );
   }
 
-  const averageEngagement = users.length > 0 
-    ? Math.round(users.reduce((sum, u) => sum + getUserEngagementScore(u), 0) / users.length)
+  const averageEngagement = enhancedUsers.length > 0 
+    ? Math.round(enhancedUsers.reduce((sum, u) => sum + getUserEngagementScore(u), 0) / enhancedUsers.length)
     : 0;
 
   return (
@@ -171,9 +249,18 @@ export function AdminUserManager({}: AdminUserManagerProps) {
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
         <AdminHeader onExportData={exportUserData} onAddUser={() => setShowAddUser(true)} />
 
+        <div className="flex gap-4 mb-6">
+          <button
+            onClick={deleteMockData}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+          >
+            Delete All Mock Data
+          </button>
+        </div>
+
         <AdminStatsGrid 
-          stats={stats || { totalUsers: 0, activeUsers: 0, premiumUsers: 0, totalRevenue: 0, totalCosts: 0, profit: 0 }} 
-          blockedUsersCount={users.filter(u => u.status === 'blocked').length} 
+          stats={stats} 
+          blockedUsersCount={blockedUsers.length} 
           averageEngagement={averageEngagement} 
         />
 
@@ -189,12 +276,11 @@ export function AdminUserManager({}: AdminUserManagerProps) {
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
               getUserEngagementScore={getUserEngagementScore}
-              isUserBlocked={(telegramId) => users.find(u => u.telegram_id === telegramId)?.status === 'blocked'}
+              isUserBlocked={isUserBlocked}
               onViewUser={handleViewUser}
               onEditUser={handleEditUser}
               onToggleBlock={handleToggleBlock}
               onDeleteUser={handleDeleteUser}
-              onRemovePayments={handleRemovePayments}
             />
           </TabsContent>
           
