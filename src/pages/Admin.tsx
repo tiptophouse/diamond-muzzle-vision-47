@@ -1,13 +1,14 @@
-
 import { Layout } from '@/components/layout/Layout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { AdminStatsGrid } from '@/components/admin/AdminStatsGrid';
 import { AdminUserManager } from '@/components/admin/AdminUserManager';
 import { NotificationCenter } from '@/components/admin/NotificationCenter';
+import { PaymentManagement } from '@/components/admin/PaymentManagement';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { Gem, Sparkles, ShieldCheck, Users, Trophy } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Placeholder image for dashboard hero
 const HERO_IMAGE = "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?auto=format&fit=crop&w=800&q=80";
@@ -157,17 +158,42 @@ export default function Admin() {
         </div>
       </section>
 
-      {/* Two column grid for Users & Notifications, on softly separated background */}
+      {/* Updated tabs section with payment management */}
       <section className="relative bg-gradient-to-tr from-fuchsia-50/50 via-indigo-50/60 to-white/90 border-y border-fuchsia-100 py-6 md:py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 grid gap-6 md:grid-cols-2">
-          <div className="rounded-2xl shadow-lg bg-white/90 border border-fuchsia-100/40">
-            <AdminUserManager />
-          </div>
-          <div className="rounded-2xl shadow-lg bg-gradient-to-tl from-fuchsia-100/60 via-white to-indigo-50/40 border border-fuchsia-100/40">
-            <NotificationCenter notifications={notifications} onRefresh={handleRefreshNotifications} />
-          </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-8">
+          <Tabs defaultValue="users" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 mb-6 bg-white">
+              <TabsTrigger value="users" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">User Management</TabsTrigger>
+              <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Send Notifications</TabsTrigger>
+              <TabsTrigger value="payments" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Payment Management</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="users">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="rounded-2xl shadow-lg bg-white/90 border border-fuchsia-100/40">
+                  <AdminUserManager />
+                </div>
+                <div className="rounded-2xl shadow-lg bg-gradient-to-tl from-fuchsia-100/60 via-white to-indigo-50/40 border border-fuchsia-100/40">
+                  <NotificationCenter notifications={notifications} onRefresh={handleRefreshNotifications} />
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="notifications">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <NotificationSender onSendNotification={(notification) => console.log('Sent notification:', notification)} />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="payments">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <PaymentManagement />
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </section>
+
       {/* Debug info in development */}
       {process.env.NODE_ENV === 'development' && (
         <div className="mt-6 p-4 bg-gray-100 rounded-lg text-sm max-w-4xl mx-auto">

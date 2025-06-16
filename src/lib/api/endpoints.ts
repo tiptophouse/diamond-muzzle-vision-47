@@ -17,4 +17,10 @@ export const apiEndpoints = {
   getInventoryByShape: (userId: number) => `/api/v1/users/${userId}/inventory/by-shape`,
   getRecentSales: (userId: number) => `/api/v1/users/${userId}/sales/recent`,
   getInventory: (userId: number, page: number = 1, limit: number = 10) => `/api/v1/users/${userId}/inventory?page=${page}&limit=${limit}`,
+  
+  // Payment management endpoints
+  removeUserPayments: (userId: number) => `/api/v1/users/${userId}/payments/remove`,
+  removeAllPayments: () => `/api/v1/payments/remove-all`,
+  getUserPayments: (userId: number) => `/api/v1/users/${userId}/payments`,
+  getPaymentStats: () => `/api/v1/payments/stats`,
 };
