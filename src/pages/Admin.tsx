@@ -1,8 +1,10 @@
+
 import { Layout } from '@/components/layout/Layout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { AdminStatsGrid } from '@/components/admin/AdminStatsGrid';
 import { AdminUserManager } from '@/components/admin/AdminUserManager';
 import { NotificationCenter } from '@/components/admin/NotificationCenter';
+import { NotificationSender } from '@/components/admin/NotificationSender';
 import { PaymentManagement } from '@/components/admin/PaymentManagement';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useEffect, useState } from 'react';

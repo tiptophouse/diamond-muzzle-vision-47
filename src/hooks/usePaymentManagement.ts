@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { api } from '@/lib/api';
+import { api, apiEndpoints } from '@/lib/api';
 import { useToast } from '@/components/ui/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
@@ -121,8 +121,9 @@ export function usePaymentManagement() {
         throw new Error(response.error);
       }
 
-      setStats(response.data);
-      return response.data;
+      const statsData = response.data as PaymentStats;
+      setStats(statsData);
+      return statsData;
     } catch (error) {
       console.error('❌ Error fetching payment stats:', error);
       return null;
