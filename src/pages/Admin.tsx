@@ -1,57 +1,28 @@
 
 import { Layout } from '@/components/layout/Layout';
-import { AdminHeader } from '@/components/admin/AdminHeader';
-import { AdminStatsGrid } from '@/components/admin/AdminStatsGrid';
 import { AdminUserManager } from '@/components/admin/AdminUserManager';
 import { NotificationCenter } from '@/components/admin/NotificationCenter';
 import { NotificationSender } from '@/components/admin/NotificationSender';
 import { PaymentManagement } from '@/components/admin/PaymentManagement';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useAdminUsers } from '@/hooks/useAdminUsers';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { Users, Settings, MessageSquare, CreditCard } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function Admin() {
-  const { user, isAuthenticated, isLoading } = useTelegramAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
+  const { stats, isLoading: statsLoading } = useAdminUsers();
   const { toast } = useToast();
   const [notifications, setNotifications] = useState([]);
-
-  // Mock stats data
-  const stats = {
-    totalUsers: 1250,
-    activeUsers: 890,
-    premiumUsers: 156,
-    totalRevenue: 25600,
-    totalCosts: 8400,
-    profit: 17200
-  };
-
-  const blockedUsersCount = 23;
-  const averageEngagement = 74;
 
   useEffect(() => {
     console.log('🔍 Admin page mounted');
     console.log('🔍 User:', user);
     console.log('🔍 Is authenticated:', isAuthenticated);
-    console.log('🔍 Is loading:', isLoading);
-  }, [user, isAuthenticated, isLoading]);
-
-  const handleExportData = () => {
-    console.log('Exporting data...');
-    toast({
-      title: "Export Started",
-      description: "Your data export is being prepared",
-    });
-  };
-
-  const handleAddUser = () => {
-    console.log('Adding new user...');
-    toast({
-      title: "Add User",
-      description: "User creation feature coming soon",
-    });
-  };
+    console.log('🔍 FastAPI Stats:', stats);
+  }, [user, isAuthenticated, stats]);
 
   const handleRefreshNotifications = () => {
     console.log('Refreshing notifications...');
@@ -61,13 +32,13 @@ export default function Admin() {
     });
   };
 
-  if (isLoading) {
+  if (authLoading || statsLoading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading admin panel...</p>
+            <p className="text-gray-600">Loading admin panel from FastAPI...</p>
           </div>
         </div>
       </Layout>
@@ -96,26 +67,22 @@ export default function Admin() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
               <p className="text-gray-600 mt-1">Welcome back, {user.first_name || 'Admin'}</p>
+              {stats && (
+                <p className="text-sm text-green-600 mt-1">
+                  ✅ Connected to FastAPI - {stats.totalUsers} users, {stats.premiumUsers} subscribers
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-3">
               <Settings className="h-5 w-5 text-gray-400" />
-              <span className="text-sm text-gray-500">System Status: Online</span>
+              <span className="text-sm text-gray-500">FastAPI Status: Online</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <AdminStatsGrid
-          stats={stats}
-          blockedUsersCount={blockedUsersCount}
-          averageEngagement={averageEngagement}
-        />
-      </div>
-
       {/* Main Admin Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Tabs defaultValue="users" className="w-full">
           <TabsList className="grid w-full grid-cols-4 bg-white border border-gray-200 rounded-lg p-1">
             <TabsTrigger 
@@ -177,6 +144,17 @@ export default function Admin() {
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <h3 className="text-lg font-semibold mb-4">System Settings</h3>
                 <p className="text-gray-600">Admin settings panel coming soon...</p>
+                {stats && (
+                  <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                    <h4 className="font-semibold text-blue-900 mb-2">FastAPI Connection Status</h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>Total Users: <span className="font-bold">{stats.totalUsers}</span></div>
+                      <div>Active Users: <span className="font-bold">{stats.activeUsers}</span></div>
+                      <div>Premium Users: <span className="font-bold">{stats.premiumUsers}</span></div>
+                      <div>Total Revenue: <span className="font-bold">${stats.totalRevenue.toFixed(2)}</span></div>
+                    </div>
+                  </div>
+                )}
               </div>
             </TabsContent>
           </div>
@@ -187,13 +165,15 @@ export default function Admin() {
       {process.env.NODE_ENV === 'development' && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6">
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm">
-            <h4 className="font-bold mb-2">🔧 Admin Debug Info</h4>
+            <h4 className="font-bold mb-2">🔧 FastAPI Admin Debug Info</h4>
             <div className="space-y-1 text-xs text-gray-600">
               <p>User ID: {user.id}</p>
               <p>User Name: {user.first_name} {user.last_name}</p>
               <p>Username: {user.username}</p>
               <p>Authenticated: {isAuthenticated ? 'Yes' : 'No'}</p>
-              <p>Loading: {isLoading ? 'Yes' : 'No'}</p>
+              <p>FastAPI Stats Loaded: {stats ? 'Yes' : 'No'}</p>
+              <p>Total Users from FastAPI: {stats?.totalUsers || 0}</p>
+              <p>Premium Subscribers: {stats?.premiumUsers || 0}</p>
               <p>Page Rendered: {new Date().toLocaleTimeString()}</p>
             </div>
           </div>
