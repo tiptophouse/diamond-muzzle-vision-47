@@ -109,10 +109,16 @@ export function useAdminData() {
           description: `Using Supabase data: ${transformedUsers.length} users loaded`,
         });
       } else {
-        // Use FastAPI data
+        // Use FastAPI data - ensure status field exists
         console.log('✅ Admin Data: Using FastAPI as primary data source');
         setDataSource('fastapi');
-        setUsers(fastapiUsers);
+        
+        const transformedFastapiUsers: AdminUser[] = fastapiUsers.map(user => ({
+          ...user,
+          status: user.status || 'active'
+        }));
+        
+        setUsers(transformedFastapiUsers);
         setStats(fastapiStats);
         setError(null);
       }
