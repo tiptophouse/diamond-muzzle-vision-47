@@ -128,7 +128,7 @@ export default function Admin() {
         </div>
       )}
 
-      {/* Main Admin Content with Real Data */}
+      {/* Main Admin Content with Real Data - Start with Users tab by default */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <Tabs defaultValue="users" className="w-full">
           <TabsList className="grid w-full grid-cols-4 bg-white border border-gray-200 rounded-lg p-1">
@@ -137,7 +137,7 @@ export default function Admin() {
               className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
             >
               <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Real Users ({users.length})</span>
+              <span className="hidden sm:inline">All Users ({users.length})</span>
               <span className="sm:hidden">Users</span>
             </TabsTrigger>
             <TabsTrigger 

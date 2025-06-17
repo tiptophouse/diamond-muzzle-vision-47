@@ -30,6 +30,7 @@ interface RealUserData {
   last_active?: string;
   total_visits: number;
   api_calls_count: number;
+  status?: string; // Added this field to fix the TypeScript error
 }
 
 export function useRealAdminData() {
