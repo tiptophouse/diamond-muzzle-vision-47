@@ -57,7 +57,7 @@ export default function InventoryPage() {
     if (diamond) {
       await updateDiamond(diamond.id, {
         ...diamond,
-        storeVisible: isVisible
+        store_visible: isVisible
       });
     }
   };
@@ -120,11 +120,12 @@ export default function InventoryPage() {
         {editingDiamond && (
           <DiamondForm
             diamond={editingDiamond}
-            onSubmit={async (data) => {
+            open={!!editingDiamond}
+            onClose={() => setEditingDiamond(null)}
+            onSave={async (data) => {
               await updateDiamond(editingDiamond.id, data);
               setEditingDiamond(null);
             }}
-            onCancel={() => setEditingDiamond(null)}
             isLoading={crudLoading}
           />
         )}
@@ -132,11 +133,12 @@ export default function InventoryPage() {
         {/* Add Diamond Form */}
         {showAddForm && (
           <DiamondForm
-            onSubmit={async (data) => {
+            open={showAddForm}
+            onClose={() => setShowAddForm(false)}
+            onSave={async (data) => {
               await addDiamond(data);
               setShowAddForm(false);
             }}
-            onCancel={() => setShowAddForm(false)}
             isLoading={crudLoading}
           />
         )}

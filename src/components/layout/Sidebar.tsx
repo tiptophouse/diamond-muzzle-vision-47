@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Package, Upload, MessageSquare, TrendingUp, FileText, Settings, Bell, Users, BarChart3, Store, Crown } from 'lucide-react';
+import { LayoutDashboard, Package, Upload, MessageSquare, TrendingUp, FileText, Settings, Bell, Users, BarChart3, Store } from 'lucide-react';
 
 const ADMIN_TELEGRAM_ID = 2138564172;
 
@@ -62,9 +61,9 @@ const Sidebar = ({ onClose }: SidebarProps) => {
 
   const adminNavigation = [
     {
-      name: 'Admin Panel',
+      name: 'Admin Analytics',
       href: '/admin',
-      icon: Crown
+      icon: BarChart3
     }
   ];
 
@@ -121,8 +120,8 @@ const Sidebar = ({ onClose }: SidebarProps) => {
                   cn(
                     'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors w-full',
                     isActive
-                      ? 'bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-700 border border-yellow-200'
-                      : 'text-gray-600 hover:bg-gradient-to-r hover:from-yellow-50 hover:to-amber-50 hover:text-yellow-700'
+                      ? 'bg-gradient-to-r from-purple-100 to-cyan-100 text-purple-700 border border-purple-200'
+                      : 'text-gray-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-cyan-50 hover:text-purple-700'
                   )
                 }
               >
