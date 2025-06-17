@@ -9,6 +9,7 @@ import { useInventoryData } from "@/hooks/useInventoryData";
 import { useInventorySearch } from "@/hooks/useInventorySearch";
 import { useInventoryCrud } from "@/hooks/useInventoryCrud";
 import { DiamondForm } from "@/components/inventory/DiamondForm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useState } from "react";
 
 export default function InventoryPage() {
@@ -60,6 +61,18 @@ export default function InventoryPage() {
         storeVisible: isVisible
       });
     }
+  };
+
+  const handleEditSubmit = async (data: any) => {
+    if (editingDiamond) {
+      await updateDiamond(editingDiamond.id, data);
+      setEditingDiamond(null);
+    }
+  };
+
+  const handleAddSubmit = async (data: any) => {
+    await addDiamond(data);
+    setShowAddForm(false);
   };
 
   if (loading && diamonds.length === 0) {
@@ -116,32 +129,36 @@ export default function InventoryPage() {
           </main>
         </div>
 
-        {/* Edit Diamond Form */}
-        {editingDiamond && (
-          <DiamondForm
-            diamond={editingDiamond}
-            isOpen={!!editingDiamond}
-            onClose={() => setEditingDiamond(null)}
-            onSave={async (data) => {
-              await updateDiamond(editingDiamond.id, data);
-              setEditingDiamond(null);
-            }}
-            isLoading={crudLoading}
-          />
-        )}
+        {/* Edit Diamond Modal */}
+        <Dialog open={!!editingDiamond} onOpenChange={() => setEditingDiamond(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Diamond</DialogTitle>
+            </DialogHeader>
+            {editingDiamond && (
+              <DiamondForm
+                diamond={editingDiamond}
+                onSubmit={handleEditSubmit}
+                onCancel={() => setEditingDiamond(null)}
+                isLoading={crudLoading}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
 
-        {/* Add Diamond Form */}
-        {showAddForm && (
-          <DiamondForm
-            isOpen={showAddForm}
-            onClose={() => setShowAddForm(false)}
-            onSave={async (data) => {
-              await addDiamond(data);
-              setShowAddForm(false);
-            }}
-            isLoading={crudLoading}
-          />
-        )}
+        {/* Add Diamond Modal */}
+        <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add New Diamond</DialogTitle>
+            </DialogHeader>
+            <DiamondForm
+              onSubmit={handleAddSubmit}
+              onCancel={() => setShowAddForm(false)}
+              isLoading={crudLoading}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
