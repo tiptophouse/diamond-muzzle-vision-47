@@ -13,25 +13,25 @@ import { useState } from "react";
 
 export default function InventoryPage() {
   const {
-    data: diamonds,
     loading,
-    error,
-    pagination,
-    setPagination,
+    diamonds,
+    allDiamonds,
     handleRefresh,
   } = useInventoryData();
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filters, setFilters] = useState<Record<string, string>>({});
 
   const {
     searchQuery,
     setSearchQuery,
-    filters,
-    setFilters,
     filteredDiamonds,
-  } = useInventorySearch(diamonds);
+    totalPages,
+    handleSearch,
+  } = useInventorySearch(allDiamonds, currentPage, filters);
 
   const { 
-    editingDiamond, 
-    setEditingDiamond, 
+    addDiamond,
     updateDiamond, 
     deleteDiamond,
     isLoading: crudLoading 
@@ -40,6 +40,7 @@ export default function InventoryPage() {
   });
 
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingDiamond, setEditingDiamond] = useState<any>(null);
 
   const handleEdit = (diamond: any) => {
     setEditingDiamond(diamond);
@@ -61,17 +62,11 @@ export default function InventoryPage() {
     }
   };
 
-  if (error) {
+  if (loading && diamonds.length === 0) {
     return (
       <Layout>
         <div className="text-center py-8">
-          <p className="text-red-600">Error loading inventory: {error}</p>
-          <button 
-            onClick={handleRefresh}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Retry
-          </button>
+          <p className="text-muted-foreground">Loading inventory...</p>
         </div>
       </Layout>
     );
@@ -93,10 +88,11 @@ export default function InventoryPage() {
               <InventorySearch
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
+                onSubmit={handleSearch}
+                allDiamonds={allDiamonds}
               />
               <InventoryFilters
-                filters={filters}
-                onFiltersChange={setFilters}
+                onFilterChange={setFilters}
               />
             </div>
           </aside>
@@ -112,9 +108,9 @@ export default function InventoryPage() {
               />
               
               <InventoryPagination
-                currentPage={pagination.page}
-                totalPages={Math.ceil(diamonds.length / pagination.limit)}
-                onPageChange={(page) => setPagination(prev => ({ ...prev, page }))}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
               />
             </div>
           </main>
@@ -124,9 +120,12 @@ export default function InventoryPage() {
         {editingDiamond && (
           <DiamondForm
             diamond={editingDiamond}
-            isOpen={!!editingDiamond}
+            open={!!editingDiamond}
             onClose={() => setEditingDiamond(null)}
-            onSave={updateDiamond}
+            onSave={async (data) => {
+              await updateDiamond(editingDiamond.id, data);
+              setEditingDiamond(null);
+            }}
             isLoading={crudLoading}
           />
         )}
@@ -134,12 +133,11 @@ export default function InventoryPage() {
         {/* Add Diamond Form */}
         {showAddForm && (
           <DiamondForm
-            isOpen={showAddForm}
+            open={showAddForm}
             onClose={() => setShowAddForm(false)}
             onSave={async (data) => {
-              // Handle add diamond logic here
+              await addDiamond(data);
               setShowAddForm(false);
-              handleRefresh();
             }}
             isLoading={crudLoading}
           />
