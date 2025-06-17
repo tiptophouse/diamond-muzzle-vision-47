@@ -4,6 +4,7 @@ import { processDiamondDataForDashboard } from '@/services/diamondAnalytics';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { InventoryChart } from '@/components/dashboard/InventoryChart';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { WelcomeBanner } from '@/components/tutorial/WelcomeBanner';
 import { Layout } from '@/components/layout/Layout';
 import { Gem, Users, TrendingUp, Star, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -68,6 +69,7 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
     return (
       <Layout>
         <div className="space-y-4 p-2 sm:p-4">
+          <WelcomeBanner />
           <DashboardHeader emergencyMode={false} />
           <div className="text-center py-8">
             <Gem className="h-16 w-16 text-gray-400 mx-auto mb-4" />
@@ -86,6 +88,7 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
   return (
     <Layout>
       <div className="space-y-4 p-2 sm:p-4">
+        <WelcomeBanner />
         <DashboardHeader emergencyMode={false} />
         
         {/* Stats Grid */}
