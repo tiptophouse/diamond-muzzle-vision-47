@@ -1,39 +1,48 @@
-import { Button } from "@/components/ui/button";
-import { RefreshCw, Plus, AlertCircle, CheckCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
-// Remove any QR scan functionality from InventoryHeader
+import { Button } from "@/components/ui/button";
+import { RefreshCw, Plus } from "lucide-react";
 
 interface InventoryHeaderProps {
-  totalDiamonds: number;
+  totalCount: number;
   onRefresh: () => void;
-  onAdd?: () => void;
-  loading: boolean;
+  loading?: boolean;
+  onAddDiamond?: () => void;
 }
 
-export function InventoryHeader({ totalDiamonds, loading }: InventoryHeaderProps) {
+export function InventoryHeader({ 
+  totalCount, 
+  onRefresh, 
+  loading = false,
+  onAddDiamond 
+}: InventoryHeaderProps) {
   return (
-    <div className="w-full bg-background">
-      <div className="flex flex-col space-y-4">
-        <div className="w-full">
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Inventory</h1>
-          <p className="text-slate-600 text-sm sm:text-base">
-            Manage your diamond inventory ({totalDiamonds} diamonds loaded)
-          </p>
-          
-          {totalDiamonds > 0 && !loading && (
-            <Alert className="mt-4 border-green-200 bg-green-50">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800">
-                {totalDiamonds === 5 ? 
-                  'Showing sample diamonds. Your FastAPI server may be offline - click "Sync Data" on the Upload page to try reconnecting.' :
-                  `Successfully loaded ${totalDiamonds} diamonds from your inventory system.`
-                }
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
-        {/* Removed Add Diamond & Sync Data buttons */}
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div>
+        <h1 className="text-3xl font-bold">Inventory</h1>
+        <p className="text-muted-foreground">
+          Manage your diamond inventory ({totalCount} items)
+        </p>
+      </div>
+      
+      <div className="flex gap-2">
+        {onAddDiamond && (
+          <Button
+            onClick={onAddDiamond}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Diamond
+          </Button>
+        )}
+        <Button
+          variant="outline"
+          onClick={onRefresh}
+          disabled={loading}
+          className="border-slate-300 text-slate-700 hover:bg-slate-50"
+        >
+          <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
     </div>
   );

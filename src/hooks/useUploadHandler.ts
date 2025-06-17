@@ -14,6 +14,8 @@ interface UploadResultData {
 interface UploadResponse {
   matched_pairs?: number;
   errors?: string[];
+  success?: boolean;
+  message?: string;
 }
 
 export const useUploadHandler = () => {
@@ -26,13 +28,13 @@ export const useUploadHandler = () => {
   const simulateProgress = () => {
     let currentProgress = 0;
     const interval = setInterval(() => {
-      currentProgress += Math.random() * 10;
-      if (currentProgress > 95) {
+      currentProgress += Math.random() * 15;
+      if (currentProgress > 90) {
         clearInterval(interval);
-        currentProgress = 95;
+        currentProgress = 90;
       }
-      setProgress(Math.min(currentProgress, 95));
-    }, 300);
+      setProgress(Math.min(currentProgress, 90));
+    }, 200);
 
     return () => clearInterval(interval);
   };
@@ -53,11 +55,15 @@ export const useUploadHandler = () => {
     const cleanup = simulateProgress();
 
     try {
-      console.log('Starting upload for user:', user.id);
+      console.log('Starting CSV upload for user:', user.id);
       
       const csvData = await parseCSVFile(selectedFile);
-      const mappedData = mapCsvData(csvData);
+      console.log('Parsed CSV data:', csvData.length, 'rows');
       
+      const mappedData = mapCsvData(csvData);
+      console.log('Mapped data for upload:', mappedData.length, 'diamonds');
+      
+      // Use the uploadCsv method from api client
       const response = await api.uploadCsv<UploadResponse>(
         apiEndpoints.uploadInventory(),
         mappedData,
@@ -72,7 +78,7 @@ export const useUploadHandler = () => {
       
       const uploadResult: UploadResultData = {
         totalItems: mappedData.length,
-        matchedPairs: response.data?.matched_pairs || 0,
+        matchedPairs: response.data?.matched_pairs || mappedData.length,
         errors: response.data?.errors || [],
       };
       
@@ -86,10 +92,13 @@ export const useUploadHandler = () => {
     } catch (error) {
       console.error('Upload failed:', error);
       
+      // Set progress to 100% even on error to stop the simulation
+      setProgress(100);
+      
       toast({
         variant: "destructive",
         title: "Upload failed",
-        description: error instanceof Error ? error.message : "There was an error uploading your CSV file.",
+        description: error instanceof Error ? error.message : "There was an error uploading your CSV file. Please check your network connection and try again.",
       });
     } finally {
       setUploading(false);

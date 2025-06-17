@@ -1,3 +1,4 @@
+
 import {
   BrowserRouter as Router,
   Route,
@@ -11,7 +12,6 @@ import Settings from "./pages/SettingsPage";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import ChatPage from "./pages/ChatPage";
-import UploadPage from "./pages/UploadPage";
 import UploadSingleStonePage from "./pages/UploadSingleStonePage";
 import InsightsPage from "./pages/InsightsPage";
 import NotificationsPage from "./pages/NotificationsPage";
@@ -48,8 +48,7 @@ function App() {
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/inventory" element={<Inventory />} />
                     <Route path="/store" element={<StorePage />} />
-                    <Route path="/upload" element={<UploadPage />} />
-                    <Route path="/upload-single" element={<UploadSingleStonePage />} />
+                    <Route path="/upload" element={<UploadSingleStonePage />} />
                     <Route path="/chat" element={<ChatPage />} />
                     <Route path="/insights" element={<InsightsPage />} />
                     <Route path="/settings" element={<Settings />} />
