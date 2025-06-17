@@ -29,7 +29,7 @@ export function Layout({
           <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)} className="p-2 mt-5">
             <Menu className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-bold text-gray-900">mazal chatbot</h1>
+          <h1 className="font-bold text-gray-900 text-2xl">mazal chatbot</h1>
           <div className="w-9" /> {/* Spacer for center alignment */}
         </div>
         
