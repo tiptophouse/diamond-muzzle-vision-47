@@ -11,130 +11,138 @@ export interface FetchInventoryResult {
 export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   const userId = getCurrentUserId() || 2138564172;
   
-  console.log('🔍 INVENTORY SERVICE: Fetching real data from FastAPI for user:', userId);
-  console.log('🔍 INVENTORY SERVICE: Expected to fetch 500+ diamonds from backend');
+  console.log('🔍 INVENTORY SERVICE: Fetching data for user:', userId);
   
   const debugInfo = { 
-    step: 'Starting FastAPI fetch process', 
+    step: 'Starting inventory fetch process', 
     userId, 
     timestamp: new Date().toISOString(),
-    expectedDiamonds: '500+',
-    dataSource: 'fastapi'
+    dataSource: 'unknown'
   };
   
   try {
-    console.log('🔍 INVENTORY SERVICE: Attempting FastAPI connection to get real inventory');
+    // First, try to get data from FastAPI backend
+    console.log('🔍 INVENTORY SERVICE: Attempting FastAPI connection...');
     const endpoint = apiEndpoints.getAllStones(userId);
-    console.log('🔍 INVENTORY SERVICE: Using endpoint:', endpoint);
     
     const result = await api.get(endpoint);
     
-    if (result.error) {
-      console.error('🔍 INVENTORY SERVICE: FastAPI failed with error:', result.error);
-      console.log('🔍 INVENTORY SERVICE: Falling back to mock data (THIS IS WHY YOU SEE ONLY 5 DIAMONDS)');
+    if (result.data && !result.error) {
+      let dataArray: any[] = [];
       
-      return {
-        ...await fetchMockInventoryData(),
-        debugInfo: {
-          ...debugInfo,
-          step: 'FALLBACK: FastAPI failed, using mock data',
-          reason: result.error,
-          actualDiamonds: 5,
-          dataSource: 'mock_fallback'
-        }
-      };
-    }
-    
-    if (!result.data) {
-      console.error('🔍 INVENTORY SERVICE: FastAPI returned no data');
-      console.log('🔍 INVENTORY SERVICE: This means your 500 diamonds are not being returned by the API');
-      
-      return {
-        ...await fetchMockInventoryData(),
-        debugInfo: {
-          ...debugInfo,
-          step: 'FALLBACK: No data from FastAPI, using mock data',
-          reason: 'Empty response from FastAPI',
-          actualDiamonds: 5,
-          dataSource: 'mock_fallback'
-        }
-      };
-    }
-    
-    // Process the FastAPI response data more thoroughly
-    let dataArray: any[] = [];
-    
-    if (Array.isArray(result.data)) {
-      dataArray = result.data;
-      console.log('🔍 INVENTORY SERVICE: Direct array response with', dataArray.length, 'items');
-    } else if (typeof result.data === 'object' && result.data !== null) {
-      const dataObj = result.data as Record<string, any>;
-      
-      // Try multiple possible array property names
-      const possibleArrayKeys = ['data', 'diamonds', 'items', 'stones', 'results', 'inventory', 'records'];
-      
-      for (const key of possibleArrayKeys) {
-        if (Array.isArray(dataObj[key])) {
-          dataArray = dataObj[key];
-          console.log('🔍 INVENTORY SERVICE: Found array in property:', key, 'with', dataArray.length, 'items');
-          break;
+      if (Array.isArray(result.data)) {
+        dataArray = result.data;
+      } else if (typeof result.data === 'object' && result.data !== null) {
+        const dataObj = result.data as Record<string, any>;
+        const possibleArrayKeys = ['data', 'diamonds', 'items', 'stones', 'results', 'inventory', 'records'];
+        
+        for (const key of possibleArrayKeys) {
+          if (Array.isArray(dataObj[key])) {
+            dataArray = dataObj[key];
+            break;
+          }
         }
       }
       
-      if (dataArray.length === 0) {
-        console.log('🔍 INVENTORY SERVICE: Response structure:', Object.keys(dataObj));
-        console.log('🔍 INVENTORY SERVICE: Could not find array data in response');
+      if (dataArray && dataArray.length > 0) {
+        console.log('✅ INVENTORY SERVICE: FastAPI returned', dataArray.length, 'diamonds');
+        
+        return {
+          data: dataArray,
+          debugInfo: {
+            ...debugInfo,
+            step: 'SUCCESS: FastAPI data fetched',
+            totalDiamonds: dataArray.length,
+            dataSource: 'fastapi'
+          }
+        };
       }
     }
     
-    if (dataArray && dataArray.length > 0) {
-      console.log('✅ INVENTORY SERVICE: SUCCESS! FastAPI returned', dataArray.length, 'diamonds (expecting ~500)');
-      console.log('🔍 INVENTORY SERVICE: Sample diamond:', dataArray[0]);
-      
-      if (dataArray.length < 100) {
-        console.warn('⚠️ INVENTORY SERVICE: Expected 500+ diamonds but got', dataArray.length, '- check your backend data');
-      }
-      
-      return {
-        data: dataArray,
-        debugInfo: {
-          ...debugInfo,
-          step: 'SUCCESS: Real data fetched from FastAPI',
-          totalDiamonds: dataArray.length,
-          source: 'fastapi',
-          sampleDiamond: dataArray[0],
-          dataHealth: dataArray.length >= 100 ? 'good' : 'low_count'
-        }
-      };
-    } else {
-      console.error('🔍 INVENTORY SERVICE: FastAPI response processed but no valid array found');
-      console.log('🔍 INVENTORY SERVICE: This is why you see mock data instead of your 500 diamonds');
-      
-      return {
-        ...await fetchMockInventoryData(),
-        debugInfo: {
-          ...debugInfo,
-          step: 'FALLBACK: Could not extract array from FastAPI response',
-          reason: 'No valid array found in response',
-          actualDiamonds: 5,
-          dataSource: 'mock_fallback',
-          responseStructure: typeof result.data === 'object' ? Object.keys(result.data) : typeof result.data
-        }
-      };
-    }
-  } catch (error) {
-    console.error("🔍 INVENTORY SERVICE: FastAPI connection failed, using mock data fallback:", error);
-    console.log("🔍 INVENTORY SERVICE: This is the main reason you're seeing 5 diamonds instead of 500");
+    // If FastAPI fails, try localStorage
+    console.log('🔄 INVENTORY SERVICE: FastAPI failed, checking localStorage...');
+    const localData = localStorage.getItem('diamond_inventory');
     
-    // Always return mock data on any error
+    if (localData) {
+      try {
+        const parsedData = JSON.parse(localData);
+        if (Array.isArray(parsedData) && parsedData.length > 0) {
+          // Filter for current user
+          const userDiamonds = parsedData.filter(item => 
+            !item.user_id || item.user_id === userId
+          );
+          
+          if (userDiamonds.length > 0) {
+            console.log('✅ INVENTORY SERVICE: Found', userDiamonds.length, 'diamonds in localStorage');
+            
+            return {
+              data: userDiamonds,
+              debugInfo: {
+                ...debugInfo,
+                step: 'SUCCESS: localStorage data found',
+                totalDiamonds: userDiamonds.length,
+                dataSource: 'localStorage'
+              }
+            };
+          }
+        }
+      } catch (parseError) {
+        console.warn('Failed to parse localStorage data:', parseError);
+      }
+    }
+    
+    // Final fallback to mock data
+    console.log('🔄 INVENTORY SERVICE: No real data found, using mock data');
+    const mockResult = await fetchMockInventoryData();
+    
     return {
-      ...await fetchMockInventoryData(),
+      ...mockResult,
       debugInfo: {
         ...debugInfo,
-        step: 'FALLBACK: FastAPI connection failed',
+        ...mockResult.debugInfo,
+        step: 'FALLBACK: Using mock data',
+        dataSource: 'mock'
+      }
+    };
+    
+  } catch (error) {
+    console.error("🔍 INVENTORY SERVICE: Error occurred:", error);
+    
+    // Try localStorage as emergency fallback
+    const localData = localStorage.getItem('diamond_inventory');
+    if (localData) {
+      try {
+        const parsedData = JSON.parse(localData);
+        if (Array.isArray(parsedData)) {
+          const userDiamonds = parsedData.filter(item => 
+            !item.user_id || item.user_id === userId
+          );
+          
+          return {
+            data: userDiamonds,
+            debugInfo: {
+              ...debugInfo,
+              step: 'EMERGENCY: localStorage fallback after error',
+              totalDiamonds: userDiamonds.length,
+              dataSource: 'localStorage_emergency'
+            }
+          };
+        }
+      } catch (parseError) {
+        console.warn('Emergency localStorage parse failed:', parseError);
+      }
+    }
+    
+    // Ultimate fallback to mock data
+    const mockResult = await fetchMockInventoryData();
+    return {
+      ...mockResult,
+      debugInfo: {
+        ...debugInfo,
+        ...mockResult.debugInfo,
+        step: 'ULTIMATE FALLBACK: Mock data after all failures',
         error: error instanceof Error ? error.message : String(error),
-        actualDiamonds: 5,
-        dataSource: 'mock_fallback'
+        dataSource: 'mock_emergency'
       }
     };
   }
