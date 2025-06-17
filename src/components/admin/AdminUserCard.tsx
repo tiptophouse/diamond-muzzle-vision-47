@@ -2,9 +2,9 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Star, Phone, Shield, AlertCircle } from 'lucide-react';
+import { Star, Phone, Shield, AlertCircle, Clock, Activity } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { AdminUserActions } from './AdminUserActions';
+import { UserActionButtons } from './UserActionButtons';
 
 interface AdminUserCardProps {
   user: any;
@@ -27,35 +27,21 @@ export function AdminUserCard({
 }: AdminUserCardProps) {
   // Get the real display name from actual data
   const getDisplayName = () => {
-    // Check if this is real user data vs mock/placeholder data
-    const isRealData = user.first_name && 
-      user.first_name.trim() && 
-      !['Test', 'Telegram', 'Emergency', 'Unknown'].includes(user.first_name.trim());
-    
-    if (isRealData) {
+    if (user.first_name && user.first_name.trim()) {
       const lastName = user.last_name ? ` ${user.last_name.trim()}` : '';
       return `${user.first_name.trim()}${lastName}`;
     }
     
-    // For mock data, try username first
-    if (user.username && !user.username.includes('testuser') && !user.username.includes('telegram_user')) {
+    if (user.username) {
       return `@${user.username}`;
     }
     
-    // Fallback: Show telegram ID with indicator
     return `User ${user.telegram_id}`;
-  };
-
-  // Check if this is real user data
-  const isRealUserData = () => {
-    return user.first_name && 
-      user.first_name.trim() && 
-      !['Test', 'Telegram', 'Emergency', 'Unknown'].includes(user.first_name.trim());
   };
 
   // Get initials for avatar
   const getInitials = () => {
-    if (isRealUserData() && user.first_name) {
+    if (user.first_name && user.first_name.trim()) {
       const lastName = user.last_name || '';
       if (lastName) {
         return `${user.first_name.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
@@ -63,46 +49,40 @@ export function AdminUserCard({
       return user.first_name.substring(0, 2).toUpperCase();
     }
     
-    if (user.username && !user.username.includes('testuser')) {
+    if (user.username) {
       return user.username.substring(0, 2).toUpperCase();
     }
     
     return 'U?';
   };
 
-  // Get real user status
+  // Get user status with last activity
   const getUserStatus = () => {
-    if (isBlocked) return 'Blocked';
+    if (isBlocked) return { status: 'Blocked', color: 'bg-red-500 text-white' };
+    
     if (user.last_active) {
       const lastActive = new Date(user.last_active);
       const hoursSinceActive = (Date.now() - lastActive.getTime()) / (1000 * 60 * 60);
-      if (hoursSinceActive < 1) return 'Online';
-      if (hoursSinceActive < 24) return 'Active Today';
-      if (hoursSinceActive < 168) return 'Active This Week';
-      return 'Inactive';
+      
+      if (hoursSinceActive < 1) return { status: 'Online', color: 'bg-green-500 text-white' };
+      if (hoursSinceActive < 24) return { status: 'Active Today', color: 'bg-blue-500 text-white' };
+      if (hoursSinceActive < 168) return { status: 'Active This Week', color: 'bg-yellow-500 text-white' };
+      return { status: 'Inactive', color: 'bg-gray-500 text-white' };
     }
-    return 'New User';
+    
+    return { status: 'New User', color: 'bg-purple-500 text-white' };
   };
 
-  const statusColor = () => {
-    const status = getUserStatus();
-    switch (status) {
-      case 'Online': return 'bg-green-500 text-white';
-      case 'Active Today': return 'bg-blue-500 text-white';
-      case 'Active This Week': return 'bg-yellow-500 text-white';
-      case 'Blocked': return 'bg-red-500 text-white';
-      case 'New User': return 'bg-purple-500 text-white';
-      default: return 'bg-gray-500 text-white';
-    }
-  };
+  const { status, color } = getUserStatus();
 
   return (
     <div className={`p-4 hover:bg-gray-50 transition-colors ${isBlocked ? 'bg-red-50' : ''}`}>
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
+        {/* User Info Section */}
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <Avatar className="h-12 w-12 border-2 border-gray-200">
             <AvatarImage src={user.photo_url} />
-            <AvatarFallback className={`font-semibold ${isRealUserData() ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
+            <AvatarFallback className="bg-blue-100 text-blue-700 font-semibold">
               {getInitials()}
             </AvatarFallback>
           </Avatar>
@@ -112,7 +92,6 @@ export function AdminUserCard({
               <span className="font-semibold text-gray-900 text-sm sm:text-base">
                 {getDisplayName()}
               </span>
-              {!isRealUserData() && <AlertCircle className="h-4 w-4 text-orange-500" />}
               {user.is_premium && <Star className="h-4 w-4 text-yellow-500" />}
               {user.phone_number && <Phone className="h-4 w-4 text-green-500" />}
               {isBlocked && <Shield className="h-4 w-4 text-red-500" />}
@@ -123,9 +102,8 @@ export function AdminUserCard({
                 ID: {user.telegram_id}
               </Badge>
               {user.username && <span>@{user.username}</span>}
-              {user.phone_number && <span className="hidden sm:inline">{user.phone_number}</span>}
-              <Badge className={statusColor()}>
-                {getUserStatus()}
+              <Badge className={color}>
+                {status}
               </Badge>
               <Badge 
                 variant={user.subscription_status === 'premium' ? 'default' : 'secondary'}
@@ -133,41 +111,45 @@ export function AdminUserCard({
               >
                 {user.subscription_status || 'free'}
               </Badge>
-              {!isRealUserData() && (
-                <Badge variant="outline" className="border-orange-300 text-orange-700 bg-orange-50">
-                  Mock Data
-                </Badge>
-              )}
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-6 w-full sm:w-auto">
-          <div className="grid grid-cols-2 gap-4 sm:flex sm:gap-6 flex-1 sm:flex-initial">
+        {/* Metrics Section */}
+        <div className="flex items-center gap-4 sm:gap-6 w-full lg:w-auto">
+          <div className="grid grid-cols-3 gap-4 sm:flex sm:gap-6 flex-1 lg:flex-initial">
             <div className="text-center">
               <div className="text-sm font-semibold text-blue-600">{user.total_visits || 0}</div>
               <div className="text-xs text-gray-500">Visits</div>
             </div>
             
             <div className="text-center">
-              <div className="text-sm font-semibold text-purple-600">{engagementScore}%</div>
-              <div className="text-xs text-gray-500">Engagement</div>
-            </div>
-
-            <div className="text-center hidden sm:block">
               <div className="text-sm font-semibold text-green-600">{user.api_calls_count || 0}</div>
               <div className="text-xs text-gray-500">API Calls</div>
             </div>
+            
+            <div className="text-center">
+              <div className="text-sm font-semibold text-purple-600">{engagementScore}%</div>
+              <div className="text-xs text-gray-500">Engagement</div>
+            </div>
           </div>
 
-          <div className="hidden sm:block text-right text-xs text-gray-500 max-w-[120px]">
-            <div>Joined {formatDistanceToNow(new Date(user.created_at), { addSuffix: true })}</div>
+          {/* Last Activity */}
+          <div className="hidden lg:block text-right text-xs text-gray-500 max-w-[120px]">
+            <div className="flex items-center gap-1 mb-1">
+              <Clock className="h-3 w-3" />
+              <span>Joined {formatDistanceToNow(new Date(user.created_at), { addSuffix: true })}</span>
+            </div>
             {user.last_active && (
-              <div>Last seen {formatDistanceToNow(new Date(user.last_active), { addSuffix: true })}</div>
+              <div className="flex items-center gap-1">
+                <Activity className="h-3 w-3" />
+                <span>Active {formatDistanceToNow(new Date(user.last_active), { addSuffix: true })}</span>
+              </div>
             )}
           </div>
 
-          <AdminUserActions
+          {/* Action Buttons */}
+          <UserActionButtons
             user={user}
             isBlocked={isBlocked}
             onViewUser={onViewUser}
@@ -175,6 +157,22 @@ export function AdminUserCard({
             onToggleBlock={onToggleBlock}
             onDeleteUser={onDeleteUser}
           />
+        </div>
+      </div>
+
+      {/* Mobile Last Activity */}
+      <div className="lg:hidden mt-3 pt-3 border-t border-gray-200 text-xs text-gray-500">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            <span>Joined {formatDistanceToNow(new Date(user.created_at), { addSuffix: true })}</span>
+          </div>
+          {user.last_active && (
+            <div className="flex items-center gap-1">
+              <Activity className="h-3 w-3" />
+              <span>Active {formatDistanceToNow(new Date(user.last_active), { addSuffix: true })}</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

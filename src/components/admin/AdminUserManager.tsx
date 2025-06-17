@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Settings } from 'lucide-react';
-import { useRealAdminData } from '@/hooks/useRealAdminData';
+import { useAdminData } from '@/hooks/useAdminData';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
 import { UserDetailsModal } from './UserDetailsModal';
 import { AddUserModal } from './AddUserModal';
@@ -14,10 +14,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-interface AdminUserManagerProps {}
-
-export function AdminUserManager({}: AdminUserManagerProps) {
-  const { stats, users, isLoading, error, refetch, getUserEngagementScore } = useRealAdminData();
+export function AdminUserManager() {
+  const { stats, users, isLoading, error, dataSource, refetch, getUserEngagementScore } = useAdminData();
   const { isUserBlocked, blockUser, unblockUser, blockedUsers } = useBlockedUsers();
   const { toast } = useToast();
   
@@ -62,7 +60,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
   };
 
   const handleDeleteUser = async (user: any) => {
-    const displayName = user.first_name && !['Test', 'Telegram', 'Emergency'].includes(user.first_name)
+    const displayName = user.first_name 
       ? `${user.first_name} ${user.last_name || ''}`.trim()
       : `User ${user.telegram_id}`;
       
@@ -70,12 +68,9 @@ export function AdminUserManager({}: AdminUserManagerProps) {
       setIsDeleting(true);
       
       try {
-        console.log('Deleting user via FastAPI:', user.telegram_id);
+        console.log('Deleting user from Supabase:', user.telegram_id);
         
-        // Try to delete via FastAPI first
-        // Note: You may need to implement this endpoint in your FastAPI backend
-        
-        // Delete from Supabase as fallback
+        // Delete from related tables first
         const { error: analyticsError } = await supabase
           .from('user_analytics')
           .delete()
@@ -168,7 +163,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `real_users_export_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `admin_users_export_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -181,8 +176,8 @@ export function AdminUserManager({}: AdminUserManagerProps) {
             <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto mb-6"></div>
             <Settings className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-blue-600" />
           </div>
-          <div className="text-xl font-semibold text-gray-900">Loading real admin data from FastAPI...</div>
-          <div className="text-sm text-gray-600 mt-2">Connecting to your backend database</div>
+          <div className="text-xl font-semibold text-gray-900">Loading admin data...</div>
+          <div className="text-sm text-gray-600 mt-2">Connecting to user database</div>
         </div>
       </div>
     );
@@ -192,7 +187,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
     return (
       <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
         <div className="text-center py-12">
-          <div className="text-xl font-semibold text-red-900 mb-4">Failed to Load Real Data</div>
+          <div className="text-xl font-semibold text-red-900 mb-4">Failed to Load Admin Data</div>
           <div className="text-sm text-red-600 mb-6">{error}</div>
           <button
             onClick={refetch}
@@ -214,17 +209,17 @@ export function AdminUserManager({}: AdminUserManagerProps) {
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
         <AdminHeader onExportData={exportUserData} onAddUser={() => setShowAddUser(true)} />
 
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+        <div className={`border rounded-lg p-4 mb-6 ${dataSource === 'fastapi' ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'}`}>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <span className="text-green-800 font-medium">
-              Real Data Connected: {users.length} users from FastAPI backend
+            <div className={`w-3 h-3 rounded-full ${dataSource === 'fastapi' ? 'bg-green-500' : 'bg-blue-500'}`}></div>
+            <span className={`font-medium ${dataSource === 'fastapi' ? 'text-green-800' : 'text-blue-800'}`}>
+              {dataSource === 'fastapi' ? 'FastAPI Backend Connected' : 'Supabase Database Connected'}: {users.length} users loaded
             </span>
           </div>
           {stats && (
-            <div className="text-sm text-green-700 mt-2">
-              Active Subscriptions: {stats.subscriptions.active} • 
-              Trial Users: {stats.subscriptions.trial} • 
+            <div className={`text-sm mt-2 ${dataSource === 'fastapi' ? 'text-green-700' : 'text-blue-700'}`}>
+              Active Users: {stats.activeUsers} • 
+              Premium Users: {stats.premiumUsers} • 
               Revenue: ${stats.totalRevenue.toFixed(2)}
             </div>
           )}
@@ -257,6 +252,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
               onEditUser={handleEditUser}
               onToggleBlock={handleToggleBlock}
               onDeleteUser={handleDeleteUser}
+              dataSource={dataSource}
             />
           </TabsContent>
           
