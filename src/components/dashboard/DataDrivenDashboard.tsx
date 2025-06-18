@@ -1,5 +1,5 @@
-
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useUserLoginTracking } from '@/hooks/useUserLoginTracking';
 import { processDiamondDataForDashboard } from '@/services/diamondAnalytics';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { InventoryChart } from '@/components/dashboard/InventoryChart';
@@ -25,6 +25,9 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
   const { user } = useTelegramAuth();
   const { subscribeToInventoryChanges } = useInventoryDataSync();
   const navigate = useNavigate();
+
+  // Track user logins automatically when dashboard loads
+  useUserLoginTracking();
 
   console.log('🔍 DataDrivenDashboard: Processing data for user:', user?.id, 'Diamonds:', allDiamonds.length);
 
