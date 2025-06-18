@@ -25,7 +25,7 @@ export async function getSecureConfig(): Promise<SecureConfig> {
     });
 
     if (tokenError) {
-      console.error('❌ Failed to get backend access token:', tokenError);
+      console.error('❌ Failed to get backend access token');
       throw new Error('Failed to retrieve secure backend token');
     }
 
@@ -37,7 +37,7 @@ export async function getSecureConfig(): Promise<SecureConfig> {
       .maybeSingle();
 
     if (adminError) {
-      console.warn('⚠️ Failed to get admin settings:', adminError);
+      console.warn('⚠️ Failed to get admin settings');
     }
 
     // Properly handle the JSON setting_value field
@@ -71,7 +71,7 @@ export async function getSecureConfig(): Promise<SecureConfig> {
     console.log('✅ Secure configuration loaded successfully');
     return config;
   } catch (error) {
-    console.error('❌ Error loading secure configuration:', error);
+    console.error('❌ Error loading secure configuration');
     // Return minimal fallback config for emergency access
     return {
       backendAccessToken: null,
