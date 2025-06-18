@@ -5,20 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { useInventoryDataSync } from "@/hooks/inventory/useInventoryDataSync";
-import { generateDiamondId } from "@/utils/diamondUtils";
+import { useInventoryCrud } from "@/hooks/useInventoryCrud";
+import { DiamondFormData } from "@/components/inventory/form/types";
 
 const shapes = ["Round", "Princess", "Emerald", "Asscher", "Oval", "Radiant", "Pear", "Heart", "Marquise", "Cushion"];
 const colors = ["D", "E", "F", "G", "H", "I", "J", "K", "L", "M"];
 const clarities = ["FL", "IF", "VVS1", "VVS2", "VS1", "VS2", "SI1", "SI2", "SI3", "I1", "I2", "I3"];
 
 export function SingleStoneUploadForm() {
-  const { toast } = useToast();
   const { user } = useTelegramAuth();
-  const { triggerInventoryChange } = useInventoryDataSync();
-  const [isLoading, setIsLoading] = useState(false);
+  const { addDiamond, isLoading } = useInventoryCrud();
   
   const [formData, setFormData] = useState({
     stockNumber: '',
@@ -40,58 +37,33 @@ export function SingleStoneUploadForm() {
     e.preventDefault();
     
     if (!user?.id) {
-      toast({
-        title: "Authentication Error",
-        description: "Please log in to add diamonds",
-        variant: "destructive",
-      });
       return;
     }
 
     // Validate required fields
     if (!formData.stockNumber || !formData.shape || !formData.carat || !formData.color || !formData.clarity || !formData.price) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
       return;
     }
 
-    setIsLoading(true);
+    // Convert form data to DiamondFormData format
+    const diamondData: DiamondFormData = {
+      stockNumber: formData.stockNumber,
+      shape: formData.shape,
+      carat: parseFloat(formData.carat),
+      color: formData.color,
+      clarity: formData.clarity,
+      cut: formData.cut,
+      price: parseFloat(formData.price),
+      status: 'Available',
+      storeVisible: true,
+      certificateNumber: formData.certificateNumber || undefined,
+      lab: formData.lab
+    };
 
-    try {
-      const newDiamond = {
-        id: generateDiamondId(),
-        stockNumber: formData.stockNumber,
-        shape: formData.shape,
-        carat: parseFloat(formData.carat),
-        color: formData.color,
-        clarity: formData.clarity,
-        cut: formData.cut,
-        price: parseFloat(formData.price),
-        status: 'Available',
-        store_visible: true,
-        certificateNumber: formData.certificateNumber,
-        lab: formData.lab,
-        user_id: user.id,
-        created_at: new Date().toISOString()
-      };
-
-      // Store in localStorage (since backend might not be available)
-      const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
-      existingData.push(newDiamond);
-      localStorage.setItem('diamond_inventory', JSON.stringify(existingData));
-
-      // Trigger inventory refresh
-      triggerInventoryChange();
-
-      toast({
-        title: "Success! 💎",
-        description: "Diamond added to your inventory successfully",
-      });
-
-      // Reset form
+    const success = await addDiamond(diamondData);
+    
+    if (success) {
+      // Reset form on success
       setFormData({
         stockNumber: '',
         shape: '',
@@ -103,16 +75,6 @@ export function SingleStoneUploadForm() {
         certificateNumber: '',
         lab: 'GIA'
       });
-
-    } catch (error) {
-      console.error('Failed to add diamond:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add diamond. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
