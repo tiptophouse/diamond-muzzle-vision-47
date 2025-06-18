@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useSecureTelegramAuth } from '@/hooks/useSecureTelegramAuth';
+import { useUserLoginTracking } from '@/hooks/useUserLoginTracking';
 
 interface TelegramUser {
   id: number;
@@ -24,6 +25,9 @@ const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(u
 
 export function TelegramAuthProvider({ children }: { children: ReactNode }) {
   const authState = useSecureTelegramAuth();
+  
+  // Track user logins automatically
+  useUserLoginTracking();
 
   return (
     <TelegramAuthContext.Provider value={authState}>
