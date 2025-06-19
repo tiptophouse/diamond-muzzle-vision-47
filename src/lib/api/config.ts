@@ -1,6 +1,6 @@
 
 // Updated to point to your actual FastAPI backend
-export const API_BASE_URL = "https://api.mazalbot.com";
+export const API_BASE_URL = "https://mazalbot.com";
 
 let currentUserId: number | null = null;
 
@@ -25,4 +25,25 @@ export function getFullApiUrl(endpoint: string): string {
   const fullUrl = `${API_BASE_URL}${endpoint}`;
   console.log('🔧 API: Full URL constructed:', fullUrl);
   return fullUrl;
+}
+
+// Add health check function
+export async function testApiConnection(): Promise<boolean> {
+  try {
+    const healthUrl = `${API_BASE_URL}/api/v1/alive`;
+    console.log('🔍 API: Testing FastAPI connection to:', healthUrl);
+    
+    const response = await fetch(healthUrl, {
+      method: 'GET',
+      mode: 'cors',
+      headers: { 'Accept': 'application/json' }
+    });
+    
+    const isHealthy = response.ok;
+    console.log(isHealthy ? '✅ API: FastAPI is healthy' : '❌ API: FastAPI health check failed');
+    return isHealthy;
+  } catch (error) {
+    console.error('❌ API: FastAPI connection test failed:', error);
+    return false;
+  }
 }
