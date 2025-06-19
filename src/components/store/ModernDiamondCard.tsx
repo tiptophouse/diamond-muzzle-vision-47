@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Heart, Eye, Share2, Trash2, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,7 +26,6 @@ export function ModernDiamondCard({
   restoreDiamondToState
 }: ModernDiamondCardProps) {
   const [showContact, setShowContact] = useState(false);
-  const [showGem360, setShowGem360] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const { user } = useTelegramAuth();
   const { toast } = useToast();
@@ -112,15 +110,10 @@ export function ModernDiamondCard({
                 View Details
               </Button>
               {diamond.gem360Url && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="bg-white/90 hover:bg-white text-gray-800 shadow-lg"
-                  onClick={() => setShowGem360(true)}
-                >
-                  <Share2 className="h-4 w-4" />
-                  360°
-                </Button>
+                <Gem360Viewer
+                  gem360Url={diamond.gem360Url}
+                  stockNumber={diamond.stockNumber}
+                />
               )}
             </div>
           </div>
@@ -224,22 +217,6 @@ export function ModernDiamondCard({
           diamond={diamond}
           isOpen={showContact}
           onClose={() => setShowContact(false)}
-        />
-      )}
-
-      {/* Gem360 Viewer */}
-      {showGem360 && diamond.gem360Url && (
-        <Gem360Viewer
-          gem360Url={diamond.gem360Url}
-          isOpen={showGem360}
-          onClose={() => setShowGem360(false)}
-          diamondInfo={{
-            stockNumber: diamond.stockNumber,
-            shape: diamond.shape,
-            carat: diamond.carat,
-            color: diamond.color,
-            clarity: diamond.clarity
-          }}
         />
       )}
     </>

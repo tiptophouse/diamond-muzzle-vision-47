@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import { BasicInfoSection } from "./form/BasicInfoSection";
 import { CertificateInfoSection } from "./form/CertificateInfoSection";
 import { useSingleStoneValidation } from "./form/useSingleStoneValidation";
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
+import { UploadSuccessModal } from "./UploadSuccessModal";
 import { useToast } from "@/hooks/use-toast";
 import { api, apiEndpoints } from "@/lib/api";
 
@@ -19,6 +21,8 @@ export function SingleStoneUploadForm() {
   const { toast } = useToast();
   const [showScanner, setShowScanner] = useState(false);
   const [isProcessingGIA, setIsProcessingGIA] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [uploadedDiamond, setUploadedDiamond] = useState<any>(null);
   
   // Enhanced form data with all GIA fields
   const [formData, setFormData] = useState({
@@ -109,12 +113,22 @@ export function SingleStoneUploadForm() {
         const success = await saveToFastAPI(updatedFormData);
         
         if (success) {
-          // Reset form after successful save
+          // Show success modal instead of just resetting
+          const uploadedDiamondData = {
+            stockNumber: updatedFormData.stockNumber,
+            shape: updatedFormData.shape,
+            carat: parseFloat(updatedFormData.carat),
+            color: updatedFormData.color,
+            clarity: updatedFormData.clarity,
+            cut: updatedFormData.cut,
+            price: parseFloat(updatedFormData.price),
+            lab: updatedFormData.lab,
+            certificateNumber: updatedFormData.certificateNumber
+          };
+          
+          setUploadedDiamond(uploadedDiamondData);
+          setShowSuccessModal(true);
           resetForm();
-          toast({
-            title: "Diamond Saved to FastAPI!",
-            description: "The complete GIA scanned diamond has been saved to your database via FastAPI.",
-          });
         }
       }
       
@@ -243,7 +257,7 @@ export function SingleStoneUploadForm() {
 
     if (!validateFormData(formData)) {
       toast({
-        title: "Validation Error",
+        title: "Validation Error", 
         description: "Please fill in all required fields before submitting.",
         variant: "destructive",
       });
@@ -252,7 +266,28 @@ export function SingleStoneUploadForm() {
 
     const success = await saveToFastAPI(formData);
     if (success) {
+      // Show success modal with uploaded diamond details
+      const uploadedDiamondData = {
+        stockNumber: formData.stockNumber,
+        shape: formData.shape,
+        carat: parseFloat(formData.carat),
+        color: formData.color,
+        clarity: formData.clarity,
+        cut: formData.cut,
+        price: parseFloat(formData.price),
+        lab: formData.lab,
+        certificateNumber: formData.certificateNumber
+      };
+      
+      setUploadedDiamond(uploadedDiamondData);
+      setShowSuccessModal(true);
       resetForm();
+      
+      // Show additional success toast with Hebrew text
+      toast({
+        title: "🎉 Diamond Uploaded Successfully!",
+        description: `Diamond #${formData.stockNumber} has been saved to your FastAPI database | האבן הועלתה בהצלחה למסד הנתונים`,
+      });
     }
   };
 
@@ -412,6 +447,12 @@ export function SingleStoneUploadForm() {
         isOpen={showScanner}
         onClose={() => setShowScanner(false)}
         onScanSuccess={handleScanSuccess}
+      />
+
+      <UploadSuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        diamond={uploadedDiamond}
       />
     </>
   );
