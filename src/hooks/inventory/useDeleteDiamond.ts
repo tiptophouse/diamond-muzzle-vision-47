@@ -1,7 +1,8 @@
 
-import { useToast } from "@/hooks/use-toast";
-import { api, apiEndpoints } from "@/lib/api";
-import { Diamond } from "@/components/inventory/InventoryTable";
+import { useToast } from '@/hooks/use-toast';
+import { api, apiEndpoints } from '@/lib/api';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { Diamond } from '@/components/inventory/InventoryTable';
 
 interface UseDeleteDiamondProps {
   onSuccess?: () => void;
@@ -9,30 +10,19 @@ interface UseDeleteDiamondProps {
   restoreDiamondToState?: (diamond: Diamond) => void;
 }
 
-export function useDeleteDiamond({ 
-  onSuccess, 
-  removeDiamondFromState, 
-  restoreDiamondToState 
-}: UseDeleteDiamondProps = {}) {
+export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDiamondToState }: UseDeleteDiamondProps) {
   const { toast } = useToast();
+  const { user } = useTelegramAuth();
 
-  const deleteDiamond = async (diamondId: string, diamondData?: Diamond): Promise<boolean> => {
-    if (!diamondData) {
-      console.error('❌ DELETE: No diamond data provided for deletion');
+  const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
+    if (!user?.id) {
       toast({
         variant: "destructive",
-        title: "Delete Failed",
-        description: "Diamond data not found. Please refresh and try again.",
+        title: "Error",
+        description: "User not authenticated",
       });
       return false;
     }
-
-    console.log('🗑️ DELETE: Starting deletion process for diamond:', {
-      id: diamondId,
-      stockNumber: diamondData.stockNumber,
-      shape: diamondData.shape,
-      carat: diamondData.carat
-    });
 
     // Optimistically remove from UI
     if (removeDiamondFromState) {
@@ -40,57 +30,59 @@ export function useDeleteDiamond({
     }
 
     try {
-      // Use the correct FastAPI endpoint for deletion
-      const endpoint = apiEndpoints.deleteDiamond(diamondData.stockNumber);
-      console.log('🗑️ DELETE: Using endpoint:', endpoint);
-      
-      const response = await api.delete(endpoint);
-      
-      if (response.error) {
-        console.error('❌ DELETE: FastAPI deletion failed:', response.error);
+      // Try FastAPI first
+      try {
+        const endpoint = apiEndpoints.deleteDiamond(diamondId);
+        const response = await api.delete(endpoint);
         
-        // Restore diamond to state on failure
-        if (restoreDiamondToState) {
-          restoreDiamondToState(diamondData);
+        if (response.error) {
+          throw new Error(response.error);
         }
-        
+
         toast({
-          variant: "destructive",
-          title: "מחיקת האבן נכשלה",
-          description: `Failed to delete diamond ${diamondData.stockNumber}: ${response.error}`,
+          title: "Success",
+          description: "Diamond deleted successfully",
         });
-        return false;
+        
+        if (onSuccess) onSuccess();
+        return true;
+        
+      } catch (apiError) {
+        console.warn('FastAPI delete failed, using localStorage:', apiError);
+        
+        // Fallback to localStorage
+        const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
+        const filteredData = existingData.filter((item: any) => item.id !== diamondId);
+        
+        if (filteredData.length < existingData.length) {
+          localStorage.setItem('diamond_inventory', JSON.stringify(filteredData));
+          
+          toast({
+            title: "Success",
+            description: "Diamond deleted successfully (from local storage)",
+          });
+          
+          if (onSuccess) onSuccess();
+          return true;
+        } else {
+          throw new Error('Diamond not found in local storage');
+        }
       }
-
-      console.log('✅ DELETE: Diamond deleted successfully from FastAPI backend');
       
-      // Show success message
-      toast({
-        title: "אבן נמחקה בהצלחה",
-        description: `Diamond ${diamondData.stockNumber} has been successfully deleted from your inventory.`,
-      });
-
-      // Trigger success callback
-      if (onSuccess) {
-        onSuccess();
-      }
-
-      return true;
     } catch (error) {
-      console.error('❌ DELETE: Unexpected error during deletion:', error);
+      console.error('Failed to delete diamond:', error);
       
-      // Restore diamond to state on error
-      if (restoreDiamondToState) {
+      // Restore diamond to UI on error
+      if (restoreDiamondToState && diamondData) {
         restoreDiamondToState(diamondData);
       }
       
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond. Please try again.";
       toast({
         variant: "destructive",
-        title: "מחיקת האבן נכשלה",
-        description: `Failed to delete diamond: ${errorMessage}`,
+        title: "Error",
+        description: errorMessage,
       });
-      
       return false;
     }
   };

@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { fetchInventoryData } from "@/services/inventoryDataService";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
@@ -10,7 +10,20 @@ export function useStoreData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchStoreData = useCallback(async () => {
+  useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+    if (user) {
+      fetchStoreData();
+    } else {
+      setLoading(false);
+      setDiamonds([]);
+      setError("Please log in to view your store items.");
+    }
+  }, [user, authLoading]);
+
+  const fetchStoreData = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -79,38 +92,12 @@ export function useStoreData() {
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  // State management functions for immediate UI updates
-  const removeDiamondFromState = useCallback((diamondId: string) => {
-    console.log('🗑️ STORE: Optimistically removing diamond from state:', diamondId);
-    setDiamonds(prev => prev.filter(diamond => diamond.id !== diamondId));
-  }, []);
-
-  const restoreDiamondToState = useCallback((diamond: Diamond) => {
-    console.log('🔄 STORE: Restoring diamond to state:', diamond.id);
-    setDiamonds(prev => [...prev, diamond]);
-  }, []);
-
-  useEffect(() => {
-    if (authLoading) {
-      return;
-    }
-    if (user) {
-      fetchStoreData();
-    } else {
-      setLoading(false);
-      setDiamonds([]);
-      setError("Please log in to view your store items.");
-    }
-  }, [user, authLoading, fetchStoreData]);
+  };
 
   return {
     diamonds,
     loading: loading || authLoading,
     error,
     refetch: fetchStoreData,
-    removeDiamondFromState,
-    restoreDiamondToState,
   };
 }

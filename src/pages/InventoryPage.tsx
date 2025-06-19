@@ -1,39 +1,117 @@
 
 import { Layout } from "@/components/layout/Layout";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";
-import { InventorySidebar } from "@/components/inventory/InventorySidebar";
-import { InventoryMainContent } from "@/components/inventory/InventoryMainContent";
-import { InventoryModal } from "@/components/inventory/InventoryModal";
-import { useInventoryPageLogic } from "@/hooks/useInventoryPageLogic";
+import { InventoryTable } from "@/components/inventory/InventoryTable";
+import { InventoryPagination } from "@/components/inventory/InventoryPagination";
+import { InventorySearch } from "@/components/inventory/InventorySearch";
+import { InventoryFilters } from "@/components/inventory/InventoryFilters";
+import { useInventoryData } from "@/hooks/useInventoryData";
+import { useInventorySearch } from "@/hooks/useInventorySearch";
+import { useInventoryCrud } from "@/hooks/useInventoryCrud";
+import { DiamondForm } from "@/components/inventory/DiamondForm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState } from "react";
+import { Diamond } from "@/components/inventory/InventoryTable";
 
 export default function InventoryPage() {
   const {
-    // Data
     loading,
+    diamonds,
     allDiamonds,
+    handleRefresh,
+  } = useInventoryData();
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filters, setFilters] = useState<Record<string, string>>({});
+
+  const {
+    searchQuery,
+    setSearchQuery,
     filteredDiamonds,
     totalPages,
-    currentPage,
-    searchQuery,
-    showAddForm,
-    editingDiamond,
-    crudLoading,
-    
-    // Actions
-    handleRefresh,
-    setCurrentPage,
-    setFilters,
-    setSearchQuery,
     handleSearch,
-    handleEdit,
-    handleDelete,
-    handleStoreToggle,
-    handleEditSubmit,
-    handleAddSubmit,
-    handleAddDiamond,
-    setShowAddForm,
-    setEditingDiamond,
-  } = useInventoryPageLogic();
+  } = useInventorySearch(allDiamonds, currentPage, filters);
+
+  const { 
+    addDiamond,
+    updateDiamond, 
+    deleteDiamond,
+    isLoading: crudLoading 
+  } = useInventoryCrud({
+    onSuccess: () => {
+      console.log('🔄 CRUD operation completed, refreshing inventory...');
+      handleRefresh();
+    },
+  });
+
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingDiamond, setEditingDiamond] = useState<Diamond | null>(null);
+
+  const handleEdit = (diamond: Diamond) => {
+    console.log('📝 Edit diamond clicked:', diamond.stockNumber);
+    setEditingDiamond(diamond);
+  };
+
+  const handleDelete = async (diamondId: string) => {
+    console.log('🗑️ Delete diamond clicked:', diamondId);
+    if (window.confirm('Are you sure you want to delete this diamond?')) {
+      const diamond = allDiamonds.find(d => d.id === diamondId);
+      console.log('🗑️ Deleting diamond:', diamond?.stockNumber);
+      
+      const success = await deleteDiamond(diamondId, diamond);
+      if (success) {
+        console.log('✅ Diamond deleted successfully');
+      } else {
+        console.error('❌ Failed to delete diamond');
+      }
+    }
+  };
+
+  const handleStoreToggle = async (stockNumber: string, isVisible: boolean) => {
+    console.log('👁️ Store visibility toggle:', stockNumber, isVisible);
+    const diamond = allDiamonds.find(d => d.stockNumber === stockNumber);
+    if (diamond) {
+      const updateData = {
+        stockNumber: diamond.stockNumber,
+        shape: diamond.shape,
+        carat: diamond.carat,
+        color: diamond.color,
+        clarity: diamond.clarity,
+        cut: diamond.cut,
+        price: diamond.price,
+        status: diamond.status,
+        storeVisible: isVisible,
+        certificateNumber: diamond.certificateNumber,
+        certificateUrl: diamond.certificateUrl,
+        lab: diamond.lab,
+      };
+      
+      const success = await updateDiamond(diamond.id, updateData);
+      if (success) {
+        console.log('✅ Store visibility updated successfully');
+      }
+    }
+  };
+
+  const handleEditSubmit = async (data: any) => {
+    console.log('💾 Saving edited diamond:', data);
+    if (editingDiamond) {
+      const success = await updateDiamond(editingDiamond.id, data);
+      if (success) {
+        console.log('✅ Diamond updated successfully');
+        setEditingDiamond(null);
+      }
+    }
+  };
+
+  const handleAddSubmit = async (data: any) => {
+    console.log('➕ Adding new diamond:', data);
+    const success = await addDiamond(data);
+    if (success) {
+      console.log('✅ Diamond added successfully');
+      setShowAddForm(false);
+    }
+  };
 
   if (loading && allDiamonds.length === 0) {
     return (
@@ -52,48 +130,76 @@ export default function InventoryPage() {
           totalCount={allDiamonds.length}
           onRefresh={handleRefresh}
           loading={loading}
-          onAddDiamond={handleAddDiamond}
+          onAddDiamond={() => {
+            console.log('➕ Add diamond button clicked');
+            setShowAddForm(true);
+          }}
         />
         
         <div className="flex flex-col lg:flex-row gap-6">
-          <InventorySidebar
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onSearchSubmit={handleSearch}
-            allDiamonds={allDiamonds}
-            onFilterChange={setFilters}
-          />
+          <aside className="lg:w-80">
+            <div className="space-y-6">
+              <InventorySearch
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                onSubmit={handleSearch}
+                allDiamonds={allDiamonds}
+              />
+              <InventoryFilters
+                onFilterChange={setFilters}
+              />
+            </div>
+          </aside>
           
-          <InventoryMainContent
-            filteredDiamonds={filteredDiamonds}
-            loading={loading}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onStoreToggle={handleStoreToggle}
-            onPageChange={setCurrentPage}
-          />
+          <main className="flex-1">
+            <div className="space-y-4">
+              <InventoryTable
+                data={filteredDiamonds}
+                loading={loading}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onStoreToggle={handleStoreToggle}
+              />
+              
+              <InventoryPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          </main>
         </div>
 
         {/* Edit Diamond Modal */}
-        <InventoryModal
-          isOpen={!!editingDiamond}
-          onClose={() => setEditingDiamond(null)}
-          title={`Edit Diamond - #${editingDiamond?.stockNumber}`}
-          diamond={editingDiamond}
-          onSubmit={handleEditSubmit}
-          isLoading={crudLoading}
-        />
+        <Dialog open={!!editingDiamond} onOpenChange={() => setEditingDiamond(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Diamond - #{editingDiamond?.stockNumber}</DialogTitle>
+            </DialogHeader>
+            {editingDiamond && (
+              <DiamondForm
+                diamond={editingDiamond}
+                onSubmit={handleEditSubmit}
+                onCancel={() => setEditingDiamond(null)}
+                isLoading={crudLoading}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Add Diamond Modal */}
-        <InventoryModal
-          isOpen={showAddForm}
-          onClose={() => setShowAddForm(false)}
-          title="Add New Diamond"
-          onSubmit={handleAddSubmit}
-          isLoading={crudLoading}
-        />
+        <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add New Diamond</DialogTitle>
+            </DialogHeader>
+            <DiamondForm
+              onSubmit={handleAddSubmit}
+              onCancel={() => setShowAddForm(false)}
+              isLoading={crudLoading}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
