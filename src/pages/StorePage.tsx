@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
@@ -15,7 +16,7 @@ import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
 
 export default function StorePage() {
-  const { diamonds, loading, error, refetch } = useStoreData();
+  const { diamonds, loading, error, refetch, removeDiamondFromState, restoreDiamondToState } = useStoreData();
   const { filters, filteredDiamonds, updateFilter, clearFilters } = useStoreFilters(diamonds || []);
   const [showUpload, setShowUpload] = useState(false);
   const [showCustomization, setShowCustomization] = useState(false);
@@ -126,6 +127,8 @@ export default function StorePage() {
           error={error}
           onUpdate={refetch}
           storeOwnerId={user?.id}
+          removeDiamondFromState={removeDiamondFromState}
+          restoreDiamondToState={restoreDiamondToState}
         />
       </div>
 

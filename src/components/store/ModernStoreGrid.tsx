@@ -10,9 +10,19 @@ interface ModernStoreGridProps {
   error?: string | null;
   onUpdate?: () => void;
   storeOwnerId?: number;
+  removeDiamondFromState?: (diamondId: string) => void;
+  restoreDiamondToState?: (diamond: Diamond) => void;
 }
 
-export function ModernStoreGrid({ diamonds, loading, error, onUpdate, storeOwnerId }: ModernStoreGridProps) {
+export function ModernStoreGrid({ 
+  diamonds, 
+  loading, 
+  error, 
+  onUpdate, 
+  storeOwnerId,
+  removeDiamondFromState,
+  restoreDiamondToState
+}: ModernStoreGridProps) {
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 sm:gap-8">
@@ -86,6 +96,8 @@ export function ModernStoreGrid({ diamonds, loading, error, onUpdate, storeOwner
               diamond={diamond}
               onUpdate={onUpdate}
               storeOwnerId={storeOwnerId}
+              removeDiamondFromState={removeDiamondFromState}
+              restoreDiamondToState={restoreDiamondToState}
             />
           </div>
         ))}

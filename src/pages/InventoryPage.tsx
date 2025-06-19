@@ -21,6 +21,8 @@ export default function InventoryPage() {
     diamonds,
     allDiamonds,
     handleRefresh,
+    removeDiamondFromState,
+    restoreDiamondToState,
   } = useInventoryData();
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -44,6 +46,8 @@ export default function InventoryPage() {
       console.log('🔄 CRUD operation completed, refreshing inventory...');
       handleRefresh();
     },
+    removeDiamondFromState,
+    restoreDiamondToState,
   });
 
   const [showAddForm, setShowAddForm] = useState(false);

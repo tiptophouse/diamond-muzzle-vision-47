@@ -88,6 +88,19 @@ export function useInventoryData() {
     fetchData();
   }, [fetchData]);
 
+  // State management functions for immediate UI updates
+  const removeDiamondFromState = useCallback((diamondId: string) => {
+    console.log('🗑️ INVENTORY HOOK: Optimistically removing diamond from state:', diamondId);
+    setDiamonds(prev => prev.filter(diamond => diamond.id !== diamondId));
+    setAllDiamonds(prev => prev.filter(diamond => diamond.id !== diamondId));
+  }, []);
+
+  const restoreDiamondToState = useCallback((diamond: Diamond) => {
+    console.log('🔄 INVENTORY HOOK: Restoring diamond to state:', diamond.id);
+    setDiamonds(prev => [...prev, diamond]);
+    setAllDiamonds(prev => [...prev, diamond]);
+  }, []);
+
   // Initial load when user is available
   useEffect(() => {
     if (authLoading) {
@@ -124,5 +137,7 @@ export function useInventoryData() {
     error,
     handleRefresh,
     fetchData,
+    removeDiamondFromState,
+    restoreDiamondToState,
   };
 }

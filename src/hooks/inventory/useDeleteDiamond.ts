@@ -50,68 +50,37 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
     console.log('🗑️ DELETE DIAMOND: User ID:', user.id);
     console.log('🗑️ DELETE DIAMOND: Diamond data:', diamondData);
 
-    // Optimistically remove from UI
+    // Optimistically remove from UI immediately
     if (removeDiamondFromState) {
       console.log('🗑️ DELETE DIAMOND: Optimistically removing from UI');
       removeDiamondFromState(diamondId);
     }
 
     try {
-      // Try FastAPI first with the correct endpoint and stock number
-      try {
-        const endpoint = apiEndpoints.deleteDiamond(stockNumber);
-        console.log('🗑️ DELETE DIAMOND: Using FastAPI endpoint:', endpoint);
-        
-        const response = await api.delete(endpoint);
-        console.log('🗑️ DELETE DIAMOND: FastAPI response:', response);
-        
-        if (response.error) {
-          console.error('❌ DELETE DIAMOND: FastAPI error response:', response.error);
-          throw new Error(response.error);
-        }
-
-        console.log('✅ DELETE DIAMOND: FastAPI deletion successful');
-
-        toast({
-          title: "Success",
-          description: `Diamond ${stockNumber} deleted successfully`,
-        });
-        
-        if (onSuccess) onSuccess();
-        return true;
-        
-      } catch (apiError) {
-        console.error('⚠️ DELETE DIAMOND: FastAPI deletion failed:', apiError);
-        console.log('🔄 DELETE DIAMOND: Attempting localStorage fallback');
-        
-        // Fallback to localStorage
-        const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
-        const originalLength = existingData.length;
-        const filteredData = existingData.filter((item: any) => 
-          item.stockNumber !== stockNumber && 
-          item.stock_number !== stockNumber &&
-          item.stock !== stockNumber
-        );
-        
-        if (filteredData.length < originalLength) {
-          localStorage.setItem('diamond_inventory', JSON.stringify(filteredData));
-          console.log('✅ DELETE DIAMOND: LocalStorage deletion successful');
-          
-          toast({
-            title: "Success",
-            description: `Diamond ${stockNumber} deleted successfully (from local storage)`,
-          });
-          
-          if (onSuccess) onSuccess();
-          return true;
-        } else {
-          console.error('❌ DELETE DIAMOND: Diamond not found in localStorage');
-          throw new Error(`Diamond with stock number ${stockNumber} not found in local storage`);
-        }
+      // Use the correct FastAPI endpoint for deletion
+      const endpoint = apiEndpoints.deleteDiamond(stockNumber);
+      console.log('🗑️ DELETE DIAMOND: Using FastAPI endpoint:', endpoint);
+      
+      const response = await api.delete(endpoint);
+      console.log('🗑️ DELETE DIAMOND: FastAPI response:', response);
+      
+      if (response.error) {
+        console.error('❌ DELETE DIAMOND: FastAPI error response:', response.error);
+        throw new Error(response.error);
       }
+
+      console.log('✅ DELETE DIAMOND: FastAPI deletion successful');
+
+      toast({
+        title: "Success",
+        description: `Diamond ${stockNumber} deleted successfully`,
+      });
+      
+      if (onSuccess) onSuccess();
+      return true;
       
     } catch (error) {
-      console.error('❌ DELETE DIAMOND: Final deletion error:', error);
+      console.error('❌ DELETE DIAMOND: Deletion failed:', error);
       
       // Restore diamond to UI on error
       if (restoreDiamondToState && diamondData) {
