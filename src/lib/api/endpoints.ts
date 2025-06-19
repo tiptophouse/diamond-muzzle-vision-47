@@ -1,5 +1,4 @@
 
-
 export const apiEndpoints = {
   getAllStones: (userId: number) => {
     // Try the correct endpoint path for your backend
@@ -10,7 +9,7 @@ export const apiEndpoints = {
   verifyTelegram: () => `/api/v1/verify-telegram`,
   uploadInventory: () => `/api/v1/upload-inventory`,
   addDiamond: () => `/api/v1/diamonds`,
-  deleteDiamond: (diamondId: string) => `/api/v1/delete_stone/${diamondId}`,
+  deleteDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`, // Fixed: Use consistent endpoint structure
   updateDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,
   soldDiamond: () => `/api/v1/sold`,
   createReport: () => `/api/v1/create-report`,
@@ -37,4 +36,3 @@ export const apiEndpoints = {
   deleteAllInventory: (userId: number) => `/api/v1/users/${userId}/inventory/delete-all`,
   updateAllInventory: (userId: number) => `/api/v1/users/${userId}/inventory/update-all`,
 };
-
