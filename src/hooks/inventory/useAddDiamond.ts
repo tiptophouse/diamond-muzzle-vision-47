@@ -1,132 +1,88 @@
 
-import { useToast } from '@/hooks/use-toast';
-import { api, apiEndpoints } from '@/lib/api';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { DiamondFormData } from '@/components/inventory/form/types';
-import { generateDiamondId } from '@/utils/diamondUtils';
+import { useToast } from "@/hooks/use-toast";
+import { api, apiEndpoints, getCurrentUserId } from "@/lib/api";
+import { DiamondFormData } from "@/components/inventory/form/types";
 
 export function useAddDiamond(onSuccess?: () => void) {
   const { toast } = useToast();
-  const { user } = useTelegramAuth();
 
-  const addDiamond = async (data: DiamondFormData) => {
-    if (!user?.id) {
+  const addDiamond = async (data: DiamondFormData): Promise<boolean> => {
+    const userId = getCurrentUserId();
+    
+    if (!userId) {
+      console.error('❌ ADD: No user ID available');
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "User not authenticated",
+        title: "הוספת אבן נכשלה",
+        description: "User authentication required. Please log in and try again.",
       });
       return false;
     }
 
+    console.log('➕ ADD: Starting diamond addition process:', {
+      stockNumber: data.stockNumber,
+      shape: data.shape,
+      carat: data.carat,
+      userId
+    });
+
     try {
-      const diamondDataPayload: Record<string, any> = {
-        user_id: user.id,
-        stock_number: data.stockNumber, // Fixed: Use stock_number consistently
+      // Transform form data to match FastAPI expected format
+      const diamondPayload = {
+        user_id: userId,
+        stock_number: data.stockNumber,
         shape: data.shape,
-        weight: Number(data.carat),
+        weight: data.carat,
         color: data.color,
         clarity: data.clarity,
         cut: data.cut,
-        price_per_carat: data.carat > 0 ? Math.round(Number(data.price) / Number(data.carat)) : Math.round(Number(data.price)),
-        status: data.status,
-        picture: data.picture,
-        certificate_number: data.certificateNumber,
-        certificate_url: data.certificateUrl,
-        certificate_comment: data.certificateComment,
-        lab: data.lab,
-        length: data.length,
-        width: data.width,
-        depth: data.depth,
-        ratio: data.ratio,
-        table_percentage: data.tablePercentage,
-        depth_percentage: data.depthPercentage,
-        fluorescence: data.fluorescence,
-        polish: data.polish,
-        symmetry: data.symmetry,
-        gridle: data.gridle,
-        culet: data.culet,
-        rapnet: data.rapnet,
-        store_visible: data.storeVisible,
+        price_per_carat: Math.round(data.price / data.carat),
+        status: data.status || 'Available',
+        store_visible: data.storeVisible || false,
+        certificate_number: data.certificateNumber || null,
+        certificate_url: data.certificateUrl || null,
+        lab: data.lab || null,
+        picture: null // Will be handled separately if needed
       };
 
-      // Remove undefined keys
-      Object.keys(diamondDataPayload).forEach(key => {
-        if (diamondDataPayload[key] === undefined) {
-          delete diamondDataPayload[key];
-        }
-      });
+      console.log('➕ ADD: Sending diamond payload to FastAPI:', diamondPayload);
       
-      console.log('📤 ADD DIAMOND: Sending to FastAPI endpoint:', apiEndpoints.addDiamond());
-      console.log('📤 ADD DIAMOND: Payload:', diamondDataPayload);
+      const response = await api.post(apiEndpoints.addDiamond(), diamondPayload);
       
-      // Try FastAPI first
-      try {
-        const endpoint = apiEndpoints.addDiamond();
-        const response = await api.post(endpoint, {
-          diamond_data: diamondDataPayload
-        });
-        
-        if (response.error) {
-          console.error('❌ ADD DIAMOND: FastAPI error:', response.error);
-          throw new Error(response.error);
-        }
-
-        console.log('✅ ADD DIAMOND: FastAPI success, response:', response.data);
-        
+      if (response.error) {
+        console.error('❌ ADD: FastAPI addition failed:', response.error);
         toast({
-          title: "Success",
-          description: "Diamond added successfully to backend",
+          variant: "destructive",
+          title: "הוספת אבן נכשלה",
+          description: `Failed to add diamond: ${response.error}`,
         });
-        
-        if (onSuccess) onSuccess();
-        return true;
-        
-      } catch (apiError) {
-        console.warn('⚠️ ADD DIAMOND: FastAPI failed, using localStorage fallback:', apiError);
-        
-        // Fallback to localStorage
-        const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
-        
-        // Convert to inventory format with proper ID
-        const newDiamond = {
-          id: generateDiamondId(),
-          stockNumber: diamondDataPayload.stock_number,
-          shape: diamondDataPayload.shape,
-          carat: diamondDataPayload.weight,
-          color: diamondDataPayload.color,
-          clarity: diamondDataPayload.clarity,
-          cut: diamondDataPayload.cut,
-          price: diamondDataPayload.price_per_carat * diamondDataPayload.weight,
-          status: diamondDataPayload.status,
-          store_visible: diamondDataPayload.store_visible,
-          certificateNumber: diamondDataPayload.certificate_number,
-          certificateUrl: diamondDataPayload.certificate_url,
-          lab: diamondDataPayload.lab,
-          user_id: user.id,
-          created_at: new Date().toISOString()
-        };
-        
-        existingData.push(newDiamond);
-        localStorage.setItem('diamond_inventory', JSON.stringify(existingData));
-        
-        toast({
-          title: "Success",
-          description: "Diamond added successfully (stored locally)",
-        });
-        
-        if (onSuccess) onSuccess();
-        return true;
+        return false;
       }
+
+      console.log('✅ ADD: Diamond added successfully to FastAPI backend');
       
+      // Show success message
+      toast({
+        title: "אבן נוספה בהצלחה!",
+        description: `Diamond ${data.stockNumber} has been successfully added to your inventory.`,
+      });
+
+      // Trigger success callback
+      if (onSuccess) {
+        onSuccess();
+      }
+
+      return true;
     } catch (error) {
-      console.error('❌ ADD DIAMOND: Unexpected error:', error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to add diamond. Please try again.";
+      console.error('❌ ADD: Unexpected error during addition:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         variant: "destructive",
-        title: "Error",
-        description: errorMessage,
+        title: "הוספת אבן נכשלה",
+        description: `Failed to add diamond: ${errorMessage}`,
       });
+      
       return false;
     }
   };
