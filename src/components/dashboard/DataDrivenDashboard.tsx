@@ -1,18 +1,14 @@
 
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { useUserLoginTracking } from '@/hooks/useUserLoginTracking';
-import { useDashboardData } from '@/hooks/useDashboardData';
 import { processDiamondDataForDashboard } from '@/services/diamondAnalytics';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { InventoryChart } from '@/components/dashboard/InventoryChart';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { WelcomeBanner } from '@/components/tutorial/WelcomeBanner';
-import { UserLoginsSection } from '@/components/dashboard/UserLoginsSection';
 import { Layout } from '@/components/layout/Layout';
-import { Gem, Users, TrendingUp, Star, Plus, Upload, Wifi, WifiOff, AlertCircle } from 'lucide-react';
+import { Gem, Users, TrendingUp, Star, Plus, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
 import { useEffect } from 'react';
 import { Diamond } from '@/components/inventory/InventoryTable';
@@ -26,83 +22,73 @@ interface DataDrivenDashboardProps {
 
 export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDrivenDashboardProps) {
   const { user } = useTelegramAuth();
-  const { stats, isLoading: dashboardLoading, connectionHealth, refetch } = useDashboardData();
   const { subscribeToInventoryChanges } = useInventoryDataSync();
   const navigate = useNavigate();
 
-  // Track user logins automatically when dashboard loads
-  useUserLoginTracking();
-
-  console.log('🔍 DataDrivenDashboard: FastAPI connection status:', connectionHealth);
-  console.log('🔍 DataDrivenDashboard: Real stats from FastAPI:', stats);
+  console.log('🔍 DataDrivenDashboard: Processing data for user:', user?.id, 'Diamonds:', allDiamonds.length);
 
   // Listen for inventory changes and refresh dashboard data immediately
   useEffect(() => {
     const unsubscribe = subscribeToInventoryChanges(() => {
       console.log('🔄 Dashboard: Inventory changed detected, refreshing dashboard data...');
       fetchData();
-      refetch();
     });
 
     return unsubscribe;
-  }, [subscribeToInventoryChanges, fetchData, refetch]);
+  }, [subscribeToInventoryChanges, fetchData]);
 
-  // Use FastAPI stats when available, fallback to calculated stats
-  const displayStats = stats || {
-    totalInventory: allDiamonds.length,
-    totalValue: allDiamonds.reduce((sum, diamond) => sum + diamond.price, 0),
-    availableDiamonds: allDiamonds.filter(d => d.status === 'Available').length,
-    storeVisibleDiamonds: allDiamonds.filter(d => d.store_visible).length,
-    avgPricePerCarat: allDiamonds.length > 0 
-      ? Math.round(allDiamonds.reduce((sum, diamond) => sum + diamond.price, 0) / allDiamonds.reduce((sum, d) => sum + d.carat, 0))
-      : 0
-  };
+  // Process the data only if we have diamonds
+  const { stats, inventoryByShape, salesByCategory } = allDiamonds.length > 0 
+    ? processDiamondDataForDashboard(
+        allDiamonds.map(d => ({
+          id: parseInt(d.id || '0'),
+          shape: d.shape,
+          color: d.color,
+          clarity: d.clarity,
+          weight: d.carat,
+          price_per_carat: d.price / d.carat,
+          owners: [user?.id || 0],
+        })),
+        user?.id
+      )
+    : { 
+        stats: { 
+          totalDiamonds: 0, 
+          matchedPairs: 0, 
+          totalLeads: 0, 
+          activeSubscriptions: 0 
+        }, 
+        inventoryByShape: [], 
+        salesByCategory: [] 
+      };
 
-  const isDataLoading = loading || dashboardLoading;
+  // Calculate actual metrics from real data
+  const totalValue = allDiamonds.reduce((sum, diamond) => sum + diamond.price, 0);
+  const availableDiamonds = allDiamonds.filter(d => d.status === 'Available').length;
+  const storeVisibleDiamonds = allDiamonds.filter(d => d.store_visible).length;
+  const avgPricePerCarat = allDiamonds.length > 0 
+    ? Math.round(totalValue / allDiamonds.reduce((sum, d) => sum + d.carat, 0))
+    : 0;
 
-  // Connection status indicator
-  const ConnectionStatus = () => (
-    <Alert className={`mb-4 ${connectionHealth === 'healthy' ? 'border-green-200 bg-green-50' : connectionHealth === 'unhealthy' ? 'border-red-200 bg-red-50' : 'border-yellow-200 bg-yellow-50'}`}>
-      <div className="flex items-center gap-2">
-        {connectionHealth === 'healthy' ? (
-          <Wifi className="h-4 w-4 text-green-600" />
-        ) : connectionHealth === 'unhealthy' ? (
-          <WifiOff className="h-4 w-4 text-red-600" />
-        ) : (
-          <AlertCircle className="h-4 w-4 text-yellow-600" />
-        )}
-        <AlertDescription className={connectionHealth === 'healthy' ? 'text-green-800' : connectionHealth === 'unhealthy' ? 'text-red-800' : 'text-yellow-800'}>
-          {connectionHealth === 'healthy' && 'Connected to FastAPI - Showing real diamond data'}
-          {connectionHealth === 'unhealthy' && 'FastAPI connection failed - Using fallback data'}
-          {connectionHealth === 'testing' && 'Testing FastAPI connection...'}
-        </AlertDescription>
-      </div>
-    </Alert>
-  );
-
-  // Show empty state when no diamonds and connection is healthy
-  if (!isDataLoading && displayStats.totalInventory === 0 && connectionHealth === 'healthy') {
+  // Show empty state when no diamonds
+  if (!loading && allDiamonds.length === 0) {
     return (
       <Layout>
         <div className="space-y-6 p-2 sm:p-4">
           <WelcomeBanner />
           <DashboardHeader emergencyMode={false} />
-          <ConnectionStatus />
-          
-          {/* User Login Tracking */}
-          <UserLoginsSection />
           
           <Card className="text-center py-12">
             <CardHeader>
               <Gem className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <CardTitle className="text-2xl">FastAPI Connected! 💎</CardTitle>
+              <CardTitle className="text-2xl">Welcome to Diamond Muzzle! 💎</CardTitle>
               <CardDescription className="text-lg">
-                Your diamond inventory system is connected to the FastAPI server
+                Your diamond inventory management system is ready to go
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-gray-600">
-                No diamonds found in your FastAPI database. Get started by adding diamonds to your inventory:
+                Get started by adding diamonds to your inventory using one of the methods below:
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -127,8 +113,8 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
               </div>
               
               <div className="mt-8 text-sm text-gray-500">
-                <p>💡 <strong>Tip:</strong> Upload your diamond inventory CSV file to populate the dashboard</p>
-                <p>📊 Real-time analytics will appear once you have inventory data</p>
+                <p>💡 <strong>Tip:</strong> You can upload a CSV file with multiple diamonds or add them one by one</p>
+                <p>📊 Your dashboard will show analytics once you have inventory data</p>
               </div>
             </CardContent>
           </Card>
@@ -141,41 +127,37 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
     <Layout>
       <div className="space-y-6 p-2 sm:p-4">
         <WelcomeBanner />
-        <DashboardHeader emergencyMode={connectionHealth === 'unhealthy'} />
-        <ConnectionStatus />
+        <DashboardHeader emergencyMode={false} />
         
-        {/* User Login Tracking Section */}
-        <UserLoginsSection />
-        
-        {/* Real Stats Grid from FastAPI */}
+        {/* Real Stats Grid */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Total Diamonds"
-            value={displayStats.totalInventory || 0}
+            value={allDiamonds.length}
             icon={Gem}
-            loading={isDataLoading}
-            description={`$${(displayStats.totalValue || 0).toLocaleString()} total value`}
+            loading={loading}
+            description={`$${totalValue.toLocaleString()} total value`}
           />
           <StatCard
             title="Available"
-            value={displayStats.availableDiamonds || 0}
+            value={availableDiamonds}
             icon={Users}
-            loading={isDataLoading}
-            description={displayStats.totalInventory > 0 ? `${((displayStats.availableDiamonds || 0) / displayStats.totalInventory * 100).toFixed(1)}% of inventory` : 'No inventory'}
+            loading={loading}
+            description={`${((availableDiamonds / allDiamonds.length) * 100).toFixed(1)}% of inventory`}
           />
           <StatCard
             title="Store Visible"
-            value={displayStats.storeVisibleDiamonds || 0}
+            value={storeVisibleDiamonds}
             icon={TrendingUp}
-            loading={isDataLoading}
-            description={displayStats.totalInventory > 0 ? `${((displayStats.storeVisibleDiamonds || 0) / displayStats.totalInventory * 100).toFixed(1)}% visible` : 'No inventory'}
+            loading={loading}
+            description={`${((storeVisibleDiamonds / allDiamonds.length) * 100).toFixed(1)}% visible`}
           />
           <StatCard
             title="Avg Price/Ct"
-            value={displayStats.avgPricePerCarat || 0}
+            value={avgPricePerCarat}
             prefix="$"
             icon={Star}
-            loading={isDataLoading}
+            loading={loading}
             description="Per carat average"
           />
         </div>
@@ -183,7 +165,7 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
         {/* Charts with Real Data */}
         <div className="grid gap-6 lg:grid-cols-2">
           <InventoryChart
-            data={[
+            data={inventoryByShape.length > 0 ? inventoryByShape : [
               { name: 'Round', value: allDiamonds.filter(d => d.shape === 'Round').length },
               { name: 'Princess', value: allDiamonds.filter(d => d.shape === 'Princess').length },
               { name: 'Emerald', value: allDiamonds.filter(d => d.shape === 'Emerald').length },
@@ -191,17 +173,17 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
               { name: 'Other', value: allDiamonds.filter(d => !['Round', 'Princess', 'Emerald', 'Oval'].includes(d.shape)).length }
             ].filter(item => item.value > 0)}
             title="Inventory by Shape"
-            loading={isDataLoading}
+            loading={loading}
           />
           <InventoryChart
-            data={[
+            data={salesByCategory.length > 0 ? salesByCategory : [
               { name: 'D-F', value: allDiamonds.filter(d => ['D', 'E', 'F'].includes(d.color)).length },
               { name: 'G-H', value: allDiamonds.filter(d => ['G', 'H'].includes(d.color)).length },
               { name: 'I-J', value: allDiamonds.filter(d => ['I', 'J'].includes(d.color)).length },
               { name: 'K+', value: allDiamonds.filter(d => !['D', 'E', 'F', 'G', 'H', 'I', 'J'].includes(d.color)).length }
             ].filter(item => item.value > 0)}
             title="Distribution by Color Grade"
-            loading={isDataLoading}
+            loading={loading}
           />
         </div>
 
@@ -209,9 +191,7 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
         <Card>
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>
-              {connectionHealth === 'healthy' ? 'Manage your real diamond inventory' : 'FastAPI connection needed for full functionality'}
-            </CardDescription>
+            <CardDescription>Manage your inventory efficiently</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-4">
@@ -227,24 +207,18 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
                 <Star className="h-4 w-4 mr-2" />
                 View Store
               </Button>
-              <Button onClick={refetch} variant="outline" disabled={isDataLoading}>
-                <Wifi className="h-4 w-4 mr-2" />
-                Refresh Data
-              </Button>
             </div>
           </CardContent>
         </Card>
 
         {/* Data Source Info */}
-        <Card className={connectionHealth === 'healthy' ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'}>
+        <Card className="bg-blue-50 border-blue-200">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-sm">
-              <div className={`w-2 h-2 rounded-full ${connectionHealth === 'healthy' ? 'bg-green-500' : 'bg-blue-500'}`}></div>
-              <span className={connectionHealth === 'healthy' ? 'text-green-800' : 'text-blue-800'}>
-                {connectionHealth === 'healthy' 
-                  ? `Showing real data from FastAPI server (${displayStats.totalInventory || 0} diamonds)`
-                  : 'FastAPI connection required - Using fallback data'
-                }
+            <div className="flex items-center gap-2 text-sm text-blue-800">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span>
+                Showing data from {allDiamonds.length > 5 ? 'your uploaded inventory' : 'sample diamonds'}
+                {allDiamonds.length <= 5 && ' - Upload your CSV file to see real data'}
               </span>
             </div>
           </CardContent>
