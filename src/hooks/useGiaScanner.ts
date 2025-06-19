@@ -1,4 +1,3 @@
-
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { BrowserMultiFormatReader } from '@zxing/library';
 import { useToast } from '@/components/ui/use-toast';
@@ -60,14 +59,15 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
     try {
       setIsFetchingGIA(true);
       toast({
-        title: "Processing with OCR",
-        description: "Analyzing image for GIA certificate data...",
+        title: "Processing with Advanced OCR",
+        description: "Extracting ALL diamond data from GIA certificate...",
       });
 
       const { data, error } = await supabase.functions.invoke('fetch-gia-data', {
         body: { 
           imageData,
-          useOCR: true 
+          useOCR: true,
+          extractAllFields: true // Request comprehensive field extraction
         }
       });
 
@@ -76,11 +76,57 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
       }
 
       if (data) {
-        onScanSuccess(data);
+        // Enhanced data mapping with all possible GIA fields
+        const enhancedData = {
+          // Basic diamond data
+          stockNumber: data.stockNumber || data.certificateNumber || data.reportNumber,
+          certificateNumber: data.certificateNumber || data.reportNumber,
+          shape: data.shape || data.cut_shape,
+          carat: parseFloat(data.carat || data.weight || data.caratWeight) || 0,
+          color: data.color,
+          clarity: data.clarity,
+          cut: data.cut || data.cutGrade || 'Excellent',
+          
+          // Detailed measurements
+          length: parseFloat(data.length || data.measurements?.length) || undefined,
+          width: parseFloat(data.width || data.measurements?.width) || undefined,
+          depth: parseFloat(data.depth || data.measurements?.depth) || undefined,
+          
+          // Additional grades
+          polish: data.polish || data.polishGrade,
+          symmetry: data.symmetry || data.symmetryGrade,
+          fluorescence: data.fluorescence || data.fluorescenceGrade,
+          
+          // Percentages and ratios
+          tablePercentage: parseFloat(data.tablePercentage || data.table) || undefined,
+          depthPercentage: parseFloat(data.depthPercentage || data.depthPercent) || undefined,
+          ratio: parseFloat(data.ratio || data.lengthToWidthRatio) || undefined,
+          
+          // Girdle and culet
+          gridle: data.gridle || data.girdleThickness,
+          culet: data.culet || data.culetSize,
+          
+          // Lab and certificate info
+          lab: data.lab || 'GIA',
+          certificateUrl: data.certificateUrl || data.reportUrl,
+          
+          // Pricing (if available)
+          price: parseFloat(data.price) || undefined,
+          pricePerCarat: parseFloat(data.pricePerCarat) || undefined,
+          
+          // Additional fields
+          comments: data.comments || data.inscriptions,
+          origin: data.origin,
+          treatment: data.treatment
+        };
+
+        console.log('Enhanced GIA data extracted:', enhancedData);
+        onScanSuccess(enhancedData);
         stopScanning();
+        
         toast({
-          title: "Success",
-          description: "GIA certificate data extracted successfully",
+          title: "Complete Success!",
+          description: "GIA certificate data extracted successfully with all available fields",
         });
       } else {
         throw new Error('No data extracted from image');
@@ -97,7 +143,7 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
       setIsFetchingGIA(false);
     }
   }, [onScanSuccess, stopScanning, toast]);
-  
+
   const extractCertificateNumber = useCallback((qrText: string): string | null => {
     try {
       if (qrText.includes('gia.edu') || qrText.includes('gia.org')) {
@@ -141,12 +187,15 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
 
       setIsFetchingGIA(true);
       toast({
-        title: "Fetching GIA Data",
-        description: "Getting diamond information from GIA database...",
+        title: "Fetching Complete GIA Data",
+        description: "Getting comprehensive diamond information from GIA database...",
       });
 
       const { data, error } = await supabase.functions.invoke('fetch-gia-data', {
-        body: { certificateNumber }
+        body: { 
+          certificateNumber,
+          extractAllFields: true // Request all available fields
+        }
       });
 
       if (error) {
@@ -154,11 +203,43 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
       }
 
       if (data) {
-        onScanSuccess(data);
+        // Map comprehensive GIA data
+        const completeData = {
+          stockNumber: data.stockNumber || certificateNumber,
+          certificateNumber: certificateNumber,
+          shape: data.shape,
+          carat: parseFloat(data.carat) || 0,
+          color: data.color,
+          clarity: data.clarity,
+          cut: data.cut || 'Excellent',
+          
+          // Enhanced measurements and details
+          length: parseFloat(data.length) || undefined,
+          width: parseFloat(data.width) || undefined,
+          depth: parseFloat(data.depth) || undefined,
+          tablePercentage: parseFloat(data.tablePercentage) || undefined,
+          depthPercentage: parseFloat(data.depthPercentage) || undefined,
+          ratio: parseFloat(data.ratio) || undefined,
+          
+          polish: data.polish,
+          symmetry: data.symmetry,
+          fluorescence: data.fluorescence,
+          gridle: data.gridle,
+          culet: data.culet,
+          
+          lab: 'GIA',
+          price: parseFloat(data.estimatedPrice) || undefined,
+          
+          // Additional certificate details
+          certificateUrl: data.certificateUrl,
+          comments: data.comments
+        };
+
+        onScanSuccess(completeData);
         stopScanning();
         toast({
-          title: "Success",
-          description: "GIA diamond information loaded successfully",
+          title: "Complete Success!",
+          description: "Comprehensive GIA diamond information loaded successfully",
         });
       } else {
         throw new Error('No data received from GIA');
@@ -171,7 +252,7 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
       setIsFetchingGIA(false);
     }
   }, [extractCertificateNumber, onScanSuccess, stopScanning, toast]);
-  
+
   const startScanning = useCallback(async () => {
     if (!videoRef.current || !readerRef.current) return;
 

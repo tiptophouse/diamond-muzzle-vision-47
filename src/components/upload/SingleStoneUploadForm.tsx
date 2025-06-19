@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +10,7 @@ import { CertificateInfoSection } from "./form/CertificateInfoSection";
 import { useSingleStoneValidation } from "./form/useSingleStoneValidation";
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
 import { useToast } from "@/hooks/use-toast";
+import { api, apiEndpoints } from "@/lib/api";
 
 export function SingleStoneUploadForm() {
   const { user } = useTelegramAuth();
@@ -20,6 +20,7 @@ export function SingleStoneUploadForm() {
   const [showScanner, setShowScanner] = useState(false);
   const [isProcessingGIA, setIsProcessingGIA] = useState(false);
   
+  // Enhanced form data with all GIA fields
   const [formData, setFormData] = useState({
     stockNumber: '',
     shape: '',
@@ -29,7 +30,26 @@ export function SingleStoneUploadForm() {
     cut: 'Excellent',
     price: '',
     certificateNumber: '',
-    lab: 'GIA'
+    lab: 'GIA',
+    
+    // Enhanced measurements
+    length: '',
+    width: '',
+    depth: '',
+    tablePercentage: '',
+    depthPercentage: '',
+    ratio: '',
+    
+    // Additional grades
+    polish: '',
+    symmetry: '',
+    fluorescence: '',
+    gridle: '',
+    culet: '',
+    
+    // Additional fields
+    certificateUrl: '',
+    comments: ''
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -37,11 +57,11 @@ export function SingleStoneUploadForm() {
   };
 
   const handleScanSuccess = async (giaData: any) => {
-    console.log('GIA data received:', giaData);
+    console.log('Complete GIA data received:', giaData);
     setIsProcessingGIA(true);
     
     try {
-      // Update form with scanned data
+      // Update form with ALL scanned data
       const updatedFormData = {
         ...formData,
         stockNumber: giaData.stockNumber || giaData.certificateNumber || formData.stockNumber,
@@ -51,71 +71,162 @@ export function SingleStoneUploadForm() {
         clarity: giaData.clarity || formData.clarity,
         cut: giaData.cut || formData.cut,
         certificateNumber: giaData.certificateNumber || formData.certificateNumber,
-        price: giaData.price?.toString() || formData.price,
-        lab: giaData.lab || 'GIA'
+        price: giaData.price?.toString() || giaData.pricePerCarat ? (giaData.pricePerCarat * giaData.carat).toString() : formData.price,
+        lab: giaData.lab || 'GIA',
+        
+        // Enhanced measurements
+        length: giaData.length?.toString() || formData.length,
+        width: giaData.width?.toString() || formData.width,
+        depth: giaData.depth?.toString() || formData.depth,
+        tablePercentage: giaData.tablePercentage?.toString() || formData.tablePercentage,
+        depthPercentage: giaData.depthPercentage?.toString() || formData.depthPercentage,
+        ratio: giaData.ratio?.toString() || formData.ratio,
+        
+        // Additional grades
+        polish: giaData.polish || formData.polish,
+        symmetry: giaData.symmetry || formData.symmetry,
+        fluorescence: giaData.fluorescence || formData.fluorescence,
+        gridle: giaData.gridle || formData.gridle,
+        culet: giaData.culet || formData.culet,
+        
+        // Additional fields
+        certificateUrl: giaData.certificateUrl || formData.certificateUrl,
+        comments: giaData.comments || formData.comments
       };
       
       setFormData(updatedFormData);
       setShowScanner(false);
       
-      // Show success message for GIA scan
       toast({
-        title: "GIA Certificate Scanned Successfully",
-        description: "Diamond data has been populated from the GIA certificate. You can review and modify before saving.",
+        title: "Complete GIA Certificate Scanned!",
+        description: "All available diamond data has been populated. Review and save to FastAPI database.",
       });
 
-      // Auto-save to database if we have complete data
+      // Auto-save to FastAPI database with comprehensive data
       if (validateFormData(updatedFormData)) {
-        console.log('Auto-saving GIA scanned diamond to database...');
+        console.log('Auto-saving complete GIA diamond to FastAPI...');
         
-        // Convert form data to DiamondFormData format
-        const diamondData: DiamondFormData = {
-          stockNumber: updatedFormData.stockNumber,
-          shape: updatedFormData.shape,
-          carat: parseFloat(updatedFormData.carat),
-          color: updatedFormData.color,
-          clarity: updatedFormData.clarity,
-          cut: updatedFormData.cut,
-          price: parseFloat(updatedFormData.price),
-          status: 'Available',
-          storeVisible: true,
-          certificateNumber: updatedFormData.certificateNumber || undefined,
-          lab: updatedFormData.lab
-        };
-
-        const success = await addDiamond(diamondData);
+        const success = await saveToFastAPI(updatedFormData);
         
         if (success) {
           // Reset form after successful save
-          setFormData({
-            stockNumber: '',
-            shape: '',
-            carat: '',
-            color: '',
-            clarity: '',
-            cut: 'Excellent',
-            price: '',
-            certificateNumber: '',
-            lab: 'GIA'
-          });
-
+          resetForm();
           toast({
-            title: "Diamond Added Successfully",
-            description: "The GIA scanned diamond has been saved to your inventory.",
+            title: "Diamond Saved to FastAPI!",
+            description: "The complete GIA scanned diamond has been saved to your database via FastAPI.",
           });
         }
       }
       
     } catch (error) {
-      console.error('Error processing GIA scan:', error);
+      console.error('Error processing complete GIA scan:', error);
       toast({
         title: "Error Processing GIA Data",
-        description: "Failed to process the scanned GIA certificate. Please try again.",
+        description: "Failed to process the complete GIA certificate. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsProcessingGIA(false);
     }
+  };
+
+  const saveToFastAPI = async (data: any): Promise<boolean> => {
+    try {
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      // Prepare comprehensive payload for FastAPI
+      const diamondDataPayload = {
+        user_id: user.id,
+        stock_number: data.stockNumber,
+        shape: data.shape,
+        weight: parseFloat(data.carat) || 0,
+        color: data.color,
+        clarity: data.clarity,
+        cut: data.cut,
+        price_per_carat: data.carat > 0 ? Math.round(parseFloat(data.price) / parseFloat(data.carat)) : Math.round(parseFloat(data.price)),
+        status: 'Available',
+        certificate_number: data.certificateNumber,
+        certificate_url: data.certificateUrl,
+        certificate_comment: data.comments,
+        lab: data.lab,
+        
+        // Enhanced measurements and details
+        length: parseFloat(data.length) || undefined,
+        width: parseFloat(data.width) || undefined,
+        depth: parseFloat(data.depth) || undefined,
+        ratio: parseFloat(data.ratio) || undefined,
+        table_percentage: parseFloat(data.tablePercentage) || undefined,
+        depth_percentage: parseFloat(data.depthPercentage) || undefined,
+        
+        // Additional grades
+        fluorescence: data.fluorescence,
+        polish: data.polish,
+        symmetry: data.symmetry,
+        gridle: data.gridle,
+        culet: data.culet,
+        
+        store_visible: true
+      };
+
+      // Remove undefined keys
+      Object.keys(diamondDataPayload).forEach(key => {
+        if (diamondDataPayload[key as keyof typeof diamondDataPayload] === undefined) {
+          delete diamondDataPayload[key as keyof typeof diamondDataPayload];
+        }
+      });
+      
+      console.log('📤 Sending comprehensive diamond data to FastAPI:', diamondDataPayload);
+      
+      const endpoint = apiEndpoints.addDiamond();
+      const response = await api.post(endpoint, {
+        diamond_data: diamondDataPayload
+      });
+      
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      console.log('✅ FastAPI save successful:', response.data);
+      return true;
+      
+    } catch (error) {
+      console.error('❌ FastAPI save failed:', error);
+      toast({
+        variant: "destructive",
+        title: "FastAPI Save Failed",
+        description: error instanceof Error ? error.message : "Failed to save to FastAPI database",
+      });
+      return false;
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      stockNumber: '',
+      shape: '',
+      carat: '',
+      color: '',
+      clarity: '',
+      cut: 'Excellent',
+      price: '',
+      certificateNumber: '',
+      lab: 'GIA',
+      length: '',
+      width: '',
+      depth: '',
+      tablePercentage: '',
+      depthPercentage: '',
+      ratio: '',
+      polish: '',
+      symmetry: '',
+      fluorescence: '',
+      gridle: '',
+      culet: '',
+      certificateUrl: '',
+      comments: ''
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -130,7 +241,6 @@ export function SingleStoneUploadForm() {
       return;
     }
 
-    // Validate required fields
     if (!validateFormData(formData)) {
       toast({
         title: "Validation Error",
@@ -140,45 +250,9 @@ export function SingleStoneUploadForm() {
       return;
     }
 
-    try {
-      // Convert form data to DiamondFormData format
-      const diamondData: DiamondFormData = {
-        stockNumber: formData.stockNumber,
-        shape: formData.shape,
-        carat: parseFloat(formData.carat),
-        color: formData.color,
-        clarity: formData.clarity,
-        cut: formData.cut,
-        price: parseFloat(formData.price),
-        status: 'Available',
-        storeVisible: true,
-        certificateNumber: formData.certificateNumber || undefined,
-        lab: formData.lab
-      };
-
-      const success = await addDiamond(diamondData);
-      
-      if (success) {
-        // Reset form on success
-        setFormData({
-          stockNumber: '',
-          shape: '',
-          carat: '',
-          color: '',
-          clarity: '',
-          cut: 'Excellent',
-          price: '',
-          certificateNumber: '',
-          lab: 'GIA'
-        });
-      }
-    } catch (error) {
-      console.error('Error adding diamond:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add diamond to inventory. Please try again.",
-        variant: "destructive",
-      });
+    const success = await saveToFastAPI(formData);
+    if (success) {
+      resetForm();
     }
   };
 
@@ -197,30 +271,138 @@ export function SingleStoneUploadForm() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            Add Single Diamond
+            Add Single Diamond to FastAPI Database
             <Button
               type="button"
               variant="outline"
               onClick={() => setShowScanner(true)}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-purple-100"
               disabled={isProcessingGIA}
             >
               <Camera className="h-4 w-4" />
-              {isProcessingGIA ? "Processing..." : "Scan GIA Certificate"}
+              {isProcessingGIA ? "Processing Complete GIA..." : "Scan Complete GIA Certificate"}
             </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <BasicInfoSection formData={formData} onInputChange={handleInputChange} />
             <CertificateInfoSection formData={formData} onInputChange={handleInputChange} />
+
+            {/* Enhanced Measurements Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Detailed Measurements & Grades</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Length (mm)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.length}
+                    onChange={(e) => handleInputChange('length', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    placeholder="e.g., 6.52"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Width (mm)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.width}
+                    onChange={(e) => handleInputChange('width', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    placeholder="e.g., 6.48"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Depth (mm)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.depth}
+                    onChange={(e) => handleInputChange('depth', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    placeholder="e.g., 4.02"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Table %</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={formData.tablePercentage}
+                    onChange={(e) => handleInputChange('tablePercentage', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    placeholder="e.g., 57.0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Depth %</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={formData.depthPercentage}
+                    onChange={(e) => handleInputChange('depthPercentage', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    placeholder="e.g., 61.8"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Polish</label>
+                  <select
+                    value={formData.polish}
+                    onChange={(e) => handleInputChange('polish', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="">Select Polish</option>
+                    <option value="Excellent">Excellent</option>
+                    <option value="Very Good">Very Good</option>
+                    <option value="Good">Good</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Symmetry</label>
+                  <select
+                    value={formData.symmetry}
+                    onChange={(e) => handleInputChange('symmetry', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="">Select Symmetry</option>
+                    <option value="Excellent">Excellent</option>
+                    <option value="Very Good">Very Good</option>
+                    <option value="Good">Good</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Fluorescence</label>
+                  <select
+                    value={formData.fluorescence}
+                    onChange={(e) => handleInputChange('fluorescence', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="">Select Fluorescence</option>
+                    <option value="None">None</option>
+                    <option value="Faint">Faint</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Strong">Strong</option>
+                  </select>
+                </div>
+              </div>
+            </div>
 
             <Button 
               type="submit" 
               disabled={isLoading || isProcessingGIA} 
-              className="w-full"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 py-3 text-lg font-semibold"
             >
-              {isLoading ? "Adding Diamond..." : "Add Diamond to Inventory"}
+              {isLoading ? "Saving to FastAPI Database..." : "Save Diamond to FastAPI Database"}
             </Button>
           </form>
         </CardContent>
