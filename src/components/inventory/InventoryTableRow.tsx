@@ -1,106 +1,157 @@
 
+import React, { useState } from 'react';
 import { TableCell, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Diamond } from "./InventoryTable";
-import { Edit, Trash, ImageIcon } from "lucide-react";
-import { StoreVisibilityToggle } from "./StoreVisibilityToggle";
+import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Edit, Trash2, Eye, EyeOff, Loader2 } from "lucide-react";
+import { useDeleteDiamondFixed } from '@/hooks/inventory/useDeleteDiamondFixed';
 
-interface InventoryTableRowProps {
-  diamond: Diamond & { store_visible?: boolean };
-  onEdit?: (diamond: Diamond) => void;
-  onDelete?: (diamondId: string) => void;
-  onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
+interface InventoryItem {
+  id: string;
+  stock_number: string;
+  shape: string;
+  weight: number;
+  color: string;
+  clarity: string;
+  cut?: string;
+  lab?: string;
+  certificate_number?: number;
+  price_per_carat?: number;
+  store_visible?: boolean;
+  status?: string;
 }
 
-export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle }: InventoryTableRowProps) {
+interface InventoryTableRowProps {
+  item: InventoryItem;
+  onEdit?: (item: InventoryItem) => void;
+  onToggleVisibility?: (stockNumber: string, visible: boolean) => void;
+  onRefresh?: () => void;
+}
+
+export function InventoryTableRow({ 
+  item, 
+  onEdit, 
+  onToggleVisibility,
+  onRefresh 
+}: InventoryTableRowProps) {
+  const { deleteDiamond, isDeleting } = useDeleteDiamondFixed();
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+  const handleDelete = async () => {
+    console.log('🗑️ Deleting diamond:', item.stock_number);
+    
+    const result = await deleteDiamond(item.stock_number, () => {
+      // Refresh inventory after successful deletion
+      if (onRefresh) {
+        onRefresh();
+      }
+    });
+
+    if (result.success) {
+      console.log('✅ Diamond deleted successfully');
+      setIsConfirmOpen(false);
+    } else {
+      console.error('❌ Diamond deletion failed:', result.error);
+    }
+  };
+
+  const handleToggleVisibility = () => {
+    if (onToggleVisibility) {
+      onToggleVisibility(item.stock_number, !item.store_visible);
+    }
+  };
+
+  const isCurrentlyDeleting = isDeleting === item.stock_number;
+
   return (
-    <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-800">
-      <TableCell className="w-16">
-        {diamond.imageUrl ? (
-          <img 
-            src={diamond.imageUrl} 
-            alt={`Diamond ${diamond.stockNumber}`}
-            className="w-12 h-12 object-cover rounded border border-slate-200 dark:border-slate-600"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.nextElementSibling?.classList.remove('hidden');
-            }}
-          />
-        ) : (
-          <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 flex items-center justify-center">
-            <ImageIcon className="h-4 w-4 text-slate-400" />
-          </div>
-        )}
-      </TableCell>
-      <TableCell className="font-mono text-xs font-medium text-slate-900 dark:text-slate-100">
-        {diamond.stockNumber}
-      </TableCell>
-      <TableCell className="font-medium text-slate-900 dark:text-slate-100">{diamond.shape}</TableCell>
-      <TableCell className="text-right font-medium text-slate-900 dark:text-slate-100">
-        {diamond.carat.toFixed(2)}
+    <TableRow className="hover:bg-slate-50">
+      <TableCell className="font-medium">{item.stock_number}</TableCell>
+      <TableCell>{item.shape}</TableCell>
+      <TableCell>{item.weight.toFixed(2)}</TableCell>
+      <TableCell>{item.color}</TableCell>
+      <TableCell>{item.clarity}</TableCell>
+      <TableCell>{item.cut || '-'}</TableCell>
+      <TableCell>{item.lab || '-'}</TableCell>
+      <TableCell>{item.certificate_number || '-'}</TableCell>
+      <TableCell>
+        {item.price_per_carat ? `$${item.price_per_carat.toLocaleString()}` : '-'}
       </TableCell>
       <TableCell>
-        <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">
-          {diamond.color}
+        <Badge variant={item.status === 'Available' ? 'default' : 'secondary'}>
+          {item.status || 'Available'}
         </Badge>
       </TableCell>
       <TableCell>
-        <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">
-          {diamond.clarity}
-        </Badge>
-      </TableCell>
-      <TableCell>
-        <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">
-          {diamond.cut}
-        </Badge>
-      </TableCell>
-      <TableCell className="text-right font-bold text-slate-900 dark:text-slate-100">
-        ${diamond.price.toLocaleString()}
-      </TableCell>
-      <TableCell>
-        <Badge 
-          className={`${
-            diamond.status === "Available" 
-              ? "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900 dark:text-emerald-200" 
-              : diamond.status === "Reserved" 
-              ? "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900 dark:text-blue-200" 
-              : "bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-700 dark:text-slate-200"
-          }`}
-          variant="outline"
-        >
-          {diamond.status}
-        </Badge>
-      </TableCell>
-      <TableCell>
-        <div className="flex gap-1">
-          {onStoreToggle && (
-            <StoreVisibilityToggle 
-              stockNumber={diamond.stockNumber}
-              isVisible={diamond.store_visible || false}
-              onToggle={onStoreToggle}
-            />
+        <div className="flex items-center gap-2">
+          {onToggleVisibility && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleToggleVisibility}
+              title={item.store_visible ? "Hide from store" : "Show in store"}
+            >
+              {item.store_visible ? (
+                <Eye className="h-4 w-4 text-green-600" />
+              ) : (
+                <EyeOff className="h-4 w-4 text-gray-400" />
+              )}
+            </Button>
           )}
+          
           {onEdit && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onEdit(diamond)}
-              className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700"
+              onClick={() => onEdit(item)}
+              title="Edit diamond"
             >
               <Edit className="h-4 w-4" />
             </Button>
           )}
-          {onDelete && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onDelete(diamond.id)}
-              className="h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400"
-            >
-              <Trash className="h-4 w-4" />
-            </Button>
-          )}
+          
+          <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={isCurrentlyDeleting}
+                title="Delete diamond"
+              >
+                {isCurrentlyDeleting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4 text-red-600" />
+                )}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Diamond</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete diamond <strong>{item.stock_number}</strong>? 
+                  This action cannot be undone and will permanently remove the diamond from your inventory.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  disabled={isCurrentlyDeleting}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {isCurrentlyDeleting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Deleting...
+                    </>
+                  ) : (
+                    'Delete Diamond'
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </TableCell>
     </TableRow>
