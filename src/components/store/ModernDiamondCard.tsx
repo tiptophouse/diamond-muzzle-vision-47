@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ContactBuyerModal } from "./ContactBuyerModal";
 import { Gem360Viewer } from "./Gem360Viewer";
 import { Diamond } from "@/components/inventory/InventoryTable";
-import { useTelegramAuth } from "@/context/TelegramAuth";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useDeleteDiamond } from "@/hooks/inventory/useDeleteDiamond";
 import { useToast } from "@/hooks/use-toast";
 
@@ -230,7 +230,7 @@ export function ModernDiamondCard({
       {/* Gem360 Viewer */}
       {showGem360 && diamond.gem360Url && (
         <Gem360Viewer
-          url={diamond.gem360Url}
+          gem360Url={diamond.gem360Url}
           isOpen={showGem360}
           onClose={() => setShowGem360(false)}
           diamondInfo={{
