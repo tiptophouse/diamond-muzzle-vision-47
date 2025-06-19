@@ -1,8 +1,8 @@
 
 import { useToast } from '@/hooks/use-toast';
+import { api, apiEndpoints } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { Diamond } from '@/components/inventory/InventoryTable';
-import { LocalStorageService } from '@/services/localStorageService';
 
 interface UseDeleteDiamondProps {
   onSuccess?: () => void;
@@ -30,24 +30,47 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
     }
 
     try {
-      console.log('🗑️ Deleting diamond from local storage:', diamondId);
-      
-      const result = LocalStorageService.deleteDiamond(diamondId);
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to delete diamond');
-      }
+      // Try FastAPI first
+      try {
+        const endpoint = apiEndpoints.deleteDiamond(diamondId);
+        const response = await api.delete(endpoint);
+        
+        if (response.error) {
+          throw new Error(response.error);
+        }
 
-      toast({
-        title: "Success ✅",
-        description: "Diamond deleted successfully",
-      });
-      
-      if (onSuccess) onSuccess();
-      return true;
+        toast({
+          title: "Success",
+          description: "Diamond deleted successfully",
+        });
+        
+        if (onSuccess) onSuccess();
+        return true;
+        
+      } catch (apiError) {
+        console.warn('FastAPI delete failed, using localStorage:', apiError);
+        
+        // Fallback to localStorage
+        const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
+        const filteredData = existingData.filter((item: any) => item.id !== diamondId);
+        
+        if (filteredData.length < existingData.length) {
+          localStorage.setItem('diamond_inventory', JSON.stringify(filteredData));
+          
+          toast({
+            title: "Success",
+            description: "Diamond deleted successfully (from local storage)",
+          });
+          
+          if (onSuccess) onSuccess();
+          return true;
+        } else {
+          throw new Error('Diamond not found in local storage');
+        }
+      }
       
     } catch (error) {
-      console.error('❌ Failed to delete diamond:', error);
+      console.error('Failed to delete diamond:', error);
       
       // Restore diamond to UI on error
       if (restoreDiamondToState && diamondData) {
