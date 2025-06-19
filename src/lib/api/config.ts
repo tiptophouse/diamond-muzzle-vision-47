@@ -1,6 +1,6 @@
 
 // Updated to point to your actual FastAPI backend
-export const API_BASE_URL = "https://mazalbot.com";
+export const API_BASE_URL = "https://api.mazalbot.com";
 
 let currentUserId: number | null = null;
 
@@ -36,7 +36,10 @@ export async function testApiConnection(): Promise<boolean> {
     const response = await fetch(healthUrl, {
       method: 'GET',
       mode: 'cors',
-      headers: { 'Accept': 'application/json' }
+      headers: { 
+        'Accept': 'application/json',
+        'Authorization': 'Bearer ifj9ov1rh20fslfp'
+      }
     });
     
     const isHealthy = response.ok;
