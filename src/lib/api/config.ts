@@ -1,16 +1,16 @@
 
-// Updated to point to your actual FastAPI backend
-export const API_BASE_URL = "https://api.mazalbot.com";
+// Local storage configuration - no external API dependency
+export const API_BASE_URL = ""; // No external API needed
 
 let currentUserId: number | null = null;
 
 export function setCurrentUserId(userId: number) {
   currentUserId = userId;
-  console.log('🔧 API: Current user ID set to:', userId, 'type:', typeof userId);
+  console.log('🔧 Local Storage: Current user ID set to:', userId, 'type:', typeof userId);
 }
 
 export function getCurrentUserId(): number | null {
-  console.log('🔧 API: Getting current user ID:', currentUserId);
+  console.log('🔧 Local Storage: Getting current user ID:', currentUserId);
   return currentUserId;
 }
 
@@ -20,9 +20,8 @@ export function isDevelopment(): boolean {
          window.location.hostname.includes('lovableproject.com');
 }
 
-// Add a function to test the exact endpoint format
-export function getFullApiUrl(endpoint: string): string {
-  const fullUrl = `${API_BASE_URL}${endpoint}`;
-  console.log('🔧 API: Full URL constructed:', fullUrl);
-  return fullUrl;
+// Local storage helper
+export function getLocalStorageKey(key: string): string {
+  const userId = getCurrentUserId();
+  return userId ? `${key}_${userId}` : key;
 }

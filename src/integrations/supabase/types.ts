@@ -679,6 +679,54 @@ export type Database = {
           },
         ]
       }
+      user_logins: {
+        Row: {
+          created_at: string
+          first_name: string | null
+          id: string
+          init_data_hash: string | null
+          ip_address: string | null
+          is_premium: boolean | null
+          language_code: string | null
+          last_name: string | null
+          login_timestamp: string
+          photo_url: string | null
+          telegram_id: number
+          user_agent: string | null
+          username: string | null
+        }
+        Insert: {
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          init_data_hash?: string | null
+          ip_address?: string | null
+          is_premium?: boolean | null
+          language_code?: string | null
+          last_name?: string | null
+          login_timestamp?: string
+          photo_url?: string | null
+          telegram_id: number
+          user_agent?: string | null
+          username?: string | null
+        }
+        Update: {
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          init_data_hash?: string | null
+          ip_address?: string | null
+          is_premium?: boolean | null
+          language_code?: string | null
+          last_name?: string | null
+          login_timestamp?: string
+          photo_url?: string | null
+          telegram_id?: number
+          user_agent?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
       user_management_log: {
         Row: {
           action_type: string
@@ -836,7 +884,18 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      recent_user_logins: {
+        Row: {
+          first_login: string | null
+          first_name: string | null
+          last_login: string | null
+          last_name: string | null
+          login_count: number | null
+          telegram_id: number | null
+          username: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       delete_diamond: {
@@ -857,6 +916,10 @@ export type Database = {
           users_with_phone: number
           recent_signups: number
         }[]
+      }
+      is_admin_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
     }
     Enums: {
