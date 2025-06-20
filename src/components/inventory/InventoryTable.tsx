@@ -4,6 +4,10 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components
 import { InventoryTableRow } from './InventoryTableRow';
 import { InventoryTableLoading } from './InventoryTableLoading';
 import { InventoryTableEmpty } from './InventoryTableEmpty';
+import { Diamond } from '@/types/diamond';
+
+// Export the Diamond interface for backward compatibility
+export type { Diamond };
 
 interface InventoryItem {
   id: string;
