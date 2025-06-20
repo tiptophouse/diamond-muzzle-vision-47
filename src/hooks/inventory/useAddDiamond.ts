@@ -2,8 +2,8 @@
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { LocalStorageService } from '@/services/localStorageService';
 import { getCurrentUserId } from '@/lib/api';
+import { api, apiEndpoints } from '@/lib/api';
 
 export function useAddDiamond(onSuccess?: () => void) {
   const { toast } = useToast();
@@ -40,14 +40,17 @@ export function useAddDiamond(onSuccess?: () => void) {
         store_visible: data.storeVisible,
       };
 
-      console.log('➕ Adding diamond to local storage:', diamondData);
+      console.log('➕ Adding diamond via FastAPI:', diamondData);
       
-      const result = LocalStorageService.addDiamond(diamondData);
+      const endpoint = apiEndpoints.addDiamond();
+      const result = await api.post(endpoint, diamondData);
       
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to add diamond');
+      if (result.error) {
+        throw new Error(result.error);
       }
 
+      console.log('✅ Diamond added successfully via FastAPI');
+      
       toast({
         title: "Success ✅",
         description: "Diamond added successfully to your inventory",
@@ -57,11 +60,11 @@ export function useAddDiamond(onSuccess?: () => void) {
       return true;
       
     } catch (error) {
-      console.error('❌ Failed to add diamond:', error);
+      console.error('❌ Failed to add diamond via FastAPI:', error);
       const errorMessage = error instanceof Error ? error.message : "Failed to add diamond. Please try again.";
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "Add Failed ❌",
         description: errorMessage,
       });
       return false;

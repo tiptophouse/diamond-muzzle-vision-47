@@ -2,7 +2,7 @@
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { LocalStorageService } from '@/services/localStorageService';
+import { api, apiEndpoints } from '@/lib/api';
 
 export function useUpdateDiamond(onSuccess?: () => void) {
   const { toast } = useToast();
@@ -30,15 +30,22 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         price_per_carat: data.carat > 0 ? Math.round(Number(data.price) / Number(data.carat)) : Math.round(Number(data.price)),
         status: data.status,
         store_visible: data.storeVisible,
+        picture: data.picture || '',
+        certificate_number: data.certificateNumber || '',
+        certificate_url: data.certificateUrl || '',
+        lab: data.lab || '',
       };
 
-      console.log('📝 Updating diamond in local storage:', diamondId, updates);
+      console.log('📝 Updating diamond via FastAPI:', diamondId, updates);
       
-      const result = LocalStorageService.updateDiamond(diamondId, updates);
+      const endpoint = apiEndpoints.updateDiamond(diamondId);
+      const result = await api.put(endpoint, updates);
       
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to update diamond');
+      if (result.error) {
+        throw new Error(result.error);
       }
+
+      console.log('✅ Diamond updated successfully via FastAPI');
 
       toast({
         title: "Success ✅",
@@ -49,11 +56,11 @@ export function useUpdateDiamond(onSuccess?: () => void) {
       return true;
       
     } catch (error) {
-      console.error('❌ Failed to update diamond:', error);
+      console.error('❌ Failed to update diamond via FastAPI:', error);
       const errorMessage = error instanceof Error ? error.message : "Failed to update diamond. Please try again.";
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "Update Failed ❌",
         description: errorMessage,
       });
       return false;
