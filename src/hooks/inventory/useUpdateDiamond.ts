@@ -1,21 +1,14 @@
 
-import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { api, apiEndpoints } from '@/lib/api';
 
 export function useUpdateDiamond(onSuccess?: () => void) {
-  const { toast } = useToast();
   const { user } = useTelegramAuth();
 
   const updateDiamond = async (diamondId: string, data: DiamondFormData) => {
     if (!user?.id) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "User not authenticated",
-      });
-      return false;
+      throw new Error('User not authenticated');
     }
 
     try {
@@ -45,25 +38,14 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         throw new Error(result.error);
       }
 
-      console.log('✅ Diamond updated successfully via FastAPI');
-
-      toast({
-        title: "Success ✅",
-        description: "Diamond updated successfully",
-      });
+      console.log('✅ Diamond updated successfully in FastAPI backend');
       
       if (onSuccess) onSuccess();
       return true;
       
     } catch (error) {
-      console.error('❌ Failed to update diamond via FastAPI:', error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to update diamond. Please try again.";
-      toast({
-        variant: "destructive",
-        title: "Update Failed ❌",
-        description: errorMessage,
-      });
-      return false;
+      console.error('❌ Failed to update diamond in FastAPI:', error);
+      throw error;
     }
   };
 

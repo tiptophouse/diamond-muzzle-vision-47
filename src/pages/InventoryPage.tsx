@@ -5,6 +5,7 @@ import { InventoryTable } from "@/components/inventory/InventoryTable";
 import { InventoryPagination } from "@/components/inventory/InventoryPagination";
 import { InventorySearch } from "@/components/inventory/InventorySearch";
 import { InventoryFilters } from "@/components/inventory/InventoryFilters";
+import { DeleteConfirmDialog } from "@/components/inventory/DeleteConfirmDialog";
 import { useInventoryData } from "@/hooks/useInventoryData";
 import { useInventorySearch } from "@/hooks/useInventorySearch";
 import { useInventoryCrud } from "@/hooks/useInventoryCrud";
@@ -46,6 +47,8 @@ export default function InventoryPage() {
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingDiamond, setEditingDiamond] = useState<Diamond | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [diamondToDelete, setDiamondToDelete] = useState<Diamond | null>(null);
 
   const handleEdit = (diamond: Diamond) => {
     console.log('📝 Edit diamond clicked:', diamond.stockNumber);
@@ -54,15 +57,21 @@ export default function InventoryPage() {
 
   const handleDelete = async (diamondId: string) => {
     console.log('🗑️ Delete diamond clicked:', diamondId);
-    if (window.confirm('Are you sure you want to delete this diamond?')) {
-      const diamond = allDiamonds.find(d => d.id === diamondId);
-      console.log('🗑️ Deleting diamond:', diamond?.stockNumber);
-      
-      const success = await deleteDiamond(diamondId, diamond);
+    const diamond = allDiamonds.find(d => d.id === diamondId);
+    if (diamond) {
+      setDiamondToDelete(diamond);
+      setDeleteDialogOpen(true);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (diamondToDelete) {
+      console.log('🗑️ Confirming delete for diamond:', diamondToDelete.stockNumber);
+      const success = await deleteDiamond(diamondToDelete.id, diamondToDelete);
       if (success) {
         console.log('✅ Diamond deleted successfully');
-      } else {
-        console.error('❌ Failed to delete diamond');
+        setDeleteDialogOpen(false);
+        setDiamondToDelete(null);
       }
     }
   };
@@ -169,6 +178,15 @@ export default function InventoryPage() {
             </div>
           </main>
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        <DeleteConfirmDialog
+          open={deleteDialogOpen}
+          onClose={() => setDeleteDialogOpen(false)}
+          onConfirm={confirmDelete}
+          diamond={diamondToDelete}
+          isLoading={crudLoading}
+        />
 
         {/* Edit Diamond Modal */}
         <Dialog open={!!editingDiamond} onOpenChange={() => setEditingDiamond(null)}>
