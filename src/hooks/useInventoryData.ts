@@ -4,6 +4,7 @@ import { Diamond } from '@/components/inventory/InventoryTable';
 import { fetchInventoryData } from '@/services/inventoryDataService';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
+import { useToast } from '@/components/ui/use-toast';
 
 export function useInventoryData() {
   const { user, isLoading: authLoading } = useTelegramAuth();
@@ -12,25 +13,34 @@ export function useInventoryData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { subscribeToInventoryChanges } = useInventoryDataSync();
+  const { toast } = useToast();
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      console.log('📥 INVENTORY HOOK: Fetching inventory data...');
+      console.log('📥 INVENTORY HOOK: Fetching inventory data from FastAPI...');
       const result = await fetchInventoryData();
 
       if (result.error) {
-        console.error('📥 INVENTORY HOOK: Fetch failed:', result.error);
+        console.error('📥 INVENTORY HOOK: FastAPI fetch failed:', result.error);
         setError(result.error);
         setDiamonds([]);
         setAllDiamonds([]);
+        
+        // Show specific error messages to user
+        toast({
+          title: "Connection Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        
         return;
       }
 
       if (result.data && result.data.length > 0) {
-        console.log('📥 INVENTORY HOOK: Processing', result.data.length, 'diamonds');
+        console.log('📥 INVENTORY HOOK: Processing', result.data.length, 'real diamonds from FastAPI');
         
         // Transform data to match Diamond interface
         const transformedDiamonds: Diamond[] = result.data.map(item => ({
@@ -50,13 +60,25 @@ export function useInventoryData() {
           certificateUrl: item.certificate_url || item.certificateUrl || undefined,
         }));
 
-        console.log('📥 INVENTORY HOOK: Transformed diamonds:', transformedDiamonds.length);
+        console.log('📥 INVENTORY HOOK: Successfully transformed', transformedDiamonds.length, 'diamonds');
         setDiamonds(transformedDiamonds);
         setAllDiamonds(transformedDiamonds);
+        
+        // Show success message
+        toast({
+          title: "✅ Real Data Loaded",
+          description: `Successfully loaded ${transformedDiamonds.length} diamonds from your FastAPI database`,
+        });
+        
       } else {
-        console.log('📥 INVENTORY HOOK: No diamonds found');
+        console.log('📥 INVENTORY HOOK: No diamonds found in FastAPI response');
         setDiamonds([]);
         setAllDiamonds([]);
+        
+        toast({
+          title: "No Diamonds Found",
+          description: "Your FastAPI database is connected but contains no diamonds. Upload some inventory to get started.",
+        });
       }
     } catch (err) {
       console.error('📥 INVENTORY HOOK: Unexpected error:', err);
@@ -64,13 +86,19 @@ export function useInventoryData() {
       setError(errorMessage);
       setDiamonds([]);
       setAllDiamonds([]);
+      
+      toast({
+        title: "Unexpected Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   const handleRefresh = useCallback(() => {
-    console.log('🔄 INVENTORY HOOK: Manual refresh triggered');
+    console.log('🔄 INVENTORY HOOK: Manual refresh triggered - fetching real data from FastAPI');
     fetchData();
   }, [fetchData]);
 
@@ -82,7 +110,7 @@ export function useInventoryData() {
     }
     
     if (user) {
-      console.log('👤 INVENTORY HOOK: User available, fetching data for:', user.id);
+      console.log('👤 INVENTORY HOOK: User available, fetching real data from FastAPI for:', user.id);
       fetchData();
     } else {
       console.log('🚫 INVENTORY HOOK: No user, clearing data');
@@ -96,7 +124,7 @@ export function useInventoryData() {
   // Listen for inventory changes
   useEffect(() => {
     const unsubscribe = subscribeToInventoryChanges(() => {
-      console.log('🔄 INVENTORY HOOK: Inventory change detected, refreshing...');
+      console.log('🔄 INVENTORY HOOK: Inventory change detected, refreshing real data...');
       fetchData();
     });
 
