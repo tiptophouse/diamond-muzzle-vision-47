@@ -6,9 +6,11 @@ import { api, apiEndpoints } from '@/lib/api';
 
 interface UseDeleteDiamondProps {
   onSuccess?: () => void;
+  removeDiamondFromState?: (diamondId: string) => void;
+  restoreDiamondToState?: (diamond: Diamond) => void;
 }
 
-export function useDeleteDiamond({ onSuccess }: UseDeleteDiamondProps) {
+export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDiamondToState }: UseDeleteDiamondProps) {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
 
