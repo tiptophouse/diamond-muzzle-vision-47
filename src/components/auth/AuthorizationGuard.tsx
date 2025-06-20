@@ -1,9 +1,10 @@
+
 import { ReactNode, useEffect, useState } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { Shield, UserX, Clock, Crown } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { getAdminTelegramId } from '@/lib/api/secureConfig';
 
 interface AuthorizationGuardProps {
   children: ReactNode;
@@ -25,10 +26,17 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
       console.log('🔍 Authorization check for user:', user.id);
 
       try {
-        // Check if user is admin using the new secure function
-        const { data: adminCheck, error } = await supabase.rpc('is_admin_user');
+        // Get admin ID from secure config
+        const configAdminId = await getAdminTelegramId();
         
-        if (!error && adminCheck === true) {
+        // Check if user is admin - direct comparison with both config and hardcoded admin ID
+        const isUserAdmin = user.id === configAdminId || user.id === 2138564172;
+        
+        console.log('🔍 Authorization - Config admin ID:', configAdminId);
+        console.log('🔍 Authorization - User ID:', user.id);
+        console.log('🔍 Authorization - Is admin:', isUserAdmin);
+        
+        if (isUserAdmin) {
           console.log('✅ Admin user detected - granting IMMEDIATE access');
           setIsAdmin(true);
           setIsAuthorized(true);
@@ -36,6 +44,13 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
         }
       } catch (error) {
         console.warn('⚠️ Could not check admin status:', error);
+        // Fallback admin check
+        if (user.id === 2138564172) {
+          console.log('✅ Fallback admin check - granting access');
+          setIsAdmin(true);
+          setIsAuthorized(true);
+          return;
+        }
       }
 
       // Wait for other data to load for non-admin users

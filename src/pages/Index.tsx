@@ -18,6 +18,7 @@ const Index = () => {
       try {
         const adminId = await getAdminTelegramId();
         setAdminTelegramId(adminId);
+        console.log('🔍 Index - Loaded admin ID:', adminId);
       } catch (error) {
         console.error('Failed to load admin ID:', error);
         setAdminTelegramId(2138564172); // fallback
@@ -84,8 +85,16 @@ const Index = () => {
   }
 
   // If user is admin, redirect directly to admin panel
-  if (isAuthenticated && user?.id === adminTelegramId) {
+  // Check both config admin ID and hardcoded fallback
+  const isUserAdmin = user?.id === adminTelegramId || user?.id === 2138564172;
+  
+  if (isAuthenticated && user && isUserAdmin) {
     console.log('✅ Admin user detected - redirecting to admin panel');
+    console.log('🔍 Admin check details:', {
+      userId: user.id,
+      adminTelegramId,
+      isUserAdmin
+    });
     redirectHandledRef.current = true;
     return <Navigate to="/admin" replace />;
   }
