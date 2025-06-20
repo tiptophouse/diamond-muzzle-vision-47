@@ -18,7 +18,7 @@ export default function InsightsPage() {
   } = useInsightsData();
   
   // Calculate market trends from diamonds data
-  const marketTrends = diamonds.reduce((acc, diamond) => {
+  const shapeCount = diamonds.reduce((acc, diamond) => {
     if (!acc[diamond.shape]) {
       acc[diamond.shape] = 0;
     }
@@ -28,6 +28,15 @@ export default function InsightsPage() {
 
   const totalDiamonds = diamonds.length;
   
+  // Transform Record<string, number> to MarketTrend[] format
+  const marketTrends = Object.entries(shapeCount)
+    .map(([category, count]) => ({
+      category,
+      count,
+      percentage: totalDiamonds > 0 ? Math.round((count / totalDiamonds) * 100) : 0
+    }))
+    .sort((a, b) => b.count - a.count);
+
   if (!isAuthenticated) {
     return (
       <Layout>

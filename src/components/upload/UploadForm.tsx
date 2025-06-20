@@ -36,6 +36,14 @@ export function UploadForm() {
     }
   };
 
+  // Transform ProcessResult to match UploadResult expected format
+  const transformedResult = result ? {
+    success: result.success,
+    message: result.message || (result.success ? 'Upload completed successfully' : 'Upload failed'),
+    processedCount: result.totalStones,
+    errors: result.errors
+  } : null;
+
   if (!isAuthenticated) {
     return (
       <div className="max-w-xl mx-auto">
@@ -62,7 +70,7 @@ export function UploadForm() {
             />
 
             <UploadProgress progress={uploadProgress} uploading={isProcessing} />
-            <UploadResult result={result} />
+            <UploadResult result={transformedResult} />
 
             {selectedFile && (
               <div className="flex justify-end gap-3">
