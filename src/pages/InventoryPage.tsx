@@ -153,7 +153,6 @@ export default function InventoryPage() {
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={setCurrentPage}
-                itemsPerPage={itemsPerPage}
               />
             )}
           </div>
