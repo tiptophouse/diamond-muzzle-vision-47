@@ -85,15 +85,15 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     }
   };
 
-  const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
+  const deleteDiamond = async (stockNumber: string, diamondData?: Diamond) => {
     console.log('🗑️ CRUD: Starting delete diamond operation');
-    console.log('🗑️ CRUD: Diamond ID:', diamondId);
+    console.log('🗑️ CRUD: Stock number:', stockNumber);
     console.log('🗑️ CRUD: Diamond data:', diamondData);
     console.log('🗑️ CRUD: User:', user?.id);
     
     setIsLoading(true);
     try {
-      await deleteDiamondFn(diamondId, diamondData);
+      await deleteDiamondFn(stockNumber, diamondData);
       console.log('✅ CRUD: Diamond deleted successfully');
       toast({
         title: "Success ✅",

@@ -1,3 +1,4 @@
+
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,10 +22,9 @@ export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle }: 
     });
     
     if (onDelete) {
-      // Try using the diamond ID first, but if FastAPI expects stock_number, we'll try that too
-      // The updated delete hook will handle both approaches
-      console.log('🗑️ ROW: Using diamond.id for deletion:', diamond.id);
-      onDelete(diamond.id);
+      // Use stock number for deletion as FastAPI expects it
+      console.log('🗑️ ROW: Using diamond.stockNumber for deletion:', diamond.stockNumber);
+      onDelete(diamond.stockNumber);
     } else {
       console.warn('⚠️ ROW: onDelete callback not provided');
     }

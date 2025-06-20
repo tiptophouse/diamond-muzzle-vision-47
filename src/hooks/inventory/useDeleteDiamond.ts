@@ -12,7 +12,7 @@ interface UseDeleteDiamondProps {
 export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDiamondToState }: UseDeleteDiamondProps) {
   const { user } = useTelegramAuth();
 
-  const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
+  const deleteDiamond = async (stockNumber: string, diamondData?: Diamond) => {
     if (!user?.id) {
       console.error('❌ DELETE: User not authenticated');
       throw new Error('User not authenticated');
@@ -20,41 +20,22 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
 
     try {
       console.log('🗑️ DELETE: Starting diamond deletion process');
-      console.log('🗑️ DELETE: Diamond ID to delete:', diamondId);
+      console.log('🗑️ DELETE: Stock number to delete:', stockNumber);
       console.log('🗑️ DELETE: Diamond data:', diamondData);
       console.log('🗑️ DELETE: User ID:', user.id);
       
-      // Optimistically remove from UI first
-      if (removeDiamondFromState) {
+      // Optimistically remove from UI first (using diamond ID for state management)
+      if (removeDiamondFromState && diamondData) {
         console.log('🗑️ DELETE: Optimistically removing diamond from UI');
-        removeDiamondFromState(diamondId);
+        removeDiamondFromState(diamondData.id);
       }
       
-      // The FastAPI backend expects the diamond ID in the URL path
-      // and may need additional parameters in the request body
-      const endpoint = apiEndpoints.deleteDiamond(diamondId);
+      // Use stock number for the API endpoint
+      const endpoint = apiEndpoints.deleteDiamond(stockNumber);
       console.log('🗑️ DELETE: API endpoint:', endpoint);
       
-      // For FastAPI delete_stone endpoint, we might need to send user_id and stock_number
-      // Let's try with DELETE request that includes necessary data
       console.log('🗑️ DELETE: Making DELETE request to FastAPI...');
-      
-      // Try different approaches based on what the FastAPI backend might expect
-      let result;
-      
-      // Approach 1: Simple DELETE with ID in path (most common)
-      result = await api.delete(endpoint);
-      
-      // If that fails and we have diamond data, try with POST body containing additional info
-      if (result.error && diamondData) {
-        console.log('🗑️ DELETE: Trying alternative approach with body data...');
-        const deleteWithBodyEndpoint = `/api/v1/delete_stone`;
-        result = await api.post(deleteWithBodyEndpoint, {
-          id: diamondId,
-          stock_number: diamondData.stockNumber,
-          user_id: user.id
-        });
-      }
+      const result = await api.delete(endpoint);
       
       console.log('🗑️ DELETE: FastAPI response received:', result);
       

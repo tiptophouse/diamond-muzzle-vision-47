@@ -1,4 +1,3 @@
-
 import { Layout } from "@/components/layout/Layout";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -55,9 +54,9 @@ export default function InventoryPage() {
     setEditingDiamond(diamond);
   };
 
-  const handleDelete = async (diamondId: string) => {
-    console.log('🗑️ Delete diamond clicked:', diamondId);
-    const diamond = allDiamonds.find(d => d.id === diamondId);
+  const handleDelete = async (stockNumber: string) => {
+    console.log('🗑️ Delete diamond clicked with stock number:', stockNumber);
+    const diamond = allDiamonds.find(d => d.stockNumber === stockNumber);
     if (diamond) {
       setDiamondToDelete(diamond);
       setDeleteDialogOpen(true);
@@ -67,7 +66,7 @@ export default function InventoryPage() {
   const confirmDelete = async () => {
     if (diamondToDelete) {
       console.log('🗑️ Confirming delete for diamond:', diamondToDelete.stockNumber);
-      const success = await deleteDiamond(diamondToDelete.id, diamondToDelete);
+      const success = await deleteDiamond(diamondToDelete.stockNumber, diamondToDelete);
       if (success) {
         console.log('✅ Diamond deleted successfully');
         setDeleteDialogOpen(false);
