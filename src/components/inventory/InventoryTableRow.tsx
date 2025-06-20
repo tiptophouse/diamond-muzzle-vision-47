@@ -21,7 +21,9 @@ export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle }: 
     });
     
     if (onDelete) {
-      // Pass the diamond ID (which should match what the API expects)
+      // Try using the diamond ID first, but if FastAPI expects stock_number, we'll try that too
+      // The updated delete hook will handle both approaches
+      console.log('🗑️ ROW: Using diamond.id for deletion:', diamond.id);
       onDelete(diamond.id);
     } else {
       console.warn('⚠️ ROW: onDelete callback not provided');

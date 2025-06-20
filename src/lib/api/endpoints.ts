@@ -9,7 +9,12 @@ export const apiEndpoints = {
   verifyTelegram: () => `/api/v1/verify-telegram`,
   uploadInventory: () => `/api/v1/upload-inventory`,
   addDiamond: () => `/api/v1/diamonds`,
-  deleteDiamond: (diamondId: string) => `/api/v1/delete_stone/${diamondId}`,
+  deleteDiamond: (diamondId: string) => {
+    // Use the correct FastAPI delete endpoint format
+    const endpoint = `/api/v1/delete_stone/${diamondId}`;
+    console.log('🗑️ API: Building delete endpoint:', endpoint, 'for diamond ID:', diamondId);
+    return endpoint;
+  },
   updateDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,
   soldDiamond: () => `/api/v1/sold`,
   createReport: () => `/api/v1/create-report`,

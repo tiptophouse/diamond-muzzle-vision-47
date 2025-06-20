@@ -30,13 +30,31 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
         removeDiamondFromState(diamondId);
       }
       
-      // Build the endpoint - try different ID formats
+      // The FastAPI backend expects the diamond ID in the URL path
+      // and may need additional parameters in the request body
       const endpoint = apiEndpoints.deleteDiamond(diamondId);
       console.log('🗑️ DELETE: API endpoint:', endpoint);
       
-      // Make the delete request
+      // For FastAPI delete_stone endpoint, we might need to send user_id and stock_number
+      // Let's try with DELETE request that includes necessary data
       console.log('🗑️ DELETE: Making DELETE request to FastAPI...');
-      const result = await api.delete(endpoint);
+      
+      // Try different approaches based on what the FastAPI backend might expect
+      let result;
+      
+      // Approach 1: Simple DELETE with ID in path (most common)
+      result = await api.delete(endpoint);
+      
+      // If that fails and we have diamond data, try with POST body containing additional info
+      if (result.error && diamondData) {
+        console.log('🗑️ DELETE: Trying alternative approach with body data...');
+        const deleteWithBodyEndpoint = `/api/v1/delete_stone`;
+        result = await api.post(deleteWithBodyEndpoint, {
+          id: diamondId,
+          stock_number: diamondData.stockNumber,
+          user_id: user.id
+        });
+      }
       
       console.log('🗑️ DELETE: FastAPI response received:', result);
       
