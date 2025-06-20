@@ -55,7 +55,6 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         variant: "destructive",
         title: "Error",
         description: errorMessage,
-        variant: "destructive",
       });
       return false;
     }

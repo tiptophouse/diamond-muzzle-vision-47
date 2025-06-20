@@ -3,6 +3,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { LocalStorageService } from '@/services/localStorageService';
+import { getCurrentUserId } from '@/lib/api';
 
 export function useAddDiamond(onSuccess?: () => void) {
   const { toast } = useToast();
@@ -19,7 +20,10 @@ export function useAddDiamond(onSuccess?: () => void) {
     }
 
     try {
+      const userId = getCurrentUserId() || user.id;
+      
       const diamondData = {
+        user_id: userId,
         stock_number: data.stockNumber,
         shape: data.shape,
         weight: Number(data.carat),
@@ -29,10 +33,10 @@ export function useAddDiamond(onSuccess?: () => void) {
         price: Number(data.price),
         price_per_carat: data.carat > 0 ? Math.round(Number(data.price) / Number(data.carat)) : Math.round(Number(data.price)),
         status: data.status,
-        picture: data.picture,
-        certificate_number: data.certificateNumber,
-        certificate_url: data.certificateUrl,
-        lab: data.lab,
+        picture: data.picture || '',
+        certificate_number: data.certificateNumber || '',
+        certificate_url: data.certificateUrl || '',
+        lab: data.lab || '',
         store_visible: data.storeVisible,
       };
 

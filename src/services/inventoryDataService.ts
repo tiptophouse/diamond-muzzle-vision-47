@@ -1,7 +1,6 @@
 
-import { LocalStorageService } from './localStorageService';
+import { api, apiEndpoints, getCurrentUserId } from "@/lib/api";
 import { fetchMockInventoryData } from "./mockInventoryService";
-import { getCurrentUserId } from "@/lib/api";
 
 export interface FetchInventoryResult {
   data?: any[];
@@ -12,60 +11,61 @@ export interface FetchInventoryResult {
 export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   const userId = getCurrentUserId() || 2138564172;
   
-  console.log('🔍 INVENTORY SERVICE: Fetching data from local storage for user:', userId);
+  console.log('🔍 INVENTORY SERVICE: Fetching data from FastAPI for user:', userId);
   
   const debugInfo = { 
-    step: 'Starting inventory fetch from local storage', 
+    step: 'Starting inventory fetch from FastAPI', 
     userId, 
     timestamp: new Date().toISOString(),
-    dataSource: 'localStorage'
+    dataSource: 'fastapi'
   };
   
   try {
-    // Get data from local storage
-    const result = LocalStorageService.getAllDiamonds();
+    // First try to fetch from FastAPI backend
+    console.log('🚀 INVENTORY SERVICE: Attempting FastAPI connection...');
+    const endpoint = apiEndpoints.getAllStones(userId);
+    console.log('🚀 INVENTORY SERVICE: Using endpoint:', endpoint);
     
-    if (result.success && result.data && result.data.length > 0) {
-      console.log('✅ INVENTORY SERVICE: Local storage returned', result.data.length, 'diamonds');
+    const result = await api.get(endpoint);
+    
+    if (result.error) {
+      console.error('❌ INVENTORY SERVICE: FastAPI request failed:', result.error);
+      throw new Error(result.error);
+    }
+    
+    if (result.data && Array.isArray(result.data) && result.data.length > 0) {
+      console.log('✅ INVENTORY SERVICE: FastAPI returned', result.data.length, 'diamonds');
       
       return {
         data: result.data,
         debugInfo: {
           ...debugInfo,
-          step: 'SUCCESS: Local storage data fetched',
+          step: 'SUCCESS: FastAPI data fetched',
           totalDiamonds: result.data.length,
-          dataSource: 'localStorage'
+          dataSource: 'fastapi',
+          endpoint
         }
       };
     }
     
-    // If no local data, provide mock data as example
-    console.log('🔄 INVENTORY SERVICE: No local data found, providing mock example data');
-    const mockResult = await fetchMockInventoryData();
-    
-    return {
-      ...mockResult,
-      debugInfo: {
-        ...debugInfo,
-        ...mockResult.debugInfo,
-        step: 'FALLBACK: Using mock example data (no local data found)',
-        dataSource: 'mock_example'
-      }
-    };
+    console.log('⚠️ INVENTORY SERVICE: FastAPI returned empty data');
+    throw new Error('No diamonds found in FastAPI response');
     
   } catch (error) {
-    console.error("🔍 INVENTORY SERVICE: Error occurred:", error);
+    console.error("❌ INVENTORY SERVICE: FastAPI connection failed:", error);
     
-    // Ultimate fallback to mock data
+    // Fallback to mock data only if FastAPI is completely unreachable
+    console.log('🔄 INVENTORY SERVICE: Using mock data as fallback');
     const mockResult = await fetchMockInventoryData();
+    
     return {
       ...mockResult,
       debugInfo: {
         ...debugInfo,
         ...mockResult.debugInfo,
-        step: 'ERROR FALLBACK: Mock data after local storage error',
+        step: 'FALLBACK: Using mock data after FastAPI failure',
         error: error instanceof Error ? error.message : String(error),
-        dataSource: 'mock_error_fallback'
+        dataSource: 'mock_fallback'
       }
     };
   }
