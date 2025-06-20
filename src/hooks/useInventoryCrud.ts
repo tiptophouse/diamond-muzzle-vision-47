@@ -86,7 +86,11 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
   };
 
   const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
-    console.log('🗑️ CRUD: Starting delete diamond operation for:', diamondId);
+    console.log('🗑️ CRUD: Starting delete diamond operation');
+    console.log('🗑️ CRUD: Diamond ID:', diamondId);
+    console.log('🗑️ CRUD: Diamond data:', diamondData);
+    console.log('🗑️ CRUD: User:', user?.id);
+    
     setIsLoading(true);
     try {
       await deleteDiamondFn(diamondId, diamondData);
@@ -97,7 +101,15 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
       });
       return true;
     } catch (error) {
-      console.error('❌ CRUD: Delete diamond failed:', error);
+      console.error('❌ CRUD: Delete diamond failed with error:', error);
+      
+      // Enhanced error logging
+      if (error instanceof Error) {
+        console.error('❌ CRUD: Error name:', error.name);
+        console.error('❌ CRUD: Error message:', error.message);
+        console.error('❌ CRUD: Error stack:', error.stack);
+      }
+      
       const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond. Please try again.";
       toast({
         variant: "destructive",

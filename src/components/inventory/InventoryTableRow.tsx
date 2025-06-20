@@ -1,4 +1,3 @@
-
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,21 @@ interface InventoryTableRowProps {
 }
 
 export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle }: InventoryTableRowProps) {
+  const handleDelete = () => {
+    console.log('🗑️ ROW: Delete button clicked for diamond:', {
+      id: diamond.id,
+      stockNumber: diamond.stockNumber,
+      fullDiamond: diamond
+    });
+    
+    if (onDelete) {
+      // Pass the diamond ID (which should match what the API expects)
+      onDelete(diamond.id);
+    } else {
+      console.warn('⚠️ ROW: onDelete callback not provided');
+    }
+  };
+
   return (
     <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-800">
       <TableCell className="w-16">
@@ -95,7 +109,7 @@ export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle }: 
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onDelete(diamond.id)}
+              onClick={handleDelete}
               className="h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400"
             >
               <Trash className="h-4 w-4" />
