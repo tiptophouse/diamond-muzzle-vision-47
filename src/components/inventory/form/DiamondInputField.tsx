@@ -14,7 +14,6 @@ interface DiamondInputFieldProps {
   register: UseFormRegister<DiamondFormData>;
   validation?: object;
   errors: FieldErrors<DiamondFormData>;
-  readOnly?: boolean;
 }
 
 export function DiamondInputField({ 
@@ -25,8 +24,7 @@ export function DiamondInputField({
   placeholder, 
   register, 
   validation = {}, 
-  errors,
-  readOnly = false
+  errors 
 }: DiamondInputFieldProps) {
   return (
     <div>
@@ -37,8 +35,6 @@ export function DiamondInputField({
         step={step}
         {...register(id, validation)}
         placeholder={placeholder}
-        readOnly={readOnly}
-        className={readOnly ? "bg-gray-50 text-gray-600" : ""}
       />
       {errors[id] && (
         <p className="text-sm text-red-600 mt-1">{errors[id]?.message}</p>

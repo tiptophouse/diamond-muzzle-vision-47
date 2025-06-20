@@ -5,17 +5,17 @@ import { Upload, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useCsvProcessor } from "@/hooks/useCsvProcessor";
+import { useUploadHandler } from "@/hooks/useUploadHandler";
 import { FileUploadArea } from "./FileUploadArea";
 import { UploadProgress } from "./UploadProgress";
 import { UploadResult } from "./UploadResult";
 import { UploadInstructions } from "./UploadInstructions";
-import { useUploadHandler } from "@/hooks/useUploadHandler";
 
 export function UploadForm() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { user, isAuthenticated } = useTelegramAuth();
   const { validateFile } = useCsvProcessor();
-  const { processFile, isProcessing, uploadProgress, result, resetState } = useUploadHandler();
+  const { uploading, progress, result, handleUpload, resetState } = useUploadHandler();
 
   const handleFileChange = (file: File | null) => {
     if (!validateFile(file)) {
@@ -30,19 +30,11 @@ export function UploadForm() {
     resetState();
   };
 
-  const handleUploadClick = async () => {
+  const handleUploadClick = () => {
     if (selectedFile) {
-      await processFile(selectedFile);
+      handleUpload(selectedFile);
     }
   };
-
-  // Transform ProcessResult to match UploadResult expected format
-  const transformedResult = result ? {
-    success: result.success,
-    message: result.message || (result.success ? 'Upload completed successfully' : 'Upload failed'),
-    processedCount: result.totalStones,
-    errors: result.errors
-  } : null;
 
   if (!isAuthenticated) {
     return (
@@ -69,25 +61,25 @@ export function UploadForm() {
               onReset={resetForm}
             />
 
-            <UploadProgress progress={uploadProgress} uploading={isProcessing} />
-            <UploadResult result={transformedResult} />
+            <UploadProgress progress={progress} uploading={uploading} />
+            <UploadResult result={result} />
 
             {selectedFile && (
               <div className="flex justify-end gap-3">
                 <Button 
                   variant="outline" 
                   onClick={resetForm}
-                  disabled={isProcessing}
+                  disabled={uploading}
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Reset
                 </Button>
                 <Button 
                   onClick={handleUploadClick}
-                  disabled={isProcessing || !!result}
+                  disabled={uploading || !!result}
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  {isProcessing ? "Processing..." : "Process CSV"}
+                  {uploading ? "Processing..." : "Process CSV"}
                 </Button>
               </div>
             )}

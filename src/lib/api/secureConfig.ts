@@ -19,8 +19,15 @@ export async function getSecureConfig(): Promise<SecureConfig> {
   try {
     console.log('🔐 Fetching secure configuration...');
     
-    // Use the provided backend access token directly
-    const backendAccessToken = 'ifj9ov1rh20fslfp';
+    // Get backend access token from Supabase edge function
+    const { data: tokenData, error: tokenError } = await supabase.functions.invoke('get-api-token', {
+      method: 'POST'
+    });
+
+    if (tokenError) {
+      console.error('❌ Failed to get backend access token:', tokenError);
+      throw new Error('Failed to retrieve secure backend token');
+    }
 
     // Get admin configuration from app_settings
     const { data: adminSettings, error: adminError } = await supabase
@@ -30,7 +37,7 @@ export async function getSecureConfig(): Promise<SecureConfig> {
       .maybeSingle();
 
     if (adminError) {
-      console.warn('⚠️ Failed to get admin settings');
+      console.warn('⚠️ Failed to get admin settings:', adminError);
     }
 
     // Properly handle the JSON setting_value field
@@ -53,7 +60,7 @@ export async function getSecureConfig(): Promise<SecureConfig> {
     }
 
     const config: SecureConfig = {
-      backendAccessToken,
+      backendAccessToken: tokenData?.token || null,
       adminTelegramId
     };
 
@@ -64,10 +71,10 @@ export async function getSecureConfig(): Promise<SecureConfig> {
     console.log('✅ Secure configuration loaded successfully');
     return config;
   } catch (error) {
-    console.error('❌ Error loading secure configuration');
+    console.error('❌ Error loading secure configuration:', error);
     // Return minimal fallback config for emergency access
     return {
-      backendAccessToken: 'ifj9ov1rh20fslfp',
+      backendAccessToken: null,
       adminTelegramId: 2138564172
     };
   }

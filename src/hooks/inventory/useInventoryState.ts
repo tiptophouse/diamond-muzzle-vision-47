@@ -18,6 +18,18 @@ export function useInventoryState() {
     setDiamonds([]);
   };
   
+  const removeDiamondFromState = (diamondId: string) => {
+    console.log('Optimistically removing diamond from state:', diamondId);
+    setAllDiamonds(prev => prev.filter(diamond => diamond.id !== diamondId));
+    setDiamonds(prev => prev.filter(diamond => diamond.id !== diamondId));
+  };
+
+  const restoreDiamondToState = (diamond: Diamond) => {
+    console.log('Restoring diamond to state:', diamond.id);
+    setAllDiamonds(prev => [...prev, diamond]);
+    setDiamonds(prev => [...prev, diamond]);
+  };
+  
   return {
     loading,
     setLoading,
@@ -28,5 +40,7 @@ export function useInventoryState() {
     setDebugInfo,
     updateDiamonds,
     clearDiamonds,
+    removeDiamondFromState,
+    restoreDiamondToState,
   };
 }

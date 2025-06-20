@@ -5,7 +5,7 @@ import { InventoryFilters } from "@/components/inventory/InventoryFilters";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { InventorySearch } from "@/components/inventory/InventorySearch";
 import { InventoryPagination } from "@/components/inventory/InventoryPagination";
-import { Diamond } from "@/types/diamond";
+import { Diamond } from "@/components/inventory/InventoryTable";
 
 interface ReportsContentProps {
   allDiamonds: Diamond[];
@@ -77,20 +77,7 @@ export function ReportsContent({ allDiamonds, loading, onRefresh }: ReportsConte
       </div>
       
       <InventoryTable
-        inventory={diamonds.map(diamond => ({
-          id: diamond.id,
-          stock_number: diamond.stockNumber,
-          shape: diamond.shape,
-          weight: diamond.carat,
-          color: diamond.color,
-          clarity: diamond.clarity,
-          cut: diamond.cut,
-          lab: diamond.lab,
-          certificate_number: diamond.certificateNumber ? Number(diamond.certificateNumber) : undefined,
-          price_per_carat: diamond.price / diamond.carat,
-          store_visible: diamond.store_visible,
-          status: diamond.status
-        }))}
+        data={diamonds}
         loading={loading}
       />
       

@@ -15,80 +15,63 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
   const { isUserBlocked, isLoading: blockedLoading } = useBlockedUsers();
   const { settings, isLoading: settingsLoading } = useAppSettings();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [adminTelegramId, setAdminTelegramId] = useState<number | null>(null);
 
   useEffect(() => {
-    const checkAuthorization = async () => {
-      if (authLoading || !user) {
-        return;
-      }
-
-      console.log('🔍 Authorization check for user:', user.id);
-
-      try {
-        // Get admin ID from secure config
-        const configAdminId = await getAdminTelegramId();
-        
-        // Check if user is admin - direct comparison with both config and hardcoded admin ID
-        const isUserAdmin = user.id === configAdminId || user.id === 2138564172;
-        
-        console.log('🔍 Authorization - Config admin ID:', configAdminId);
-        console.log('🔍 Authorization - User ID:', user.id);
-        console.log('🔍 Authorization - Is admin:', isUserAdmin);
-        
-        if (isUserAdmin) {
-          console.log('✅ Admin user detected - granting IMMEDIATE access');
-          setIsAdmin(true);
-          setIsAuthorized(true);
-          return;
-        }
-      } catch (error) {
-        console.warn('⚠️ Could not check admin status:', error);
-        // Fallback admin check
-        if (user.id === 2138564172) {
-          console.log('✅ Fallback admin check - granting access');
-          setIsAdmin(true);
-          setIsAuthorized(true);
-          return;
-        }
-      }
-
-      // Wait for other data to load for non-admin users
-      if (blockedLoading || settingsLoading) {
-        return;
-      }
-
-      // Enhanced security: verify environment in production for non-admin users
-      if (process.env.NODE_ENV === 'production' && !isTelegramEnvironment) {
-        console.log('❌ Production requires Telegram environment for non-admin users');
-        setIsAuthorized(false);
-        return;
-      }
-
-      // Check if user is blocked (only applies to non-admin users)
-      if (isUserBlocked(user.id)) {
-        console.log('❌ User is blocked');
-        setIsAuthorized(false);
-        return;
-      }
-
-      // If manual authorization is enabled, only admin can access
-      if (settings.manual_authorization_enabled) {
-        console.log('⚠️ Manual authorization enabled - denying access to non-admin');
-        setIsAuthorized(false);
-        return;
-      }
-
-      // Otherwise, user is authorized
-      console.log('✅ User authorized');
-      setIsAuthorized(true);
+    const loadAdminId = async () => {
+      const adminId = await getAdminTelegramId();
+      setAdminTelegramId(adminId);
     };
+    loadAdminId();
+  }, []);
 
-    checkAuthorization();
-  }, [user, isUserBlocked, settings, authLoading, blockedLoading, settingsLoading, isTelegramEnvironment]);
+  useEffect(() => {
+    if (authLoading || !user || adminTelegramId === null) {
+      return;
+    }
+
+    console.log('🔍 Authorization check for user:', user.id, 'Admin ID:', adminTelegramId);
+
+    // Admin always gets access - HIGHEST PRIORITY
+    if (user.id === adminTelegramId) {
+      console.log('✅ Admin user detected - granting IMMEDIATE access');
+      setIsAuthorized(true);
+      return;
+    }
+
+    // Wait for other data to load for non-admin users
+    if (blockedLoading || settingsLoading) {
+      return;
+    }
+
+    // Enhanced security: verify environment in production for non-admin users
+    if (process.env.NODE_ENV === 'production' && !isTelegramEnvironment) {
+      console.log('❌ Production requires Telegram environment for non-admin users');
+      setIsAuthorized(false);
+      return;
+    }
+
+    // Check if user is blocked (only applies to non-admin users)
+    if (isUserBlocked(user.id)) {
+      console.log('❌ User is blocked');
+      setIsAuthorized(false);
+      return;
+    }
+
+    // If manual authorization is enabled, only admin can access
+    if (settings.manual_authorization_enabled) {
+      console.log('⚠️ Manual authorization enabled - denying access to non-admin');
+      setIsAuthorized(false);
+      return;
+    }
+
+    // Otherwise, user is authorized
+    console.log('✅ User authorized');
+    setIsAuthorized(true);
+  }, [user, isUserBlocked, settings, authLoading, blockedLoading, settingsLoading, isTelegramEnvironment, adminTelegramId]);
 
   // Loading state
-  if (authLoading || isAuthorized === null) {
+  if (authLoading || isAuthorized === null || adminTelegramId === null) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
@@ -109,15 +92,16 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
   // Not authorized
   if (!isAuthorized) {
     const isBlocked = user && isUserBlocked(user.id);
+    const isAdminUser = user && user.id === adminTelegramId;
     const invalidEnvironment = process.env.NODE_ENV === 'production' && !isTelegramEnvironment;
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
           <div className={`rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 ${
-            isAdmin ? 'bg-yellow-50' : isBlocked ? 'bg-red-50' : 'bg-orange-50'
+            isAdminUser ? 'bg-yellow-50' : isBlocked ? 'bg-red-50' : 'bg-orange-50'
           }`}>
-            {isAdmin ? (
+            {isAdminUser ? (
               <Crown className="h-10 w-10 text-yellow-600" />
             ) : isBlocked ? (
               <UserX className="h-10 w-10 text-red-600" />
@@ -147,7 +131,7 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
           <div className="text-sm text-gray-500 mb-8 space-y-1">
             <p>User ID: {user?.id || 'Unknown'}</p>
             <p>Status: {invalidEnvironment ? 'Invalid Environment' : isBlocked ? 'Blocked' : 'Pending Authorization'}</p>
-            {isAdmin && <p className="text-yellow-600 font-medium">⚠️ Admin user detected but authorization failed</p>}
+            {isAdminUser && <p className="text-yellow-600 font-medium">⚠️ Admin user detected but authorization failed</p>}
           </div>
           
           <div className="space-y-3">

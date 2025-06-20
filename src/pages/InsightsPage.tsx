@@ -6,37 +6,16 @@ import { ShapeDistributionChart } from "@/components/insights/ShapeDistributionC
 import { ShapeAnalysisCard } from "@/components/insights/ShapeAnalysisCard";
 import { QuickStatsGrid } from "@/components/insights/QuickStatsGrid";
 import { useInsightsData } from "@/hooks/useInsightsData";
-import { useTelegramAuth } from "@/context/TelegramAuthContext";
 
 export default function InsightsPage() {
-  const { isAuthenticated } = useTelegramAuth();
   const {
-    diamonds,
     loading,
-    error,
-    refetch
+    marketTrends,
+    totalDiamonds,
+    fetchRealInsights,
+    isAuthenticated
   } = useInsightsData();
   
-  // Calculate market trends from diamonds data
-  const shapeCount = diamonds.reduce((acc, diamond) => {
-    if (!acc[diamond.shape]) {
-      acc[diamond.shape] = 0;
-    }
-    acc[diamond.shape]++;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const totalDiamonds = diamonds.length;
-  
-  // Transform Record<string, number> to MarketTrend[] format
-  const marketTrends = Object.entries(shapeCount)
-    .map(([category, count]) => ({
-      category,
-      count,
-      percentage: totalDiamonds > 0 ? Math.round((count / totalDiamonds) * 100) : 0
-    }))
-    .sort((a, b) => b.count - a.count);
-
   if (!isAuthenticated) {
     return (
       <Layout>
@@ -72,28 +51,13 @@ export default function InsightsPage() {
     );
   }
 
-  if (error) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center h-64">
-          <Card>
-            <CardHeader>
-              <CardTitle>Error Loading Insights</CardTitle>
-              <CardDescription>{error}</CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-      </Layout>
-    );
-  }
-
   return (
     <Layout>
       <div className="space-y-6">
         <InsightsHeader
           totalDiamonds={totalDiamonds}
           loading={loading}
-          onRefresh={refetch}
+          onRefresh={fetchRealInsights}
         />
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

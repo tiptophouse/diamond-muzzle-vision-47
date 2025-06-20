@@ -1,82 +1,90 @@
+import {
+  Table,
+  TableBody,
+} from "@/components/ui/table";
+import { InventoryTableHeader } from "./InventoryTableHeader";
+import { InventoryTableRow } from "./InventoryTableRow";
+import { InventoryTableLoading } from "./InventoryTableLoading";
+import { InventoryTableEmpty } from "./InventoryTableEmpty";
+import { InventoryMobileCard } from "./InventoryMobileCard";
+import { useIsMobile } from "@/hooks/use-mobile";
 
-import React from 'react';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { InventoryTableRow } from './InventoryTableRow';
-import { InventoryTableLoading } from './InventoryTableLoading';
-import { InventoryTableEmpty } from './InventoryTableEmpty';
-import { Diamond } from '@/types/diamond';
-
-// Export the Diamond interface for backward compatibility
-export type { Diamond };
-
-interface InventoryItem {
+export interface Diamond {
   id: string;
-  stock_number: string;
+  stockNumber: string;
   shape: string;
-  weight: number;
+  carat: number;
   color: string;
   clarity: string;
-  cut?: string;
-  lab?: string;
-  certificate_number?: number;
-  price_per_carat?: number;
+  cut: string;
+  price: number;
+  status: string;
+  imageUrl?: string;
   store_visible?: boolean;
-  status?: string;
+  certificateNumber?: string;
+  lab?: string;
+  gem360Url?: string;
+  certificateUrl?: string;
 }
 
 interface InventoryTableProps {
-  inventory: InventoryItem[];
+  data: Diamond[];
   loading?: boolean;
-  onEdit?: (item: InventoryItem) => void;
-  onToggleVisibility?: (stockNumber: string, visible: boolean) => void;
-  onRefresh?: () => void;
+  onEdit?: (diamond: Diamond) => void;
+  onDelete?: (diamondId: string) => void;
+  onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
 }
 
-export function InventoryTable({ 
-  inventory, 
-  loading = false, 
-  onEdit, 
-  onToggleVisibility,
-  onRefresh 
-}: InventoryTableProps) {
+export function InventoryTable({ data, loading = false, onEdit, onDelete, onStoreToggle }: InventoryTableProps) {
+  const isMobile = useIsMobile();
+
   if (loading) {
     return <InventoryTableLoading />;
   }
 
-  if (!inventory || inventory.length === 0) {
-    return <InventoryTableEmpty />;
-  }
-
-  return (
-    <div className="rounded-md border bg-white overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Stock #</TableHead>
-            <TableHead>Shape</TableHead>
-            <TableHead>Carat</TableHead>
-            <TableHead>Color</TableHead>
-            <TableHead>Clarity</TableHead>
-            <TableHead>Cut</TableHead>
-            <TableHead>Lab</TableHead>
-            <TableHead>Cert #</TableHead>
-            <TableHead>Price/Ct</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {inventory.map((item) => (
-            <InventoryTableRow
-              key={item.id}
-              item={item}
+  if (isMobile) {
+    return (
+      <div className="w-full space-y-3 bg-background">
+        {data.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No diamonds found. Upload your inventory to get started.
+          </div>
+        ) : (
+          data.map((diamond) => (
+            <InventoryMobileCard 
+              key={diamond.id} 
+              diamond={diamond} 
               onEdit={onEdit}
-              onToggleVisibility={onToggleVisibility}
-              onRefresh={onRefresh}
+              onDelete={onDelete}
             />
-          ))}
-        </TableBody>
-      </Table>
+          ))
+        )}
+      </div>
+    );
+  }
+  
+  return (
+    <div className="w-full rounded-md border overflow-hidden bg-background">
+      <div className="w-full overflow-x-auto">
+        <Table className="w-full min-w-full">
+          <InventoryTableHeader />
+          <TableBody>
+            {data.length === 0 ? (
+              <InventoryTableEmpty />
+            ) : (
+              data.map((diamond) => (
+                <InventoryTableRow 
+                  key={diamond.id} 
+                  diamond={diamond} 
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onStoreToggle={onStoreToggle}
+                />
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

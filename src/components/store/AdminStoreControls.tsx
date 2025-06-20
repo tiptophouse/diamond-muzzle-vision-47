@@ -24,7 +24,6 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [adminTelegramId, setAdminTelegramId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     price: diamond.price,
@@ -112,8 +111,8 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
       }
 
       toast({
-        title: "Success",
-        description: "Diamond updated successfully",
+        title: "Updated",
+        description: "Diamond updated successfully via API",
       });
       
       setIsEditOpen(false);
@@ -132,41 +131,31 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    if (!confirm(`Are you sure you want to delete diamond ${diamond.stockNumber}? This action cannot be undone.`)) {
-      return;
-    }
+    if (confirm('Are you sure you want to delete this diamond?')) {
+      try {
+        console.log('🗑️ Deleting diamond via API endpoint:', diamond.id);
+        
+        const endpoint = apiEndpoints.deleteDiamond(diamond.id);
+        const result = await api.delete(endpoint);
 
-    setIsDeleting(true);
-    try {
-      console.log('🗑️ Deleting diamond via API endpoint:', diamond.id);
-      
-      const endpoint = apiEndpoints.deleteDiamond(diamond.id);
-      const result = await api.delete(endpoint);
+        if (result.error) {
+          throw new Error(result.error);
+        }
 
-      if (result.error) {
-        throw new Error(result.error);
+        toast({
+          title: "Deleted",
+          description: "Diamond removed from store via API",
+        });
+        
+        onDelete();
+      } catch (error) {
+        console.error('Error deleting diamond via API:', error);
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to delete diamond",
+          variant: "destructive",
+        });
       }
-
-      console.log('✅ Diamond deleted successfully from FastAPI');
-      
-      toast({
-        title: "Success",
-        description: `Diamond ${diamond.stockNumber} deleted successfully`,
-      });
-      
-      // Trigger the onDelete callback to refresh data
-      onDelete();
-      
-    } catch (error) {
-      console.error('❌ Error deleting diamond via API:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete diamond",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -178,7 +167,6 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
           size="sm"
           onClick={handleEditClick}
           className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-sm"
-          disabled={isUpdating || isDeleting}
         >
           <Edit className="h-4 w-4" />
         </Button>
@@ -187,7 +175,6 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
           size="sm"
           onClick={handleDelete}
           className="h-8 w-8 p-0 bg-white/90 hover:bg-white text-red-600 shadow-sm"
-          disabled={isUpdating || isDeleting}
         >
           <Trash className="h-4 w-4" />
         </Button>

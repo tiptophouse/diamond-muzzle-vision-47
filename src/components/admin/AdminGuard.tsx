@@ -13,57 +13,30 @@ interface AdminGuardProps {
 export function AdminGuard({ children }: AdminGuardProps) {
   const { user, isLoading, isTelegramEnvironment, isAuthenticated } = useTelegramAuth();
   const navigate = useNavigate();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [isLoadingAdmin, setIsLoadingAdmin] = useState(true);
   const [adminTelegramId, setAdminTelegramId] = useState<number | null>(null);
+  const [isLoadingAdmin, setIsLoadingAdmin] = useState(true);
 
   useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (!user?.id) {
-        setIsAdmin(false);
-        setIsLoadingAdmin(false);
-        return;
-      }
-
+    const loadAdminConfig = async () => {
       try {
-        console.log('🔍 AdminGuard - Checking admin status for user:', user.id);
-        
-        // Get the admin ID from secure config
-        const configAdminId = await getAdminTelegramId();
-        setAdminTelegramId(configAdminId);
-        
-        console.log('🔍 AdminGuard - Config admin ID:', configAdminId);
-        console.log('🔍 AdminGuard - User ID:', user.id);
-        console.log('🔍 AdminGuard - User ID type:', typeof user.id);
-        console.log('🔍 AdminGuard - Config admin ID type:', typeof configAdminId);
-        
-        // Direct comparison - user ID 2138564172 should be admin
-        const isUserAdmin = user.id === configAdminId || user.id === 2138564172;
-        
-        console.log('🔍 AdminGuard - Is user admin (direct check):', isUserAdmin);
-        
-        setIsAdmin(isUserAdmin);
+        const adminId = await getAdminTelegramId();
+        setAdminTelegramId(adminId);
       } catch (error) {
-        console.error('❌ Error checking admin status:', error);
-        // Fallback: if user ID is 2138564172, grant admin access
-        const fallbackAdmin = user.id === 2138564172;
-        console.log('🔄 AdminGuard - Fallback admin check:', fallbackAdmin);
-        setIsAdmin(fallbackAdmin);
+        console.error('❌ Failed to load admin configuration:', error);
+        setAdminTelegramId(2138564172); // fallback
       } finally {
         setIsLoadingAdmin(false);
       }
     };
 
-    checkAdminStatus();
-  }, [user?.id]);
+    loadAdminConfig();
+  }, []);
 
-  console.log('🔍 AdminGuard - Current state:', {
-    userId: user?.id,
-    isAdmin,
-    isLoading: isLoading || isLoadingAdmin,
-    isAuthenticated,
-    adminTelegramId
-  });
+  console.log('🔍 AdminGuard - Current user:', user);
+  console.log('🔍 AdminGuard - User ID:', user?.id);
+  console.log('🔍 AdminGuard - Admin ID:', adminTelegramId);
+  console.log('🔍 AdminGuard - Is Loading:', isLoading || isLoadingAdmin);
+  console.log('🔍 AdminGuard - Is Authenticated:', isAuthenticated);
 
   if (isLoading || isLoadingAdmin) {
     console.log('⏳ AdminGuard - Still loading...');
@@ -105,6 +78,11 @@ export function AdminGuard({ children }: AdminGuardProps) {
     );
   }
 
+  // Enhanced admin verification using secure configuration
+  const isAdmin = adminTelegramId && user.id === adminTelegramId;
+  
+  console.log('🔍 AdminGuard - Is Admin?', isAdmin);
+  
   if (!isAdmin) {
     console.log('❌ AdminGuard - Access denied for user:', user.id);
     return (
@@ -119,9 +97,8 @@ export function AdminGuard({ children }: AdminGuardProps) {
           </p>
           <div className="text-sm text-gray-500 mb-8 bg-gray-50 p-4 rounded">
             <p><strong>Your ID:</strong> {user.id}</p>
-            <p><strong>Expected Admin ID:</strong> {adminTelegramId || 2138564172}</p>
+            <p><strong>Required Admin ID:</strong> {adminTelegramId}</p>
             <p><strong>Environment:</strong> {isTelegramEnvironment ? 'Telegram' : 'Browser'}</p>
-            <p><strong>Admin Status:</strong> {isAdmin ? 'Yes' : 'No'}</p>
           </div>
           
           <button

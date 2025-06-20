@@ -28,6 +28,8 @@ export function getVerificationResult(): TelegramVerificationResponse | null {
 export async function verifyTelegramUser(initData: string): Promise<TelegramVerificationResponse | null> {
   try {
     console.log('🔐 API: Enhanced Telegram user verification starting');
+    console.log('🔐 API: Sending to:', `${API_BASE_URL}${apiEndpoints.verifyTelegram()}`);
+    console.log('🔐 API: InitData length:', initData.length);
     
     // Pre-validation checks
     const urlParams = new URLSearchParams(initData);
@@ -46,7 +48,7 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     const age = now - authDateTime;
     
     if (age > 60000) { // 60 seconds
-      console.warn('🔐 API: InitData too old for verification');
+      console.warn('🔐 API: InitData too old for verification:', age / 1000, 'seconds');
       verificationResult = null;
       return null;
     }
@@ -83,11 +85,13 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     console.log('🔐 API: Verification response status:', response.status);
 
     if (!response.ok) {
-      console.error('🔐 API: Verification failed with status:', response.status);
+      const errorText = await response.text();
+      console.error('🔐 API: Verification failed with status:', response.status, 'body:', errorText);
       
-      // Log security event without exposing sensitive data
+      // Log security event
       console.warn('🚫 Security Event: Verification failed', {
         status: response.status,
+        initDataAge: age / 1000,
         timestamp: new Date().toISOString()
       });
       
@@ -96,11 +100,12 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     }
 
     const result: TelegramVerificationResponse = await response.json();
-    console.log('✅ API: Enhanced Telegram verification successful');
+    console.log('✅ API: Enhanced Telegram verification successful:', result);
     
-    // Log successful authentication without exposing tokens
+    // Log successful authentication
     console.log('📊 Security Event: Verification successful', {
       userId: result.user_id,
+      securityInfo: result.security_info,
       timestamp: new Date().toISOString()
     });
     
@@ -111,10 +116,11 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     
     return result;
   } catch (error) {
-    console.error('❌ API: Enhanced Telegram verification failed');
+    console.error('❌ API: Enhanced Telegram verification failed:', error);
     
-    // Log security event for monitoring without exposing sensitive data
+    // Log security event for monitoring
     console.warn('🚫 Security Event: Verification error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
       timestamp: new Date().toISOString()
     });
     
@@ -149,7 +155,7 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
   return headers;
 }
 
-// Security monitoring (without exposing sensitive data)
+// Security monitoring
 export function getSecurityMetrics() {
   return {
     lastVerification: verificationResult ? new Date().toISOString() : null,

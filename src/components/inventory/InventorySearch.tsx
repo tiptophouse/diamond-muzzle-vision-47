@@ -1,6 +1,6 @@
 
 import { InventoryAutocomplete } from "./InventoryAutocomplete";
-import { Diamond } from "@/types/diamond";
+import { Diamond } from "./InventoryTable";
 
 interface InventorySearchProps {
   searchQuery: string;
