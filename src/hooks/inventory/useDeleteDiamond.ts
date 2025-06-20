@@ -1,8 +1,8 @@
 
+import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { api, apiEndpoints } from '@/lib/api';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { Diamond } from '@/components/inventory/InventoryTable';
+import { Diamond } from '@/types/diamond';
 
 interface UseDeleteDiamondProps {
   onSuccess?: () => void;
@@ -10,19 +10,13 @@ interface UseDeleteDiamondProps {
   restoreDiamondToState?: (diamond: Diamond) => void;
 }
 
-export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDiamondToState }: UseDeleteDiamondProps) {
+export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDiamondToState }: UseDeleteDiamondProps = {}) {
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { user } = useTelegramAuth();
 
-  const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
-    if (!user?.id) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "User not authenticated",
-      });
-      return false;
-    }
+  const deleteDiamond = async (diamondId: string, diamondData?: Diamond): Promise<boolean> => {
+    setIsLoading(true);
+    console.log('🗑️ Starting delete operation for diamond:', diamondId);
 
     // Optimistically remove from UI
     if (removeDiamondFromState) {
@@ -30,62 +24,60 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
     }
 
     try {
-      // Try FastAPI first
-      try {
-        const endpoint = apiEndpoints.deleteDiamond(diamondId);
-        const response = await api.delete(endpoint);
+      const response = await api.delete(apiEndpoints.deleteDiamond(diamondId));
+      
+      if (response.error) {
+        console.error('❌ Delete API Error:', response.error);
         
-        if (response.error) {
-          throw new Error(response.error);
+        // Restore diamond to state on error
+        if (restoreDiamondToState && diamondData) {
+          restoreDiamondToState(diamondData);
         }
-
+        
         toast({
-          title: "Success",
-          description: "Diamond deleted successfully",
+          variant: "destructive",
+          title: "Delete Failed",
+          description: response.error,
         });
         
-        if (onSuccess) onSuccess();
-        return true;
-        
-      } catch (apiError) {
-        console.warn('FastAPI delete failed, using localStorage:', apiError);
-        
-        // Fallback to localStorage
-        const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
-        const filteredData = existingData.filter((item: any) => item.id !== diamondId);
-        
-        if (filteredData.length < existingData.length) {
-          localStorage.setItem('diamond_inventory', JSON.stringify(filteredData));
-          
-          toast({
-            title: "Success",
-            description: "Diamond deleted successfully (from local storage)",
-          });
-          
-          if (onSuccess) onSuccess();
-          return true;
-        } else {
-          throw new Error('Diamond not found in local storage');
-        }
+        return false;
+      }
+
+      console.log('✅ Diamond deleted successfully');
+      
+      toast({
+        title: "Success",
+        description: "Diamond deleted successfully",
+      });
+      
+      if (onSuccess) {
+        onSuccess();
       }
       
+      return true;
     } catch (error) {
-      console.error('Failed to delete diamond:', error);
+      console.error('❌ Failed to delete diamond:', error);
       
-      // Restore diamond to UI on error
+      // Restore diamond to state on error
       if (restoreDiamondToState && diamondData) {
         restoreDiamondToState(diamondData);
       }
       
-      const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond. Please try again.";
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete diamond';
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "Delete Failed",
         description: errorMessage,
       });
+      
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  return { deleteDiamond };
+  return {
+    deleteDiamond,
+    isLoading,
+  };
 }
