@@ -50,6 +50,7 @@ export function InventoryTableRow({
   
   const { deleteDiamond, isLoading: isDeleteLoading } = useDeleteDiamond({
     onSuccess: () => {
+      console.log('✅ Delete successful, triggering refresh...');
       if (onRefresh) {
         onRefresh();
       }
@@ -58,21 +59,27 @@ export function InventoryTableRow({
 
   const handleDelete = async () => {
     setIsDeleting(true);
+    console.log('🗑️ Deleting diamond with ID:', item.id);
+    
     try {
       const success = await deleteDiamond(item.id);
+      
       if (success) {
+        console.log('✅ Diamond deletion completed successfully');
         toast({
           title: "Success",
           description: `Diamond ${item.stock_number} deleted successfully`,
         });
       } else {
+        console.log('❌ Diamond deletion failed');
         toast({
           variant: "destructive",
-          title: "Error",
+          title: "Delete Failed",
           description: `Failed to delete diamond ${item.stock_number}`,
         });
       }
     } catch (error) {
+      console.error('❌ Delete operation error:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -166,11 +173,11 @@ export function InventoryTableRow({
                 <AlertDialogTitle>Delete Diamond</AlertDialogTitle>
                 <AlertDialogDescription>
                   Are you sure you want to delete diamond <strong>{item.stock_number}</strong>? 
-                  This action cannot be undone.
+                  This action cannot be undone and will remove the diamond from your FastAPI database.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={handleDelete}
                   className="bg-red-600 hover:bg-red-700"
