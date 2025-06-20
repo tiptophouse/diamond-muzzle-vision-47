@@ -5,17 +5,17 @@ import { Upload, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useCsvProcessor } from "@/hooks/useCsvProcessor";
-import { useUploadHandler } from "@/hooks/useUploadHandler";
 import { FileUploadArea } from "./FileUploadArea";
 import { UploadProgress } from "./UploadProgress";
 import { UploadResult } from "./UploadResult";
 import { UploadInstructions } from "./UploadInstructions";
+import { useUploadHandler } from "@/hooks/useUploadHandler";
 
 export function UploadForm() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { user, isAuthenticated } = useTelegramAuth();
   const { validateFile } = useCsvProcessor();
-  const { uploading, progress, result, handleUpload, resetState } = useUploadHandler();
+  const { processFile, isProcessing, uploadProgress, result, resetState } = useUploadHandler();
 
   const handleFileChange = (file: File | null) => {
     if (!validateFile(file)) {
@@ -30,9 +30,9 @@ export function UploadForm() {
     resetState();
   };
 
-  const handleUploadClick = () => {
+  const handleUploadClick = async () => {
     if (selectedFile) {
-      handleUpload(selectedFile);
+      await processFile(selectedFile);
     }
   };
 
@@ -61,7 +61,7 @@ export function UploadForm() {
               onReset={resetForm}
             />
 
-            <UploadProgress progress={progress} uploading={uploading} />
+            <UploadProgress progress={uploadProgress} uploading={isProcessing} />
             <UploadResult result={result} />
 
             {selectedFile && (
@@ -69,17 +69,17 @@ export function UploadForm() {
                 <Button 
                   variant="outline" 
                   onClick={resetForm}
-                  disabled={uploading}
+                  disabled={isProcessing}
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Reset
                 </Button>
                 <Button 
                   onClick={handleUploadClick}
-                  disabled={uploading || !!result}
+                  disabled={isProcessing || !!result}
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  {uploading ? "Processing..." : "Process CSV"}
+                  {isProcessing ? "Processing..." : "Process CSV"}
                 </Button>
               </div>
             )}

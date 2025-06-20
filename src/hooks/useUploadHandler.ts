@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { api, apiEndpoints } from "@/lib/api";
+import { API_BASE_URL, apiEndpoints } from "@/lib/api";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 
 interface ProcessResult {
@@ -9,6 +9,7 @@ interface ProcessResult {
   totalStones: number;
   errors: string[];
   processedData?: any[];
+  message?: string;
 }
 
 export function useUploadHandler() {
@@ -39,8 +40,7 @@ export function useUploadHandler() {
     try {
       setUploadProgress(30);
 
-      // Create the upload request with proper error handling
-      const response = await fetch(`${api.API_BASE_URL || 'https://api.mazalbot.com'}${apiEndpoints.uploadInventory()}`, {
+      const response = await fetch(`${API_BASE_URL}${apiEndpoints.uploadInventory()}`, {
         method: 'POST',
         body: formData,
       });
@@ -64,7 +64,8 @@ export function useUploadHandler() {
         success: true,
         totalStones: data.total_processed || 0,
         errors: data.errors || [],
-        processedData: data.processed_data || []
+        processedData: data.processed_data || [],
+        message: `Successfully processed ${data.total_processed || 0} diamonds`
       };
 
       setResult(processResult);
@@ -83,7 +84,8 @@ export function useUploadHandler() {
       const errorResult: ProcessResult = {
         success: false,
         totalStones: 0,
-        errors: [errorMessage]
+        errors: [errorMessage],
+        message: errorMessage
       };
 
       setResult(errorResult);
