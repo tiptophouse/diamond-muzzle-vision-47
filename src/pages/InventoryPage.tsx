@@ -6,7 +6,7 @@ import { InventorySearch } from "@/components/inventory/InventorySearch";
 import { InventoryFilters } from "@/components/inventory/InventoryFilters";
 import { DeleteConfirmDialog } from "@/components/inventory/DeleteConfirmDialog";
 import { Toaster } from "@/components/ui/toaster";
-import { useInventoryData } from "@/hooks/useInventoryData";
+import { useSecureInventoryData } from "@/hooks/useSecureInventoryData";
 import { useInventorySearch } from "@/hooks/useInventorySearch";
 import { useInventoryCrud } from "@/hooks/useInventoryCrud";
 import { DiamondForm } from "@/components/inventory/DiamondForm";
@@ -20,7 +20,9 @@ export default function InventoryPage() {
     diamonds,
     allDiamonds,
     handleRefresh,
-  } = useInventoryData();
+    userId,
+    error
+  } = useSecureInventoryData();
 
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -40,7 +42,7 @@ export default function InventoryPage() {
     isLoading: crudLoading 
   } = useInventoryCrud({
     onSuccess: () => {
-      console.log('🔄 CRUD operation completed, refreshing inventory...');
+      console.log('🔄 CRUD operation completed for user:', userId, 'refreshing inventory...');
       handleRefresh();
     },
   });
@@ -122,11 +124,27 @@ export default function InventoryPage() {
     }
   };
 
+  // Show error state if user data access fails
+  if (error && !loading) {
+    return (
+      <Layout>
+        <div className="text-center py-8">
+          <div className="text-red-600 mb-4">
+            <p className="text-lg font-semibold">Access Error</p>
+            <p className="text-sm">{error}</p>
+          </div>
+          <p className="text-muted-foreground">Please ensure you are properly logged in.</p>
+        </div>
+      </Layout>
+    );
+  }
+
   if (loading && allDiamonds.length === 0) {
     return (
       <Layout>
         <div className="text-center py-8">
-          <p className="text-muted-foreground">Loading inventory...</p>
+          <p className="text-muted-foreground">Loading your inventory securely...</p>
+          {userId && <p className="text-xs text-gray-500 mt-2">User ID: {userId}</p>}
         </div>
       </Layout>
     );
@@ -140,10 +158,19 @@ export default function InventoryPage() {
           onRefresh={handleRefresh}
           loading={loading}
           onAddDiamond={() => {
-            console.log('➕ Add diamond button clicked');
+            console.log('➕ Add diamond button clicked for user:', userId);
             setShowAddForm(true);
           }}
         />
+        
+        {/* User info display for verification */}
+        {userId && process.env.NODE_ENV === 'development' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+            <p className="text-blue-800">
+              🔒 Secure Mode: Showing inventory for User ID <strong>{userId}</strong>
+            </p>
+          </div>
+        )}
         
         <div className="flex flex-col lg:flex-row gap-6">
           <aside className="lg:w-80">

@@ -1,21 +1,33 @@
-
 export const apiEndpoints = {
   getAllStones: (userId: number) => {
-    // Try the correct endpoint path for your backend
+    // Ensure we're using the correct user-specific endpoint for your backend
     const endpoint = `/api/v1/get_all_stones?user_id=${userId}`;
-    console.log('🔧 API: Building getAllStones endpoint:', endpoint, 'for user:', userId, 'type:', typeof userId);
+    console.log('🔧 API: Building secure getAllStones endpoint:', endpoint, 'for user:', userId, 'type:', typeof userId);
     return endpoint;
   },
   verifyTelegram: () => `/api/v1/verify-telegram`,
   uploadInventory: () => `/api/v1/upload-inventory`,
-  addDiamond: () => `/api/v1/diamonds`,
-  deleteDiamond: (diamondId: string) => {
-    // Use the correct FastAPI delete endpoint format
-    const endpoint = `/api/v1/delete_stone/${diamondId}`;
-    console.log('🗑️ API: Building delete endpoint:', endpoint, 'for diamond ID:', diamondId);
+  addDiamond: (userId: number) => {
+    // Add user context to diamond creation
+    const endpoint = `/api/v1/diamonds?user_id=${userId}`;
+    console.log('💎 API: Building secure addDiamond endpoint:', endpoint);
     return endpoint;
   },
-  updateDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,
+  deleteDiamond: (diamondId: string, userId?: number) => {
+    // Use the correct FastAPI delete endpoint format with user validation
+    const endpoint = userId 
+      ? `/api/v1/delete_stone/${diamondId}?user_id=${userId}`
+      : `/api/v1/delete_stone/${diamondId}`;
+    console.log('🗑️ API: Building secure delete endpoint:', endpoint, 'for diamond ID:', diamondId, 'user:', userId);
+    return endpoint;
+  },
+  updateDiamond: (diamondId: string, userId?: number) => {
+    const endpoint = userId 
+      ? `/api/v1/diamonds/${diamondId}?user_id=${userId}`
+      : `/api/v1/diamonds/${diamondId}`;
+    console.log('📝 API: Building secure update endpoint:', endpoint);
+    return endpoint;
+  },
   soldDiamond: () => `/api/v1/sold`,
   createReport: () => `/api/v1/create-report`,
   getReport: (reportId: string) => `/api/v1/get-report?diamond_id=${reportId}`,
@@ -23,6 +35,10 @@ export const apiEndpoints = {
   getInventoryByShape: (userId: number) => `/api/v1/users/${userId}/inventory/by-shape`,
   getRecentSales: (userId: number) => `/api/v1/users/${userId}/sales/recent`,
   getInventory: (userId: number, page: number = 1, limit: number = 10) => `/api/v1/users/${userId}/inventory?page=${page}&limit=${limit}`,
+  
+  // Admin endpoints for user data management
+  clearUserData: (userId: number) => `/api/v1/admin/users/${userId}/data`,
+  getUserDataSummary: (userId: number) => `/api/v1/admin/users/${userId}/data-summary`,
   
   // Payment management endpoints
   removeUserPayments: (userId: number) => `/api/v1/users/${userId}/payments/remove`,
