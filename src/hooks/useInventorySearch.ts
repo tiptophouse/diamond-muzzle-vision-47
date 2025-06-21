@@ -8,10 +8,9 @@ interface FilterOptions {
   clarity?: string;
   caratMin?: string;
   caratMax?: string;
-  [key: string]: string | undefined;
 }
 
-export function useInventorySearch(allDiamonds: Diamond[], currentPage: number = 1, filters: FilterOptions = {}) {
+export function useInventorySearch(allDiamonds: Diamond[], currentPage: number, filters: FilterOptions = {}) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredDiamonds, setFilteredDiamonds] = useState<Diamond[]>([]);
   const [totalPages, setTotalPages] = useState(1);

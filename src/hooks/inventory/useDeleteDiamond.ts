@@ -1,8 +1,10 @@
 
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { Diamond } from '@/components/inventory/InventoryTable';
+import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
+import { api, apiEndpoints } from '@/lib/api';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { isValidUUID } from '@/utils/diamondUtils';
+import { Diamond } from '@/components/inventory/InventoryTable';
 
 interface UseDeleteDiamondProps {
   onSuccess?: () => void;
@@ -10,114 +12,82 @@ interface UseDeleteDiamondProps {
   restoreDiamondToState?: (diamond: Diamond) => void;
 }
 
-export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDiamondToState }: UseDeleteDiamondProps) {
+export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDiamondToState }: UseDeleteDiamondProps = {}) {
+  const { toast } = useToast();
   const { user } = useTelegramAuth();
 
-  const deleteDiamond = async (stockNumber: string, diamondData?: Diamond) => {
+  const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
     if (!user?.id) {
-      console.error('❌ DELETE HOOK: User not authenticated');
       toast({
-        title: "❌ Authentication Required",
-        description: "Please log in to delete diamonds",
         variant: "destructive",
+        title: "Error",
+        description: "User not authenticated",
       });
-      throw new Error('User not authenticated');
+      return false;
     }
 
-    console.log('🗑️ DELETE HOOK: Starting enhanced deletion process');
-    console.log('🗑️ DELETE HOOK: Stock number:', stockNumber);
-    console.log('🗑️ DELETE HOOK: User ID:', user.id);
-    
-    // Optimistic UI update
-    if (removeDiamondFromState && diamondData) {
-      console.log('🗑️ DELETE HOOK: Optimistically removing from UI');
-      removeDiamondFromState(diamondData.id);
+    if (!diamondId || !isValidUUID(diamondId)) {
+      console.error('Invalid diamond ID for deletion:', diamondId);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Invalid diamond ID format",
+      });
+      return false;
+    }
+
+    // Optimistic UI update - remove diamond immediately
+    if (removeDiamondFromState) {
+      removeDiamondFromState(diamondId);
     }
 
     try {
-      console.log('🗑️ DELETE HOOK: Calling enhanced delete API...');
+      console.log('Deleting diamond ID:', diamondId, 'for user:', user.id);
       
-      const { data: response, error } = await supabase.functions.invoke('diamond-management', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-action': 'delete',
-          'x-stock_number': stockNumber,
-          'x-user_id': user.id.toString()
-        }
+      // Call the backend /sold endpoint to delete the diamond
+      const response = await api.post('/sold', {
+        diamond_id: diamondId,
+        user_id: user.id,
+        action: 'delete'
       });
       
-      console.log('🗑️ DELETE HOOK: API response received:', response);
-      
-      if (error) {
-        console.error('❌ DELETE HOOK: API error:', error);
-        
-        // Restore UI state on error
-        if (restoreDiamondToState && diamondData) {
-          console.log('🔄 DELETE HOOK: Restoring diamond to UI');
-          restoreDiamondToState(diamondData);
-        }
-        
-        toast({
-          title: "❌ Delete Failed",
-          description: `Failed to delete diamond: ${error.message}`,
-          variant: "destructive",
-        });
-        
-        throw new Error(error.message);
+      if (response.error) {
+        throw new Error(response.error);
       }
-
-      if (!response?.success) {
-        console.error('❌ DELETE HOOK: Operation failed:', response?.error);
-        
-        // Restore UI state on error
-        if (restoreDiamondToState && diamondData) {
-          console.log('🔄 DELETE HOOK: Restoring diamond to UI');
-          restoreDiamondToState(diamondData);
-        }
-        
-        toast({
-          title: "❌ Delete Failed",
-          description: response?.error || 'Unknown error occurred',
-          variant: "destructive",
-        });
-        
-        throw new Error(response?.error || 'Delete operation failed');
-      }
-
-      console.log('✅ DELETE HOOK: Diamond deleted successfully');
       
-      // Show success message
+      // Also delete from Supabase as backup
+      const { error: supabaseError } = await supabase
+        .from('inventory')
+        .delete()
+        .eq('id', diamondId)
+        .eq('user_id', user.id);
+
+      if (supabaseError) {
+        console.warn('Supabase delete warning:', supabaseError);
+      }
+      
       toast({
-        title: "Success ✅",
-        description: response.message || `Diamond ${stockNumber} deleted successfully`,
+        title: "Success",
+        description: "Diamond deleted successfully",
       });
       
-      if (onSuccess) {
-        console.log('✅ DELETE HOOK: Calling success callback');
-        onSuccess();
-      }
-      
+      if (onSuccess) onSuccess();
       return true;
-      
     } catch (error) {
-      console.error('❌ DELETE HOOK: Unexpected error:', error);
+      console.error('Failed to delete diamond:', error);
       
-      // Restore UI state on error
+      // Restore diamond to state if deletion failed
       if (restoreDiamondToState && diamondData) {
-        console.log('🔄 DELETE HOOK: Restoring diamond to UI due to exception');
         restoreDiamondToState(diamondData);
       }
       
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond. Please try again.";
       toast({
-        title: "❌ Delete Failed",
-        description: `Failed to delete diamond: ${errorMessage}`,
         variant: "destructive",
+        title: "Error",
+        description: errorMessage,
       });
-      
-      throw new Error(`Delete operation failed: ${errorMessage}`);
+      return false;
     }
   };
 

@@ -1,190 +1,158 @@
 
-import React from 'react';
 import { Layout } from '@/components/layout/Layout';
-import { SmartNotificationCard } from '@/components/notifications/SmartNotificationCard';
-import { GroupNotificationCard } from '@/components/notifications/GroupNotificationCard';
-import { useNotifications } from '@/hooks/useNotifications';
-import { Bell, BellRing, RefreshCw, Users, Diamond } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useNotifications } from '@/hooks/useNotifications';
+import { Bell, Search, Diamond, Mail, Check } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
-const NotificationsPage = () => {
-  const { notifications, isLoading, markAsRead, contactCustomer, refetch } = useNotifications();
-  
+export default function NotificationsPage() {
+  const { notifications, isLoading, markAsRead } = useNotifications();
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'search_alert':
+        return <Search className="h-4 w-4" />;
+      case 'diamond_match':
+        return <Diamond className="h-4 w-4" />;
+      case 'message':
+        return <Mail className="h-4 w-4" />;
+      default:
+        return <Bell className="h-4 w-4" />;
+    }
+  };
+
+  const getNotificationColor = (type: string) => {
+    switch (type) {
+      case 'search_alert':
+        return 'bg-blue-500';
+      case 'diamond_match':
+        return 'bg-diamond-500';
+      case 'message':
+        return 'bg-green-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
   const unreadCount = notifications.filter(n => !n.read).length;
-  const groupNotifications = notifications.filter(n => n.type === 'group_diamond_request');
-  const diamondMatches = notifications.filter(n => n.type === 'diamond_match');
-  const otherNotifications = notifications.filter(n => 
-    n.type !== 'group_diamond_request' && n.type !== 'diamond_match'
-  );
 
   if (isLoading) {
     return (
       <Layout>
-        <div className="max-w-4xl mx-auto p-6">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
+          </div>
+          <div className="grid gap-4">
+            {[...Array(5)].map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardContent className="p-6">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </Layout>
     );
   }
 
-  const handleContactCustomer = (customerInfo: any) => {
-    // Open Telegram chat with the user
-    if (customerInfo.telegram_username) {
-      window.open(`https://t.me/${customerInfo.telegram_username}`, '_blank');
-    } else if (customerInfo.telegram_id) {
-      window.open(`tg://user?id=${customerInfo.telegram_id}`, '_blank');
-    }
-  };
-
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
-        {/* Header */}
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Bell className="h-8 w-8 text-blue-600" />
-              {unreadCount > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center text-xs p-0"
-                >
-                  {unreadCount}
-                </Badge>
-              )}
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">התראות חכמות</h1>
-              <p className="text-gray-600">
-                קבל התראות כשמישהו מחפש יהלומים בקבוצות טלגרם או דומים למלאי שלך
-              </p>
-            </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
+            <p className="text-muted-foreground">
+              Stay updated with customer searches and diamond matches
+            </p>
           </div>
-          
-          <Button onClick={refetch} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            רענן
-          </Button>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-center gap-2">
-              <BellRing className="h-5 w-5 text-blue-600" />
-              <span className="font-medium text-blue-900">התראות חדשות</span>
-            </div>
-            <div className="text-2xl font-bold text-blue-600 mt-1">{unreadCount}</div>
-          </div>
-          
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-green-600" />
-              <span className="font-medium text-green-900">בקשות מקבוצות</span>
-            </div>
-            <div className="text-2xl font-bold text-green-600 mt-1">{groupNotifications.length}</div>
-          </div>
-          
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-            <div className="flex items-center gap-2">
-              <Diamond className="h-5 w-5 text-purple-600" />
-              <span className="font-medium text-purple-900">התאמות יהלומים</span>
-            </div>
-            <div className="text-2xl font-bold text-purple-600 mt-1">{diamondMatches.length}</div>
-          </div>
-
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-            <div className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-orange-600" />
-              <span className="font-medium text-orange-900">סה"כ התראות</span>
-            </div>
-            <div className="text-2xl font-bold text-orange-600 mt-1">{notifications.length}</div>
-          </div>
-        </div>
-
-        {/* Notifications List */}
-        <div className="space-y-6">
-          {/* Group Notifications */}
-          {groupNotifications.length > 0 && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Users className="h-5 w-5 text-green-600" />
-                בקשות מקבוצות B2B
-              </h2>
-              <div className="space-y-4">
-                {groupNotifications.map((notification) => (
-                  <GroupNotificationCard
-                    key={notification.id}
-                    notification={notification}
-                    onMarkAsRead={markAsRead}
-                    onContactCustomer={handleContactCustomer}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Regular Notifications */}
-          {(diamondMatches.length > 0 || otherNotifications.length > 0) && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Bell className="h-5 w-5 text-blue-600" />
-                התראות רגילות
-              </h2>
-              <div className="space-y-4">
-                {[...diamondMatches, ...otherNotifications].map((notification) => (
-                  <SmartNotificationCard
-                    key={notification.id}
-                    notification={notification}
-                    onMarkAsRead={markAsRead}
-                    onContactCustomer={contactCustomer}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Empty State */}
-          {notifications.length === 0 && (
-            <div className="text-center py-12">
-              <Bell className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-medium text-gray-900 mb-2">אין התראות עדיין</h3>
-              <p className="text-gray-600 max-w-md mx-auto">
-                כשמישהו יחפש יהלומים בקבוצות טלגרם או דומים למלאי שלך, תקבל התראה כאן. 
-                המערכת פועלת באופן אוטומטי ובזמן אמת.
-              </p>
-            </div>
+          {unreadCount > 0 && (
+            <Badge variant="secondary" className="bg-diamond-100 text-diamond-700">
+              {unreadCount} unread
+            </Badge>
           )}
         </div>
 
-        {/* Info Box */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="font-semibold text-blue-900 mb-2">איך זה עובד?</h3>
-          <ul className="space-y-2 text-blue-800">
-            <li className="flex items-start gap-2">
-              <span className="font-bold">•</span>
-              <span>הבוט מנטר את קבוצות הטלגרם B2B שלך ומזהה בקשות יהלומים</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="font-bold">•</span>
-              <span>המערכת מנתחת כל הודעה ומחפשת התאמות במלאי שלך</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="font-bold">•</span>
-              <span>אתה מקבל התראה מיידית עם פרטי הבקשה וההתאמות שנמצאו</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="font-bold">•</span>
-              <span>ניתן ליצור קשר ישיר עם המבקש דרך טלגרם</span>
-            </li>
-          </ul>
-        </div>
+        {notifications.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Bell className="h-12 w-12 text-muted-foreground mb-4" />
+              <CardTitle className="text-xl mb-2">No notifications yet</CardTitle>
+              <CardDescription className="text-center max-w-md">
+                You'll receive notifications here when customers search for diamonds similar to your inventory, 
+                when you get new leads, or when there are system updates.
+              </CardDescription>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4">
+            {notifications.map((notification) => (
+              <Card 
+                key={notification.id} 
+                className={`transition-all duration-200 hover:shadow-md ${
+                  !notification.read ? 'ring-2 ring-diamond-200 bg-diamond-50/50' : ''
+                }`}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className={`p-2 rounded-full ${getNotificationColor(notification.type)} text-white`}>
+                      {getNotificationIcon(notification.type)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-semibold text-foreground">{notification.title}</h3>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">
+                            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                          </span>
+                          {!notification.read && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => markAsRead(notification.id)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-muted-foreground">{notification.message}</p>
+                      
+                      {notification.data && (
+                        <div className="mt-3 p-3 bg-muted rounded-lg">
+                          <div className="text-sm">
+                            {notification.type === 'search_alert' && notification.data.search_query && (
+                              <div>
+                                <span className="font-medium">Search details: </span>
+                                {Object.entries(notification.data.search_query).map(([key, value]) => (
+                                  <span key={key} className="mr-2">
+                                    {key}: {String(value)}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            {notification.data.customer_info && (
+                              <div className="mt-1">
+                                <span className="font-medium">Customer: </span>
+                                {notification.data.customer_info.name || 'Anonymous'}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </Layout>
   );
-};
-
-export default NotificationsPage;
+}

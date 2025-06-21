@@ -14,22 +14,6 @@ interface InventoryTableRowProps {
 }
 
 export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle }: InventoryTableRowProps) {
-  const handleDelete = () => {
-    console.log('🗑️ ROW: Delete button clicked for diamond:', {
-      id: diamond.id,
-      stockNumber: diamond.stockNumber,
-      fullDiamond: diamond
-    });
-    
-    if (onDelete) {
-      // Use stock number for deletion as FastAPI expects it
-      console.log('🗑️ ROW: Using diamond.stockNumber for deletion:', diamond.stockNumber);
-      onDelete(diamond.stockNumber);
-    } else {
-      console.warn('⚠️ ROW: onDelete callback not provided');
-    }
-  };
-
   return (
     <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-800">
       <TableCell className="w-16">
@@ -49,8 +33,8 @@ export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle }: 
           </div>
         )}
       </TableCell>
-      <TableCell className="font-mono text-sm font-bold text-blue-600 dark:text-blue-400 min-w-[120px]">
-        #{diamond.stockNumber}
+      <TableCell className="font-mono text-xs font-medium text-slate-900 dark:text-slate-100">
+        {diamond.stockNumber}
       </TableCell>
       <TableCell className="font-medium text-slate-900 dark:text-slate-100">{diamond.shape}</TableCell>
       <TableCell className="text-right font-medium text-slate-900 dark:text-slate-100">
@@ -111,7 +95,7 @@ export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle }: 
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleDelete}
+              onClick={() => onDelete(diamond.id)}
               className="h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400"
             >
               <Trash className="h-4 w-4" />

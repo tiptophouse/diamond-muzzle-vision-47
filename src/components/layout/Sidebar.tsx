@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -46,6 +47,11 @@ const Sidebar = ({ onClose }: SidebarProps) => {
       name: 'Insights',
       href: '/insights',
       icon: TrendingUp
+    },
+    {
+      name: 'Reports',
+      href: '/reports',
+      icon: FileText
     },
     {
       name: 'Settings',

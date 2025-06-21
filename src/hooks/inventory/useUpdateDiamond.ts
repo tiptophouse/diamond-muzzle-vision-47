@@ -1,106 +1,98 @@
 
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
+import { isValidUUID } from '@/utils/diamondUtils';
 
 export function useUpdateDiamond(onSuccess?: () => void) {
+  const { toast } = useToast();
   const { user } = useTelegramAuth();
 
   const updateDiamond = async (diamondId: string, data: DiamondFormData) => {
     if (!user?.id) {
-      console.error('❌ UPDATE HOOK: User not authenticated');
       toast({
-        title: "❌ Authentication Required",
-        description: "Please log in to update diamonds",
         variant: "destructive",
+        title: "Error",
+        description: "User not authenticated",
       });
-      throw new Error('User not authenticated');
+      return false;
     }
 
-    console.log('📝 UPDATE HOOK: Starting enhanced diamond update');
-    console.log('📝 UPDATE HOOK: Diamond ID:', diamondId);
-    console.log('📝 UPDATE HOOK: Data:', data);
+    // Validate diamond ID format
+    if (!diamondId || !isValidUUID(diamondId)) {
+      console.error('Invalid diamond ID format:', diamondId);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Invalid diamond ID format. Please refresh and try again.",
+      });
+      return false;
+    }
 
     try {
-      const updates = {
-        stock_number: data.stockNumber,
-        shape: data.shape,
-        weight: Number(data.carat),
-        color: data.color,
-        clarity: data.clarity,
-        cut: data.cut,
-        price: Number(data.price),
+      console.log('Updating diamond ID:', diamondId, 'with data:', data);
+      
+      // Prepare update data with proper validation and type conversion
+      const updateData = {
+        stock_number: data.stockNumber?.toString() || '',
+        shape: data.shape || 'Round',
+        weight: Number(data.carat) || 1,
+        color: data.color || 'G',
+        clarity: data.clarity || 'VS1',
+        cut: data.cut || 'Excellent',
         price_per_carat: data.carat > 0 ? Math.round(Number(data.price) / Number(data.carat)) : Math.round(Number(data.price)),
-        status: data.status,
-        store_visible: data.storeVisible,
-        picture: data.picture || '',
-        certificate_number: data.certificateNumber || '',
-        certificate_url: data.certificateUrl || '',
-        lab: data.lab || '',
+        status: data.status || 'Available',
+        picture: data.imageUrl || null,
+        updated_at: new Date().toISOString(),
       };
 
-      console.log('📝 UPDATE HOOK: Calling enhanced update API...');
-      
-      const { data: response, error } = await supabase.functions.invoke('diamond-management', {
-        method: 'PUT',
-        body: updates,
-        headers: {
-          'Content-Type': 'application/json',
-          'x-action': 'update',
-          'x-diamond_id': diamondId,
-          'x-user_id': user.id.toString()
-        }
-      });
-      
-      console.log('📝 UPDATE HOOK: API response received:', response);
-      
+      console.log('Supabase update data:', updateData);
+
+      const { data: updatedData, error } = await supabase
+        .from('inventory')
+        .update(updateData)
+        .eq('id', diamondId)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
       if (error) {
-        console.error('❌ UPDATE HOOK: API error:', error);
-        toast({
-          title: "❌ Update Failed",
-          description: `Failed to update diamond: ${error.message}`,
-          variant: "destructive",
-        });
-        throw new Error(error.message);
+        console.error('Supabase update error:', error);
+        
+        if (error.message.includes('invalid input syntax for type uuid')) {
+          throw new Error('Invalid diamond ID format. Please refresh the page and try again.');
+        } else if (error.message.includes('row-level security')) {
+          throw new Error('You do not have permission to update this diamond.');
+        } else if (error.message.includes('No rows found')) {
+          throw new Error('Diamond not found. It may have been deleted.');
+        } else {
+          throw new Error(`Update failed: ${error.message}`);
+        }
       }
 
-      if (!response?.success) {
-        console.error('❌ UPDATE HOOK: Operation failed:', response?.error);
-        toast({
-          title: "❌ Update Failed",
-          description: response?.error || 'Failed to update diamond',
-          variant: "destructive",
-        });
-        throw new Error(response?.error || 'Update operation failed');
+      if (!updatedData) {
+        throw new Error('Diamond not found or no changes were made');
       }
 
-      console.log('✅ UPDATE HOOK: Diamond updated successfully');
+      console.log('Diamond updated successfully:', updatedData);
       
-      // Show success message
       toast({
-        title: "Success ✅",
-        description: response.message || `Diamond ${data.stockNumber} updated successfully`,
+        title: "Success",
+        description: "Diamond updated successfully",
       });
       
-      if (onSuccess) {
-        console.log('✅ UPDATE HOOK: Calling success callback');
-        onSuccess();
-      }
-      
+      if (onSuccess) onSuccess();
       return true;
-      
     } catch (error) {
-      console.error('❌ UPDATE HOOK: Unexpected error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
+      console.error('Failed to update diamond:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to update diamond. Please try again.";
       toast({
-        title: "❌ Update Failed",
-        description: `Failed to update diamond: ${errorMessage}`,
         variant: "destructive",
+        title: "Error",
+        description: errorMessage,
       });
-      
-      throw new Error(`Update operation failed: ${errorMessage}`);
+      return false;
     }
   };
 

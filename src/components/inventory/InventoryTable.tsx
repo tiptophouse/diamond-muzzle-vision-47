@@ -10,7 +10,7 @@ import { InventoryTableEmpty } from "./InventoryTableEmpty";
 import { InventoryMobileCard } from "./InventoryMobileCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-export interface Diamond {
+export type Diamond = {
   id: string;
   stockNumber: string;
   shape: string;
@@ -22,21 +22,17 @@ export interface Diamond {
   status: string;
   imageUrl?: string;
   store_visible?: boolean;
-  certificateNumber?: string;
-  lab?: string;
-  gem360Url?: string;
-  certificateUrl?: string;
-}
+};
 
 interface InventoryTableProps {
-  diamonds: Diamond[];
+  data: Diamond[];
   loading?: boolean;
   onEdit?: (diamond: Diamond) => void;
-  onDelete?: (stockNumber: string) => void;
+  onDelete?: (diamondId: string) => void;
   onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
 }
 
-export function InventoryTable({ diamonds, loading = false, onEdit, onDelete, onStoreToggle }: InventoryTableProps) {
+export function InventoryTable({ data, loading = false, onEdit, onDelete, onStoreToggle }: InventoryTableProps) {
   const isMobile = useIsMobile();
 
   if (loading) {
@@ -46,12 +42,12 @@ export function InventoryTable({ diamonds, loading = false, onEdit, onDelete, on
   if (isMobile) {
     return (
       <div className="w-full space-y-3 bg-background">
-        {diamonds.length === 0 ? (
+        {data.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             No diamonds found. Upload your inventory to get started.
           </div>
         ) : (
-          diamonds.map((diamond) => (
+          data.map((diamond) => (
             <InventoryMobileCard 
               key={diamond.id} 
               diamond={diamond} 
@@ -70,10 +66,10 @@ export function InventoryTable({ diamonds, loading = false, onEdit, onDelete, on
         <Table className="w-full min-w-full">
           <InventoryTableHeader />
           <TableBody>
-            {diamonds.length === 0 ? (
+            {data.length === 0 ? (
               <InventoryTableEmpty />
             ) : (
-              diamonds.map((diamond) => (
+              data.map((diamond) => (
                 <InventoryTableRow 
                   key={diamond.id} 
                   diamond={diamond} 

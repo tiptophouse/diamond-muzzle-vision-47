@@ -3,11 +3,7 @@ import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { DiamondDetailsSection } from './form/DiamondDetailsSection';
-import { CertificateSection } from './form/CertificateSection';
-import { MeasurementsSection } from './form/MeasurementsSection';
-import { DetailedGradingSection } from './form/DetailedGradingSection';
-import { BusinessInfoSection } from './form/BusinessInfoSection';
-import { ImageUploadSection } from './form/ImageUploadSection';
+import { ManualInputSection } from './form/ManualInputSection';
 import { FormActions } from './form/FormActions';
 import { useFormValidation } from './form/useFormValidation';
 
@@ -24,18 +20,14 @@ export function SingleStoneForm({ initialData, onSubmit, isLoading = false }: Si
       carat: 1,
       price: 0,
       status: 'Available',
-      picture: '',
+      imageUrl: '',
       shape: 'Round',
       color: 'G',
       clarity: 'VS1',
       cut: 'Excellent',
       fluorescence: 'None',
       polish: 'Excellent',
-      symmetry: 'Excellent',
-      lab: 'GIA',
-      gridle: 'Medium',
-      culet: 'None',
-      storeVisible: false
+      symmetry: 'Excellent'
     }
   });
 
@@ -74,18 +66,14 @@ export function SingleStoneForm({ initialData, onSubmit, isLoading = false }: Si
       carat: 1,
       price: 0,
       status: 'Available',
-      picture: '',
+      imageUrl: '',
       shape: 'Round',
       color: 'G',
       clarity: 'VS1',
       cut: 'Excellent',
       fluorescence: 'None',
       polish: 'Excellent',
-      symmetry: 'Excellent',
-      lab: 'GIA',
-      gridle: 'Medium',
-      culet: 'None',
-      storeVisible: false
+      symmetry: 'Excellent'
     });
   };
 
@@ -98,36 +86,11 @@ export function SingleStoneForm({ initialData, onSubmit, isLoading = false }: Si
         errors={errors}
       />
 
-      <CertificateSection
+      <ManualInputSection
         register={register}
         setValue={setValue}
         watch={watch}
         errors={errors}
-      />
-
-      <MeasurementsSection
-        register={register}
-        watch={watch}
-        errors={errors}
-      />
-
-      <DetailedGradingSection
-        register={register}
-        setValue={setValue}
-        watch={watch}
-        errors={errors}
-      />
-
-      <BusinessInfoSection
-        register={register}
-        setValue={setValue}
-        watch={watch}
-        errors={errors}
-      />
-
-      <ImageUploadSection
-        setValue={setValue}
-        watch={watch}
       />
 
       <FormActions

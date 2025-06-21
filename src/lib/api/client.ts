@@ -1,269 +1,194 @@
 
 import { toast } from "@/components/ui/use-toast";
-import { API_BASE_URL, getCurrentUserId } from './config';
-import { supabase } from '@/integrations/supabase/client';
+import { API_BASE_URL, getCurrentUserId, BACKEND_ACCESS_TOKEN } from './config';
+import { getAuthHeaders } from './auth';
 
 interface ApiResponse<T> {
   data?: T;
   error?: string;
 }
 
-interface EdgeFunctionResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-  count?: number;
-  source?: string;
+// Test backend connectivity
+async function testBackendConnectivity(): Promise<boolean> {
+  try {
+    console.log('🔍 API: Testing backend connectivity to:', API_BASE_URL);
+    
+    // Try different test endpoints
+    const testUrls = [
+      `${API_BASE_URL}/`,
+      `${API_BASE_URL}/health`,
+      `${API_BASE_URL}/docs`,
+    ];
+    
+    for (const url of testUrls) {
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          mode: 'cors',
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
+          },
+        });
+        
+        if (response.ok || response.status === 404) {
+          console.log('✅ API: Backend is reachable at:', url);
+          return true;
+        }
+      } catch (error) {
+        console.log('❌ API: Failed to reach:', url, error instanceof Error ? error.message : String(error));
+      }
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('❌ API: Backend connectivity test failed:', error);
+    return false;
+  }
 }
 
 export async function fetchApi<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
+  const url = `${API_BASE_URL}${endpoint}`;
   
   try {
-    console.log('🚀 API: Using Supabase edge function for diamond operations');
+    console.log('🚀 API: Making request to:', url);
+    console.log('🚀 API: Current user ID:', getCurrentUserId(), 'type:', typeof getCurrentUserId());
     
-    // Extract action and parameters from endpoint
-    let action = '';
-    let diamondId = '';
-    let stockNumber = '';
-    const userId = getCurrentUserId()?.toString() || '2138564172';
+    // Test connectivity first if this is the first request
+    const isBackendReachable = await testBackendConnectivity();
+    if (!isBackendReachable) {
+      throw new Error('Backend server is not reachable. Please check if the server is running.');
+    }
     
-    if (endpoint.includes('/get_all_stones')) {
-      action = 'get_all';
-    } else if (endpoint.includes('/diamonds') && options.method === 'POST') {
-      action = 'add';
-    } else if (endpoint.includes('/diamonds/') && options.method === 'PUT') {
-      action = 'update';
-      diamondId = endpoint.match(/\/diamonds\/([^\/]+)/)?.[1] || '';
-    } else if (endpoint.includes('/delete_stone/')) {
-      action = 'delete';
-      stockNumber = endpoint.match(/\/delete_stone\/([^\/]+)/)?.[1] || '';
-    }
+    const authHeaders = await getAuthHeaders();
+    let headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "Origin": window.location.origin,
+      ...authHeaders,
+      ...options.headers as Record<string, string>,
+    };
+    
+    const fetchOptions: RequestInit = {
+      ...options,
+      headers,
+      mode: 'cors',
+      credentials: 'omit', // Don't send cookies
+    };
+    
+    console.log('🚀 API: Fetch options:', {
+      url,
+      method: fetchOptions.method || 'GET',
+      hasAuth: !!headers.Authorization,
+      hasBody: !!fetchOptions.body,
+    });
+    
+    const response = await fetch(url, fetchOptions);
 
-    if (!action) {
-      throw new Error('Unsupported endpoint - using fallback');
-    }
+    console.log('📡 API: Response status:', response.status);
+    console.log('📡 API: Response headers:', Object.fromEntries(response.headers.entries()));
 
-    console.log('🔸 Calling diamond-management edge function:', { action, userId, diamondId, stockNumber });
-
-    const { data: edgeResponse, error: edgeError } = await supabase.functions.invoke('diamond-management', {
-      method: (options.method || 'GET') as 'GET' | 'POST' | 'PUT' | 'DELETE',
-      body: options.body ? JSON.parse(options.body as string) : undefined,
-      headers: {
-        'Content-Type': 'application/json',
-        'x-action': action,
-        'x-user_id': userId,
-        'x-diamond_id': diamondId,
-        'x-stock_number': stockNumber ? decodeURIComponent(stockNumber) : ''
+    let data;
+    const contentType = response.headers.get('content-type');
+    
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+      console.log('📡 API: JSON response received, data type:', typeof data, 'length:', Array.isArray(data) ? data.length : 'not array');
+      if (Array.isArray(data)) {
+        console.log('📡 API: Sample data (first 2 items):', data.slice(0, 2));
+      } else {
+        console.log('📡 API: Response data:', data);
       }
-    });
-
-    if (edgeError) {
-      console.error('❌ Edge function error:', edgeError);
-      throw new Error(edgeError.message);
+    } else {
+      const text = await response.text();
+      console.log('📡 API: Non-JSON response:', text.substring(0, 200));
+      data = text;
     }
 
-    const response = edgeResponse as EdgeFunctionResponse<T>;
-    
-    if (!response.success) {
-      console.error('❌ Edge function returned error:', response.error);
-      throw new Error(response.error || 'Edge function failed');
+    if (!response.ok) {
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      
+      if (typeof data === 'object' && data) {
+        errorMessage = data.detail || data.message || errorMessage;
+      } else if (typeof data === 'string') {
+        errorMessage = data || errorMessage;
+      }
+      
+      console.error('❌ API: Request failed:', errorMessage);
+      throw new Error(errorMessage);
     }
 
-    console.log('✅ Edge function success:', {
-      action,
-      dataCount: Array.isArray(response.data) ? response.data.length : 'N/A',
-      source: response.source || 'edge-function'
-    });
-
-    // Show success toast for add/update/delete operations
-    if (['add', 'update', 'delete'].includes(action) && response.message) {
-      toast({
-        title: "Success ✅",
-        description: response.message,
-      });
-    }
-
-    return { data: response.data };
-
+    console.log('✅ API: Request successful');
+    return { data: data as T };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error('❌ API: Edge function request failed:', {
-      endpoint,
-      method: options.method || 'GET',
-      error: errorMessage,
-    });
+    console.error('❌ API: Request error:', errorMessage);
+    console.error('❌ API: Error details:', error);
     
-    toast({
-      title: "❌ Operation Failed",
-      description: `Request failed: ${errorMessage}`,
-      variant: "destructive",
-    });
+    // Show toast for critical errors
+    if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+      toast({
+        title: "🌐 Network Error",
+        description: "Cannot reach the diamond inventory server. Please check your connection and try again.",
+        variant: "destructive",
+      });
+    } else if (errorMessage.includes('not reachable')) {
+      toast({
+        title: "🔌 Server Unavailable",
+        description: "The backend server appears to be offline. Please contact support.",
+        variant: "destructive",
+      });
+    } else if (errorMessage.includes('CORS')) {
+      toast({
+        title: "🚫 Access Blocked",
+        description: "Server configuration issue. Please contact support about CORS settings.",
+        variant: "destructive",
+      });
+    }
     
     return { error: errorMessage };
   }
 }
 
 export const api = {
-  get: <T>(endpoint: string) => {
-    return supabase.functions.invoke('diamond-management', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-action': 'get_all',
-        'x-user_id': getCurrentUserId()?.toString() || '2138564172'
-      }
-    }).then(({ data, error }) => {
-      if (error) {
-        console.error('❌ API GET error:', error);
-        toast({
-          title: "❌ Get Failed",
-          description: error.message,
-          variant: "destructive",
-        });
-        return { error: error.message };
-      }
-      const response = data as EdgeFunctionResponse<T>;
-      if (!response.success) {
-        console.error('❌ API GET failed:', response.error);
-        toast({
-          title: "❌ Get Failed",
-          description: response.error || 'Failed to fetch data',
-          variant: "destructive",
-        });
-        return { error: response.error };
-      }
-      return { data: response.data };
-    });
-  },
+  get: <T>(endpoint: string) => fetchApi<T>(endpoint, { method: "GET" }),
   
-  post: <T>(endpoint: string, body: Record<string, any>) => {
-    return supabase.functions.invoke('diamond-management', {
-      method: 'POST',
-      body,
+  post: <T>(endpoint: string, body: Record<string, any>) =>
+    fetchApi<T>(endpoint, {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'x-action': 'add',
-        'x-user_id': getCurrentUserId()?.toString() || '2138564172'
-      }
-    }).then(({ data, error }) => {
-      if (error) {
-        console.error('❌ API POST error:', error);
-        toast({
-          title: "❌ Add Failed",
-          description: error.message,
-          variant: "destructive",
-        });
-        return { error: error.message };
-      }
-      const response = data as EdgeFunctionResponse<T>;
-      if (!response.success) {
-        console.error('❌ API POST failed:', response.error);
-        toast({
-          title: "❌ Add Failed",
-          description: response.error || 'Failed to add item',
-          variant: "destructive",
-        });
-        return { error: response.error };
-      }
-      if (response.message) {
-        toast({
-          title: "Success ✅",
-          description: response.message,
-        });
-      }
-      return { data: response.data };
-    });
-  },
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    }),
   
-  put: <T>(endpoint: string, body: Record<string, any>) => {
-    const diamondId = endpoint.match(/\/diamonds\/([^\/]+)/)?.[1];
-    return supabase.functions.invoke('diamond-management', {
-      method: 'PUT',
-      body,
+  put: <T>(endpoint: string, body: Record<string, any>) =>
+    fetchApi<T>(endpoint, {
+      method: "PUT",
       headers: {
-        'Content-Type': 'application/json',
-        'x-action': 'update',
-        'x-diamond_id': diamondId,
-        'x-user_id': getCurrentUserId()?.toString() || '2138564172'
-      }
-    }).then(({ data, error }) => {
-      if (error) {
-        console.error('❌ API PUT error:', error);
-        toast({
-          title: "❌ Update Failed",
-          description: error.message,
-          variant: "destructive",
-        });
-        return { error: error.message };
-      }
-      const response = data as EdgeFunctionResponse<T>;
-      if (!response.success) {
-        console.error('❌ API PUT failed:', response.error);
-        toast({
-          title: "❌ Update Failed",
-          description: response.error || 'Failed to update item',
-          variant: "destructive",
-        });
-        return { error: response.error };
-      }
-      if (response.message) {
-        toast({
-          title: "Success ✅",
-          description: response.message,
-        });
-      }
-      return { data: response.data };
-    });
-  },
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    }),
   
-  delete: <T>(endpoint: string) => {
-    const stockNumber = endpoint.match(/\/delete_stone\/([^\/]+)/)?.[1];
-    return supabase.functions.invoke('diamond-management', {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-action': 'delete',
-        'x-stock_number': stockNumber ? decodeURIComponent(stockNumber) : '',
-        'x-user_id': getCurrentUserId()?.toString() || '2138564172'
-      }
-    }).then(({ data, error }) => {
-      if (error) {
-        console.error('❌ API DELETE error:', error);
-        toast({
-          title: "❌ Delete Failed",
-          description: error.message,
-          variant: "destructive",
-        });
-        return { error: error.message };
-      }
-      const response = data as EdgeFunctionResponse<T>;
-      if (!response.success) {
-        console.error('❌ API DELETE failed:', response.error);
-        toast({
-          title: "❌ Delete Failed",
-          description: response.error || 'Failed to delete item',
-          variant: "destructive",
-        });
-        return { error: response.error };
-      }
-      if (response.message) {
-        toast({
-          title: "Success ✅",
-          description: response.message,
-        });
-      }
-      return { data: response.data };
-    });
-  },
+  delete: <T>(endpoint: string) =>
+    fetchApi<T>(endpoint, { method: "DELETE" }),
     
   uploadCsv: async <T>(endpoint: string, csvData: any[], userId: number): Promise<ApiResponse<T>> => {
-    console.log('📤 API: CSV upload will be handled by edge function in future update');
+    console.log('📤 API: Uploading CSV data to FastAPI:', { endpoint, dataLength: csvData.length, userId });
     
-    // For now, return success to prevent blocking
-    return { data: { success: true, message: 'CSV upload queued for processing' } as T };
+    return fetchApi<T>(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        diamonds: csvData
+      }),
+    });
   },
 };

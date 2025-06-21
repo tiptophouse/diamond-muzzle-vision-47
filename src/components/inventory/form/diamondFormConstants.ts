@@ -36,18 +36,6 @@ export const symmetryGrades = [
   'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'
 ];
 
-export const girdleTypes = [
-  'Extremely Thin', 'Very Thin', 'Thin', 'Medium', 'Slightly Thick', 'Thick', 'Very Thick', 'Extremely Thick'
-];
-
-export const culetGrades = [
-  'None', 'Very Small', 'Small', 'Medium', 'Slightly Large', 'Large', 'Very Large'
-];
-
-export const labOptions = [
-  'GIA', 'AGS', 'EGL', 'GSI', 'IGI', 'Other'
-];
-
 export const statuses = [
   'Available', 'Reserved', 'Sold', 'On Hold'
 ];

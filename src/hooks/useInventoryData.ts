@@ -1,114 +1,120 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { Diamond } from '@/components/inventory/InventoryTable';
-import { fetchInventoryData } from '@/services/inventoryDataService';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
+import { useEffect } from "react";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { fetchInventoryData } from "@/services/inventoryDataService";
+import { useInventoryProcessor } from "./inventory/useInventoryProcessor";
+import { useInventoryState } from "./inventory/useInventoryState";
 
 export function useInventoryData() {
-  const { user, isLoading: authLoading } = useTelegramAuth();
-  const [diamonds, setDiamonds] = useState<Diamond[]>([]);
-  const [allDiamonds, setAllDiamonds] = useState<Diamond[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { subscribeToInventoryChanges } = useInventoryDataSync();
-
-  const fetchData = useCallback(async () => {
+  const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
+  const { processInventoryData, showSuccessToast, showErrorToast } = useInventoryProcessor();
+  const {
+    loading,
+    setLoading,
+    diamonds,
+    setDiamonds,
+    allDiamonds,
+    debugInfo,
+    setDebugInfo,
+    updateDiamonds,
+    clearDiamonds,
+    removeDiamondFromState,
+    restoreDiamondToState,
+  } = useInventoryState();
+  
+  const fetchData = async () => {
+    setLoading(true);
+    
     try {
-      setLoading(true);
-      setError(null);
-
-      console.log('📥 INVENTORY HOOK: Fetching inventory data...');
       const result = await fetchInventoryData();
-
+      
+      setDebugInfo(result.debugInfo);
+      
       if (result.error) {
-        console.error('📥 INVENTORY HOOK: Fetch failed:', result.error);
-        setError(result.error);
-        setDiamonds([]);
-        setAllDiamonds([]);
+        console.error('🔍 INVENTORY: Data fetch failed:', result.error);
+        showErrorToast(result.error);
+        clearDiamonds();
         return;
       }
-
+      
       if (result.data && result.data.length > 0) {
-        console.log('📥 INVENTORY HOOK: Processing', result.data.length, 'diamonds');
+        const processedDiamonds = processInventoryData(result.data);
+        updateDiamonds(processedDiamonds);
         
-        // Transform data to match Diamond interface
-        const transformedDiamonds: Diamond[] = result.data.map(item => ({
-          id: item.id || `${item.stock_number}-${Date.now()}`,
-          stockNumber: item.stock_number || item.stockNumber || '',
-          shape: item.shape || 'Round',
-          carat: Number(item.weight || item.carat) || 0,
-          color: item.color || 'D',
-          clarity: item.clarity || 'FL',
-          cut: item.cut || 'Excellent',
-          price: Number(item.price_per_carat ? item.price_per_carat * (item.weight || item.carat) : item.price) || 0,
-          status: item.status || 'Available',
-          imageUrl: item.picture || item.imageUrl || undefined,
-          store_visible: item.store_visible !== false,
-          certificateNumber: item.certificate_number || item.certificateNumber || undefined,
-          lab: item.lab || undefined,
-          certificateUrl: item.certificate_url || item.certificateUrl || undefined,
+        setDebugInfo(prev => ({ 
+          ...prev, 
+          step: 'SUCCESS: Data processed',
+          totalDiamonds: processedDiamonds.length,
+          sampleDiamond: processedDiamonds[0],
+          timestamp: new Date().toISOString()
         }));
-
-        console.log('📥 INVENTORY HOOK: Transformed diamonds:', transformedDiamonds.length);
-        setDiamonds(transformedDiamonds);
-        setAllDiamonds(transformedDiamonds);
+        
+        showSuccessToast(processedDiamonds.length);
       } else {
-        console.log('📥 INVENTORY HOOK: No diamonds found');
-        setDiamonds([]);
-        setAllDiamonds([]);
+        clearDiamonds();
+        showErrorToast("No diamonds found in response", "⚠️ No Diamonds Found");
       }
-    } catch (err) {
-      console.error('📥 INVENTORY HOOK: Unexpected error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load inventory';
-      setError(errorMessage);
-      setDiamonds([]);
-      setAllDiamonds([]);
+    } catch (error) {
+      console.error("🔍 INVENTORY: Unexpected error:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      setDebugInfo(prev => ({ 
+        ...prev, 
+        step: 'Unexpected error',
+        error: errorMessage,
+        timestamp: new Date().toISOString()
+      }));
+      
+      clearDiamonds();
+      showErrorToast(errorMessage, "❌ System Error");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefresh = () => {
+    if (isAuthenticated && user?.id) {
+      console.log('🔍 INVENTORY: Manual refresh triggered for verified user:', user.id);
+      setDebugInfo({ step: 'Manual refresh triggered', timestamp: new Date().toISOString() });
+      fetchData();
+    }
+  };
+
+  const handleStoreToggle = (stockNumber: string, isVisible: boolean) => {
+    // Update the diamond's store_visible status in local state
+    setDiamonds(prevDiamonds => 
+      prevDiamonds.map(diamond => 
+        diamond.stockNumber === stockNumber 
+          ? { ...diamond, store_visible: isVisible }
+          : diamond
+      )
+    );
+  };
+
+  useEffect(() => {
+    console.log('🔍 INVENTORY: useEffect triggered');
+    
+    const timer = setTimeout(() => {
+      console.log('🔍 INVENTORY: Timer executed, calling fetchData');
+      fetchData();
+    }, 1000);
+    
+    return () => {
+      console.log('🔍 INVENTORY: Cleaning up timer');
+      clearTimeout(timer);
+    };
   }, []);
 
-  const handleRefresh = useCallback(() => {
-    console.log('🔄 INVENTORY HOOK: Manual refresh triggered');
-    fetchData();
-  }, [fetchData]);
-
-  // Initial load when user is available
-  useEffect(() => {
-    if (authLoading) {
-      console.log('⏳ INVENTORY HOOK: Waiting for auth...');
-      return;
-    }
-    
-    if (user) {
-      console.log('👤 INVENTORY HOOK: User available, fetching data for:', user.id);
-      fetchData();
-    } else {
-      console.log('🚫 INVENTORY HOOK: No user, clearing data');
-      setLoading(false);
-      setDiamonds([]);
-      setAllDiamonds([]);
-      setError("Please log in to view your inventory.");
-    }
-  }, [user, authLoading, fetchData]);
-
-  // Listen for inventory changes
-  useEffect(() => {
-    const unsubscribe = subscribeToInventoryChanges(() => {
-      console.log('🔄 INVENTORY HOOK: Inventory change detected, refreshing...');
-      fetchData();
-    });
-
-    return unsubscribe;
-  }, [subscribeToInventoryChanges, fetchData]);
-
   return {
-    diamonds,
-    allDiamonds,
     loading: loading || authLoading,
-    error,
-    handleRefresh,
+    diamonds,
+    setDiamonds,
+    allDiamonds,
     fetchData,
+    handleRefresh,
+    handleStoreToggle,
+    removeDiamondFromState,
+    restoreDiamondToState,
+    debugInfo,
   };
 }

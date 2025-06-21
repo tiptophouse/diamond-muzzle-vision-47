@@ -1,172 +1,221 @@
 
 import { useState } from "react";
+import { X, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Filter, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
-import { PriceRangeFilter } from "./filters/PriceRangeFilter";
-import { CaratRangeFilter } from "./filters/CaratRangeFilter";
-import { ClarityFilter } from "./filters/ClarityFilter";
-import { ColorFilter } from "./filters/ColorFilter";
-import { ShapeFilter } from "./filters/ShapeFilter";
+import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Diamond } from "@/components/inventory/InventoryTable";
 
 interface StoreFiltersProps {
-  filters: any;
-  onUpdateFilter: (filterName: string, value: any) => void;
+  filters: {
+    shapes: string[];
+    colors: string[];
+    clarities: string[];
+    caratRange: [number, number];
+    priceRange: [number, number];
+  };
+  onUpdateFilter: (key: string, value: any) => void;
   onClearFilters: () => void;
-  diamonds: any[];
+  diamonds: Diamond[];
+  isOpen?: boolean;
+  onClose?: () => void;
+  isMobile?: boolean;
 }
 
-export function StoreFilters({ filters, onUpdateFilter, onClearFilters, diamonds }: StoreFiltersProps) {
-  const [isOpen, setIsOpen] = useState(true);
+const SHAPES = ["Round", "Princess", "Oval", "Emerald", "Cushion", "Pear", "Marquise", "Asscher", "Radiant", "Heart"];
+const COLORS = ["D", "E", "F", "G", "H", "I", "J", "K", "L", "M"];
+const CLARITIES = ["FL", "IF", "VVS1", "VVS2", "VS1", "VS2", "SI1", "SI2", "SI3", "I1"];
 
-  // Calculate min/max values from diamonds data
+export function StoreFilters({ 
+  filters, 
+  onUpdateFilter, 
+  onClearFilters, 
+  diamonds,
+  isOpen = false,
+  onClose,
+  isMobile = false
+}: StoreFiltersProps) {
   const getMinMaxValues = () => {
-    if (!diamonds || diamonds.length === 0) {
-      return {
-        minPrice: 0,
-        maxPrice: 100000,
-        minCarat: 0,
-        maxCarat: 10
-      };
-    }
-
-    const prices = diamonds.map(d => d.price).filter(p => p != null);
-    const carats = diamonds.map(d => d.carat).filter(c => c != null);
-
+    if (diamonds.length === 0) return { minCarat: 0, maxCarat: 10, minPrice: 0, maxPrice: 100000 };
+    
+    const carats = diamonds.map(d => d.carat);
+    const prices = diamonds.map(d => d.price);
+    
     return {
-      minPrice: prices.length > 0 ? Math.min(...prices) : 0,
-      maxPrice: prices.length > 0 ? Math.max(...prices) : 100000,
-      minCarat: carats.length > 0 ? Math.min(...carats) : 0,
-      maxCarat: carats.length > 0 ? Math.max(...carats) : 10
+      minCarat: Math.min(...carats),
+      maxCarat: Math.max(...carats),
+      minPrice: Math.min(...prices),
+      maxPrice: Math.max(...prices)
     };
   };
 
-  const { minPrice, maxPrice, minCarat, maxCarat } = getMinMaxValues();
+  const { minCarat, maxCarat, minPrice, maxPrice } = getMinMaxValues();
+  
+  const activeFiltersCount = 
+    filters.shapes.length + 
+    filters.colors.length + 
+    filters.clarities.length + 
+    (filters.caratRange[0] > minCarat || filters.caratRange[1] < maxCarat ? 1 : 0) +
+    (filters.priceRange[0] > minPrice || filters.priceRange[1] < maxPrice ? 1 : 0);
 
-  const handleToggle = () => {
-    setIsOpen(!isOpen);
+  const toggleFilter = (type: string, value: string) => {
+    const currentValues = filters[type as keyof typeof filters] as string[];
+    const newValues = currentValues.includes(value)
+      ? currentValues.filter(v => v !== value)
+      : [...currentValues, value];
+    onUpdateFilter(type, newValues);
   };
 
-  const handlePriceRangeChange = (range: [number, number]) => {
-    onUpdateFilter('priceRange', { min: range[0], max: range[1] });
-  };
-
-  const handleCaratRangeChange = (range: [number, number]) => {
-    onUpdateFilter('caratRange', { min: range[0], max: range[1] });
-  };
-
-  const handleShapeToggle = (shape: string) => {
-    const selectedShapes = new Set(filters.shapes);
-    if (selectedShapes.has(shape)) {
-      selectedShapes.delete(shape);
-    } else {
-      selectedShapes.add(shape);
-    }
-    onUpdateFilter('shapes', Array.from(selectedShapes));
-  };
-
-  const handleClarityToggle = (clarity: string) => {
-    const selectedClarities = new Set(filters.clarities);
-    if (selectedClarities.has(clarity)) {
-      selectedClarities.delete(clarity);
-    } else {
-      selectedClarities.add(clarity);
-    }
-    
-    onUpdateFilter('clarities', Array.from(selectedClarities));
-  };
-
-  const handleColorToggle = (color: string) => {
-    const selectedColors = new Set(filters.colors);
-    if (selectedColors.has(color)) {
-      selectedColors.delete(color);
-    } else {
-      selectedColors.add(color);
-    }
-    
-    onUpdateFilter('colors', Array.from(selectedColors));
-  };
-
-  const activeFiltersCount =
-    (filters.priceRange?.min ? 1 : 0) +
-    (filters.priceRange?.max ? 1 : 0) +
-    (filters.caratRange?.min ? 1 : 0) +
-    (filters.caratRange?.max ? 1 : 0) +
-    (filters.shapes?.length || 0) +
-    (filters.clarities?.length || 0) +
-    (filters.colors?.length || 0);
-
-  return (
-    <div className="bg-white rounded-xl shadow-md p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-            <Filter className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-slate-900">Refine Your Search</h2>
-            <p className="text-sm text-slate-600">Find your perfect diamond</p>
-          </div>
-        </div>
-        
+  const FilterContent = () => (
+    <div className="space-y-6">
+      {/* Clear Filters */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-slate-900">Filters</h3>
         {activeFiltersCount > 0 && (
-          <div className="flex items-center gap-3">
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-              {activeFiltersCount} active
-            </Badge>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClearFilters}
-              className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-            >
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Clear All
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClearFilters}
+            className="text-slate-600 hover:text-slate-900"
+          >
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Clear All ({activeFiltersCount})
+          </Button>
         )}
       </div>
 
-      {/* Collapse Button */}
-      <Button
-        variant="ghost"
-        className="w-full justify-between text-slate-700 hover:bg-slate-50 rounded-xl"
-        onClick={handleToggle}
-      >
-        <span>Filters</span>
-        {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-      </Button>
-
-      {/* Collapsible Content */}
-      {isOpen && (
-        <div className="space-y-6 pt-4">
-          <PriceRangeFilter
-            priceRange={filters.priceRange}
-            minPrice={minPrice}
-            maxPrice={maxPrice}
-            onPriceRangeChange={handlePriceRangeChange}
-          />
-          <CaratRangeFilter
-            caratRange={filters.caratRange}
-            minCarat={minCarat}
-            maxCarat={maxCarat}
-            onCaratRangeChange={handleCaratRangeChange}
-          />
-          <ShapeFilter
-            selectedShapes={filters.shapes || []}
-            onShapeToggle={handleShapeToggle}
-          />
-          <ClarityFilter
-            selectedClarities={filters.clarities || []}
-            onClarityToggle={handleClarityToggle}
-          />
-          <ColorFilter
-            selectedColors={filters.colors || []}
-            onColorToggle={handleColorToggle}
-          />
+      {/* Active Filters */}
+      {activeFiltersCount > 0 && (
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-slate-700">Active Filters:</p>
+          <div className="flex flex-wrap gap-2">
+            {filters.shapes.map(shape => (
+              <Badge key={shape} variant="secondary" className="cursor-pointer" onClick={() => toggleFilter('shapes', shape)}>
+                {shape} <X className="h-3 w-3 ml-1" />
+              </Badge>
+            ))}
+            {filters.colors.map(color => (
+              <Badge key={color} variant="secondary" className="cursor-pointer" onClick={() => toggleFilter('colors', color)}>
+                {color} <X className="h-3 w-3 ml-1" />
+              </Badge>
+            ))}
+            {filters.clarities.map(clarity => (
+              <Badge key={clarity} variant="secondary" className="cursor-pointer" onClick={() => toggleFilter('clarities', clarity)}>
+                {clarity} <X className="h-3 w-3 ml-1" />
+              </Badge>
+            ))}
+          </div>
         </div>
       )}
+
+      {/* Shape Filter */}
+      <div className="space-y-3">
+        <h4 className="font-medium text-slate-900">Shape</h4>
+        <div className="grid grid-cols-2 gap-2">
+          {SHAPES.map(shape => (
+            <label key={shape} className="flex items-center space-x-2 cursor-pointer">
+              <Checkbox
+                checked={filters.shapes.includes(shape)}
+                onCheckedChange={() => toggleFilter('shapes', shape)}
+              />
+              <span className="text-sm text-slate-700">{shape}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Color Filter */}
+      <div className="space-y-3">
+        <h4 className="font-medium text-slate-900">Color</h4>
+        <div className="grid grid-cols-5 gap-2">
+          {COLORS.map(color => (
+            <label key={color} className="flex items-center space-x-2 cursor-pointer">
+              <Checkbox
+                checked={filters.colors.includes(color)}
+                onCheckedChange={() => toggleFilter('colors', color)}
+              />
+              <span className="text-sm text-slate-700">{color}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Clarity Filter */}
+      <div className="space-y-3">
+        <h4 className="font-medium text-slate-900">Clarity</h4>
+        <div className="grid grid-cols-3 gap-2">
+          {CLARITIES.map(clarity => (
+            <label key={clarity} className="flex items-center space-x-2 cursor-pointer">
+              <Checkbox
+                checked={filters.clarities.includes(clarity)}
+                onCheckedChange={() => toggleFilter('clarities', clarity)}
+              />
+              <span className="text-sm text-slate-700">{clarity}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Carat Range */}
+      <div className="space-y-3">
+        <h4 className="font-medium text-slate-900">Carat Weight</h4>
+        <div className="px-2">
+          <Slider
+            value={filters.caratRange}
+            onValueChange={(value) => onUpdateFilter('caratRange', value as [number, number])}
+            max={maxCarat}
+            min={minCarat}
+            step={0.1}
+            className="w-full"
+          />
+          <div className="flex justify-between text-sm text-slate-600 mt-1">
+            <span>{filters.caratRange[0].toFixed(1)} ct</span>
+            <span>{filters.caratRange[1].toFixed(1)} ct</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Price Range */}
+      <div className="space-y-3">
+        <h4 className="font-medium text-slate-900">Price Range</h4>
+        <div className="px-2">
+          <Slider
+            value={filters.priceRange}
+            onValueChange={(value) => onUpdateFilter('priceRange', value as [number, number])}
+            max={maxPrice}
+            min={minPrice}
+            step={1000}
+            className="w-full"
+          />
+          <div className="flex justify-between text-sm text-slate-600 mt-1">
+            <span>${filters.priceRange[0].toLocaleString()}</span>
+            <span>${filters.priceRange[1].toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <Sheet open={isOpen} onOpenChange={onClose}>
+        <SheetContent side="bottom" className="h-[80vh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Filter Diamonds</SheetTitle>
+          </SheetHeader>
+          <div className="mt-6">
+            <FilterContent />
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      <FilterContent />
     </div>
   );
 }
