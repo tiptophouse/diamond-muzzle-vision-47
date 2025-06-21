@@ -20,7 +20,7 @@ export function useSecureInventoryData() {
     }
 
     if (!validateUserAccess()) {
-      setError("Access denied: Please log in to view your inventory.");
+      setError("🚫 Access denied: Please log in to view your inventory.");
       setDiamonds([]);
       setAllDiamonds([]);
       setLoading(false);
@@ -45,12 +45,12 @@ export function useSecureInventoryData() {
       if (result.data && result.data.length > 0) {
         console.log('📥 SECURE INVENTORY: Processing', result.data.length, 'user-owned diamonds');
         
-        // Transform data to match Diamond interface with additional security checks
+        // Additional security check: Verify ownership again at transform time
         const transformedDiamonds: Diamond[] = result.data.map(item => {
           // Verify ownership again at transform time
           const itemUserId = item.user_id || item.owner_id;
           if (itemUserId !== userId) {
-            console.warn('🚫 SECURITY: Skipping item not owned by user:', item.id);
+            console.error('🚨 SECURITY: Detected item not owned by user during transform:', item.id, 'Item User:', itemUserId, 'Current User:', userId);
             return null;
           }
 
@@ -72,7 +72,13 @@ export function useSecureInventoryData() {
           };
         }).filter(Boolean) as Diamond[];
 
-        console.log('📥 SECURE INVENTORY: Transformed', transformedDiamonds.length, 'secure diamonds');
+        console.log('📥 SECURE INVENTORY: Transformed', transformedDiamonds.length, 'secure diamonds for user:', userId);
+        
+        // Final security validation
+        if (transformedDiamonds.length !== result.data.length) {
+          console.error('🚨 SECURITY ALERT: Some items were filtered out during transform for user:', userId);
+        }
+        
         setDiamonds(transformedDiamonds);
         setAllDiamonds(transformedDiamonds);
       } else {
@@ -81,7 +87,7 @@ export function useSecureInventoryData() {
         setAllDiamonds([]);
       }
     } catch (err) {
-      console.error('📥 SECURE INVENTORY: Unexpected error:', err);
+      console.error('📥 SECURE INVENTORY: Unexpected error for user:', userId, err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load inventory securely';
       setError(errorMessage);
       setDiamonds([]);
@@ -111,7 +117,7 @@ export function useSecureInventoryData() {
       setLoading(false);
       setDiamonds([]);
       setAllDiamonds([]);
-      setError("Please log in to view your inventory.");
+      setError("🚫 Please log in to view your inventory.");
     }
   }, [isUserValid, userId, userLoading, fetchData]);
 
