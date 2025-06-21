@@ -1,7 +1,7 @@
 
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { Diamond } from '@/components/inventory/InventoryTable';
-import { api, apiEndpoints } from '@/lib/api';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UseDeleteDiamondProps {
   onSuccess?: () => void;
@@ -19,9 +19,8 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
     }
 
     try {
-      console.log('🗑️ DELETE: Starting diamond deletion process');
+      console.log('🗑️ DELETE: Starting diamond deletion via edge function');
       console.log('🗑️ DELETE: Stock number to delete:', stockNumber);
-      console.log('🗑️ DELETE: Diamond data:', diamondData);
       console.log('🗑️ DELETE: User ID:', user.id);
       
       // Optimistically remove from UI first (using diamond ID for state management)
@@ -30,18 +29,21 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
         removeDiamondFromState(diamondData.id);
       }
       
-      // Use stock number for the API endpoint
-      const endpoint = apiEndpoints.deleteDiamond(stockNumber);
-      console.log('🗑️ DELETE: API endpoint:', endpoint);
+      console.log('🗑️ DELETE: Making DELETE request via edge function...');
+      const { data: response, error } = await supabase.functions.invoke('diamond-management', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-action': 'delete',
+          'x-stock_number': stockNumber,
+          'x-user_id': user.id.toString()
+        }
+      });
       
-      console.log('🗑️ DELETE: Making DELETE request to FastAPI...');
-      const result = await api.delete(endpoint);
+      console.log('🗑️ DELETE: Edge function response received:', response);
       
-      console.log('🗑️ DELETE: FastAPI response received:', result);
-      
-      // Check if the delete operation was successful
-      if (result.error) {
-        console.error('❌ DELETE: FastAPI returned error:', result.error);
+      if (error) {
+        console.error('❌ DELETE: Edge function error:', error);
         
         // Restore diamond to UI if delete failed
         if (restoreDiamondToState && diamondData) {
@@ -49,10 +51,23 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
           restoreDiamondToState(diamondData);
         }
         
-        throw new Error(`Delete failed: ${result.error}`);
+        throw new Error(error.message);
       }
 
-      console.log('✅ DELETE: Diamond deleted successfully from FastAPI backend');
+      // Check if the delete operation was successful
+      if (!response?.success) {
+        console.error('❌ DELETE: Edge function returned error:', response?.error);
+        
+        // Restore diamond to UI if delete failed
+        if (restoreDiamondToState && diamondData) {
+          console.log('🔄 DELETE: Restoring diamond to UI due to error');
+          restoreDiamondToState(diamondData);
+        }
+        
+        throw new Error(`Delete failed: ${response?.error || 'Unknown error'}`);
+      }
+
+      console.log('✅ DELETE: Diamond deleted successfully via edge function');
       console.log('✅ DELETE: Calling onSuccess callback');
       
       if (onSuccess) onSuccess();
@@ -60,8 +75,6 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
       
     } catch (error) {
       console.error('❌ DELETE: Complete error details:', error);
-      console.error('❌ DELETE: Error type:', typeof error);
-      console.error('❌ DELETE: Error message:', error instanceof Error ? error.message : 'Unknown error');
       
       // Restore diamond to UI if delete failed
       if (restoreDiamondToState && diamondData) {

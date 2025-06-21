@@ -1,7 +1,7 @@
 
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { api, apiEndpoints } from '@/lib/api';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useUpdateDiamond(onSuccess?: () => void) {
   const { user } = useTelegramAuth();
@@ -29,22 +29,34 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         lab: data.lab || '',
       };
 
-      console.log('📝 Updating diamond via FastAPI:', diamondId, updates);
+      console.log('📝 Updating diamond via edge function:', diamondId, updates);
       
-      const endpoint = apiEndpoints.updateDiamond(diamondId);
-      const result = await api.put(endpoint, updates);
+      const { data: response, error } = await supabase.functions.invoke('diamond-management', {
+        method: 'PUT',
+        body: updates,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-action': 'update',
+          'x-diamond_id': diamondId,
+          'x-user_id': user.id.toString()
+        }
+      });
       
-      if (result.error) {
-        throw new Error(result.error);
+      if (error) {
+        throw new Error(error.message);
       }
 
-      console.log('✅ Diamond updated successfully in FastAPI backend');
+      if (!response?.success) {
+        throw new Error(response?.error || 'Failed to update diamond');
+      }
+
+      console.log('✅ Diamond updated successfully via edge function');
       
       if (onSuccess) onSuccess();
       return true;
       
     } catch (error) {
-      console.error('❌ Failed to update diamond in FastAPI:', error);
+      console.error('❌ Failed to update diamond via edge function:', error);
       throw error;
     }
   };

@@ -77,7 +77,7 @@ export function ReportsContent({ allDiamonds, loading, onRefresh }: ReportsConte
       </div>
       
       <InventoryTable
-        data={diamonds}
+        diamonds={diamonds}
         loading={loading}
       />
       

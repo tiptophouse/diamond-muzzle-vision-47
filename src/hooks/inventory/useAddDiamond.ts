@@ -2,7 +2,7 @@
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { getCurrentUserId } from '@/lib/api';
-import { api, apiEndpoints } from '@/lib/api';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useAddDiamond(onSuccess?: () => void) {
   const { user } = useTelegramAuth();
@@ -33,22 +33,33 @@ export function useAddDiamond(onSuccess?: () => void) {
         store_visible: data.storeVisible,
       };
 
-      console.log('➕ Adding diamond via FastAPI:', diamondData);
+      console.log('➕ Adding diamond via edge function:', diamondData);
       
-      const endpoint = apiEndpoints.addDiamond();
-      const result = await api.post(endpoint, diamondData);
+      const { data: response, error } = await supabase.functions.invoke('diamond-management', {
+        method: 'POST',
+        body: diamondData,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-action': 'add',
+          'x-user_id': userId.toString()
+        }
+      });
       
-      if (result.error) {
-        throw new Error(result.error);
+      if (error) {
+        throw new Error(error.message);
       }
 
-      console.log('✅ Diamond added successfully to FastAPI backend');
+      if (!response?.success) {
+        throw new Error(response?.error || 'Failed to add diamond');
+      }
+
+      console.log('✅ Diamond added successfully via edge function');
       
       if (onSuccess) onSuccess();
       return true;
       
     } catch (error) {
-      console.error('❌ Failed to add diamond to FastAPI:', error);
+      console.error('❌ Failed to add diamond via edge function:', error);
       throw error;
     }
   };
