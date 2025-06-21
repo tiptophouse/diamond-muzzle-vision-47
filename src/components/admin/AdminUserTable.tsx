@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +15,7 @@ interface AdminUserTableProps {
   onUnblockUser: (user: any) => void;
   onViewDetails: (user: any) => void;
   onViewUser: (user: any) => void;
+  onEditUser: (user: any) => void;
   renderExtraActions?: (user: any) => React.ReactNode;
 }
 
@@ -29,6 +29,7 @@ export function AdminUserTable({
   onUnblockUser,
   onViewDetails,
   onViewUser,
+  onEditUser,
   renderExtraActions
 }: AdminUserTableProps) {
   return (
