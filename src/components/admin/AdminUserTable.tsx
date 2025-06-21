@@ -15,6 +15,7 @@ interface AdminUserTableProps {
   onBlockUser: (user: any) => void;
   onUnblockUser: (user: any) => void;
   onViewDetails: (user: any) => void;
+  onViewUser: (user: any) => void;
   renderExtraActions?: (user: any) => React.ReactNode;
 }
 
@@ -27,6 +28,7 @@ export function AdminUserTable({
   onBlockUser,
   onUnblockUser,
   onViewDetails,
+  onViewUser,
   renderExtraActions
 }: AdminUserTableProps) {
   return (

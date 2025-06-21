@@ -215,7 +215,7 @@ export function DiamondCSVUpload({ open, onClose, onSuccess }: DiamondCSVUploadP
             certificate_url: ''
           };
 
-          const result = await api.post(apiEndpoints.addDiamond(), diamondData);
+          const result = await api.post(apiEndpoints.addDiamond(userId), diamondData);
           
           if (result.error) {
             console.error('Failed to upload diamond:', diamond.stockNumber, result.error);

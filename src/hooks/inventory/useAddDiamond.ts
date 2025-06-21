@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { api, apiEndpoints, getCurrentUserId } from '@/lib/api';
 import { Diamond } from '@/components/inventory/InventoryTable';
-import { triggerInventoryChange } from '@/hooks/inventory/useInventoryDataSync';
+import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
 
 interface AddDiamondData {
   stockNumber: string;
@@ -24,6 +24,7 @@ interface AddDiamondData {
 export function useAddDiamond() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { triggerInventoryChange } = useInventoryDataSync();
 
   const addDiamond = async (diamondData: AddDiamondData): Promise<boolean> => {
     const userId = getCurrentUserId();

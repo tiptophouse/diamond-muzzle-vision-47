@@ -42,7 +42,7 @@ export function useUserProfile() {
       }
 
       if (response.data) {
-        setProfile(response.data);
+        setProfile(response.data as UserProfile);
         console.log('✅ PROFILE: Profile loaded successfully');
       }
     } catch (error) {

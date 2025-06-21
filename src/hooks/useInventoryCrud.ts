@@ -27,8 +27,8 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     if (onSuccess) onSuccess();
   };
 
-  const { addDiamond: addDiamondFn } = useAddDiamond(successHandler);
-  const { updateDiamond: updateDiamondFn } = useUpdateDiamond(successHandler);
+  const { addDiamond: addDiamondFn } = useAddDiamond();
+  const { updateDiamond: updateDiamondFn } = useUpdateDiamond();
   const { deleteDiamond: deleteDiamondFn } = useDeleteDiamond({ 
     onSuccess: successHandler, 
     removeDiamondFromState, 
@@ -41,6 +41,7 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     try {
       await addDiamondFn(data);
       console.log('✅ CRUD: Diamond added successfully');
+      successHandler();
       
       // Show success toast
       toast({
@@ -73,6 +74,7 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     try {
       await updateDiamondFn(diamondId, data);
       console.log('✅ CRUD: Diamond updated successfully');
+      successHandler();
       
       // Show success toast
       toast({
@@ -109,6 +111,7 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     try {
       await deleteDiamondFn(stockNumber, diamondData);
       console.log('✅ CRUD: Diamond deleted successfully');
+      successHandler();
       
       // Show success toast with diamond details
       const stockDisplay = diamondData?.stockNumber || diamondData?.id || stockNumber;
