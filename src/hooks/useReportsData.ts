@@ -43,7 +43,11 @@ export function useReportsData() {
         const processedDiamonds: Diamond[] = convertedDiamonds.map(diamond => ({
           ...diamond,
           store_visible: diamond.store_visible ?? true,
-          gem360Url: diamond.gem360Url || (diamond.certificateUrl?.includes('gem360') ? diamond.certificateUrl : undefined)
+          gem360Url: diamond.gem360Url || (diamond.certificateUrl?.includes('gem360') ? diamond.certificateUrl : undefined),
+          certificateUrl: diamond.certificateUrl || undefined,
+          imageUrl: diamond.imageUrl || undefined,
+          certificateNumber: diamond.certificateNumber || undefined,
+          lab: diamond.lab || undefined,
         }));
         
         console.log('✅ Converted diamonds for display:', processedDiamonds.length, 'diamonds for user', user.id);

@@ -22,11 +22,15 @@ export function useInventoryProcessor() {
     // Otherwise convert from raw API format
     const convertedDiamonds = convertDiamondsToInventoryFormat(rawData, userId);
     
-    // Ensure all required properties are present
+    // Ensure all required Diamond properties are present
     const processedDiamonds: Diamond[] = convertedDiamonds.map(diamond => ({
       ...diamond,
       store_visible: diamond.store_visible ?? true,
-      gem360Url: diamond.gem360Url || diamond.certificateUrl?.includes('gem360') ? diamond.certificateUrl : undefined
+      gem360Url: diamond.gem360Url || (diamond.certificateUrl?.includes('gem360') ? diamond.certificateUrl : undefined),
+      certificateUrl: diamond.certificateUrl || undefined,
+      imageUrl: diamond.imageUrl || undefined,
+      certificateNumber: diamond.certificateNumber || undefined,
+      lab: diamond.lab || undefined,
     }));
     
     console.log('🔍 INVENTORY PROCESSOR: Converted', processedDiamonds.length, 'diamonds for display');

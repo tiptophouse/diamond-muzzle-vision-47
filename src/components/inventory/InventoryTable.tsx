@@ -30,12 +30,27 @@ export interface Diamond {
 }
 
 interface InventoryTableProps {
-  diamonds: Diamond[];
+  diamonds?: Diamond[];
+  data?: Diamond[]; // Support both props for compatibility
   onRefresh: () => void;
   loading?: boolean;
+  onEdit?: (diamond: Diamond) => void;
+  onDelete?: (stockNumber: string) => Promise<void>;
+  onStoreToggle?: (stockNumber: string, isVisible: boolean) => Promise<void>;
 }
 
-export function InventoryTable({ diamonds, onRefresh, loading }: InventoryTableProps) {
+export function InventoryTable({ 
+  diamonds: diamondsProp, 
+  data: dataProp, 
+  onRefresh, 
+  loading,
+  onEdit: onEditProp,
+  onDelete: onDeleteProp,
+  onStoreToggle: onStoreToggleProp
+}: InventoryTableProps) {
+  // Use either diamonds or data prop for compatibility
+  const diamonds = diamondsProp || dataProp || [];
+  
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [shapeFilter, setShapeFilter] = useState('all');
@@ -96,19 +111,20 @@ export function InventoryTable({ diamonds, onRefresh, loading }: InventoryTableP
     return success;
   };
 
-  const handleEdit = async (data: DiamondFormData) => {
-    if (!editingDiamond) return false;
-    const success = await updateDiamond(editingDiamond.id, data);
-    if (success) {
-      toast({
-        title: "✅ Diamond Updated",
-        description: `Diamond #${data.stockNumber} has been updated successfully`,
-      });
+  const handleEdit = (diamond: Diamond) => {
+    if (onEditProp) {
+      onEditProp(diamond);
+      return;
     }
-    return success;
+    setEditingDiamond(diamond);
   };
 
   const handleDelete = async (diamond: Diamond) => {
+    if (onDeleteProp) {
+      await onDeleteProp(diamond.stockNumber);
+      return;
+    }
+
     const confirmed = window.confirm(
       `Are you sure you want to delete diamond #${diamond.stockNumber}?\n\nThis action cannot be undone.`
     );
@@ -136,6 +152,11 @@ export function InventoryTable({ diamonds, onRefresh, loading }: InventoryTableP
   };
 
   const toggleVisibility = async (diamond: Diamond) => {
+    if (onStoreToggleProp) {
+      await onStoreToggleProp(diamond.stockNumber, !diamond.store_visible);
+      return;
+    }
+
     const updatedData: DiamondFormData = {
       stockNumber: diamond.stockNumber,
       shape: diamond.shape,
@@ -325,7 +346,7 @@ export function InventoryTable({ diamonds, onRefresh, loading }: InventoryTableP
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setEditingDiamond(diamond)}
+                            onClick={() => handleEdit(diamond)}
                             disabled={crudLoading}
                           >
                             <Edit className="h-4 w-4" />
