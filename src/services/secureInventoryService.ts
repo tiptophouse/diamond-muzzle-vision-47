@@ -48,25 +48,19 @@ export async function fetchSecureInventoryData(): Promise<SecureFetchInventoryRe
     }
     
     if (result.data && Array.isArray(result.data) && result.data.length > 0) {
-      // CRITICAL SECURITY CHECK: Ensure all returned data belongs to the authenticated user
+      // Additional security check: ensure all returned data belongs to the authenticated user
       const userOwnedData = result.data.filter(item => {
         const itemUserId = item.user_id || item.owner_id;
         const isOwned = itemUserId === userId;
         
         if (!isOwned) {
-          console.warn('🚫 SECURITY: Filtered out data not owned by user. Item:', item.id, 'Item User ID:', itemUserId, 'Current User ID:', userId);
+          console.warn('🚫 SECURITY: Filtered out data not owned by user:', item.id);
         }
         
         return isOwned;
       });
       
-      console.log('✅ SECURE INVENTORY: FastAPI returned', result.data.length, 'total items');
-      console.log('🔒 SECURE INVENTORY: After security filtering:', userOwnedData.length, 'user-owned diamonds');
-      
-      // Log security check results
-      if (result.data.length !== userOwnedData.length) {
-        console.error('🚨 SECURITY ALERT: User', userId, 'attempted to access', (result.data.length - userOwnedData.length), 'items not owned by them');
-      }
+      console.log('✅ SECURE INVENTORY: FastAPI returned', userOwnedData.length, 'user-owned diamonds');
       
       return {
         data: userOwnedData,
@@ -76,8 +70,7 @@ export async function fetchSecureInventoryData(): Promise<SecureFetchInventoryRe
           totalDiamonds: userOwnedData.length,
           filteredOut: result.data.length - userOwnedData.length,
           dataSource: 'fastapi',
-          endpoint,
-          securityCheck: 'PASSED'
+          endpoint
         },
         userId
       };
@@ -90,8 +83,7 @@ export async function fetchSecureInventoryData(): Promise<SecureFetchInventoryRe
         ...debugInfo,
         step: 'SUCCESS: No diamonds found for user',
         totalDiamonds: 0,
-        dataSource: 'fastapi',
-        securityCheck: 'PASSED'
+        dataSource: 'fastapi'
       },
       userId
     };
@@ -110,8 +102,7 @@ export async function fetchSecureInventoryData(): Promise<SecureFetchInventoryRe
         ...mockResult.debugInfo,
         step: 'FALLBACK: Using mock data after FastAPI failure',
         error: error instanceof Error ? error.message : String(error),
-        dataSource: 'mock_fallback',
-        securityCheck: 'PASSED'
+        dataSource: 'mock_fallback'
       },
       userId
     };

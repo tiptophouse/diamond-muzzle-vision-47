@@ -16,8 +16,6 @@ interface AdminUserTableProps {
   onViewDetails: (user: any) => void;
   onViewUser: (user: any) => void;
   onEditUser: (user: any) => void;
-  onToggleBlock: (user: any) => void;
-  onDeleteUser: (user: any) => void;
   renderExtraActions?: (user: any) => React.ReactNode;
 }
 
@@ -32,8 +30,6 @@ export function AdminUserTable({
   onViewDetails,
   onViewUser,
   onEditUser,
-  onToggleBlock,
-  onDeleteUser,
   renderExtraActions
 }: AdminUserTableProps) {
   return (
