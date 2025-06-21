@@ -24,6 +24,11 @@ interface UserDataSummary {
   totalRecords: number;
 }
 
+interface DiamondData {
+  stock_number: string;
+  [key: string]: any;
+}
+
 export function UserDataManager({ user, onDataCleared }: UserDataManagerProps) {
   const { toast } = useToast();
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -78,7 +83,7 @@ export function UserDataManager({ user, onDataCleared }: UserDataManagerProps) {
         throw new Error(diamondsResponse.error);
       }
 
-      const diamonds = diamondsResponse.data || [];
+      const diamonds = (diamondsResponse.data as DiamondData[]) || [];
       console.log(`💎 ADMIN: Found ${diamonds.length} diamonds to delete`);
 
       if (diamonds.length === 0) {
