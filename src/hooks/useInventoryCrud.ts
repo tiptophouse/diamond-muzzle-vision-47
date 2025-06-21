@@ -27,8 +27,8 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     if (onSuccess) onSuccess();
   };
 
-  const { addDiamond: addDiamondFn } = useAddDiamond();
-  const { updateDiamond: updateDiamondFn } = useUpdateDiamond();
+  const { addDiamond: addDiamondFn } = useAddDiamond(successHandler);
+  const { updateDiamond: updateDiamondFn } = useUpdateDiamond(successHandler);
   const { deleteDiamond: deleteDiamondFn } = useDeleteDiamond({ 
     onSuccess: successHandler, 
     removeDiamondFromState, 
@@ -41,27 +41,19 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     try {
       await addDiamondFn(data);
       console.log('✅ CRUD: Diamond added successfully');
-      successHandler();
-      
-      // Show success toast
       toast({
-        title: "✅ Diamond Added Successfully!",
-        description: `Diamond #${data.stockNumber} has been added to your inventory`,
-        variant: "default",
+        title: "Success ✅",
+        description: "Diamond added successfully to your inventory",
       });
-      
       return true;
     } catch (error) {
       console.error('❌ CRUD: Add diamond failed:', error);
       const errorMessage = error instanceof Error ? error.message : "Failed to add diamond. Please try again.";
-      
-      // Show error toast
       toast({
         variant: "destructive",
-        title: "❌ Failed to Add Diamond",
+        title: "Add Failed ❌",
         description: errorMessage,
       });
-      
       return false;
     } finally {
       setIsLoading(false);
@@ -74,27 +66,19 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     try {
       await updateDiamondFn(diamondId, data);
       console.log('✅ CRUD: Diamond updated successfully');
-      successHandler();
-      
-      // Show success toast
       toast({
-        title: "✅ Diamond Updated Successfully!",
-        description: `Diamond #${data.stockNumber} has been updated`,
-        variant: "default",
+        title: "Success ✅",
+        description: "Diamond updated successfully",
       });
-      
       return true;
     } catch (error) {
       console.error('❌ CRUD: Update diamond failed:', error);
       const errorMessage = error instanceof Error ? error.message : "Failed to update diamond. Please try again.";
-      
-      // Show error toast
       toast({
         variant: "destructive",
-        title: "❌ Failed to Update Diamond",
+        title: "Update Failed ❌",
         description: errorMessage,
       });
-      
       return false;
     } finally {
       setIsLoading(false);
@@ -111,16 +95,10 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     try {
       await deleteDiamondFn(stockNumber, diamondData);
       console.log('✅ CRUD: Diamond deleted successfully');
-      successHandler();
-      
-      // Show success toast with diamond details
-      const stockDisplay = diamondData?.stockNumber || diamondData?.id || stockNumber;
       toast({
-        title: "✅ Diamond Deleted Successfully!",
-        description: `Diamond #${stockDisplay} has been removed from your inventory`,
-        variant: "default",
+        title: "Success ✅",
+        description: "Diamond deleted successfully from your inventory",
       });
-      
       return true;
     } catch (error) {
       console.error('❌ CRUD: Delete diamond failed with error:', error);
@@ -133,15 +111,11 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
       }
       
       const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond. Please try again.";
-      const stockDisplay = diamondData?.stockNumber || diamondData?.id || stockNumber;
-      
-      // Show error toast
       toast({
         variant: "destructive",
-        title: "❌ Failed to Delete Diamond",
-        description: `Could not delete diamond #${stockDisplay}. ${errorMessage}`,
+        title: "Delete Failed ❌",
+        description: errorMessage,
       });
-      
       return false;
     } finally {
       setIsLoading(false);

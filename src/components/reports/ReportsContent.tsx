@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
 import { InventoryFilters } from "@/components/inventory/InventoryFilters";
@@ -76,9 +77,8 @@ export function ReportsContent({ allDiamonds, loading, onRefresh }: ReportsConte
       </div>
       
       <InventoryTable
-        diamonds={diamonds}
+        data={diamonds}
         loading={loading}
-        onRefresh={onRefresh}
       />
       
       <InventoryPagination

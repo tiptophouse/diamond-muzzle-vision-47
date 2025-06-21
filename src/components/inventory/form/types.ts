@@ -36,8 +36,6 @@ export interface DiamondFormData {
   status: string;
   storeVisible?: boolean;
   
-  // Image and Media
+  // Image
   picture?: string;
-  imageUrl?: string;
-  gem360Url?: string;
 }

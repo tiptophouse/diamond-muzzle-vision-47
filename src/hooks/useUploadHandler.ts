@@ -3,15 +3,13 @@ import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useInventoryDataSync } from './inventory/useInventoryDataSync';
-import { api, apiEndpoints } from '@/lib/api';
+import { LocalStorageService } from '@/services/localStorageService';
 
 interface UploadResult {
   success: boolean;
   message: string;
   processedCount?: number;
   errors?: string[];
-  uploadedCount?: number;
-  failedCount?: number;
 }
 
 export function useUploadHandler() {
@@ -25,8 +23,8 @@ export function useUploadHandler() {
   const handleUpload = async (file: File) => {
     if (!user?.id) {
       toast({
-        title: "❌ Authentication Required",
-        description: "Please log in to upload inventory files",
+        title: "Authentication Error",
+        description: "Please log in to upload files",
         variant: "destructive",
       });
       return;
@@ -48,7 +46,7 @@ export function useUploadHandler() {
       const headers = lines[0].split(',').map(h => h.trim());
       const csvData = [];
 
-      setProgress(15);
+      setProgress(25);
 
       // Process CSV rows
       for (let i = 1; i < lines.length; i++) {
@@ -62,11 +60,10 @@ export function useUploadHandler() {
         }
       }
 
-      setProgress(30);
+      setProgress(50);
 
-      // Process and upload diamonds to FastAPI backend
+      // Process data for local storage
       const processedDiamonds = csvData.map(item => ({
-        user_id: user.id,
         stock_number: item['Stock Number'] || item['stock_number'] || `STK-${Date.now()}-${Math.random()}`,
         shape: item['Shape'] || item['shape'] || 'Round',
         weight: parseFloat(item['Carat'] || item['carat'] || item['Weight'] || '1.0'),
@@ -74,86 +71,36 @@ export function useUploadHandler() {
         clarity: item['Clarity'] || item['clarity'] || 'VS1',
         cut: item['Cut'] || item['cut'] || 'Excellent',
         price: parseFloat(item['Price'] || item['price'] || item['Total Price'] || '5000'),
-        price_per_carat: Math.round((parseFloat(item['Price'] || item['price'] || '5000') / parseFloat(item['Carat'] || item['carat'] || '1.0'))),
         status: 'Available',
         store_visible: true,
         certificate_number: item['Certificate Number'] || item['certificate_number'] || '',
-        lab: item['Lab'] || item['lab'] || 'GIA',
-        picture: '',
-        certificate_url: ''
+        lab: item['Lab'] || item['lab'] || '',
       }));
 
-      setProgress(50);
+      setProgress(75);
 
-      // Upload diamonds in batches to FastAPI
-      let uploadedCount = 0;
-      let failedCount = 0;
-      const batchSize = 5;
-
-      for (let i = 0; i < processedDiamonds.length; i += batchSize) {
-        const batch = processedDiamonds.slice(i, i + batchSize);
-        
-        for (const diamond of batch) {
-          try {
-            const result = await api.post(apiEndpoints.addDiamond(user.id), diamond);
-            
-            if (result.error) {
-              console.error('❌ Failed to upload diamond:', diamond.stock_number, result.error);
-              failedCount++;
-            } else {
-              uploadedCount++;
-            }
-          } catch (error) {
-            console.error('❌ Error uploading diamond:', diamond.stock_number, error);
-            failedCount++;
-          }
-        }
-
-        // Update progress
-        const completedItems = Math.min(i + batchSize, processedDiamonds.length);
-        setProgress(50 + (completedItems / processedDiamonds.length) * 50);
+      console.log('📦 Uploading', processedDiamonds.length, 'diamonds to local storage...');
+      const uploadResult = LocalStorageService.bulkAddDiamonds(processedDiamonds);
+      
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.error || 'Upload failed');
       }
 
       setProgress(100);
       
-      // Trigger inventory refresh
-      triggerInventoryChange();
-
-      // Determine result based on upload success
-      let successResult: UploadResult;
-      
-      if (uploadedCount > 0 && failedCount === 0) {
-        successResult = {
-          success: true,
-          message: `🎉 Successfully uploaded all ${uploadedCount} diamonds to your inventory!`,
-          processedCount: processedDiamonds.length,
-          uploadedCount,
-          failedCount: 0
-        };
-        
-        toast({
-          title: "✅ Upload Complete!",
-          description: `Successfully uploaded ${uploadedCount} diamonds to your secure inventory`,
-        });
-      } else if (uploadedCount > 0 && failedCount > 0) {
-        successResult = {
-          success: true,
-          message: `⚠️ Partially successful: ${uploadedCount} diamonds uploaded, ${failedCount} failed`,
-          processedCount: processedDiamonds.length,
-          uploadedCount,
-          failedCount
-        };
-        
-        toast({
-          title: "⚠️ Partial Upload Success",
-          description: `${uploadedCount} diamonds uploaded successfully, ${failedCount} failed`,
-          variant: "destructive",
-        });
-      } else {
-        throw new Error(`Failed to upload any diamonds. ${failedCount} items failed processing.`);
-      }
+      const successResult: UploadResult = {
+        success: true,
+        message: `Successfully uploaded ${processedDiamonds.length} diamonds to your local inventory! 💎`,
+        processedCount: processedDiamonds.length
+      };
       
       setResult(successResult);
+      triggerInventoryChange();
+      
+      toast({
+        title: "Upload Successful! 🎉",
+        description: successResult.message,
+      });
 
     } catch (error) {
       console.error('❌ Upload failed:', error);
@@ -161,16 +108,14 @@ export function useUploadHandler() {
       
       const errorResult: UploadResult = {
         success: false,
-        message: `❌ Upload failed: ${errorMessage}`,
-        errors: [errorMessage],
-        uploadedCount: 0,
-        failedCount: 0
+        message: errorMessage,
+        errors: [errorMessage]
       };
       
       setResult(errorResult);
       
       toast({
-        title: "❌ Upload Failed",
+        title: "Upload Failed",
         description: errorMessage,
         variant: "destructive",
       });

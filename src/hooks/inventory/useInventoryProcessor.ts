@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { convertDiamondsToInventoryFormat } from "@/services/diamondAnalytics";
@@ -14,7 +13,7 @@ export function useInventoryProcessor() {
     console.log('🔍 INVENTORY PROCESSOR: Converting', rawData.length, 'items for display');
     
     // Check if this is already processed Diamond data (from mock service)
-    if (rawData.length > 0 && rawData[0].id && rawData[0].stockNumber && rawData[0].store_visible !== undefined) {
+    if (rawData.length > 0 && rawData[0].id && rawData[0].stockNumber) {
       console.log('🔍 INVENTORY PROCESSOR: Data already in Diamond format');
       return rawData as Diamond[];
     }
@@ -22,28 +21,9 @@ export function useInventoryProcessor() {
     // Otherwise convert from raw API format
     const convertedDiamonds = convertDiamondsToInventoryFormat(rawData, userId);
     
-    // Ensure all required Diamond properties are present by creating complete Diamond objects
-    const processedDiamonds: Diamond[] = convertedDiamonds.map(diamond => ({
-      id: diamond.id,
-      stockNumber: diamond.stockNumber,
-      shape: diamond.shape,
-      carat: diamond.carat,
-      color: diamond.color,
-      clarity: diamond.clarity,
-      cut: diamond.cut,
-      price: diamond.price,
-      status: diamond.status,
-      store_visible: diamond.store_visible ?? true,
-      gem360Url: diamond.gem360Url || (diamond.certificateUrl?.includes('gem360') ? diamond.certificateUrl : undefined),
-      certificateUrl: diamond.certificateUrl || undefined,
-      imageUrl: diamond.imageUrl || undefined,
-      certificateNumber: diamond.certificateNumber || undefined,
-      lab: diamond.lab || undefined,
-    }));
+    console.log('🔍 INVENTORY PROCESSOR: Converted', convertedDiamonds.length, 'diamonds for display');
     
-    console.log('🔍 INVENTORY PROCESSOR: Converted', processedDiamonds.length, 'diamonds for display');
-    
-    return processedDiamonds;
+    return convertedDiamonds;
   };
   
   const showSuccessToast = (count: number) => {

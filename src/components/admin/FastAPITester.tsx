@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -136,7 +137,7 @@ export function FastAPITester() {
           store_visible: false
         };
         
-        const endpoint = apiEndpoints.addDiamond(userId);
+        const endpoint = apiEndpoints.addDiamond();
         const result = await api.post(endpoint, testDiamond);
         const responseTime = Date.now() - startTime;
         
@@ -159,7 +160,7 @@ export function FastAPITester() {
         };
       } catch (error) {
         return {
-          endpoint: apiEndpoints.addDiamond(userId),
+          endpoint: apiEndpoints.addDiamond(),
           method: 'POST',
           status: 'error',
           message: `Request failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -174,7 +175,7 @@ export function FastAPITester() {
       try {
         console.log('🔍 Testing DELETE diamond endpoint...');
         const testStockNumber = `TEST_${Date.now()}`;
-        const endpoint = apiEndpoints.deleteDiamond(testStockNumber, userId);
+        const endpoint = apiEndpoints.deleteDiamond(testStockNumber);
         const result = await api.delete(endpoint);
         const responseTime = Date.now() - startTime;
         
@@ -198,7 +199,7 @@ export function FastAPITester() {
         };
       } catch (error) {
         return {
-          endpoint: apiEndpoints.deleteDiamond('TEST_ID', userId),
+          endpoint: apiEndpoints.deleteDiamond('TEST_ID'),
           method: 'DELETE',
           status: 'error',
           message: `Request failed: ${error instanceof Error ? error.message : 'Unknown error'}`,

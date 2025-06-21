@@ -12,7 +12,7 @@ interface UseDeleteDiamondProps {
 export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDiamondToState }: UseDeleteDiamondProps) {
   const { user } = useTelegramAuth();
 
-  const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
+  const deleteDiamond = async (stockNumber: string, diamondData?: Diamond) => {
     if (!user?.id) {
       console.error('❌ DELETE: User not authenticated');
       throw new Error('User not authenticated');
@@ -20,7 +20,7 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
 
     try {
       console.log('🗑️ DELETE: Starting diamond deletion process');
-      console.log('🗑️ DELETE: Diamond ID to delete:', diamondId);
+      console.log('🗑️ DELETE: Stock number to delete:', stockNumber);
       console.log('🗑️ DELETE: Diamond data:', diamondData);
       console.log('🗑️ DELETE: User ID:', user.id);
       
@@ -30,11 +30,9 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
         removeDiamondFromState(diamondData.id);
       }
       
-      // Use the diamond ID directly - this should match the ID returned from get_all_stones
-      // The backend delete endpoint expects the exact ID from the database
-      const endpoint = apiEndpoints.deleteDiamond(diamondId, user.id);
+      // Use stock number for the API endpoint
+      const endpoint = apiEndpoints.deleteDiamond(stockNumber);
       console.log('🗑️ DELETE: API endpoint:', endpoint);
-      console.log('🗑️ DELETE: Using diamond ID:', diamondId);
       
       console.log('🗑️ DELETE: Making DELETE request to FastAPI...');
       const result = await api.delete(endpoint);
