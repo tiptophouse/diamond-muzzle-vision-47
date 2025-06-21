@@ -1,7 +1,7 @@
 
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { api, apiEndpoints } from '@/lib/api';
+import { api } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { isValidUUID } from '@/utils/diamondUtils';
 import { Diamond } from '@/components/inventory/InventoryTable';
@@ -42,9 +42,9 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
     }
 
     try {
-      console.log('Deleting diamond ID:', diamondId, 'for user:', user.id);
+      console.log('🔒 Secure Delete: Deleting diamond ID:', diamondId, 'for user:', user.id);
       
-      // Call the backend /sold endpoint to delete the diamond
+      // Call the secure backend /sold endpoint to delete the diamond
       const response = await api.post('/sold', {
         diamond_id: diamondId,
         user_id: user.id,
@@ -67,14 +67,14 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
       }
       
       toast({
-        title: "Success",
+        title: "✅ Success",
         description: "Diamond deleted successfully",
       });
       
       if (onSuccess) onSuccess();
       return true;
     } catch (error) {
-      console.error('Failed to delete diamond:', error);
+      console.error('❌ Failed to delete diamond:', error);
       
       // Restore diamond to state if deletion failed
       if (restoreDiamondToState && diamondData) {
@@ -84,7 +84,7 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
       const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond. Please try again.";
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "❌ Error",
         description: errorMessage,
       });
       return false;

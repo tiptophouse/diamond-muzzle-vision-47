@@ -13,7 +13,7 @@ export function useAddDiamond(onSuccess?: () => void) {
     if (!user?.id) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "❌ Error",
         description: "User not authenticated",
       });
       return false;
@@ -26,7 +26,7 @@ export function useAddDiamond(onSuccess?: () => void) {
         id: generateDiamondId(),
       };
 
-      console.log('Adding diamond with generated ID:', diamondData);
+      console.log('🔒 Secure Add: Adding diamond with generated ID:', diamondData);
       
       const response = await api.uploadCsv('/upload-inventory', [diamondData], user.id);
       
@@ -35,18 +35,20 @@ export function useAddDiamond(onSuccess?: () => void) {
       }
 
       toast({
-        title: "Success",
-        description: "Diamond added successfully",
+        title: "✅ Success",
+        description: "Diamond added successfully to your inventory",
       });
       
       if (onSuccess) onSuccess();
       return true;
     } catch (error) {
-      console.error('Failed to add diamond:', error);
+      console.error('❌ Failed to add diamond:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : "Failed to add diamond. Please try again.";
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to add diamond. Please try again.",
+        title: "❌ Failed",
+        description: errorMessage,
       });
       return false;
     }

@@ -1,5 +1,5 @@
 
-import { API_BASE_URL, BACKEND_ACCESS_TOKEN } from './config';
+import { supabase } from '@/integrations/supabase/client';
 import { apiEndpoints } from './endpoints';
 import { setCurrentUserId } from './config';
 
@@ -17,43 +17,37 @@ export function getVerificationResult(): TelegramVerificationResponse | null {
   return verificationResult;
 }
 
-// Verify Telegram user with backend
+// Secure Telegram user verification using Supabase Edge Function
 export async function verifyTelegramUser(initData: string): Promise<TelegramVerificationResponse | null> {
   try {
-    console.log('🔐 API: Verifying Telegram user with backend');
-    console.log('🔐 API: Sending to:', `${API_BASE_URL}${apiEndpoints.verifyTelegram()}`);
-    console.log('🔐 API: InitData length:', initData.length);
+    console.log('🔐 Secure Auth: Verifying Telegram user through secure proxy');
+    console.log('🔐 Secure Auth: InitData length:', initData.length);
     
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
-    };
-    
-    console.log('🔐 API: Using backend access token for verification');
-    
-    const response = await fetch(`${API_BASE_URL}${apiEndpoints.verifyTelegram()}`, {
-      method: 'POST',
-      headers,
-      mode: 'cors',
-      body: JSON.stringify({
-        init_data: initData
-      }),
+    // Use the secure Supabase Edge Function for Telegram verification
+    const { data: proxyResponse, error: supabaseError } = await supabase.functions.invoke('fastapi-proxy', {
+      body: {
+        endpoint: apiEndpoints.verifyTelegram(),
+        method: 'POST',
+        body: {
+          init_data: initData
+        }
+      }
     });
 
-    console.log('🔐 API: Verification response status:', response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('🔐 API: Verification failed with status:', response.status, 'body:', errorText);
-      
-      // Return null instead of throwing to allow fallback handling
+    if (supabaseError) {
+      console.error('🔐 Secure Auth: Supabase error:', supabaseError);
       verificationResult = null;
       return null;
     }
 
-    const result: TelegramVerificationResponse = await response.json();
-    console.log('✅ API: Telegram verification successful:', result);
+    if (!proxyResponse || !proxyResponse.success) {
+      console.error('🔐 Secure Auth: Verification failed:', proxyResponse?.error);
+      verificationResult = null;
+      return null;
+    }
+
+    const result: TelegramVerificationResponse = proxyResponse.data;
+    console.log('✅ Secure Auth: Telegram verification successful:', result);
     
     verificationResult = result;
     if (result.success && result.user_id) {
@@ -62,24 +56,24 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     
     return result;
   } catch (error) {
-    console.error('❌ API: Telegram verification failed:', error);
+    console.error('❌ Secure Auth: Telegram verification failed:', error);
     verificationResult = null;
     return null;
   }
 }
 
 export async function getAuthHeaders(): Promise<Record<string, string>> {
-  const headers: Record<string, string> = {
-    "Authorization": `Bearer ${BACKEND_ACCESS_TOKEN}`,
-  };
+  // SECURITY: No longer exposing backend tokens in frontend
+  // Authentication is now handled securely through Supabase Edge Function
+  const headers: Record<string, string> = {};
   
-  console.log('🚀 API: Using backend access token for requests');
+  console.log('🔒 Secure Auth: Using secure proxy for authentication');
   
   // Add auth headers if available from verification
   if (verificationResult && verificationResult.success) {
     const authToken = `telegram_verified_${verificationResult.user_id}`;
     headers["X-Telegram-Auth"] = authToken;
-    console.log('🚀 API: Added telegram auth token to request');
+    console.log('🔒 Secure Auth: Added telegram auth token to request');
   }
   
   return headers;
