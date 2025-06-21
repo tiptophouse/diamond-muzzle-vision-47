@@ -1,13 +1,14 @@
-
 import React, { useState } from 'react';
 import { Settings } from 'lucide-react';
 import { useEnhancedAnalytics } from '@/hooks/useEnhancedAnalytics';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
+import { UserDetailsModal } from './UserDetailsModal';
+import { AddUserModal } from './AddUserModal';
+import { EditUserModal } from './EditUserModal';
+import { UserDataManager } from './UserDataManager';
 import { AdminHeader } from './AdminHeader';
 import { AdminStatsGrid } from './AdminStatsGrid';
-import { AdminUserList } from './AdminUserList';
-import { AdminActions } from './AdminActions';
-import { AdminModals } from './AdminModals';
+import { AdminUserTable } from './AdminUserTable';
 import { NotificationSender } from './NotificationSender';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
@@ -31,7 +32,10 @@ export function AdminUserManager({}: AdminUserManagerProps) {
   const stats = getUserStats();
 
   const filteredUsers = enhancedUsers.filter(user => {
+    // Create a comprehensive search that includes real names
     const searchLower = searchTerm.toLowerCase();
+    
+    // Primary search fields
     const firstName = (user.first_name || '').toLowerCase();
     const lastName = (user.last_name || '').toLowerCase();
     const fullName = `${firstName} ${lastName}`.trim();
@@ -39,6 +43,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
     const telegramId = user.telegram_id.toString();
     const phoneNumber = user.phone_number || '';
     
+    // Enhanced search logic
     return (
       firstName.includes(searchLower) ||
       lastName.includes(searchLower) ||
@@ -46,6 +51,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
       username.includes(searchLower) ||
       telegramId.includes(searchTerm) ||
       phoneNumber.includes(searchTerm) ||
+      // Also search by display logic for cases where first_name might be "Telegram" etc
       (user.username && `@${username}`.includes(searchLower))
     );
   });
@@ -116,6 +122,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
           description: `Successfully deleted ${displayName}`,
         });
 
+        // Refresh the data
         refetch();
       } catch (error: any) {
         console.error('Error deleting user:', error);
@@ -144,6 +151,44 @@ export function AdminUserManager({}: AdminUserManagerProps) {
       const success = await blockUser(user.telegram_id, 'Blocked by admin');
       if (success) {
         refetch();
+      }
+    }
+  };
+
+  const deleteMockData = async () => {
+    if (window.confirm('Are you sure you want to delete ALL mock/test data? This will remove users with names like "Test", "Telegram", "Emergency", etc.')) {
+      try {
+        console.log('Deleting all mock data...');
+        
+        // Delete mock users from analytics first
+        const { error: analyticsError } = await supabase
+          .from('user_analytics')
+          .delete()
+          .in('telegram_id', [2138564172, 1000000000]); // Known mock IDs
+
+        // Delete mock users where first_name indicates test data
+        const { error: profileError } = await supabase
+          .from('user_profiles')
+          .delete()
+          .or('first_name.ilike.%test%,first_name.ilike.%telegram%,first_name.ilike.%emergency%,first_name.ilike.%unknown%');
+
+        if (profileError) {
+          throw profileError;
+        }
+
+        toast({
+          title: "Mock Data Deleted",
+          description: "All mock/test data has been removed",
+        });
+
+        refetch();
+      } catch (error: any) {
+        console.error('Error deleting mock data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete mock data",
+          variant: "destructive",
+        });
       }
     }
   };
@@ -204,7 +249,15 @@ export function AdminUserManager({}: AdminUserManagerProps) {
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
         <AdminHeader onExportData={exportUserData} onAddUser={() => setShowAddUser(true)} />
 
-        <AdminActions onRefetch={refetch} />
+        {/* Enhanced admin controls */}
+        <div className="flex gap-4 mb-6">
+          <button
+            onClick={deleteMockData}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+          >
+            Delete All Mock Data
+          </button>
+        </div>
 
         <AdminStatsGrid 
           stats={stats} 
@@ -219,19 +272,34 @@ export function AdminUserManager({}: AdminUserManagerProps) {
           </TabsList>
           
           <TabsContent value="users">
-            <AdminUserList
-              filteredUsers={filteredUsers}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              getUserEngagementScore={getUserEngagementScore}
-              isUserBlocked={isUserBlocked}
-              blockedUsers={blockedUsers}
-              onViewUser={handleViewUser}
-              onEditUser={handleEditUser}
-              onDeleteUser={handleDeleteUser}
-              onToggleBlock={handleToggleBlock}
-              onRefetch={refetch}
-            />
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              {/* Enhanced user table with data management controls */}
+              <div className="space-y-4">
+                <AdminUserTable
+                  filteredUsers={filteredUsers}
+                  searchTerm={searchTerm}
+                  onSearchChange={setSearchTerm}
+                  getUserEngagementScore={getUserEngagementScore}
+                  isUserBlocked={isUserBlocked}
+                  onViewUser={handleViewUser}
+                  onEditUser={handleEditUser}
+                  onToggleBlock={handleToggleBlock}
+                  onDeleteUser={handleDeleteUser}
+                  renderExtraActions={(user) => (
+                    <UserDataManager
+                      user={user}
+                      onDataCleared={() => {
+                        toast({
+                          title: "Data Cleared",
+                          description: `All data for user has been removed.`,
+                        });
+                        refetch();
+                      }}
+                    />
+                  )}
+                />
+              </div>
+            </div>
           </TabsContent>
           
           <TabsContent value="notifications">
@@ -241,16 +309,29 @@ export function AdminUserManager({}: AdminUserManagerProps) {
           </TabsContent>
         </Tabs>
 
-        <AdminModals
-          showUserDetails={showUserDetails}
-          selectedUser={selectedUser}
-          onCloseUserDetails={() => setShowUserDetails(false)}
-          showAddUser={showAddUser}
-          onCloseAddUser={() => setShowAddUser(false)}
-          showEditUser={showEditUser}
-          editingUser={editingUser}
-          onCloseEditUser={() => setShowEditUser(false)}
-        />
+        {/* Modals */}
+        {showUserDetails && selectedUser && (
+          <UserDetailsModal
+            user={selectedUser}
+            isOpen={showUserDetails}
+            onClose={() => setShowUserDetails(false)}
+          />
+        )}
+
+        {showAddUser && (
+          <AddUserModal
+            isOpen={showAddUser}
+            onClose={() => setShowAddUser(false)}
+          />
+        )}
+
+        {showEditUser && editingUser && (
+          <EditUserModal
+            user={editingUser}
+            isOpen={showEditUser}
+            onClose={() => setShowEditUser(false)}
+          />
+        )}
       </div>
     </div>
   );
