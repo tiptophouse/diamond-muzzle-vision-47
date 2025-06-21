@@ -39,9 +39,17 @@ export function useReportsData() {
         
         const convertedDiamonds = convertDiamondsToInventoryFormat(response.data, user.id);
         
-        // Ensure all Diamond properties are present
+        // Ensure all Diamond properties are present by creating complete Diamond objects
         const processedDiamonds: Diamond[] = convertedDiamonds.map(diamond => ({
-          ...diamond,
+          id: diamond.id,
+          stockNumber: diamond.stockNumber,
+          shape: diamond.shape,
+          carat: diamond.carat,
+          color: diamond.color,
+          clarity: diamond.clarity,
+          cut: diamond.cut,
+          price: diamond.price,
+          status: diamond.status,
           store_visible: diamond.store_visible ?? true,
           gem360Url: diamond.gem360Url || (diamond.certificateUrl?.includes('gem360') ? diamond.certificateUrl : undefined),
           certificateUrl: diamond.certificateUrl || undefined,

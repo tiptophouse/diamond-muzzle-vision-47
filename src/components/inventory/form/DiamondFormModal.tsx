@@ -28,8 +28,8 @@ export function DiamondFormModal({
     }
   };
 
-  // Convert Diamond to DiamondFormData if needed
-  const convertInitialData = (): Partial<DiamondFormData> | undefined => {
+  // Convert Diamond to a format compatible with DiamondForm
+  const convertInitialData = (): Diamond | Partial<DiamondFormData> | undefined => {
     if (!initialData) return undefined;
     
     // If it's already DiamondFormData, return as is
@@ -37,24 +37,8 @@ export function DiamondFormModal({
       return initialData as Partial<DiamondFormData>;
     }
     
-    // Convert Diamond to DiamondFormData
-    const diamond = initialData as Diamond;
-    return {
-      stockNumber: diamond.stockNumber || '',
-      shape: diamond.shape || '',
-      carat: diamond.carat || 0,
-      color: diamond.color || '',
-      clarity: diamond.clarity || '',
-      cut: diamond.cut || '',
-      price: diamond.price || 0,
-      status: diamond.status || 'Available',
-      storeVisible: diamond.store_visible ?? true,
-      certificateNumber: diamond.certificateNumber || '',
-      certificateUrl: diamond.certificateUrl || '',
-      lab: diamond.lab || '',
-      imageUrl: diamond.imageUrl || '',
-      gem360Url: diamond.gem360Url || '',
-    };
+    // If it's a Diamond object, return it directly since DiamondForm can handle Diamond objects
+    return initialData as Diamond;
   };
 
   return (
