@@ -1,6 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -49,30 +48,37 @@ serve(async (req) => {
       throw new Error('Backend authentication token not configured');
     }
 
+    console.log('🔸 Using backend URL:', backendUrl);
+    console.log('🔸 Has bearer token:', !!bearerToken);
+    console.log('🔸 Bearer token length:', bearerToken?.length || 0);
+
     const headers = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${bearerToken}`,
       'Accept': 'application/json',
     };
 
-    console.log('🔸 Using backend URL:', backendUrl);
-    console.log('🔸 Has bearer token:', !!bearerToken);
-
     switch (action) {
       case 'get_all': {
         console.log('📥 Fetching all diamonds for user:', userId);
         const endpoint = `${backendUrl}/api/v1/get_all_stones`;
+        
+        console.log('🔸 Making GET request to:', endpoint);
+        console.log('🔸 With headers:', { ...headers, Authorization: 'Bearer [REDACTED]' });
         
         const response = await fetch(endpoint, {
           method: 'GET',
           headers,
         });
 
+        console.log('🔸 Response status:', response.status);
+        console.log('🔸 Response headers:', Object.fromEntries(response.headers.entries()));
+
         if (!response.ok) {
-          console.error('❌ FastAPI get_all failed:', response.status, response.statusText);
           const errorText = await response.text();
-          console.error('❌ Error details:', errorText);
-          throw new Error(`FastAPI error: ${response.status} ${response.statusText}`);
+          console.error('❌ FastAPI get_all failed:', response.status, response.statusText);
+          console.error('❌ Error response body:', errorText);
+          throw new Error(`FastAPI error: ${response.status} ${response.statusText} - ${errorText}`);
         }
 
         const data = await response.json();
@@ -206,8 +212,9 @@ serve(async (req) => {
         });
 
         if (!getAllResponse.ok) {
-          console.error('❌ Failed to fetch diamonds for ID lookup:', getAllResponse.status);
-          throw new Error(`Failed to fetch diamonds: ${getAllResponse.status}`);
+          const errorText = await getAllResponse.text();
+          console.error('❌ Failed to fetch diamonds for ID lookup:', getAllResponse.status, errorText);
+          throw new Error(`Failed to fetch diamonds: ${getAllResponse.status} - ${errorText}`);
         }
 
         const allDiamonds = await getAllResponse.json();
@@ -226,12 +233,12 @@ serve(async (req) => {
           throw new Error(`Diamond not found with stock number: ${stockNumber}`);
         }
 
-        const diamondId = targetDiamond.id;
-        console.log('✅ Found diamond ID:', diamondId, 'for stock number:', stockNumber);
+        const diamondIdToDelete = targetDiamond.id;
+        console.log('✅ Found diamond ID:', diamondIdToDelete, 'for stock number:', stockNumber);
 
         // Now delete using the diamond ID
-        const deleteEndpoint = `${backendUrl}/api/v1/delete_stone/${diamondId}`;
-        console.log('🗑️ Deleting diamond with ID:', diamondId, 'at endpoint:', deleteEndpoint);
+        const deleteEndpoint = `${backendUrl}/api/v1/delete_stone/${diamondIdToDelete}`;
+        console.log('🗑️ Deleting diamond with ID:', diamondIdToDelete, 'at endpoint:', deleteEndpoint);
         
         const deleteResponse = await fetch(deleteEndpoint, {
           method: 'DELETE',
