@@ -1,5 +1,3 @@
-
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
@@ -43,20 +41,17 @@ serve(async (req) => {
 
     const backendUrl = Deno.env.get('BACKEND_URL') || 'https://api.mazalbot.com';
     
-    // Try multiple environment variable names for the bearer token
-    const bearerToken = Deno.env.get('BACKEND_ACCESS_TOKEN') || 
-                       Deno.env.get('FASTAPI_BEARER_TOKEN') || 
-                       Deno.env.get('BEARER_TOKEN');
+    // Get the bearer token from environment variables
+    const bearerToken = Deno.env.get('BACKEND_ACCESS_TOKEN');
     
     if (!bearerToken) {
-      console.error('❌ No bearer token found in environment variables');
-      console.error('❌ Checked: BACKEND_ACCESS_TOKEN, FASTAPI_BEARER_TOKEN, BEARER_TOKEN');
-      throw new Error('Backend authentication token not configured in environment variables');
+      console.error('❌ BACKEND_ACCESS_TOKEN not found in environment variables');
+      throw new Error('Backend authentication token (BACKEND_ACCESS_TOKEN) not configured in environment variables');
     }
 
     console.log('🔸 Using backend URL:', backendUrl);
-    console.log('🔸 Found bearer token from environment');
-    console.log('🔸 Bearer token length:', bearerToken?.length || 0);
+    console.log('🔸 Bearer token configured successfully');
+    console.log('🔸 Bearer token length:', bearerToken.length);
 
     const headers = {
       'Content-Type': 'application/json',
@@ -70,7 +65,6 @@ serve(async (req) => {
         const endpoint = `${backendUrl}/api/v1/get_all_stones`;
         
         console.log('🔸 Making GET request to:', endpoint);
-        console.log('🔸 With headers:', { ...headers, Authorization: 'Bearer [REDACTED]' });
         
         const response = await fetch(endpoint, {
           method: 'GET',
@@ -78,7 +72,6 @@ serve(async (req) => {
         });
 
         console.log('🔸 Response status:', response.status);
-        console.log('🔸 Response headers:', Object.fromEntries(response.headers.entries()));
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -284,4 +277,3 @@ serve(async (req) => {
     });
   }
 });
-
