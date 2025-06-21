@@ -4,7 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-action, x-user_id, x-diamond_id, x-stock_number',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 };
 
@@ -33,9 +33,11 @@ serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url);
-    const action = url.searchParams.get('action');
-    const userId = url.searchParams.get('user_id') || '2138564172';
+    // Get action and parameters from headers
+    const action = req.headers.get('x-action') || 'get_all';
+    const userId = req.headers.get('x-user_id') || '2138564172';
+    const diamondId = req.headers.get('x-diamond_id') || '';
+    const stockNumber = req.headers.get('x-stock_number') || '';
     
     console.log('🔸 Diamond Management - Action:', action, 'User:', userId);
 
@@ -59,7 +61,7 @@ serve(async (req) => {
     switch (action) {
       case 'get_all': {
         console.log('📥 Fetching all diamonds for user:', userId);
-        const endpoint = `${backendUrl}/api/v1/get_all_stones?user_id=${userId}`;
+        const endpoint = `${backendUrl}/api/v1/get_all_stones`;
         
         const response = await fetch(endpoint, {
           method: 'GET',
@@ -132,7 +134,6 @@ serve(async (req) => {
       }
 
       case 'update': {
-        const diamondId = url.searchParams.get('diamond_id');
         const diamondData: DiamondData = await req.json();
         console.log('📝 Updating diamond:', diamondId);
         
@@ -183,7 +184,6 @@ serve(async (req) => {
       }
 
       case 'delete': {
-        const stockNumber = url.searchParams.get('stock_number');
         console.log('🗑️ Deleting diamond:', stockNumber);
         
         if (!stockNumber) {

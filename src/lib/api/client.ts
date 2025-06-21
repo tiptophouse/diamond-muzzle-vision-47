@@ -49,18 +49,15 @@ export async function fetchApi<T>(
 
     console.log('🔸 Calling diamond-management edge function:', { action, userId, diamondId, stockNumber });
 
-    // Build the URL with query parameters for the edge function
-    const url = new URL(`${supabase.supabaseUrl}/functions/v1/diamond-management`);
-    url.searchParams.set('action', action);
-    url.searchParams.set('user_id', userId);
-    if (diamondId) url.searchParams.set('diamond_id', diamondId);
-    if (stockNumber) url.searchParams.set('stock_number', decodeURIComponent(stockNumber));
-
     const { data: edgeResponse, error: edgeError } = await supabase.functions.invoke('diamond-management', {
       method: (options.method || 'GET') as 'GET' | 'POST' | 'PUT' | 'DELETE',
       body: options.body ? JSON.parse(options.body as string) : undefined,
       headers: {
         'Content-Type': 'application/json',
+        'x-action': action,
+        'x-user_id': userId,
+        'x-diamond_id': diamondId,
+        'x-stock_number': stockNumber ? decodeURIComponent(stockNumber) : ''
       }
     });
 
