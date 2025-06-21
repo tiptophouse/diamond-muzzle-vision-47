@@ -73,7 +73,7 @@ export function useStoreData() {
               lab: item.lab || undefined,
               gem360Url: gem360Url || undefined,
               certificateUrl: item.certificate_url || item.certificateUrl || undefined
-            };
+            } as Diamond;
           })
           .filter(diamond => diamond.store_visible && diamond.status === 'Available'); // Only show store-visible and available diamonds
 

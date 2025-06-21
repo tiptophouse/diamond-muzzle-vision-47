@@ -38,15 +38,23 @@ export function useReportsData() {
         console.log('✅ Received diamonds from API:', response.data.length, 'total diamonds');
         
         const convertedDiamonds = convertDiamondsToInventoryFormat(response.data, user.id);
-        console.log('✅ Converted diamonds for display:', convertedDiamonds.length, 'diamonds for user', user.id);
         
-        setAllDiamonds(convertedDiamonds);
-        setDiamonds(convertedDiamonds);
+        // Ensure all Diamond properties are present
+        const processedDiamonds: Diamond[] = convertedDiamonds.map(diamond => ({
+          ...diamond,
+          store_visible: diamond.store_visible ?? true,
+          gem360Url: diamond.gem360Url || (diamond.certificateUrl?.includes('gem360') ? diamond.certificateUrl : undefined)
+        }));
+        
+        console.log('✅ Converted diamonds for display:', processedDiamonds.length, 'diamonds for user', user.id);
+        
+        setAllDiamonds(processedDiamonds);
+        setDiamonds(processedDiamonds);
         setRetryCount(0);
         
-        if (convertedDiamonds.length > 0) {
+        if (processedDiamonds.length > 0) {
           const toastInstance = toast({
-            title: `${convertedDiamonds.length} diamonds`,
+            title: `${processedDiamonds.length} diamonds`,
             description: "Report data loaded",
           });
           

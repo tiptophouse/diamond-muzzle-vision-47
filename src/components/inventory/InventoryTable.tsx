@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +9,7 @@ import { Trash2, Edit, Eye, EyeOff, Search, Filter, Diamond, Loader2 } from 'luc
 import { useInventoryCrud } from '@/hooks/useInventoryCrud';
 import { DiamondFormModal } from './form/DiamondFormModal';
 import { DiamondFormData } from './form/types';
+import { useToast } from '@/components/ui/use-toast';
 
 export interface Diamond {
   id: string;
@@ -26,6 +26,7 @@ export interface Diamond {
   certificateNumber?: string;
   lab?: string;
   certificateUrl?: string;
+  gem360Url?: string;
 }
 
 interface InventoryTableProps {
@@ -35,6 +36,7 @@ interface InventoryTableProps {
 }
 
 export function InventoryTable({ diamonds, onRefresh, loading }: InventoryTableProps) {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [shapeFilter, setShapeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -47,13 +49,15 @@ export function InventoryTable({ diamonds, onRefresh, loading }: InventoryTableP
       onRefresh();
       setEditingDiamond(null);
       setShowAddModal(false);
+      toast({
+        title: "✅ Success",
+        description: "Diamond operation completed successfully",
+      });
     },
     removeDiamondFromState: (diamondId: string) => {
-      // Optimistic UI update handled by parent component
       console.log('🔄 Optimistically removing diamond:', diamondId);
     },
     restoreDiamondToState: (diamond: Diamond) => {
-      // Restore diamond if deletion fails
       console.log('🔄 Restoring diamond:', diamond.id);
       onRefresh();
     }
@@ -82,12 +86,26 @@ export function InventoryTable({ diamonds, onRefresh, loading }: InventoryTableP
   }, [diamonds, searchTerm, shapeFilter, statusFilter]);
 
   const handleAdd = async (data: DiamondFormData) => {
-    return await addDiamond(data);
+    const success = await addDiamond(data);
+    if (success) {
+      toast({
+        title: "✅ Diamond Added",
+        description: `Diamond #${data.stockNumber} has been added successfully`,
+      });
+    }
+    return success;
   };
 
   const handleEdit = async (data: DiamondFormData) => {
     if (!editingDiamond) return false;
-    return await updateDiamond(editingDiamond.id, data);
+    const success = await updateDiamond(editingDiamond.id, data);
+    if (success) {
+      toast({
+        title: "✅ Diamond Updated",
+        description: `Diamond #${data.stockNumber} has been updated successfully`,
+      });
+    }
+    return success;
   };
 
   const handleDelete = async (diamond: Diamond) => {
@@ -99,8 +117,19 @@ export function InventoryTable({ diamonds, onRefresh, loading }: InventoryTableP
     
     setDeletingId(diamond.id);
     try {
-      // Use the diamond's ID directly from the API response
-      await deleteDiamond(diamond.id, diamond);
+      const success = await deleteDiamond(diamond.id, diamond);
+      if (success) {
+        toast({
+          title: "✅ Diamond Deleted",
+          description: `Diamond #${diamond.stockNumber} has been deleted successfully`,
+        });
+      } else {
+        toast({
+          title: "❌ Delete Failed",
+          description: `Failed to delete diamond #${diamond.stockNumber}`,
+          variant: "destructive",
+        });
+      }
     } finally {
       setDeletingId(null);
     }
@@ -120,10 +149,17 @@ export function InventoryTable({ diamonds, onRefresh, loading }: InventoryTableP
       certificateNumber: diamond.certificateNumber || '',
       lab: diamond.lab || '',
       imageUrl: diamond.imageUrl || '',
-      certificateUrl: diamond.certificateUrl || ''
+      certificateUrl: diamond.certificateUrl || '',
+      gem360Url: diamond.gem360Url || ''
     };
     
-    await updateDiamond(diamond.id, updatedData);
+    const success = await updateDiamond(diamond.id, updatedData);
+    if (success) {
+      toast({
+        title: "✅ Visibility Updated",
+        description: `Diamond #${diamond.stockNumber} is now ${!diamond.store_visible ? 'visible' : 'hidden'} in store`,
+      });
+    }
   };
 
   if (loading) {
@@ -346,7 +382,8 @@ export function InventoryTable({ diamonds, onRefresh, loading }: InventoryTableP
             certificateNumber: editingDiamond.certificateNumber || '',
             lab: editingDiamond.lab || '',
             imageUrl: editingDiamond.imageUrl || '',
-            certificateUrl: editingDiamond.certificateUrl || ''
+            certificateUrl: editingDiamond.certificateUrl || '',
+            gem360Url: editingDiamond.gem360Url || ''
           }}
           isLoading={crudLoading}
         />
