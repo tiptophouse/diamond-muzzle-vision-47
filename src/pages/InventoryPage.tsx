@@ -190,8 +190,9 @@ export default function InventoryPage() {
           <main className="flex-1">
             <div className="space-y-4">
               <InventoryTable
-                data={filteredDiamonds}
+                diamonds={filteredDiamonds}
                 loading={loading}
+                onRefresh={handleRefresh}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onStoreToggle={handleStoreToggle}

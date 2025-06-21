@@ -29,22 +29,33 @@ export function DiamondFormModal({
   };
 
   // Convert Diamond to DiamondFormData if needed
-  const convertedInitialData = initialData ? {
-    stockNumber: initialData.stockNumber || '',
-    shape: initialData.shape || '',
-    carat: initialData.carat || 0,
-    color: initialData.color || '',
-    clarity: initialData.clarity || '',
-    cut: initialData.cut || '',
-    price: initialData.price || 0,
-    status: initialData.status || 'Available',
-    storeVisible: 'store_visible' in initialData ? initialData.store_visible : true,
-    certificateNumber: initialData.certificateNumber || '',
-    certificateUrl: initialData.certificateUrl || '',
-    lab: initialData.lab || '',
-    imageUrl: initialData.imageUrl || '',
-    gem360Url: initialData.gem360Url || '',
-  } as Partial<DiamondFormData> : undefined;
+  const convertInitialData = (): Partial<DiamondFormData> | undefined => {
+    if (!initialData) return undefined;
+    
+    // If it's already DiamondFormData, return as is
+    if ('storeVisible' in initialData) {
+      return initialData as Partial<DiamondFormData>;
+    }
+    
+    // Convert Diamond to DiamondFormData
+    const diamond = initialData as Diamond;
+    return {
+      stockNumber: diamond.stockNumber || '',
+      shape: diamond.shape || '',
+      carat: diamond.carat || 0,
+      color: diamond.color || '',
+      clarity: diamond.clarity || '',
+      cut: diamond.cut || '',
+      price: diamond.price || 0,
+      status: diamond.status || 'Available',
+      storeVisible: diamond.store_visible ?? true,
+      certificateNumber: diamond.certificateNumber || '',
+      certificateUrl: diamond.certificateUrl || '',
+      lab: diamond.lab || '',
+      imageUrl: diamond.imageUrl || '',
+      gem360Url: diamond.gem360Url || '',
+    };
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -53,7 +64,7 @@ export function DiamondFormModal({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <DiamondForm
-          diamond={convertedInitialData}
+          diamond={convertInitialData()}
           onSubmit={handleSubmit}
           onCancel={onClose}
           isLoading={isLoading}

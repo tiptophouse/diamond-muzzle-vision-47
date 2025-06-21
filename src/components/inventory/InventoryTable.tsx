@@ -119,6 +119,20 @@ export function InventoryTable({
     setEditingDiamond(diamond);
   };
 
+  const handleEditSubmit = async (data: DiamondFormData) => {
+    if (!editingDiamond) return false;
+    
+    const success = await updateDiamond(editingDiamond.id, data);
+    if (success) {
+      toast({
+        title: "✅ Diamond Updated",
+        description: `Diamond #${data.stockNumber} has been updated successfully`,
+      });
+      setEditingDiamond(null);
+    }
+    return success;
+  };
+
   const handleDelete = async (diamond: Diamond) => {
     if (onDeleteProp) {
       await onDeleteProp(diamond.stockNumber);
@@ -388,24 +402,9 @@ export function InventoryTable({
         <DiamondFormModal
           isOpen={!!editingDiamond}
           onClose={() => setEditingDiamond(null)}
-          onSubmit={handleEdit}
+          onSubmit={handleEditSubmit}
           title="Edit Diamond"
-          initialData={{
-            stockNumber: editingDiamond.stockNumber,
-            shape: editingDiamond.shape,
-            carat: editingDiamond.carat,
-            color: editingDiamond.color,
-            clarity: editingDiamond.clarity,
-            cut: editingDiamond.cut,
-            price: editingDiamond.price,
-            status: editingDiamond.status,
-            storeVisible: editingDiamond.store_visible,
-            certificateNumber: editingDiamond.certificateNumber || '',
-            lab: editingDiamond.lab || '',
-            imageUrl: editingDiamond.imageUrl || '',
-            certificateUrl: editingDiamond.certificateUrl || '',
-            gem360Url: editingDiamond.gem360Url || ''
-          }}
+          initialData={editingDiamond}
           isLoading={crudLoading}
         />
       )}
