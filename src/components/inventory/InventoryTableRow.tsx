@@ -22,9 +22,9 @@ export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle }: 
     });
     
     if (onDelete) {
-      // Use stock number for deletion as FastAPI expects it
-      console.log('🗑️ ROW: Using diamond.stockNumber for deletion:', diamond.stockNumber);
-      onDelete(diamond.stockNumber);
+      // Use the diamond ID for deletion as the FastAPI backend expects it in the URL
+      console.log('🗑️ ROW: Using diamond.id for deletion:', diamond.id);
+      onDelete(diamond.id);
     } else {
       console.warn('⚠️ ROW: onDelete callback not provided');
     }

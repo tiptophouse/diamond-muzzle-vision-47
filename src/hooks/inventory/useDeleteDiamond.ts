@@ -30,9 +30,12 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
         removeDiamondFromState(diamondData.id);
       }
       
-      // Use stock number for the API endpoint
-      const endpoint = apiEndpoints.deleteDiamond(stockNumber);
+      // Use the stock number for the API endpoint - this aligns with the FastAPI backend
+      // The backend expects the diamond ID/stock number in the URL path
+      const deleteId = diamondData?.id || stockNumber;
+      const endpoint = apiEndpoints.deleteDiamond(deleteId);
       console.log('🗑️ DELETE: API endpoint:', endpoint);
+      console.log('🗑️ DELETE: Using delete ID:', deleteId);
       
       console.log('🗑️ DELETE: Making DELETE request to FastAPI...');
       const result = await api.delete(endpoint);
