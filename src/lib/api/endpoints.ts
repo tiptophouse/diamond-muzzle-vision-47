@@ -1,3 +1,4 @@
+
 export const apiEndpoints = {
   getAllStones: (userId: number) => {
     // Ensure we're using the correct user-specific endpoint for your backend
@@ -56,4 +57,16 @@ export const apiEndpoints = {
   // Inventory management
   deleteAllInventory: (userId: number) => `/api/v1/users/${userId}/inventory/delete-all`,
   updateAllInventory: (userId: number) => `/api/v1/users/${userId}/inventory/update-all`,
+  
+  // User profile management endpoints
+  getUserProfile: (userId: number) => {
+    const endpoint = `/api/v1/users/${userId}/profile`;
+    console.log('👤 API: Building getUserProfile endpoint:', endpoint);
+    return endpoint;
+  },
+  updateUserProfile: (userId: number) => {
+    const endpoint = `/api/v1/users/${userId}/profile`;
+    console.log('👤 API: Building updateUserProfile endpoint:', endpoint);
+    return endpoint;
+  },
 };

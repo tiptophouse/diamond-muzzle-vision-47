@@ -40,13 +40,11 @@ export function UserDataManager({ user, onDataCleared }: UserDataManagerProps) {
     try {
       console.log('📊 ADMIN: Fetching data summary for user:', user.telegram_id);
       
-      // This would typically call your FastAPI backend to get user data summary
       const response = await api.get(`/api/v1/admin/users/${user.telegram_id}/data-summary`);
       
       if (response.data) {
-        setDataSummary(response.data);
+        setDataSummary(response.data as UserDataSummary);
       } else {
-        // Fallback summary if endpoint not available
         setDataSummary({
           diamonds: 0,
           chatSessions: 0,
@@ -56,7 +54,6 @@ export function UserDataManager({ user, onDataCleared }: UserDataManagerProps) {
       }
     } catch (error) {
       console.error('❌ ADMIN: Failed to fetch data summary:', error);
-      // Set fallback data summary
       setDataSummary({
         diamonds: 0,
         chatSessions: 0,
@@ -73,7 +70,6 @@ export function UserDataManager({ user, onDataCleared }: UserDataManagerProps) {
     try {
       console.log('🗑️ ADMIN: Clearing all data for user:', user.telegram_id);
       
-      // Call FastAPI backend to clear user data
       const response = await api.delete(`/api/v1/admin/users/${user.telegram_id}/data`);
       
       if (response.error) {

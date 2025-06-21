@@ -1,57 +1,99 @@
 
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { DiamondFormData } from '@/components/inventory/form/types';
-import { getCurrentUserId } from '@/lib/api';
-import { api, apiEndpoints } from '@/lib/api';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { api, apiEndpoints, getCurrentUserId } from '@/lib/api';
+import { Diamond } from '@/components/inventory/InventoryTable';
+import { triggerInventoryChange } from '@/hooks/inventory/useInventoryDataSync';
 
-export function useAddDiamond(onSuccess?: () => void) {
-  const { user } = useTelegramAuth();
+interface AddDiamondData {
+  stockNumber: string;
+  shape: string;
+  carat: number;
+  color: string;
+  clarity: string;
+  cut: string;
+  price: number;
+  status: string;
+  imageUrl?: string;
+  store_visible?: boolean;
+  certificateNumber?: string;
+  lab?: string;
+  certificateUrl?: string;
+}
 
-  const addDiamond = async (data: DiamondFormData) => {
-    if (!user?.id) {
-      throw new Error('User not authenticated');
+export function useAddDiamond() {
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const addDiamond = async (diamondData: AddDiamondData): Promise<boolean> => {
+    const userId = getCurrentUserId();
+    
+    if (!userId) {
+      console.error('🚫 ADD DIAMOND: No authenticated user ID found');
+      toast({
+        variant: "destructive",
+        title: "❌ Authentication Required",
+        description: "You must be logged in to add diamonds to your inventory.",
+      });
+      return false;
     }
 
+    setIsLoading(true);
+    
     try {
-      const userId = getCurrentUserId() || user.id;
+      console.log('💎 ADD DIAMOND: Adding diamond for user:', userId, diamondData);
       
-      const diamondData = {
+      const endpoint = apiEndpoints.addDiamond(userId);
+      const response = await api.post(endpoint, {
         user_id: userId,
-        stock_number: data.stockNumber,
-        shape: data.shape,
-        weight: Number(data.carat),
-        color: data.color,
-        clarity: data.clarity,
-        cut: data.cut,
-        price: Number(data.price),
-        price_per_carat: data.carat > 0 ? Math.round(Number(data.price) / Number(data.carat)) : Math.round(Number(data.price)),
-        status: data.status,
-        picture: data.picture || '',
-        certificate_number: data.certificateNumber || '',
-        certificate_url: data.certificateUrl || '',
-        lab: data.lab || '',
-        store_visible: data.storeVisible,
-      };
+        stock_number: diamondData.stockNumber,
+        shape: diamondData.shape,
+        weight: diamondData.carat,
+        color: diamondData.color,
+        clarity: diamondData.clarity,
+        cut: diamondData.cut,
+        price_per_carat: Math.round(diamondData.price / diamondData.carat),
+        status: diamondData.status,
+        picture: diamondData.imageUrl,
+        store_visible: diamondData.store_visible !== false,
+        certificate_number: diamondData.certificateNumber,
+        lab: diamondData.lab,
+        certificate_url: diamondData.certificateUrl,
+      });
 
-      console.log('➕ Adding diamond via FastAPI:', diamondData);
-      
-      const endpoint = apiEndpoints.addDiamond();
-      const result = await api.post(endpoint, diamondData);
-      
-      if (result.error) {
-        throw new Error(result.error);
+      if (response.error) {
+        throw new Error(response.error);
       }
 
-      console.log('✅ Diamond added successfully to FastAPI backend');
+      console.log('✅ ADD DIAMOND: Successfully added diamond');
       
-      if (onSuccess) onSuccess();
+      toast({
+        title: "✅ Diamond Added Successfully",
+        description: `Stock #${diamondData.stockNumber} has been added to your inventory.`,
+      });
+
+      // Trigger inventory refresh
+      triggerInventoryChange();
+      
       return true;
-      
     } catch (error) {
-      console.error('❌ Failed to add diamond to FastAPI:', error);
-      throw error;
+      console.error('❌ ADD DIAMOND: Failed to add diamond:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add diamond';
+      
+      toast({
+        variant: "destructive",
+        title: "❌ Failed to Add Diamond",
+        description: errorMessage,
+      });
+      
+      return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  return { addDiamond };
+  return {
+    addDiamond,
+    isLoading
+  };
 }
