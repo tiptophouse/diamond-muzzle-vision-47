@@ -467,6 +467,33 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_analytics_cache: {
+        Row: {
+          analytics_type: string
+          created_at: string | null
+          data: Json
+          expires_at: string
+          id: string
+          user_id: number
+        }
+        Insert: {
+          analytics_type: string
+          created_at?: string | null
+          data: Json
+          expires_at: string
+          id?: string
+          user_id: number
+        }
+        Update: {
+          analytics_type?: string
+          created_at?: string | null
+          data?: Json
+          expires_at?: string
+          id?: string
+          user_id?: number
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -898,6 +925,10 @@ export type Database = {
       }
     }
     Functions: {
+      clean_expired_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       delete_diamond: {
         Args: { p_stock_number: string; p_user_id: number }
         Returns: boolean

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Settings } from 'lucide-react';
 import { useEnhancedAnalytics } from '@/hooks/useEnhancedAnalytics';
@@ -10,6 +9,7 @@ import { AdminHeader } from './AdminHeader';
 import { AdminStatsGrid } from './AdminStatsGrid';
 import { AdminUserTable } from './AdminUserTable';
 import { NotificationSender } from './NotificationSender';
+import { AdminRealTimeAnalytics } from './AdminRealTimeAnalytics';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,10 +32,8 @@ export function AdminUserManager({}: AdminUserManagerProps) {
   const stats = getUserStats();
 
   const filteredUsers = enhancedUsers.filter(user => {
-    // Create a comprehensive search that includes real names
     const searchLower = searchTerm.toLowerCase();
     
-    // Primary search fields
     const firstName = (user.first_name || '').toLowerCase();
     const lastName = (user.last_name || '').toLowerCase();
     const fullName = `${firstName} ${lastName}`.trim();
@@ -43,7 +41,6 @@ export function AdminUserManager({}: AdminUserManagerProps) {
     const telegramId = user.telegram_id.toString();
     const phoneNumber = user.phone_number || '';
     
-    // Enhanced search logic
     return (
       firstName.includes(searchLower) ||
       lastName.includes(searchLower) ||
@@ -51,7 +48,6 @@ export function AdminUserManager({}: AdminUserManagerProps) {
       username.includes(searchLower) ||
       telegramId.includes(searchTerm) ||
       phoneNumber.includes(searchTerm) ||
-      // Also search by display logic for cases where first_name might be "Telegram" etc
       (user.username && `@${username}`.includes(searchLower))
     );
   });
@@ -77,7 +73,6 @@ export function AdminUserManager({}: AdminUserManagerProps) {
       try {
         console.log('Deleting user:', user.telegram_id);
         
-        // Delete from user_analytics first (foreign key constraint)
         const { error: analyticsError } = await supabase
           .from('user_analytics')
           .delete()
@@ -87,7 +82,6 @@ export function AdminUserManager({}: AdminUserManagerProps) {
           console.warn('Error deleting analytics:', analyticsError);
         }
 
-        // Delete from blocked_users if exists
         const { error: blockedError } = await supabase
           .from('blocked_users')
           .delete()
@@ -97,7 +91,6 @@ export function AdminUserManager({}: AdminUserManagerProps) {
           console.warn('Error deleting blocked user:', blockedError);
         }
 
-        // Delete from user_profiles
         const { error: profileError } = await supabase
           .from('user_profiles')
           .delete()
@@ -107,7 +100,6 @@ export function AdminUserManager({}: AdminUserManagerProps) {
           throw profileError;
         }
 
-        // Log admin action
         await supabase
           .from('user_management_log')
           .insert({
@@ -122,7 +114,6 @@ export function AdminUserManager({}: AdminUserManagerProps) {
           description: `Successfully deleted ${displayName}`,
         });
 
-        // Refresh the data
         refetch();
       } catch (error: any) {
         console.error('Error deleting user:', error);
@@ -160,13 +151,11 @@ export function AdminUserManager({}: AdminUserManagerProps) {
       try {
         console.log('Deleting all mock data...');
         
-        // Delete mock users from analytics first
         const { error: analyticsError } = await supabase
           .from('user_analytics')
           .delete()
-          .in('telegram_id', [2138564172, 1000000000]); // Known mock IDs
+          .in('telegram_id', [2138564172, 1000000000]);
 
-        // Delete mock users where first_name indicates test data
         const { error: profileError } = await supabase
           .from('user_profiles')
           .delete()
@@ -264,11 +253,18 @@ export function AdminUserManager({}: AdminUserManagerProps) {
           averageEngagement={averageEngagement} 
         />
 
-        <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6 bg-white">
+        <Tabs defaultValue="analytics" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-6 bg-white">
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Real-Time Analytics</TabsTrigger>
             <TabsTrigger value="users" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">User Management</TabsTrigger>
             <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Send Notifications</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="analytics">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <AdminRealTimeAnalytics />
+            </div>
+          </TabsContent>
           
           <TabsContent value="users">
             <AdminUserTable

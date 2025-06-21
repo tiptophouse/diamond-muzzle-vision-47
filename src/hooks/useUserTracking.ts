@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { realTimeAnalyticsService } from '@/services/realTimeAnalyticsService';
 
 interface UserSession {
   id: string;
@@ -34,53 +34,81 @@ export function useUserTracking() {
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize session tracking
+  // Initialize session tracking with enhanced real-time service
   useEffect(() => {
     if (!user?.id) return;
 
     const initializeSession = async () => {
       try {
-        // Create a new session
-        const { data: session, error } = await supabase
-          .from('user_sessions')
-          .insert({
-            telegram_id: user.id,
-            user_agent: navigator.userAgent,
-            pages_visited: 0,
-            is_active: true
-          })
-          .select()
-          .single();
+        console.log('🚀 Initializing enhanced user session tracking');
+        
+        const sessionId = await realTimeAnalyticsService.startUserSession(
+          user.id,
+          navigator.userAgent
+        );
 
-        if (error) throw error;
+        if (sessionId) {
+          setCurrentSessionId(sessionId);
+          console.log('✅ Enhanced session initialized:', sessionId);
+        } else {
+          console.error('❌ Failed to initialize enhanced session');
+          // Fallback to basic session creation
+          const { data: session, error } = await supabase
+            .from('user_sessions')
+            .insert({
+              telegram_id: user.id,
+              user_agent: navigator.userAgent,
+              pages_visited: 0,
+              is_active: true
+            })
+            .select()
+            .single();
 
-        setCurrentSessionId(session.id);
-        console.log('Session initialized:', session.id);
+          if (error) throw error;
+          setCurrentSessionId(session.id);
+          console.log('✅ Fallback session initialized:', session.id);
+        }
       } catch (error) {
-        console.error('Error initializing session:', error);
+        console.error('❌ Error initializing session:', error);
       }
     };
 
     initializeSession();
   }, [user?.id]);
 
-  // Track page visits
+  // Enhanced page visit tracking
   const trackPageVisit = async (pagePath: string, pageTitle?: string) => {
     if (!user?.id || !currentSessionId) return;
 
     try {
-      const { error } = await supabase
-        .from('page_visits')
-        .insert({
-          session_id: currentSessionId,
-          page_path: pagePath,
-          page_title: pageTitle,
-          referrer: document.referrer || undefined
-        });
+      console.log('📄 Enhanced page visit tracking:', pagePath);
+      
+      // Use real-time service for tracking
+      const success = await realTimeAnalyticsService.trackPageVisit(
+        currentSessionId,
+        pagePath,
+        pageTitle
+      );
 
-      if (error) throw error;
+      if (success) {
+        console.log('✅ Enhanced page visit tracked:', pagePath);
+      } else {
+        console.warn('⚠️ Enhanced tracking failed, using fallback');
+        // Fallback to direct Supabase insert
+        const { error } = await supabase
+          .from('page_visits')
+          .insert({
+            session_id: currentSessionId,
+            page_path: pagePath,
+            page_title: pageTitle,
+            referrer: document.referrer || undefined
+          });
 
-      // Update session page count
+        if (error) throw error;
+        console.log('✅ Fallback page visit tracked:', pagePath);
+      }
+
+      // Update local session page count
       await supabase
         .from('user_sessions')
         .update({
@@ -88,9 +116,8 @@ export function useUserTracking() {
         })
         .eq('id', currentSessionId);
 
-      console.log('Page visit tracked:', pagePath);
     } catch (error) {
-      console.error('Error tracking page visit:', error);
+      console.error('❌ Error tracking page visit:', error);
     }
   };
 
@@ -110,22 +137,32 @@ export function useUserTracking() {
     }
   };
 
-  // End session
+  // Enhanced session ending
   const endSession = async () => {
     if (!currentSessionId) return;
 
     try {
-      await supabase
-        .from('user_sessions')
-        .update({
-          session_end: new Date().toISOString(),
-          is_active: false
-        })
-        .eq('id', currentSessionId);
-
-      console.log('Session ended:', currentSessionId);
+      console.log('🛑 Ending enhanced session:', currentSessionId);
+      
+      const success = await realTimeAnalyticsService.endUserSession(currentSessionId);
+      
+      if (success) {
+        console.log('✅ Enhanced session ended:', currentSessionId);
+      } else {
+        console.warn('⚠️ Enhanced session end failed, using fallback');
+        // Fallback to direct Supabase update
+        await supabase
+          .from('user_sessions')
+          .update({
+            session_end: new Date().toISOString(),
+            is_active: false
+          })
+          .eq('id', currentSessionId);
+        
+        console.log('✅ Fallback session ended:', currentSessionId);
+      }
     } catch (error) {
-      console.error('Error ending session:', error);
+      console.error('❌ Error ending session:', error);
     }
   };
 
@@ -139,7 +176,6 @@ export function useUserTracking() {
 
       if (error) throw error;
       
-      // Map the data to ensure proper types
       const mappedSessions = (data || []).map(session => ({
         ...session,
         total_duration: session.total_duration ? String(session.total_duration) : null,
@@ -163,7 +199,6 @@ export function useUserTracking() {
 
       if (error) throw error;
       
-      // Map the data to ensure proper types
       const mappedVisits = (data || []).map(visit => ({
         ...visit,
         time_spent: visit.time_spent ? String(visit.time_spent) : null
@@ -183,7 +218,7 @@ export function useUserTracking() {
     fetchPageVisits();
   }, []);
 
-  // Track page changes
+  // Enhanced page change tracking
   useEffect(() => {
     const handlePageChange = () => {
       const currentPath = window.location.hash.replace('#', '') || '/';
@@ -202,7 +237,7 @@ export function useUserTracking() {
     };
   }, [currentSessionId]);
 
-  // End session on page unload
+  // Enhanced session cleanup on page unload
   useEffect(() => {
     const handleBeforeUnload = () => {
       endSession();

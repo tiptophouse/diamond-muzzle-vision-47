@@ -104,6 +104,86 @@ serve(async (req) => {
         });
       }
 
+      case 'get_analytics': {
+        console.log('📊 ANALYTICS - Fetching inventory analytics for user:', userId);
+        const endpoint = `${backendUrl}/api/v1/get_all_stones`;
+        
+        const response = await fetch(endpoint, {
+          method: 'GET',
+          headers,
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ ANALYTICS - FastAPI error:', response.status, errorText);
+          throw new Error(`Analytics fetch failed: ${response.status} - ${errorText}`);
+        }
+
+        const diamonds = await response.json();
+        
+        // Process analytics data
+        const analytics = {
+          totalDiamonds: diamonds?.length || 0,
+          totalValue: diamonds?.reduce((sum: number, d: any) => sum + (Number(d.price) || 0), 0) || 0,
+          averagePrice: diamonds?.length ? (diamonds.reduce((sum: number, d: any) => sum + (Number(d.price) || 0), 0) / diamonds.length) : 0,
+          colorDistribution: {},
+          clarityDistribution: {},
+          shapeDistribution: {},
+          caratRanges: {
+            'under_1': 0,
+            '1_to_2': 0,
+            '2_to_3': 0,
+            'over_3': 0
+          },
+          priceRanges: {
+            'under_1000': 0,
+            '1000_to_5000': 0,
+            '5000_to_10000': 0,
+            'over_10000': 0
+          }
+        };
+
+        // Process distributions
+        diamonds?.forEach((diamond: any) => {
+          // Color distribution
+          const color = diamond.color || 'Unknown';
+          analytics.colorDistribution[color] = (analytics.colorDistribution[color] || 0) + 1;
+          
+          // Clarity distribution
+          const clarity = diamond.clarity || 'Unknown';
+          analytics.clarityDistribution[clarity] = (analytics.clarityDistribution[clarity] || 0) + 1;
+          
+          // Shape distribution
+          const shape = diamond.shape || 'Unknown';
+          analytics.shapeDistribution[shape] = (analytics.shapeDistribution[shape] || 0) + 1;
+          
+          // Carat ranges
+          const weight = Number(diamond.weight) || 0;
+          if (weight < 1) analytics.caratRanges.under_1++;
+          else if (weight < 2) analytics.caratRanges['1_to_2']++;
+          else if (weight < 3) analytics.caratRanges['2_to_3']++;
+          else analytics.caratRanges.over_3++;
+          
+          // Price ranges
+          const price = Number(diamond.price) || 0;
+          if (price < 1000) analytics.priceRanges.under_1000++;
+          else if (price < 5000) analytics.priceRanges['1000_to_5000']++;
+          else if (price < 10000) analytics.priceRanges['5000_to_10000']++;
+          else analytics.priceRanges.over_10000++;
+        });
+
+        console.log('✅ ANALYTICS - Processed analytics for', analytics.totalDiamonds, 'diamonds');
+        
+        return new Response(JSON.stringify({
+          success: true,
+          data: analytics,
+          source: 'analytics-processor',
+          message: `Analytics generated for ${analytics.totalDiamonds} diamonds`
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       case 'add': {
         const diamondData: DiamondData = await req.json();
         console.log('➕ ADD - Adding diamond:', diamondData.stock_number);
