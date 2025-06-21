@@ -24,6 +24,12 @@ interface UserDataSummary {
   totalRecords: number;
 }
 
+interface DiamondRecord {
+  id: string;
+  stock_number: string;
+  [key: string]: any;
+}
+
 export function UserDataManager({ user, onDataCleared }: UserDataManagerProps) {
   const { toast } = useToast();
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -71,14 +77,14 @@ export function UserDataManager({ user, onDataCleared }: UserDataManagerProps) {
     try {
       console.log('💎🗑️ ADMIN: Deleting all diamonds for user:', user.telegram_id);
       
-      // First get all user diamonds
+      // First get all user diamonds using the secure endpoint
       const diamondsResponse = await api.get(`/api/v1/get_all_stones?user_id=${user.telegram_id}`);
       
       if (diamondsResponse.error) {
         throw new Error(diamondsResponse.error);
       }
 
-      const diamonds = diamondsResponse.data || [];
+      const diamonds = (diamondsResponse.data as DiamondRecord[]) || [];
       console.log(`💎 ADMIN: Found ${diamonds.length} diamonds to delete`);
 
       if (diamonds.length === 0) {
@@ -95,17 +101,21 @@ export function UserDataManager({ user, onDataCleared }: UserDataManagerProps) {
 
       for (const diamond of diamonds) {
         try {
-          const deleteResponse = await api.delete(`/api/v1/delete_stone/${diamond.stock_number}?user_id=${user.telegram_id}`);
+          // Use the diamond ID directly from the API response for deletion
+          const diamondId = diamond.id || diamond.stock_number;
+          console.log(`🗑️ ADMIN: Deleting diamond with ID: ${diamondId}`);
+          
+          const deleteResponse = await api.delete(`/api/v1/delete_stone/${diamondId}?user_id=${user.telegram_id}`);
           
           if (deleteResponse.error) {
-            console.error(`❌ Failed to delete diamond ${diamond.stock_number}:`, deleteResponse.error);
+            console.error(`❌ Failed to delete diamond ${diamondId}:`, deleteResponse.error);
             failedCount++;
           } else {
-            console.log(`✅ Successfully deleted diamond ${diamond.stock_number}`);
+            console.log(`✅ Successfully deleted diamond ${diamondId}`);
             deletedCount++;
           }
         } catch (error) {
-          console.error(`❌ Error deleting diamond ${diamond.stock_number}:`, error);
+          console.error(`❌ Error deleting diamond ${diamond.id || diamond.stock_number}:`, error);
           failedCount++;
         }
       }

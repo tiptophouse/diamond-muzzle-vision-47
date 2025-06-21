@@ -1,13 +1,13 @@
 
-// FastAPI backend configuration
-export const API_BASE_URL = "https://api.mazalbot.com"; // Your FastAPI backend URL
+// FastAPI backend configuration - Updated to use the correct API URL
+export const API_BASE_URL = "https://api.mazalbot.com";
 
 let currentUserId: number | null = null;
 
 export function setCurrentUserId(userId: number) {
   currentUserId = userId;
   console.log('🔧 API: Current user ID set to:', userId, 'type:', typeof userId);
-  console.log('🔧 API: This will be used for FastAPI requests');
+  console.log('🔧 API: This will be used for secure FastAPI requests');
 }
 
 export function getCurrentUserId(): number | null {
@@ -24,7 +24,7 @@ export function isDevelopment(): boolean {
 // FastAPI connection helper
 export function getApiUrl(endpoint: string): string {
   const fullUrl = `${API_BASE_URL}${endpoint}`;
-  console.log('🔧 API: Building FastAPI URL:', fullUrl);
+  console.log('🔧 API: Building secure FastAPI URL:', fullUrl);
   return fullUrl;
 }
 

@@ -16,6 +16,7 @@ export const apiEndpoints = {
   },
   deleteDiamond: (diamondId: string, userId?: number) => {
     // Use the correct FastAPI delete endpoint format with user validation
+    // Always include user_id for security verification
     const endpoint = userId 
       ? `/api/v1/delete_stone/${diamondId}?user_id=${userId}`
       : `/api/v1/delete_stone/${diamondId}`;

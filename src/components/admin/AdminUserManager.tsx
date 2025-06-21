@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Settings } from 'lucide-react';
 import { useEnhancedAnalytics } from '@/hooks/useEnhancedAnalytics';
@@ -281,10 +282,11 @@ export function AdminUserManager({}: AdminUserManagerProps) {
                   onSearchChange={setSearchTerm}
                   getUserEngagementScore={getUserEngagementScore}
                   isUserBlocked={isUserBlocked}
+                  onBlockUser={handleToggleBlock}
+                  onUnblockUser={handleToggleBlock}
+                  onViewDetails={handleViewUser}
                   onViewUser={handleViewUser}
                   onEditUser={handleEditUser}
-                  onToggleBlock={handleToggleBlock}
-                  onDeleteUser={handleDeleteUser}
                   renderExtraActions={(user) => (
                     <UserDataManager
                       user={user}
