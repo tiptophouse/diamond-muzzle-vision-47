@@ -15,23 +15,28 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
 
   const deleteDiamond = async (stockNumber: string, diamondData?: Diamond) => {
     if (!user?.id) {
-      console.error('❌ DELETE: User not authenticated');
+      console.error('❌ DELETE HOOK: User not authenticated');
+      toast({
+        title: "❌ Authentication Required",
+        description: "Please log in to delete diamonds",
+        variant: "destructive",
+      });
       throw new Error('User not authenticated');
     }
 
+    console.log('🗑️ DELETE HOOK: Starting enhanced deletion process');
+    console.log('🗑️ DELETE HOOK: Stock number:', stockNumber);
+    console.log('🗑️ DELETE HOOK: User ID:', user.id);
+    
+    // Optimistic UI update
+    if (removeDiamondFromState && diamondData) {
+      console.log('🗑️ DELETE HOOK: Optimistically removing from UI');
+      removeDiamondFromState(diamondData.id);
+    }
+
     try {
-      console.log('🗑️ DELETE: Starting diamond deletion via edge function');
-      console.log('🗑️ DELETE: Stock number to delete:', stockNumber);
-      console.log('🗑️ DELETE: Diamond data:', diamondData);
-      console.log('🗑️ DELETE: User ID:', user.id);
+      console.log('🗑️ DELETE HOOK: Calling enhanced delete API...');
       
-      // Optimistically remove from UI first (using diamond ID for state management)
-      if (removeDiamondFromState && diamondData) {
-        console.log('🗑️ DELETE: Optimistically removing diamond from UI');
-        removeDiamondFromState(diamondData.id);
-      }
-      
-      console.log('🗑️ DELETE: Making DELETE request via edge function...');
       const { data: response, error } = await supabase.functions.invoke('diamond-management', {
         method: 'DELETE',
         headers: {
@@ -42,33 +47,32 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
         }
       });
       
-      console.log('🗑️ DELETE: Edge function response received:', response);
+      console.log('🗑️ DELETE HOOK: API response received:', response);
       
       if (error) {
-        console.error('❌ DELETE: Edge function error:', error);
+        console.error('❌ DELETE HOOK: API error:', error);
         
-        // Restore diamond to UI if delete failed
+        // Restore UI state on error
         if (restoreDiamondToState && diamondData) {
-          console.log('🔄 DELETE: Restoring diamond to UI due to error');
+          console.log('🔄 DELETE HOOK: Restoring diamond to UI');
           restoreDiamondToState(diamondData);
         }
         
         toast({
           title: "❌ Delete Failed",
-          description: error.message,
+          description: `Failed to delete diamond: ${error.message}`,
           variant: "destructive",
         });
         
         throw new Error(error.message);
       }
 
-      // Check if the delete operation was successful
       if (!response?.success) {
-        console.error('❌ DELETE: Edge function returned error:', response?.error);
+        console.error('❌ DELETE HOOK: Operation failed:', response?.error);
         
-        // Restore diamond to UI if delete failed
+        // Restore UI state on error
         if (restoreDiamondToState && diamondData) {
-          console.log('🔄 DELETE: Restoring diamond to UI due to error');
+          console.log('🔄 DELETE HOOK: Restoring diamond to UI');
           restoreDiamondToState(diamondData);
         }
         
@@ -78,10 +82,10 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
           variant: "destructive",
         });
         
-        throw new Error(`Delete failed: ${response?.error || 'Unknown error'}`);
+        throw new Error(response?.error || 'Delete operation failed');
       }
 
-      console.log('✅ DELETE: Diamond deleted successfully via edge function');
+      console.log('✅ DELETE HOOK: Diamond deleted successfully');
       
       // Show success message
       toast({
@@ -89,22 +93,31 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
         description: response.message || `Diamond ${stockNumber} deleted successfully`,
       });
       
-      console.log('✅ DELETE: Calling onSuccess callback');
-      if (onSuccess) onSuccess();
+      if (onSuccess) {
+        console.log('✅ DELETE HOOK: Calling success callback');
+        onSuccess();
+      }
+      
       return true;
       
     } catch (error) {
-      console.error('❌ DELETE: Complete error details:', error);
+      console.error('❌ DELETE HOOK: Unexpected error:', error);
       
-      // Restore diamond to UI if delete failed
+      // Restore UI state on error
       if (restoreDiamondToState && diamondData) {
-        console.log('🔄 DELETE: Restoring diamond to UI due to exception');
+        console.log('🔄 DELETE HOOK: Restoring diamond to UI due to exception');
         restoreDiamondToState(diamondData);
       }
       
-      // Re-throw with more context
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred during deletion';
-      throw new Error(`Failed to delete diamond: ${errorMessage}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      toast({
+        title: "❌ Delete Failed",
+        description: `Failed to delete diamond: ${errorMessage}`,
+        variant: "destructive",
+      });
+      
+      throw new Error(`Delete operation failed: ${errorMessage}`);
     }
   };
 

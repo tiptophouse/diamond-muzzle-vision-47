@@ -10,8 +10,17 @@ export function useAddDiamond(onSuccess?: () => void) {
 
   const addDiamond = async (data: DiamondFormData) => {
     if (!user?.id) {
+      console.error('❌ ADD HOOK: User not authenticated');
+      toast({
+        title: "❌ Authentication Required",
+        description: "Please log in to add diamonds",
+        variant: "destructive",
+      });
       throw new Error('User not authenticated');
     }
+
+    console.log('➕ ADD HOOK: Starting enhanced diamond creation');
+    console.log('➕ ADD HOOK: Data:', data);
 
     try {
       const userId = getCurrentUserId() || user.id;
@@ -34,7 +43,7 @@ export function useAddDiamond(onSuccess?: () => void) {
         store_visible: data.storeVisible,
       };
 
-      console.log('➕ Adding diamond via edge function:', diamondData);
+      console.log('➕ ADD HOOK: Calling enhanced add API...');
       
       const { data: response, error } = await supabase.functions.invoke('diamond-management', {
         method: 'POST',
@@ -46,27 +55,29 @@ export function useAddDiamond(onSuccess?: () => void) {
         }
       });
       
+      console.log('➕ ADD HOOK: API response received:', response);
+      
       if (error) {
-        console.error('❌ ADD: Edge function error:', error);
+        console.error('❌ ADD HOOK: API error:', error);
         toast({
           title: "❌ Add Failed",
-          description: error.message,
+          description: `Failed to add diamond: ${error.message}`,
           variant: "destructive",
         });
         throw new Error(error.message);
       }
 
       if (!response?.success) {
-        console.error('❌ ADD: Edge function returned error:', response?.error);
+        console.error('❌ ADD HOOK: Operation failed:', response?.error);
         toast({
           title: "❌ Add Failed",
           description: response?.error || 'Failed to add diamond',
           variant: "destructive",
         });
-        throw new Error(response?.error || 'Failed to add diamond');
+        throw new Error(response?.error || 'Add operation failed');
       }
 
-      console.log('✅ Diamond added successfully via edge function');
+      console.log('✅ ADD HOOK: Diamond added successfully');
       
       // Show success message
       toast({
@@ -74,12 +85,24 @@ export function useAddDiamond(onSuccess?: () => void) {
         description: response.message || `Diamond ${data.stockNumber} added successfully`,
       });
       
-      if (onSuccess) onSuccess();
+      if (onSuccess) {
+        console.log('✅ ADD HOOK: Calling success callback');
+        onSuccess();
+      }
+      
       return true;
       
     } catch (error) {
-      console.error('❌ Failed to add diamond via edge function:', error);
-      throw error;
+      console.error('❌ ADD HOOK: Unexpected error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      toast({
+        title: "❌ Add Failed",
+        description: `Failed to add diamond: ${errorMessage}`,
+        variant: "destructive",
+      });
+      
+      throw new Error(`Add operation failed: ${errorMessage}`);
     }
   };
 

@@ -9,8 +9,18 @@ export function useUpdateDiamond(onSuccess?: () => void) {
 
   const updateDiamond = async (diamondId: string, data: DiamondFormData) => {
     if (!user?.id) {
+      console.error('❌ UPDATE HOOK: User not authenticated');
+      toast({
+        title: "❌ Authentication Required",
+        description: "Please log in to update diamonds",
+        variant: "destructive",
+      });
       throw new Error('User not authenticated');
     }
+
+    console.log('📝 UPDATE HOOK: Starting enhanced diamond update');
+    console.log('📝 UPDATE HOOK: Diamond ID:', diamondId);
+    console.log('📝 UPDATE HOOK: Data:', data);
 
     try {
       const updates = {
@@ -30,7 +40,7 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         lab: data.lab || '',
       };
 
-      console.log('📝 Updating diamond via edge function:', diamondId, updates);
+      console.log('📝 UPDATE HOOK: Calling enhanced update API...');
       
       const { data: response, error } = await supabase.functions.invoke('diamond-management', {
         method: 'PUT',
@@ -43,27 +53,29 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         }
       });
       
+      console.log('📝 UPDATE HOOK: API response received:', response);
+      
       if (error) {
-        console.error('❌ UPDATE: Edge function error:', error);
+        console.error('❌ UPDATE HOOK: API error:', error);
         toast({
           title: "❌ Update Failed",
-          description: error.message,
+          description: `Failed to update diamond: ${error.message}`,
           variant: "destructive",
         });
         throw new Error(error.message);
       }
 
       if (!response?.success) {
-        console.error('❌ UPDATE: Edge function returned error:', response?.error);
+        console.error('❌ UPDATE HOOK: Operation failed:', response?.error);
         toast({
           title: "❌ Update Failed",
           description: response?.error || 'Failed to update diamond',
           variant: "destructive",
         });
-        throw new Error(response?.error || 'Failed to update diamond');
+        throw new Error(response?.error || 'Update operation failed');
       }
 
-      console.log('✅ Diamond updated successfully via edge function');
+      console.log('✅ UPDATE HOOK: Diamond updated successfully');
       
       // Show success message
       toast({
@@ -71,12 +83,24 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         description: response.message || `Diamond ${data.stockNumber} updated successfully`,
       });
       
-      if (onSuccess) onSuccess();
+      if (onSuccess) {
+        console.log('✅ UPDATE HOOK: Calling success callback');
+        onSuccess();
+      }
+      
       return true;
       
     } catch (error) {
-      console.error('❌ Failed to update diamond via edge function:', error);
-      throw error;
+      console.error('❌ UPDATE HOOK: Unexpected error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      toast({
+        title: "❌ Update Failed",
+        description: `Failed to update diamond: ${errorMessage}`,
+        variant: "destructive",
+      });
+      
+      throw new Error(`Update operation failed: ${errorMessage}`);
     }
   };
 

@@ -1,7 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { getCurrentUserId } from "@/lib/api";
-import { fetchMockInventoryData } from "./mockInventoryService";
 
 export interface FetchInventoryResult {
   data?: any[];
@@ -12,17 +11,18 @@ export interface FetchInventoryResult {
 export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   const userId = getCurrentUserId() || 2138564172;
   
-  console.log('🔍 INVENTORY SERVICE: Fetching data via Supabase edge function for user:', userId);
+  console.log('📊 INVENTORY SERVICE: Starting data fetch for user:', userId);
   
   const debugInfo = { 
-    step: 'Starting inventory fetch via edge function', 
+    step: 'Starting enhanced inventory fetch', 
     userId, 
     timestamp: new Date().toISOString(),
-    dataSource: 'edge-function'
+    dataSource: 'edge-function-primary',
+    attemptNumber: 1
   };
   
   try {
-    console.log('🚀 INVENTORY SERVICE: Calling diamond-management edge function...');
+    console.log('🚀 INVENTORY SERVICE: Calling enhanced diamond-management function...');
     
     const { data: edgeResponse, error: edgeError } = await supabase.functions.invoke('diamond-management', {
       method: 'GET',
@@ -35,7 +35,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
 
     if (edgeError) {
       console.error('❌ INVENTORY SERVICE: Edge function error:', edgeError);
-      throw new Error(edgeError.message);
+      throw new Error(`Edge function failed: ${edgeError.message}`);
     }
 
     if (!edgeResponse) {
@@ -43,46 +43,59 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       throw new Error('No response from diamond management service');
     }
 
+    console.log('📊 INVENTORY SERVICE: Edge response received:', {
+      success: edgeResponse.success,
+      dataCount: Array.isArray(edgeResponse.data) ? edgeResponse.data.length : 'N/A',
+      source: edgeResponse.source,
+      message: edgeResponse.message
+    });
+
     if (!edgeResponse.success) {
       console.error('❌ INVENTORY SERVICE: Edge function returned error:', edgeResponse.error);
       throw new Error(edgeResponse.error || 'Diamond management service failed');
     }
 
-    if (edgeResponse.data && Array.isArray(edgeResponse.data) && edgeResponse.data.length > 0) {
-      console.log('✅ INVENTORY SERVICE: Edge function returned', edgeResponse.data.length, 'diamonds');
-      console.log('✅ INVENTORY SERVICE: Data source:', edgeResponse.source || 'fastapi-via-edge-function');
-      console.log('✅ INVENTORY SERVICE: Sample diamond data:', edgeResponse.data[0]);
+    if (edgeResponse.data && Array.isArray(edgeResponse.data)) {
+      console.log('✅ INVENTORY SERVICE: Successfully loaded', edgeResponse.data.length, 'diamonds');
       
       return {
         data: edgeResponse.data,
         debugInfo: {
           ...debugInfo,
-          step: 'SUCCESS: Edge function data fetched',
+          step: 'SUCCESS: Data loaded from FastAPI via edge function',
           totalDiamonds: edgeResponse.data.length,
           dataSource: edgeResponse.source || 'fastapi-via-edge-function',
-          count: edgeResponse.count || edgeResponse.data.length
+          count: edgeResponse.count || edgeResponse.data.length,
+          message: edgeResponse.message
         }
       };
     }
     
-    console.log('⚠️ INVENTORY SERVICE: Edge function returned empty data, falling back to mock data');
-    throw new Error('No diamonds found in edge function response');
-    
-  } catch (error) {
-    console.error("❌ INVENTORY SERVICE: Edge function connection failed:", error);
-    
-    // Fallback to mock data only if edge function is completely unreachable
-    console.log('🔄 INVENTORY SERVICE: Using mock data as fallback');
-    const mockResult = await fetchMockInventoryData();
-    
+    console.log('⚠️ INVENTORY SERVICE: Empty data returned from edge function');
     return {
-      ...mockResult,
+      data: [],
       debugInfo: {
         ...debugInfo,
-        ...mockResult.debugInfo,
-        step: 'FALLBACK: Using mock data after edge function failure',
-        error: error instanceof Error ? error.message : String(error),
-        dataSource: 'mock_fallback'
+        step: 'SUCCESS: Empty data set returned',
+        totalDiamonds: 0,
+        dataSource: edgeResponse.source || 'fastapi-via-edge-function',
+        message: 'No diamonds found in your inventory'
+      }
+    };
+    
+  } catch (error) {
+    console.error("❌ INVENTORY SERVICE: Complete failure:", error);
+    
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    return {
+      error: `Failed to load inventory: ${errorMessage}`,
+      debugInfo: {
+        ...debugInfo,
+        step: 'FAILED: Unable to load inventory data',
+        error: errorMessage,
+        dataSource: 'error-state',
+        message: 'Please check your API configuration and try again'
       }
     };
   }

@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
@@ -24,6 +25,15 @@ interface DiamondData {
   store_visible?: boolean;
 }
 
+interface ApiResponse {
+  success: boolean;
+  data?: any;
+  error?: string;
+  message?: string;
+  count?: number;
+  source?: string;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -37,57 +47,58 @@ serve(async (req) => {
     const diamondId = req.headers.get('x-diamond_id') || '';
     const stockNumber = req.headers.get('x-stock_number') || '';
     
-    console.log('🔸 Diamond Management - Action:', action, 'User:', userId);
+    console.log('💎 DIAMOND API - Action:', action, 'User:', userId);
+    console.log('💎 DIAMOND API - Request method:', req.method);
 
+    // Step 1: Environment Configuration
     const backendUrl = Deno.env.get('BACKEND_URL') || 'https://api.mazalbot.com';
-    
-    // Get the bearer token from environment variables
     const bearerToken = Deno.env.get('BACKEND_ACCESS_TOKEN');
     
     if (!bearerToken) {
-      console.error('❌ BACKEND_ACCESS_TOKEN not found in environment variables');
+      console.error('❌ BACKEND_ACCESS_TOKEN not configured');
       throw new Error('Backend authentication token (BACKEND_ACCESS_TOKEN) not configured in environment variables');
     }
 
-    console.log('🔸 Using backend URL:', backendUrl);
-    console.log('🔸 Bearer token configured successfully');
-    console.log('🔸 Bearer token length:', bearerToken.length);
+    console.log('✅ Configuration loaded successfully');
+    console.log('🔗 Backend URL:', backendUrl);
+    console.log('🔑 Token length:', bearerToken.length);
 
+    // Step 2: Request Headers Configuration
     const headers = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${bearerToken}`,
       'Accept': 'application/json',
+      'User-Agent': 'Diamond-Management-Edge-Function/1.0',
     };
 
+    // Step 3: API Operations Implementation
     switch (action) {
       case 'get_all': {
-        console.log('📥 Fetching all diamonds for user:', userId);
+        console.log('📥 GET ALL - Fetching diamonds for user:', userId);
         const endpoint = `${backendUrl}/api/v1/get_all_stones`;
-        
-        console.log('🔸 Making GET request to:', endpoint);
         
         const response = await fetch(endpoint, {
           method: 'GET',
           headers,
         });
 
-        console.log('🔸 Response status:', response.status);
+        console.log('📥 GET ALL - Response status:', response.status);
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('❌ FastAPI get_all failed:', response.status, response.statusText);
-          console.error('❌ Error response body:', errorText);
-          throw new Error(`FastAPI error: ${response.status} ${response.statusText} - ${errorText}`);
+          console.error('❌ GET ALL - FastAPI error:', response.status, errorText);
+          throw new Error(`FastAPI get_all failed: ${response.status} - ${errorText}`);
         }
 
         const data = await response.json();
-        console.log('✅ Retrieved', data?.length || 0, 'diamonds from FastAPI');
+        console.log('✅ GET ALL - Retrieved', data?.length || 0, 'diamonds');
         
         return new Response(JSON.stringify({
           success: true,
           data: data || [],
           count: data?.length || 0,
-          source: 'fastapi'
+          source: 'fastapi',
+          message: `Successfully loaded ${data?.length || 0} diamonds`
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -95,7 +106,7 @@ serve(async (req) => {
 
       case 'add': {
         const diamondData: DiamondData = await req.json();
-        console.log('➕ Adding diamond:', diamondData.stock_number);
+        console.log('➕ ADD - Adding diamond:', diamondData.stock_number);
         
         const endpoint = `${backendUrl}/api/v1/diamonds`;
         const payload = {
@@ -116,7 +127,7 @@ serve(async (req) => {
           store_visible: diamondData.store_visible !== false,
         };
 
-        console.log('➕ Sending payload to FastAPI:', payload);
+        console.log('➕ ADD - Payload prepared, sending to FastAPI');
 
         const response = await fetch(endpoint, {
           method: 'POST',
@@ -126,17 +137,17 @@ serve(async (req) => {
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('❌ FastAPI add failed:', response.status, errorText);
+          console.error('❌ ADD - FastAPI error:', response.status, errorText);
           throw new Error(`Add failed: ${response.status} - ${errorText}`);
         }
 
         const result = await response.json();
-        console.log('✅ Diamond added successfully');
+        console.log('✅ ADD - Diamond added successfully');
         
         return new Response(JSON.stringify({
           success: true,
           data: result,
-          message: 'Diamond added successfully'
+          message: `Diamond ${diamondData.stock_number} added successfully`
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -144,7 +155,7 @@ serve(async (req) => {
 
       case 'update': {
         const diamondData: DiamondData = await req.json();
-        console.log('📝 Updating diamond:', diamondId);
+        console.log('📝 UPDATE - Updating diamond:', diamondId);
         
         if (!diamondId) {
           throw new Error('Diamond ID is required for update');
@@ -168,7 +179,7 @@ serve(async (req) => {
           store_visible: diamondData.store_visible !== false,
         };
 
-        console.log('📝 Sending update payload to FastAPI:', payload);
+        console.log('📝 UPDATE - Payload prepared, sending to FastAPI');
 
         const response = await fetch(endpoint, {
           method: 'PUT',
@@ -178,31 +189,31 @@ serve(async (req) => {
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('❌ FastAPI update failed:', response.status, errorText);
+          console.error('❌ UPDATE - FastAPI error:', response.status, errorText);
           throw new Error(`Update failed: ${response.status} - ${errorText}`);
         }
 
         const result = await response.json();
-        console.log('✅ Diamond updated successfully');
+        console.log('✅ UPDATE - Diamond updated successfully');
         
         return new Response(JSON.stringify({
           success: true,
           data: result,
-          message: 'Diamond updated successfully'
+          message: `Diamond ${diamondData.stock_number} updated successfully`
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
       case 'delete': {
-        console.log('🗑️ Deleting diamond with stock number:', stockNumber);
+        console.log('🗑️ DELETE - Deleting diamond:', stockNumber);
         
         if (!stockNumber) {
           throw new Error('Stock number is required for delete');
         }
 
-        // First, get all diamonds to find the diamond ID by stock number
-        console.log('🔍 First getting all diamonds to find ID for stock number:', stockNumber);
+        // Step 4: Enhanced Delete Process - Find diamond ID first
+        console.log('🔍 DELETE - Finding diamond by stock number:', stockNumber);
         const getAllEndpoint = `${backendUrl}/api/v1/get_all_stones`;
         
         const getAllResponse = await fetch(getAllEndpoint, {
@@ -212,32 +223,28 @@ serve(async (req) => {
 
         if (!getAllResponse.ok) {
           const errorText = await getAllResponse.text();
-          console.error('❌ Failed to fetch diamonds for ID lookup:', getAllResponse.status, errorText);
-          throw new Error(`Failed to fetch diamonds: ${getAllResponse.status} - ${errorText}`);
+          console.error('❌ DELETE - Failed to fetch diamonds:', getAllResponse.status, errorText);
+          throw new Error(`Failed to find diamond: ${getAllResponse.status} - ${errorText}`);
         }
 
         const allDiamonds = await getAllResponse.json();
-        console.log('🔍 Got', allDiamonds?.length || 0, 'diamonds, searching for stock number:', stockNumber);
+        console.log('🔍 DELETE - Found', allDiamonds?.length || 0, 'total diamonds');
         
-        // Find the diamond with matching stock number
         const targetDiamond = allDiamonds?.find((diamond: any) => 
           diamond.stock_number === stockNumber || 
-          diamond.stockNumber === stockNumber ||
           String(diamond.stock_number) === String(stockNumber)
         );
 
         if (!targetDiamond) {
-          console.error('❌ Diamond not found with stock number:', stockNumber);
-          console.log('🔍 Available diamonds:', allDiamonds?.map((d: any) => ({ id: d.id, stock_number: d.stock_number })));
+          console.error('❌ DELETE - Diamond not found:', stockNumber);
           throw new Error(`Diamond not found with stock number: ${stockNumber}`);
         }
 
         const diamondIdToDelete = targetDiamond.id;
-        console.log('✅ Found diamond ID:', diamondIdToDelete, 'for stock number:', stockNumber);
+        console.log('✅ DELETE - Found diamond ID:', diamondIdToDelete);
 
-        // Now delete using the diamond ID
+        // Delete using the diamond ID
         const deleteEndpoint = `${backendUrl}/api/v1/delete_stone/${diamondIdToDelete}`;
-        console.log('🗑️ Deleting diamond with ID:', diamondIdToDelete, 'at endpoint:', deleteEndpoint);
         
         const deleteResponse = await fetch(deleteEndpoint, {
           method: 'DELETE',
@@ -246,15 +253,15 @@ serve(async (req) => {
 
         if (!deleteResponse.ok) {
           const errorText = await deleteResponse.text();
-          console.error('❌ FastAPI delete failed:', deleteResponse.status, errorText);
+          console.error('❌ DELETE - FastAPI error:', deleteResponse.status, errorText);
           throw new Error(`Delete failed: ${deleteResponse.status} - ${errorText}`);
         }
 
-        console.log('✅ Diamond deleted successfully');
+        console.log('✅ DELETE - Diamond deleted successfully');
         
         return new Response(JSON.stringify({
           success: true,
-          message: `Diamond with stock number ${stockNumber} deleted successfully`
+          message: `Diamond ${stockNumber} deleted successfully`
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -265,13 +272,17 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('❌ Diamond management error:', error);
+    console.error('❌ DIAMOND API ERROR:', error);
     
-    return new Response(JSON.stringify({
+    // Step 5: Enhanced Error Response
+    const errorResponse: ApiResponse = {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',
-      timestamp: new Date().toISOString()
-    }), {
+      source: 'edge-function-error',
+      message: 'Operation failed - please check logs for details'
+    };
+    
+    return new Response(JSON.stringify(errorResponse), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
