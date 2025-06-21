@@ -7,7 +7,7 @@ import { getVerificationResult } from '@/lib/api';
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
-  const { loading, allDiamonds, debugInfo } = useInventoryData();
+  const { loading, allDiamonds, debugInfo, fetchData } = useInventoryData();
   const verificationResult = getVerificationResult();
 
   console.log('🔍 DASHBOARD DEBUG:');
@@ -45,7 +45,11 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <DataDrivenDashboard />
+      <DataDrivenDashboard 
+        allDiamonds={allDiamonds}
+        loading={loading}
+        fetchData={fetchData}
+      />
     </div>
   );
 }

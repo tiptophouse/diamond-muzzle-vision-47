@@ -375,6 +375,7 @@ export type Database = {
           created_at: string
           culet: string | null
           cut: string | null
+          deleted_at: string | null
           depth: number | null
           depth_percentage: number | null
           fluorescence: string | null
@@ -407,6 +408,7 @@ export type Database = {
           created_at?: string
           culet?: string | null
           cut?: string | null
+          deleted_at?: string | null
           depth?: number | null
           depth_percentage?: number | null
           fluorescence?: string | null
@@ -439,6 +441,7 @@ export type Database = {
           created_at?: string
           culet?: string | null
           cut?: string | null
+          deleted_at?: string | null
           depth?: number | null
           depth_percentage?: number | null
           fluorescence?: string | null
@@ -461,6 +464,33 @@ export type Database = {
           user_id?: number
           weight?: number
           width?: number | null
+        }
+        Relationships: []
+      }
+      inventory_analytics_cache: {
+        Row: {
+          analytics_type: string
+          created_at: string | null
+          data: Json
+          expires_at: string
+          id: string
+          user_id: number
+        }
+        Insert: {
+          analytics_type: string
+          created_at?: string | null
+          data: Json
+          expires_at: string
+          id?: string
+          user_id: number
+        }
+        Update: {
+          analytics_type?: string
+          created_at?: string | null
+          data?: Json
+          expires_at?: string
+          id?: string
+          user_id?: number
         }
         Relationships: []
       }
@@ -676,6 +706,54 @@ export type Database = {
           },
         ]
       }
+      user_logins: {
+        Row: {
+          created_at: string
+          first_name: string | null
+          id: string
+          init_data_hash: string | null
+          ip_address: string | null
+          is_premium: boolean | null
+          language_code: string | null
+          last_name: string | null
+          login_timestamp: string
+          photo_url: string | null
+          telegram_id: number
+          user_agent: string | null
+          username: string | null
+        }
+        Insert: {
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          init_data_hash?: string | null
+          ip_address?: string | null
+          is_premium?: boolean | null
+          language_code?: string | null
+          last_name?: string | null
+          login_timestamp?: string
+          photo_url?: string | null
+          telegram_id: number
+          user_agent?: string | null
+          username?: string | null
+        }
+        Update: {
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          init_data_hash?: string | null
+          ip_address?: string | null
+          is_premium?: boolean | null
+          language_code?: string | null
+          last_name?: string | null
+          login_timestamp?: string
+          photo_url?: string | null
+          telegram_id?: number
+          user_agent?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
       user_management_log: {
         Row: {
           action_type: string
@@ -833,9 +911,24 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      recent_user_logins: {
+        Row: {
+          first_login: string | null
+          first_name: string | null
+          last_login: string | null
+          last_name: string | null
+          login_count: number | null
+          telegram_id: number | null
+          username: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      clean_expired_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       delete_diamond: {
         Args: { p_stock_number: string; p_user_id: number }
         Returns: boolean
@@ -854,6 +947,10 @@ export type Database = {
           users_with_phone: number
           recent_signups: number
         }[]
+      }
+      is_admin_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
     }
     Enums: {
