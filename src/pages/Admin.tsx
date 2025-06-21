@@ -7,10 +7,11 @@ import { NotificationCenter } from '@/components/admin/NotificationCenter';
 import { NotificationSender } from '@/components/admin/NotificationSender';
 import { PaymentManagement } from '@/components/admin/PaymentManagement';
 import { FastAPITester } from '@/components/admin/FastAPITester';
+import { DiamondManagement } from '@/components/admin/DiamondManagement';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { Users, Settings, MessageSquare, CreditCard, Activity } from 'lucide-react';
+import { Users, Settings, MessageSquare, CreditCard, Activity, Gem } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function Admin() {
@@ -118,13 +119,20 @@ export default function Admin() {
       {/* Main Admin Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 bg-white border border-gray-200 rounded-lg p-1">
+          <TabsList className="grid w-full grid-cols-6 bg-white border border-gray-200 rounded-lg p-1">
             <TabsTrigger 
               value="users" 
               className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
             >
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Users</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="diamonds" 
+              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            >
+              <Gem className="h-4 w-4" />
+              <span className="hidden sm:inline">Diamonds</span>
             </TabsTrigger>
             <TabsTrigger 
               value="payments" 
@@ -160,6 +168,12 @@ export default function Admin() {
             <TabsContent value="users" className="space-y-0">
               <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                 <AdminUserManager />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="diamonds" className="space-y-0">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <DiamondManagement />
               </div>
             </TabsContent>
             
