@@ -1,4 +1,5 @@
 
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
@@ -41,15 +42,20 @@ serve(async (req) => {
     console.log('🔸 Diamond Management - Action:', action, 'User:', userId);
 
     const backendUrl = Deno.env.get('BACKEND_URL') || 'https://api.mazalbot.com';
-    const bearerToken = Deno.env.get('FASTAPI_BEARER_TOKEN') || Deno.env.get('BACKEND_ACCESS_TOKEN');
+    
+    // Try multiple environment variable names for the bearer token
+    const bearerToken = Deno.env.get('BACKEND_ACCESS_TOKEN') || 
+                       Deno.env.get('FASTAPI_BEARER_TOKEN') || 
+                       Deno.env.get('BEARER_TOKEN');
     
     if (!bearerToken) {
-      console.error('❌ No bearer token available');
-      throw new Error('Backend authentication token not configured');
+      console.error('❌ No bearer token found in environment variables');
+      console.error('❌ Checked: BACKEND_ACCESS_TOKEN, FASTAPI_BEARER_TOKEN, BEARER_TOKEN');
+      throw new Error('Backend authentication token not configured in environment variables');
     }
 
     console.log('🔸 Using backend URL:', backendUrl);
-    console.log('🔸 Has bearer token:', !!bearerToken);
+    console.log('🔸 Found bearer token from environment');
     console.log('🔸 Bearer token length:', bearerToken?.length || 0);
 
     const headers = {
@@ -278,3 +284,4 @@ serve(async (req) => {
     });
   }
 });
+
