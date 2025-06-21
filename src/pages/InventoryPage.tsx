@@ -5,6 +5,7 @@ import { InventoryPagination } from "@/components/inventory/InventoryPagination"
 import { InventorySearch } from "@/components/inventory/InventorySearch";
 import { InventoryFilters } from "@/components/inventory/InventoryFilters";
 import { DeleteConfirmDialog } from "@/components/inventory/DeleteConfirmDialog";
+import { Toaster } from "@/components/ui/toaster";
 import { useInventoryData } from "@/hooks/useInventoryData";
 import { useInventorySearch } from "@/hooks/useInventorySearch";
 import { useInventoryCrud } from "@/hooks/useInventoryCrud";
@@ -56,7 +57,7 @@ export default function InventoryPage() {
 
   const handleDelete = async (stockNumber: string) => {
     console.log('🗑️ Delete diamond clicked with stock number:', stockNumber);
-    const diamond = allDiamonds.find(d => d.stockNumber === stockNumber);
+    const diamond = allDiamonds.find(d => d.id === stockNumber);
     if (diamond) {
       setDiamondToDelete(diamond);
       setDeleteDialogOpen(true);
@@ -66,7 +67,7 @@ export default function InventoryPage() {
   const confirmDelete = async () => {
     if (diamondToDelete) {
       console.log('🗑️ Confirming delete for diamond:', diamondToDelete.stockNumber);
-      const success = await deleteDiamond(diamondToDelete.stockNumber, diamondToDelete);
+      const success = await deleteDiamond(diamondToDelete.id, diamondToDelete);
       if (success) {
         console.log('✅ Diamond deleted successfully');
         setDeleteDialogOpen(false);
@@ -218,6 +219,9 @@ export default function InventoryPage() {
           </DialogContent>
         </Dialog>
       </div>
+      
+      {/* Toast notifications */}
+      <Toaster />
     </Layout>
   );
 }
