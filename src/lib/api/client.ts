@@ -27,41 +27,40 @@ export async function fetchApi<T>(
     
     // Extract action and parameters from endpoint
     let action = '';
-    let params: Record<string, string> = {};
+    let diamondId = '';
+    let stockNumber = '';
+    const userId = getCurrentUserId()?.toString() || '2138564172';
     
     if (endpoint.includes('/get_all_stones')) {
       action = 'get_all';
-      const userId = endpoint.match(/user_id=(\d+)/)?.[1] || getCurrentUserId()?.toString() || '2138564172';
-      params.user_id = userId;
     } else if (endpoint.includes('/diamonds') && options.method === 'POST') {
       action = 'add';
-      params.user_id = getCurrentUserId()?.toString() || '2138564172';
     } else if (endpoint.includes('/diamonds/') && options.method === 'PUT') {
       action = 'update';
-      const diamondId = endpoint.match(/\/diamonds\/([^\/]+)/)?.[1];
-      if (diamondId) params.diamond_id = diamondId;
-      params.user_id = getCurrentUserId()?.toString() || '2138564172';
+      diamondId = endpoint.match(/\/diamonds\/([^\/]+)/)?.[1] || '';
     } else if (endpoint.includes('/delete_stone/')) {
       action = 'delete';
-      const stockNumber = endpoint.match(/\/delete_stone\/([^\/]+)/)?.[1];
-      if (stockNumber) params.stock_number = decodeURIComponent(stockNumber);
-      params.user_id = getCurrentUserId()?.toString() || '2138564172';
+      stockNumber = endpoint.match(/\/delete_stone\/([^\/]+)/)?.[1] || '';
     }
 
     if (!action) {
       throw new Error('Unsupported endpoint - using fallback');
     }
 
-    console.log('🔸 Calling diamond-management edge function:', { action, params });
+    console.log('🔸 Calling diamond-management edge function:', { action, userId, diamondId, stockNumber });
+
+    // Build the URL with query parameters for the edge function
+    const url = new URL(`${supabase.supabaseUrl}/functions/v1/diamond-management`);
+    url.searchParams.set('action', action);
+    url.searchParams.set('user_id', userId);
+    if (diamondId) url.searchParams.set('diamond_id', diamondId);
+    if (stockNumber) url.searchParams.set('stock_number', decodeURIComponent(stockNumber));
 
     const { data: edgeResponse, error: edgeError } = await supabase.functions.invoke('diamond-management', {
-      method: options.method || 'GET',
+      method: (options.method || 'GET') as 'GET' | 'POST' | 'PUT' | 'DELETE',
       body: options.body ? JSON.parse(options.body as string) : undefined,
       headers: {
         'Content-Type': 'application/json',
-        ...Object.fromEntries(
-          Object.entries(params).map(([key, value]) => [`x-${key}`, value])
-        )
       }
     });
 
@@ -113,16 +112,12 @@ export async function fetchApi<T>(
 
 export const api = {
   get: <T>(endpoint: string) => {
-    // Convert to edge function call
-    const url = new URL(`https://placeholder.com${endpoint}`);
-    const params = Object.fromEntries(url.searchParams.entries());
-    
     return supabase.functions.invoke('diamond-management', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         'x-action': 'get_all',
-        'x-user_id': params.user_id || getCurrentUserId()?.toString() || '2138564172'
+        'x-user_id': getCurrentUserId()?.toString() || '2138564172'
       }
     }).then(({ data, error }) => {
       if (error) return { error: error.message };
