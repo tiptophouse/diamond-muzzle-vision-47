@@ -1,3 +1,4 @@
+
 import {
   Table,
   TableBody,
@@ -28,14 +29,14 @@ export interface Diamond {
 }
 
 interface InventoryTableProps {
-  data: Diamond[];
+  diamonds: Diamond[];
   loading?: boolean;
   onEdit?: (diamond: Diamond) => void;
-  onDelete?: (diamondId: string) => void;
+  onDelete?: (stockNumber: string) => void;
   onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
 }
 
-export function InventoryTable({ data, loading = false, onEdit, onDelete, onStoreToggle }: InventoryTableProps) {
+export function InventoryTable({ diamonds, loading = false, onEdit, onDelete, onStoreToggle }: InventoryTableProps) {
   const isMobile = useIsMobile();
 
   if (loading) {
@@ -45,12 +46,12 @@ export function InventoryTable({ data, loading = false, onEdit, onDelete, onStor
   if (isMobile) {
     return (
       <div className="w-full space-y-3 bg-background">
-        {data.length === 0 ? (
+        {diamonds.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             No diamonds found. Upload your inventory to get started.
           </div>
         ) : (
-          data.map((diamond) => (
+          diamonds.map((diamond) => (
             <InventoryMobileCard 
               key={diamond.id} 
               diamond={diamond} 
@@ -69,10 +70,10 @@ export function InventoryTable({ data, loading = false, onEdit, onDelete, onStor
         <Table className="w-full min-w-full">
           <InventoryTableHeader />
           <TableBody>
-            {data.length === 0 ? (
+            {diamonds.length === 0 ? (
               <InventoryTableEmpty />
             ) : (
-              data.map((diamond) => (
+              diamonds.map((diamond) => (
                 <InventoryTableRow 
                   key={diamond.id} 
                   diamond={diamond} 

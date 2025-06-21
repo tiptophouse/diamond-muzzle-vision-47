@@ -1,3 +1,4 @@
+
 import { Layout } from "@/components/layout/Layout";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -162,7 +163,7 @@ export default function InventoryPage() {
           <main className="flex-1">
             <div className="space-y-4">
               <InventoryTable
-                data={filteredDiamonds}
+                diamonds={filteredDiamonds}
                 loading={loading}
                 onEdit={handleEdit}
                 onDelete={handleDelete}

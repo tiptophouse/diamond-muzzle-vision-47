@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { api, apiEndpoints } from "@/lib/api";
 import { convertDiamondsToInventoryFormat } from "@/services/diamondAnalytics";
 import { Diamond } from "@/components/inventory/InventoryTable";
@@ -37,7 +37,24 @@ export function useReportsData() {
       if (response.data) {
         console.log('✅ Received diamonds from API:', response.data.length, 'total diamonds');
         
-        const convertedDiamonds = convertDiamondsToInventoryFormat(response.data, user.id);
+        const convertedDiamonds = response.data.map(item => ({
+          id: item.id || `${item.stock_number}-${Date.now()}`,
+          stockNumber: item.stock_number || item.stockNumber || '',
+          shape: item.shape || 'Round',
+          carat: Number(item.weight || item.carat) || 0,
+          color: item.color || 'D',
+          clarity: item.clarity || 'FL',
+          cut: item.cut || 'Excellent',
+          price: Number(item.price_per_carat ? item.price_per_carat * (item.weight || item.carat) : item.price) || 0,
+          status: item.status || 'Available',
+          imageUrl: item.picture || item.imageUrl || undefined,
+          store_visible: item.store_visible !== false,
+          gem360Url: item.gem360Url || item.certificateUrl?.includes('gem360') ? item.certificateUrl : undefined,
+          certificateUrl: item.certificate_url || item.certificateUrl || undefined,
+          certificateNumber: item.certificate_number || item.certificateNumber || undefined,
+          lab: item.lab || undefined,
+        })) as Diamond[];
+        
         console.log('✅ Converted diamonds for display:', convertedDiamonds.length, 'diamonds for user', user.id);
         
         setAllDiamonds(convertedDiamonds);
