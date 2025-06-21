@@ -117,9 +117,26 @@ export const api = {
         'x-user_id': getCurrentUserId()?.toString() || '2138564172'
       }
     }).then(({ data, error }) => {
-      if (error) return { error: error.message };
+      if (error) {
+        console.error('❌ API GET error:', error);
+        toast({
+          title: "❌ Get Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return { error: error.message };
+      }
       const response = data as EdgeFunctionResponse<T>;
-      return response.success ? { data: response.data } : { error: response.error };
+      if (!response.success) {
+        console.error('❌ API GET failed:', response.error);
+        toast({
+          title: "❌ Get Failed",
+          description: response.error || 'Failed to fetch data',
+          variant: "destructive",
+        });
+        return { error: response.error };
+      }
+      return { data: response.data };
     });
   },
   
@@ -133,9 +150,32 @@ export const api = {
         'x-user_id': getCurrentUserId()?.toString() || '2138564172'
       }
     }).then(({ data, error }) => {
-      if (error) return { error: error.message };
+      if (error) {
+        console.error('❌ API POST error:', error);
+        toast({
+          title: "❌ Add Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return { error: error.message };
+      }
       const response = data as EdgeFunctionResponse<T>;
-      return response.success ? { data: response.data } : { error: response.error };
+      if (!response.success) {
+        console.error('❌ API POST failed:', response.error);
+        toast({
+          title: "❌ Add Failed",
+          description: response.error || 'Failed to add item',
+          variant: "destructive",
+        });
+        return { error: response.error };
+      }
+      if (response.message) {
+        toast({
+          title: "Success ✅",
+          description: response.message,
+        });
+      }
+      return { data: response.data };
     });
   },
   
@@ -151,9 +191,32 @@ export const api = {
         'x-user_id': getCurrentUserId()?.toString() || '2138564172'
       }
     }).then(({ data, error }) => {
-      if (error) return { error: error.message };
+      if (error) {
+        console.error('❌ API PUT error:', error);
+        toast({
+          title: "❌ Update Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return { error: error.message };
+      }
       const response = data as EdgeFunctionResponse<T>;
-      return response.success ? { data: response.data } : { error: response.error };
+      if (!response.success) {
+        console.error('❌ API PUT failed:', response.error);
+        toast({
+          title: "❌ Update Failed",
+          description: response.error || 'Failed to update item',
+          variant: "destructive",
+        });
+        return { error: response.error };
+      }
+      if (response.message) {
+        toast({
+          title: "Success ✅",
+          description: response.message,
+        });
+      }
+      return { data: response.data };
     });
   },
   
@@ -168,9 +231,32 @@ export const api = {
         'x-user_id': getCurrentUserId()?.toString() || '2138564172'
       }
     }).then(({ data, error }) => {
-      if (error) return { error: error.message };
+      if (error) {
+        console.error('❌ API DELETE error:', error);
+        toast({
+          title: "❌ Delete Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return { error: error.message };
+      }
       const response = data as EdgeFunctionResponse<T>;
-      return response.success ? { data: response.data } : { error: response.error };
+      if (!response.success) {
+        console.error('❌ API DELETE failed:', response.error);
+        toast({
+          title: "❌ Delete Failed",
+          description: response.error || 'Failed to delete item',
+          variant: "destructive",
+        });
+        return { error: response.error };
+      }
+      if (response.message) {
+        toast({
+          title: "Success ✅",
+          description: response.message,
+        });
+      }
+      return { data: response.data };
     });
   },
     

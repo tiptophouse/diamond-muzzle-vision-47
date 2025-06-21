@@ -3,6 +3,7 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { getCurrentUserId } from '@/lib/api';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/use-toast';
 
 export function useAddDiamond(onSuccess?: () => void) {
   const { user } = useTelegramAuth();
@@ -46,14 +47,32 @@ export function useAddDiamond(onSuccess?: () => void) {
       });
       
       if (error) {
+        console.error('❌ ADD: Edge function error:', error);
+        toast({
+          title: "❌ Add Failed",
+          description: error.message,
+          variant: "destructive",
+        });
         throw new Error(error.message);
       }
 
       if (!response?.success) {
+        console.error('❌ ADD: Edge function returned error:', response?.error);
+        toast({
+          title: "❌ Add Failed",
+          description: response?.error || 'Failed to add diamond',
+          variant: "destructive",
+        });
         throw new Error(response?.error || 'Failed to add diamond');
       }
 
       console.log('✅ Diamond added successfully via edge function');
+      
+      // Show success message
+      toast({
+        title: "Success ✅",
+        description: response.message || `Diamond ${data.stockNumber} added successfully`,
+      });
       
       if (onSuccess) onSuccess();
       return true;

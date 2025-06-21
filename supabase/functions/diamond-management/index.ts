@@ -70,6 +70,8 @@ serve(async (req) => {
 
         if (!response.ok) {
           console.error('❌ FastAPI get_all failed:', response.status, response.statusText);
+          const errorText = await response.text();
+          console.error('❌ Error details:', errorText);
           throw new Error(`FastAPI error: ${response.status} ${response.statusText}`);
         }
 
@@ -108,6 +110,8 @@ serve(async (req) => {
           lab: diamondData.lab || '',
           store_visible: diamondData.store_visible !== false,
         };
+
+        console.log('➕ Sending payload to FastAPI:', payload);
 
         const response = await fetch(endpoint, {
           method: 'POST',
@@ -159,6 +163,8 @@ serve(async (req) => {
           store_visible: diamondData.store_visible !== false,
         };
 
+        console.log('📝 Sending update payload to FastAPI:', payload);
+
         const response = await fetch(endpoint, {
           method: 'PUT',
           headers,
@@ -184,30 +190,65 @@ serve(async (req) => {
       }
 
       case 'delete': {
-        console.log('🗑️ Deleting diamond:', stockNumber);
+        console.log('🗑️ Deleting diamond with stock number:', stockNumber);
         
         if (!stockNumber) {
           throw new Error('Stock number is required for delete');
         }
 
-        const endpoint = `${backendUrl}/api/v1/delete_stone/${encodeURIComponent(stockNumber)}`;
+        // First, get all diamonds to find the diamond ID by stock number
+        console.log('🔍 First getting all diamonds to find ID for stock number:', stockNumber);
+        const getAllEndpoint = `${backendUrl}/api/v1/get_all_stones`;
         
-        const response = await fetch(endpoint, {
+        const getAllResponse = await fetch(getAllEndpoint, {
+          method: 'GET',
+          headers,
+        });
+
+        if (!getAllResponse.ok) {
+          console.error('❌ Failed to fetch diamonds for ID lookup:', getAllResponse.status);
+          throw new Error(`Failed to fetch diamonds: ${getAllResponse.status}`);
+        }
+
+        const allDiamonds = await getAllResponse.json();
+        console.log('🔍 Got', allDiamonds?.length || 0, 'diamonds, searching for stock number:', stockNumber);
+        
+        // Find the diamond with matching stock number
+        const targetDiamond = allDiamonds?.find((diamond: any) => 
+          diamond.stock_number === stockNumber || 
+          diamond.stockNumber === stockNumber ||
+          String(diamond.stock_number) === String(stockNumber)
+        );
+
+        if (!targetDiamond) {
+          console.error('❌ Diamond not found with stock number:', stockNumber);
+          console.log('🔍 Available diamonds:', allDiamonds?.map((d: any) => ({ id: d.id, stock_number: d.stock_number })));
+          throw new Error(`Diamond not found with stock number: ${stockNumber}`);
+        }
+
+        const diamondId = targetDiamond.id;
+        console.log('✅ Found diamond ID:', diamondId, 'for stock number:', stockNumber);
+
+        // Now delete using the diamond ID
+        const deleteEndpoint = `${backendUrl}/api/v1/delete_stone/${diamondId}`;
+        console.log('🗑️ Deleting diamond with ID:', diamondId, 'at endpoint:', deleteEndpoint);
+        
+        const deleteResponse = await fetch(deleteEndpoint, {
           method: 'DELETE',
           headers,
         });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('❌ FastAPI delete failed:', response.status, errorText);
-          throw new Error(`Delete failed: ${response.status} - ${errorText}`);
+        if (!deleteResponse.ok) {
+          const errorText = await deleteResponse.text();
+          console.error('❌ FastAPI delete failed:', deleteResponse.status, errorText);
+          throw new Error(`Delete failed: ${deleteResponse.status} - ${errorText}`);
         }
 
         console.log('✅ Diamond deleted successfully');
         
         return new Response(JSON.stringify({
           success: true,
-          message: 'Diamond deleted successfully'
+          message: `Diamond with stock number ${stockNumber} deleted successfully`
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });

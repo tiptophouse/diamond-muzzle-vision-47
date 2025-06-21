@@ -51,6 +51,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     if (edgeResponse.data && Array.isArray(edgeResponse.data) && edgeResponse.data.length > 0) {
       console.log('✅ INVENTORY SERVICE: Edge function returned', edgeResponse.data.length, 'diamonds');
       console.log('✅ INVENTORY SERVICE: Data source:', edgeResponse.source || 'fastapi-via-edge-function');
+      console.log('✅ INVENTORY SERVICE: Sample diamond data:', edgeResponse.data[0]);
       
       return {
         data: edgeResponse.data,
@@ -64,7 +65,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       };
     }
     
-    console.log('⚠️ INVENTORY SERVICE: Edge function returned empty data');
+    console.log('⚠️ INVENTORY SERVICE: Edge function returned empty data, falling back to mock data');
     throw new Error('No diamonds found in edge function response');
     
   } catch (error) {

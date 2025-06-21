@@ -2,6 +2,7 @@
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/use-toast';
 
 interface UseDeleteDiamondProps {
   onSuccess?: () => void;
@@ -21,6 +22,7 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
     try {
       console.log('🗑️ DELETE: Starting diamond deletion via edge function');
       console.log('🗑️ DELETE: Stock number to delete:', stockNumber);
+      console.log('🗑️ DELETE: Diamond data:', diamondData);
       console.log('🗑️ DELETE: User ID:', user.id);
       
       // Optimistically remove from UI first (using diamond ID for state management)
@@ -51,6 +53,12 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
           restoreDiamondToState(diamondData);
         }
         
+        toast({
+          title: "❌ Delete Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        
         throw new Error(error.message);
       }
 
@@ -64,12 +72,24 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
           restoreDiamondToState(diamondData);
         }
         
+        toast({
+          title: "❌ Delete Failed",
+          description: response?.error || 'Unknown error occurred',
+          variant: "destructive",
+        });
+        
         throw new Error(`Delete failed: ${response?.error || 'Unknown error'}`);
       }
 
       console.log('✅ DELETE: Diamond deleted successfully via edge function');
-      console.log('✅ DELETE: Calling onSuccess callback');
       
+      // Show success message
+      toast({
+        title: "Success ✅",
+        description: response.message || `Diamond ${stockNumber} deleted successfully`,
+      });
+      
+      console.log('✅ DELETE: Calling onSuccess callback');
       if (onSuccess) onSuccess();
       return true;
       
