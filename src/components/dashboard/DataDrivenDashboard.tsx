@@ -66,6 +66,9 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
   const totalValue = allDiamonds.reduce((sum, diamond) => sum + diamond.price, 0);
   const availableDiamonds = allDiamonds.filter(d => d.status === 'Available').length;
   const storeVisibleDiamonds = allDiamonds.filter(d => d.store_visible).length;
+  const avgPricePerCarat = allDiamonds.length > 0 
+    ? Math.round(totalValue / allDiamonds.reduce((sum, d) => sum + d.carat, 0))
+    : 0;
 
   // Show empty state when no diamonds
   if (!loading && allDiamonds.length === 0) {
@@ -133,28 +136,24 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
             value={allDiamonds.length}
             icon={Gem}
             loading={loading}
-            subtitle={`$${totalValue.toLocaleString()} total value`}
           />
           <StatCard
             title="Available"
             value={availableDiamonds}
             icon={Users}
             loading={loading}
-            subtitle={`${((availableDiamonds / allDiamonds.length) * 100).toFixed(1)}% of inventory`}
           />
           <StatCard
             title="Store Visible"
             value={storeVisibleDiamonds}
             icon={TrendingUp}
             loading={loading}
-            subtitle={`${((storeVisibleDiamonds / allDiamonds.length) * 100).toFixed(1)}% visible`}
           />
           <StatCard
             title="Avg Price/Ct"
-            value={`$${Math.round(totalValue / allDiamonds.reduce((sum, d) => sum + d.carat, 0)).toLocaleString()}`}
+            value={avgPricePerCarat}
             icon={Star}
             loading={loading}
-            subtitle="Per carat average"
           />
         </div>
 
