@@ -79,8 +79,8 @@ export function FastApiDiagnostics() {
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                <strong>🔒 SECURITY ALERT:</strong> Backend token "ifj9ov1rh20fslfp" was exposed in logs. 
-                Rotate this token immediately in your Supabase secrets.
+                <strong>🔒 SECURITY ALERT:</strong> Backend token was exposed in logs. 
+                Please rotate this token immediately in your Supabase secrets.
               </AlertDescription>
             </Alert>
 
@@ -227,12 +227,12 @@ export function FastApiDiagnostics() {
                     <div><br /></div>
                     <div>response = requests.get(</div>
                     <div className="ml-4">"https://api.mazalbot.com/api/v1/get_all_stones?user_id=2138564172",</div>
-                    <div className="ml-4">headers={{"Authorization": "Bearer ifj9ov1rh20fslfp"}}</div>
+                    <div className="ml-4">headers={`{"Authorization": "Bearer YOUR_TOKEN"}`}</div>
                     <div>)</div>
                     <div><br /></div>
-                    <div>print(f"Status: {{response.status_code}}")</div>
-                    <div>print(f"Headers: {{dict(response.headers)}}")</div>
-                    <div>print(f"Response: {{response.text[:1000]}}")</div>
+                    <div>print(f"Status: {"{response.status_code}"}")</div>
+                    <div>print(f"Headers: {"{dict(response.headers)}"}")</div>
+                    <div>print(f"Response: {"{response.text[:1000]}"}")</div>
                   </div>
                 </div>
 
@@ -243,18 +243,16 @@ export function FastApiDiagnostics() {
                     <div>import requests</div>
                     <div><br /></div>
                     <div>response = requests.get("https://api.mazalbot.com/health")</div>
-                    <div>print(f"Health Status: {{response.status_code}}")</div>
-                    <div>print(f"Response: {{response.text}}")</div>
+                    <div>print(f"Health Status: {"{response.status_code}"}")</div>
+                    <div>print(f"Response: {"{response.text}"}")</div>
                   </div>
                 </div>
 
                 <Alert>
-                  <Alert className="border-red-200 bg-red-50">
-                    <AlertTriangle className="h-4 w-4 text-red-600" />
-                    <AlertDescription className="text-red-800">
-                      <strong>CRITICAL:</strong> Replace "ifj9ov1rh20fslfp" with a new secure token before testing!
-                    </AlertDescription>
-                  </Alert>
+                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="text-red-800">
+                    <strong>CRITICAL:</strong> Replace "YOUR_TOKEN" with your actual secure token before testing!
+                  </AlertDescription>
                 </Alert>
               </CardContent>
             </Card>
