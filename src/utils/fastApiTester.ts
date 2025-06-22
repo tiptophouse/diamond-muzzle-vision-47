@@ -69,6 +69,103 @@ export class FastApiTester {
     }
   }
 
+  static async testAllEndpoints(): Promise<Array<{
+    endpoint: string;
+    status: number;
+    success: boolean;
+    error?: string;
+    description: string;
+  }>> {
+    const endpoints = [
+      {
+        path: `/api/v1/get_all_stones?user_id=${this.TEST_USER_ID}`,
+        description: 'Get all diamonds for user',
+        method: 'GET'
+      },
+      {
+        path: `/get_all_stones?user_id=${this.TEST_USER_ID}`,
+        description: 'Get all diamonds (no /api/v1 prefix)',
+        method: 'GET'
+      },
+      {
+        path: `/api/v1/verify-telegram`,
+        description: 'Verify Telegram authentication',
+        method: 'POST'
+      },
+      {
+        path: `/api/v1/upload-inventory`,
+        description: 'Upload inventory data',
+        method: 'POST'
+      },
+      {
+        path: `/api/v1/delete_diamond?diamond_id=test&user_id=${this.TEST_USER_ID}`,
+        description: 'Delete diamond endpoint',
+        method: 'DELETE'
+      },
+      {
+        path: `/api/v1/health`,
+        description: 'API health check',
+        method: 'GET'
+      },
+      {
+        path: `/health`,
+        description: 'Health check (root)',
+        method: 'GET'
+      },
+      {
+        path: `/docs`,
+        description: 'API documentation',
+        method: 'GET'
+      }
+    ];
+
+    const results = [];
+
+    for (const endpoint of endpoints) {
+      const fullUrl = `${this.BASE_URL}${endpoint.path}`;
+      
+      try {
+        const headers: Record<string, string> = {
+          'Authorization': `Bearer ${this.TEST_TOKEN}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        };
+
+        if (endpoint.method === 'POST') {
+          headers['X-User-ID'] = this.TEST_USER_ID.toString();
+        }
+
+        const response = await fetch(fullUrl, {
+          method: endpoint.method,
+          headers,
+          body: endpoint.method === 'POST' ? JSON.stringify({
+            user_id: this.TEST_USER_ID,
+            test: true
+          }) : undefined,
+        });
+
+        results.push({
+          endpoint: endpoint.path,
+          status: response.status,
+          success: response.ok,
+          description: endpoint.description,
+          error: response.ok ? undefined : `HTTP ${response.status}: ${response.statusText}`
+        });
+
+      } catch (error) {
+        results.push({
+          endpoint: endpoint.path,
+          status: 0,
+          success: false,
+          description: endpoint.description,
+          error: error instanceof Error ? error.message : 'Network error'
+        });
+      }
+    }
+
+    return results;
+  }
+
   static async testAlternativeEndpoints(): Promise<Array<{
     endpoint: string;
     status: number;
@@ -143,23 +240,26 @@ export class FastApiTester {
   static async runFullDiagnostic(): Promise<{
     directTest: any;
     alternativeEndpoints: any[];
+    allEndpoints: any[];
     recommendations: string[];
   }> {
     console.log('🔍 Running full FastAPI diagnostic...');
     
     const directTest = await this.testDirectConnection();
     const alternativeEndpoints = await this.testAlternativeEndpoints();
+    const allEndpoints = await this.testAllEndpoints();
     
-    const recommendations = this.generateRecommendations(directTest, alternativeEndpoints);
+    const recommendations = this.generateRecommendations(directTest, alternativeEndpoints, allEndpoints);
     
     return {
       directTest,
       alternativeEndpoints,
+      allEndpoints,
       recommendations
     };
   }
 
-  private static generateRecommendations(directTest: any, alternativeTests: any[]): string[] {
+  private static generateRecommendations(directTest: any, alternativeTests: any[], allEndpointTests: any[]): string[] {
     const recommendations = [];
     
     // Security recommendation
@@ -192,6 +292,15 @@ export class FastApiTester {
     if (workingEndpoints.length > 0) {
       recommendations.push(`✅ Working endpoints found: ${workingEndpoints.map(e => e.endpoint).join(', ')}`);
       recommendations.push('🔄 Update your API configuration to use the working endpoints');
+    }
+
+    // Analyze all endpoint results
+    const workingAllEndpoints = allEndpointTests.filter(test => test.success);
+    if (workingAllEndpoints.length > 0) {
+      recommendations.push(`📊 ${workingAllEndpoints.length}/${allEndpointTests.length} endpoints are responding correctly`);
+    } else {
+      recommendations.push('❌ No endpoints are responding - FastAPI server may be completely down');
+      recommendations.push('🔧 Check if FastAPI server is running and accessible at https://api.mazalbot.com');
     }
     
     return recommendations;
