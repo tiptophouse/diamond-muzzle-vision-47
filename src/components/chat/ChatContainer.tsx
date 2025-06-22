@@ -1,60 +1,48 @@
 
 import React from 'react';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { ChatHeader } from './ChatHeader';
 import { ChatMessages } from './ChatMessages';
 import { ChatInput } from './ChatInput';
 import { ChatQuickPrompts } from './ChatQuickPrompts';
 import { useOpenAIChat } from '@/hooks/useOpenAIChat';
 
-export const ChatContainer = () => {
-  const { user } = useTelegramAuth();
-  const { messages, sendMessage, isLoading, clearMessages } = useOpenAIChat(user?.id);
+export function ChatContainer() {
+  const { messages, sendMessage, isLoading, clearMessages, user } = useOpenAIChat();
 
-  const handleSendMessage = async (content: string) => {
-    await sendMessage(content);
-  };
-
-  const handleNewChat = () => {
-    clearMessages();
-  };
-
-  const handleQuickPrompt = (prompt: string) => {
-    handleSendMessage(prompt);
-  };
+  // Transform ChatMessage to Message format expected by ChatMessages component
+  const transformedMessages = messages.map(msg => ({
+    id: msg.id,
+    content: msg.content,
+    role: msg.role,
+    user_id: user?.id?.toString() || null,
+    created_at: msg.timestamp,
+  }));
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full max-w-4xl mx-auto">
       <ChatHeader 
-        title="Diamond Assistant"
-        subtitle="AI-powered diamond expert with real-time inventory access"
-        onNewChat={handleNewChat}
+        title="Diamond Assistant" 
+        subtitle="Your AI-powered diamond expert"
+        onNewChat={clearMessages} 
       />
       
-      <div className="flex-1 overflow-hidden flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0">
+        <ChatMessages 
+          messages={transformedMessages} 
+          isLoading={isLoading} 
+          currentUserId={user?.id?.toString()}
+        />
+        
         {messages.length === 0 && (
-          <div className="p-4">
-            <ChatQuickPrompts onPromptClick={handleQuickPrompt} />
+          <div className="px-4 pb-4">
+            <ChatQuickPrompts onPromptClick={sendMessage} />
           </div>
         )}
         
-        <ChatMessages 
-          messages={messages.map(msg => ({
-            id: msg.id,
-            content: msg.content,
-            role: msg.role,
-            user_id: msg.role === 'user' ? user?.id?.toString() || null : 'ai',
-            created_at: msg.timestamp,
-          }))}
-          isLoading={isLoading}
-          currentUserId={user?.id?.toString()}
-        />
+        <div className="px-4 pb-4">
+          <ChatInput onSendMessage={sendMessage} disabled={isLoading} />
+        </div>
       </div>
-      
-      <ChatInput 
-        onSendMessage={handleSendMessage}
-        disabled={isLoading}
-      />
     </div>
   );
-};
+}

@@ -20,9 +20,6 @@ export function isDevelopment(): boolean {
          window.location.hostname.includes('lovableproject.com');
 }
 
-// SECURITY: Backend access token is now handled securely through Supabase Edge Function
-// No longer exposing the token in frontend code
-
 // Add a function to test the exact endpoint format
 export function getFullApiUrl(endpoint: string): string {
   const fullUrl = `${API_BASE_URL}${endpoint}`;

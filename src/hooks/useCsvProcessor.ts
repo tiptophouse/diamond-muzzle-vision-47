@@ -1,66 +1,120 @@
 
-import { toast } from "@/components/ui/use-toast";
+import { useState } from 'react';
+import { useToast } from '@/components/ui/use-toast';
 
-export const useCsvProcessor = () => {
-  const parseCSVFile = (file: File): Promise<any[]> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const text = e.target?.result as string;
-          const lines = text.split('\n');
-          const headers = lines[0].split(',').map(h => h.trim());
-          
-          const data = lines.slice(1)
-            .filter(line => line.trim())
-            .map(line => {
-              const values = line.split(',').map(v => v.trim());
-              const item: any = {};
-              headers.forEach((header, index) => {
-                item[header] = values[index] || '';
-              });
-              return item;
-            });
-          
-          resolve(data);
-        } catch (error) {
-          reject(error);
-        }
-      };
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsText(file);
-    });
-  };
-
-  const mapCsvData = (csvData: any[]) => {
-    return csvData.map(row => ({
-      shape: row.Shape || row.shape || '',
-      weight: parseFloat(row.Carat || row.carat || row.Weight || row.weight || '0'),
-      color: row.Color || row.color || '',
-      clarity: row.Clarity || row.clarity || '',
-      price: parseFloat(row.Price || row.price || '0'),
-      cut: row.Cut || row.cut || 'Excellent',
-      stock_number: row['Stock #'] || row.stock_number || `D${Math.floor(Math.random() * 10000)}`,
-      certificate_number: row.Certificate || row.certificate || '',
-      status: 'Available'
-    }));
-  };
+export function useCsvProcessor() {
+  const { toast } = useToast();
 
   const validateFile = (file: File | null): boolean => {
-    if (file && !file.name.toLowerCase().endsWith('.csv')) {
+    if (!file) {
       toast({
+        title: "No file selected",
+        description: "Please select a CSV file to upload",
         variant: "destructive",
-        title: "Invalid file type",
-        description: "Please select a CSV file.",
       });
       return false;
     }
+
+    // Check file type
+    const isValidType = file.type === 'text/csv' || 
+                       file.type === 'application/vnd.ms-excel' ||
+                       file.name.toLowerCase().endsWith('.csv');
+    
+    if (!isValidType) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select a CSV file (.csv)",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Check file size (10MB limit)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      toast({
+        title: "File too large",
+        description: "Please select a file smaller than 10MB",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     return true;
   };
 
-  return {
-    parseCSVFile,
-    mapCsvData,
-    validateFile
+  const processCsvData = async (file: File): Promise<any[]> => {
+    try {
+      const text = await file.text();
+      const lines = text.split('\n').filter(line => line.trim());
+      
+      if (lines.length < 2) {
+        throw new Error('CSV file must contain at least a header row and one data row');
+      }
+
+      // Parse headers - handle different formats
+      const headerLine = lines[0];
+      const headers = headerLine.split(',').map(h => h.trim().replace(/['"]/g, ''));
+      
+      console.log('CSV Headers detected:', headers);
+      
+      const data = [];
+      
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        // Parse CSV line handling quoted values
+        const values = parseCsvLine(line);
+        
+        if (values.length >= headers.length) {
+          const row: any = {};
+          headers.forEach((header, index) => {
+            const value = values[index] || '';
+            row[header] = value.replace(/['"]/g, '').trim();
+          });
+          
+          // Only add rows that have essential diamond data
+          if (row[headers[0]] && row[headers[0]] !== '') {
+            data.push(row);
+          }
+        }
+      }
+      
+      console.log('Processed CSV data:', data.slice(0, 3)); // Log first 3 rows
+      return data;
+      
+    } catch (error) {
+      console.error('CSV processing error:', error);
+      throw new Error(`Failed to process CSV: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
-};
+
+  // Helper function to parse CSV line with proper quote handling
+  const parseCsvLine = (line: string): string[] => {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        result.push(current);
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    
+    result.push(current);
+    return result;
+  };
+
+  return {
+    validateFile,
+    processCsvData,
+  };
+}

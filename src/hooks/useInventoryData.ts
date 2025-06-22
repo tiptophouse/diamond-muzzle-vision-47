@@ -4,10 +4,12 @@ import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { fetchInventoryData } from "@/services/inventoryDataService";
 import { useInventoryProcessor } from "./inventory/useInventoryProcessor";
 import { useInventoryState } from "./inventory/useInventoryState";
+import { useInventoryDataSync } from "./inventory/useInventoryDataSync";
 
 export function useInventoryData() {
   const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
   const { processInventoryData, showSuccessToast, showErrorToast } = useInventoryProcessor();
+  const { subscribeToInventoryChanges } = useInventoryDataSync();
   const {
     loading,
     setLoading,
@@ -23,6 +25,7 @@ export function useInventoryData() {
   } = useInventoryState();
   
   const fetchData = async () => {
+    console.log('🔄 Fetching inventory data...');
     setLoading(true);
     
     try {
@@ -50,9 +53,11 @@ export function useInventoryData() {
         }));
         
         showSuccessToast(processedDiamonds.length);
+        console.log('✅ Inventory data updated with', processedDiamonds.length, 'diamonds');
       } else {
         clearDiamonds();
         showErrorToast("No diamonds found in response", "⚠️ No Diamonds Found");
+        console.log('⚠️ No diamonds found in API response');
       }
     } catch (error) {
       console.error("🔍 INVENTORY: Unexpected error:", error);
@@ -90,6 +95,16 @@ export function useInventoryData() {
       )
     );
   };
+
+  // Subscribe to inventory changes from other components
+  useEffect(() => {
+    const unsubscribe = subscribeToInventoryChanges(() => {
+      console.log('🔄 Inventory change detected, refreshing data...');
+      fetchData();
+    });
+
+    return unsubscribe;
+  }, [subscribeToInventoryChanges]);
 
   useEffect(() => {
     console.log('🔍 INVENTORY: useEffect triggered');

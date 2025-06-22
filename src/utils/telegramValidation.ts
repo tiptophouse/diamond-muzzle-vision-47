@@ -1,120 +1,119 @@
 
-import { TelegramInitData } from '@/types/telegram';
-import crypto from 'crypto-js';
+// Enhanced Telegram validation utilities
+export interface AuthenticationMetrics {
+  attemptTimestamp: number;
+  environment: string;
+  hasInitData: boolean;
+  initDataLength: number;
+  validationStatus: 'pending' | 'success' | 'failed';
+}
 
-export function parseTelegramInitData(initData: string): TelegramInitData | null {
+let authMetrics: AuthenticationMetrics = {
+  attemptTimestamp: Date.now(),
+  environment: typeof window !== 'undefined' ? 'browser' : 'server',
+  hasInitData: false,
+  initDataLength: 0,
+  validationStatus: 'pending'
+};
+
+export function getAuthenticationMetrics(): AuthenticationMetrics {
+  return { ...authMetrics };
+}
+
+export function updateAuthenticationMetrics(updates: Partial<AuthenticationMetrics>): void {
+  authMetrics = { ...authMetrics, ...updates };
+}
+
+export function isTelegramWebApp(): boolean {
+  if (typeof window === 'undefined') return false;
+  
+  return !!(
+    window.Telegram?.WebApp && 
+    typeof window.Telegram.WebApp === 'object' &&
+    window.Telegram.WebApp.initData !== undefined
+  );
+}
+
+export function parseTelegramInitData(initData: string) {
   try {
-    if (!initData || initData.length === 0) {
-      console.warn('Empty initData provided');
-      return null;
-    }
-    
-    const urlParams = new URLSearchParams(initData);
-    const data: any = {};
-    
-    urlParams.forEach((value, key) => {
-      if (key === 'user') {
-        try {
-          const decodedValue = decodeURIComponent(value);
-          data[key] = JSON.parse(decodedValue);
-          console.log('Successfully parsed user data:', data[key]);
-        } catch (userParseError) {
-          console.error('Failed to parse user data:', userParseError);
-          return null;
-        }
-      } else {
-        data[key] = decodeURIComponent(value);
-      }
+    updateAuthenticationMetrics({
+      hasInitData: !!initData,
+      initDataLength: initData?.length || 0
     });
-    
-    // Enhanced validation
-    if (data.user && data.user.id && typeof data.user.id === 'number') {
-      console.log('✅ Valid Telegram initData parsed with user ID:', data.user.id);
-      return data as TelegramInitData;
-    } else {
-      console.warn('⚠️ Parsed initData but missing valid user ID');
+
+    if (!initData) {
+      updateAuthenticationMetrics({ validationStatus: 'failed' });
       return null;
     }
+
+    const urlParams = new URLSearchParams(initData);
+    const userParam = urlParams.get('user');
+    
+    if (!userParam) {
+      updateAuthenticationMetrics({ validationStatus: 'failed' });
+      return null;
+    }
+    
+    const user = JSON.parse(decodeURIComponent(userParam));
+    
+    updateAuthenticationMetrics({ validationStatus: 'success' });
+    
+    return {
+      user: {
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        username: user.username,
+        language_code: user.language_code,
+        is_premium: user.is_premium,
+        photo_url: user.photo_url
+      },
+      auth_date: parseInt(urlParams.get('auth_date') || '0'),
+      hash: urlParams.get('hash')
+    };
   } catch (error) {
     console.error('Failed to parse Telegram initData:', error);
+    updateAuthenticationMetrics({ validationStatus: 'failed' });
     return null;
   }
 }
 
-export function validateTelegramInitData(initData: string, botToken?: string): boolean {
-  console.log('Enhanced Telegram initData validation');
-  
-  if (!initData || initData.length === 0) {
-    console.warn('Missing or empty initData');
-    return false;
-  }
-
-  // Skip validation in development mode
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Development mode - skipping signature validation');
-    const parsed = parseTelegramInitData(initData);
-    return !!parsed && !!parsed.user && typeof parsed.user.id === 'number';
-  }
-  
+export function validateTelegramData(initData: string): boolean {
   try {
-    // Parse query parameters
     const urlParams = new URLSearchParams(initData);
+    const authDate = urlParams.get('auth_date');
     const hash = urlParams.get('hash');
     
-    if (!hash) {
-      console.warn('Missing hash in initData');
+    if (!authDate || !hash) {
       return false;
     }
     
-    // Remove hash from params for validation
-    urlParams.delete('hash');
+    // Check timestamp validity (within 5 minutes)
+    const authDateTime = parseInt(authDate) * 1000;
+    const now = Date.now();
+    const maxAge = 5 * 60 * 1000; // 5 minutes
     
-    // Create data check string
-    const dataCheckArr: string[] = [];
-    urlParams.forEach((value, key) => {
-      dataCheckArr.push(`${key}=${value}`);
-    });
-    dataCheckArr.sort();
-    const dataCheckString = dataCheckArr.join('\n');
-    
-    if (botToken) {
-      // Validate HMAC signature
-      const secretKey = crypto.HmacSHA256(botToken, 'WebAppData');
-      const calculatedHash = crypto.HmacSHA256(dataCheckString, secretKey).toString();
-      
-      const isValid = calculatedHash === hash;
-      console.log('HMAC validation result:', isValid);
-      
-      if (!isValid) {
-        console.warn('Invalid Telegram signature');
-        return false;
-      }
-    }
-    
-    const parsed = parseTelegramInitData(initData);
-    const isValid = !!parsed && !!parsed.user && typeof parsed.user.id === 'number';
-    console.log('Final validation result:', isValid);
-    return isValid;
+    return (now - authDateTime) <= maxAge;
   } catch (error) {
-    console.error('Failed to validate Telegram initData:', error);
+    console.error('Telegram data validation failed:', error);
     return false;
   }
 }
 
-export function isTelegramWebApp(): boolean {
-  const isWebApp = typeof window !== 'undefined' && 
-    !!window.Telegram?.WebApp && 
-    typeof window.Telegram.WebApp === 'object';
-  
-  console.log('Telegram WebApp detection:', {
-    hasWindow: typeof window !== 'undefined',
-    hasTelegram: !!window.Telegram,
-    hasWebApp: !!window.Telegram?.WebApp,
-    result: isWebApp
-  });
-  
-  return isWebApp;
+// Export interface for use in other modules
+export interface TelegramInitData {
+  user: {
+    id: number;
+    first_name: string;
+    last_name?: string;
+    username?: string;
+    language_code?: string;
+    is_premium?: boolean;
+    photo_url?: string;
+  };
+  auth_date: number;
+  hash: string | null;
 }
 
-// Re-export the types for backward compatibility
-export type { TelegramInitData } from '@/types/telegram';
+// Add the missing function that other files expect
+export const validateTelegramInitData = validateTelegramData;

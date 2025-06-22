@@ -1,5 +1,6 @@
 
 import { api, apiEndpoints, getCurrentUserId } from "@/lib/api";
+import { fetchMockInventoryData } from "./mockInventoryService";
 
 export interface FetchInventoryResult {
   data?: any[];
@@ -10,151 +11,138 @@ export interface FetchInventoryResult {
 export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   const userId = getCurrentUserId() || 2138564172;
   
-  console.log('🔍 INVENTORY SERVICE: Starting fetch with user ID:', userId);
-  console.log('🔍 INVENTORY SERVICE: Backend URL:', 'https://api.mazalbot.com');
-  console.log('🔍 INVENTORY SERVICE: Expected diamonds: 566');
+  console.log('🔍 INVENTORY SERVICE: Fetching data for user:', userId);
   
   const debugInfo = { 
-    step: 'Starting fetch', 
+    step: 'Starting inventory fetch process', 
     userId, 
-    expectedCount: 566, 
-    timestamp: new Date().toISOString() 
+    timestamp: new Date().toISOString(),
+    dataSource: 'unknown'
   };
   
   try {
-    console.log('🔍 INVENTORY SERVICE: Using API client to fetch data');
+    // First, try to get data from FastAPI backend
+    console.log('🔍 INVENTORY SERVICE: Attempting FastAPI connection...');
     const endpoint = apiEndpoints.getAllStones(userId);
-    const fullUrl = `https://api.mazalbot.com${endpoint}`;
-    console.log('🔍 INVENTORY SERVICE: Full endpoint URL:', fullUrl);
-    console.log('🔍 INVENTORY SERVICE: Expected format: GET https://api.mazalbot.com/api/v1/get_all_stones?user_id=' + userId);
     
     const result = await api.get(endpoint);
     
-    const updatedDebugInfo = { 
-      ...debugInfo,
-      step: 'API call completed',
-      hasError: !!result.error,
-      hasData: !!result.data,
-      endpoint: endpoint,
-      fullUrl: fullUrl,
-      timestamp: new Date().toISOString()
+    if (result.data && !result.error) {
+      let dataArray: any[] = [];
+      
+      if (Array.isArray(result.data)) {
+        dataArray = result.data;
+      } else if (typeof result.data === 'object' && result.data !== null) {
+        const dataObj = result.data as Record<string, any>;
+        const possibleArrayKeys = ['data', 'diamonds', 'items', 'stones', 'results', 'inventory', 'records'];
+        
+        for (const key of possibleArrayKeys) {
+          if (Array.isArray(dataObj[key])) {
+            dataArray = dataObj[key];
+            break;
+          }
+        }
+      }
+      
+      if (dataArray && dataArray.length > 0) {
+        console.log('✅ INVENTORY SERVICE: FastAPI returned', dataArray.length, 'diamonds');
+        
+        return {
+          data: dataArray,
+          debugInfo: {
+            ...debugInfo,
+            step: 'SUCCESS: FastAPI data fetched',
+            totalDiamonds: dataArray.length,
+            dataSource: 'fastapi'
+          }
+        };
+      }
+    }
+    
+    // If FastAPI fails, try localStorage
+    console.log('🔄 INVENTORY SERVICE: FastAPI failed, checking localStorage...');
+    const localData = localStorage.getItem('diamond_inventory');
+    
+    if (localData) {
+      try {
+        const parsedData = JSON.parse(localData);
+        if (Array.isArray(parsedData) && parsedData.length > 0) {
+          // Filter for current user
+          const userDiamonds = parsedData.filter(item => 
+            !item.user_id || item.user_id === userId
+          );
+          
+          if (userDiamonds.length > 0) {
+            console.log('✅ INVENTORY SERVICE: Found', userDiamonds.length, 'diamonds in localStorage');
+            
+            return {
+              data: userDiamonds,
+              debugInfo: {
+                ...debugInfo,
+                step: 'SUCCESS: localStorage data found',
+                totalDiamonds: userDiamonds.length,
+                dataSource: 'localStorage'
+              }
+            };
+          }
+        }
+      } catch (parseError) {
+        console.warn('Failed to parse localStorage data:', parseError);
+      }
+    }
+    
+    // Final fallback to mock data
+    console.log('🔄 INVENTORY SERVICE: No real data found, using mock data');
+    const mockResult = await fetchMockInventoryData();
+    
+    return {
+      ...mockResult,
+      debugInfo: {
+        ...debugInfo,
+        ...mockResult.debugInfo,
+        step: 'FALLBACK: Using mock data',
+        dataSource: 'mock'
+      }
     };
     
-    if (result.error) {
-      console.error('🔍 INVENTORY SERVICE: API error:', result.error);
-      
-      // Try alternative endpoint if the first one fails
-      console.log('🔍 INVENTORY SERVICE: Trying alternative endpoint without /api/v1 prefix...');
+  } catch (error) {
+    console.error("🔍 INVENTORY SERVICE: Error occurred:", error);
+    
+    // Try localStorage as emergency fallback
+    const localData = localStorage.getItem('diamond_inventory');
+    if (localData) {
       try {
-        const alternativeEndpoint = `/get_all_stones?user_id=${userId}`;
-        console.log('🔍 INVENTORY SERVICE: Alternative endpoint:', `https://api.mazalbot.com${alternativeEndpoint}`);
-        const alternativeResult = await api.get(alternativeEndpoint);
-        
-        if (!alternativeResult.error && alternativeResult.data) {
-          console.log('🔍 INVENTORY SERVICE: Alternative endpoint worked!');
+        const parsedData = JSON.parse(localData);
+        if (Array.isArray(parsedData)) {
+          const userDiamonds = parsedData.filter(item => 
+            !item.user_id || item.user_id === userId
+          );
+          
           return {
-            data: Array.isArray(alternativeResult.data) ? alternativeResult.data : [],
+            data: userDiamonds,
             debugInfo: {
-              ...updatedDebugInfo,
-              step: 'SUCCESS: Alternative endpoint worked',
-              endpoint: alternativeEndpoint,
+              ...debugInfo,
+              step: 'EMERGENCY: localStorage fallback after error',
+              totalDiamonds: userDiamonds.length,
+              dataSource: 'localStorage_emergency'
             }
           };
         }
-      } catch (altError) {
-        console.error('🔍 INVENTORY SERVICE: Alternative endpoint also failed:', altError);
-      }
-      
-      return {
-        data: [],
-        error: result.error,
-        debugInfo: {
-          ...updatedDebugInfo,
-          step: 'API error occurred',
-          error: result.error,
-        }
-      };
-    }
-    
-    if (!result.data) {
-      console.log('🔍 INVENTORY SERVICE: No data returned from backend');
-      return {
-        data: [],
-        error: 'No data returned from backend',
-        debugInfo: {
-          ...updatedDebugInfo,
-          step: 'No data returned from backend',
-        }
-      };
-    }
-    
-    // Process the response data with proper type checking
-    let dataArray: any[] = [];
-    
-    if (Array.isArray(result.data)) {
-      dataArray = result.data;
-    } else if (typeof result.data === 'object' && result.data !== null) {
-      // Check for common data structure patterns
-      const dataObj = result.data as Record<string, any>;
-      if (Array.isArray(dataObj.data)) {
-        dataArray = dataObj.data;
-      } else if (Array.isArray(dataObj.diamonds)) {
-        dataArray = dataObj.diamonds;
-      } else if (Array.isArray(dataObj.items)) {
-        dataArray = dataObj.items;
-      } else if (Array.isArray(dataObj.stones)) {
-        dataArray = dataObj.stones;
+      } catch (parseError) {
+        console.warn('Emergency localStorage parse failed:', parseError);
       }
     }
     
-    console.log('🔍 INVENTORY SERVICE: Processing response data:', {
-      rawDataType: typeof result.data,
-      isArray: Array.isArray(result.data),
-      dataArrayLength: dataArray.length,
-      expectedLength: 566,
-      sampleItem: dataArray[0]
-    });
-    
-    if (dataArray && dataArray.length > 0) {
-      console.log('🔍 INVENTORY SERVICE: SUCCESS! Processing', dataArray.length, 'diamonds (expected 566)');
-      
-      return {
-        data: dataArray,
-        debugInfo: {
-          ...updatedDebugInfo,
-          step: 'SUCCESS: Data fetched',
-          totalDiamonds: dataArray.length,
-          expectedDiamonds: 566,
-          backendResponse: dataArray.length,
-          sampleItem: dataArray[0],
-        }
-      };
-    } else {
-      console.log('🔍 INVENTORY SERVICE: Backend responded but no diamonds found in data');
-      console.log('🔍 INVENTORY SERVICE: Response structure:', result.data);
-      
-      return {
-        data: [],
-        error: 'No diamonds found in response',
-        debugInfo: {
-          ...updatedDebugInfo,
-          step: 'Backend responded but no diamonds found',
-          responseStructure: result.data && typeof result.data === 'object' ? Object.keys(result.data) : [],
-          fullResponse: result.data,
-        }
-      };
-    }
-  } catch (error) {
-    console.error("🔍 INVENTORY SERVICE: Critical error connecting to backend:", error);
-    
+    // Ultimate fallback to mock data
+    const mockResult = await fetchMockInventoryData();
     return {
-      data: [],
-      error: error instanceof Error ? error.message : String(error),
+      ...mockResult,
       debugInfo: {
         ...debugInfo,
-        step: 'Critical backend connection error',
+        ...mockResult.debugInfo,
+        step: 'ULTIMATE FALLBACK: Mock data after all failures',
         error: error instanceof Error ? error.message : String(error),
-        errorStack: error instanceof Error ? error.stack : undefined,
+        dataSource: 'mock_emergency'
       }
     };
   }

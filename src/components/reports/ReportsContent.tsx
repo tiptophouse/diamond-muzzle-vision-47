@@ -60,7 +60,7 @@ export function ReportsContent({ allDiamonds, loading, onRefresh }: ReportsConte
   return (
     <div className="space-y-6 px-4 sm:px-6 pb-6">
       <InventoryHeader
-        totalDiamonds={allDiamonds.length}
+        totalCount={allDiamonds.length}
         onRefresh={onRefresh}
         loading={loading}
       />

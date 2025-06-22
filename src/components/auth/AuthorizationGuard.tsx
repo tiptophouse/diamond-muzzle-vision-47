@@ -4,41 +4,54 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { Shield, UserX, Clock, Crown } from 'lucide-react';
+import { getAdminTelegramId } from '@/lib/api/secureConfig';
 
 interface AuthorizationGuardProps {
   children: ReactNode;
 }
-
-const ADMIN_TELEGRAM_ID = 2138564172;
 
 export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
   const { user, isLoading: authLoading, isTelegramEnvironment } = useTelegramAuth();
   const { isUserBlocked, isLoading: blockedLoading } = useBlockedUsers();
   const { settings, isLoading: settingsLoading } = useAppSettings();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  const [adminTelegramId, setAdminTelegramId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (authLoading || blockedLoading || settingsLoading || !user) {
+    const loadAdminId = async () => {
+      const adminId = await getAdminTelegramId();
+      setAdminTelegramId(adminId);
+    };
+    loadAdminId();
+  }, []);
+
+  useEffect(() => {
+    if (authLoading || !user || adminTelegramId === null) {
       return;
     }
 
-    console.log('🔍 Authorization check for user:', user.id, 'Admin ID:', ADMIN_TELEGRAM_ID);
+    console.log('🔍 Authorization check for user:', user.id, 'Admin ID:', adminTelegramId);
 
-    // Enhanced security: verify environment in production
-    if (process.env.NODE_ENV === 'production' && !isTelegramEnvironment) {
-      console.log('❌ Production requires Telegram environment');
-      setIsAuthorized(false);
-      return;
-    }
-
-    // Admin always gets access - highest priority
-    if (user.id === ADMIN_TELEGRAM_ID) {
-      console.log('✅ Admin user detected - granting full access');
+    // Admin always gets access - HIGHEST PRIORITY
+    if (user.id === adminTelegramId) {
+      console.log('✅ Admin user detected - granting IMMEDIATE access');
       setIsAuthorized(true);
       return;
     }
 
-    // Check if user is blocked
+    // Wait for other data to load for non-admin users
+    if (blockedLoading || settingsLoading) {
+      return;
+    }
+
+    // Enhanced security: verify environment in production for non-admin users
+    if (process.env.NODE_ENV === 'production' && !isTelegramEnvironment) {
+      console.log('❌ Production requires Telegram environment for non-admin users');
+      setIsAuthorized(false);
+      return;
+    }
+
+    // Check if user is blocked (only applies to non-admin users)
     if (isUserBlocked(user.id)) {
       console.log('❌ User is blocked');
       setIsAuthorized(false);
@@ -55,10 +68,10 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
     // Otherwise, user is authorized
     console.log('✅ User authorized');
     setIsAuthorized(true);
-  }, [user, isUserBlocked, settings, authLoading, blockedLoading, settingsLoading, isTelegramEnvironment]);
+  }, [user, isUserBlocked, settings, authLoading, blockedLoading, settingsLoading, isTelegramEnvironment, adminTelegramId]);
 
   // Loading state
-  if (authLoading || blockedLoading || settingsLoading || isAuthorized === null) {
+  if (authLoading || isAuthorized === null || adminTelegramId === null) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
@@ -79,7 +92,7 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
   // Not authorized
   if (!isAuthorized) {
     const isBlocked = user && isUserBlocked(user.id);
-    const isAdminUser = user && user.id === ADMIN_TELEGRAM_ID;
+    const isAdminUser = user && user.id === adminTelegramId;
     const invalidEnvironment = process.env.NODE_ENV === 'production' && !isTelegramEnvironment;
     
     return (

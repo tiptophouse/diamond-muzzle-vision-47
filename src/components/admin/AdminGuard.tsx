@@ -1,25 +1,44 @@
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { Shield, AlertTriangle, Settings, Crown } from 'lucide-react';
+import { Shield, AlertTriangle, Settings, Crown, Home } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { getAdminTelegramId } from '@/lib/api/secureConfig';
 
 interface AdminGuardProps {
   children: ReactNode;
 }
 
-// Your actual admin Telegram ID
-const ADMIN_TELEGRAM_ID = 2138564172;
-
 export function AdminGuard({ children }: AdminGuardProps) {
   const { user, isLoading, isTelegramEnvironment, isAuthenticated } = useTelegramAuth();
+  const navigate = useNavigate();
+  const [adminTelegramId, setAdminTelegramId] = useState<number | null>(null);
+  const [isLoadingAdmin, setIsLoadingAdmin] = useState(true);
+
+  useEffect(() => {
+    const loadAdminConfig = async () => {
+      try {
+        const adminId = await getAdminTelegramId();
+        setAdminTelegramId(adminId);
+      } catch (error) {
+        console.error('❌ Failed to load admin configuration:', error);
+        setAdminTelegramId(2138564172); // fallback
+      } finally {
+        setIsLoadingAdmin(false);
+      }
+    };
+
+    loadAdminConfig();
+  }, []);
 
   console.log('🔍 AdminGuard - Current user:', user);
   console.log('🔍 AdminGuard - User ID:', user?.id);
-  console.log('🔍 AdminGuard - Expected Admin ID:', ADMIN_TELEGRAM_ID);
-  console.log('🔍 AdminGuard - Is Loading:', isLoading);
+  console.log('🔍 AdminGuard - Admin ID:', adminTelegramId);
+  console.log('🔍 AdminGuard - Is Loading:', isLoading || isLoadingAdmin);
   console.log('🔍 AdminGuard - Is Authenticated:', isAuthenticated);
 
-  if (isLoading) {
+  if (isLoading || isLoadingAdmin) {
     console.log('⏳ AdminGuard - Still loading...');
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -59,32 +78,8 @@ export function AdminGuard({ children }: AdminGuardProps) {
     );
   }
 
-  // Enhanced admin verification
-  const isAdmin = user.id === ADMIN_TELEGRAM_ID;
-  
-  // Additional security: verify in production that we're in Telegram environment for the real admin
-  if (process.env.NODE_ENV === 'production' && !isTelegramEnvironment && isAdmin) {
-    console.log('❌ AdminGuard - Production admin access requires Telegram environment');
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
-          <div className="bg-red-50 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-            <AlertTriangle className="h-10 w-10 text-red-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Invalid Access Method</h2>
-          <p className="text-gray-600 mb-6">
-            Admin access must be through the official Telegram application for security reasons.
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors w-full"
-          >
-            Refresh
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Enhanced admin verification using secure configuration
+  const isAdmin = adminTelegramId && user.id === adminTelegramId;
   
   console.log('🔍 AdminGuard - Is Admin?', isAdmin);
   
@@ -102,7 +97,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
           </p>
           <div className="text-sm text-gray-500 mb-8 bg-gray-50 p-4 rounded">
             <p><strong>Your ID:</strong> {user.id}</p>
-            <p><strong>Required Admin ID:</strong> {ADMIN_TELEGRAM_ID}</p>
+            <p><strong>Required Admin ID:</strong> {adminTelegramId}</p>
             <p><strong>Environment:</strong> {isTelegramEnvironment ? 'Telegram' : 'Browser'}</p>
           </div>
           
@@ -124,11 +119,21 @@ export function AdminGuard({ children }: AdminGuardProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="bg-white border-b sticky top-0 z-50 shadow-sm">
-        <div className="flex items-center justify-center gap-3 p-4">
-          <Crown className="h-5 w-5 text-yellow-600" />
-          <span className="font-semibold text-gray-900">
-            Admin Dashboard - Welcome, {user.first_name}
-          </span>
+        <div className="flex items-center justify-between gap-3 p-4">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/dashboard')}
+              className="h-8 w-8 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+            >
+              <Home className="h-4 w-4" />
+            </Button>
+            <Crown className="h-5 w-5 text-yellow-600" />
+            <span className="font-semibold text-gray-900">
+              Admin Dashboard - Welcome, {user.first_name}
+            </span>
+          </div>
           <div className="text-xs bg-green-100 text-green-800 px-3 py-1 rounded-full">
             Verified ID: {user.id}
           </div>

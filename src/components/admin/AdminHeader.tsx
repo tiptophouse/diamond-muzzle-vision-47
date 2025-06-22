@@ -20,16 +20,20 @@ export function AdminHeader({ onExportData, onAddUser }: AdminHeaderProps) {
           Manage users, monitor activity, and control system settings
         </p>
       </div>
-      <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-        <Button 
-          onClick={onExportData} 
-          variant="outline" 
-          className="border-gray-300 text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
+      {/* Ensure buttons never overlap, with gap and flexible wrapping */}
+      <div className="flex flex-col w-full sm:w-auto sm:flex-row gap-2 sm:gap-4 mt-4 sm:mt-0">
+        <Button
+          onClick={onExportData}
+          variant="outline"
+          className="border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center justify-center w-full sm:w-auto"
         >
           <Download className="h-4 w-4 mr-2" />
           Export Data
         </Button>
-        <Button onClick={onAddUser} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
+        <Button
+          onClick={onAddUser}
+          className="bg-blue-600 hover:bg-blue-700 flex items-center justify-center w-full sm:w-auto"
+        >
           <UserPlus className="h-4 w-4 mr-2" />
           Add User
         </Button>

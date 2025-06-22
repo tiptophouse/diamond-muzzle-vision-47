@@ -8,7 +8,9 @@ export const apiEndpoints = {
   },
   verifyTelegram: () => `/api/v1/verify-telegram`,
   uploadInventory: () => `/api/v1/upload-inventory`,
-  deleteDiamond: (diamondId: string, userId: number) => `/api/v1/delete_diamond?diamond_id=${diamondId}&user_id=${userId}`,
+  addDiamond: () => `/api/v1/diamonds`,
+  deleteDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,
+  updateDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,
   soldDiamond: () => `/api/v1/sold`,
   createReport: () => `/api/v1/create-report`,
   getReport: (reportId: string) => `/api/v1/get-report?diamond_id=${reportId}`,
@@ -16,4 +18,21 @@ export const apiEndpoints = {
   getInventoryByShape: (userId: number) => `/api/v1/users/${userId}/inventory/by-shape`,
   getRecentSales: (userId: number) => `/api/v1/users/${userId}/sales/recent`,
   getInventory: (userId: number, page: number = 1, limit: number = 10) => `/api/v1/users/${userId}/inventory?page=${page}&limit=${limit}`,
+  
+  // Payment management endpoints
+  removeUserPayments: (userId: number) => `/api/v1/users/${userId}/payments/remove`,
+  removeAllPayments: () => `/api/v1/payments/remove-all`,
+  getUserPayments: (userId: number) => `/api/v1/users/${userId}/payments`,
+  getPaymentStats: () => `/api/v1/payments/stats`,
+
+  // New client and admin endpoints
+  getAllClients: () => `/api/v1/clients`,
+  getClientById: (clientId: number) => `/api/v1/clients/${clientId}`,
+  blockUser: () => `/api/v1/admin/block-user`,
+  unblockUser: (userId: number) => `/api/v1/admin/unblock-user/${userId}`,
+  sendMessageToUser: () => `/api/v1/admin/send-message`,
+  
+  // Inventory management
+  deleteAllInventory: (userId: number) => `/api/v1/users/${userId}/inventory/delete-all`,
+  updateAllInventory: (userId: number) => `/api/v1/users/${userId}/inventory/update-all`,
 };

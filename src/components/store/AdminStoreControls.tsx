@@ -9,6 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Diamond } from "@/components/inventory/InventoryTable";
+import { api, apiEndpoints } from "@/lib/api";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { getAdminTelegramId } from "@/lib/api/secureConfig";
+import { useEffect } from "react";
 
 interface AdminStoreControlsProps {
   diamond: Diamond;
@@ -19,12 +23,37 @@ interface AdminStoreControlsProps {
 export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreControlsProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [adminTelegramId, setAdminTelegramId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     price: diamond.price,
     description: '',
     imageUrl: diamond.imageUrl || ''
   });
   const { toast } = useToast();
+  const { user, isTelegramEnvironment } = useTelegramAuth();
+
+  useEffect(() => {
+    const loadAdminId = async () => {
+      const adminId = await getAdminTelegramId();
+      setAdminTelegramId(adminId);
+    };
+    loadAdminId();
+  }, []);
+
+  // Security check: Only render controls for verified admin
+  const isAdmin = user?.id === adminTelegramId && isTelegramEnvironment;
+  
+  if (!isAdmin || !adminTelegramId) {
+    console.warn('🚫 AdminStoreControls: Unauthorized access attempt');
+    return null;
+  }
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('🔧 Admin edit button clicked for diamond:', diamond.stockNumber);
+    setIsEditOpen(true);
+  };
 
   const generateDescription = async () => {
     setIsGenerating(true);
@@ -64,56 +93,66 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
   };
 
   const handleSave = async () => {
+    setIsUpdating(true);
     try {
-      const { error } = await supabase
-        .from('inventory')
-        .update({
-          price_per_carat: Math.round(formData.price / diamond.carat),
-          picture: formData.imageUrl,
-          certificate_comment: formData.description
-        })
-        .eq('stock_number', diamond.stockNumber);
+      console.log('🔄 Updating diamond via API endpoint:', diamond.id);
+      
+      const updateData = {
+        price_per_carat: Math.round(formData.price / diamond.carat),
+        picture: formData.imageUrl,
+        certificate_comment: formData.description
+      };
 
-      if (error) throw error;
+      const endpoint = apiEndpoints.updateDiamond(diamond.id);
+      const result = await api.put(endpoint, updateData);
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
 
       toast({
         title: "Updated",
-        description: "Diamond updated successfully",
+        description: "Diamond updated successfully via API",
       });
       
       setIsEditOpen(false);
       onUpdate();
     } catch (error) {
-      console.error('Error updating diamond:', error);
+      console.error('Error updating diamond via API:', error);
       toast({
         title: "Error",
-        description: "Failed to update diamond",
+        description: error instanceof Error ? error.message : "Failed to update diamond",
         variant: "destructive",
       });
+    } finally {
+      setIsUpdating(false);
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (confirm('Are you sure you want to delete this diamond?')) {
       try {
-        const { error } = await supabase
-          .from('inventory')
-          .delete()
-          .eq('stock_number', diamond.stockNumber);
+        console.log('🗑️ Deleting diamond via API endpoint:', diamond.id);
+        
+        const endpoint = apiEndpoints.deleteDiamond(diamond.id);
+        const result = await api.delete(endpoint);
 
-        if (error) throw error;
+        if (result.error) {
+          throw new Error(result.error);
+        }
 
         toast({
           title: "Deleted",
-          description: "Diamond removed from store",
+          description: "Diamond removed from store via API",
         });
         
         onDelete();
       } catch (error) {
-        console.error('Error deleting diamond:', error);
+        console.error('Error deleting diamond via API:', error);
         toast({
           title: "Error",
-          description: "Failed to delete diamond",
+          description: error instanceof Error ? error.message : "Failed to delete diamond",
           variant: "destructive",
         });
       }
@@ -122,12 +161,12 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
 
   return (
     <>
-      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setIsEditOpen(true)}
-          className="h-8 w-8 p-0 bg-white/80 hover:bg-white"
+          onClick={handleEditClick}
+          className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-sm"
         >
           <Edit className="h-4 w-4" />
         </Button>
@@ -135,7 +174,7 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
           variant="ghost"
           size="sm"
           onClick={handleDelete}
-          className="h-8 w-8 p-0 bg-white/80 hover:bg-white text-red-600"
+          className="h-8 w-8 p-0 bg-white/90 hover:bg-white text-red-600 shadow-sm"
         >
           <Trash className="h-4 w-4" />
         </Button>
@@ -196,11 +235,11 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
             </div>
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsEditOpen(false)}>
+              <Button variant="outline" onClick={() => setIsEditOpen(false)} disabled={isUpdating}>
                 Cancel
               </Button>
-              <Button onClick={handleSave}>
-                Save Changes
+              <Button onClick={handleSave} disabled={isUpdating}>
+                {isUpdating ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
           </div>

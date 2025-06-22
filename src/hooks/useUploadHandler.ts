@@ -1,105 +1,157 @@
 
-import { useState } from "react";
-import { api, apiEndpoints } from "@/lib/api";
-import { toast } from "@/components/ui/use-toast";
-import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { useCsvProcessor } from "./useCsvProcessor";
+import { useState } from 'react';
+import { useToast } from '@/components/ui/use-toast';
+import { api, apiEndpoints } from '@/lib/api';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useInventoryDataSync } from './inventory/useInventoryDataSync';
 
-interface UploadResultData {
-  totalItems: number;
-  matchedPairs: number;
-  errors: string[];
-}
-
-interface UploadResponse {
-  matched_pairs?: number;
+interface UploadResult {
+  success: boolean;
+  message: string;
+  processedCount?: number;
   errors?: string[];
 }
 
-export const useUploadHandler = () => {
+export function useUploadHandler() {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [result, setResult] = useState<UploadResultData | null>(null);
-  const { user, isAuthenticated } = useTelegramAuth();
-  const { parseCSVFile, mapCsvData } = useCsvProcessor();
+  const [result, setResult] = useState<UploadResult | null>(null);
+  const { toast } = useToast();
+  const { user } = useTelegramAuth();
+  const { triggerInventoryChange } = useInventoryDataSync();
 
-  const simulateProgress = () => {
-    let currentProgress = 0;
-    const interval = setInterval(() => {
-      currentProgress += Math.random() * 10;
-      if (currentProgress > 95) {
-        clearInterval(interval);
-        currentProgress = 95;
-      }
-      setProgress(Math.min(currentProgress, 95));
-    }, 300);
-
-    return () => clearInterval(interval);
-  };
-
-  const handleUpload = async (selectedFile: File) => {
-    if (!selectedFile || !isAuthenticated || !user) {
+  const handleUpload = async (file: File) => {
+    if (!user?.id) {
       toast({
+        title: "Authentication Error",
+        description: "Please log in to upload files",
         variant: "destructive",
-        title: "Authentication required",
-        description: "Please make sure you're logged in to upload files.",
       });
       return;
     }
 
     setUploading(true);
     setProgress(0);
-    
-    const cleanup = simulateProgress();
+    setResult(null);
 
     try {
-      console.log('Starting upload for user:', user.id);
+      // Parse CSV file
+      const text = await file.text();
+      const lines = text.split('\n').filter(line => line.trim());
       
-      const csvData = await parseCSVFile(selectedFile);
-      const mappedData = mapCsvData(csvData);
-      
-      const response = await api.uploadCsv<UploadResponse>(
-        apiEndpoints.uploadInventory(),
-        mappedData,
-        user.id
-      );
-      
-      setProgress(100);
-      
-      if (response.error) {
-        throw new Error(response.error);
+      if (lines.length < 2) {
+        throw new Error('CSV file must contain at least a header and one data row');
       }
-      
-      const uploadResult: UploadResultData = {
-        totalItems: mappedData.length,
-        matchedPairs: response.data?.matched_pairs || 0,
-        errors: response.data?.errors || [],
-      };
-      
-      setResult(uploadResult);
-      
-      toast({
-        title: "Upload successful",
-        description: `Successfully uploaded ${mappedData.length} diamonds to your inventory.`,
-      });
-      
+
+      const headers = lines[0].split(',').map(h => h.trim());
+      const csvData = [];
+
+      setProgress(25);
+
+      // Process CSV rows
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim());
+        if (values.length >= headers.length) {
+          const row: any = {};
+          headers.forEach((header, index) => {
+            row[header] = values[index] || '';
+          });
+          csvData.push(row);
+        }
+      }
+
+      setProgress(50);
+
+      // Try to upload to FastAPI backend first
+      try {
+        console.log('🔄 Attempting upload to FastAPI backend...');
+        const response = await api.uploadCsv(apiEndpoints.uploadInventory(), csvData, user.id);
+        
+        if (response.error) {
+          throw new Error(response.error);
+        }
+
+        setProgress(100);
+        
+        const successResult: UploadResult = {
+          success: true,
+          message: `Successfully uploaded ${csvData.length} diamonds to your inventory!`,
+          processedCount: csvData.length
+        };
+        
+        setResult(successResult);
+        triggerInventoryChange();
+        
+        toast({
+          title: "Upload Successful! 🎉",
+          description: successResult.message,
+        });
+
+      } catch (apiError) {
+        console.warn('FastAPI upload failed, using fallback method:', apiError);
+        
+        // Fallback: Store in localStorage for demo purposes
+        const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
+        const newData = csvData.map((item, index) => ({
+          id: `upload-${Date.now()}-${index}`,
+          stockNumber: item['Stock Number'] || item['stock_number'] || `STK-${Date.now()}-${index}`,
+          shape: item['Shape'] || item['shape'] || 'Round',
+          carat: parseFloat(item['Carat'] || item['carat'] || item['Weight'] || '1.0'),
+          color: item['Color'] || item['color'] || 'G',
+          clarity: item['Clarity'] || item['clarity'] || 'VS1',
+          cut: item['Cut'] || item['cut'] || 'Excellent',
+          price: parseFloat(item['Price'] || item['price'] || item['Total Price'] || '5000'),
+          status: 'Available',
+          store_visible: true,
+          user_id: user.id
+        }));
+        
+        localStorage.setItem('diamond_inventory', JSON.stringify([...existingData, ...newData]));
+        
+        setProgress(100);
+        
+        const fallbackResult: UploadResult = {
+          success: true,
+          message: `Uploaded ${csvData.length} diamonds (stored locally - backend unavailable)`,
+          processedCount: csvData.length
+        };
+        
+        setResult(fallbackResult);
+        triggerInventoryChange();
+        
+        toast({
+          title: "Upload Completed (Local Storage)",
+          description: fallbackResult.message,
+          variant: "default",
+        });
+      }
+
     } catch (error) {
       console.error('Upload failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+      
+      const errorResult: UploadResult = {
+        success: false,
+        message: errorMessage,
+        errors: [errorMessage]
+      };
+      
+      setResult(errorResult);
       
       toast({
+        title: "Upload Failed",
+        description: errorMessage,
         variant: "destructive",
-        title: "Upload failed",
-        description: error instanceof Error ? error.message : "There was an error uploading your CSV file.",
       });
     } finally {
       setUploading(false);
-      cleanup();
     }
   };
 
   const resetState = () => {
-    setResult(null);
     setProgress(0);
+    setResult(null);
+    setUploading(false);
   };
 
   return {
@@ -107,6 +159,6 @@ export const useUploadHandler = () => {
     progress,
     result,
     handleUpload,
-    resetState
+    resetState,
   };
-};
+}

@@ -21,7 +21,6 @@ export function UploadForm() {
     if (!validateFile(file)) {
       return;
     }
-    
     setSelectedFile(file);
     resetState();
   };
@@ -61,11 +60,10 @@ export function UploadForm() {
               onFileChange={handleFileChange}
               onReset={resetForm}
             />
-            
+
             <UploadProgress progress={progress} uploading={uploading} />
-            
             <UploadResult result={result} />
-            
+
             {selectedFile && (
               <div className="flex justify-end gap-3">
                 <Button 
@@ -88,7 +86,6 @@ export function UploadForm() {
           </div>
         </CardContent>
       </Card>
-      
       <UploadInstructions userId={user?.id} />
     </div>
   );
