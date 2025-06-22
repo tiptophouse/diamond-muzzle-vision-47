@@ -12,42 +12,72 @@ interface SimpleInventoryTableProps {
   diamonds: Diamond[];
   loading: boolean;
   onRefresh: () => void;
+  onDiamondDeleted?: (diamondId: string) => void;
 }
 
-export function SimpleInventoryTable({ diamonds, loading, onRefresh }: SimpleInventoryTableProps) {
+export function SimpleInventoryTable({ 
+  diamonds, 
+  loading, 
+  onRefresh, 
+  onDiamondDeleted 
+}: SimpleInventoryTableProps) {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleDelete = async (diamond: Diamond) => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      toast({
+        variant: "destructive",
+        title: "❌ Error",
+        description: "User not authenticated",
+      });
+      return;
+    }
     
     setDeletingId(diamond.id);
     
+    // Optimistically remove from UI
+    if (onDiamondDeleted) {
+      onDiamondDeleted(diamond.id);
+    }
+    
     try {
-      const response = await api.post('/sold', {
+      console.log('🗑️ Deleting diamond:', {
+        id: diamond.id,
+        stockNumber: diamond.stockNumber,
+        userId: user.id
+      });
+
+      const response = await api.post('/api/v1/sold', {
         diamond_id: diamond.id,
         user_id: user.id,
         action: 'delete'
       });
       
       if (response.error) {
+        // Restore diamond to UI on error
         throw new Error(response.error);
       }
       
       toast({
         title: "✅ Success",
-        description: "Diamond deleted successfully",
+        description: `Diamond ${diamond.stockNumber} deleted successfully`,
       });
       
-      onRefresh();
+      console.log('✅ Diamond deleted successfully');
       
     } catch (error) {
-      console.error('Failed to delete diamond:', error);
+      console.error('❌ Failed to delete diamond:', error);
+      
+      // Restore diamond to UI on error by refreshing
+      onRefresh();
+      
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond. Please try again.";
       toast({
         variant: "destructive",
-        title: "❌ Error",
-        description: "Failed to delete diamond. Please try again.",
+        title: "❌ Delete Failed",
+        description: errorMessage,
       });
     } finally {
       setDeletingId(null);
@@ -113,7 +143,7 @@ export function SimpleInventoryTable({ diamonds, loading, onRefresh }: SimpleInv
                   <div className="text-sm text-gray-900">
                     {diamond.shape}
                   </div>
-                  <div className="flex gap-1 mt-1">
+                  <div className="flex gap-1 mt-1 flex-wrap">
                     <Badge variant="outline" className="text-xs">
                       {diamond.color}
                     </Badge>
@@ -149,7 +179,7 @@ export function SimpleInventoryTable({ diamonds, loading, onRefresh }: SimpleInv
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap text-right">
                   <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button 
@@ -157,9 +187,13 @@ export function SimpleInventoryTable({ diamonds, loading, onRefresh }: SimpleInv
                       size="sm"
                       onClick={() => handleDelete(diamond)}
                       disabled={deletingId === diamond.id}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-red-600 hover:text-red-700 disabled:opacity-50"
                     >
-                      <Trash className="h-4 w-4" />
+                      {deletingId === diamond.id ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                      ) : (
+                        <Trash className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </td>

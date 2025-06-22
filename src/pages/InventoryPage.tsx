@@ -4,10 +4,11 @@ import { Layout } from "@/components/layout/Layout";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw, AlertCircle } from "lucide-react";
 import { SimpleInventoryTable } from "@/components/inventory/SimpleInventoryTable";
 import { SimpleInventorySearch } from "@/components/inventory/SimpleInventorySearch";
-import { api } from "@/lib/api";
+import { InventoryService } from "@/services/inventoryService";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export interface Diamond {
   id: string;
@@ -28,49 +29,51 @@ export default function InventoryPage() {
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
 
   const loadInventory = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setError("User not authenticated");
+      return;
+    }
     
     setLoading(true);
+    setError(null);
+    
     try {
-      console.log('Loading inventory for user:', user.id);
+      console.log('🔄 Loading inventory for user:', user.id);
       
-      const response = await api.get(`/api/v1/get_all_stones?user_id=${user.id}`);
+      const result = await InventoryService.fetchInventory(user.id);
       
-      if (response.error) {
-        throw new Error(response.error);
+      setDebugInfo(result.debugInfo);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Unknown error occurred');
       }
 
-      const rawData = Array.isArray(response.data) ? response.data : [];
-      
-      // Convert to Diamond format
-      const convertedDiamonds: Diamond[] = rawData.map((item: any) => ({
-        id: item.id || `${Date.now()}-${Math.random()}`,
-        stockNumber: item.stock_number || item.stockNumber || 'N/A',
-        shape: item.shape || 'Round',
-        carat: Number(item.weight || item.carat || 0),
-        color: item.color || 'G',
-        clarity: item.clarity || 'VS1',
-        cut: item.cut || 'Excellent',
-        price: Number(item.price_per_carat * item.weight) || Number(item.price) || 0,
-        status: item.status || 'Available',
-        imageUrl: item.picture || item.imageUrl
-      }));
-
-      setDiamonds(convertedDiamonds);
+      const inventoryData = result.data || [];
+      setDiamonds(inventoryData);
       
       toast({
         title: "✅ Success",
-        description: `Loaded ${convertedDiamonds.length} diamonds`,
+        description: `Loaded ${inventoryData.length} diamonds successfully`,
+      });
+      
+      console.log('✅ Inventory loaded successfully:', {
+        count: inventoryData.length,
+        sample: inventoryData[0]
       });
       
     } catch (error) {
-      console.error('Failed to load inventory:', error);
+      console.error('❌ Failed to load inventory:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load inventory';
+      setError(errorMessage);
+      
       toast({
         variant: "destructive",
         title: "❌ Error",
-        description: "Failed to load inventory. Please try again.",
+        description: errorMessage,
       });
     } finally {
       setLoading(false);
@@ -126,6 +129,24 @@ export default function InventoryPage() {
           </div>
         </div>
 
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {error}
+              {debugInfo && (
+                <details className="mt-2 text-xs">
+                  <summary className="cursor-pointer">Debug Information</summary>
+                  <pre className="mt-1 overflow-auto">
+                    {JSON.stringify(debugInfo, null, 2)}
+                  </pre>
+                </details>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Search */}
         <SimpleInventorySearch
           searchQuery={searchQuery}
@@ -138,6 +159,9 @@ export default function InventoryPage() {
           diamonds={filteredDiamonds}
           loading={loading}
           onRefresh={loadInventory}
+          onDiamondDeleted={(deletedId) => {
+            setDiamonds(prev => prev.filter(d => d.id !== deletedId));
+          }}
         />
       </div>
     </Layout>
