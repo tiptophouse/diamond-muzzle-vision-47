@@ -1,16 +1,16 @@
 
-// Local storage configuration - no external API dependency
-export const API_BASE_URL = ""; // No external API needed
+// FastAPI backend configuration
+export const API_BASE_URL = "https://api.mazalbot.com";
 
 let currentUserId: number | null = null;
 
 export function setCurrentUserId(userId: number) {
   currentUserId = userId;
-  console.log('🔧 Local Storage: Current user ID set to:', userId, 'type:', typeof userId);
+  console.log('🔧 API Config: Current user ID set to:', userId, 'type:', typeof userId);
 }
 
 export function getCurrentUserId(): number | null {
-  console.log('🔧 Local Storage: Getting current user ID:', currentUserId);
+  console.log('🔧 API Config: Getting current user ID:', currentUserId);
   return currentUserId;
 }
 

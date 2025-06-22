@@ -1,16 +1,21 @@
-
 export const apiEndpoints = {
+  // Fixed endpoint to match your FastAPI structure
   getAllStones: (userId: number) => {
-    // Try the correct endpoint path for your backend
-    const endpoint = `/api/v1/get_all_stones?user_id=${userId}`;
-    console.log('🔧 API: Building getAllStones endpoint:', endpoint, 'for user:', userId, 'type:', typeof userId);
+    const endpoint = `/get_all_stones?user_id=${userId}`;
+    console.log('🔧 API: Building getAllStones endpoint:', endpoint, 'for user:', userId);
     return endpoint;
   },
+  
+  // Fixed delete endpoint to match your API structure
+  deleteDiamond: (diamondId: string) => `/api/v1/delete_stone/${diamondId}`,
+  
+  // Other endpoints - updating to match your API structure
+  addDiamond: () => `/api/v1/add_stone`,
+  updateDiamond: (diamondId: string) => `/api/v1/update_stone/${diamondId}`,
+  
+  // Keep existing endpoints for other features
   verifyTelegram: () => `/api/v1/verify-telegram`,
   uploadInventory: () => `/api/v1/upload-inventory`,
-  addDiamond: () => `/api/v1/diamonds`,
-  deleteDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,
-  updateDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,
   soldDiamond: () => `/api/v1/sold`,
   createReport: () => `/api/v1/create-report`,
   getReport: (reportId: string) => `/api/v1/get-report?diamond_id=${reportId}`,
@@ -25,7 +30,7 @@ export const apiEndpoints = {
   getUserPayments: (userId: number) => `/api/v1/users/${userId}/payments`,
   getPaymentStats: () => `/api/v1/payments/stats`,
 
-  // New client and admin endpoints
+  // Client and admin endpoints
   getAllClients: () => `/api/v1/clients`,
   getClientById: (clientId: number) => `/api/v1/clients/${clientId}`,
   blockUser: () => `/api/v1/admin/block-user`,

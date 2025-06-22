@@ -1,7 +1,6 @@
 
-import { LocalStorageService } from './localStorageService';
+import { api, apiEndpoints, getCurrentUserId } from "@/lib/api";
 import { fetchMockInventoryData } from "./mockInventoryService";
-import { getCurrentUserId } from "@/lib/api";
 
 export interface FetchInventoryResult {
   data?: any[];
@@ -10,63 +9,64 @@ export interface FetchInventoryResult {
 }
 
 export async function fetchInventoryData(): Promise<FetchInventoryResult> {
-  const userId = getCurrentUserId() || 2138564172;
+  const userId = getCurrentUserId() || 2138564172; // Use admin ID if no user set
   
-  console.log('🔍 INVENTORY SERVICE: Fetching data from local storage for user:', userId);
+  console.log('🔍 INVENTORY SERVICE: Fetching data from FastAPI backend for user:', userId);
   
   const debugInfo = { 
-    step: 'Starting inventory fetch from local storage', 
+    step: 'Starting inventory fetch from FastAPI backend', 
     userId, 
     timestamp: new Date().toISOString(),
-    dataSource: 'localStorage'
+    dataSource: 'fastapi_backend',
+    apiUrl: apiEndpoints.getAllStones(userId)
   };
   
   try {
-    // Get data from local storage
-    const result = LocalStorageService.getAllDiamonds();
+    // First try to fetch from your FastAPI backend
+    console.log('📡 INVENTORY SERVICE: Calling FastAPI endpoint:', apiEndpoints.getAllStones(userId));
     
-    if (result.success && result.data && result.data.length > 0) {
-      console.log('✅ INVENTORY SERVICE: Local storage returned', result.data.length, 'diamonds');
-      
-      return {
-        data: result.data,
-        debugInfo: {
-          ...debugInfo,
-          step: 'SUCCESS: Local storage data fetched',
-          totalDiamonds: result.data.length,
-          dataSource: 'localStorage'
-        }
-      };
+    const response = await api.get<any[]>(apiEndpoints.getAllStones(userId));
+    
+    if (response.error) {
+      console.error('❌ INVENTORY SERVICE: FastAPI error:', response.error);
+      throw new Error(`FastAPI Error: ${response.error}`);
     }
     
-    // If no local data, provide mock data as example
-    console.log('🔄 INVENTORY SERVICE: No local data found, providing mock example data');
-    const mockResult = await fetchMockInventoryData();
-    
-    return {
-      ...mockResult,
-      debugInfo: {
-        ...debugInfo,
-        ...mockResult.debugInfo,
-        step: 'FALLBACK: Using mock example data (no local data found)',
-        dataSource: 'mock_example'
-      }
-    };
+    if (response.data && response.data.length > 0) {
+      console.log('✅ INVENTORY SERVICE: FastAPI returned', response.data.length, 'diamonds');
+      
+      return {
+        data: response.data,
+        debugInfo: {
+          ...debugInfo,
+          step: 'SUCCESS: FastAPI data fetched',
+          totalDiamonds: response.data.length,
+          dataSource: 'fastapi_backend',
+          sampleData: response.data.slice(0, 2) // First 2 items for debugging
+        }
+      };
+    } else {
+      console.warn('⚠️ INVENTORY SERVICE: FastAPI returned empty data');
+      throw new Error('No diamonds found in FastAPI response');
+    }
     
   } catch (error) {
-    console.error("🔍 INVENTORY SERVICE: Error occurred:", error);
+    console.error("❌ INVENTORY SERVICE: FastAPI request failed:", error);
     
-    // Ultimate fallback to mock data
+    // Fallback to mock data only if FastAPI is completely unreachable
+    console.log('🔄 INVENTORY SERVICE: FastAPI unavailable, using mock data as fallback');
     const mockResult = await fetchMockInventoryData();
+    
     return {
       ...mockResult,
       debugInfo: {
         ...debugInfo,
         ...mockResult.debugInfo,
-        step: 'ERROR FALLBACK: Mock data after local storage error',
+        step: 'FALLBACK: Using mock data (FastAPI unreachable)',
         error: error instanceof Error ? error.message : String(error),
-        dataSource: 'mock_error_fallback'
-      }
+        dataSource: 'mock_fallback_after_api_error'
+      },
+      error: `FastAPI Backend Error: ${error instanceof Error ? error.message : String(error)}. Using sample data.`
     };
   }
 }

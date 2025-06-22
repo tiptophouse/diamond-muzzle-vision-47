@@ -2,7 +2,7 @@
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { LocalStorageService } from '@/services/localStorageService';
+import { api, apiEndpoints } from '@/lib/api';
 
 export function useUpdateDiamond(onSuccess?: () => void) {
   const { toast } = useToast();
@@ -32,28 +32,28 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         store_visible: data.storeVisible,
       };
 
-      console.log('📝 Updating diamond in local storage:', diamondId, updates);
+      console.log('📝 Updating diamond via FastAPI:', diamondId, updates);
       
-      const result = LocalStorageService.updateDiamond(diamondId, updates);
+      const response = await api.put(apiEndpoints.updateDiamond(diamondId), updates);
       
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to update diamond');
+      if (response.error) {
+        throw new Error(response.error);
       }
 
       toast({
         title: "Success ✅",
-        description: "Diamond updated successfully",
+        description: "Diamond updated successfully in your inventory",
       });
       
       if (onSuccess) onSuccess();
       return true;
       
     } catch (error) {
-      console.error('❌ Failed to update diamond:', error);
+      console.error('❌ Failed to update diamond via FastAPI:', error);
       const errorMessage = error instanceof Error ? error.message : "Failed to update diamond. Please try again.";
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "Update Failed",
         description: errorMessage,
       });
       return false;
