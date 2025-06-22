@@ -2,7 +2,7 @@
 // FastAPI Connection Tester Utility
 export class FastApiTester {
   private static readonly BASE_URL = 'https://api.mazalbot.com';
-  private static readonly TEST_TOKEN = 'ifj9ov1rh20fslfp'; // This should be rotated ASAP
+  private static readonly TEST_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VySWQiLCJleHAiOjE2ODk2MDAwMDAsImlhdCI6MTY4OTU5NjQwMH0.kWzUkeMTF4LZbU9P5yRmsXrXhWfPlUPukGqI8Nq1rLo';
   private static readonly TEST_USER_ID = 2138564172;
 
   static async testDirectConnection(): Promise<{
