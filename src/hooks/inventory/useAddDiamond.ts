@@ -20,6 +20,7 @@ export function useAddDiamond(onSuccess?: () => void) {
 
     try {
       const diamondData = {
+        user_id: user.id,
         stock_number: data.stockNumber,
         shape: data.shape,
         weight: Number(data.carat),
