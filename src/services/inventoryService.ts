@@ -1,6 +1,6 @@
-
 import { api } from "@/lib/api";
 import { Diamond } from "@/pages/InventoryPage";
+import { FastApiTester } from "@/utils/fastApiTester";
 
 export interface InventoryServiceResult {
   success: boolean;
@@ -11,12 +11,10 @@ export interface InventoryServiceResult {
 
 export class InventoryService {
   private static validateDiamondData(rawItem: any): boolean {
-    // Filter out invalid entries like "lisa monroxy"
     if (!rawItem || typeof rawItem !== 'object') {
       return false;
     }
 
-    // Check for corrupted test data
     const invalidEntries = ['lisa monroxy', 'test', 'dummy', 'sample'];
     const stockNumber = String(rawItem.stock_number || rawItem.stockNumber || '').toLowerCase();
     const shape = String(rawItem.shape || '').toLowerCase();
@@ -28,14 +26,12 @@ export class InventoryService {
       }
     }
 
-    // Ensure required fields exist
     return (
       rawItem.stock_number || rawItem.stockNumber
     );
   }
 
   private static convertToStandardFormat(rawItem: any): Diamond {
-    // Clean and convert the data
     const weight = Number(rawItem.weight || rawItem.carat || 1);
     const pricePerCarat = Number(rawItem.price_per_carat || 0);
     const totalPrice = weight > 0 && pricePerCarat > 0 ? weight * pricePerCarat : Number(rawItem.price || 0);
@@ -57,14 +53,11 @@ export class InventoryService {
   static async fetchInventory(userId: number): Promise<InventoryServiceResult> {
     console.log('📦 InventoryService: === STARTING INVENTORY FETCH ===');
     console.log('📦 InventoryService: User ID:', userId, 'Type:', typeof userId);
-    console.log('📦 InventoryService: Expected backend: https://api.mazalbot.com');
-    console.log('📦 InventoryService: Expected diamonds: ~566');
     
     try {
       // Try primary endpoint first
       const primaryEndpoint = `/api/v1/get_all_stones?user_id=${userId}`;
       console.log('📦 InventoryService: 🎯 Primary endpoint:', primaryEndpoint);
-      console.log('📦 InventoryService: 🎯 Full URL will be: https://api.mazalbot.com' + primaryEndpoint);
       
       const response = await api.get(primaryEndpoint);
       
@@ -79,24 +72,24 @@ export class InventoryService {
       if (response.error) {
         console.warn('📦 InventoryService: ⚠️ Primary endpoint failed:', response.error);
         
-        // Enhanced error analysis
+        // Run diagnostic and get better error information
+        const diagnostic = await FastApiTester.testDirectConnection();
+        
         const debugInfo = {
           primaryEndpoint,
           primaryError: response.error,
           timestamp: new Date().toISOString(),
           userId: userId,
-          analysis: this.analyzeError(response.error)
+          diagnostic: diagnostic,
+          analysis: this.analyzeError(response.error),
+          criticalIssue: 'Backend token "ifj9ov1rh20fslfp" exposed - rotate immediately'
         };
         
-        console.log('📦 InventoryService: 🔍 Error analysis:', debugInfo.analysis);
-        
-        // Try alternative endpoint patterns
+        // Try alternative endpoints with better logging
         const alternativeEndpoints = [
           `/get_all_stones?user_id=${userId}`,
           `/api/v1/stones?user_id=${userId}`,
           `/stones?user_id=${userId}`,
-          `/api/v1/inventory?user_id=${userId}`,
-          `/inventory?user_id=${userId}`
         ];
         
         for (const altEndpoint of alternativeEndpoints) {
@@ -108,17 +101,15 @@ export class InventoryService {
             if (!altResponse.error && altResponse.data) {
               console.log('📦 InventoryService: ✅ Alternative endpoint worked!', altEndpoint);
               return this.processInventoryData(altResponse.data, altEndpoint);
-            } else {
-              console.log('📦 InventoryService: ❌ Alternative failed:', altEndpoint, altResponse.error);
             }
           } catch (altError) {
-            console.log('📦 InventoryService: ❌ Alternative error:', altEndpoint, altError);
+            console.log('📦 InventoryService: ❌ Alternative failed:', altEndpoint, altError);
           }
         }
         
         return {
           success: false,
-          error: `All endpoints failed. Primary error: ${response.error}`,
+          error: this.getDetailedErrorMessage(response.error, diagnostic),
           debugInfo: {
             ...debugInfo,
             attemptedEndpoints: [primaryEndpoint, ...alternativeEndpoints],
@@ -138,13 +129,36 @@ export class InventoryService {
         debugInfo: {
           type: 'Critical service error',
           error: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined,
           timestamp: new Date().toISOString(),
           userId: userId,
-          recommendation: 'Check network connectivity and backend server status'
+          criticalIssue: 'Backend token exposed - immediate rotation required'
         }
       };
     }
+  }
+
+  private static getDetailedErrorMessage(error: string, diagnostic: any): string {
+    const baseError = `FastAPI Connection Failed: ${error}`;
+    
+    if (diagnostic && !diagnostic.success) {
+      if (diagnostic.statusCode === 404) {
+        return `${baseError}\n\n🔧 ISSUE: API endpoint not found\n💡 SOLUTION: Verify FastAPI routing and endpoint paths`;
+      }
+      
+      if (diagnostic.statusCode === 403 || diagnostic.statusCode === 401) {
+        return `${baseError}\n\n🔑 ISSUE: Authentication failed\n💡 SOLUTION: Rotate BACKEND_ACCESS_TOKEN in Supabase secrets`;
+      }
+      
+      if (diagnostic.statusCode === 500) {
+        return `${baseError}\n\n🚨 ISSUE: FastAPI server error\n💡 SOLUTION: Check server logs and database connectivity`;
+      }
+      
+      if (!diagnostic.statusCode) {
+        return `${baseError}\n\n🌐 ISSUE: Cannot reach FastAPI server\n💡 SOLUTION: Verify server is running and accessible`;
+      }
+    }
+    
+    return `${baseError}\n\n🔒 CRITICAL: Exposed token needs immediate rotation`;
   }
 
   private static analyzeError(error: string): { issue: string; recommendation: string; severity: 'low' | 'medium' | 'high' } {
@@ -211,7 +225,6 @@ export class InventoryService {
     console.log('📦 InventoryService: 🔄 Is array:', Array.isArray(rawData));
     console.log('📦 InventoryService: 🔄 Data length:', Array.isArray(rawData) ? rawData.length : 'N/A');
 
-    // Extract array from various possible response structures
     let dataArray: any[] = [];
     
     if (Array.isArray(rawData)) {
@@ -220,7 +233,6 @@ export class InventoryService {
     } else if (rawData && typeof rawData === 'object') {
       console.log('📦 InventoryService: 📋 Object response, checking nested arrays...');
       
-      // Check common response wrapper patterns
       const possibleArrays = [
         { key: 'data', value: rawData.data },
         { key: 'diamonds', value: rawData.diamonds },
@@ -264,23 +276,9 @@ export class InventoryService {
     // Sample the first few items for debugging
     console.log('📦 InventoryService: 📋 Sample raw items:', dataArray.slice(0, 3));
 
-    // Filter and convert valid diamonds
     const validDiamonds = dataArray
-      .filter((item, index) => {
-        const isValid = this.validateDiamondData(item);
-        if (!isValid && index < 5) {
-          console.log(`📦 InventoryService: 🚮 Filtered out item ${index}:`, item);
-        }
-        return isValid;
-      })
-      .map((item, index) => {
-        try {
-          return this.convertToStandardFormat(item);
-        } catch (conversionError) {
-          console.error(`📦 InventoryService: ❌ Conversion error for item ${index}:`, conversionError, item);
-          return null;
-        }
-      })
+      .filter(this.validateDiamondData)
+      .map(this.convertToStandardFormat)
       .filter(Boolean) as Diamond[];
 
     console.log('📦 InventoryService: ✅ Processing complete!');
@@ -291,11 +289,6 @@ export class InventoryService {
       conversionRate: `${Math.round((validDiamonds.length / dataArray.length) * 100)}%`
     });
 
-    // Sample the converted diamonds
-    if (validDiamonds.length > 0) {
-      console.log('📦 InventoryService: 💎 Sample converted diamonds:', validDiamonds.slice(0, 2));
-    }
-
     return {
       success: true,
       data: validDiamonds,
@@ -305,9 +298,7 @@ export class InventoryService {
         validDiamonds: validDiamonds.length,
         filteredOut: dataArray.length - validDiamonds.length,
         conversionRate: Math.round((validDiamonds.length / dataArray.length) * 100),
-        sampleRawItem: dataArray[0],
-        sampleConvertedItem: validDiamonds[0],
-        timestamp: new Date().toISOString()
+        criticalIssue: 'Backend token "ifj9ov1rh20fslfp" exposed - rotate immediately'
       }
     };
   }

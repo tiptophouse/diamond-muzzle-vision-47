@@ -1,14 +1,14 @@
-
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { Plus, RefreshCw, AlertCircle } from "lucide-react";
+import { Plus, RefreshCw, AlertCircle, TestTube } from "lucide-react";
 import { SimpleInventoryTable } from "@/components/inventory/SimpleInventoryTable";
 import { SimpleInventorySearch } from "@/components/inventory/SimpleInventorySearch";
 import { InventoryService } from "@/services/inventoryService";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useNavigate } from "react-router-dom";
 
 export interface Diamond {
   id: string;
@@ -26,6 +26,7 @@ export interface Diamond {
 export default function InventoryPage() {
   const { user, isAuthenticated } = useTelegramAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -112,7 +113,16 @@ export default function InventoryPage() {
             <h1 className="text-2xl font-bold text-gray-900">Diamond Inventory</h1>
             <p className="text-gray-600">Manage your diamond collection</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              onClick={() => navigate('/diagnostics')}
+              variant="outline"
+              size="sm"
+              className="text-orange-600 border-orange-200 hover:bg-orange-50"
+            >
+              <TestTube className="h-4 w-4 mr-2" />
+              Diagnostics
+            </Button>
             <Button
               onClick={loadInventory}
               disabled={loading}
@@ -129,6 +139,32 @@ export default function InventoryPage() {
           </div>
         </div>
 
+        {/* Critical Security Alert */}
+        {debugInfo?.criticalIssue && (
+          <Alert variant="destructive" className="border-red-500 bg-red-50">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <div className="space-y-2">
+                <div className="font-bold text-red-800">
+                  🚨 CRITICAL SECURITY ISSUE
+                </div>
+                <div className="text-red-700">
+                  {debugInfo.criticalIssue}
+                </div>
+                <div className="bg-red-100 p-3 rounded border text-sm">
+                  <strong>Immediate Action Required:</strong>
+                  <ol className="list-decimal ml-4 mt-1 space-y-1">
+                    <li>Go to Supabase Dashboard → Project Settings → Edge Functions → Secrets</li>
+                    <li>Generate a new backend access token</li>
+                    <li>Update BACKEND_ACCESS_TOKEN secret</li>
+                    <li>Revoke the old token from your FastAPI configuration</li>
+                  </ol>
+                </div>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Enhanced Error Alert */}
         {error && (
           <Alert variant="destructive">
@@ -136,57 +172,44 @@ export default function InventoryPage() {
             <AlertDescription>
               <div className="space-y-3">
                 <div>
-                  <strong>Connection Problem:</strong> {error}
+                  <strong>FastAPI Connection Problem:</strong>
+                  <div className="mt-1 whitespace-pre-line text-sm">
+                    {error}
+                  </div>
                 </div>
                 
-                {debugInfo?.analysis && (
+                {debugInfo?.diagnostic && (
                   <div className="bg-red-50 p-3 rounded border">
-                    <p><strong>Issue:</strong> {debugInfo.analysis.issue}</p>
-                    <p><strong>Solution:</strong> {debugInfo.analysis.recommendation}</p>
+                    <p><strong>Status Code:</strong> {debugInfo.diagnostic.statusCode || 'No Response'}</p>
+                    {debugInfo.diagnostic.statusCode === 404 && (
+                      <p className="text-sm mt-1">The endpoint /api/v1/get_all_stones was not found on your FastAPI server.</p>
+                    )}
+                    {debugInfo.diagnostic.statusCode === 403 && (
+                      <p className="text-sm mt-1">Access forbidden. The backend token may be invalid or expired.</p>
+                    )}
+                    {debugInfo.diagnostic.statusCode === 401 && (
+                      <p className="text-sm mt-1">Authentication failed. Check your backend token configuration.</p>
+                    )}
                   </div>
                 )}
                 
-                {debugInfo && (
-                  <details className="text-xs bg-red-50 p-2 rounded">
-                    <summary className="cursor-pointer font-medium">🔍 Technical Details (Click to expand)</summary>
-                    <div className="mt-2 space-y-2">
-                      {debugInfo.primaryError && (
-                        <div>
-                          <strong>API Error:</strong> {debugInfo.primaryError}
-                        </div>
-                      )}
-                      
-                      {debugInfo.attemptedEndpoints && (
-                        <div>
-                          <strong>Attempted Endpoints:</strong>
-                          <ul className="list-disc ml-4">
-                            {debugInfo.attemptedEndpoints.map((endpoint: string, i: number) => (
-                              <li key={i}><code>https://api.mazalbot.com{endpoint}</code></li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      
-                      {debugInfo.userId && (
-                        <div><strong>User ID:</strong> {debugInfo.userId}</div>
-                      )}
-                      
-                      {debugInfo.timestamp && (
-                        <div><strong>Error Time:</strong> {new Date(debugInfo.timestamp).toLocaleString()}</div>
-                      )}
-                      
-                      <div className="bg-yellow-50 p-2 rounded border-l-4 border-yellow-400">
-                        <strong>💡 Quick Fixes:</strong>
-                        <ul className="list-disc ml-4 mt-1">
-                          <li>Check if https://api.mazalbot.com is accessible</li>
-                          <li>Verify BACKEND_ACCESS_TOKEN in Supabase secrets</li>
-                          <li>Confirm FastAPI server is running</li>
-                          <li>Try refreshing the page</li>
-                        </ul>
-                      </div>
+                <div className="bg-blue-50 p-3 rounded border-l-4 border-blue-400">
+                  <strong>💡 Quick Actions:</strong>
+                  <div className="mt-2 space-y-1">
+                    <Button
+                      onClick={() => navigate('/diagnostics')}
+                      size="sm"
+                      variant="outline"
+                      className="mr-2"
+                    >
+                      <TestTube className="h-4 w-4 mr-1" />
+                      Run Full Diagnostic
+                    </Button>
+                    <div className="text-xs text-blue-700 mt-2">
+                      Run diagnostics to get detailed connection analysis and Python test commands.
                     </div>
-                  </details>
-                )}
+                  </div>
+                </div>
               </div>
             </AlertDescription>
           </Alert>
@@ -203,6 +226,11 @@ export default function InventoryPage() {
               Loaded {debugInfo.validDiamonds} diamonds • Filtered {debugInfo.filteredOut} invalid entries • 
               Success rate: {debugInfo.conversionRate}%
             </div>
+            {debugInfo.criticalIssue && (
+              <div className="text-xs text-orange-700 mt-1 font-medium">
+                ⚠️ Security: Backend token rotation still required
+              </div>
+            )}
           </div>
         )}
 
