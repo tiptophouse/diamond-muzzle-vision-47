@@ -1,5 +1,5 @@
 
-import { CheckCircle, AlertTriangle } from "lucide-react";
+import { CheckCircle, AlertCircle } from "lucide-react";
 
 interface UploadResultProps {
   result: {
@@ -16,17 +16,17 @@ export function UploadResult({ result }: UploadResultProps) {
   return (
     <div className={`border rounded-lg p-4 space-y-3 ${
       result.success 
-        ? 'bg-green-50 border-green-100' 
-        : 'bg-red-50 border-red-100'
+        ? 'bg-green-50 border-green-200' 
+        : 'bg-red-50 border-red-200'
     }`}>
       <div className="flex items-center">
         {result.success ? (
           <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
         ) : (
-          <AlertTriangle className="h-5 w-5 text-red-600 mr-2" />
+          <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
         )}
         <p className="text-sm font-medium">
-          {result.success ? 'File processed successfully' : 'Upload failed'}
+          {result.success ? 'Upload Successful' : 'Upload Failed'}
         </p>
       </div>
       
@@ -38,14 +38,15 @@ export function UploadResult({ result }: UploadResultProps) {
       
       {result.processedCount && (
         <div className="text-sm">
-          <p className="text-gray-500">Processed Items</p>
-          <p className="font-medium">{result.processedCount}</p>
+          <p className="text-gray-600">
+            Processed {result.processedCount} items
+          </p>
         </div>
       )}
       
       {result.errors && result.errors.length > 0 && (
         <div className="text-sm">
-          <p className="text-gray-500">Errors</p>
+          <p className="text-gray-500 font-medium">Errors:</p>
           <ul className="list-disc list-inside text-red-600 text-xs mt-1">
             {result.errors.map((error, index) => (
               <li key={index}>{error}</li>

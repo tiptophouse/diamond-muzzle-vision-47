@@ -136,24 +136,29 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
             value={allDiamonds.length}
             icon={Gem}
             loading={loading}
+            description={`$${totalValue.toLocaleString()} total value`}
           />
           <StatCard
             title="Available"
             value={availableDiamonds}
             icon={Users}
             loading={loading}
+            description={`${((availableDiamonds / allDiamonds.length) * 100).toFixed(1)}% of inventory`}
           />
           <StatCard
             title="Store Visible"
             value={storeVisibleDiamonds}
             icon={TrendingUp}
             loading={loading}
+            description={`${((storeVisibleDiamonds / allDiamonds.length) * 100).toFixed(1)}% visible`}
           />
           <StatCard
             title="Avg Price/Ct"
             value={avgPricePerCarat}
+            prefix="$"
             icon={Star}
             loading={loading}
+            description="Per carat average"
           />
         </div>
 

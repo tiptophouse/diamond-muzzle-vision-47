@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Plus } from "lucide-react";
+import { DataExportButton } from "./DataExportButton";
 
 interface InventoryHeaderProps {
   totalCount: number;
@@ -20,11 +21,12 @@ export function InventoryHeader({
       <div>
         <h1 className="text-3xl font-bold">Inventory</h1>
         <p className="text-muted-foreground">
-          Manage your diamond inventory ({totalCount} items)
+          Manage your diamond inventory ({totalCount} items stored locally)
         </p>
       </div>
       
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
+        <DataExportButton />
         {onAddDiamond && (
           <Button
             onClick={onAddDiamond}

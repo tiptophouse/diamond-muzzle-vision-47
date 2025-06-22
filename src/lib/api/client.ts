@@ -8,26 +8,20 @@ interface ApiResponse<T> {
   error?: string;
 }
 
-// Enhanced backend connectivity test with detailed diagnostics
-async function testBackendConnectivity(): Promise<{ connected: boolean; details: string[] }> {
-  const details: string[] = [];
-  
+// Enhanced backend connectivity test
+async function testBackendConnectivity(): Promise<boolean> {
   try {
     console.log('🔍 API: Testing FastAPI backend connectivity to:', API_BASE_URL);
-    details.push(`Testing connectivity to: ${API_BASE_URL}`);
+    console.log('🔍 API: Expected to connect to your real diamond database with 500+ records');
     
     const backendToken = await getBackendAccessToken();
     if (!backendToken) {
-      const error = 'No secure backend access token available';
-      console.error('❌ API:', error);
-      details.push(`❌ ${error}`);
-      return { connected: false, details };
+      console.error('❌ API: No secure backend access token available for connectivity test');
+      return false;
     }
-    details.push('✅ Backend access token available');
     
     // Try the root endpoint first
     const testUrl = `${API_BASE_URL}/`;
-    details.push(`Testing root endpoint: ${testUrl}`);
     console.log('🔍 API: Testing root endpoint:', testUrl);
     
     const response = await fetch(testUrl, {
@@ -40,25 +34,18 @@ async function testBackendConnectivity(): Promise<{ connected: boolean; details:
     });
     
     console.log('🔍 API: Root endpoint response status:', response.status);
-    details.push(`Root endpoint status: ${response.status}`);
     
     if (response.ok || response.status === 404) {
-      console.log('✅ API: FastAPI backend is reachable - your diamonds should be accessible');
-      details.push('✅ FastAPI backend is reachable');
-      return { connected: true, details };
+      console.log('✅ API: FastAPI backend is reachable - your 500 diamonds should be accessible');
+      return true;
     }
     
-    console.log('❌ API: FastAPI backend not reachable - this causes fallback to mock data');
-    details.push(`❌ Backend not reachable (status: ${response.status})`);
-    details.push('This is why you see mock data instead of your real diamonds');
-    return { connected: false, details };
-    
+    console.log('❌ API: FastAPI backend not reachable - this is why you see mock data (5 diamonds)');
+    console.log('❌ API: Status:', response.status, 'Check if your backend server is running');
+    return false;
   } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error('❌ API: FastAPI backend connectivity test failed:', errorMsg);
-    details.push(`❌ Connection failed: ${errorMsg}`);
-    details.push('This causes fallback to mock data instead of real diamonds');
-    return { connected: false, details };
+    console.error('❌ API: FastAPI backend connectivity test failed - this causes fallback to 5 mock diamonds:', error);
+    return false;
   }
 }
 
@@ -71,22 +58,14 @@ export async function fetchApi<T>(
   try {
     console.log('🚀 API: Making FastAPI request to fetch real diamonds:', url);
     console.log('🚀 API: Current user ID:', getCurrentUserId(), 'type:', typeof getCurrentUserId());
+    console.log('🚀 API: This should return your 500+ diamonds, not mock data');
     
-    // Test connectivity first with detailed diagnostics
-    const { connected, details } = await testBackendConnectivity();
-    if (!connected) {
-      const errorMsg = 'FastAPI backend server is not reachable';
-      console.error('❌ API: Backend unreachable - this forces fallback to mock data');
-      console.error('❌ API: Diagnostics:', details);
-      
-      // Show detailed error toast
-      toast({
-        title: "🔌 FastAPI Server Offline",
-        description: details.slice(-1)[0] || errorMsg,
-        variant: "destructive",
-      });
-      
-      throw new Error(`${errorMsg}. Details: ${details.join(', ')}`);
+    // Test connectivity first
+    const isBackendReachable = await testBackendConnectivity();
+    if (!isBackendReachable) {
+      const errorMsg = 'FastAPI backend server is not reachable. Please check if the server is running at ' + API_BASE_URL;
+      console.error('❌ API: Backend unreachable - this forces fallback to 5 mock diamonds');
+      throw new Error(errorMsg);
     }
     
     const authHeaders = await getAuthHeaders();
@@ -105,12 +84,12 @@ export async function fetchApi<T>(
       credentials: 'omit',
     };
     
-    console.log('🚀 API: Enhanced fetch options for real data:', {
+    console.log('🚀 API: Fetch options for real data:', {
       url,
       method: fetchOptions.method || 'GET',
       hasAuth: !!headers.Authorization,
       hasBody: !!fetchOptions.body,
-      userId: getCurrentUserId()
+      headers: Object.keys(headers),
     });
     
     const response = await fetch(url, fetchOptions);
@@ -126,9 +105,9 @@ export async function fetchApi<T>(
       console.log('📡 API: JSON response received from FastAPI');
       console.log('📡 API: Data type:', typeof data, 'is array:', Array.isArray(data));
       if (Array.isArray(data)) {
-        console.log('📡 API: SUCCESS! Array length:', data.length, '(your real diamonds!)');
-        if (data.length >= 100) {
-          console.log('🎉 API: Large inventory detected - this is your real data, not mock!');
+        console.log('📡 API: SUCCESS! Array length:', data.length, '(expecting ~500 diamonds)');
+        if (data.length < 100) {
+          console.warn('⚠️ API: Expected 500+ diamonds but got', data.length, '- check your backend database');
         }
         console.log('📡 API: Sample diamond:', data.slice(0, 1));
       } else {
@@ -158,16 +137,43 @@ export async function fetchApi<T>(
         errorMessage = data || errorMessage;
       }
       
-      console.error('❌ API: FastAPI request failed:', errorMessage);
+      console.error('❌ API: FastAPI request failed - this causes fallback to mock data:', errorMessage);
       throw new Error(errorMessage);
     }
 
-    console.log('✅ API: FastAPI request successful - real diamond data loaded');
+    console.log('✅ API: FastAPI request successful - should have your real diamond data now');
     return { data: data as T };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error('❌ API: FastAPI request error:', errorMessage);
+    console.error('❌ API: FastAPI request error - this is why you see 5 mock diamonds instead of 500 real ones:', errorMessage);
     console.error('❌ API: Error details:', error);
+    
+    // Show specific toast messages for different error types
+    if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+      toast({
+        title: "🌐 Connection Error",
+        description: `Cannot reach FastAPI server at ${API_BASE_URL}. Your 500 diamonds are not accessible. Please check if the server is running.`,
+        variant: "destructive",
+      });
+    } else if (errorMessage.includes('not reachable')) {
+      toast({
+        title: "🔌 FastAPI Server Offline",
+        description: `The FastAPI backend at ${API_BASE_URL} is not responding. This is why you see 5 mock diamonds instead of your 500 real diamonds.`,
+        variant: "destructive",
+      });
+    } else if (errorMessage.includes('CORS')) {
+      toast({
+        title: "🚫 CORS Issue",
+        description: "FastAPI server CORS configuration issue. Please check server settings to access your real diamond data.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "❌ FastAPI Error",
+        description: `FastAPI request failed: ${errorMessage}. Falling back to mock data (5 diamonds).`,
+        variant: "destructive",
+      });
+    }
     
     return { error: errorMessage };
   }
