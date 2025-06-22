@@ -55,111 +55,246 @@ export class InventoryService {
   }
 
   static async fetchInventory(userId: number): Promise<InventoryServiceResult> {
-    console.log('📦 InventoryService: Fetching inventory for user:', userId);
+    console.log('📦 InventoryService: === STARTING INVENTORY FETCH ===');
+    console.log('📦 InventoryService: User ID:', userId, 'Type:', typeof userId);
+    console.log('📦 InventoryService: Expected backend: https://api.mazalbot.com');
+    console.log('📦 InventoryService: Expected diamonds: ~566');
     
     try {
       // Try primary endpoint first
       const primaryEndpoint = `/api/v1/get_all_stones?user_id=${userId}`;
-      console.log('📦 InventoryService: Trying primary endpoint:', primaryEndpoint);
+      console.log('📦 InventoryService: 🎯 Primary endpoint:', primaryEndpoint);
+      console.log('📦 InventoryService: 🎯 Full URL will be: https://api.mazalbot.com' + primaryEndpoint);
       
       const response = await api.get(primaryEndpoint);
       
+      console.log('📦 InventoryService: 📥 Primary response received:', {
+        hasError: !!response.error,
+        hasData: !!response.data,
+        errorMessage: response.error,
+        dataType: typeof response.data,
+        isArray: Array.isArray(response.data)
+      });
+      
       if (response.error) {
-        console.warn('📦 InventoryService: Primary endpoint failed:', response.error);
+        console.warn('📦 InventoryService: ⚠️ Primary endpoint failed:', response.error);
         
-        // Try alternative endpoint without /api/v1 prefix
-        const altEndpoint = `/get_all_stones?user_id=${userId}`;
-        console.log('📦 InventoryService: Trying alternative endpoint:', altEndpoint);
+        // Enhanced error analysis
+        const debugInfo = {
+          primaryEndpoint,
+          primaryError: response.error,
+          timestamp: new Date().toISOString(),
+          userId: userId,
+          analysis: this.analyzeError(response.error)
+        };
         
-        const altResponse = await api.get(altEndpoint);
+        console.log('📦 InventoryService: 🔍 Error analysis:', debugInfo.analysis);
         
-        if (altResponse.error) {
-          return {
-            success: false,
-            error: `Both endpoints failed. Primary: ${response.error}, Alternative: ${altResponse.error}`,
-            debugInfo: {
-              primaryEndpoint,
-              altEndpoint,
-              primaryError: response.error,
-              altError: altResponse.error,
-              timestamp: new Date().toISOString()
+        // Try alternative endpoint patterns
+        const alternativeEndpoints = [
+          `/get_all_stones?user_id=${userId}`,
+          `/api/v1/stones?user_id=${userId}`,
+          `/stones?user_id=${userId}`,
+          `/api/v1/inventory?user_id=${userId}`,
+          `/inventory?user_id=${userId}`
+        ];
+        
+        for (const altEndpoint of alternativeEndpoints) {
+          console.log('📦 InventoryService: 🔄 Trying alternative:', altEndpoint);
+          
+          try {
+            const altResponse = await api.get(altEndpoint);
+            
+            if (!altResponse.error && altResponse.data) {
+              console.log('📦 InventoryService: ✅ Alternative endpoint worked!', altEndpoint);
+              return this.processInventoryData(altResponse.data, altEndpoint);
+            } else {
+              console.log('📦 InventoryService: ❌ Alternative failed:', altEndpoint, altResponse.error);
             }
-          };
+          } catch (altError) {
+            console.log('📦 InventoryService: ❌ Alternative error:', altEndpoint, altError);
+          }
         }
         
-        return this.processInventoryData(altResponse.data, altEndpoint);
+        return {
+          success: false,
+          error: `All endpoints failed. Primary error: ${response.error}`,
+          debugInfo: {
+            ...debugInfo,
+            attemptedEndpoints: [primaryEndpoint, ...alternativeEndpoints],
+            recommendation: debugInfo.analysis.recommendation
+          }
+        };
       }
       
       return this.processInventoryData(response.data, primaryEndpoint);
       
     } catch (error) {
-      console.error('📦 InventoryService: Critical error:', error);
+      console.error('📦 InventoryService: ❌ CRITICAL ERROR:', error);
+      
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown inventory service error',
         debugInfo: {
-          error: error,
-          timestamp: new Date().toISOString()
+          type: 'Critical service error',
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          timestamp: new Date().toISOString(),
+          userId: userId,
+          recommendation: 'Check network connectivity and backend server status'
         }
       };
     }
   }
 
+  private static analyzeError(error: string): { issue: string; recommendation: string; severity: 'low' | 'medium' | 'high' } {
+    const errorLower = error.toLowerCase();
+    
+    if (errorLower.includes('404') || errorLower.includes('not found')) {
+      return {
+        issue: 'API endpoint does not exist',
+        recommendation: 'Verify the correct endpoint path with your FastAPI backend',
+        severity: 'high'
+      };
+    }
+    
+    if (errorLower.includes('403') || errorLower.includes('forbidden')) {
+      return {
+        issue: 'Authentication/authorization failed',
+        recommendation: 'Check BACKEND_ACCESS_TOKEN in Supabase secrets',
+        severity: 'high'
+      };
+    }
+    
+    if (errorLower.includes('401') || errorLower.includes('unauthorized')) {
+      return {
+        issue: 'Missing or invalid authentication',
+        recommendation: 'Verify backend token and user authentication',
+        severity: 'high'
+      };
+    }
+    
+    if (errorLower.includes('500') || errorLower.includes('internal server')) {
+      return {
+        issue: 'Backend server error',
+        recommendation: 'Check FastAPI server logs and status',
+        severity: 'high'
+      };
+    }
+    
+    if (errorLower.includes('network') || errorLower.includes('fetch')) {
+      return {
+        issue: 'Network connectivity problem',
+        recommendation: 'Check internet connection and server availability',
+        severity: 'medium'
+      };
+    }
+    
+    if (errorLower.includes('timeout')) {
+      return {
+        issue: 'Request timeout',
+        recommendation: 'Server may be overloaded or slow',
+        severity: 'medium'
+      };
+    }
+    
+    return {
+      issue: 'Unknown error',
+      recommendation: 'Check logs for more details',
+      severity: 'medium'
+    };
+  }
+
   private static processInventoryData(rawData: any, endpoint: string): InventoryServiceResult {
-    console.log('📦 InventoryService: Processing raw data:', {
-      dataType: typeof rawData,
-      isArray: Array.isArray(rawData),
-      dataLength: Array.isArray(rawData) ? rawData.length : 'N/A'
-    });
+    console.log('📦 InventoryService: 🔄 Processing inventory data...');
+    console.log('📦 InventoryService: 🔄 Data type:', typeof rawData);
+    console.log('📦 InventoryService: 🔄 Is array:', Array.isArray(rawData));
+    console.log('📦 InventoryService: 🔄 Data length:', Array.isArray(rawData) ? rawData.length : 'N/A');
 
     // Extract array from various possible response structures
     let dataArray: any[] = [];
     
     if (Array.isArray(rawData)) {
       dataArray = rawData;
+      console.log('📦 InventoryService: 📋 Direct array detected');
     } else if (rawData && typeof rawData === 'object') {
+      console.log('📦 InventoryService: 📋 Object response, checking nested arrays...');
+      
       // Check common response wrapper patterns
       const possibleArrays = [
-        rawData.data,
-        rawData.diamonds,
-        rawData.stones,
-        rawData.inventory,
-        rawData.results,
-        rawData.items
+        { key: 'data', value: rawData.data },
+        { key: 'diamonds', value: rawData.diamonds },
+        { key: 'stones', value: rawData.stones },
+        { key: 'inventory', value: rawData.inventory },
+        { key: 'results', value: rawData.results },
+        { key: 'items', value: rawData.items }
       ];
       
-      for (const arr of possibleArrays) {
-        if (Array.isArray(arr)) {
-          dataArray = arr;
+      for (const { key, value } of possibleArrays) {
+        if (Array.isArray(value)) {
+          console.log(`📦 InventoryService: ✅ Found array in '${key}' property:`, value.length, 'items');
+          dataArray = value;
           break;
         }
+      }
+      
+      if (dataArray.length === 0) {
+        console.log('📦 InventoryService: 📋 Available object keys:', Object.keys(rawData));
       }
     }
 
     if (!Array.isArray(dataArray) || dataArray.length === 0) {
-      console.warn('📦 InventoryService: No valid data array found');
+      console.warn('📦 InventoryService: ⚠️ No valid data array found');
       return {
         success: true,
         data: [],
         debugInfo: {
           message: 'No diamonds found in response',
           endpoint,
-          rawResponseStructure: rawData && typeof rawData === 'object' ? Object.keys(rawData) : [],
-          timestamp: new Date().toISOString()
+          rawResponseType: typeof rawData,
+          rawResponseKeys: rawData && typeof rawData === 'object' ? Object.keys(rawData) : [],
+          timestamp: new Date().toISOString(),
+          recommendation: 'Check if the API response format has changed'
         }
       };
     }
 
+    console.log('📦 InventoryService: 🔄 Processing', dataArray.length, 'raw items...');
+    
+    // Sample the first few items for debugging
+    console.log('📦 InventoryService: 📋 Sample raw items:', dataArray.slice(0, 3));
+
     // Filter and convert valid diamonds
     const validDiamonds = dataArray
-      .filter(this.validateDiamondData)
-      .map(this.convertToStandardFormat);
+      .filter((item, index) => {
+        const isValid = this.validateDiamondData(item);
+        if (!isValid && index < 5) {
+          console.log(`📦 InventoryService: 🚮 Filtered out item ${index}:`, item);
+        }
+        return isValid;
+      })
+      .map((item, index) => {
+        try {
+          return this.convertToStandardFormat(item);
+        } catch (conversionError) {
+          console.error(`📦 InventoryService: ❌ Conversion error for item ${index}:`, conversionError, item);
+          return null;
+        }
+      })
+      .filter(Boolean) as Diamond[];
 
-    console.log('📦 InventoryService: ✅ Successfully processed diamonds', {
+    console.log('📦 InventoryService: ✅ Processing complete!');
+    console.log('📦 InventoryService: 📊 Results:', {
       totalReceived: dataArray.length,
       validDiamonds: validDiamonds.length,
-      filteredOut: dataArray.length - validDiamonds.length
+      filteredOut: dataArray.length - validDiamonds.length,
+      conversionRate: `${Math.round((validDiamonds.length / dataArray.length) * 100)}%`
     });
+
+    // Sample the converted diamonds
+    if (validDiamonds.length > 0) {
+      console.log('📦 InventoryService: 💎 Sample converted diamonds:', validDiamonds.slice(0, 2));
+    }
 
     return {
       success: true,
@@ -169,6 +304,9 @@ export class InventoryService {
         totalReceived: dataArray.length,
         validDiamonds: validDiamonds.length,
         filteredOut: dataArray.length - validDiamonds.length,
+        conversionRate: Math.round((validDiamonds.length / dataArray.length) * 100),
+        sampleRawItem: dataArray[0],
+        sampleConvertedItem: validDiamonds[0],
         timestamp: new Date().toISOString()
       }
     };

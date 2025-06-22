@@ -72,7 +72,7 @@ export default function InventoryPage() {
       
       toast({
         variant: "destructive",
-        title: "❌ Error",
+        title: "❌ Connection Error",
         description: errorMessage,
       });
     } finally {
@@ -129,22 +129,81 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        {/* Error Alert */}
+        {/* Enhanced Error Alert */}
         {error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              {error}
-              {debugInfo && (
-                <details className="mt-2 text-xs">
-                  <summary className="cursor-pointer">Debug Information</summary>
-                  <pre className="mt-1 overflow-auto">
-                    {JSON.stringify(debugInfo, null, 2)}
-                  </pre>
-                </details>
-              )}
+              <div className="space-y-3">
+                <div>
+                  <strong>Connection Problem:</strong> {error}
+                </div>
+                
+                {debugInfo?.analysis && (
+                  <div className="bg-red-50 p-3 rounded border">
+                    <p><strong>Issue:</strong> {debugInfo.analysis.issue}</p>
+                    <p><strong>Solution:</strong> {debugInfo.analysis.recommendation}</p>
+                  </div>
+                )}
+                
+                {debugInfo && (
+                  <details className="text-xs bg-red-50 p-2 rounded">
+                    <summary className="cursor-pointer font-medium">🔍 Technical Details (Click to expand)</summary>
+                    <div className="mt-2 space-y-2">
+                      {debugInfo.primaryError && (
+                        <div>
+                          <strong>API Error:</strong> {debugInfo.primaryError}
+                        </div>
+                      )}
+                      
+                      {debugInfo.attemptedEndpoints && (
+                        <div>
+                          <strong>Attempted Endpoints:</strong>
+                          <ul className="list-disc ml-4">
+                            {debugInfo.attemptedEndpoints.map((endpoint: string, i: number) => (
+                              <li key={i}><code>https://api.mazalbot.com{endpoint}</code></li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      {debugInfo.userId && (
+                        <div><strong>User ID:</strong> {debugInfo.userId}</div>
+                      )}
+                      
+                      {debugInfo.timestamp && (
+                        <div><strong>Error Time:</strong> {new Date(debugInfo.timestamp).toLocaleString()}</div>
+                      )}
+                      
+                      <div className="bg-yellow-50 p-2 rounded border-l-4 border-yellow-400">
+                        <strong>💡 Quick Fixes:</strong>
+                        <ul className="list-disc ml-4 mt-1">
+                          <li>Check if https://api.mazalbot.com is accessible</li>
+                          <li>Verify BACKEND_ACCESS_TOKEN in Supabase secrets</li>
+                          <li>Confirm FastAPI server is running</li>
+                          <li>Try refreshing the page</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </details>
+                )}
+              </div>
             </AlertDescription>
           </Alert>
+        )}
+
+        {/* Success Debug Info */}
+        {!error && debugInfo && debugInfo.validDiamonds !== undefined && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-green-800">
+              <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="font-medium">✅ Connected to FastAPI Backend</span>
+            </div>
+            <div className="text-sm text-green-700 mt-2">
+              Loaded {debugInfo.validDiamonds} diamonds • Filtered {debugInfo.filteredOut} invalid entries • 
+              Success rate: {debugInfo.conversionRate}%
+            </div>
+          </div>
         )}
 
         {/* Search */}
@@ -161,6 +220,10 @@ export default function InventoryPage() {
           onRefresh={loadInventory}
           onDiamondDeleted={(deletedId) => {
             setDiamonds(prev => prev.filter(d => d.id !== deletedId));
+            toast({
+              title: "✅ Deleted",
+              description: "Diamond removed from inventory",
+            });
           }}
         />
       </div>
