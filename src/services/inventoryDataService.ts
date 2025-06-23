@@ -1,6 +1,5 @@
 
 import { api, apiEndpoints, getCurrentUserId } from "@/lib/api";
-import { fetchMockInventoryData } from "./mockInventoryService";
 
 export interface FetchInventoryResult {
   data?: any[];
@@ -11,7 +10,7 @@ export interface FetchInventoryResult {
 export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   const userId = getCurrentUserId() || 2138564172;
   
-  console.log('🔍 INVENTORY SERVICE: Fetching data from FastAPI for user:', userId);
+  console.log('🔍 INVENTORY SERVICE: Fetching REAL-TIME data from FastAPI for user:', userId);
   
   const debugInfo = { 
     step: 'Starting inventory fetch from FastAPI', 
@@ -21,8 +20,8 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   };
   
   try {
-    // First try to fetch from FastAPI backend
-    console.log('🚀 INVENTORY SERVICE: Attempting FastAPI connection...');
+    // Fetch from FastAPI backend - NO FALLBACK TO MOCK DATA
+    console.log('🚀 INVENTORY SERVICE: Connecting to FastAPI...');
     const endpoint = apiEndpoints.getAllStones(userId);
     console.log('🚀 INVENTORY SERVICE: Using endpoint:', endpoint);
     
@@ -30,17 +29,39 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     
     if (result.error) {
       console.error('❌ INVENTORY SERVICE: FastAPI request failed:', result.error);
-      throw new Error(result.error);
+      return {
+        error: `FastAPI Connection Failed: ${result.error}`,
+        debugInfo: {
+          ...debugInfo,
+          step: 'FAILED: FastAPI connection error',
+          error: result.error,
+          endpoint
+        }
+      };
     }
     
-    if (result.data && Array.isArray(result.data) && result.data.length > 0) {
+    if (result.data && Array.isArray(result.data)) {
       console.log('✅ INVENTORY SERVICE: FastAPI returned', result.data.length, 'diamonds');
+      
+      if (result.data.length === 0) {
+        console.log('📊 INVENTORY SERVICE: No diamonds found in your database');
+        return {
+          data: [],
+          debugInfo: {
+            ...debugInfo,
+            step: 'SUCCESS: FastAPI connected but no diamonds found',
+            totalDiamonds: 0,
+            dataSource: 'fastapi',
+            endpoint
+          }
+        };
+      }
       
       return {
         data: result.data,
         debugInfo: {
           ...debugInfo,
-          step: 'SUCCESS: FastAPI data fetched',
+          step: 'SUCCESS: Real-time FastAPI data fetched',
           totalDiamonds: result.data.length,
           dataSource: 'fastapi',
           endpoint
@@ -48,24 +69,27 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       };
     }
     
-    console.log('⚠️ INVENTORY SERVICE: FastAPI returned empty data');
-    throw new Error('No diamonds found in FastAPI response');
+    console.log('⚠️ INVENTORY SERVICE: FastAPI returned invalid data format');
+    return {
+      error: 'Invalid data format from FastAPI',
+      debugInfo: {
+        ...debugInfo,
+        step: 'FAILED: Invalid data format',
+        receivedData: typeof result.data,
+        endpoint
+      }
+    };
     
   } catch (error) {
     console.error("❌ INVENTORY SERVICE: FastAPI connection failed:", error);
     
-    // Fallback to mock data only if FastAPI is completely unreachable
-    console.log('🔄 INVENTORY SERVICE: Using mock data as fallback');
-    const mockResult = await fetchMockInventoryData();
-    
     return {
-      ...mockResult,
+      error: error instanceof Error ? error.message : 'Unknown FastAPI error',
       debugInfo: {
         ...debugInfo,
-        ...mockResult.debugInfo,
-        step: 'FALLBACK: Using mock data after FastAPI failure',
+        step: 'FAILED: FastAPI connection error',
         error: error instanceof Error ? error.message : String(error),
-        dataSource: 'mock_fallback'
+        dataSource: 'none'
       }
     };
   }

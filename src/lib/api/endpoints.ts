@@ -1,8 +1,8 @@
 
 export const apiEndpoints = {
   getAllStones: (userId: number) => {
-    // Try the correct endpoint path for your backend
-    const endpoint = `/api/v1/get_all_stones?user_id=${userId}`;
+    // Use the correct endpoint path for your FastAPI backend
+    const endpoint = `/get_all_stones?user_id=${userId}`;
     console.log('🔧 API: Building getAllStones endpoint:', endpoint, 'for user:', userId, 'type:', typeof userId);
     return endpoint;
   },
