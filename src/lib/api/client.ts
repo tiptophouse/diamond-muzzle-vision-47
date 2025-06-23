@@ -11,7 +11,7 @@ interface ApiResponse<T> {
 async function testBackendConnectivity(): Promise<boolean> {
   try {
     console.log('🔍 API: Testing FastAPI backend connectivity to:', API_BASE_URL);
-    console.log('🔍 API: Expected to connect to your real diamond database');
+    console.log('🔍 API: Using access token:', BACKEND_ACCESS_TOKEN ? 'Present' : 'Missing');
     
     if (!BACKEND_ACCESS_TOKEN) {
       console.error('❌ API: No backend access token available for connectivity test');
@@ -53,16 +53,19 @@ export async function fetchApi<T>(
   const url = `${API_BASE_URL}${endpoint}`;
   
   try {
-    console.log('🚀 API: Making FastAPI request to fetch real diamonds:', url);
+    console.log('🚀 API: Making FastAPI request to:', url);
     console.log('🚀 API: Current user ID:', getCurrentUserId(), 'type:', typeof getCurrentUserId());
-    console.log('🚀 API: Using backend token for authentication');
+    console.log('🚀 API: Using backend token:', BACKEND_ACCESS_TOKEN ? 'Present' : 'Missing');
+    console.log('🚀 API: Request method:', options.method || 'GET');
     
-    // Test connectivity first
-    const isBackendReachable = await testBackendConnectivity();
-    if (!isBackendReachable) {
-      const errorMsg = 'FastAPI backend server is not reachable. Please check if the server is running at ' + API_BASE_URL;
-      console.error('❌ API: Backend unreachable');
-      throw new Error(errorMsg);
+    // Test connectivity first for GET requests
+    if (!options.method || options.method === 'GET') {
+      const isBackendReachable = await testBackendConnectivity();
+      if (!isBackendReachable) {
+        const errorMsg = 'FastAPI backend server is not reachable. Please check if the server is running at ' + API_BASE_URL;
+        console.error('❌ API: Backend unreachable');
+        throw new Error(errorMsg);
+      }
     }
     
     let headers: Record<string, string> = {
@@ -80,17 +83,14 @@ export async function fetchApi<T>(
       credentials: 'omit',
     };
     
-    console.log('🚀 API: Fetch options for real data:', {
-      url,
-      method: fetchOptions.method || 'GET',
-      hasAuth: !!headers.Authorization,
-      hasBody: !!fetchOptions.body,
-      headers: Object.keys(headers),
-    });
+    console.log('🚀 API: Request headers:', Object.keys(headers));
+    if (fetchOptions.body) {
+      console.log('🚀 API: Request body:', fetchOptions.body);
+    }
     
     const response = await fetch(url, fetchOptions);
 
-    console.log('📡 API: FastAPI Response status:', response.status);
+    console.log('📡 API: Response status:', response.status);
     console.log('📡 API: Response headers:', Object.fromEntries(response.headers.entries()));
 
     let data;
@@ -98,17 +98,19 @@ export async function fetchApi<T>(
     
     if (contentType && contentType.includes('application/json')) {
       data = await response.json();
-      console.log('📡 API: JSON response received from FastAPI');
-      console.log('📡 API: Data type:', typeof data, 'is array:', Array.isArray(data));
+      console.log('📡 API: JSON response received');
+      console.log('📡 API: Response data type:', typeof data);
       if (Array.isArray(data)) {
-        console.log('📡 API: SUCCESS! Array length:', data.length, 'diamonds');
-        console.log('📡 API: Sample diamond:', data.slice(0, 1));
-      } else {
-        console.log('📡 API: Response data structure:', Object.keys(data || {}));
+        console.log('📡 API: Array response length:', data.length);
+        if (data.length > 0) {
+          console.log('📡 API: Sample item:', data[0]);
+        }
+      } else if (data && typeof data === 'object') {
+        console.log('📡 API: Object response keys:', Object.keys(data));
       }
     } else {
       const text = await response.text();
-      console.log('📡 API: Non-JSON response from FastAPI:', text.substring(0, 200));
+      console.log('📡 API: Non-JSON response:', text.substring(0, 200));
       data = text;
     }
 
@@ -121,39 +123,33 @@ export async function fetchApi<T>(
         errorMessage = data || errorMessage;
       }
       
-      console.error('❌ API: FastAPI request failed:', errorMessage);
+      console.error('❌ API: Request failed:', errorMessage);
       throw new Error(errorMessage);
     }
 
-    console.log('✅ API: FastAPI request successful - real diamond data received');
+    console.log('✅ API: Request successful');
     return { data: data as T };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error('❌ API: FastAPI request error:', errorMessage);
+    console.error('❌ API: Request error:', errorMessage);
     
     // Show specific toast messages for different error types
     if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
       toast({
         title: "🌐 Connection Error",
-        description: `Cannot reach FastAPI server at ${API_BASE_URL}. Please check if the server is running.`,
+        description: `Cannot reach FastAPI server. Please check your internet connection.`,
         variant: "destructive",
       });
     } else if (errorMessage.includes('not reachable')) {
       toast({
         title: "🔌 FastAPI Server Offline",
-        description: `The FastAPI backend at ${API_BASE_URL} is not responding.`,
-        variant: "destructive",
-      });
-    } else if (errorMessage.includes('CORS')) {
-      toast({
-        title: "🚫 CORS Issue",
-        description: "FastAPI server CORS configuration issue. Please check server settings.",
+        description: `The FastAPI backend is not responding.`,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "❌ FastAPI Error",
-        description: `FastAPI request failed: ${errorMessage}`,
+        title: "❌ API Error",
+        description: `Request failed: ${errorMessage}`,
         variant: "destructive",
       });
     }

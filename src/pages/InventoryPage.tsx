@@ -1,4 +1,3 @@
-
 import { Layout } from "@/components/layout/Layout";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -67,7 +66,7 @@ export default function InventoryPage() {
   const confirmDelete = async () => {
     if (diamondToDelete) {
       console.log('🗑️ Confirming delete for diamond:', diamondToDelete.stockNumber);
-      const success = await deleteDiamond(diamondToDelete.id, diamondToDelete);
+      const success = await deleteDiamond(diamondToDelete.id);
       if (success) {
         console.log('✅ Diamond deleted successfully');
         setDeleteDialogOpen(false);

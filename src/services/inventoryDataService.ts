@@ -20,10 +20,11 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   };
   
   try {
-    // Fetch from FastAPI backend - NO FALLBACK TO MOCK DATA
-    console.log('🚀 INVENTORY SERVICE: Connecting to FastAPI...');
+    // Fetch from FastAPI backend - REAL DATA ONLY
+    console.log('🚀 INVENTORY SERVICE: Connecting to FastAPI backend at:', 'https://api.mazalbot.com');
     const endpoint = apiEndpoints.getAllStones(userId);
     console.log('🚀 INVENTORY SERVICE: Using endpoint:', endpoint);
+    console.log('🚀 INVENTORY SERVICE: Full URL will be:', `https://api.mazalbot.com${endpoint}`);
     
     const result = await api.get(endpoint);
     
@@ -35,16 +36,33 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
           ...debugInfo,
           step: 'FAILED: FastAPI connection error',
           error: result.error,
-          endpoint
+          endpoint,
+          fullUrl: `https://api.mazalbot.com${endpoint}`
         }
       };
     }
     
-    if (result.data && Array.isArray(result.data)) {
-      console.log('✅ INVENTORY SERVICE: FastAPI returned', result.data.length, 'diamonds');
+    if (result.data) {
+      console.log('✅ INVENTORY SERVICE: FastAPI returned data:', typeof result.data, Array.isArray(result.data));
+      console.log('✅ INVENTORY SERVICE: Raw response:', result.data);
       
-      if (result.data.length === 0) {
-        console.log('📊 INVENTORY SERVICE: No diamonds found in your database');
+      // Handle different response formats
+      let diamonds = [];
+      if (Array.isArray(result.data)) {
+        diamonds = result.data;
+      } else if (result.data && Array.isArray(result.data.diamonds)) {
+        diamonds = result.data.diamonds;
+      } else if (result.data && typeof result.data === 'object') {
+        // If it's an object, try to extract diamond data
+        diamonds = Object.values(result.data).filter(item => 
+          item && typeof item === 'object' && (item.stock_number || item.weight)
+        );
+      }
+      
+      console.log('✅ INVENTORY SERVICE: Processed diamonds count:', diamonds.length);
+      
+      if (diamonds.length === 0) {
+        console.log('📊 INVENTORY SERVICE: No diamonds found in your FastAPI database');
         return {
           data: [],
           debugInfo: {
@@ -52,19 +70,22 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
             step: 'SUCCESS: FastAPI connected but no diamonds found',
             totalDiamonds: 0,
             dataSource: 'fastapi',
-            endpoint
+            endpoint,
+            rawResponseType: typeof result.data,
+            isArray: Array.isArray(result.data)
           }
         };
       }
       
       return {
-        data: result.data,
+        data: diamonds,
         debugInfo: {
           ...debugInfo,
           step: 'SUCCESS: Real-time FastAPI data fetched',
-          totalDiamonds: result.data.length,
+          totalDiamonds: diamonds.length,
           dataSource: 'fastapi',
-          endpoint
+          endpoint,
+          sampleDiamond: diamonds[0]
         }
       };
     }
