@@ -1,86 +1,93 @@
 
 import { useState } from 'react';
-import { api, apiEndpoints } from '@/lib/api';
-import { DiamondFormData } from '@/components/inventory/form/types';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { api, apiEndpoints, getCurrentUserId } from '@/lib/api';
+import { Diamond } from '@/components/inventory/InventoryTable';
+import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
 
-export function useAddDiamond(onSuccess?: () => void) {
+interface AddDiamondData {
+  stockNumber: string;
+  shape: string;
+  carat: number;
+  color: string;
+  clarity: string;
+  cut: string;
+  price: number;
+  status: string;
+  imageUrl?: string;
+  store_visible?: boolean;
+  certificateNumber?: string;
+  lab?: string;
+  certificateUrl?: string;
+}
+
+export function useAddDiamond() {
   const [isLoading, setIsLoading] = useState(false);
-  const { user } = useTelegramAuth();
+  const { toast } = useToast();
+  const { triggerInventoryChange } = useInventoryDataSync();
 
-  const addDiamond = async (data: DiamondFormData): Promise<boolean> => {
-    if (!user?.id) {
-      console.error('❌ User not authenticated');
+  const addDiamond = async (diamondData: AddDiamondData): Promise<boolean> => {
+    const userId = getCurrentUserId();
+    
+    if (!userId) {
+      console.error('🚫 ADD DIAMOND: No authenticated user ID found');
+      toast({
+        variant: "destructive",
+        title: "❌ Authentication Required",
+        description: "You must be logged in to add diamonds to your inventory.",
+      });
       return false;
     }
 
     setIsLoading(true);
-    console.log('➕ Adding diamond:', data);
-
+    
     try {
-      // Prepare the data for the API
-      const diamondData = {
-        ...data,
-        user_id: user.id,
-        // Ensure numeric values are properly converted
-        carat: parseFloat(data.carat?.toString() || '0'),
-        price: parseFloat(data.price?.toString() || '0'),
-        certificateNumber: data.certificateNumber || undefined,
-      };
+      console.log('💎 ADD DIAMOND: Adding diamond for user:', userId, diamondData);
+      
+      const endpoint = apiEndpoints.addDiamond(userId);
+      const response = await api.post(endpoint, {
+        user_id: userId,
+        stock_number: diamondData.stockNumber,
+        shape: diamondData.shape,
+        weight: diamondData.carat,
+        color: diamondData.color,
+        clarity: diamondData.clarity,
+        cut: diamondData.cut,
+        price_per_carat: Math.round(diamondData.price / diamondData.carat),
+        status: diamondData.status,
+        picture: diamondData.imageUrl,
+        store_visible: diamondData.store_visible !== false,
+        certificate_number: diamondData.certificateNumber,
+        lab: diamondData.lab,
+        certificate_url: diamondData.certificateUrl,
+      });
 
-      console.log('📤 Sending diamond data to API:', diamondData);
-      
-      const response = await api.post(apiEndpoints.addDiamond, diamondData);
-      
       if (response.error) {
-        console.error('❌ API Error:', response.error);
         throw new Error(response.error);
       }
 
-      console.log('✅ Diamond added successfully:', response.data);
+      console.log('✅ ADD DIAMOND: Successfully added diamond');
       
-      if (onSuccess) {
-        onSuccess();
-      }
+      toast({
+        title: "✅ Diamond Added Successfully",
+        description: `Stock #${diamondData.stockNumber} has been added to your inventory.`,
+      });
+
+      // Trigger inventory refresh
+      triggerInventoryChange();
       
       return true;
     } catch (error) {
-      console.error('❌ Failed to add diamond:', error);
+      console.error('❌ ADD DIAMOND: Failed to add diamond:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add diamond';
       
-      // Store in localStorage as fallback
-      try {
-        const existingData = localStorage.getItem('diamond_inventory');
-        const inventory = existingData ? JSON.parse(existingData) : [];
-        
-        const newDiamond = {
-          id: `temp_${Date.now()}`,
-          stock_number: data.stockNumber,
-          shape: data.shape,
-          weight: parseFloat(data.carat?.toString() || '0'),
-          color: data.color,
-          clarity: data.clarity,
-          cut: data.cut,
-          price_per_carat: parseFloat(data.price?.toString() || '0'),
-          user_id: user.id,
-          status: data.status || 'Available',
-          store_visible: true,
-          created_at: new Date().toISOString()
-        };
-        
-        inventory.push(newDiamond);
-        localStorage.setItem('diamond_inventory', JSON.stringify(inventory));
-        
-        console.log('💾 Diamond saved to localStorage as fallback');
-        
-        if (onSuccess) {
-          onSuccess();
-        }
-        
-        return true;
-      } catch (storageError) {
-        console.error('❌ Failed to save to localStorage:', storageError);
-        return false;
-      }
+      toast({
+        variant: "destructive",
+        title: "❌ Failed to Add Diamond",
+        description: errorMessage,
+      });
+      
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -88,6 +95,6 @@ export function useAddDiamond(onSuccess?: () => void) {
 
   return {
     addDiamond,
-    isLoading,
+    isLoading
   };
 }

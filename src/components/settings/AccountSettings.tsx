@@ -6,75 +6,86 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { User, Mail, Phone, Globe, Save, Loader2 } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { User, Mail, Phone, Globe, Save, Building } from 'lucide-react';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
 export function AccountSettings() {
-  const { profile, isLoading, isSaving, saveProfile } = useUserProfile();
+  const { user } = useTelegramAuth();
+  const { profile, isLoading, isSaving, updateProfile } = useUserProfile();
+  const { toast } = useToast();
   
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
-    phone_number: '',
+    phone: '',
     bio: '',
     company: '',
     website: '',
-    language_code: 'en',
+    language: 'en',
     timezone: 'UTC'
   });
 
-  // Update form when profile loads
+  // Update form data when profile is loaded
   useEffect(() => {
     if (profile) {
       setFormData({
         firstName: profile.first_name || '',
         lastName: profile.last_name || '',
         email: profile.email || '',
-        phone_number: profile.phone_number || '',
+        phone: profile.phone_number || '',
         bio: profile.bio || '',
         company: profile.company || '',
         website: profile.website || '',
-        language_code: profile.language_code || 'en',
+        language: profile.language_code || 'en',
         timezone: profile.timezone || 'UTC'
       });
+    } else if (user) {
+      // Fallback to Telegram data if no profile exists yet
+      setFormData(prev => ({
+        ...prev,
+        firstName: user.first_name || '',
+        lastName: user.last_name || '',
+        language: user.language_code || 'en'
+      }));
     }
-  }, [profile]);
+  }, [profile, user]);
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
   const handleSave = async () => {
-    const success = await saveProfile({
-      first_name: formData.firstName,
-      last_name: formData.lastName,
-      email: formData.email,
-      phone_number: formData.phone_number,
-      bio: formData.bio,
-      company: formData.company,
-      website: formData.website,
-      language_code: formData.language_code,
-      timezone: formData.timezone
-    });
+    try {
+      const success = await updateProfile({
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone_number: formData.phone,
+        bio: formData.bio,
+        company: formData.company,
+        website: formData.website,
+        language_code: formData.language,
+        timezone: formData.timezone
+      });
 
-    if (success) {
-      console.log('✅ Account settings saved successfully');
+      if (!success) {
+        throw new Error('Failed to save profile');
+      }
+    } catch (error) {
+      console.error('❌ Failed to save profile:', error);
+      // Error handling is done in the hook
     }
   };
 
   if (isLoading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Account Information
-          </CardTitle>
-          <CardDescription>Loading your account information...</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            <div className="h-10 bg-gray-200 rounded"></div>
-            <div className="h-10 bg-gray-200 rounded"></div>
-          </div>
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin mr-3" />
+          <span>Loading your profile...</span>
         </CardContent>
       </Card>
     );
@@ -98,7 +109,7 @@ export function AccountSettings() {
             <Input
               id="firstName"
               value={formData.firstName}
-              onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+              onChange={(e) => handleInputChange('firstName', e.target.value)}
               placeholder="Enter your first name"
             />
           </div>
@@ -107,7 +118,7 @@ export function AccountSettings() {
             <Input
               id="lastName"
               value={formData.lastName}
-              onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+              onChange={(e) => handleInputChange('lastName', e.target.value)}
               placeholder="Enter your last name"
             />
           </div>
@@ -122,7 +133,7 @@ export function AccountSettings() {
                 id="email"
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                onChange={(e) => handleInputChange('email', e.target.value)}
                 placeholder="your.email@example.com"
                 className="pl-10"
               />
@@ -134,8 +145,8 @@ export function AccountSettings() {
               <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
                 id="phone"
-                value={formData.phone_number}
-                onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
+                value={formData.phone}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
                 placeholder="+1 (555) 123-4567"
                 className="pl-10"
               />
@@ -148,7 +159,7 @@ export function AccountSettings() {
           <Textarea
             id="bio"
             value={formData.bio}
-            onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+            onChange={(e) => handleInputChange('bio', e.target.value)}
             placeholder="Tell us about yourself..."
             rows={3}
           />
@@ -157,16 +168,12 @@ export function AccountSettings() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="company">Company</Label>
-            <div className="relative">
-              <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                id="company"
-                value={formData.company}
-                onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
-                placeholder="Your company name"
-                className="pl-10"
-              />
-            </div>
+            <Input
+              id="company"
+              value={formData.company}
+              onChange={(e) => handleInputChange('company', e.target.value)}
+              placeholder="Your company name"
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="website">Website</Label>
@@ -175,7 +182,7 @@ export function AccountSettings() {
               <Input
                 id="website"
                 value={formData.website}
-                onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
+                onChange={(e) => handleInputChange('website', e.target.value)}
                 placeholder="https://yourwebsite.com"
                 className="pl-10"
               />
@@ -186,7 +193,7 @@ export function AccountSettings() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="language">Language</Label>
-            <Select value={formData.language_code} onValueChange={(value) => setFormData(prev => ({ ...prev, language_code: value }))}>
+            <Select value={formData.language} onValueChange={(value) => handleInputChange('language', value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
@@ -202,7 +209,7 @@ export function AccountSettings() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="timezone">Timezone</Label>
-            <Select value={formData.timezone} onValueChange={(value) => setFormData(prev => ({ ...prev, timezone: value }))}>
+            <Select value={formData.timezone} onValueChange={(value) => handleInputChange('timezone', value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select timezone" />
               </SelectTrigger>
@@ -221,9 +228,22 @@ export function AccountSettings() {
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button onClick={handleSave} disabled={isSaving} className="bg-blue-600 hover:bg-blue-700">
-            <Save className="h-4 w-4 mr-2" />
-            {isSaving ? 'Saving...' : 'Save Changes'}
+          <Button 
+            onClick={handleSave} 
+            disabled={isSaving} 
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Save Changes
+              </>
+            )}
           </Button>
         </div>
       </CardContent>

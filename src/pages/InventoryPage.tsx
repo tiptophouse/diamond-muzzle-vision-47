@@ -1,104 +1,150 @@
-
-import { useState, useCallback } from 'react';
-import { Layout } from '@/components/layout/Layout';
-import { InventoryHeader } from '@/components/inventory/InventoryHeader';
-import { InventoryFilters } from '@/components/inventory/InventoryFilters';
-import { InventoryTable } from '@/components/inventory/InventoryTable';
-import { InventorySearch } from '@/components/inventory/InventorySearch';
-import { InventoryPagination } from '@/components/inventory/InventoryPagination';
-import { DiamondForm } from '@/components/inventory/DiamondForm';
-import { useInventoryData } from '@/hooks/useInventoryData';
-import { useInventorySearch } from '@/hooks/useInventorySearch';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Diamond } from '@/types/diamond';
+import { Layout } from "@/components/layout/Layout";
+import { InventoryHeader } from "@/components/inventory/InventoryHeader";
+import { InventoryTable } from "@/components/inventory/InventoryTable";
+import { InventoryPagination } from "@/components/inventory/InventoryPagination";
+import { InventorySearch } from "@/components/inventory/InventorySearch";
+import { InventoryFilters } from "@/components/inventory/InventoryFilters";
+import { DeleteConfirmDialog } from "@/components/inventory/DeleteConfirmDialog";
+import { Toaster } from "@/components/ui/toaster";
+import { useSecureInventoryData } from "@/hooks/useSecureInventoryData";
+import { useInventorySearch } from "@/hooks/useInventorySearch";
+import { useInventoryCrud } from "@/hooks/useInventoryCrud";
+import { DiamondForm } from "@/components/inventory/DiamondForm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState } from "react";
+import { Diamond } from "@/components/inventory/InventoryTable";
 
 export default function InventoryPage() {
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<Diamond | null>(null);
+  const {
+    loading,
+    diamonds,
+    allDiamonds,
+    handleRefresh,
+    userId,
+    error
+  } = useSecureInventoryData();
+
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 50;
+  const [filters, setFilters] = useState<Record<string, string>>({});
 
-  // Use inventory data hook with refresh capability
-  const { 
-    diamonds, 
-    loading, 
-    error, 
-    handleRefresh 
-  } = useInventoryData();
-
-  // Search and filter functionality
   const {
     searchQuery,
     setSearchQuery,
-    filteredDiamonds
-  } = useInventorySearch(diamonds);
+    filteredDiamonds,
+    totalPages,
+    handleSearch,
+  } = useInventorySearch(allDiamonds, currentPage, filters);
 
-  // Pagination
-  const totalItems = filteredDiamonds.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentItems = filteredDiamonds.slice(startIndex, endIndex);
+  const { 
+    addDiamond,
+    updateDiamond, 
+    deleteDiamond,
+    isLoading: crudLoading 
+  } = useInventoryCrud({
+    onSuccess: () => {
+      console.log('🔄 CRUD operation completed for user:', userId, 'refreshing inventory...');
+      handleRefresh();
+    },
+  });
 
-  const handleAddDiamond = () => {
-    setEditingItem(null);
-    setIsFormOpen(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingDiamond, setEditingDiamond] = useState<Diamond | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [diamondToDelete, setDiamondToDelete] = useState<Diamond | null>(null);
+
+  const handleEdit = (diamond: Diamond) => {
+    console.log('📝 Edit diamond clicked:', diamond.stockNumber);
+    setEditingDiamond(diamond);
   };
 
-  const handleEditDiamond = (item: any) => {
-    // Convert InventoryItem to Diamond format
-    const diamondItem: Diamond = {
-      id: item.id,
-      stockNumber: item.stock_number || item.stockNumber,
-      shape: item.shape,
-      carat: item.weight || item.carat,
-      color: item.color,
-      clarity: item.clarity,
-      cut: item.cut || 'Excellent',
-      price: item.price_per_carat ? item.price_per_carat * (item.weight || item.carat) : item.price || 0,
-      status: item.status || 'Available',
-      imageUrl: item.picture || item.imageUrl,
-      store_visible: item.store_visible,
-      certificateNumber: item.certificate_number,
-      lab: item.lab
-    };
-    setEditingItem(diamondItem);
-    setIsFormOpen(true);
+  const handleDelete = async (stockNumber: string) => {
+    console.log('🗑️ Delete diamond clicked with stock number:', stockNumber);
+    const diamond = allDiamonds.find(d => d.id === stockNumber);
+    if (diamond) {
+      setDiamondToDelete(diamond);
+      setDeleteDialogOpen(true);
+    }
   };
 
-  const handleFormClose = () => {
-    setIsFormOpen(false);
-    setEditingItem(null);
-    // Refresh inventory after form closes (in case of add/edit)
-    handleRefresh();
+  const confirmDelete = async () => {
+    if (diamondToDelete) {
+      console.log('🗑️ Confirming delete for diamond:', diamondToDelete.stockNumber);
+      const success = await deleteDiamond(diamondToDelete.id, diamondToDelete);
+      if (success) {
+        console.log('✅ Diamond deleted successfully');
+        setDeleteDialogOpen(false);
+        setDiamondToDelete(null);
+      }
+    }
   };
 
-  const handleToggleVisibility = async (stockNumber: string, visible: boolean) => {
-    console.log('👁️ Toggling visibility for:', stockNumber, 'to:', visible);
-    // TODO: Implement store visibility toggle
-    // This would call your backend API to update the store_visible field
-    handleRefresh();
+  const handleStoreToggle = async (stockNumber: string, isVisible: boolean) => {
+    console.log('👁️ Store visibility toggle:', stockNumber, isVisible);
+    const diamond = allDiamonds.find(d => d.stockNumber === stockNumber);
+    if (diamond) {
+      const updateData = {
+        stockNumber: diamond.stockNumber,
+        shape: diamond.shape,
+        carat: diamond.carat,
+        color: diamond.color,
+        clarity: diamond.clarity,
+        cut: diamond.cut,
+        price: diamond.price,
+        status: diamond.status,
+        storeVisible: isVisible,
+        certificateNumber: diamond.certificateNumber,
+        certificateUrl: diamond.certificateUrl,
+        lab: diamond.lab,
+      };
+      
+      const success = await updateDiamond(diamond.id, updateData);
+      if (success) {
+        console.log('✅ Store visibility updated successfully');
+      }
+    }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Search is handled by the useInventorySearch hook automatically
+  const handleEditSubmit = async (data: any) => {
+    console.log('💾 Saving edited diamond:', data);
+    if (editingDiamond) {
+      const success = await updateDiamond(editingDiamond.id, data);
+      if (success) {
+        console.log('✅ Diamond updated successfully');
+        setEditingDiamond(null);
+      }
+    }
   };
 
-  if (error) {
+  const handleAddSubmit = async (data: any) => {
+    console.log('➕ Adding new diamond:', data);
+    const success = await addDiamond(data);
+    if (success) {
+      console.log('✅ Diamond added successfully');
+      setShowAddForm(false);
+    }
+  };
+
+  // Show error state if user data access fails
+  if (error && !loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Inventory</h2>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <button 
-              onClick={handleRefresh}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Try Again
-            </button>
+        <div className="text-center py-8">
+          <div className="text-red-600 mb-4">
+            <p className="text-lg font-semibold">Access Error</p>
+            <p className="text-sm">{error}</p>
           </div>
+          <p className="text-muted-foreground">Please ensure you are properly logged in.</p>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (loading && allDiamonds.length === 0) {
+    return (
+      <Layout>
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Loading your inventory securely...</p>
+          {userId && <p className="text-xs text-gray-500 mt-2">User ID: {userId}</p>}
         </div>
       </Layout>
     );
@@ -107,67 +153,102 @@ export default function InventoryPage() {
   return (
     <Layout>
       <div className="space-y-6">
-        <InventoryHeader
-          totalCount={totalItems}
+        <InventoryHeader 
+          totalCount={allDiamonds.length}
           onRefresh={handleRefresh}
           loading={loading}
-          onAddDiamond={handleAddDiamond}
+          onAddDiamond={() => {
+            console.log('➕ Add diamond button clicked for user:', userId);
+            setShowAddForm(true);
+          }}
         />
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-1">
-            <InventoryFilters onFilterChange={() => {}} />
+        
+        {/* User info display for verification */}
+        {userId && process.env.NODE_ENV === 'development' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+            <p className="text-blue-800">
+              🔒 Secure Mode: Showing inventory for User ID <strong>{userId}</strong>
+            </p>
           </div>
+        )}
+        
+        <div className="flex flex-col lg:flex-row gap-6">
+          <aside className="lg:w-80">
+            <div className="space-y-6">
+              <InventorySearch
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                onSubmit={handleSearch}
+                allDiamonds={allDiamonds}
+              />
+              <InventoryFilters
+                onFilterChange={setFilters}
+              />
+            </div>
+          </aside>
           
-          <div className="lg:col-span-3 space-y-4">
-            <InventorySearch 
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              onSubmit={handleSearch}
-              allDiamonds={diamonds}
-            />
-            
-            <InventoryTable
-              inventory={currentItems.map(diamond => ({
-                id: diamond.id,
-                stock_number: diamond.stockNumber,
-                shape: diamond.shape,
-                weight: diamond.carat,
-                color: diamond.color,
-                clarity: diamond.clarity,
-                cut: diamond.cut,
-                lab: diamond.lab,
-                certificate_number: diamond.certificateNumber ? Number(diamond.certificateNumber) : undefined,
-                price_per_carat: diamond.price / diamond.carat,
-                store_visible: diamond.store_visible,
-                status: diamond.status
-              }))}
-              loading={loading}
-              onEdit={handleEditDiamond}
-              onToggleVisibility={handleToggleVisibility}
-              onRefresh={handleRefresh}
-            />
-            
-            {totalPages > 1 && (
+          <main className="flex-1">
+            <div className="space-y-4">
+              <InventoryTable
+                data={filteredDiamonds}
+                loading={loading}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onStoreToggle={handleStoreToggle}
+              />
+              
               <InventoryPagination
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={setCurrentPage}
               />
-            )}
-          </div>
+            </div>
+          </main>
         </div>
 
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        {/* Delete Confirmation Dialog */}
+        <DeleteConfirmDialog
+          open={deleteDialogOpen}
+          onClose={() => setDeleteDialogOpen(false)}
+          onConfirm={confirmDelete}
+          diamond={diamondToDelete}
+          isLoading={crudLoading}
+        />
+
+        {/* Edit Diamond Modal */}
+        <Dialog open={!!editingDiamond} onOpenChange={() => setEditingDiamond(null)}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Diamond - #{editingDiamond?.stockNumber}</DialogTitle>
+            </DialogHeader>
+            {editingDiamond && (
+              <DiamondForm
+                diamond={editingDiamond}
+                onSubmit={handleEditSubmit}
+                onCancel={() => setEditingDiamond(null)}
+                isLoading={crudLoading}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Diamond Modal */}
+        <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add New Diamond</DialogTitle>
+            </DialogHeader>
             <DiamondForm
-              diamond={editingItem}
-              onSubmit={() => {}}
-              onCancel={handleFormClose}
+              onSubmit={handleAddSubmit}
+              onCancel={() => setShowAddForm(false)}
+              isLoading={crudLoading}
             />
           </DialogContent>
         </Dialog>
       </div>
+      
+      {/* Toast notifications */}
+      <Toaster />
     </Layout>
   );
 }

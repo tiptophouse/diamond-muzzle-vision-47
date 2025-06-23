@@ -1,110 +1,140 @@
 
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { api, apiEndpoints } from "@/lib/api";
-import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { useState } from 'react';
+import { useToast } from '@/components/ui/use-toast';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useInventoryDataSync } from './inventory/useInventoryDataSync';
+import { LocalStorageService } from '@/services/localStorageService';
 
-interface ProcessResult {
+interface UploadResult {
   success: boolean;
-  totalStones: number;
-  errors: string[];
-  processedData?: any[];
+  message: string;
+  processedCount?: number;
+  errors?: string[];
 }
 
 export function useUploadHandler() {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [result, setResult] = useState<ProcessResult | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [result, setResult] = useState<UploadResult | null>(null);
   const { toast } = useToast();
   const { user } = useTelegramAuth();
+  const { triggerInventoryChange } = useInventoryDataSync();
 
-  const resetState = () => {
-    setIsProcessing(false);
-    setUploadProgress(0);
-    setResult(null);
-  };
-
-  const processFile = async (file: File): Promise<ProcessResult> => {
+  const handleUpload = async (file: File) => {
     if (!user?.id) {
-      throw new Error('User not authenticated');
+      toast({
+        title: "Authentication Error",
+        description: "Please log in to upload files",
+        variant: "destructive",
+      });
+      return;
     }
 
-    setIsProcessing(true);
-    setUploadProgress(10);
-
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('user_id', user.id.toString());
+    setUploading(true);
+    setProgress(0);
+    setResult(null);
 
     try {
-      setUploadProgress(30);
-
-      // Create the upload request with proper error handling
-      const response = await fetch(`${api.API_BASE_URL || 'https://api.mazalbot.com'}${apiEndpoints.uploadInventory()}`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      setUploadProgress(60);
-
-      if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`);
+      // Parse CSV file
+      const text = await file.text();
+      const lines = text.split('\n').filter(line => line.trim());
+      
+      if (lines.length < 2) {
+        throw new Error('CSV file must contain at least a header and one data row');
       }
 
-      const data = await response.json();
-      setUploadProgress(80);
+      const headers = lines[0].split(',').map(h => h.trim());
+      const csvData = [];
 
-      if (data.error) {
-        throw new Error(data.error);
+      setProgress(25);
+
+      // Process CSV rows
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim());
+        if (values.length >= headers.length) {
+          const row: any = {};
+          headers.forEach((header, index) => {
+            row[header] = values[index] || '';
+          });
+          csvData.push(row);
+        }
       }
 
-      setUploadProgress(100);
+      setProgress(50);
 
-      const processResult: ProcessResult = {
+      // Process data for local storage
+      const processedDiamonds = csvData.map(item => ({
+        stock_number: item['Stock Number'] || item['stock_number'] || `STK-${Date.now()}-${Math.random()}`,
+        shape: item['Shape'] || item['shape'] || 'Round',
+        weight: parseFloat(item['Carat'] || item['carat'] || item['Weight'] || '1.0'),
+        color: item['Color'] || item['color'] || 'G',
+        clarity: item['Clarity'] || item['clarity'] || 'VS1',
+        cut: item['Cut'] || item['cut'] || 'Excellent',
+        price: parseFloat(item['Price'] || item['price'] || item['Total Price'] || '5000'),
+        status: 'Available',
+        store_visible: true,
+        certificate_number: item['Certificate Number'] || item['certificate_number'] || '',
+        lab: item['Lab'] || item['lab'] || '',
+      }));
+
+      setProgress(75);
+
+      console.log('📦 Uploading', processedDiamonds.length, 'diamonds to local storage...');
+      const uploadResult = LocalStorageService.bulkAddDiamonds(processedDiamonds);
+      
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.error || 'Upload failed');
+      }
+
+      setProgress(100);
+      
+      const successResult: UploadResult = {
         success: true,
-        totalStones: data.total_processed || 0,
-        errors: data.errors || [],
-        processedData: data.processed_data || []
+        message: `Successfully uploaded ${processedDiamonds.length} diamonds to your local inventory! 💎`,
+        processedCount: processedDiamonds.length
       };
-
-      setResult(processResult);
-
+      
+      setResult(successResult);
+      triggerInventoryChange();
+      
       toast({
-        title: "Upload Successful",
-        description: `Successfully processed ${processResult.totalStones} diamonds`,
+        title: "Upload Successful! 🎉",
+        description: successResult.message,
       });
-
-      return processResult;
 
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('❌ Upload failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Upload failed';
       
-      const errorResult: ProcessResult = {
+      const errorResult: UploadResult = {
         success: false,
-        totalStones: 0,
+        message: errorMessage,
         errors: [errorMessage]
       };
-
+      
       setResult(errorResult);
-
+      
       toast({
-        variant: "destructive",
         title: "Upload Failed",
         description: errorMessage,
+        variant: "destructive",
       });
-
-      return errorResult;
     } finally {
-      setIsProcessing(false);
+      setUploading(false);
     }
+  };
+
+  const resetState = () => {
+    setProgress(0);
+    setResult(null);
+    setUploading(false);
   };
 
   return {
-    processFile,
-    isProcessing,
-    uploadProgress,
+    uploading,
+    progress,
     result,
+    handleUpload,
     resetState,
   };
 }
