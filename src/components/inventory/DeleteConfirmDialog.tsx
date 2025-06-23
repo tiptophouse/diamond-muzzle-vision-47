@@ -36,7 +36,7 @@ export function DeleteConfirmDialog({
           <AlertDialogDescription>
             Are you sure you want to delete this diamond?
             <div className="mt-3 p-3 bg-gray-50 rounded-md border text-sm space-y-1">
-              <div><strong>Stock #:</strong> {diamond.stockNumber || diamond.id}</div>
+              <div><strong>Stock #:</strong> {diamond.stockNumber}</div>
               <div><strong>Details:</strong> {diamond.carat}ct {diamond.color}-{diamond.clarity} {diamond.shape}</div>
               <div><strong>Price:</strong> ${diamond.price.toLocaleString()}</div>
             </div>

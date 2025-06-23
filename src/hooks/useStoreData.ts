@@ -43,11 +43,16 @@ export function useStoreData() {
         const transformedDiamonds: Diamond[] = result.data
           .map(item => {
             // Better Gem360 URL detection and handling
-            let gem360Url = item.gem360_url;
+            let gem360Url = item.gem360_url || item.gem360Url;
             
             // Check if certificate_url contains gem360
             if (!gem360Url && item.certificate_url && item.certificate_url.includes('gem360')) {
               gem360Url = item.certificate_url;
+            }
+            
+            // Check if certificateUrl contains gem360
+            if (!gem360Url && item.certificateUrl && item.certificateUrl.includes('gem360')) {
+              gem360Url = item.certificateUrl;
             }
 
             console.log('🔍 STORE: Processing diamond', item.stock_number, 'gem360 URL:', gem360Url);
@@ -67,7 +72,7 @@ export function useStoreData() {
               certificateNumber: item.certificate_number || undefined,
               lab: item.lab || undefined,
               gem360Url: gem360Url || undefined,
-              certificateUrl: item.certificate_url || undefined
+              certificateUrl: item.certificate_url || item.certificateUrl || undefined
             };
           })
           .filter(diamond => diamond.store_visible && diamond.status === 'Available'); // Only show store-visible and available diamonds

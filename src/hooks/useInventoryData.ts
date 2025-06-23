@@ -45,9 +45,9 @@ export function useInventoryData() {
           status: item.status || 'Available',
           imageUrl: item.picture || item.imageUrl || undefined,
           store_visible: item.store_visible !== false,
-          certificateNumber: item.certificate_number || undefined,
+          certificateNumber: item.certificate_number || item.certificateNumber || undefined,
           lab: item.lab || undefined,
-          certificateUrl: item.certificate_url || undefined,
+          certificateUrl: item.certificate_url || item.certificateUrl || undefined,
         }));
 
         console.log('📥 INVENTORY HOOK: Transformed diamonds:', transformedDiamonds.length);

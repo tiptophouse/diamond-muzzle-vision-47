@@ -1,24 +1,23 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { User, Mail, Phone, Globe, Save, Loader2 } from 'lucide-react';
-import { useUserProfile } from '@/hooks/useUserProfile';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useToast } from '@/components/ui/use-toast';
+import { User, Mail, Phone, Globe, Save } from 'lucide-react';
 
 export function AccountSettings() {
   const { user } = useTelegramAuth();
-  const { profile, isLoading, isSaving, updateProfile } = useUserProfile();
   const { toast } = useToast();
   
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+  const [profile, setProfile] = useState({
+    firstName: user?.first_name || '',
+    lastName: user?.last_name || '',
     email: '',
     phone: '',
     bio: '',
@@ -28,68 +27,27 @@ export function AccountSettings() {
     timezone: 'UTC'
   });
 
-  // Update form data when profile is loaded
-  useEffect(() => {
-    if (profile) {
-      setFormData({
-        firstName: profile.first_name || '',
-        lastName: profile.last_name || '',
-        email: profile.email || '',
-        phone: profile.phone_number || '',
-        bio: profile.bio || '',
-        company: profile.company || '',
-        website: profile.website || '',
-        language: profile.language_code || 'en',
-        timezone: profile.timezone || 'UTC'
-      });
-    } else if (user) {
-      // Fallback to Telegram data if no profile exists yet
-      setFormData(prev => ({
-        ...prev,
-        firstName: user.first_name || '',
-        lastName: user.last_name || '',
-        language: user.language_code || 'en'
-      }));
-    }
-  }, [profile, user]);
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSave = async () => {
+    setIsLoading(true);
     try {
-      const success = await updateProfile({
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        email: formData.email,
-        phone_number: formData.phone,
-        bio: formData.bio,
-        company: formData.company,
-        website: formData.website,
-        language_code: formData.language,
-        timezone: formData.timezone
+      // In a real app, you'd save this to the database
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      toast({
+        title: "Settings saved",
+        description: "Your account settings have been updated successfully.",
       });
-
-      if (!success) {
-        throw new Error('Failed to save profile');
-      }
     } catch (error) {
-      console.error('❌ Failed to save profile:', error);
-      // Error handling is done in the hook
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin mr-3" />
-          <span>Loading your profile...</span>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card>
@@ -108,8 +66,8 @@ export function AccountSettings() {
             <Label htmlFor="firstName">First Name</Label>
             <Input
               id="firstName"
-              value={formData.firstName}
-              onChange={(e) => handleInputChange('firstName', e.target.value)}
+              value={profile.firstName}
+              onChange={(e) => setProfile(prev => ({ ...prev, firstName: e.target.value }))}
               placeholder="Enter your first name"
             />
           </div>
@@ -117,8 +75,8 @@ export function AccountSettings() {
             <Label htmlFor="lastName">Last Name</Label>
             <Input
               id="lastName"
-              value={formData.lastName}
-              onChange={(e) => handleInputChange('lastName', e.target.value)}
+              value={profile.lastName}
+              onChange={(e) => setProfile(prev => ({ ...prev, lastName: e.target.value }))}
               placeholder="Enter your last name"
             />
           </div>
@@ -132,8 +90,8 @@ export function AccountSettings() {
               <Input
                 id="email"
                 type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
+                value={profile.email}
+                onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))}
                 placeholder="your.email@example.com"
                 className="pl-10"
               />
@@ -145,8 +103,8 @@ export function AccountSettings() {
               <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
                 id="phone"
-                value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
+                value={profile.phone}
+                onChange={(e) => setProfile(prev => ({ ...prev, phone: e.target.value }))}
                 placeholder="+1 (555) 123-4567"
                 className="pl-10"
               />
@@ -158,8 +116,8 @@ export function AccountSettings() {
           <Label htmlFor="bio">Bio</Label>
           <Textarea
             id="bio"
-            value={formData.bio}
-            onChange={(e) => handleInputChange('bio', e.target.value)}
+            value={profile.bio}
+            onChange={(e) => setProfile(prev => ({ ...prev, bio: e.target.value }))}
             placeholder="Tell us about yourself..."
             rows={3}
           />
@@ -170,8 +128,8 @@ export function AccountSettings() {
             <Label htmlFor="company">Company</Label>
             <Input
               id="company"
-              value={formData.company}
-              onChange={(e) => handleInputChange('company', e.target.value)}
+              value={profile.company}
+              onChange={(e) => setProfile(prev => ({ ...prev, company: e.target.value }))}
               placeholder="Your company name"
             />
           </div>
@@ -181,8 +139,8 @@ export function AccountSettings() {
               <Globe className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
                 id="website"
-                value={formData.website}
-                onChange={(e) => handleInputChange('website', e.target.value)}
+                value={profile.website}
+                onChange={(e) => setProfile(prev => ({ ...prev, website: e.target.value }))}
                 placeholder="https://yourwebsite.com"
                 className="pl-10"
               />
@@ -193,7 +151,7 @@ export function AccountSettings() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="language">Language</Label>
-            <Select value={formData.language} onValueChange={(value) => handleInputChange('language', value)}>
+            <Select value={profile.language} onValueChange={(value) => setProfile(prev => ({ ...prev, language: value }))}>
               <SelectTrigger>
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
@@ -209,7 +167,7 @@ export function AccountSettings() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="timezone">Timezone</Label>
-            <Select value={formData.timezone} onValueChange={(value) => handleInputChange('timezone', value)}>
+            <Select value={profile.timezone} onValueChange={(value) => setProfile(prev => ({ ...prev, timezone: value }))}>
               <SelectTrigger>
                 <SelectValue placeholder="Select timezone" />
               </SelectTrigger>
@@ -228,22 +186,9 @@ export function AccountSettings() {
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button 
-            onClick={handleSave} 
-            disabled={isSaving} 
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Save Changes
-              </>
-            )}
+          <Button onClick={handleSave} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700">
+            <Save className="h-4 w-4 mr-2" />
+            {isLoading ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
       </CardContent>

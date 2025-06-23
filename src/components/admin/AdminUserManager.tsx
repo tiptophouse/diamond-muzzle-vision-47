@@ -6,7 +6,6 @@ import { useBlockedUsers } from '@/hooks/useBlockedUsers';
 import { UserDetailsModal } from './UserDetailsModal';
 import { AddUserModal } from './AddUserModal';
 import { EditUserModal } from './EditUserModal';
-import { UserDataManager } from './UserDataManager';
 import { AdminHeader } from './AdminHeader';
 import { AdminStatsGrid } from './AdminStatsGrid';
 import { AdminUserTable } from './AdminUserTable';
@@ -250,7 +249,6 @@ export function AdminUserManager({}: AdminUserManagerProps) {
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
         <AdminHeader onExportData={exportUserData} onAddUser={() => setShowAddUser(true)} />
 
-        {/* Enhanced admin controls */}
         <div className="flex gap-4 mb-6">
           <button
             onClick={deleteMockData}
@@ -273,35 +271,17 @@ export function AdminUserManager({}: AdminUserManagerProps) {
           </TabsList>
           
           <TabsContent value="users">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              {/* Enhanced user table with data management controls */}
-              <div className="space-y-4">
-                <AdminUserTable
-                  filteredUsers={filteredUsers}
-                  searchTerm={searchTerm}
-                  onSearchChange={setSearchTerm}
-                  getUserEngagementScore={getUserEngagementScore}
-                  isUserBlocked={isUserBlocked}
-                  onBlockUser={handleToggleBlock}
-                  onUnblockUser={handleToggleBlock}
-                  onViewDetails={handleViewUser}
-                  onViewUser={handleViewUser}
-                  onEditUser={handleEditUser}
-                  renderExtraActions={(user) => (
-                    <UserDataManager
-                      user={user}
-                      onDataCleared={() => {
-                        toast({
-                          title: "Data Cleared",
-                          description: `All data for user has been removed.`,
-                        });
-                        refetch();
-                      }}
-                    />
-                  )}
-                />
-              </div>
-            </div>
+            <AdminUserTable
+              filteredUsers={filteredUsers}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              getUserEngagementScore={getUserEngagementScore}
+              isUserBlocked={isUserBlocked}
+              onViewUser={handleViewUser}
+              onEditUser={handleEditUser}
+              onToggleBlock={handleToggleBlock}
+              onDeleteUser={handleDeleteUser}
+            />
           </TabsContent>
           
           <TabsContent value="notifications">

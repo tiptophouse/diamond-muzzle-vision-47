@@ -1,161 +1,72 @@
 
-import { getCurrentUserId, getApiUrl } from '@/lib/api/config';
-import { fetchApi } from '@/lib/api/client';
+import { api, apiEndpoints, getCurrentUserId } from "@/lib/api";
+import { fetchMockInventoryData } from "./mockInventoryService";
 
-export interface DiamondData {
-  id?: string;
-  stock_number: string;
-  shape: string;
-  weight: number;
-  color: string;
-  clarity: string;
-  cut?: string;
-  price?: number;
-  price_per_carat?: number;
-  status?: string;
-  store_visible?: boolean;
-  picture?: string;
-  certificate_number?: string;
-  certificate_url?: string;
-  gem360_url?: string;
-  lab?: string;
-  carat?: number; // For compatibility
-  imageUrl?: string; // For compatibility
-  stockNumber?: string; // For compatibility
-}
-
-export interface InventoryResponse {
-  data?: DiamondData[];
+export interface FetchInventoryResult {
+  data?: any[];
   error?: string;
+  debugInfo: any;
 }
 
-export async function fetchInventoryData(): Promise<InventoryResponse> {
+export async function fetchInventoryData(): Promise<FetchInventoryResult> {
+  const userId = getCurrentUserId() || 2138564172;
+  
+  console.log('🔍 INVENTORY SERVICE: Fetching data from FastAPI for user:', userId);
+  
+  const debugInfo = { 
+    step: 'Starting inventory fetch from FastAPI', 
+    userId, 
+    timestamp: new Date().toISOString(),
+    dataSource: 'fastapi'
+  };
+  
   try {
-    const userId = getCurrentUserId();
+    // First try to fetch from FastAPI backend
+    console.log('🚀 INVENTORY SERVICE: Attempting FastAPI connection...');
+    const endpoint = apiEndpoints.getAllStones(userId);
+    console.log('🚀 INVENTORY SERVICE: Using endpoint:', endpoint);
     
-    if (!userId) {
-      console.error('❌ INVENTORY: No user ID available for fetching inventory');
-      return { 
-        error: 'User not authenticated. Please refresh the app.',
-        data: []
-      };
-    }
-
-    console.log('📥 INVENTORY: Fetching inventory data from FastAPI for user:', userId);
-    
-    // Use your specific FastAPI endpoint format
-    const endpoint = `/get_all_stones?user_id=${userId}`;
-    const apiUrl = getApiUrl(endpoint);
-    
-    console.log('📥 INVENTORY: Making request to:', apiUrl);
-    
-    const result = await fetchApi<DiamondData[]>(endpoint);
+    const result = await api.get(endpoint);
     
     if (result.error) {
-      console.error('❌ INVENTORY: FastAPI fetch failed:', result.error);
+      console.error('❌ INVENTORY SERVICE: FastAPI request failed:', result.error);
+      throw new Error(result.error);
+    }
+    
+    if (result.data && Array.isArray(result.data) && result.data.length > 0) {
+      console.log('✅ INVENTORY SERVICE: FastAPI returned', result.data.length, 'diamonds');
+      
       return {
-        error: result.error,
-        data: []
+        data: result.data,
+        debugInfo: {
+          ...debugInfo,
+          step: 'SUCCESS: FastAPI data fetched',
+          totalDiamonds: result.data.length,
+          dataSource: 'fastapi',
+          endpoint
+        }
       };
     }
-
-    if (!result.data) {
-      console.log('📥 INVENTORY: No data returned from FastAPI');
-      return {
-        data: [],
-        error: null
-      };
-    }
-
-    const diamonds = Array.isArray(result.data) ? result.data : [];
-    console.log('✅ INVENTORY: Successfully fetched', diamonds.length, 'diamonds from FastAPI');
+    
+    console.log('⚠️ INVENTORY SERVICE: FastAPI returned empty data');
+    throw new Error('No diamonds found in FastAPI response');
+    
+  } catch (error) {
+    console.error("❌ INVENTORY SERVICE: FastAPI connection failed:", error);
+    
+    // Fallback to mock data only if FastAPI is completely unreachable
+    console.log('🔄 INVENTORY SERVICE: Using mock data as fallback');
+    const mockResult = await fetchMockInventoryData();
     
     return {
-      data: diamonds,
-      error: null
-    };
-
-  } catch (error) {
-    console.error('❌ INVENTORY: Unexpected error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch inventory';
-    
-    return {
-      error: errorMessage,
-      data: []
-    };
-  }
-}
-
-export async function addDiamondToInventory(diamondData: DiamondData): Promise<{ success: boolean; error?: string }> {
-  try {
-    const userId = getCurrentUserId();
-    
-    if (!userId) {
-      return { 
-        success: false, 
-        error: 'User not authenticated. Please refresh the app.' 
-      };
-    }
-
-    console.log('💎 INVENTORY: Adding diamond to FastAPI for user:', userId);
-    
-    const endpoint = `/diamonds?user_id=${userId}`;
-    const result = await fetchApi(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(diamondData),
-    });
-
-    if (result.error) {
-      console.error('❌ INVENTORY: Failed to add diamond:', result.error);
-      return { success: false, error: result.error };
-    }
-
-    console.log('✅ INVENTORY: Diamond added successfully to FastAPI');
-    return { success: true };
-
-  } catch (error) {
-    console.error('❌ INVENTORY: Error adding diamond:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to add diamond' 
-    };
-  }
-}
-
-export async function deleteDiamondFromInventory(diamondId: string): Promise<{ success: boolean; error?: string }> {
-  try {
-    const userId = getCurrentUserId();
-    
-    if (!userId) {
-      return { 
-        success: false, 
-        error: 'User not authenticated. Please refresh the app.' 
-      };
-    }
-
-    console.log('🗑️ INVENTORY: Deleting diamond from FastAPI:', diamondId, 'for user:', userId);
-    
-    const endpoint = `/delete_stone/${diamondId}?user_id=${userId}`;
-    const result = await fetchApi(endpoint, {
-      method: 'DELETE',
-    });
-
-    if (result.error) {
-      console.error('❌ INVENTORY: Failed to delete diamond:', result.error);
-      return { success: false, error: result.error };
-    }
-
-    console.log('✅ INVENTORY: Diamond deleted successfully from FastAPI');
-    return { success: true };
-
-  } catch (error) {
-    console.error('❌ INVENTORY: Error deleting diamond:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to delete diamond' 
+      ...mockResult,
+      debugInfo: {
+        ...debugInfo,
+        ...mockResult.debugInfo,
+        step: 'FALLBACK: Using mock data after FastAPI failure',
+        error: error instanceof Error ? error.message : String(error),
+        dataSource: 'mock_fallback'
+      }
     };
   }
 }
