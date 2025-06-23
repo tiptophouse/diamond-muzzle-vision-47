@@ -7,10 +7,14 @@ let currentUserId: number | null = null;
 export function setCurrentUserId(userId: number) {
   currentUserId = userId;
   console.log('🔧 API Config: Current user ID set to:', userId, 'type:', typeof userId);
+  console.log('🔧 API Config: API calls will now include user_id=' + userId + ' parameter');
 }
 
 export function getCurrentUserId(): number | null {
   console.log('🔧 API Config: Getting current user ID:', currentUserId);
+  if (!currentUserId) {
+    console.warn('⚠️ API Config: No user ID set! API calls may fail without user_id parameter');
+  }
   return currentUserId;
 }
 
