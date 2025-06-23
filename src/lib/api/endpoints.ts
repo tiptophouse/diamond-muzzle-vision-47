@@ -1,9 +1,9 @@
 
 export const apiEndpoints = {
   getAllStones: (userId: number) => {
-    // Use the correct endpoint path for your FastAPI backend
-    const endpoint = `/get_all_stones?user_id=${userId}`;
-    console.log('🔧 API: Building getAllStones endpoint:', endpoint, 'for user:', userId, 'type:', typeof userId);
+    // Use the new RESTful endpoint for getting user stones
+    const endpoint = `/api/v1/get_user_stones?user_id=${userId}`;
+    console.log('🔧 API: Building getUserStones endpoint:', endpoint, 'for user:', userId, 'type:', typeof userId);
     return endpoint;
   },
   verifyTelegram: () => `/api/v1/verify-telegram`,

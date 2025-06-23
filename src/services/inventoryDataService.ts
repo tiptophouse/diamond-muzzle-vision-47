@@ -13,17 +13,17 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   console.log('🔍 INVENTORY SERVICE: Fetching REAL-TIME data from FastAPI for user:', userId);
   
   const debugInfo = { 
-    step: 'Starting inventory fetch from FastAPI', 
+    step: 'Starting inventory fetch from new FastAPI endpoint', 
     userId, 
     timestamp: new Date().toISOString(),
     dataSource: 'fastapi'
   };
   
   try {
-    // Fetch from FastAPI backend - REAL DATA ONLY
+    // Fetch from new FastAPI endpoint - /api/v1/get_user_stones
     console.log('🚀 INVENTORY SERVICE: Connecting to FastAPI backend at:', 'https://api.mazalbot.com');
     const endpoint = apiEndpoints.getAllStones(userId);
-    console.log('🚀 INVENTORY SERVICE: Using endpoint:', endpoint);
+    console.log('🚀 INVENTORY SERVICE: Using NEW endpoint:', endpoint);
     console.log('🚀 INVENTORY SERVICE: Full URL will be:', `https://api.mazalbot.com${endpoint}`);
     
     const result = await api.get(endpoint);
@@ -44,75 +44,90 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     
     if (result.data) {
       console.log('✅ INVENTORY SERVICE: FastAPI returned data:', typeof result.data, Array.isArray(result.data));
-      console.log('✅ INVENTORY SERVICE: Raw response:', result.data);
+      console.log('✅ INVENTORY SERVICE: Raw response structure:', result.data);
       
-      // Handle different response formats with proper type checking
-      let diamonds = [];
+      // Handle the new endpoint response format
+      let stones = [];
+      
       if (Array.isArray(result.data)) {
-        diamonds = result.data;
+        // Direct array response
+        stones = result.data;
+        console.log('✅ INVENTORY SERVICE: Direct array response with', stones.length, 'stones');
       } else if (result.data && typeof result.data === 'object' && result.data !== null) {
-        // Check if the response has a diamonds property
+        // Object response - check for common property names
         const responseData = result.data as Record<string, any>;
-        if (Array.isArray(responseData.diamonds)) {
-          diamonds = responseData.diamonds;
+        
+        if (Array.isArray(responseData.stones)) {
+          stones = responseData.stones;
+          console.log('✅ INVENTORY SERVICE: Found stones array with', stones.length, 'items');
+        } else if (Array.isArray(responseData.data)) {
+          stones = responseData.data;
+          console.log('✅ INVENTORY SERVICE: Found data array with', stones.length, 'items');
+        } else if (Array.isArray(responseData.diamonds)) {
+          stones = responseData.diamonds;
+          console.log('✅ INVENTORY SERVICE: Found diamonds array with', stones.length, 'items');
         } else {
-          // If it's an object, try to extract diamond data
-          diamonds = Object.values(responseData).filter(item => 
-            item && typeof item === 'object' && (item.stock_number || item.weight)
-          );
+          // Try to extract any array from the object
+          const possibleArrays = Object.values(responseData).filter(value => Array.isArray(value));
+          if (possibleArrays.length > 0) {
+            stones = possibleArrays[0];
+            console.log('✅ INVENTORY SERVICE: Found array in response with', stones.length, 'items');
+          }
         }
       }
       
-      console.log('✅ INVENTORY SERVICE: Processed diamonds count:', diamonds.length);
+      console.log('✅ INVENTORY SERVICE: Final processed stones count:', stones.length);
       
-      if (diamonds.length === 0) {
-        console.log('📊 INVENTORY SERVICE: No diamonds found in your FastAPI database');
+      if (stones.length === 0) {
+        console.log('📊 INVENTORY SERVICE: No stones found in your FastAPI database for user:', userId);
         return {
           data: [],
           debugInfo: {
             ...debugInfo,
-            step: 'SUCCESS: FastAPI connected but no diamonds found',
-            totalDiamonds: 0,
+            step: 'SUCCESS: FastAPI connected but no stones found',
+            totalStones: 0,
             dataSource: 'fastapi',
             endpoint,
             rawResponseType: typeof result.data,
-            isArray: Array.isArray(result.data)
+            isArray: Array.isArray(result.data),
+            responseKeys: result.data && typeof result.data === 'object' ? Object.keys(result.data) : []
           }
         };
       }
       
       return {
-        data: diamonds,
+        data: stones,
         debugInfo: {
           ...debugInfo,
-          step: 'SUCCESS: Real-time FastAPI data fetched',
-          totalDiamonds: diamonds.length,
+          step: 'SUCCESS: Real-time FastAPI data fetched from new endpoint',
+          totalStones: stones.length,
           dataSource: 'fastapi',
           endpoint,
-          sampleDiamond: diamonds[0]
+          sampleStone: stones[0],
+          responseStructure: result.data && typeof result.data === 'object' ? Object.keys(result.data) : 'direct_array'
         }
       };
     }
     
     console.log('⚠️ INVENTORY SERVICE: FastAPI returned invalid data format');
     return {
-      error: 'Invalid data format from FastAPI',
+      error: 'Invalid data format from FastAPI new endpoint',
       debugInfo: {
         ...debugInfo,
-        step: 'FAILED: Invalid data format',
+        step: 'FAILED: Invalid data format from new endpoint',
         receivedData: typeof result.data,
         endpoint
       }
     };
     
   } catch (error) {
-    console.error("❌ INVENTORY SERVICE: FastAPI connection failed:", error);
+    console.error("❌ INVENTORY SERVICE: FastAPI connection failed for new endpoint:", error);
     
     return {
-      error: error instanceof Error ? error.message : 'Unknown FastAPI error',
+      error: error instanceof Error ? error.message : 'Unknown FastAPI error with new endpoint',
       debugInfo: {
         ...debugInfo,
-        step: 'FAILED: FastAPI connection error',
+        step: 'FAILED: FastAPI connection error with new endpoint',
         error: error instanceof Error ? error.message : String(error),
         dataSource: 'none'
       }

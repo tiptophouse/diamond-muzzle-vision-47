@@ -2,6 +2,7 @@
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { api, apiEndpoints } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 
 interface UseDeleteDiamondProps {
   onSuccess?: () => void;
@@ -9,6 +10,7 @@ interface UseDeleteDiamondProps {
 
 export function useDeleteDiamond({ onSuccess }: UseDeleteDiamondProps) {
   const { user } = useTelegramAuth();
+  const { toast } = useToast();
 
   const deleteDiamond = async (diamondId: string) => {
     if (!user?.id) {
@@ -16,25 +18,45 @@ export function useDeleteDiamond({ onSuccess }: UseDeleteDiamondProps) {
     }
 
     try {
-      console.log('🗑️ Deleting diamond via FastAPI with correct endpoint:', diamondId);
+      console.log('🗑️ DELETING STONE: Starting delete for diamond ID:', diamondId);
       
       const endpoint = apiEndpoints.deleteDiamond(diamondId);
-      console.log('🗑️ Using delete endpoint:', endpoint);
+      console.log('🗑️ DELETING STONE: Using endpoint:', endpoint);
+      console.log('🗑️ DELETING STONE: Full URL:', `https://api.mazalbot.com${endpoint}`);
       
       const result = await api.delete(endpoint);
       
-      // Check if the delete operation was successful
       if (result.error) {
+        console.error('❌ DELETING STONE: FastAPI delete failed:', result.error);
+        toast({
+          title: "Delete Failed ❌",
+          description: `Failed to delete stone: ${result.error}`,
+          variant: "destructive",
+        });
         throw new Error(result.error);
       }
 
-      console.log('✅ Diamond deleted successfully from FastAPI backend');
+      console.log('✅ DELETING STONE: Stone deleted successfully from FastAPI');
+      console.log('✅ DELETING STONE: Response:', result.data);
+      
+      toast({
+        title: "Success ✅",
+        description: "Stone deleted successfully from your inventory",
+      });
       
       if (onSuccess) onSuccess();
       return true;
       
     } catch (error) {
-      console.error('❌ Failed to delete diamond from FastAPI:', error);
+      console.error('❌ DELETING STONE: Failed to delete from FastAPI:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      toast({
+        title: "Delete Failed ❌", 
+        description: `Could not delete stone: ${errorMsg}`,
+        variant: "destructive",
+      });
+      
       throw error;
     }
   };
