@@ -1,67 +1,60 @@
 
-import { useInventoryData } from '@/hooks/useInventoryData';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DataDrivenDashboard } from '@/components/dashboard/DataDrivenDashboard';
-import { DashboardLoading } from '@/components/dashboard/DashboardLoading';
-import { SecurityMonitor } from '@/components/auth/SecurityMonitor';
+import { Layout } from '@/components/layout/Layout';
+import { WelcomeBanner } from '@/components/tutorial/WelcomeBanner';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { TutorialTrigger } from '@/components/tutorial/TutorialTrigger';
 import { getVerificationResult } from '@/lib/api';
+import { useEffect, useState } from 'react';
 
 export default function Dashboard() {
-  const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
-  const { loading, allDiamonds, fetchData } = useInventoryData();
-  const verificationResult = getVerificationResult();
+  const { user, isAuthenticated } = useTelegramAuth();
+  const [verificationStatus, setVerificationStatus] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  console.log('🔍 DASHBOARD DEBUG:');
-  console.log('- Auth loading:', authLoading);
-  console.log('- Is authenticated:', isAuthenticated);
-  console.log('- User:', user);
-  console.log('- FastAPI verification:', verificationResult);
-  console.log('- Inventory loading:', loading);
-  console.log('- Diamonds count:', allDiamonds.length);
+  useEffect(() => {
+    const checkVerification = async () => {
+      if (user?.id) {
+        try {
+          const result = await getVerificationResult(user.id);
+          setVerificationStatus(result.data);
+        } catch (error) {
+          console.error('Failed to get verification result:', error);
+        }
+      }
+      setLoading(false);
+    };
 
-  const handleEmergencyMode = () => {
-    console.log('Emergency mode activated - skipping to basic dashboard');
-  };
+    checkVerification();
+  }, [user?.id]);
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
-      <>
-        <DashboardLoading onEmergencyMode={handleEmergencyMode} />
-        <SecurityMonitor />
-      </>
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+      </Layout>
     );
   }
 
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated) {
     return (
-      <>
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Enhanced Authentication Required</h2>
-            <p className="text-gray-600 mb-4">Please authenticate through Telegram to access your dashboard.</p>
-            <div className="text-sm text-gray-500 space-y-1">
-              <p>Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
-              <p>Is Authenticated: {isAuthenticated ? 'Yes' : 'No'}</p>
-              <p>User: {user ? `${user.first_name} (${user.id})` : 'None'}</p>
-              <p>Enhanced Verification: {verificationResult ? 'Success' : 'Failed'}</p>
-            </div>
-          </div>
+      <Layout>
+        <div className="text-center py-8">
+          <h2 className="text-xl font-semibold mb-4">Please log in to access your dashboard</h2>
         </div>
-        <SecurityMonitor />
-      </>
+      </Layout>
     );
   }
 
   return (
-    <>
-      <div className="min-h-screen bg-gray-50">
-        <DataDrivenDashboard 
-          allDiamonds={allDiamonds} 
-          loading={loading}
-          fetchData={fetchData} 
-        />
+    <Layout>
+      <div className="space-y-6">
+        <WelcomeBanner />
+        <DataDrivenDashboard />
+        <TutorialTrigger />
       </div>
-      <SecurityMonitor />
-    </>
+    </Layout>
   );
 }

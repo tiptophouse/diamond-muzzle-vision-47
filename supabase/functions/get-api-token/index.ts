@@ -1,57 +1,63 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 }
 
-Deno.serve(async (req) => {
+serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('🔑 Getting FastAPI backend access token...')
-    
-    // Get the backend access token from Supabase secrets
-    const backendToken = Deno.env.get('FASTAPI_BEARER_TOKEN')
-    
-    if (!backendToken) {
-      console.error('❌ FASTAPI_BEARER_TOKEN not found in secrets')
-      throw new Error('Backend access token not configured')
+    // Only allow POST requests
+    if (req.method !== 'POST') {
+      return new Response(
+        JSON.stringify({ error: 'Method not allowed' }),
+        { 
+          status: 405, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
+
+    // Get the secure API token from Supabase secrets
+    const apiToken = Deno.env.get('FASTAPI_BEARER_TOKEN');
     
-    console.log('✅ FastAPI backend token retrieved successfully')
-    
+    if (!apiToken) {
+      console.error('FASTAPI_BEARER_TOKEN not configured in Supabase secrets');
+      return new Response(
+        JSON.stringify({ error: 'API configuration error' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    console.log('✅ Bearer token retrieved successfully');
+
+    // Return the token securely
     return new Response(
-      JSON.stringify({ 
-        token: backendToken,
-        success: true 
-      }),
-      {
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        },
-      },
-    )
+      JSON.stringify({ token: apiToken }),
+      { 
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+
   } catch (error) {
-    console.error('❌ Error getting backend token:', error)
-    
+    console.error('Error in get-api-token function:', error);
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        success: false 
-      }),
-      {
-        status: 500,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        },
-      },
-    )
+      JSON.stringify({ error: 'Internal server error' }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
   }
-})
+});

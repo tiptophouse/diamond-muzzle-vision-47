@@ -1,27 +1,20 @@
 
+
 export const apiEndpoints = {
-  // Main endpoints for your FastAPI backend
   getAllStones: (userId: number) => {
-    const endpoint = `/get_all_stones?user_id=${userId}`;
-    console.log('🔧 API: Building getAllStones endpoint:', endpoint, 'for user:', userId);
+    // Try the correct endpoint path for your backend
+    const endpoint = `/api/v1/get_all_stones?user_id=${userId}`;
+    console.log('🔧 API: Building getAllStones endpoint:', endpoint, 'for user:', userId, 'type:', typeof userId);
     return endpoint;
   },
-  
-  // Stone management endpoints
-  deleteDiamond: (diamondId: string) => `/api/v1/delete_stone/${diamondId}`,
-  addDiamond: () => `/api/v1/add_stone`,
-  updateDiamond: (diamondId: string) => `/api/v1/update_stone/${diamondId}`,
-  
-  // User verification and authentication
   verifyTelegram: () => `/api/v1/verify-telegram`,
-  
-  // Inventory management
   uploadInventory: () => `/api/v1/upload-inventory`,
+  addDiamond: () => `/api/v1/diamonds`,
+  deleteDiamond: (diamondId: string) => `/api/v1/delete_stone/${diamondId}`,
+  updateDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,
   soldDiamond: () => `/api/v1/sold`,
   createReport: () => `/api/v1/create-report`,
   getReport: (reportId: string) => `/api/v1/get-report?diamond_id=${reportId}`,
-  
-  // Dashboard and analytics
   getDashboardStats: (userId: number) => `/api/v1/users/${userId}/dashboard/stats`,
   getInventoryByShape: (userId: number) => `/api/v1/users/${userId}/inventory/by-shape`,
   getRecentSales: (userId: number) => `/api/v1/users/${userId}/sales/recent`,
@@ -33,7 +26,7 @@ export const apiEndpoints = {
   getUserPayments: (userId: number) => `/api/v1/users/${userId}/payments`,
   getPaymentStats: () => `/api/v1/payments/stats`,
 
-  // Client and admin endpoints
+  // New client and admin endpoints
   getAllClients: () => `/api/v1/clients`,
   getClientById: (clientId: number) => `/api/v1/clients/${clientId}`,
   blockUser: () => `/api/v1/admin/block-user`,
@@ -44,3 +37,4 @@ export const apiEndpoints = {
   deleteAllInventory: (userId: number) => `/api/v1/users/${userId}/inventory/delete-all`,
   updateAllInventory: (userId: number) => `/api/v1/users/${userId}/inventory/update-all`,
 };
+

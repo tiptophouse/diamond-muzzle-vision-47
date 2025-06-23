@@ -1,8 +1,7 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { Diamond } from "./InventoryTable";
+import { Diamond } from "@/types/diamond";
 import { cn } from "@/lib/utils";
 
 interface InventoryAutocompleteProps {

@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   isTelegramWebAppEnvironment,
   getTelegramWebApp,
@@ -8,7 +8,6 @@ import {
   initializeTelegramWebApp
 } from '@/utils/telegramWebApp';
 import { verifyTelegramUser } from '@/lib/api/auth';
-import { setCurrentUserId } from '@/lib/api/config';
 import { getAuthenticationMetrics } from '@/utils/telegramValidation';
 
 interface TelegramUser {
@@ -61,17 +60,6 @@ export function useSecureTelegramAuth(): AuthState {
     };
   };
 
-  const setUserAndUpdateConfig = (user: TelegramUser) => {
-    console.log('🔧 Setting user and updating API config with user ID:', user.id);
-    setCurrentUserId(user.id);
-    updateState({
-      user,
-      isAuthenticated: true,
-      isLoading: false,
-      error: null
-    });
-  };
-
   const logSecurityEvent = (event: string, details: any) => {
     console.log(`🛡️ Security Event: ${event}`, {
       ...details,
@@ -106,7 +94,12 @@ export function useSecureTelegramAuth(): AuthState {
           userId: adminUser.id
         });
         
-        setUserAndUpdateConfig(adminUser);
+        updateState({
+          user: adminUser,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null
+        });
         initializedRef.current = true;
         return;
       }
@@ -136,7 +129,12 @@ export function useSecureTelegramAuth(): AuthState {
           reason: 'WebApp not available'
         });
         
-        setUserAndUpdateConfig(adminUser);
+        updateState({
+          user: adminUser,
+          isAuthenticated: true,
+          isLoading: false,
+          error: 'Telegram WebApp not available - using admin access'
+        });
         initializedRef.current = true;
         return;
       }
@@ -270,7 +268,12 @@ export function useSecureTelegramAuth(): AuthState {
 
       console.log('✅ Final authenticated user:', authenticatedUser.first_name, 'ID:', authenticatedUser.id);
 
-      setUserAndUpdateConfig(authenticatedUser);
+      updateState({
+        user: authenticatedUser,
+        isAuthenticated: true,
+        isLoading: false,
+        error: null
+      });
       
     } catch (error) {
       console.error('❌ Enhanced authentication error:', error);
@@ -282,7 +285,12 @@ export function useSecureTelegramAuth(): AuthState {
       
       // Always fall back to admin user on any error
       const adminUser = createAdminUser();
-      setUserAndUpdateConfig(adminUser);
+      updateState({
+        user: adminUser,
+        isAuthenticated: true,
+        isLoading: false,
+        error: 'Authentication error - using admin access'
+      });
     } finally {
       initializedRef.current = true;
     }
@@ -302,10 +310,15 @@ export function useSecureTelegramAuth(): AuthState {
         });
         
         const adminUser = createAdminUser();
-        setUserAndUpdateConfig(adminUser);
+        updateState({
+          user: adminUser,
+          isAuthenticated: true,
+          isLoading: false,
+          error: 'Authentication timeout - using admin access'
+        });
         initializedRef.current = true;
       }
-    }, 2500);
+    }, 2500); // Reduced from 3 seconds to 2.5 seconds for better UX
 
     // Start enhanced authentication immediately
     authenticateUser();

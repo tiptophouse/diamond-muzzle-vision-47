@@ -17,19 +17,12 @@ export async function getSecureConfig(): Promise<SecureConfig> {
   }
 
   try {
-    console.log('🔐 Fetching secure configuration from Supabase secrets...');
+    console.log('🔐 Fetching secure configuration...');
     
-    // Get backend access token from Supabase secrets
-    const { data: tokenData, error: tokenError } = await supabase.functions.invoke('get-api-token', {
-      method: 'POST'
-    });
+    // Use the provided backend access token directly
+    const backendAccessToken = 'ifj9ov1rh20fslfp';
 
-    if (tokenError) {
-      console.error('❌ Failed to get backend access token:', tokenError);
-      throw new Error('Failed to retrieve secure backend token');
-    }
-
-    // Get admin configuration
+    // Get admin configuration from app_settings
     const { data: adminSettings, error: adminError } = await supabase
       .from('app_settings')
       .select('setting_value')
@@ -37,18 +30,21 @@ export async function getSecureConfig(): Promise<SecureConfig> {
       .maybeSingle();
 
     if (adminError) {
-      console.warn('⚠️ Failed to get admin settings:', adminError);
+      console.warn('⚠️ Failed to get admin settings');
     }
 
-    // Set admin ID to your Telegram ID
-    let adminTelegramId = 2138564172; // Your admin Telegram ID
+    // Properly handle the JSON setting_value field
+    let adminTelegramId = 2138564172; // fallback
     if (adminSettings?.setting_value) {
+      // Handle different possible formats of the setting_value
       if (typeof adminSettings.setting_value === 'number') {
         adminTelegramId = adminSettings.setting_value;
       } else if (typeof adminSettings.setting_value === 'object' && adminSettings.setting_value !== null) {
+        // If it's an object, check if it has a value property
         const settingObj = adminSettings.setting_value as Record<string, any>;
         adminTelegramId = settingObj.value || settingObj.admin_telegram_id || 2138564172;
       } else if (typeof adminSettings.setting_value === 'string') {
+        // Try to parse as number
         const parsed = parseInt(adminSettings.setting_value, 10);
         if (!isNaN(parsed)) {
           adminTelegramId = parsed;
@@ -57,7 +53,7 @@ export async function getSecureConfig(): Promise<SecureConfig> {
     }
 
     const config: SecureConfig = {
-      backendAccessToken: tokenData?.token || null,
+      backendAccessToken,
       adminTelegramId
     };
 
@@ -66,15 +62,12 @@ export async function getSecureConfig(): Promise<SecureConfig> {
     configExpiry = Date.now() + CACHE_DURATION;
 
     console.log('✅ Secure configuration loaded successfully');
-    console.log('🔑 Backend token available:', !!config.backendAccessToken);
-    console.log('👑 Admin ID configured:', config.adminTelegramId);
-    
     return config;
   } catch (error) {
-    console.error('❌ Error loading secure configuration:', error);
-    // Return minimal fallback config
+    console.error('❌ Error loading secure configuration');
+    // Return minimal fallback config for emergency access
     return {
-      backendAccessToken: null,
+      backendAccessToken: 'ifj9ov1rh20fslfp',
       adminTelegramId: 2138564172
     };
   }

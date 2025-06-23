@@ -1,5 +1,5 @@
 
-// Enhanced Telegram validation utilities
+// Enhanced Telegram validation utilities with security focus
 export interface AuthenticationMetrics {
   attemptTimestamp: number;
   environment: string;
@@ -58,6 +58,7 @@ export function parseTelegramInitData(initData: string) {
     
     updateAuthenticationMetrics({ validationStatus: 'success' });
     
+    // Return parsed data without logging sensitive information
     return {
       user: {
         id: user.id,
@@ -72,7 +73,7 @@ export function parseTelegramInitData(initData: string) {
       hash: urlParams.get('hash')
     };
   } catch (error) {
-    console.error('Failed to parse Telegram initData:', error);
+    console.error('Failed to parse Telegram initData');
     updateAuthenticationMetrics({ validationStatus: 'failed' });
     return null;
   }
@@ -95,7 +96,7 @@ export function validateTelegramData(initData: string): boolean {
     
     return (now - authDateTime) <= maxAge;
   } catch (error) {
-    console.error('Telegram data validation failed:', error);
+    console.error('Telegram data validation failed');
     return false;
   }
 }

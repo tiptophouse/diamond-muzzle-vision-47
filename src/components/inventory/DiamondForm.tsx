@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { DiamondFormData } from './form/types';
@@ -8,16 +9,36 @@ import { DetailedGradingSection } from '../upload/form/DetailedGradingSection';
 import { BusinessInfoSection } from '../upload/form/BusinessInfoSection';
 import { ImageUploadSection } from '../upload/form/ImageUploadSection';
 import { DiamondFormActions } from './form/DiamondFormActions';
-import { Diamond } from './InventoryTable';
+import { Diamond } from '@/types/diamond';
+import { useAddDiamond } from '@/hooks/inventory/useAddDiamond';
+import { useUpdateDiamond } from '@/hooks/inventory/useUpdateDiamond';
+import { useToast } from '@/hooks/use-toast';
 
 interface DiamondFormProps {
   diamond?: Diamond;
-  onSubmit: (data: DiamondFormData) => void;
+  onSubmit?: (data: DiamondFormData) => void;
   onCancel: () => void;
   isLoading?: boolean;
 }
 
 export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: DiamondFormProps) {
+  const { toast } = useToast();
+  const { addDiamond, isLoading: isAdding } = useAddDiamond(() => {
+    toast({
+      title: "Success",
+      description: "Diamond added successfully",
+    });
+    onCancel(); // Close the form
+  });
+  
+  const { updateDiamond } = useUpdateDiamond(() => {
+    toast({
+      title: "Success", 
+      description: "Diamond updated successfully",
+    });
+    onCancel(); // Close the form
+  });
+
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<DiamondFormData>({
     defaultValues: diamond ? {
       stockNumber: diamond.stockNumber || '',
@@ -29,15 +50,14 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       price: diamond.price || 0,
       status: diamond.status || 'Available',
       picture: diamond.imageUrl || '',
-      // Map additional fields from diamond object if they exist
-      certificateNumber: (diamond as any).certificateNumber || '',
-      lab: (diamond as any).lab || 'GIA',
-      fluorescence: (diamond as any).fluorescence || 'None',
-      polish: (diamond as any).polish || 'Excellent',
-      symmetry: (diamond as any).symmetry || 'Excellent',
-      gridle: (diamond as any).gridle || 'Medium',
-      culet: (diamond as any).culet || 'None',
-      storeVisible: (diamond as any).store_visible || false,
+      certificateNumber: diamond.certificateNumber || '',
+      lab: diamond.lab || 'GIA',
+      fluorescence: 'None',
+      polish: 'Excellent',
+      symmetry: 'Excellent',
+      gridle: 'Medium',
+      culet: 'None',
+      storeVisible: diamond.store_visible || false,
     } : {
       stockNumber: '',
       carat: 1,
@@ -71,34 +91,46 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
         price: diamond.price || 0,
         status: diamond.status || 'Available',
         picture: diamond.imageUrl || '',
-        certificateNumber: (diamond as any).certificateNumber || '',
-        lab: (diamond as any).lab || 'GIA',
-        fluorescence: (diamond as any).fluorescence || 'None',
-        polish: (diamond as any).polish || 'Excellent',
-        symmetry: (diamond as any).symmetry || 'Excellent',
-        gridle: (diamond as any).gridle || 'Medium',
-        culet: (diamond as any).culet || 'None',
-        storeVisible: (diamond as any).store_visible || false,
+        certificateNumber: diamond.certificateNumber || '',
+        lab: diamond.lab || 'GIA',
+        fluorescence: 'None',
+        polish: 'Excellent',
+        symmetry: 'Excellent',
+        gridle: 'Medium',
+        culet: 'None',
+        storeVisible: diamond.store_visible || false,
       });
     }
   }, [diamond?.id, reset]);
 
-  const handleFormSubmit = (data: DiamondFormData) => {
+  const handleFormSubmit = async (data: DiamondFormData) => {
     console.log('Form submitted with data:', data);
     
     // Validate required fields
     if (!data.stockNumber || data.stockNumber.trim() === '') {
-      console.error('Stock number is required');
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Stock number is required",
+      });
       return;
     }
     
     if (!data.carat || data.carat <= 0) {
-      console.error('Valid carat weight is required');
+      toast({
+        variant: "destructive", 
+        title: "Error",
+        description: "Valid carat weight is required",
+      });
       return;
     }
     
     if (!data.price || data.price <= 0) {
-      console.error('Valid price is required');
+      toast({
+        variant: "destructive",
+        title: "Error", 
+        description: "Valid price is required",
+      });
       return;
     }
     
@@ -113,7 +145,6 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       cut: data.cut || 'Excellent',
       status: data.status || 'Available',
       picture: data.picture?.trim() || '',
-      // Include all the new fields
       certificateNumber: data.certificateNumber?.trim() || '',
       certificateUrl: data.certificateUrl?.trim() || '',
       certificateComment: data.certificateComment?.trim() || '',
@@ -135,7 +166,28 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
     };
     
     console.log('Formatted form data:', formattedData);
-    onSubmit(formattedData);
+    
+    try {
+      if (diamond?.id) {
+        // Update existing diamond
+        await updateDiamond(diamond.id, formattedData);
+      } else {
+        // Add new diamond
+        await addDiamond(formattedData);
+      }
+      
+      // Call custom onSubmit if provided
+      if (onSubmit) {
+        onSubmit(formattedData);
+      }
+    } catch (error) {
+      console.error('Form submission error:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to save diamond. Please try again.",
+      });
+    }
   };
 
   const currentShape = watch('shape');
@@ -184,7 +236,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
 
       <DiamondFormActions
         diamond={diamond}
-        isLoading={isLoading}
+        isLoading={isLoading || isAdding}
         onCancel={onCancel}
       />
     </form>
