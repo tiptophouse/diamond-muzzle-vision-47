@@ -5,35 +5,26 @@ import { api, apiEndpoints } from '@/lib/api';
 
 interface UseDeleteDiamondProps {
   onSuccess?: () => void;
-  removeDiamondFromState?: (diamondId: string) => void;
-  restoreDiamondToState?: (diamond: Diamond) => void;
 }
 
-export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDiamondToState }: UseDeleteDiamondProps) {
+export function useDeleteDiamond({ onSuccess }: UseDeleteDiamondProps) {
   const { user } = useTelegramAuth();
 
-  const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
+  const deleteDiamond = async (diamondId: string) => {
     if (!user?.id) {
       throw new Error('User not authenticated');
     }
 
     try {
-      console.log('🗑️ Deleting diamond via FastAPI:', diamondId);
-      
-      // Optimistically remove from UI
-      if (removeDiamondFromState) {
-        removeDiamondFromState(diamondId);
-      }
+      console.log('🗑️ Deleting diamond via FastAPI with correct endpoint:', diamondId);
       
       const endpoint = apiEndpoints.deleteDiamond(diamondId);
+      console.log('🗑️ Using delete endpoint:', endpoint);
+      
       const result = await api.delete(endpoint);
       
       // Check if the delete operation was successful
       if (result.error) {
-        // Restore diamond to UI if delete failed
-        if (restoreDiamondToState && diamondData) {
-          restoreDiamondToState(diamondData);
-        }
         throw new Error(result.error);
       }
 
@@ -44,12 +35,6 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
       
     } catch (error) {
       console.error('❌ Failed to delete diamond from FastAPI:', error);
-      
-      // Restore diamond to UI if delete failed
-      if (restoreDiamondToState && diamondData) {
-        restoreDiamondToState(diamondData);
-      }
-      
       throw error;
     }
   };

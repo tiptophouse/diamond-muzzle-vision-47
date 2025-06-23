@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { Diamond } from '@/components/inventory/InventoryTable';
 import { useAddDiamond } from './inventory/useAddDiamond';
 import { useUpdateDiamond } from './inventory/useUpdateDiamond';
 import { useDeleteDiamond } from './inventory/useDeleteDiamond';
@@ -11,11 +10,9 @@ import { useInventoryDataSync } from './inventory/useInventoryDataSync';
 
 interface UseInventoryCrudProps {
   onSuccess?: () => void;
-  removeDiamondFromState?: (diamondId: string) => void;
-  restoreDiamondToState?: (diamond: Diamond) => void;
 }
 
-export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDiamondToState }: UseInventoryCrudProps = {}) {
+export function useInventoryCrud({ onSuccess }: UseInventoryCrudProps = {}) {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -29,11 +26,7 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
 
   const { addDiamond: addDiamondFn } = useAddDiamond(successHandler);
   const { updateDiamond: updateDiamondFn } = useUpdateDiamond(successHandler);
-  const { deleteDiamond: deleteDiamondFn } = useDeleteDiamond({ 
-    onSuccess: successHandler, 
-    removeDiamondFromState, 
-    restoreDiamondToState 
-  });
+  const { deleteDiamond: deleteDiamondFn } = useDeleteDiamond({ onSuccess: successHandler });
 
   const addDiamond = async (data: DiamondFormData) => {
     console.log('➕ CRUD: Starting add diamond operation');
@@ -85,11 +78,11 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     }
   };
 
-  const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
+  const deleteDiamond = async (diamondId: string) => {
     console.log('🗑️ CRUD: Starting delete diamond operation for:', diamondId);
     setIsLoading(true);
     try {
-      await deleteDiamondFn(diamondId, diamondData);
+      await deleteDiamondFn(diamondId);
       console.log('✅ CRUD: Diamond deleted successfully');
       toast({
         title: "Success ✅",

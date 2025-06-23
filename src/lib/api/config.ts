@@ -5,7 +5,9 @@ export const API_BASE_URL = "https://api.mazalbot.com"; // Your FastAPI backend 
 // Use the provided backend access token directly
 export const BACKEND_ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VySWQiLCJleHAiOjE2ODk2MDAwMDAsImlhdCI6MTY4OTU5NjQwMH0.kWzUkeMTF4LZbU9P5yRmsXrXhWfPlUPukGqI8Nq1rLo";
 
-let currentUserId: number | null = null;
+// Set admin user ID directly
+const ADMIN_USER_ID = 2138564172;
+let currentUserId: number | null = ADMIN_USER_ID;
 
 export function setCurrentUserId(userId: number) {
   currentUserId = userId;
