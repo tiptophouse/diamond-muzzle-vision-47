@@ -9,21 +9,23 @@ export interface FetchInventoryResult {
 }
 
 export async function fetchInventoryData(): Promise<FetchInventoryResult> {
-  const userId = getCurrentUserId() || 2138564172; // Use admin ID if no user set
+  const userId = getCurrentUserId() || 2138564172; // Use your admin ID as fallback
   
-  console.log('🔍 INVENTORY SERVICE: Fetching data from FastAPI backend for user:', userId);
+  console.log('🔍 INVENTORY SERVICE: Fetching real diamonds from FastAPI backend for user:', userId);
+  console.log('🔍 INVENTORY SERVICE: Expecting 500+ diamonds from your backend');
   
   const debugInfo = { 
-    step: 'Starting inventory fetch from FastAPI backend', 
+    step: 'Starting inventory fetch from your FastAPI backend', 
     userId, 
     timestamp: new Date().toISOString(),
-    dataSource: 'fastapi_backend',
-    apiUrl: apiEndpoints.getAllStones(userId)
+    dataSource: 'mazalbot_fastapi_backend',
+    apiUrl: apiEndpoints.getAllStones(userId),
+    expectedBackend: 'https://api.mazalbot.com'
   };
   
   try {
-    // First try to fetch from your FastAPI backend
-    console.log('📡 INVENTORY SERVICE: Calling FastAPI endpoint:', apiEndpoints.getAllStones(userId));
+    console.log('📡 INVENTORY SERVICE: Calling your FastAPI endpoint:', apiEndpoints.getAllStones(userId));
+    console.log('📡 INVENTORY SERVICE: This should return your 500+ real diamonds');
     
     const response = await api.get<any[]>(apiEndpoints.getAllStones(userId));
     
@@ -33,28 +35,30 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     }
     
     if (response.data && response.data.length > 0) {
-      console.log('✅ INVENTORY SERVICE: FastAPI returned', response.data.length, 'diamonds');
+      console.log('✅ INVENTORY SERVICE: SUCCESS! FastAPI returned', response.data.length, 'diamonds from your backend');
+      console.log('✅ INVENTORY SERVICE: Your real diamond inventory is now loaded');
       
       return {
         data: response.data,
         debugInfo: {
           ...debugInfo,
-          step: 'SUCCESS: FastAPI data fetched',
+          step: 'SUCCESS: Real diamonds loaded from your FastAPI backend',
           totalDiamonds: response.data.length,
-          dataSource: 'fastapi_backend',
+          dataSource: 'mazalbot_fastapi_backend',
           sampleData: response.data.slice(0, 2) // First 2 items for debugging
         }
       };
     } else {
-      console.warn('⚠️ INVENTORY SERVICE: FastAPI returned empty data');
-      throw new Error('No diamonds found in FastAPI response');
+      console.warn('⚠️ INVENTORY SERVICE: FastAPI returned empty data - check your database');
+      throw new Error('No diamonds found in FastAPI response - check your backend database');
     }
     
   } catch (error) {
-    console.error("❌ INVENTORY SERVICE: FastAPI request failed:", error);
+    console.error("❌ INVENTORY SERVICE: Failed to connect to your FastAPI backend:", error);
+    console.error("❌ INVENTORY SERVICE: Your 500+ diamonds are not accessible");
     
     // Fallback to mock data only if FastAPI is completely unreachable
-    console.log('🔄 INVENTORY SERVICE: FastAPI unavailable, using mock data as fallback');
+    console.log('🔄 INVENTORY SERVICE: Using mock data as emergency fallback');
     const mockResult = await fetchMockInventoryData();
     
     return {
@@ -62,11 +66,12 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       debugInfo: {
         ...debugInfo,
         ...mockResult.debugInfo,
-        step: 'FALLBACK: Using mock data (FastAPI unreachable)',
+        step: 'FALLBACK: Using mock data (your FastAPI backend is unreachable)',
         error: error instanceof Error ? error.message : String(error),
-        dataSource: 'mock_fallback_after_api_error'
+        dataSource: 'mock_emergency_fallback',
+        note: 'Your real 500+ diamonds are not loading - check FastAPI backend connection'
       },
-      error: `FastAPI Backend Error: ${error instanceof Error ? error.message : String(error)}. Using sample data.`
+      error: `FastAPI Backend Connection Failed: ${error instanceof Error ? error.message : String(error)}. Using sample data. Please check if your backend at https://api.mazalbot.com is running.`
     };
   }
 }

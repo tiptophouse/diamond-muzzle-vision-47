@@ -1,24 +1,27 @@
+
 export const apiEndpoints = {
-  // Fixed endpoint to match your FastAPI structure
+  // Main endpoints for your FastAPI backend
   getAllStones: (userId: number) => {
     const endpoint = `/get_all_stones?user_id=${userId}`;
     console.log('🔧 API: Building getAllStones endpoint:', endpoint, 'for user:', userId);
     return endpoint;
   },
   
-  // Fixed delete endpoint to match your API structure
+  // Stone management endpoints
   deleteDiamond: (diamondId: string) => `/api/v1/delete_stone/${diamondId}`,
-  
-  // Other endpoints - updating to match your API structure
   addDiamond: () => `/api/v1/add_stone`,
   updateDiamond: (diamondId: string) => `/api/v1/update_stone/${diamondId}`,
   
-  // Keep existing endpoints for other features
+  // User verification and authentication
   verifyTelegram: () => `/api/v1/verify-telegram`,
+  
+  // Inventory management
   uploadInventory: () => `/api/v1/upload-inventory`,
   soldDiamond: () => `/api/v1/sold`,
   createReport: () => `/api/v1/create-report`,
   getReport: (reportId: string) => `/api/v1/get-report?diamond_id=${reportId}`,
+  
+  // Dashboard and analytics
   getDashboardStats: (userId: number) => `/api/v1/users/${userId}/dashboard/stats`,
   getInventoryByShape: (userId: number) => `/api/v1/users/${userId}/inventory/by-shape`,
   getRecentSales: (userId: number) => `/api/v1/users/${userId}/sales/recent`,

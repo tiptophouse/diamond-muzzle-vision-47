@@ -17,9 +17,9 @@ export async function getSecureConfig(): Promise<SecureConfig> {
   }
 
   try {
-    console.log('🔐 Fetching secure configuration...');
+    console.log('🔐 Fetching secure configuration from Supabase secrets...');
     
-    // Get backend access token from Supabase edge function
+    // Get backend access token from Supabase secrets
     const { data: tokenData, error: tokenError } = await supabase.functions.invoke('get-api-token', {
       method: 'POST'
     });
@@ -29,7 +29,7 @@ export async function getSecureConfig(): Promise<SecureConfig> {
       throw new Error('Failed to retrieve secure backend token');
     }
 
-    // Get admin configuration from app_settings
+    // Get admin configuration
     const { data: adminSettings, error: adminError } = await supabase
       .from('app_settings')
       .select('setting_value')
@@ -40,18 +40,15 @@ export async function getSecureConfig(): Promise<SecureConfig> {
       console.warn('⚠️ Failed to get admin settings:', adminError);
     }
 
-    // Properly handle the JSON setting_value field
-    let adminTelegramId = 2138564172; // fallback
+    // Set admin ID to your Telegram ID
+    let adminTelegramId = 2138564172; // Your admin Telegram ID
     if (adminSettings?.setting_value) {
-      // Handle different possible formats of the setting_value
       if (typeof adminSettings.setting_value === 'number') {
         adminTelegramId = adminSettings.setting_value;
       } else if (typeof adminSettings.setting_value === 'object' && adminSettings.setting_value !== null) {
-        // If it's an object, check if it has a value property
         const settingObj = adminSettings.setting_value as Record<string, any>;
         adminTelegramId = settingObj.value || settingObj.admin_telegram_id || 2138564172;
       } else if (typeof adminSettings.setting_value === 'string') {
-        // Try to parse as number
         const parsed = parseInt(adminSettings.setting_value, 10);
         if (!isNaN(parsed)) {
           adminTelegramId = parsed;
@@ -69,10 +66,13 @@ export async function getSecureConfig(): Promise<SecureConfig> {
     configExpiry = Date.now() + CACHE_DURATION;
 
     console.log('✅ Secure configuration loaded successfully');
+    console.log('🔑 Backend token available:', !!config.backendAccessToken);
+    console.log('👑 Admin ID configured:', config.adminTelegramId);
+    
     return config;
   } catch (error) {
     console.error('❌ Error loading secure configuration:', error);
-    // Return minimal fallback config for emergency access
+    // Return minimal fallback config
     return {
       backendAccessToken: null,
       adminTelegramId: 2138564172
