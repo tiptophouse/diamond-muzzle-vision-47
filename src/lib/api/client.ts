@@ -13,7 +13,7 @@ interface ApiResponse<T> {
 async function testBackendConnectivity(): Promise<boolean> {
   try {
     console.log('🔍 API: Testing FastAPI backend connectivity to:', API_BASE_URL);
-    console.log('🔍 API: Expected to connect to your real diamond database with 500+ records');
+    console.log('🔍 API: Expected to connect to your real diamond database');
     
     const backendToken = await getBackendAccessToken();
     if (!backendToken) {
@@ -37,15 +37,15 @@ async function testBackendConnectivity(): Promise<boolean> {
     console.log('🔍 API: Root endpoint response status:', response.status);
     
     if (response.ok || response.status === 404) {
-      console.log('✅ API: FastAPI backend is reachable - your 500 diamonds should be accessible');
+      console.log('✅ API: FastAPI backend is reachable - your diamonds should be accessible');
       return true;
     }
     
-    console.log('❌ API: FastAPI backend not reachable - this is why you see mock data (5 diamonds)');
+    console.log('❌ API: FastAPI backend not reachable');
     console.log('❌ API: Status:', response.status, 'Check if your backend server is running');
     return false;
   } catch (error) {
-    console.error('❌ API: FastAPI backend connectivity test failed - this causes fallback to 5 mock diamonds:', error);
+    console.error('❌ API: FastAPI backend connectivity test failed:', error);
     return false;
   }
 }
@@ -68,7 +68,7 @@ export async function fetchApi<T>(
       const isBackendReachable = await testBackendConnectivity();
       if (!isBackendReachable) {
         const errorMsg = 'FastAPI backend server is not reachable. Please check if the server is running at ' + API_BASE_URL;
-        console.error('❌ API: Backend unreachable - this forces fallback to mock data');
+        console.error('❌ API: Backend unreachable');
         throw new Error(errorMsg);
       }
     }
@@ -103,7 +103,6 @@ export async function fetchApi<T>(
       status: response.status,
       statusText: response.statusText,
       ok: response.ok,
-      headers: Object.fromEntries(response.headers.entries()),
     });
 
     let data;
@@ -111,7 +110,7 @@ export async function fetchApi<T>(
     
     if (contentType && contentType.includes('application/json')) {
       data = await response.json();
-      console.log('📡 API: JSON response data:', data);
+      console.log('📡 API: JSON response data received, count:', Array.isArray(data) ? data.length : 'not array');
     } else {
       const text = await response.text();
       console.log('📡 API: Text response:', text.substring(0, 200));
@@ -131,7 +130,6 @@ export async function fetchApi<T>(
         status: response.status,
         statusText: response.statusText,
         errorMessage,
-        responseData: data,
       });
       
       throw new Error(errorMessage);
@@ -145,8 +143,6 @@ export async function fetchApi<T>(
       url,
       method: options.method || 'GET',
       error: errorMessage,
-      errorType: typeof error,
-      fullError: error,
     });
     
     // Show specific toast messages for different error types
@@ -160,12 +156,6 @@ export async function fetchApi<T>(
       toast({
         title: "🔌 FastAPI Server Offline",
         description: `The FastAPI backend at ${API_BASE_URL} is not responding.`,
-        variant: "destructive",
-      });
-    } else if (errorMessage.includes('CORS')) {
-      toast({
-        title: "🚫 CORS Issue",
-        description: "FastAPI server CORS configuration issue. Please check server settings.",
         variant: "destructive",
       });
     } else {
@@ -204,20 +194,5 @@ export const api = {
   delete: <T>(endpoint: string) => {
     console.log('🗑️ API: DELETE request initiated for endpoint:', endpoint);
     return fetchApi<T>(endpoint, { method: "DELETE" });
-  },
-    
-  uploadCsv: async <T>(endpoint: string, csvData: any[], userId: number): Promise<ApiResponse<T>> => {
-    console.log('📤 API: Uploading CSV data to FastAPI:', { endpoint, dataLength: csvData.length, userId });
-    
-    return fetchApi<T>(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        user_id: userId,
-        diamonds: csvData
-      }),
-    });
   },
 };

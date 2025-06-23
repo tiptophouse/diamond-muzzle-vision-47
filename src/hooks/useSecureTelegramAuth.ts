@@ -9,6 +9,7 @@ import {
 } from '@/utils/telegramWebApp';
 import { verifyTelegramUser } from '@/lib/api/auth';
 import { getAuthenticationMetrics } from '@/utils/telegramValidation';
+import { setCurrentUserId } from '@/lib/api/config';
 
 interface TelegramUser {
   id: number;
@@ -68,6 +69,17 @@ export function useSecureTelegramAuth(): AuthState {
     });
   };
 
+  const setUserAndId = (user: TelegramUser) => {
+    console.log('🔧 Setting current user ID to:', user.id);
+    setCurrentUserId(user.id);
+    updateState({
+      user,
+      isAuthenticated: true,
+      isLoading: false,
+      error: null
+    });
+  };
+
   const authenticateUser = async () => {
     if (initializedRef.current || !mountedRef.current || authAttempts.current >= maxAuthAttempts) {
       return;
@@ -94,12 +106,7 @@ export function useSecureTelegramAuth(): AuthState {
           userId: adminUser.id
         });
         
-        updateState({
-          user: adminUser,
-          isAuthenticated: true,
-          isLoading: false,
-          error: null
-        });
+        setUserAndId(adminUser);
         initializedRef.current = true;
         return;
       }
@@ -129,12 +136,7 @@ export function useSecureTelegramAuth(): AuthState {
           reason: 'WebApp not available'
         });
         
-        updateState({
-          user: adminUser,
-          isAuthenticated: true,
-          isLoading: false,
-          error: 'Telegram WebApp not available - using admin access'
-        });
+        setUserAndId(adminUser);
         initializedRef.current = true;
         return;
       }
@@ -268,12 +270,7 @@ export function useSecureTelegramAuth(): AuthState {
 
       console.log('✅ Final authenticated user:', authenticatedUser.first_name, 'ID:', authenticatedUser.id);
 
-      updateState({
-        user: authenticatedUser,
-        isAuthenticated: true,
-        isLoading: false,
-        error: null
-      });
+      setUserAndId(authenticatedUser);
       
     } catch (error) {
       console.error('❌ Enhanced authentication error:', error);
@@ -285,12 +282,7 @@ export function useSecureTelegramAuth(): AuthState {
       
       // Always fall back to admin user on any error
       const adminUser = createAdminUser();
-      updateState({
-        user: adminUser,
-        isAuthenticated: true,
-        isLoading: false,
-        error: 'Authentication error - using admin access'
-      });
+      setUserAndId(adminUser);
     } finally {
       initializedRef.current = true;
     }
@@ -310,15 +302,10 @@ export function useSecureTelegramAuth(): AuthState {
         });
         
         const adminUser = createAdminUser();
-        updateState({
-          user: adminUser,
-          isAuthenticated: true,
-          isLoading: false,
-          error: 'Authentication timeout - using admin access'
-        });
+        setUserAndId(adminUser);
         initializedRef.current = true;
       }
-    }, 2500); // Reduced from 3 seconds to 2.5 seconds for better UX
+    }, 2500);
 
     // Start enhanced authentication immediately
     authenticateUser();
