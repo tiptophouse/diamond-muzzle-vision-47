@@ -17,6 +17,7 @@ export interface DiamondData {
   picture?: string;
   certificate_number?: string;
   certificate_url?: string;
+  gem360_url?: string;
   lab?: string;
   carat?: number; // For compatibility
   imageUrl?: string; // For compatibility
