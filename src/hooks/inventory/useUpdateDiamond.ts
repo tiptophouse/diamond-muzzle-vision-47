@@ -3,10 +3,12 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { api, apiEndpoints } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { useInventoryDataSync } from './useInventoryDataSync';
 
 export function useUpdateDiamond(onSuccess?: () => void) {
   const { user } = useTelegramAuth();
   const { toast } = useToast();
+  const { triggerInventoryChange } = useInventoryDataSync();
 
   const updateDiamond = async (diamondId: string, data: DiamondFormData) => {
     if (!user?.id) {
@@ -14,7 +16,6 @@ export function useUpdateDiamond(onSuccess?: () => void) {
     }
 
     try {
-      // Map form data to FastAPI expected format (simple object with string/number values)
       const updates = {
         stock_number: data.stockNumber,
         shape: data.shape,
@@ -25,7 +26,7 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         price: Number(data.price),
         price_per_carat: data.carat > 0 ? Math.round(Number(data.price) / Number(data.carat)) : Math.round(Number(data.price)),
         status: data.status || 'Available',
-        store_visible: data.storeVisible !== false ? 1 : 0, // Convert boolean to number
+        store_visible: data.storeVisible !== false ? 1 : 0,
         picture: data.picture || '',
         certificate_number: data.certificateNumber || '',
         certificate_url: data.certificateUrl || '',
@@ -43,14 +44,13 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         certificate_comment: data.certificateComment || '',
       };
 
-      console.log('📝 Updating stone via FastAPI endpoint:', diamondId, updates);
+      console.log('📝 UPDATE DIAMOND: Updating stone for user:', user.id, 'stone ID:', diamondId);
       
       const endpoint = apiEndpoints.updateDiamond(diamondId);
-      console.log('📝 Using endpoint:', endpoint);
       const result = await api.put(endpoint, updates);
       
       if (result.error) {
-        console.error('❌ UPDATE STONE: FastAPI update failed:', result.error);
+        console.error('❌ UPDATE DIAMOND: FastAPI update failed:', result.error);
         toast({
           title: "Update Failed ❌",
           description: `Failed to update stone: ${result.error}`,
@@ -59,19 +59,21 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         throw new Error(result.error);
       }
 
-      console.log('✅ UPDATE STONE: Stone updated successfully in FastAPI backend');
-      console.log('✅ UPDATE STONE: Response:', result.data);
+      console.log('✅ UPDATE DIAMOND: Stone updated successfully');
       
       toast({
         title: "Success ✅",
         description: "Stone updated successfully in your inventory",
       });
       
+      // Trigger real-time inventory update
+      triggerInventoryChange();
+      
       if (onSuccess) onSuccess();
       return true;
       
     } catch (error) {
-      console.error('❌ UPDATE STONE: Failed to update in FastAPI:', error);
+      console.error('❌ UPDATE DIAMOND: Failed to update stone:', error);
       const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred';
       
       toast({

@@ -10,12 +10,12 @@ let currentUserId: number | null = null;
 
 export function setCurrentUserId(userId: number) {
   currentUserId = userId;
-  console.log('🔧 API: Setting current user ID from Telegram InitData:', userId, 'type:', typeof userId);
-  console.log('🔧 API: This user will be used for all FastAPI requests with proper isolation');
+  console.log('🔧 API CONFIG: Setting current user ID from Telegram InitData:', userId);
+  console.log('🔧 API CONFIG: This user will see only their own data with perfect isolation');
 }
 
 export function getCurrentUserId(): number | null {
-  console.log('🔧 API: Getting current user ID from Telegram verification:', currentUserId);
+  console.log('🔧 API CONFIG: Getting current user ID for data isolation:', currentUserId);
   return currentUserId;
 }
 
@@ -28,7 +28,7 @@ export function isDevelopment(): boolean {
 // FastAPI connection helper
 export function getApiUrl(endpoint: string): string {
   const fullUrl = `${API_BASE_URL}${endpoint}`;
-  console.log('🔧 API: Building FastAPI URL for authenticated user:', fullUrl);
+  console.log('🔧 API CONFIG: Building FastAPI URL for user isolation:', fullUrl);
   return fullUrl;
 }
 

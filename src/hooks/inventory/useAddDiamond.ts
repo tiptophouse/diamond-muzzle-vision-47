@@ -3,10 +3,12 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { api, apiEndpoints } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { useInventoryDataSync } from './useInventoryDataSync';
 
 export function useAddDiamond(onSuccess?: () => void) {
   const { user } = useTelegramAuth();
   const { toast } = useToast();
+  const { triggerInventoryChange } = useInventoryDataSync();
 
   const addDiamond = async (data: DiamondFormData) => {
     if (!user?.id) {
@@ -29,7 +31,7 @@ export function useAddDiamond(onSuccess?: () => void) {
         certificate_number: data.certificateNumber || '',
         certificate_url: data.certificateUrl || '',
         lab: data.lab || 'GIA',
-        store_visible: data.storeVisible !== false ? 1 : 0, // Convert boolean to number
+        store_visible: data.storeVisible !== false ? 1 : 0,
         fluorescence: data.fluorescence || 'None',
         polish: data.polish || 'Excellent',
         symmetry: data.symmetry || 'Excellent',
@@ -43,14 +45,13 @@ export function useAddDiamond(onSuccess?: () => void) {
         certificate_comment: data.certificateComment || '',
       };
 
-      console.log('➕ Adding stone via FastAPI endpoint with JWT auth:', stoneData);
+      console.log('➕ ADD DIAMOND: Adding stone for user:', user.id, 'via JWT auth');
       
       const endpoint = apiEndpoints.addDiamond();
-      console.log('➕ Using endpoint:', endpoint);
       const result = await api.post(endpoint, stoneData);
       
       if (result.error) {
-        console.error('❌ ADD STONE: FastAPI add failed:', result.error);
+        console.error('❌ ADD DIAMOND: FastAPI add failed:', result.error);
         toast({
           title: "Add Failed ❌",
           description: `Failed to add stone: ${result.error}`,
@@ -59,19 +60,21 @@ export function useAddDiamond(onSuccess?: () => void) {
         throw new Error(result.error);
       }
 
-      console.log('✅ ADD STONE: Stone added successfully to FastAPI with JWT');
-      console.log('✅ ADD STONE: Response:', result.data);
+      console.log('✅ ADD DIAMOND: Stone added successfully');
       
       toast({
         title: "Success ✅",
         description: "Stone added successfully to your inventory",
       });
       
+      // Trigger real-time inventory update
+      triggerInventoryChange();
+      
       if (onSuccess) onSuccess();
       return true;
       
     } catch (error) {
-      console.error('❌ ADD STONE: Failed to add to FastAPI:', error);
+      console.error('❌ ADD DIAMOND: Failed to add stone:', error);
       const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred';
       
       toast({
