@@ -5,20 +5,18 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { api, apiEndpoints } from '@/lib/api';
 
 interface PaymentStats {
+  totalUsers: number;
+  usersWithPayments: number;
   totalPayments: number;
-  totalAmount: number;
-  averagePayment: number;
-  pendingPayments: number;
-  completedPayments: number;
-  failedPayments: number;
 }
 
 export function usePaymentManagement() {
   const [isLoading, setIsLoading] = useState(false);
+  const [stats, setStats] = useState<PaymentStats | null>(null);
   const { toast } = useToast();
   const { user } = useTelegramAuth();
 
-  const removeUserPayments = async () => {
+  const removeUserPayments = async (userId?: number) => {
     if (!user?.id) {
       toast({
         title: "Authentication Required",
@@ -47,7 +45,7 @@ export function usePaymentManagement() {
       console.log('✅ PAYMENTS: User payments removed successfully');
       toast({
         title: "Success ✅",
-        description: "Your payments have been removed successfully",
+        description: "Payments have been removed successfully",
       });
       
       return true;
@@ -110,6 +108,10 @@ export function usePaymentManagement() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const removeMyselfFromPayments = async () => {
+    return await removeUserPayments();
   };
 
   const getUserPayments = async () => {
@@ -181,7 +183,9 @@ export function usePaymentManagement() {
       }
 
       console.log('✅ PAYMENTS: Payment stats retrieved successfully');
-      return result.data as PaymentStats;
+      const statsData = result.data as PaymentStats;
+      setStats(statsData);
+      return statsData;
     } catch (error) {
       console.error('❌ PAYMENTS: Failed to get payment stats:', error);
       const errorMessage = error instanceof Error ? error.message : "Failed to get payment statistics";
@@ -198,8 +202,10 @@ export function usePaymentManagement() {
 
   return {
     isLoading,
+    stats,
     removeUserPayments,
     removeAllPayments,
+    removeMyselfFromPayments,
     getUserPayments,
     getPaymentStats,
   };
