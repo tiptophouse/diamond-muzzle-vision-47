@@ -8,7 +8,7 @@ import { getVerificationResult } from '@/lib/api';
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
-  const { loading, allDiamonds, fetchData } = useInventoryData();
+  const { loading, allDiamonds, fetchData, error } = useInventoryData();
   const verificationResult = getVerificationResult();
 
   console.log('🔍 DASHBOARD DEBUG:');
@@ -18,6 +18,7 @@ export default function Dashboard() {
   console.log('- FastAPI verification:', verificationResult);
   console.log('- Inventory loading:', loading);
   console.log('- Diamonds count:', allDiamonds.length);
+  console.log('- Error:', error);
 
   const handleEmergencyMode = () => {
     console.log('Emergency mode activated - skipping to basic dashboard');
@@ -58,7 +59,8 @@ export default function Dashboard() {
         <DataDrivenDashboard 
           allDiamonds={allDiamonds} 
           loading={loading}
-          fetchData={fetchData} 
+          fetchData={fetchData}
+          error={error}
         />
       </div>
       <SecurityMonitor />
