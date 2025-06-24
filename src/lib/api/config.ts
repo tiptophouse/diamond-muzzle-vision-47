@@ -1,13 +1,12 @@
 
-// FastAPI backend configuration
-export const API_BASE_URL = "https://api.mazalbot.com"; // Your FastAPI backend URL
+// FastAPI backend configuration with JWT authentication
+export const API_BASE_URL = "https://api.mazalbot.com";
 
-// Use the correct backend access token for FastAPI authentication
-export const BACKEND_ACCESS_TOKEN = "ifj9ov1rh20fslfp";
+// Use the correct JWT Bearer token from your environment
+export const BACKEND_ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VySWQiLCJleHAiOjE2ODk2MDAwMDAsImlhdCI6MTY4OTU5NjQwMH0.kWzUkeMTF4LZbU9P5yRmsXrXhWfPlUPukGqI8Nq1rLo";
 
-// Set admin user ID directly
-const ADMIN_USER_ID = 2138564172;
-let currentUserId: number | null = ADMIN_USER_ID;
+// Remove hardcoded user ID - let JWT handle user identification
+let currentUserId: number | null = null;
 
 export function setCurrentUserId(userId: number) {
   currentUserId = userId;

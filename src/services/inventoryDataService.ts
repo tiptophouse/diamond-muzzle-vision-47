@@ -1,5 +1,5 @@
 
-import { api, apiEndpoints, getCurrentUserId } from "@/lib/api";
+import { api, apiEndpoints } from "@/lib/api";
 
 export interface FetchInventoryResult {
   data?: any[];
@@ -8,15 +8,13 @@ export interface FetchInventoryResult {
 }
 
 export async function fetchInventoryData(): Promise<FetchInventoryResult> {
-  const userId = getCurrentUserId() || 2138564172;
-  
-  console.log('🔍 INVENTORY SERVICE: Fetching data from FastAPI for user:', userId);
+  console.log('🔍 INVENTORY SERVICE: Fetching data from FastAPI with JWT authentication');
   
   const debugInfo = { 
-    step: 'Starting inventory fetch from FastAPI endpoint', 
-    userId, 
+    step: 'Starting inventory fetch from FastAPI endpoint with JWT', 
     timestamp: new Date().toISOString(),
-    dataSource: 'fastapi'
+    dataSource: 'fastapi',
+    authentication: 'JWT Bearer Token'
   };
   
   try {
@@ -36,11 +34,11 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       };
     }
     
-    console.log('✅ INVENTORY SERVICE: Backend is alive, fetching stones...');
+    console.log('✅ INVENTORY SERVICE: Backend is alive, fetching stones with JWT...');
     
-    // Fetch from correct FastAPI endpoint
-    const endpoint = apiEndpoints.getAllStones(userId);
-    console.log('🚀 INVENTORY SERVICE: Using endpoint:', endpoint);
+    // Fetch from JWT-authenticated endpoint (no user_id needed)
+    const endpoint = apiEndpoints.getAllStones();
+    console.log('🚀 INVENTORY SERVICE: Using JWT endpoint:', endpoint);
     console.log('🚀 INVENTORY SERVICE: Full URL:', `https://api.mazalbot.com${endpoint}`);
     
     const result = await api.get(endpoint);
@@ -89,7 +87,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       }
       
       if (stones.length === 0) {
-        console.log('📊 INVENTORY SERVICE: No stones found for user:', userId);
+        console.log('📊 INVENTORY SERVICE: No stones found for authenticated user');
         return {
           data: [],
           debugInfo: {
@@ -125,7 +123,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
         data: processedStones,
         debugInfo: {
           ...debugInfo,
-          step: 'SUCCESS: Data fetched and processed',
+          step: 'SUCCESS: Data fetched and processed with JWT',
           totalStones: processedStones.length,
           endpoint,
           sampleStone: processedStones[0]

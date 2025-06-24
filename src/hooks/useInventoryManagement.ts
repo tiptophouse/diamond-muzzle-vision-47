@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { api, apiEndpoints, getCurrentUserId } from '@/lib/api';
+import { api, apiEndpoints } from '@/lib/api';
 
 export function useInventoryManagement() {
   const [isLoading, setIsLoading] = useState(false);
@@ -21,11 +21,10 @@ export function useInventoryManagement() {
 
     setIsLoading(true);
     try {
-      const userId = getCurrentUserId() || user.id;
-      console.log('🗑️ BULK DELETE: Starting delete all inventory for user:', userId);
+      console.log('🗑️ BULK DELETE: Starting delete all inventory with JWT authentication');
       
-      const endpoint = apiEndpoints.deleteAllInventory(userId);
-      console.log('🗑️ BULK DELETE: Using endpoint:', endpoint);
+      const endpoint = apiEndpoints.deleteAllInventory();
+      console.log('🗑️ BULK DELETE: Using JWT endpoint:', endpoint);
       
       const result = await api.delete(endpoint);
       
@@ -39,7 +38,7 @@ export function useInventoryManagement() {
         return false;
       }
 
-      console.log('✅ BULK DELETE: All inventory deleted successfully from FastAPI');
+      console.log('✅ BULK DELETE: All inventory deleted successfully from FastAPI with JWT');
       toast({
         title: "Success ✅",
         description: "All inventory deleted successfully",
@@ -72,15 +71,13 @@ export function useInventoryManagement() {
 
     setIsLoading(true);
     try {
-      const userId = getCurrentUserId() || user.id;
-      console.log('📤 BULK UPDATE: Starting bulk update for user:', userId, 'with', csvData.length, 'items');
+      console.log('📤 BULK UPDATE: Starting bulk update with JWT auth for', csvData.length, 'items');
       
-      const endpoint = apiEndpoints.updateAllInventory(userId);
-      console.log('📤 BULK UPDATE: Using endpoint:', endpoint);
+      const endpoint = apiEndpoints.updateAllInventory();
+      console.log('📤 BULK UPDATE: Using JWT endpoint:', endpoint);
       
       // Transform CSV data to match FastAPI expected format
       const transformedData = csvData.map(item => ({
-        user_id: userId,
         stock_number: item.stock_number || item.stockNumber || '',
         shape: item.shape || 'Round',
         weight: Number(item.weight || item.carat) || 0,
@@ -109,7 +106,7 @@ export function useInventoryManagement() {
         return false;
       }
 
-      console.log('✅ BULK UPDATE: Inventory updated successfully in FastAPI');
+      console.log('✅ BULK UPDATE: Inventory updated successfully in FastAPI with JWT');
       toast({
         title: "Success ✅",
         description: `Successfully updated ${csvData.length} items in your inventory`,

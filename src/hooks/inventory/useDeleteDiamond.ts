@@ -20,10 +20,9 @@ export function useDeleteDiamond({ onSuccess }: UseDeleteDiamondProps) {
     try {
       console.log('🗑️ DELETING STONE: Starting delete for diamond ID:', diamondId);
       
-      // Build endpoint with path parameter and query parameter as per OpenAPI schema
-      const baseEndpoint = apiEndpoints.deleteDiamond(diamondId);
-      const endpoint = `${baseEndpoint}?diamond_id=${diamondId}`;
-      console.log('🗑️ DELETING STONE: Using endpoint:', endpoint);
+      // Use the correct delete endpoint from OpenAPI schema
+      const endpoint = apiEndpoints.deleteDiamond(diamondId);
+      console.log('🗑️ DELETING STONE: Using JWT endpoint:', endpoint);
       console.log('🗑️ DELETING STONE: Full URL:', `https://api.mazalbot.com${endpoint}`);
       
       const result = await api.delete(endpoint);
@@ -38,7 +37,7 @@ export function useDeleteDiamond({ onSuccess }: UseDeleteDiamondProps) {
         throw new Error(result.error);
       }
 
-      console.log('✅ DELETING STONE: Stone deleted successfully from FastAPI');
+      console.log('✅ DELETING STONE: Stone deleted successfully from FastAPI with JWT');
       console.log('✅ DELETING STONE: Response:', result.data);
       
       toast({

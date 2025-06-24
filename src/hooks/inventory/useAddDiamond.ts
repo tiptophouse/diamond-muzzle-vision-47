@@ -1,7 +1,6 @@
 
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { getCurrentUserId } from '@/lib/api';
 import { api, apiEndpoints } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
@@ -15,11 +14,8 @@ export function useAddDiamond(onSuccess?: () => void) {
     }
 
     try {
-      const userId = getCurrentUserId() || user.id;
-      
-      // Map form data to match FastAPI expected format (simple object with string/number values)
+      // Map form data to match FastAPI expected format - user identification via JWT
       const stoneData = {
-        user_id: userId,
         stock_number: data.stockNumber,
         shape: data.shape,
         weight: Number(data.carat),
@@ -47,7 +43,7 @@ export function useAddDiamond(onSuccess?: () => void) {
         certificate_comment: data.certificateComment || '',
       };
 
-      console.log('➕ Adding stone via FastAPI endpoint:', stoneData);
+      console.log('➕ Adding stone via FastAPI endpoint with JWT auth:', stoneData);
       
       const endpoint = apiEndpoints.addDiamond();
       console.log('➕ Using endpoint:', endpoint);
@@ -63,7 +59,7 @@ export function useAddDiamond(onSuccess?: () => void) {
         throw new Error(result.error);
       }
 
-      console.log('✅ ADD STONE: Stone added successfully to FastAPI');
+      console.log('✅ ADD STONE: Stone added successfully to FastAPI with JWT');
       console.log('✅ ADD STONE: Response:', result.data);
       
       toast({

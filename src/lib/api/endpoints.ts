@@ -1,9 +1,10 @@
 
 export const apiEndpoints = {
-  // Core inventory endpoints - matching OpenAPI schema exactly
-  getAllStones: (userId: number) => {
-    const endpoint = `/api/v1/get_all_stones?user_id=${userId}`;
-    console.log('🔧 API: Building getAllStones endpoint:', endpoint, 'for user:', userId);
+  // Core inventory endpoints - JWT-based authentication
+  getAllStones: () => {
+    const endpoint = `/api/v1/get_all_stones`;
+    console.log('🔧 API: Building getAllStones endpoint:', endpoint);
+    console.log('🔧 API: User will be identified from JWT token');
     return endpoint;
   },
   
@@ -22,17 +23,17 @@ export const apiEndpoints = {
   createReport: () => `/api/v1/create-report`,
   getReport: (reportId: string) => `/api/v1/get-report?diamond_id=${reportId}`,
   
-  // Analytics endpoints (assuming they exist)
-  getDashboardStats: (userId: number) => `/api/v1/users/${userId}/dashboard/stats`,
-  getInventoryByShape: (userId: number) => `/api/v1/users/${userId}/inventory/by-shape`,
-  getRecentSales: (userId: number) => `/api/v1/users/${userId}/sales/recent`,
-  getInventory: (userId: number, page: number = 1, limit: number = 10) => `/api/v1/users/${userId}/inventory?page=${page}&limit=${limit}`,
+  // Analytics endpoints (JWT-based user identification)
+  getDashboardStats: () => `/api/v1/dashboard/stats`,
+  getInventoryByShape: () => `/api/v1/inventory/by-shape`,
+  getRecentSales: () => `/api/v1/sales/recent`,
+  getInventory: (page: number = 1, limit: number = 10) => `/api/v1/inventory?page=${page}&limit=${limit}`,
   
-  // Payment management endpoints
+  // Payment management endpoints (JWT-based user identification)
   paymentRequest: () => `/api/v1/payment_request`,
-  removeUserPayments: (userId: number) => `/api/v1/users/${userId}/payments/remove`,
+  removeUserPayments: () => `/api/v1/payments/remove`,
   removeAllPayments: () => `/api/v1/payments/remove-all`,
-  getUserPayments: (userId: number) => `/api/v1/users/${userId}/payments`,
+  getUserPayments: () => `/api/v1/payments`,
   getPaymentStats: () => `/api/v1/payments/stats`,
 
   // Client and admin endpoints
@@ -42,9 +43,9 @@ export const apiEndpoints = {
   unblockUser: (userId: number) => `/api/v1/admin/unblock-user/${userId}`,
   sendMessageToUser: () => `/api/v1/admin/send-message`,
   
-  // Bulk inventory management
-  deleteAllInventory: (userId: number) => `/api/v1/users/${userId}/inventory/delete-all`,
-  updateAllInventory: (userId: number) => `/api/v1/users/${userId}/inventory/update-all`,
+  // Bulk inventory management (JWT-based user identification)
+  deleteAllInventory: () => `/api/v1/inventory/delete-all`,
+  updateAllInventory: () => `/api/v1/inventory/update-all`,
   
   // System health
   alive: () => `/api/v1/alive`,
