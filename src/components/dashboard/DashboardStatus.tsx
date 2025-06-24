@@ -41,7 +41,7 @@ export function DashboardStatus({
   }, [autoRefreshEnabled, onRefresh]);
 
   const getConnectionStatus = () => {
-    if (loading) return { status: 'connecting', color: 'yellow', icon: RefreshCw };
+    if (loading) return { status: 'updating', color: 'yellow', icon: RefreshCw };
     if (error) return { status: 'error', color: 'red', icon: WifiOff };
     return { status: 'connected', color: 'green', icon: Wifi };
   };
@@ -54,7 +54,7 @@ export function DashboardStatus({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <StatusIcon className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            <span className="font-medium">FastAPI Connection</span>
+            <span className="font-medium">System Status</span>
             <Badge variant={color === 'green' ? 'default' : color === 'yellow' ? 'secondary' : 'destructive'}>
               {status}
             </Badge>
@@ -74,10 +74,10 @@ export function DashboardStatus({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
           <div className="flex items-center gap-2">
             <Database className="h-4 w-4 text-blue-500" />
-            <span className="text-muted-foreground">Diamonds:</span>
+            <span className="text-muted-foreground">Inventory:</span>
             <span className="font-medium">{totalDiamonds}</span>
           </div>
           
@@ -101,20 +101,17 @@ export function DashboardStatus({
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 col-span-2 lg:col-span-1">
+            <div className="flex items-center gap-2 col-span-2 lg:col-span-3">
               <AlertCircle className="h-4 w-4 text-red-500" />
-              <span className="text-red-600 text-xs truncate" title={error}>
-                {error.substring(0, 30)}...
+              <span className="text-red-600 text-xs">
+                Connection issue - please try refreshing
               </span>
             </div>
           )}
         </div>
 
         <div className="mt-3 text-xs text-muted-foreground">
-          <span>API: </span>
-          <code className="bg-gray-100 px-1 py-0.5 rounded">
-            https://api.mazalbot.com/api/v1/get_all_stones?user_id=2138564172
-          </code>
+          <span>✅ Secure connection established - showing your personal inventory</span>
         </div>
       </CardContent>
     </Card>

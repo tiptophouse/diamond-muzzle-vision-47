@@ -8,7 +8,6 @@ import {
   initializeTelegramWebApp
 } from '@/utils/telegramWebApp';
 import { verifyTelegramUser } from '@/lib/api/auth';
-import { getAuthenticationMetrics } from '@/utils/telegramValidation';
 import { setCurrentUserId } from '@/lib/api/config';
 
 interface TelegramUser {
@@ -29,8 +28,6 @@ interface AuthState {
   isAuthenticated: boolean;
 }
 
-const ADMIN_TELEGRAM_ID = 2138564172;
-
 export function useSecureTelegramAuth(): AuthState {
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -49,16 +46,6 @@ export function useSecureTelegramAuth(): AuthState {
     if (mountedRef.current) {
       setState(prev => ({ ...prev, ...updates }));
     }
-  };
-
-  const createAdminUser = (): TelegramUser => {
-    return {
-      id: ADMIN_TELEGRAM_ID,
-      first_name: "Admin",
-      last_name: "User",
-      username: "admin",
-      language_code: "en"
-    };
   };
 
   const logSecurityEvent = (event: string, details: any) => {
@@ -84,26 +71,105 @@ export function useSecureTelegramAuth(): AuthState {
       
       updateState({ isTelegramEnvironment: inTelegram });
 
-      // Always use admin access for now to ensure API connection works
-      console.log('🔧 Using admin access for FastAPI connection');
-      const adminUser = createAdminUser();
-      
-      // Set the current user ID for API requests
-      setCurrentUserId(adminUser.id);
-      
-      logSecurityEvent('Admin Access Granted', {
-        environment: process.env.NODE_ENV,
-        telegramEnv: inTelegram,
-        userId: adminUser.id
-      });
-      
-      updateState({
-        user: adminUser,
-        isAuthenticated: true,
-        isLoading: false,
-        error: null
-      });
-      initializedRef.current = true;
+      if (inTelegram && window.Telegram?.WebApp) {
+        const tg = window.Telegram.WebApp;
+        
+        // Initialize Telegram WebApp
+        try {
+          if (typeof tg.ready === 'function') tg.ready();
+          if (typeof tg.expand === 'function') tg.expand();
+          console.log('✅ Telegram WebApp initialized');
+        } catch (themeError) {
+          console.warn('⚠️ WebApp setup failed, continuing...', themeError);
+        }
+        
+        // Try to get real user data from initData
+        if (tg.initData && tg.initData.length > 0) {
+          console.log('🔐 Found initData, verifying with backend...');
+          
+          const verificationResult = await verifyTelegramUser(tg.initData);
+          
+          if (verificationResult && verificationResult.success && verificationResult.user_id) {
+            console.log('✅ Backend verification successful:', verificationResult);
+            
+            const verifiedUser: TelegramUser = {
+              id: verificationResult.user_id,
+              first_name: verificationResult.user_data?.first_name || 'User',
+              last_name: verificationResult.user_data?.last_name || '',
+              username: verificationResult.user_data?.username || '',
+              language_code: verificationResult.user_data?.language_code || 'en'
+            };
+            
+            console.log('👤 Setting verified user from InitData:', verifiedUser);
+            setCurrentUserId(verificationResult.user_id);
+            
+            logSecurityEvent('Telegram InitData Verified', {
+              userId: verificationResult.user_id,
+              firstName: verifiedUser.first_name,
+              securityInfo: verificationResult.security_info
+            });
+            
+            updateState({
+              user: verifiedUser,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null
+            });
+            initializedRef.current = true;
+            return;
+          } else {
+            console.error('❌ Backend verification failed, trying unsafe data...');
+          }
+        }
+        
+        // Fallback to initDataUnsafe if verification fails
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
+          console.log('⚠️ Using initDataUnsafe as fallback');
+          const unsafeUser = tg.initDataUnsafe.user;
+          
+          const fallbackUser: TelegramUser = {
+            id: unsafeUser.id,
+            first_name: unsafeUser.first_name || 'User',
+            last_name: unsafeUser.last_name || '',
+            username: unsafeUser.username || '',
+            language_code: unsafeUser.language_code || 'en'
+          };
+          
+          setCurrentUserId(fallbackUser.id);
+          
+          logSecurityEvent('Telegram Unsafe Data Used', {
+            userId: fallbackUser.id,
+            firstName: fallbackUser.first_name,
+            warning: 'Using unverified Telegram data'
+          });
+          
+          updateState({
+            user: fallbackUser,
+            isAuthenticated: true,
+            isLoading: false,
+            error: 'Using unverified Telegram data'
+          });
+          initializedRef.current = true;
+          return;
+        }
+        
+        console.error('❌ No valid Telegram user data found');
+        updateState({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: 'No valid Telegram user data found'
+        });
+        
+      } else {
+        console.log('❌ Not in Telegram environment - authentication failed');
+        updateState({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: 'This app must be accessed through Telegram'
+        });
+      }
       
     } catch (error) {
       console.error('❌ Authentication error:', error);
@@ -113,15 +179,11 @@ export function useSecureTelegramAuth(): AuthState {
         attempt: authAttempts.current
       });
       
-      // Always fall back to admin user on any error
-      const adminUser = createAdminUser();
-      setCurrentUserId(adminUser.id);
-      
       updateState({
-        user: adminUser,
-        isAuthenticated: true,
+        user: null,
+        isAuthenticated: false,
         isLoading: false,
-        error: 'Authentication error - using admin access'
+        error: error instanceof Error ? error.message : 'Authentication failed'
       });
     } finally {
       initializedRef.current = true;
@@ -131,30 +193,27 @@ export function useSecureTelegramAuth(): AuthState {
   useEffect(() => {
     mountedRef.current = true;
     
-    // Shorter timeout for faster fallback
+    // Timeout for authentication
     const timeoutId = setTimeout(() => {
       if (state.isLoading && mountedRef.current && !initializedRef.current) {
-        console.warn('⚠️ Authentication timeout - using admin fallback');
+        console.warn('⚠️ Authentication timeout');
         
         logSecurityEvent('Authentication Timeout', {
           attempts: authAttempts.current,
           maxAttempts: maxAuthAttempts
         });
         
-        const adminUser = createAdminUser();
-        setCurrentUserId(adminUser.id);
-        
         updateState({
-          user: adminUser,
-          isAuthenticated: true,
+          user: null,
+          isAuthenticated: false,
           isLoading: false,
-          error: 'Authentication timeout - using admin access'
+          error: 'Authentication timeout - please refresh the app'
         });
         initializedRef.current = true;
       }
-    }, 1000); // Reduced timeout for faster API connection
+    }, 5000);
 
-    // Start authentication immediately
+    // Start authentication
     authenticateUser();
 
     return () => {

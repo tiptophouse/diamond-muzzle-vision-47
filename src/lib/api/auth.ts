@@ -23,10 +23,10 @@ export function getVerificationResult(): TelegramVerificationResponse | null {
   return verificationResult;
 }
 
-// Enhanced verification with direct backend token
+// Enhanced verification with Telegram InitData
 export async function verifyTelegramUser(initData: string): Promise<TelegramVerificationResponse | null> {
   try {
-    console.log('🔐 API: Telegram user verification starting');
+    console.log('🔐 API: Starting Telegram InitData verification');
     console.log('🔐 API: Sending to:', `${API_BASE_URL}${apiEndpoints.verifyTelegram()}`);
     console.log('🔐 API: InitData length:', initData.length);
     
@@ -44,7 +44,7 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
       'X-Client-Version': '1.0.0'
     };
     
-    console.log('🔐 API: Using direct backend access token for verification');
+    console.log('🔐 API: Verifying Telegram InitData with backend...');
     
     const response = await fetch(`${API_BASE_URL}${apiEndpoints.verifyTelegram()}`, {
       method: 'POST',
@@ -67,16 +67,17 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     }
 
     const result: TelegramVerificationResponse = await response.json();
-    console.log('✅ API: Telegram verification successful:', result);
+    console.log('✅ API: Telegram InitData verification successful:', result);
     
     verificationResult = result;
     if (result.success && result.user_id) {
+      console.log('✅ API: Setting current user ID from verified InitData:', result.user_id);
       setCurrentUserId(result.user_id);
     }
     
     return result;
   } catch (error) {
-    console.error('❌ API: Telegram verification failed:', error);
+    console.error('❌ API: Telegram InitData verification failed:', error);
     verificationResult = null;
     return null;
   }
@@ -89,7 +90,7 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
   
   if (BACKEND_ACCESS_TOKEN) {
     headers["Authorization"] = `Bearer ${BACKEND_ACCESS_TOKEN}`;
-    console.log('🚀 API: Using direct backend access token for requests');
+    console.log('🚀 API: Using backend access token for authenticated requests');
   } else {
     console.warn('⚠️ API: No backend access token available');
   }
@@ -99,7 +100,8 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
     const authToken = `telegram_verified_${verificationResult.user_id}_${Date.now()}`;
     headers["X-Telegram-Auth"] = authToken;
     headers["X-Security-Level"] = "enhanced";
-    console.log('🚀 API: Added enhanced telegram auth token to request');
+    headers["X-User-ID"] = verificationResult.user_id.toString();
+    console.log('🚀 API: Added Telegram user authentication headers for user:', verificationResult.user_id);
   }
   
   return headers;
@@ -110,6 +112,7 @@ export function getSecurityMetrics() {
   return {
     lastVerification: verificationResult ? new Date().toISOString() : null,
     verificationStatus: verificationResult?.success || false,
-    securityInfo: verificationResult?.security_info || null
+    securityInfo: verificationResult?.security_info || null,
+    authenticatedUserId: verificationResult?.user_id || null
   };
 }
