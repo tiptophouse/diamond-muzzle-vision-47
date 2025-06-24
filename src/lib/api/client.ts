@@ -1,3 +1,4 @@
+
 import { toast } from "@/components/ui/use-toast";
 import { API_BASE_URL, getCurrentUserId, BACKEND_ACCESS_TOKEN } from './config';
 
@@ -33,8 +34,8 @@ async function testBackendConnectivity(): Promise<boolean> {
     
     console.log('🔍 API: FastAPI endpoint response status:', response.status);
     
-    if (response.ok) {
-      console.log('✅ API: FastAPI backend is reachable - your diamonds should be accessible');
+    if (response.ok || response.status === 401) { // 401 means server is reachable but needs auth
+      console.log('✅ API: FastAPI backend is reachable');
       return true;
     }
     
@@ -124,6 +125,16 @@ export async function fetchApi<T>(
       }
       
       console.error('❌ API: Request failed:', errorMessage);
+      
+      // Don't show toast for connectivity tests
+      if (!endpoint.includes('get_all_stones')) {
+        toast({
+          title: "❌ API Error",
+          description: `Request failed: ${errorMessage}`,
+          variant: "destructive",
+        });
+      }
+      
       throw new Error(errorMessage);
     }
 
@@ -144,12 +155,6 @@ export async function fetchApi<T>(
       toast({
         title: "🔌 FastAPI Server Offline",
         description: `The FastAPI backend is not responding at ${API_BASE_URL}/api/v1/get_all_stones`,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "❌ API Error",
-        description: `Request failed: ${errorMessage}`,
         variant: "destructive",
       });
     }

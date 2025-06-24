@@ -8,9 +8,9 @@ export const apiEndpoints = {
   },
   verifyTelegram: () => `/api/v1/verify-telegram`,
   uploadInventory: () => `/api/v1/upload-inventory`,
-  addDiamond: () => `/api/v1/diamonds`, // POST endpoint for adding diamonds
+  addDiamond: () => `/api/v1/add_stone`, // Updated to match FastAPI endpoint
   deleteDiamond: (diamondId: string) => `/api/v1/delete_stone/${diamondId}`, // Correct delete endpoint
-  updateDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`, // PUT endpoint for updating
+  updateDiamond: (diamondId: string) => `/api/v1/update_stone/${diamondId}`, // Updated to match FastAPI endpoint
   soldDiamond: () => `/api/v1/sold`,
   createReport: () => `/api/v1/create-report`,
   getReport: (reportId: string) => `/api/v1/get-report?diamond_id=${reportId}`,
