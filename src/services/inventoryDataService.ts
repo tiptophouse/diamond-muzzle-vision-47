@@ -1,5 +1,6 @@
 
 import { api, apiEndpoints } from "@/lib/api";
+import { getCurrentUserId } from "@/lib/api/config";
 
 export interface FetchInventoryResult {
   data?: any[];
@@ -8,14 +9,29 @@ export interface FetchInventoryResult {
 }
 
 export async function fetchInventoryData(): Promise<FetchInventoryResult> {
-  console.log('🔍 INVENTORY SERVICE: Fetching data from FastAPI with JWT authentication');
+  const telegramUserId = getCurrentUserId();
+  console.log('🔍 INVENTORY SERVICE: Fetching data from FastAPI with Telegram user isolation');
+  console.log('🔍 INVENTORY SERVICE: Current Telegram user ID:', telegramUserId);
   
   const debugInfo = { 
-    step: 'Starting inventory fetch from FastAPI endpoint with JWT', 
+    step: 'Starting inventory fetch with Telegram user ID filtering', 
     timestamp: new Date().toISOString(),
     dataSource: 'fastapi',
-    authentication: 'JWT Bearer Token'
+    authentication: 'JWT Bearer Token + Telegram ID',
+    telegramUserId: telegramUserId
   };
+  
+  if (!telegramUserId) {
+    console.error('❌ INVENTORY SERVICE: No Telegram user ID available for data filtering');
+    return {
+      error: 'No authenticated Telegram user found. Please restart the app.',
+      debugInfo: {
+        ...debugInfo,
+        step: 'FAILED: No Telegram user ID for filtering',
+        error: 'Missing Telegram user authentication'
+      }
+    };
+  }
   
   try {
     // Test backend connectivity first
@@ -34,37 +50,40 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       };
     }
     
-    console.log('✅ INVENTORY SERVICE: Backend is alive, fetching stones with JWT...');
+    console.log('✅ INVENTORY SERVICE: Backend is alive, fetching stones for Telegram user:', telegramUserId);
     
-    // Fetch from JWT-authenticated endpoint (no user_id needed)
+    // Fetch from JWT-authenticated endpoint with Telegram user filtering
     const endpoint = apiEndpoints.getAllStones();
-    console.log('🚀 INVENTORY SERVICE: Using JWT endpoint:', endpoint);
+    console.log('🚀 INVENTORY SERVICE: Using filtered endpoint:', endpoint);
     console.log('🚀 INVENTORY SERVICE: Full URL:', `https://api.mazalbot.com${endpoint}`);
+    console.log('🚀 INVENTORY SERVICE: Backend will filter by Telegram user ID:', telegramUserId);
     
     const result = await api.get(endpoint);
     
     if (result.error) {
       console.error('❌ INVENTORY SERVICE: FastAPI request failed:', result.error);
       return {
-        error: `Failed to fetch stones: ${result.error}`,
+        error: `Failed to fetch stones for your account: ${result.error}`,
         debugInfo: {
           ...debugInfo,
           step: 'FAILED: FastAPI stones request error',
           error: result.error,
           endpoint,
-          fullUrl: `https://api.mazalbot.com${endpoint}`
+          fullUrl: `https://api.mazalbot.com${endpoint}`,
+          telegramUserId
         }
       };
     }
     
     if (result.data) {
-      console.log('✅ INVENTORY SERVICE: FastAPI returned data:', typeof result.data, Array.isArray(result.data));
+      console.log('✅ INVENTORY SERVICE: FastAPI returned filtered data for Telegram user:', telegramUserId);
+      console.log('✅ INVENTORY SERVICE: Response type:', typeof result.data, 'Is array:', Array.isArray(result.data));
       
       let stones = [];
       
       if (Array.isArray(result.data)) {
         stones = result.data;
-        console.log('✅ INVENTORY SERVICE: Direct array response with', stones.length, 'stones');
+        console.log('✅ INVENTORY SERVICE: Direct array response with', stones.length, 'stones for user:', telegramUserId);
       } else if (result.data && typeof result.data === 'object') {
         // Handle object response - try common property names
         const responseData = result.data as Record<string, any>;
@@ -83,25 +102,31 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
           }
         }
         
-        console.log('✅ INVENTORY SERVICE: Extracted', stones.length, 'stones from object response');
+        console.log('✅ INVENTORY SERVICE: Extracted', stones.length, 'stones from object response for user:', telegramUserId);
       }
       
       if (stones.length === 0) {
-        console.log('📊 INVENTORY SERVICE: No stones found for authenticated user');
+        console.log('📊 INVENTORY SERVICE: No stones found for authenticated Telegram user:', telegramUserId);
         return {
           data: [],
           debugInfo: {
             ...debugInfo,
-            step: 'SUCCESS: Connected but no stones found',
+            step: 'SUCCESS: Connected but no stones found for this user',
             totalStones: 0,
             endpoint,
-            responseType: typeof result.data
+            responseType: typeof result.data,
+            telegramUserId
           }
         };
       }
       
-      // Process and validate stones data
+      // Process and validate stones data with user verification
       const processedStones = stones.filter(stone => stone && typeof stone === 'object').map(stone => {
+        // Log any user_id mismatch for debugging
+        if (stone.user_id && stone.user_id !== telegramUserId) {
+          console.warn('⚠️ INVENTORY SERVICE: Stone user_id mismatch:', stone.user_id, 'vs current user:', telegramUserId);
+        }
+        
         return {
           ...stone,
           id: stone.id || stone.diamond_id || `${stone.stock_number || Date.now()}`,
@@ -113,43 +138,47 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
           cut: stone.cut || 'Excellent',
           price: parseFloat(stone.price || 0),
           status: stone.status || 'Available',
-          store_visible: stone.store_visible !== false
+          store_visible: stone.store_visible !== false,
+          user_id: stone.user_id || telegramUserId // Ensure user_id is set
         };
       });
       
-      console.log('✅ INVENTORY SERVICE: Processed', processedStones.length, 'valid stones');
+      console.log('✅ INVENTORY SERVICE: Processed', processedStones.length, 'valid stones for Telegram user:', telegramUserId);
       
       return {
         data: processedStones,
         debugInfo: {
           ...debugInfo,
-          step: 'SUCCESS: Data fetched and processed with JWT',
+          step: 'SUCCESS: Data fetched and processed with Telegram user filtering',
           totalStones: processedStones.length,
           endpoint,
-          sampleStone: processedStones[0]
+          sampleStone: processedStones[0],
+          telegramUserId
         }
       };
     }
     
-    console.log('⚠️ INVENTORY SERVICE: No data in response');
+    console.log('⚠️ INVENTORY SERVICE: No data in response for Telegram user:', telegramUserId);
     return {
-      error: 'No data received from FastAPI endpoint',
+      error: 'No data received from FastAPI endpoint for your account',
       debugInfo: {
         ...debugInfo,
         step: 'FAILED: Empty response from endpoint',
-        endpoint
+        endpoint,
+        telegramUserId
       }
     };
     
   } catch (error) {
-    console.error("❌ INVENTORY SERVICE: Unexpected error:", error);
+    console.error("❌ INVENTORY SERVICE: Unexpected error for Telegram user:", telegramUserId, error);
     
     return {
       error: error instanceof Error ? error.message : 'Unknown error occurred',
       debugInfo: {
         ...debugInfo,
         step: 'FAILED: Unexpected error',
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
+        telegramUserId
       }
     };
   }

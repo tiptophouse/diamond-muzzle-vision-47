@@ -1,6 +1,5 @@
-
 import { toast } from "@/components/ui/use-toast";
-import { API_BASE_URL, getCurrentUserId, BACKEND_ACCESS_TOKEN } from './config';
+import { API_BASE_URL, getCurrentUserId, BACKEND_ACCESS_TOKEN, getTelegramUserHeaders } from './config';
 
 interface ApiResponse<T> {
   data?: T;
@@ -53,8 +52,9 @@ export async function fetchApi<T>(
   const url = `${API_BASE_URL}${endpoint}`;
   
   try {
+    const telegramUserId = getCurrentUserId();
     console.log('🚀 API: Making FastAPI request to:', url);
-    console.log('🚀 API: Current user ID:', getCurrentUserId(), 'type:', typeof getCurrentUserId());
+    console.log('🚀 API: Telegram user ID for data isolation:', telegramUserId);
     console.log('🚀 API: Using backend token:', BACKEND_ACCESS_TOKEN ? 'Present' : 'Missing');
     console.log('🚀 API: Request method:', options.method || 'GET');
     
@@ -80,6 +80,10 @@ export async function fetchApi<T>(
       headers["Authorization"] = `Bearer ${BACKEND_ACCESS_TOKEN}`;
     }
     
+    // Add Telegram user ID headers for data isolation
+    const telegramHeaders = getTelegramUserHeaders();
+    headers = { ...headers, ...telegramHeaders };
+    
     const fetchOptions: RequestInit = {
       ...options,
       headers,
@@ -87,7 +91,7 @@ export async function fetchApi<T>(
       credentials: 'omit',
     };
     
-    console.log('🚀 API: Request headers:', Object.keys(headers));
+    console.log('🚀 API: Request headers with Telegram isolation:', Object.keys(headers));
     if (fetchOptions.body) {
       console.log('🚀 API: Request body:', fetchOptions.body);
     }
@@ -102,12 +106,12 @@ export async function fetchApi<T>(
     
     if (contentType && contentType.includes('application/json')) {
       data = await response.json();
-      console.log('📡 API: JSON response received');
+      console.log('📡 API: JSON response received for Telegram user:', telegramUserId);
       console.log('📡 API: Response data type:', typeof data);
       if (Array.isArray(data)) {
-        console.log('📡 API: Array response length:', data.length);
+        console.log('📡 API: Array response length (user-specific data):', data.length);
         if (data.length > 0) {
-          console.log('📡 API: Sample item:', data[0]);
+          console.log('📡 API: Sample item from user data:', data[0]);
         }
       } else if (data && typeof data === 'object') {
         console.log('📡 API: Object response keys:', Object.keys(data));
@@ -127,7 +131,7 @@ export async function fetchApi<T>(
         errorMessage = data || errorMessage;
       }
       
-      console.error('❌ API: Request failed:', errorMessage);
+      console.error('❌ API: Request failed for Telegram user:', telegramUserId, 'Error:', errorMessage);
       
       toast({
         title: "❌ API Error",
@@ -138,11 +142,11 @@ export async function fetchApi<T>(
       throw new Error(errorMessage);
     }
 
-    console.log('✅ API: Request successful');
+    console.log('✅ API: Request successful for Telegram user:', telegramUserId);
     return { data: data as T };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error('❌ API: Request error:', errorMessage);
+    console.error('❌ API: Request error for Telegram user:', getCurrentUserId(), 'Error:', errorMessage);
     
     // Show specific toast messages for different error types
     if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
@@ -188,7 +192,7 @@ export const api = {
     fetchApi<T>(endpoint, { method: "DELETE" }),
     
   uploadCsv: async <T>(endpoint: string, csvData: any[], userId: number): Promise<ApiResponse<T>> => {
-    console.log('📤 API: Uploading CSV data to FastAPI:', { endpoint, dataLength: csvData.length, userId });
+    console.log('📤 API: Uploading CSV data to FastAPI with Telegram user isolation:', { endpoint, dataLength: csvData.length, userId });
     
     return fetchApi<T>(endpoint, {
       method: "POST",

@@ -1,20 +1,29 @@
 
 export const apiEndpoints = {
-  // Core inventory endpoints - JWT-based authentication
+  // Core inventory endpoints - JWT-based authentication with Telegram user ID filtering
   getAllStones: () => {
     const endpoint = `/api/v1/get_all_stones`;
-    console.log('🔧 API: Building getAllStones endpoint:', endpoint);
-    console.log('🔧 API: User will be identified from JWT token');
+    console.log('🔧 API: Building getAllStones endpoint with Telegram user filtering:', endpoint);
+    console.log('🔧 API: Backend will filter stones by authenticated Telegram user ID from JWT token');
     return endpoint;
   },
   
   // Authentication endpoints
   verifyTelegram: () => `/api/v1/verify-telegram`,
   
-  // Inventory management endpoints - using correct FastAPI paths
-  addDiamond: () => `/api/v1/diamonds`, // POST /api/v1/diamonds
-  updateDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`, // PUT /api/v1/diamonds/{diamond_id}
-  deleteDiamond: (diamondId: string) => `/api/v1/delete_stone/${diamondId}`, // DELETE /api/v1/delete_stone/{id}
+  // Inventory management endpoints - using correct FastAPI paths with Telegram user isolation
+  addDiamond: () => {
+    console.log('🔧 API: Building addDiamond endpoint - will be associated with authenticated Telegram user');
+    return `/api/v1/diamonds`; // POST /api/v1/diamonds
+  },
+  updateDiamond: (diamondId: string) => {
+    console.log('🔧 API: Building updateDiamond endpoint for diamond:', diamondId, '- will verify ownership by Telegram user');
+    return `/api/v1/diamonds/${diamondId}`; // PUT /api/v1/diamonds/{diamond_id}
+  },
+  deleteDiamond: (diamondId: string) => {
+    console.log('🔧 API: Building deleteDiamond endpoint for diamond:', diamondId, '- will verify ownership by Telegram user');
+    return `/api/v1/delete_stone/${diamondId}`; // DELETE /api/v1/delete_stone/{id}
+  },
   
   // File upload endpoints
   uploadInventory: () => `/api/v1/upload-inventory`,
