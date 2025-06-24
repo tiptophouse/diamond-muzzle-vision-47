@@ -20,7 +20,9 @@ export function useDeleteDiamond({ onSuccess }: UseDeleteDiamondProps) {
     try {
       console.log('🗑️ DELETING STONE: Starting delete for diamond ID:', diamondId);
       
-      const endpoint = apiEndpoints.deleteDiamond(diamondId);
+      // Build endpoint with path parameter and query parameter as per OpenAPI schema
+      const baseEndpoint = apiEndpoints.deleteDiamond(diamondId);
+      const endpoint = `${baseEndpoint}?diamond_id=${diamondId}`;
       console.log('🗑️ DELETING STONE: Using endpoint:', endpoint);
       console.log('🗑️ DELETING STONE: Full URL:', `https://api.mazalbot.com${endpoint}`);
       

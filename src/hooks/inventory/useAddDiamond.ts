@@ -17,12 +17,12 @@ export function useAddDiamond(onSuccess?: () => void) {
     try {
       const userId = getCurrentUserId() || user.id;
       
-      // Map form data to FastAPI expected format
+      // Map form data to match FastAPI expected format (simple object with string/number values)
       const stoneData = {
         user_id: userId,
         stock_number: data.stockNumber,
         shape: data.shape,
-        weight: Number(data.carat), // FastAPI expects 'weight' not 'carat'
+        weight: Number(data.carat),
         color: data.color,
         clarity: data.clarity,
         cut: data.cut,
@@ -33,18 +33,17 @@ export function useAddDiamond(onSuccess?: () => void) {
         certificate_number: data.certificateNumber || '',
         certificate_url: data.certificateUrl || '',
         lab: data.lab || 'GIA',
-        store_visible: data.storeVisible !== false, // Default to true
-        // Additional fields that might be expected by FastAPI
+        store_visible: data.storeVisible !== false ? 1 : 0, // Convert boolean to number
         fluorescence: data.fluorescence || 'None',
         polish: data.polish || 'Excellent',
         symmetry: data.symmetry || 'Excellent',
         gridle: data.gridle || 'Medium',
         culet: data.culet || 'None',
-        length: data.length ? Number(data.length) : null,
-        width: data.width ? Number(data.width) : null,
-        depth: data.depth ? Number(data.depth) : null,
-        table_percentage: data.tablePercentage ? Number(data.tablePercentage) : null,
-        depth_percentage: data.depthPercentage ? Number(data.depthPercentage) : null,
+        length: data.length ? Number(data.length) : '',
+        width: data.width ? Number(data.width) : '',
+        depth: data.depth ? Number(data.depth) : '',
+        table_percentage: data.tablePercentage ? Number(data.tablePercentage) : '',
+        depth_percentage: data.depthPercentage ? Number(data.depthPercentage) : '',
         certificate_comment: data.certificateComment || '',
       };
 

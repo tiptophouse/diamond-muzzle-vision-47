@@ -14,33 +14,32 @@ export function useUpdateDiamond(onSuccess?: () => void) {
     }
 
     try {
-      // Map form data to FastAPI expected format
+      // Map form data to FastAPI expected format (simple object with string/number values)
       const updates = {
         stock_number: data.stockNumber,
         shape: data.shape,
-        weight: Number(data.carat), // FastAPI expects 'weight' not 'carat'
+        weight: Number(data.carat),
         color: data.color,
         clarity: data.clarity,
         cut: data.cut,
         price: Number(data.price),
         price_per_carat: data.carat > 0 ? Math.round(Number(data.price) / Number(data.carat)) : Math.round(Number(data.price)),
         status: data.status || 'Available',
-        store_visible: data.storeVisible !== false,
+        store_visible: data.storeVisible !== false ? 1 : 0, // Convert boolean to number
         picture: data.picture || '',
         certificate_number: data.certificateNumber || '',
         certificate_url: data.certificateUrl || '',
         lab: data.lab || 'GIA',
-        // Additional fields that might be expected by FastAPI
         fluorescence: data.fluorescence || 'None',
         polish: data.polish || 'Excellent',
         symmetry: data.symmetry || 'Excellent',
         gridle: data.gridle || 'Medium',
         culet: data.culet || 'None',
-        length: data.length ? Number(data.length) : null,
-        width: data.width ? Number(data.width) : null,
-        depth: data.depth ? Number(data.depth) : null,
-        table_percentage: data.tablePercentage ? Number(data.tablePercentage) : null,
-        depth_percentage: data.depthPercentage ? Number(data.depthPercentage) : null,
+        length: data.length ? Number(data.length) : '',
+        width: data.width ? Number(data.width) : '',
+        depth: data.depth ? Number(data.depth) : '',
+        table_percentage: data.tablePercentage ? Number(data.tablePercentage) : '',
+        depth_percentage: data.depthPercentage ? Number(data.depthPercentage) : '',
         certificate_comment: data.certificateComment || '',
       };
 
