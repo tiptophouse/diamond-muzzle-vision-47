@@ -2,8 +2,8 @@
 // FastAPI backend configuration
 export const API_BASE_URL = "https://api.mazalbot.com"; // Your FastAPI backend URL
 
-// Use the correct backend access token from your .env file
-export const BACKEND_ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VySWQiLCJleHAiOjE2ODk2MDAwMDAsImlhdCI6MTY4OTU5NjQwMH0.kWzUkeMTF4LZbU9P5yRmsXrXhWfPlUPukGqI8Nq1rLo";
+// Use the correct backend access token for FastAPI authentication
+export const BACKEND_ACCESS_TOKEN = "ifj9ov1rh20fslfp";
 
 // Set admin user ID directly
 const ADMIN_USER_ID = 2138564172;

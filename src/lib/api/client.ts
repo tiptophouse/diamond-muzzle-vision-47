@@ -1,4 +1,3 @@
-
 import { toast } from "@/components/ui/use-toast";
 import { API_BASE_URL, getCurrentUserId, BACKEND_ACCESS_TOKEN } from './config';
 
@@ -11,16 +10,17 @@ interface ApiResponse<T> {
 async function testBackendConnectivity(): Promise<boolean> {
   try {
     console.log('🔍 API: Testing FastAPI backend connectivity to:', API_BASE_URL);
-    console.log('🔍 API: Using access token:', BACKEND_ACCESS_TOKEN ? 'Present' : 'Missing');
+    console.log('🔍 API: Using access token:', BACKEND_ACCESS_TOKEN ? 'ifj9ov1rh20fslfp' : 'Missing');
     
     if (!BACKEND_ACCESS_TOKEN) {
       console.error('❌ API: No backend access token available for connectivity test');
       return false;
     }
     
-    // Try the root endpoint first
-    const testUrl = `${API_BASE_URL}/`;
-    console.log('🔍 API: Testing root endpoint:', testUrl);
+    // Try the get_all_stones endpoint directly to test your exact backend
+    const userId = getCurrentUserId() || 2138564172;
+    const testUrl = `${API_BASE_URL}/api/v1/get_all_stones?user_id=${userId}`;
+    console.log('🔍 API: Testing FastAPI endpoint:', testUrl);
     
     const response = await fetch(testUrl, {
       method: 'GET',
@@ -31,9 +31,9 @@ async function testBackendConnectivity(): Promise<boolean> {
       },
     });
     
-    console.log('🔍 API: Root endpoint response status:', response.status);
+    console.log('🔍 API: FastAPI endpoint response status:', response.status);
     
-    if (response.ok || response.status === 404) {
+    if (response.ok) {
       console.log('✅ API: FastAPI backend is reachable - your diamonds should be accessible');
       return true;
     }
@@ -55,14 +55,14 @@ export async function fetchApi<T>(
   try {
     console.log('🚀 API: Making FastAPI request to:', url);
     console.log('🚀 API: Current user ID:', getCurrentUserId(), 'type:', typeof getCurrentUserId());
-    console.log('🚀 API: Using backend token:', BACKEND_ACCESS_TOKEN ? 'Present' : 'Missing');
+    console.log('🚀 API: Using backend token:', BACKEND_ACCESS_TOKEN ? 'ifj9ov1rh20fslfp' : 'Missing');
     console.log('🚀 API: Request method:', options.method || 'GET');
     
     // Test connectivity first for GET requests
     if (!options.method || options.method === 'GET') {
       const isBackendReachable = await testBackendConnectivity();
       if (!isBackendReachable) {
-        const errorMsg = 'FastAPI backend server is not reachable. Please check if the server is running at ' + API_BASE_URL;
+        const errorMsg = 'FastAPI backend server is not reachable at ' + API_BASE_URL + '. Please check if the server is running and accessible.';
         console.error('❌ API: Backend unreachable');
         throw new Error(errorMsg);
       }
@@ -137,13 +137,13 @@ export async function fetchApi<T>(
     if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
       toast({
         title: "🌐 Connection Error",
-        description: `Cannot reach FastAPI server. Please check your internet connection.`,
+        description: `Cannot reach FastAPI server at ${API_BASE_URL}. Please check your internet connection.`,
         variant: "destructive",
       });
     } else if (errorMessage.includes('not reachable')) {
       toast({
         title: "🔌 FastAPI Server Offline",
-        description: `The FastAPI backend is not responding.`,
+        description: `The FastAPI backend is not responding at ${API_BASE_URL}/api/v1/get_all_stones`,
         variant: "destructive",
       });
     } else {

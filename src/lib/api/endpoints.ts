@@ -1,8 +1,8 @@
 
 export const apiEndpoints = {
   getAllStones: (userId: number) => {
-    // Use the correct endpoint without /api/v1/ prefix
-    const endpoint = `/get_all_stones?user_id=${userId}`;
+    // Use the correct endpoint WITH /api/v1/ prefix to match FastAPI backend
+    const endpoint = `/api/v1/get_all_stones?user_id=${userId}`;
     console.log('🔧 API: Building getAllStones endpoint:', endpoint, 'for user:', userId, 'type:', typeof userId);
     return endpoint;
   },

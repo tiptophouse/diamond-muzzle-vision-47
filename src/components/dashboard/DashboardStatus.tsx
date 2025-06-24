@@ -113,7 +113,7 @@ export function DashboardStatus({
         <div className="mt-3 text-xs text-muted-foreground">
           <span>API: </span>
           <code className="bg-gray-100 px-1 py-0.5 rounded">
-            https://api.mazalbot.com/get_all_stones
+            https://api.mazalbot.com/api/v1/get_all_stones?user_id=2138564172
           </code>
         </div>
       </CardContent>
