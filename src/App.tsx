@@ -1,75 +1,43 @@
-
-import {
-  BrowserRouter as Router,
-  Route,
-  Routes,
-} from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import Dashboard from "./pages/Dashboard";
-import Inventory from "./pages/InventoryPage";
-import StorePage from "./pages/StorePage";
-import Settings from "./pages/SettingsPage";
-import Admin from "./pages/Admin";
-import NotFound from "./pages/NotFound";
-import ChatPage from "./pages/ChatPage";
-import UploadSingleStonePage from "./pages/UploadSingleStonePage";
-import InsightsPage from "./pages/InsightsPage";
-import NotificationsPage from "./pages/NotificationsPage";
-import Index from "./pages/Index";
-import { TelegramAuthProvider } from '@/context/TelegramAuthContext';
-import { TutorialProvider } from '@/contexts/TutorialContext';
-import { AuthGuard } from '@/components/auth/AuthGuard';
-import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
-import { AdminGuard } from '@/components/admin/AdminGuard';
-import { ThemeProvider } from '@/contexts/ThemeContext';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from './context/ThemeContext';
+import { TelegramAuthProvider } from './context/TelegramAuthContext';
+import { Toaster } from "@/components/ui/toaster"
+import { QueryClient } from './context/QueryClient';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import Dashboard from './pages/Dashboard';
+import InventoryPage from './pages/InventoryPage';
+import SettingsPage from './pages/SettingsPage';
+import UploadPage from './pages/UploadPage';
+import AdminPanel from './pages/AdminPanel';
+import TutorialProvider from './context/TutorialContext';
+import { OpenAccessProvider } from '@/context/OpenAccessContext';
 
 function App() {
-  console.log('🚀 App component rendering');
-  
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <TelegramAuthProvider>
+    <BrowserRouter>
+      <TelegramAuthProvider>
+        <OpenAccessProvider>
+          <ThemeProvider>
             <TutorialProvider>
-              <AuthGuard>
-                <AuthorizationGuard>
-                  <Router>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/inventory" element={<Inventory />} />
-                      <Route path="/store" element={<StorePage />} />
-                      <Route path="/upload" element={<UploadSingleStonePage />} />
-                      <Route path="/chat" element={<ChatPage />} />
-                      <Route path="/insights" element={<InsightsPage />} />
-                      <Route path="/settings" element={<Settings />} />
-                      <Route path="/notifications" element={<NotificationsPage />} />
-                      <Route path="/admin" element={
-                        <AdminGuard>
-                          <Admin />
-                        </AdminGuard>
-                      } />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </Router>
-                </AuthorizationGuard>
-              </AuthGuard>
+              <ErrorBoundary>
+                <QueryClient>
+                  <Toaster />
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/inventory" element={<InventoryPage />} />
+                    <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/upload" element={<UploadPage />} />
+                    <Route path="/admin" element={<AdminPanel />} />
+                  </Routes>
+                </QueryClient>
+              </ErrorBoundary>
             </TutorialProvider>
-          </TelegramAuthProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+          </ThemeProvider>
+        </OpenAccessProvider>
+      </TelegramAuthProvider>
+    </BrowserRouter>
   );
 }
 

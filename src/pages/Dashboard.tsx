@@ -1,69 +1,95 @@
-
-import { useInventoryData } from '@/hooks/useInventoryData';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { DataDrivenDashboard } from '@/components/dashboard/DataDrivenDashboard';
+import React, { useEffect } from 'react';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { MetricsGrid } from '@/components/dashboard/MetricsGrid';
 import { DashboardLoading } from '@/components/dashboard/DashboardLoading';
-import { SecurityMonitor } from '@/components/auth/SecurityMonitor';
-import { getVerificationResult } from '@/lib/api';
+import { useDashboardData } from '@/hooks/useDashboardData';
+import { UserStatsCard } from '@/components/dashboard/UserStatsCard';
+import { useOpenAccess } from '@/context/OpenAccessContext';
+import { useEnhancedUserTracking } from '@/hooks/useEnhancedUserTracking';
 
 export default function Dashboard() {
-  const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
-  const { loading, allDiamonds, fetchData, error } = useInventoryData();
-  const verificationResult = getVerificationResult();
+  const { hasAccess, isBlocked, loading } = useOpenAccess();
+  const { trackEnhancedPageVisit } = useEnhancedUserTracking();
+  
+  const { stats, clients, isLoading, refetch } = useDashboardData();
 
-  console.log('🔍 DASHBOARD DEBUG:');
-  console.log('- Auth loading:', authLoading);
-  console.log('- Is authenticated:', isAuthenticated);
-  console.log('- User:', user);
-  console.log('- FastAPI verification:', verificationResult);
-  console.log('- Inventory loading:', loading);
-  console.log('- Diamonds count:', allDiamonds.length);
-  console.log('- Error:', error);
+  useEffect(() => {
+    trackEnhancedPageVisit('/dashboard', 'Dashboard');
+  }, []);
 
-  const handleEmergencyMode = () => {
-    console.log('Emergency mode activated - skipping to basic dashboard');
-  };
+  if (loading) {
+    return <DashboardLoading />;
+  }
 
-  if (authLoading || loading) {
+  if (isBlocked) {
     return (
-      <>
-        <DashboardLoading onEmergencyMode={handleEmergencyMode} />
-        <SecurityMonitor />
-      </>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Access Blocked</h1>
+          <p className="text-gray-600">Your access has been restricted. Please contact support.</p>
+        </div>
+      </div>
     );
   }
 
-  if (!isAuthenticated || !user) {
+  if (!hasAccess) {
     return (
-      <>
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Enhanced Authentication Required</h2>
-            <p className="text-gray-600 mb-4">Please authenticate through Telegram to access your dashboard.</p>
-            <div className="text-sm text-gray-500 space-y-1">
-              <p>Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
-              <p>Is Authenticated: {isAuthenticated ? 'Yes' : 'No'}</p>
-              <p>User: {user ? `${user.first_name} (${user.id})` : 'None'}</p>
-              <p>Enhanced Verification: {verificationResult ? 'Success' : 'Failed'}</p>
-            </div>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">Welcome to Diamond Inventory</h1>
+          <p className="text-gray-600">Please wait while we set up your access...</p>
         </div>
-        <SecurityMonitor />
-      </>
+      </div>
     );
   }
 
   return (
-    <>
-      <div className="min-h-screen bg-gray-50">
-        <DataDrivenDashboard 
-          allDiamonds={allDiamonds} 
-          loading={loading}
-          fetchData={fetchData}
-          error={error}
-        />
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <DashboardHeader />
+        
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+          <div className="lg:col-span-3">
+            <MetricsGrid />
+          </div>
+          <div className="lg:col-span-1">
+            <UserStatsCard />
+          </div>
+        </div>
+
+        <div className="bg-white shadow overflow-hidden rounded-md">
+          <ul role="list" className="divide-y divide-gray-200">
+            {clients.map((client) => (
+              <li key={client.id}>
+                <a href="#" className="block hover:bg-gray-50">
+                  <div className="px-4 py-4 sm:px-6">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-blue-600 truncate">{client.first_name} {client.last_name}</p>
+                      <div className="ml-2 flex-shrink-0 flex">
+                        <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                          {client.status}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-2 sm:flex sm:justify-between">
+                      <div className="sm:flex">
+                        <p className="flex items-center text-sm text-gray-500">
+                          <span className="mr-1">Telegram ID:</span>
+                          {client.telegram_id}
+                        </p>
+                      </div>
+                      <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                        <span>Last Active:</span>
+                        <time dateTime={client.last_active || client.created_at}>{client.last_active || client.created_at}</time>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
-      <SecurityMonitor />
-    </>
+    </div>
   );
 }
