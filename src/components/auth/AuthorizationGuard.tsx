@@ -2,7 +2,8 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
-import { Shield, UserX, Crown } from 'lucide-react';
+import { useAppSettings } from '@/hooks/useAppSettings';
+import { Shield, UserX, Clock, Crown } from 'lucide-react';
 import { getAdminTelegramId } from '@/lib/api/secureConfig';
 
 interface AuthorizationGuardProps {
@@ -12,6 +13,7 @@ interface AuthorizationGuardProps {
 export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
   const { user, isLoading: authLoading, isTelegramEnvironment } = useTelegramAuth();
   const { isUserBlocked, isLoading: blockedLoading } = useBlockedUsers();
+  const { settings, isLoading: settingsLoading } = useAppSettings();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [adminTelegramId, setAdminTelegramId] = useState<number | null>(null);
 
@@ -30,22 +32,43 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
 
     console.log('🔍 Authorization check for user:', user.id, 'Admin ID:', adminTelegramId);
 
-    // Wait for blocked users data to load
-    if (blockedLoading) {
+    // Admin always gets access - HIGHEST PRIORITY
+    if (user.id === adminTelegramId) {
+      console.log('✅ Admin user detected - granting IMMEDIATE access');
+      setIsAuthorized(true);
       return;
     }
 
-    // Check if user is blocked - this applies to ALL users including admin
+    // Wait for other data to load for non-admin users
+    if (blockedLoading || settingsLoading) {
+      return;
+    }
+
+    // Enhanced security: verify environment in production for non-admin users
+    if (process.env.NODE_ENV === 'production' && !isTelegramEnvironment) {
+      console.log('❌ Production requires Telegram environment for non-admin users');
+      setIsAuthorized(false);
+      return;
+    }
+
+    // Check if user is blocked (only applies to non-admin users)
     if (isUserBlocked(user.id)) {
       console.log('❌ User is blocked');
       setIsAuthorized(false);
       return;
     }
 
-    // All authenticated, non-blocked users get access
-    console.log('✅ User authorized - authenticated and not blocked');
+    // If manual authorization is enabled, only admin can access
+    if (settings.manual_authorization_enabled) {
+      console.log('⚠️ Manual authorization enabled - denying access to non-admin');
+      setIsAuthorized(false);
+      return;
+    }
+
+    // Otherwise, user is authorized
+    console.log('✅ User authorized');
     setIsAuthorized(true);
-  }, [user, isUserBlocked, authLoading, blockedLoading, adminTelegramId]);
+  }, [user, isUserBlocked, settings, authLoading, blockedLoading, settingsLoading, isTelegramEnvironment, adminTelegramId]);
 
   // Loading state
   if (authLoading || isAuthorized === null || adminTelegramId === null) {
@@ -66,34 +89,49 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
     );
   }
 
-  // Not authorized - only blocked users
+  // Not authorized
   if (!isAuthorized) {
     const isBlocked = user && isUserBlocked(user.id);
     const isAdminUser = user && user.id === adminTelegramId;
+    const invalidEnvironment = process.env.NODE_ENV === 'production' && !isTelegramEnvironment;
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
           <div className={`rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 ${
-            isAdminUser ? 'bg-yellow-50' : 'bg-red-50'
+            isAdminUser ? 'bg-yellow-50' : isBlocked ? 'bg-red-50' : 'bg-orange-50'
           }`}>
             {isAdminUser ? (
               <Crown className="h-10 w-10 text-yellow-600" />
-            ) : (
+            ) : isBlocked ? (
               <UserX className="h-10 w-10 text-red-600" />
+            ) : (
+              <Clock className="h-10 w-10 text-orange-600" />
             )}
           </div>
           
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            {invalidEnvironment 
+              ? 'Invalid Access Method'
+              : isBlocked 
+                ? 'Access Denied' 
+                : 'Authorization Required'
+            }
+          </h2>
           
           <p className="text-gray-600 mb-6">
-            Your access to this application has been restricted by the administrator.
+            {invalidEnvironment
+              ? 'This application must be accessed through the official Telegram application for security reasons.'
+              : isBlocked 
+                ? 'Your access to this application has been restricted by the administrator.'
+                : 'This application now requires manual authorization. Please contact the administrator to request access.'
+            }
           </p>
           
           <div className="text-sm text-gray-500 mb-8 space-y-1">
             <p>User ID: {user?.id || 'Unknown'}</p>
-            <p>Status: Blocked</p>
-            {isAdminUser && <p className="text-yellow-600 font-medium">⚠️ Admin user is blocked</p>}
+            <p>Status: {invalidEnvironment ? 'Invalid Environment' : isBlocked ? 'Blocked' : 'Pending Authorization'}</p>
+            {isAdminUser && <p className="text-yellow-600 font-medium">⚠️ Admin user detected but authorization failed</p>}
           </div>
           
           <div className="space-y-3">
@@ -115,6 +153,6 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
     );
   }
 
-  // User is authorized - all authenticated, non-blocked users get access
+  // User is authorized
   return <>{children}</>;
 }

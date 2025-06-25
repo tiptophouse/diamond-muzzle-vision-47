@@ -1,5 +1,6 @@
 
-import { getCurrentUserId, getBackendAccessToken } from "@/lib/api/config";
+import { api, apiEndpoints, getCurrentUserId } from "@/lib/api";
+import { fetchMockInventoryData } from "./mockInventoryService";
 
 export interface FetchInventoryResult {
   data?: any[];
@@ -8,196 +9,63 @@ export interface FetchInventoryResult {
 }
 
 export async function fetchInventoryData(): Promise<FetchInventoryResult> {
-  const telegramUserId = getCurrentUserId();
-  console.log('🔍 INVENTORY SERVICE: Fetching data from FastAPI v1 get_all_stones endpoint');
-  console.log('🔍 INVENTORY SERVICE: Current Telegram user ID:', telegramUserId);
+  const userId = getCurrentUserId() || 2138564172;
+  
+  console.log('🔍 INVENTORY SERVICE: Fetching data from FastAPI for user:', userId);
   
   const debugInfo = { 
-    step: 'Starting inventory fetch with FastAPI v1 get_all_stones endpoint', 
+    step: 'Starting inventory fetch from FastAPI', 
+    userId, 
     timestamp: new Date().toISOString(),
-    dataSource: 'fastapi_v1',
-    authentication: 'Bearer Token',
-    telegramUserId: telegramUserId,
-    endpoint: '/api/v1/get_all_stones'
+    dataSource: 'fastapi'
   };
   
   try {
-    // Get the access token dynamically
-    console.log('🔐 INVENTORY SERVICE: Getting access token...');
-    const accessToken = await getBackendAccessToken();
+    // First try to fetch from FastAPI backend
+    console.log('🚀 INVENTORY SERVICE: Attempting FastAPI connection...');
+    const endpoint = apiEndpoints.getAllStones(userId);
+    console.log('🚀 INVENTORY SERVICE: Using endpoint:', endpoint);
     
-    if (!accessToken) {
-      console.error('❌ INVENTORY SERVICE: No access token available');
-      return {
-        error: 'No access token available for authentication',
-        debugInfo: {
-          ...debugInfo,
-          step: 'FAILED: No access token available',
-          error: 'Authentication token missing'
-        }
-      };
+    const result = await api.get(endpoint);
+    
+    if (result.error) {
+      console.error('❌ INVENTORY SERVICE: FastAPI request failed:', result.error);
+      throw new Error(result.error);
     }
     
-    console.log('✅ INVENTORY SERVICE: Access token retrieved, testing backend connectivity...');
-    
-    // Test backend connectivity first
-    const aliveResponse = await fetch('https://api.mazalbot.com/api/v1/alive');
-    
-    if (!aliveResponse.ok) {
-      console.error('❌ INVENTORY SERVICE: Backend connectivity test failed');
-      return {
-        error: `FastAPI server is not responding: ${aliveResponse.statusText}`,
-        debugInfo: {
-          ...debugInfo,
-          step: 'FAILED: Backend connectivity test failed',
-          error: aliveResponse.statusText
-        }
-      };
-    }
-    
-    console.log('✅ INVENTORY SERVICE: Backend is alive, fetching stones...');
-    
-    // Use the correct FastAPI v1 get_all_stones endpoint with dynamic Bearer token
-    const endpoint = 'https://api.mazalbot.com/api/v1/get_all_stones';
-    console.log('🚀 INVENTORY SERVICE: Using get_all_stones endpoint:', endpoint);
-    console.log('🚀 INVENTORY SERVICE: Using access token (first 20 chars):', accessToken.substring(0, 20) + '...');
-    
-    const response = await fetch(endpoint, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }
-    });
-    
-    console.log('📡 INVENTORY SERVICE: Response status:', response.status);
-    console.log('📡 INVENTORY SERVICE: Response headers:', Object.fromEntries(response.headers.entries()));
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ INVENTORY SERVICE: FastAPI request failed:', response.status, response.statusText);
-      console.error('❌ INVENTORY SERVICE: Error response:', errorText);
-      
-      let errorMessage = `Failed to fetch stones from get_all_stones: ${response.status} ${response.statusText}`;
-      if (response.status === 403) {
-        errorMessage = 'Authentication failed - invalid or expired token';
-      } else if (response.status === 401) {
-        errorMessage = 'Unauthorized - please check authentication';
-      }
+    if (result.data && Array.isArray(result.data) && result.data.length > 0) {
+      console.log('✅ INVENTORY SERVICE: FastAPI returned', result.data.length, 'diamonds');
       
       return {
-        error: errorMessage,
+        data: result.data,
         debugInfo: {
           ...debugInfo,
-          step: 'FAILED: get_all_stones request error',
-          error: `${response.status}: ${response.statusText}`,
-          errorResponse: errorText,
+          step: 'SUCCESS: FastAPI data fetched',
+          totalDiamonds: result.data.length,
+          dataSource: 'fastapi',
           endpoint
         }
       };
     }
     
-    const result = await response.json();
-    console.log('📡 INVENTORY SERVICE: Raw response received:', typeof result, Array.isArray(result));
-    
-    if (result) {
-      let stones = [];
-      
-      // Handle different response formats
-      if (Array.isArray(result)) {
-        stones = result;
-        console.log('✅ INVENTORY SERVICE: Direct array response with', stones.length, 'stones');
-      } else if (result && typeof result === 'object') {
-        // Handle object response - try common property names
-        if (Array.isArray(result.stones)) {
-          stones = result.stones;
-        } else if (Array.isArray(result.data)) {
-          stones = result.data;
-        } else if (Array.isArray(result.diamonds)) {
-          stones = result.diamonds;
-        } else if (Array.isArray(result.inventory)) {
-          stones = result.inventory;
-        } else {
-          // Try to find any array in the response
-          const possibleArrays = Object.values(result).filter(value => Array.isArray(value));
-          if (possibleArrays.length > 0) {
-            stones = possibleArrays[0];
-          }
-        }
-        
-        console.log('✅ INVENTORY SERVICE: Extracted', stones.length, 'stones from object response');
-      }
-      
-      if (stones.length === 0) {
-        console.log('📊 INVENTORY SERVICE: No stones found in response');
-        return {
-          data: [],
-          debugInfo: {
-            ...debugInfo,
-            step: 'SUCCESS: Connected to get_all_stones but no stones found',
-            totalStones: 0,
-            endpoint,
-            rawResponse: result
-          }
-        };
-      }
-      
-      // Process and validate stones data
-      const processedStones = stones.filter(stone => stone && typeof stone === 'object').map((stone, index) => {
-        return {
-          ...stone,
-          id: stone.id || stone.stone_id || stone.diamond_id || `stone-${index}-${Date.now()}`,
-          stock_number: stone.stock_number || stone.stockNumber || stone.stock_no || `STOCK-${index + 1}`,
-          shape: stone.shape || 'Round',
-          weight: parseFloat(stone.weight || stone.carat || stone.size || 0),
-          color: stone.color || 'D',
-          clarity: stone.clarity || 'FL',
-          cut: stone.cut || 'Excellent',
-          price: parseFloat(stone.price || stone.price_per_carat || 0),
-          status: stone.status || 'Available',
-          store_visible: stone.store_visible !== false,
-          picture: stone.picture || stone.image || stone.imageUrl,
-          certificate_url: stone.certificate_url || stone.certificateUrl,
-          certificate_number: stone.certificate_number || stone.certificateNumber,
-          lab: stone.lab || stone.laboratory
-        };
-      });
-      
-      console.log('✅ INVENTORY SERVICE: Processed', processedStones.length, 'valid stones from get_all_stones');
-      console.log('✅ INVENTORY SERVICE: Sample processed stone:', processedStones[0]);
-      
-      return {
-        data: processedStones,
-        debugInfo: {
-          ...debugInfo,
-          step: 'SUCCESS: Data fetched and processed from get_all_stones',
-          totalStones: processedStones.length,
-          endpoint,
-          sampleStone: processedStones[0]
-        }
-      };
-    }
-    
-    console.log('⚠️ INVENTORY SERVICE: No data in get_all_stones response');
-    return {
-      error: 'No data received from get_all_stones endpoint',
-      debugInfo: {
-        ...debugInfo,
-        step: 'FAILED: Empty response from get_all_stones',
-        endpoint
-      }
-    };
+    console.log('⚠️ INVENTORY SERVICE: FastAPI returned empty data');
+    throw new Error('No diamonds found in FastAPI response');
     
   } catch (error) {
-    console.error("❌ INVENTORY SERVICE: Unexpected error calling get_all_stones:", error);
+    console.error("❌ INVENTORY SERVICE: FastAPI connection failed:", error);
+    
+    // Fallback to mock data only if FastAPI is completely unreachable
+    console.log('🔄 INVENTORY SERVICE: Using mock data as fallback');
+    const mockResult = await fetchMockInventoryData();
     
     return {
-      error: error instanceof Error ? error.message : 'Unknown error occurred calling get_all_stones',
+      ...mockResult,
       debugInfo: {
         ...debugInfo,
-        step: 'FAILED: Unexpected error calling get_all_stones',
-        error: error instanceof Error ? error.message : String(error)
+        ...mockResult.debugInfo,
+        step: 'FALLBACK: Using mock data after FastAPI failure',
+        error: error instanceof Error ? error.message : String(error),
+        dataSource: 'mock_fallback'
       }
     };
   }

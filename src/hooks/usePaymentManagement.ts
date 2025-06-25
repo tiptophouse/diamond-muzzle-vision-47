@@ -1,8 +1,8 @@
 
 import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { api, apiEndpoints } from '@/lib/api';
+import { useToast } from '@/components/ui/use-toast';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
 interface PaymentStats {
   totalUsers: number;
@@ -16,45 +16,29 @@ export function usePaymentManagement() {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
 
-  const removeUserPayments = async (userId?: number) => {
-    if (!user?.id) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to manage payments",
-        variant: "destructive",
-      });
-      return false;
-    }
-
+  const removeUserPayments = async (userId: number) => {
     setIsLoading(true);
     try {
-      console.log('🗑️ PAYMENTS: Removing user payments with JWT authentication');
+      console.log('🗑️ Removing payments for user:', userId);
+      const response = await api.delete(apiEndpoints.removeUserPayments(userId));
       
-      const result = await api.delete(apiEndpoints.removeUserPayments());
-      
-      if (result.error) {
-        console.error('❌ PAYMENTS: Remove user payments failed:', result.error);
-        toast({
-          title: "Remove Failed ❌",
-          description: `Failed to remove payments: ${result.error}`,
-          variant: "destructive",
-        });
-        return false;
+      if (response.error) {
+        throw new Error(response.error);
       }
 
-      console.log('✅ PAYMENTS: User payments removed successfully');
       toast({
-        title: "Success ✅",
-        description: "Payments have been removed successfully",
+        title: "Payments Removed",
+        description: `Successfully removed all payment data for user ${userId}`,
       });
-      
+
+      // Refresh stats after removal
+      await getPaymentStats();
       return true;
     } catch (error) {
-      console.error('❌ PAYMENTS: Failed to remove payments:', error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to remove payments";
+      console.error('❌ Error removing user payments:', error);
       toast({
-        title: "Remove Failed ❌",
-        description: errorMessage,
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to remove user payments",
         variant: "destructive",
       });
       return false;
@@ -64,44 +48,28 @@ export function usePaymentManagement() {
   };
 
   const removeAllPayments = async () => {
-    if (!user?.id) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to manage payments",
-        variant: "destructive",
-      });
-      return false;
-    }
-
     setIsLoading(true);
     try {
-      console.log('🗑️ PAYMENTS: Removing all payments with JWT authentication');
+      console.log('🗑️ Removing all payment data');
+      const response = await api.delete(apiEndpoints.removeAllPayments());
       
-      const result = await api.delete(apiEndpoints.removeAllPayments());
-      
-      if (result.error) {
-        console.error('❌ PAYMENTS: Remove all payments failed:', result.error);
-        toast({
-          title: "Remove Failed ❌",
-          description: `Failed to remove all payments: ${result.error}`,
-          variant: "destructive",
-        });
-        return false;
+      if (response.error) {
+        throw new Error(response.error);
       }
 
-      console.log('✅ PAYMENTS: All payments removed successfully');
       toast({
-        title: "Success ✅",
-        description: "All payments have been removed successfully",
+        title: "All Payments Removed",
+        description: "Successfully removed all payment data from the system",
       });
-      
+
+      // Refresh stats after removal
+      await getPaymentStats();
       return true;
     } catch (error) {
-      console.error('❌ PAYMENTS: Failed to remove all payments:', error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to remove all payments";
+      console.error('❌ Error removing all payments:', error);
       toast({
-        title: "Remove Failed ❌",
-        description: errorMessage,
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to remove all payments",
         variant: "destructive",
       });
       return false;
@@ -111,92 +79,54 @@ export function usePaymentManagement() {
   };
 
   const removeMyselfFromPayments = async () => {
-    return await removeUserPayments();
-  };
-
-  const getUserPayments = async () => {
     if (!user?.id) {
       toast({
-        title: "Authentication Required",
-        description: "Please log in to view payments",
+        title: "Error",
+        description: "User not authenticated",
         variant: "destructive",
       });
-      return null;
+      return false;
     }
 
-    setIsLoading(true);
+    return await removeUserPayments(user.id);
+  };
+
+  const getUserPayments = async (userId: number) => {
     try {
-      console.log('💰 PAYMENTS: Getting user payments with JWT authentication');
+      console.log('📊 Fetching payments for user:', userId);
+      const response = await api.get(apiEndpoints.getUserPayments(userId));
       
-      const result = await api.get(apiEndpoints.getUserPayments());
-      
-      if (result.error) {
-        console.error('❌ PAYMENTS: Get user payments failed:', result.error);
-        toast({
-          title: "Fetch Failed ❌",
-          description: `Failed to get payments: ${result.error}`,
-          variant: "destructive",
-        });
-        return null;
+      if (response.error) {
+        throw new Error(response.error);
       }
 
-      console.log('✅ PAYMENTS: User payments retrieved successfully');
-      return result.data;
+      return response.data;
     } catch (error) {
-      console.error('❌ PAYMENTS: Failed to get payments:', error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to get payments";
+      console.error('❌ Error fetching user payments:', error);
       toast({
-        title: "Fetch Failed ❌",
-        description: errorMessage,
+        title: "Error",
+        description: "Failed to fetch user payments",
         variant: "destructive",
       });
       return null;
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const getPaymentStats = async (): Promise<PaymentStats | null> => {
-    if (!user?.id) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to view payment statistics",
-        variant: "destructive",
-      });
-      return null;
-    }
-
-    setIsLoading(true);
+  const getPaymentStats = async () => {
     try {
-      console.log('📊 PAYMENTS: Getting payment stats with JWT authentication');
+      console.log('📊 Fetching payment statistics');
+      const response = await api.get(apiEndpoints.getPaymentStats());
       
-      const result = await api.get(apiEndpoints.getPaymentStats());
-      
-      if (result.error) {
-        console.error('❌ PAYMENTS: Get payment stats failed:', result.error);
-        toast({
-          title: "Stats Failed ❌",
-          description: `Failed to get payment statistics: ${result.error}`,
-          variant: "destructive",
-        });
-        return null;
+      if (response.error) {
+        throw new Error(response.error);
       }
 
-      console.log('✅ PAYMENTS: Payment stats retrieved successfully');
-      const statsData = result.data as PaymentStats;
+      const statsData = response.data as PaymentStats;
       setStats(statsData);
       return statsData;
     } catch (error) {
-      console.error('❌ PAYMENTS: Failed to get payment stats:', error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to get payment statistics";
-      toast({
-        title: "Stats Failed ❌",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      console.error('❌ Error fetching payment stats:', error);
       return null;
-    } finally {
-      setIsLoading(false);
     }
   };
 

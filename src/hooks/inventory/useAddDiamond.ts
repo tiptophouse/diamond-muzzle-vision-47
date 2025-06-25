@@ -1,122 +1,100 @@
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { useEnhancedUserTracking } from '@/hooks/useEnhancedUserTracking';
-import { getBackendAccessToken } from '@/lib/api/config';
+import { api, apiEndpoints, getCurrentUserId } from '@/lib/api';
+import { Diamond } from '@/components/inventory/InventoryTable';
+import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
 
-export interface DiamondFormData {
-  // Basic Info
+interface AddDiamondData {
+  stockNumber: string;
   shape: string;
   carat: number;
   color: string;
   clarity: string;
-  cut?: string;
-  
-  // Measurements
-  length?: number;
-  width?: number;
-  depth?: number;
-  table?: number;
-  
-  // Certificate
+  cut: string;
+  price: number;
+  status: string;
+  imageUrl?: string;
+  store_visible?: boolean;
   certificateNumber?: string;
-  certificateType?: string;
-  
-  // Pricing
-  price?: number;
-  
-  // Images
-  images?: string[];
-  
-  // Store visibility
-  storeVisible?: boolean;
-  
-  // Additional properties
-  fluorescence?: string;
-  polish?: string;
-  symmetry?: string;
-  girdle?: string;
-  culet?: string;
+  lab?: string;
+  certificateUrl?: string;
 }
 
-export function useAddDiamond(onSuccess?: () => void) {
+export function useAddDiamond() {
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { user } = useTelegramAuth();
-  const queryClient = useQueryClient();
-  const { trackDiamondOperation } = useEnhancedUserTracking();
+  const { triggerInventoryChange } = useInventoryDataSync();
 
-  const addDiamondMutation = useMutation({
-    mutationFn: async (data: DiamondFormData): Promise<boolean> => {
-      if (!user?.id) {
-        throw new Error('User not authenticated');
-      }
-
-      // Get the access token dynamically
-      const accessToken = await getBackendAccessToken();
-      
-      if (!accessToken) {
-        throw new Error('No access token available for authentication');
-      }
-
-      // Use the correct FastAPI v1 endpoint structure
-      const diamondData = {
-        shape: data.shape,
-        weight: data.carat, // FastAPI expects 'weight' not 'carat'
-        color: data.color,
-        clarity: data.clarity,
-        cut: data.cut,
-        price: data.price || 0, // FastAPI expects price, not price_per_carat
-        // Add other fields as needed by the API
-        polish: data.polish,
-        symmetry: data.symmetry,
-        fluorescence: data.fluorescence
-      };
-
-      const response = await fetch('https://api.mazalbot.com/api/v1/diamonds', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
-        },
-        body: JSON.stringify(diamondData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || errorData.message || 'Failed to add diamond');
-      }
-
-      return true;
-    },
-    onSuccess: () => {
+  const addDiamond = async (diamondData: AddDiamondData): Promise<boolean> => {
+    const userId = getCurrentUserId();
+    
+    if (!userId) {
+      console.error('🚫 ADD DIAMOND: No authenticated user ID found');
       toast({
-        title: "Success",
-        description: "Diamond added successfully to your inventory!",
-      });
-      
-      trackDiamondOperation('add', { success: true });
-      queryClient.invalidateQueries({ queryKey: ['diamonds'] });
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      
-      if (onSuccess) {
-        onSuccess();
-      }
-    },
-    onError: (error: Error) => {
-      console.error('Error adding diamond:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to add diamond. Please try again.",
         variant: "destructive",
+        title: "❌ Authentication Required",
+        description: "You must be logged in to add diamonds to your inventory.",
+      });
+      return false;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      console.log('💎 ADD DIAMOND: Adding diamond for user:', userId, diamondData);
+      
+      const endpoint = apiEndpoints.addDiamond(userId);
+      const response = await api.post(endpoint, {
+        user_id: userId,
+        stock_number: diamondData.stockNumber,
+        shape: diamondData.shape,
+        weight: diamondData.carat,
+        color: diamondData.color,
+        clarity: diamondData.clarity,
+        cut: diamondData.cut,
+        price_per_carat: Math.round(diamondData.price / diamondData.carat),
+        status: diamondData.status,
+        picture: diamondData.imageUrl,
+        store_visible: diamondData.store_visible !== false,
+        certificate_number: diamondData.certificateNumber,
+        lab: diamondData.lab,
+        certificate_url: diamondData.certificateUrl,
+      });
+
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      console.log('✅ ADD DIAMOND: Successfully added diamond');
+      
+      toast({
+        title: "✅ Diamond Added Successfully",
+        description: `Stock #${diamondData.stockNumber} has been added to your inventory.`,
+      });
+
+      // Trigger inventory refresh
+      triggerInventoryChange();
+      
+      return true;
+    } catch (error) {
+      console.error('❌ ADD DIAMOND: Failed to add diamond:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add diamond';
+      
+      toast({
+        variant: "destructive",
+        title: "❌ Failed to Add Diamond",
+        description: errorMessage,
       });
       
-      trackDiamondOperation('add', { success: false, error: error.message });
-    },
-  });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return {
-    addDiamond: addDiamondMutation.mutateAsync,
-    isLoading: addDiamondMutation.isPending,
+    addDiamond,
+    isLoading
   };
 }
