@@ -2,6 +2,9 @@
 // FastAPI backend configuration with JWT authentication
 export const API_BASE_URL = "https://api.mazalbot.com";
 
+// Use the correct JWT Bearer token from your environment
+export const BACKEND_ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VySWQiLCJleHAiOjE2ODk2MDAwMDAsImlhdCI6MTY4OTU5NjQwMH0.kWzUkeMTF4LZbU9P5yRmsXrXhWfPlUPukGqI8Nq1rLo";
+
 // Current user ID from Telegram InitData verification
 let currentUserId: number | null = null;
 
@@ -49,44 +52,4 @@ export function getTelegramUserHeaders(): Record<string, string> {
   }
   
   return headers;
-}
-
-// Get backend access token - try multiple methods
-export async function getBackendAccessToken(): Promise<string | null> {
-  try {
-    console.log('🔐 CONFIG: Attempting to get backend access token...');
-    
-    // Try to get token from Supabase edge function first
-    const { supabase } = await import('@/integrations/supabase/client');
-    
-    try {
-      const { data: tokenData, error: tokenError } = await supabase.functions.invoke('get-api-token', {
-        method: 'POST'
-      });
-
-      if (!tokenError && tokenData?.token) {
-        console.log('✅ CONFIG: Retrieved token from Supabase edge function');
-        return tokenData.token;
-      }
-      
-      console.warn('⚠️ CONFIG: Supabase edge function failed:', tokenError?.message);
-    } catch (edgeFunctionError) {
-      console.warn('⚠️ CONFIG: Edge function call failed:', edgeFunctionError);
-    }
-    
-    // Fallback: try to get from environment or use hardcoded token
-    const fallbackToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VySWQiLCJleHAiOjE2ODk2MDAwMDAsImlhdCI6MTY4OTU5NjQwMH0.kWzUkeMTF4LZbU9P5yRmsXrXhWfPlUPukGqI8Nq1rLo";
-    
-    if (fallbackToken) {
-      console.log('🔄 CONFIG: Using fallback token');
-      return fallbackToken;
-    }
-    
-    console.error('❌ CONFIG: No valid token available');
-    return null;
-    
-  } catch (error) {
-    console.error('❌ CONFIG: Error getting backend access token:', error);
-    return null;
-  }
 }

@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useEnhancedUserTracking } from '@/hooks/useEnhancedUserTracking';
-import { getBackendAccessToken } from '@/lib/api/config';
 
 export interface DiamondFormData {
   // Basic Info
@@ -52,13 +51,6 @@ export function useAddDiamond(onSuccess?: () => void) {
         throw new Error('User not authenticated');
       }
 
-      // Get the access token dynamically
-      const accessToken = await getBackendAccessToken();
-      
-      if (!accessToken) {
-        throw new Error('No access token available for authentication');
-      }
-
       // Use the correct FastAPI v1 endpoint structure
       const diamondData = {
         shape: data.shape,
@@ -77,7 +69,7 @@ export function useAddDiamond(onSuccess?: () => void) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VySWQiLCJleHAiOjE2ODk2MDAwMDAsImlhdCI6MTY4OTU5NjQwMH0.kWzUkeMTF4LZbU9P5yRmsXrXhWfPlUPukGqI8Nq1rLo`
         },
         body: JSON.stringify(diamondData),
       });
