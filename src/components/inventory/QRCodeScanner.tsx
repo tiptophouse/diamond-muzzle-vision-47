@@ -63,7 +63,7 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 rounded-lg">
                 <Loader2 className="h-8 w-8 animate-spin text-white mb-2" />
                 <p className="text-white text-sm text-center">
-                  {isFetchingGIA ? 'Analyzing certificate with AI...' : 'Starting camera...'}
+                  {isFetchingGIA ? 'Processing certificate data...' : 'Starting camera...'}
                 </p>
               </div>
             )}
@@ -101,7 +101,7 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
           />
           
           <p className="text-sm text-gray-600 text-center">
-            Scan a GIA QR code or upload an image of a GIA certificate. AI will automatically extract all diamond data from the certificate.
+            Scan a GIA QR code or upload an image of a GIA certificate. The system will automatically extract diamond data using OCR if needed.
           </p>
         </CardContent>
       </Card>

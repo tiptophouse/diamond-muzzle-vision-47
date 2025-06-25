@@ -39,11 +39,11 @@ export function useAddDiamond(onSuccess?: () => void) {
         price: Number(data.price) || 0,
         price_per_carat: data.price ? Math.round(Number(data.price) / (Number(data.carat) || 1)) : 0,
         status: data.status || 'Available',
-        picture: data.picture || '',
+        picture: data.imageUrl || '',
         certificate_number: data.certificateNumber || '',
         certificate_url: data.certificateUrl || '',
         lab: data.lab || 'GIA',
-        store_visible: data.storeVisible !== false,
+        store_visible: data.store_visible !== false,
       };
 
       const endpoint = apiEndpoints.addDiamond();

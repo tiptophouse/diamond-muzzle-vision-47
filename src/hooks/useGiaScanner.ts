@@ -1,7 +1,7 @@
 
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { BrowserMultiFormatReader } from '@zxing/library';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 interface UseGiaScannerProps {
@@ -56,50 +56,43 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
     return canvas.toDataURL('image/jpeg', 0.8);
   }, []);
 
-  const analyzeImageWithAI = useCallback(async (imageData: string) => {
+  const processWithOCR = useCallback(async (imageData: string) => {
     try {
       setIsFetchingGIA(true);
       toast({
-        title: "🤖 AI Analysis Starting",
-        description: "Using GPT Vision to extract diamond data from certificate...",
+        title: "Processing with OCR",
+        description: "Analyzing image for GIA certificate data...",
       });
 
-      console.log('🤖 GIA SCANNER: Starting AI analysis of certificate image');
-
-      const { data, error } = await supabase.functions.invoke('analyze-gia-certificate', {
+      const { data, error } = await supabase.functions.invoke('fetch-gia-data', {
         body: { 
           imageData,
-          extractAllData: true 
+          useOCR: true 
         }
       });
 
       if (error) {
-        console.error('❌ GIA SCANNER: AI analysis failed:', error);
-        throw new Error(error.message || 'Failed to analyze certificate with AI');
+        throw new Error(error.message || 'Failed to process image with OCR');
       }
 
-      if (data && data.success) {
-        console.log('✅ GIA SCANNER: AI successfully extracted diamond data:', data.diamondData);
-        
-        toast({
-          title: "✅ Certificate Analyzed Successfully",
-          description: `Extracted data for ${data.diamondData.shape} diamond, ${data.diamondData.weight} ct`,
-        });
-
-        onScanSuccess(data.diamondData);
+      if (data) {
+        onScanSuccess(data);
         stopScanning();
+        toast({
+          title: "Success",
+          description: "GIA certificate data extracted successfully",
+        });
       } else {
-        throw new Error(data?.error || 'No diamond data could be extracted from the certificate');
+        throw new Error('No data extracted from image');
       }
 
     } catch (error) {
-      console.error('❌ GIA SCANNER: AI analysis error:', error);
+      console.error('Error processing with OCR:', error);
       toast({
         variant: "destructive",
-        title: "❌ AI Analysis Failed",
-        description: error instanceof Error ? error.message : "Failed to extract certificate data",
+        title: "OCR Processing Failed",
+        description: error instanceof Error ? error.message : "Failed to extract certificate data from image",
       });
-      setError(error instanceof Error ? error.message : "AI analysis failed");
     } finally {
       setIsFetchingGIA(false);
     }
@@ -107,7 +100,6 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
   
   const extractCertificateNumber = useCallback((qrText: string): string | null => {
     try {
-      // Try various GIA URL patterns
       if (qrText.includes('gia.edu') || qrText.includes('gia.org')) {
         const urlMatch = qrText.match(/reportno[=\/](\d+)/i);
         if (urlMatch) {
@@ -115,13 +107,11 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
         }
       }
 
-      // Try pure number
       const numberMatch = qrText.match(/^\d{10,}$/);
       if (numberMatch) {
         return numberMatch[0];
       }
 
-      // Try JSON format
       try {
         const jsonData = JSON.parse(qrText);
         return jsonData.certificate || jsonData.certificateNumber || jsonData.reportNumber;
@@ -129,7 +119,6 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
         // Continue with other parsing methods
       }
 
-      // Try certificate patterns
       const certMatch = qrText.match(/(?:certificate|cert|report)[\s:]*(\d{10,})/i);
       if (certMatch) {
         return certMatch[1];
@@ -144,67 +133,44 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
 
   const handleQRScan = useCallback(async (qrText: string) => {
     try {
-      console.log('📱 GIA SCANNER: QR code detected:', qrText);
-      
       const certificateNumber = extractCertificateNumber(qrText);
       
       if (!certificateNumber) {
-        console.log('📱 GIA SCANNER: No certificate number found, trying AI image analysis');
-        const imageData = captureFrame();
-        if (imageData) {
-          await analyzeImageWithAI(imageData);
-        } else {
-          throw new Error("Could not extract certificate number from QR code and failed to capture image");
-        }
-        return;
+        throw new Error("Invalid GIA QR code format");
       }
 
       setIsFetchingGIA(true);
       toast({
-        title: "🔍 Fetching GIA Data",
-        description: `Looking up certificate ${certificateNumber}...`,
+        title: "Fetching GIA Data",
+        description: "Getting diamond information from GIA database...",
       });
-
-      console.log('📱 GIA SCANNER: Fetching GIA data for certificate:', certificateNumber);
 
       const { data, error } = await supabase.functions.invoke('fetch-gia-data', {
         body: { certificateNumber }
       });
 
-      if (error || !data) {
-        console.log('📱 GIA SCANNER: GIA API failed, falling back to AI analysis');
-        const imageData = captureFrame();
-        if (imageData) {
-          await analyzeImageWithAI(imageData);
-        } else {
-          throw new Error('Failed to fetch GIA data and could not analyze image');
-        }
-        return;
+      if (error) {
+        throw new Error(error.message || 'Failed to fetch GIA data');
       }
 
-      console.log('✅ GIA SCANNER: GIA data fetched successfully:', data);
-      
-      toast({
-        title: "✅ GIA Data Retrieved",
-        description: "Diamond information loaded from GIA database",
-      });
-
-      onScanSuccess(data);
-      stopScanning();
+      if (data) {
+        onScanSuccess(data);
+        stopScanning();
+        toast({
+          title: "Success",
+          description: "GIA diamond information loaded successfully",
+        });
+      } else {
+        throw new Error('No data received from GIA');
+      }
 
     } catch (error) {
-      console.error('❌ GIA SCANNER: QR processing failed:', error);
-      setError(error instanceof Error ? error.message : "Failed to process QR code");
-      
-      // Try AI analysis as fallback
-      const imageData = captureFrame();
-      if (imageData) {
-        await analyzeImageWithAI(imageData);
-      }
+      console.error('Error fetching GIA data:', error);
+      throw error; // Re-throw to trigger OCR fallback
     } finally {
       setIsFetchingGIA(false);
     }
-  }, [extractCertificateNumber, onScanSuccess, stopScanning, toast, captureFrame, analyzeImageWithAI]);
+  }, [extractCertificateNumber, onScanSuccess, stopScanning, toast]);
   
   const startScanning = useCallback(async () => {
     if (!videoRef.current || !readerRef.current) return;
@@ -235,8 +201,23 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
         async (result, error) => {
           if (result) {
             const qrText = result.getText();
-            console.log('📱 GIA SCANNER: QR Code detected:', qrText);
-            await handleQRScan(qrText);
+            console.log('QR Code scanned:', qrText);
+            
+            try {
+              await handleQRScan(qrText);
+            } catch (err) {
+              console.error('QR processing failed, trying OCR fallback:', err);
+              const imageData = captureFrame();
+              if (imageData) {
+                await processWithOCR(imageData);
+              } else {
+                toast({
+                  variant: "destructive",
+                  title: "Scan Error",
+                  description: "Failed to process QR code and capture image for OCR",
+                });
+              }
+            }
           }
         }
       );
@@ -245,19 +226,17 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
       setError('Failed to start camera. Please ensure camera permissions are granted.');
       console.error('Camera start error:', err);
     }
-  }, [handleQRScan]);
+  }, [handleQRScan, captureFrame, processWithOCR, toast]);
   
   const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     try {
-      console.log('📁 GIA SCANNER: Processing uploaded file:', file.name);
-      
       const reader = new FileReader();
       reader.onload = async (e) => {
         const imageData = e.target?.result as string;
-        await analyzeImageWithAI(imageData);
+        await processWithOCR(imageData);
       };
       reader.readAsDataURL(file);
     } catch (error) {
@@ -268,7 +247,7 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
         description: "Failed to process uploaded image",
       });
     }
-  }, [analyzeImageWithAI, toast]);
+  }, [processWithOCR, toast]);
 
   return {
     videoRef,

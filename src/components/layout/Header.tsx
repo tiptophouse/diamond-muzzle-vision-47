@@ -1,68 +1,116 @@
-
-import React, { useState } from 'react';
+import React from 'react';
+import { Moon, Sun } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Settings, Scan } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { ModeToggle } from '@/components/ui/mode-toggle';
 import { MainNav } from '@/components/layout/MainNav';
 import { MobileNav } from '@/components/layout/MobileNav';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { Skeleton } from "@/components/ui/skeleton"
 import { GIAScannerButton } from '@/components/gia/GIAScannerButton';
 
 export function Header() {
-  const [isOpen, setIsOpen] = useState(false);
-  const navigate = useNavigate();
-
-  const handleGIAScanResult = (result: string) => {
-    console.log('Header GIA scan result:', result);
-    // Navigate to inventory page after scan
-    navigate('/inventory');
-  };
+  const { theme } = useTheme();
+  const { user, isLoading } = useTelegramAuth();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center">
-        <div className="mr-4 hidden md:flex">
-          <a className="mr-6 flex items-center space-x-2" href="/">
-            <span className="hidden font-bold sm:inline-block">
-              Diamond Inventory
-            </span>
-          </a>
-          <MainNav />
-        </div>
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetTrigger asChild>
-            <Button
-              variant="ghost"
-              className="mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
-            >
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Toggle Menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="pr-0">
-            <MobileNav />
-          </SheetContent>
-        </Sheet>
-        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-          <div className="w-full flex-1 md:w-auto md:flex-none">
-            {/* Search can be added here later */}
-          </div>
-          <nav className="flex items-center gap-2">
-            <GIAScannerButton 
-              onScanResult={handleGIAScanResult}
-              variant="outline"
-              size="sm"
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/settings')}
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
-          </nav>
-        </div>
+    <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <a href="#" className="lg:hidden">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="sm" className="p-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-4 w-4"
+                >
+                  <line x1="4" y1="12" x2="20" y2="12" />
+                  <line x1="4" y1="6" x2="20" y2="6" />
+                  <line x1="4" y1="18" x2="20" y2="18" />
+                </svg>
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-full sm:w-64">
+              <SheetHeader className="text-left">
+                <SheetTitle>Menu</SheetTitle>
+                <SheetDescription>
+                  Navigate through the application.
+                </SheetDescription>
+              </SheetHeader>
+              <MobileNav />
+            </SheetContent>
+          </Sheet>
+        </a>
+        <a href="#" className="font-bold">
+          Diamond Inventory
+        </a>
       </div>
+
+      <nav className="hidden md:flex items-center space-x-6">
+        <MainNav />
+      </nav>
+
+      <div className="flex items-center gap-2">
+        <GIAScannerButton 
+          variant="outline" 
+          size="sm"
+          onScanResult={(result) => {
+            console.log('Header GIA scan result:', result);
+            // Handle scan result if needed
+          }}
+        />
+        
+        <ModeToggle />
+        {isLoading ? (
+          <Skeleton className="h-8 w-8 rounded-full" />
+        ) : user ? (
+          <Avatar>
+            <AvatarImage src={user.photo_url} alt={user.first_name} />
+            <AvatarFallback>{user.first_name?.charAt(0)}{user.last_name?.charAt(0)}</AvatarFallback>
+          </Avatar>
+        ) : (
+          <Button size="sm">Login</Button>
+        )}
+      </div>
+
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button variant="ghost" size="sm" className="lg:hidden p-2">
+            <Avatar>
+              {isLoading ? (
+                <Skeleton className="h-8 w-8 rounded-full" />
+              ) : user ? (
+                <>
+                  <AvatarImage src={user.photo_url} alt={user.first_name} />
+                  <AvatarFallback>{user.first_name?.charAt(0)}{user.last_name?.charAt(0)}</AvatarFallback>
+                </>
+              ) : (
+                <AvatarFallback>Login</AvatarFallback>
+              )}
+            </Avatar>
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="right" className="w-full sm:w-64">
+          <SheetHeader className="text-left">
+            <SheetTitle>User Profile</SheetTitle>
+            <SheetDescription>
+              Manage your account settings.
+            </SheetDescription>
+          </SheetHeader>
+          {/* Add user profile settings here */}
+        </SheetContent>
+      </Sheet>
     </header>
   );
 }

@@ -22,19 +22,15 @@ export function GIAScannerButton({
   const [isOpen, setIsOpen] = useState(false);
   const { trackFeatureUsage } = useEnhancedUserTracking();
 
-  const handleScanSuccess = (giaData: any) => {
-    console.log('📱 GIA SCANNER: Scan success with extracted data:', giaData);
+  const handleScanResult = (result: string) => {
+    console.log('📱 GIA SCANNER: Scan result:', result);
     
     // Track GIA scanner usage
-    trackFeatureUsage('gia_scanner', { scan_result: 'success', extracted_data: giaData });
+    trackFeatureUsage('gia_scanner', { scan_result: result });
     
     if (onScanResult) {
-      onScanResult(JSON.stringify(giaData));
+      onScanResult(result);
     }
-    setIsOpen(false);
-  };
-
-  const handleClose = () => {
     setIsOpen(false);
   };
 
@@ -45,22 +41,35 @@ export function GIAScannerButton({
   };
 
   return (
-    <>
-      <Button 
-        variant={variant} 
-        size={size}
-        className={`gap-2 ${className}`}
-        onClick={handleOpenScanner}
-      >
-        <Scan className="h-4 w-4" />
-        GIA Scanner
-      </Button>
-
-      <QRCodeScanner
-        onScanSuccess={handleScanSuccess}
-        onClose={handleClose}
-        isOpen={isOpen}
-      />
-    </>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button 
+          variant={variant} 
+          size={size}
+          className={`gap-2 ${className}`}
+          onClick={handleOpenScanner}
+        >
+          <Scan className="h-4 w-4" />
+          GIA Scanner
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Camera className="h-5 w-5" />
+            GIA Certificate Scanner
+          </DialogTitle>
+        </DialogHeader>
+        <div className="p-4">
+          <QRCodeScanner
+            onScanResult={handleScanResult}
+            onError={(error) => {
+              console.error('GIA Scanner error:', error);
+              trackFeatureUsage('gia_scanner', { action: 'error', error: error.message });
+            }}
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
