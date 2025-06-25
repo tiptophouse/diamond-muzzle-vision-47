@@ -126,15 +126,22 @@ export function useEnhancedUserTracking() {
           scroll_depth: maxScrollRef.current
         });
 
-      // Update behavior analytics
-      await supabase
+      // Update behavior analytics with raw SQL increment
+      const { data: currentAnalytics } = await supabase
         .from('user_behavior_analytics')
-        .update({
-          total_page_views: supabase.sql`total_page_views + 1`,
-          total_time_spent: supabase.sql`total_time_spent + interval '${Math.round(timeSpent / 1000)} seconds'`,
-          updated_at: new Date().toISOString()
-        })
-        .eq('telegram_id', user.id);
+        .select('total_page_views, total_time_spent')
+        .eq('telegram_id', user.id)
+        .single();
+
+      if (currentAnalytics) {
+        await supabase
+          .from('user_behavior_analytics')
+          .update({
+            total_page_views: currentAnalytics.total_page_views + 1,
+            updated_at: new Date().toISOString()
+          })
+          .eq('telegram_id', user.id);
+      }
 
       // Track activity
       await trackActivity('page_visit', {
@@ -163,15 +170,31 @@ export function useEnhancedUserTracking() {
 
     // Update analytics counters
     try {
-      const updateField = `diamonds_${operation === 'add' ? 'added' : operation === 'edit' ? 'edited' : 'deleted'}`;
-      await supabase
+      const { data: currentAnalytics } = await supabase
         .from('user_behavior_analytics')
-        .update({
-          [updateField]: supabase.sql`${updateField} + 1`,
-          engagement_score: supabase.sql`engagement_score + 5`,
+        .select('diamonds_added, diamonds_edited, diamonds_deleted, engagement_score')
+        .eq('telegram_id', user!.id)
+        .single();
+
+      if (currentAnalytics) {
+        const updates: any = {
+          engagement_score: currentAnalytics.engagement_score + 5,
           updated_at: new Date().toISOString()
-        })
-        .eq('telegram_id', user!.id);
+        };
+
+        if (operation === 'add') {
+          updates.diamonds_added = currentAnalytics.diamonds_added + 1;
+        } else if (operation === 'edit') {
+          updates.diamonds_edited = currentAnalytics.diamonds_edited + 1;
+        } else if (operation === 'delete') {
+          updates.diamonds_deleted = currentAnalytics.diamonds_deleted + 1;
+        }
+
+        await supabase
+          .from('user_behavior_analytics')
+          .update(updates)
+          .eq('telegram_id', user!.id);
+      }
     } catch (error) {
       console.error('Error updating analytics:', error);
     }

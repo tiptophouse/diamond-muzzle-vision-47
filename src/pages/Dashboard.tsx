@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { MetricsGrid } from '@/components/dashboard/MetricsGrid';
 import { DashboardLoading } from '@/components/dashboard/DashboardLoading';
@@ -10,6 +11,7 @@ import { useEnhancedUserTracking } from '@/hooks/useEnhancedUserTracking';
 export default function Dashboard() {
   const { hasAccess, isBlocked, loading } = useOpenAccess();
   const { trackEnhancedPageVisit } = useEnhancedUserTracking();
+  const [emergencyMode, setEmergencyMode] = useState(false);
   
   const { stats, clients, isLoading, refetch } = useDashboardData();
 
@@ -17,8 +19,12 @@ export default function Dashboard() {
     trackEnhancedPageVisit('/dashboard', 'Dashboard');
   }, []);
 
+  const handleEmergencyMode = () => {
+    setEmergencyMode(true);
+  };
+
   if (loading) {
-    return <DashboardLoading />;
+    return <DashboardLoading onEmergencyMode={handleEmergencyMode} />;
   }
 
   if (isBlocked) {
@@ -46,11 +52,19 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <DashboardHeader />
+        <DashboardHeader emergencyMode={emergencyMode} />
         
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
           <div className="lg:col-span-3">
-            <MetricsGrid />
+            <MetricsGrid 
+              totalInventory={stats?.totalInventory || 0}
+              totalValue={stats?.totalValue || 0}
+              activeLeads={stats?.activeLeads || 0}
+              avgPricePerCarat={stats?.avgPricePerCarat || 0}
+              avgCaratWeight={stats?.avgCaratWeight || 0}
+              premiumDiamondsCount={stats?.premiumDiamondsCount || 0}
+              unreadNotifications={stats?.unreadNotifications || 0}
+            />
           </div>
           <div className="lg:col-span-1">
             <UserStatsCard />

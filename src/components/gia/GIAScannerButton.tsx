@@ -34,6 +34,11 @@ export function GIAScannerButton({
     setIsOpen(false);
   };
 
+  const handleScanError = (error: any) => {
+    console.error('GIA Scanner error:', error);
+    trackFeatureUsage('gia_scanner', { action: 'error', error: error.message });
+  };
+
   const handleOpenScanner = () => {
     console.log('📱 GIA SCANNER: Opening scanner');
     trackFeatureUsage('gia_scanner', { action: 'opened' });
@@ -62,11 +67,8 @@ export function GIAScannerButton({
         </DialogHeader>
         <div className="p-4">
           <QRCodeScanner
-            onScanResult={handleScanResult}
-            onError={(error) => {
-              console.error('GIA Scanner error:', error);
-              trackFeatureUsage('gia_scanner', { action: 'error', error: error.message });
-            }}
+            onResult={handleScanResult}
+            onError={handleScanError}
           />
         </div>
       </DialogContent>

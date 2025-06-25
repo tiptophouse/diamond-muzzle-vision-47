@@ -1,17 +1,27 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { TelegramAuthProvider } from './context/TelegramAuthContext';
 import { Toaster } from "@/components/ui/toaster"
-import { QueryClient } from './context/QueryClient';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import InventoryPage from './pages/InventoryPage';
 import SettingsPage from './pages/SettingsPage';
 import UploadPage from './pages/UploadPage';
-import AdminPanel from './pages/AdminPanel';
-import TutorialProvider from './context/TutorialContext';
+import AdminPanel from './pages/Admin';
+import TutorialProvider from './contexts/TutorialContext';
 import { OpenAccessProvider } from '@/context/OpenAccessContext';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
   return (
@@ -21,7 +31,7 @@ function App() {
           <ThemeProvider>
             <TutorialProvider>
               <ErrorBoundary>
-                <QueryClient>
+                <QueryClientProvider client={queryClient}>
                   <Toaster />
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
@@ -31,7 +41,7 @@ function App() {
                     <Route path="/upload" element={<UploadPage />} />
                     <Route path="/admin" element={<AdminPanel />} />
                   </Routes>
-                </QueryClient>
+                </QueryClientProvider>
               </ErrorBoundary>
             </TutorialProvider>
           </ThemeProvider>
