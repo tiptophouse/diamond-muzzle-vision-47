@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { InventoryTable } from '@/components/inventory/InventoryTable';
 import { InventoryHeader } from '@/components/inventory/InventoryHeader';
 import { InventoryTableLoading } from '@/components/inventory/InventoryTableLoading';
@@ -23,7 +23,6 @@ export default function InventoryPage() {
   const handleGIAScanResult = (result: string) => {
     console.log('Inventory GIA scan result:', result);
     trackFeatureUsage('gia_scanner_inventory', { scan_result: result });
-    // You can add logic here to auto-fill diamond form with GIA data
   };
 
   const handleRefresh = () => {

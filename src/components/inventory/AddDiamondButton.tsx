@@ -27,7 +27,6 @@ export function AddDiamondButton() {
         <DiamondForm
           onSubmit={addDiamond}
           onCancel={() => setIsOpen(false)}
-          submitLabel="Add Diamond"
         />
       </DialogContent>
     </Dialog>

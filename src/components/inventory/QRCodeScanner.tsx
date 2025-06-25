@@ -1,110 +1,105 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
+import { QrReader } from 'react-qr-reader';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Camera, X, Loader2, Upload } from 'lucide-react';
-import { useGiaScanner } from '@/hooks/useGiaScanner';
+import { Camera, X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-interface QRCodeScannerProps {
-  onScanResult: (result: string) => void;
+export interface QRCodeScannerProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onScanSuccess: (result: string) => void;
   onError?: (error: any) => void;
 }
 
-export function QRCodeScanner({ onScanResult, onError }: QRCodeScannerProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+export function QRCodeScanner({ isOpen, onClose, onScanSuccess, onError }: QRCodeScannerProps) {
+  const { toast } = useToast();
+  const [scanning, setScanning] = useState(false);
 
-  const {
-    videoRef,
-    canvasRef,
-    isScanning,
-    isLoading,
-    isFetchingGIA,
-    error,
-    startScanning,
-    stopScanning,
-    handleFileUpload,
-  } = useGiaScanner({ 
-    onScanSuccess: (giaData: any) => {
-      // Extract certificate number or relevant info for backward compatibility
-      const result = giaData.certificateNumber || JSON.stringify(giaData);
-      onScanResult(result);
-    }, 
-    isOpen: true 
-  });
-
-  const triggerFileUpload = () => {
-    fileInputRef.current?.click();
+  const handleScan = (result: any) => {
+    if (result) {
+      const scannedText = result.text || result;
+      console.log('QR Code scanned:', scannedText);
+      
+      toast({
+        title: "QR Code Scanned",
+        description: "Processing certificate data...",
+      });
+      
+      onScanSuccess(scannedText);
+      onClose();
+    }
   };
 
+  const handleError = (error: any) => {
+    console.error('QR Scanner error:', error);
+    toast({
+      title: "Scanner Error",
+      description: "Failed to access camera. Please check permissions.",
+      variant: "destructive",
+    });
+    
+    if (onError) {
+      onError(error);
+    }
+  };
+
+  const startScanning = () => {
+    setScanning(true);
+  };
+
+  const stopScanning = () => {
+    setScanning(false);
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      startScanning();
+    } else {
+      stopScanning();
+    }
+  }, [isOpen]);
+
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Camera className="h-5 w-5" />
-          Scan GIA Certificate
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="relative">
-          <video
-            ref={videoRef}
-            className="w-full aspect-square rounded-lg bg-gray-100"
-            autoPlay
-            playsInline
-            muted
-          />
-          <canvas
-            ref={canvasRef}
-            className="hidden"
-          />
-          {(isLoading || isFetchingGIA) && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 rounded-lg">
-              <Loader2 className="h-8 w-8 animate-spin text-white mb-2" />
-              <p className="text-white text-sm text-center">
-                {isFetchingGIA ? 'Processing certificate data...' : 'Starting camera...'}
-              </p>
-            </div>
-          )}
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Camera className="h-5 w-5" />
+            Scan GIA Certificate QR Code
+          </DialogTitle>
+        </DialogHeader>
         
-        {error && (
-          <div className="text-red-600 text-sm text-center">
-            {error}
-            {onError && onError(new Error(error))}
+        <div className="space-y-4">
+          <div className="relative">
+            {scanning && (
+              <QrReader
+                onResult={handleScan}
+                onError={handleError}
+                style={{ width: '100%' }}
+                constraints={{
+                  facingMode: 'environment'
+                }}
+              />
+            )}
           </div>
-        )}
-        
-        <div className="flex gap-2">
-          {!isScanning ? (
-            <>
-              <Button onClick={startScanning} className="flex-1" disabled={isFetchingGIA}>
-                <Camera className="h-4 w-4 mr-2" />
-                Start Scanning
-              </Button>
-              <Button onClick={triggerFileUpload} variant="outline" className="flex-1" disabled={isFetchingGIA}>
-                <Upload className="h-4 w-4 mr-2" />
-                Upload Image
-              </Button>
-            </>
-          ) : (
-            <Button onClick={stopScanning} variant="outline" className="flex-1" disabled={isFetchingGIA}>
-              Stop Scanning
+          
+          <div className="flex justify-between gap-2">
+            <Button variant="outline" onClick={onClose}>
+              <X className="mr-2 h-4 w-4" />
+              Cancel
             </Button>
-          )}
+            <Button 
+              onClick={scanning ? stopScanning : startScanning}
+              variant={scanning ? "destructive" : "default"}
+            >
+              <Camera className="mr-2 h-4 w-4" />
+              {scanning ? 'Stop' : 'Start'} Scanner
+            </Button>
+          </div>
         </div>
-        
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileUpload}
-          className="hidden"
-        />
-        
-        <p className="text-sm text-gray-600 text-center">
-          Scan a GIA QR code or upload an image of a GIA certificate. The system will automatically extract diamond data using OCR if needed.
-        </p>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 }
