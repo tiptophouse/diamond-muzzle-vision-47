@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { QrReader } from 'react-qr-reader';
+import { BrowserMultiFormatReader } from '@zxing/library';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Camera, X } from 'lucide-react';
@@ -16,24 +16,80 @@ export interface QRCodeScannerProps {
 export function QRCodeScanner({ isOpen, onClose, onScanSuccess, onError }: QRCodeScannerProps) {
   const { toast } = useToast();
   const [scanning, setScanning] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
 
-  const handleScan = (result: any) => {
-    if (result) {
-      const scannedText = result.text || result;
-      console.log('QR Code scanned:', scannedText);
+  useEffect(() => {
+    if (isOpen) {
+      startScanning();
+    } else {
+      stopScanning();
+    }
+
+    return () => {
+      stopScanning();
+    };
+  }, [isOpen]);
+
+  const startScanning = async () => {
+    try {
+      setScanning(true);
       
-      toast({
-        title: "QR Code Scanned",
-        description: "Processing certificate data...",
-      });
+      if (!codeReaderRef.current) {
+        codeReaderRef.current = new BrowserMultiFormatReader();
+      }
+
+      const videoInputDevices = await codeReaderRef.current.listVideoInputDevices();
       
-      onScanSuccess(scannedText);
-      onClose();
+      if (videoInputDevices.length === 0) {
+        throw new Error('No camera devices found');
+      }
+
+      // Try to find back camera first, otherwise use first available
+      const backCamera = videoInputDevices.find(device => 
+        device.label.toLowerCase().includes('back') || 
+        device.label.toLowerCase().includes('rear')
+      );
+      const selectedDevice = backCamera || videoInputDevices[0];
+
+      if (videoRef.current) {
+        codeReaderRef.current.decodeFromVideoDevice(
+          selectedDevice.deviceId,
+          videoRef.current,
+          (result, error) => {
+            if (result) {
+              const scannedText = result.getText();
+              console.log('QR Code scanned:', scannedText);
+              
+              toast({
+                title: "QR Code Scanned",
+                description: "Processing certificate data...",
+              });
+              
+              onScanSuccess(scannedText);
+              onClose();
+            }
+            if (error && error.name !== 'NotFoundException') {
+              console.error('QR Scanner error:', error);
+              handleError(error);
+            }
+          }
+        );
+      }
+    } catch (error) {
+      console.error('Failed to start scanning:', error);
+      handleError(error);
+    }
+  };
+
+  const stopScanning = () => {
+    setScanning(false);
+    if (codeReaderRef.current) {
+      codeReaderRef.current.reset();
     }
   };
 
   const handleError = (error: any) => {
-    console.error('QR Scanner error:', error);
     toast({
       title: "Scanner Error",
       description: "Failed to access camera. Please check permissions.",
@@ -44,22 +100,6 @@ export function QRCodeScanner({ isOpen, onClose, onScanSuccess, onError }: QRCod
       onError(error);
     }
   };
-
-  const startScanning = () => {
-    setScanning(true);
-  };
-
-  const stopScanning = () => {
-    setScanning(false);
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      startScanning();
-    } else {
-      stopScanning();
-    }
-  }, [isOpen]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -73,15 +113,15 @@ export function QRCodeScanner({ isOpen, onClose, onScanSuccess, onError }: QRCod
         
         <div className="space-y-4">
           <div className="relative">
-            {scanning && (
-              <QrReader
-                onResult={handleScan}
-                onError={handleError}
-                style={{ width: '100%' }}
-                constraints={{
-                  facingMode: 'environment'
-                }}
-              />
+            <video
+              ref={videoRef}
+              className="w-full h-64 object-cover rounded-lg bg-gray-100"
+              style={{ display: scanning ? 'block' : 'none' }}
+            />
+            {!scanning && (
+              <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+                <Camera className="h-12 w-12 text-gray-400" />
+              </div>
             )}
           </div>
           

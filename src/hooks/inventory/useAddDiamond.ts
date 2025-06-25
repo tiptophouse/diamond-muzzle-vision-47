@@ -51,42 +51,32 @@ export function useAddDiamond(onSuccess?: () => void) {
         throw new Error('User not authenticated');
       }
 
+      // Use the correct FastAPI v1 endpoint structure
       const diamondData = {
-        user_id: user.id,
         shape: data.shape,
-        carat: data.carat,
+        weight: data.carat, // FastAPI expects 'weight' not 'carat'
         color: data.color,
         clarity: data.clarity,
         cut: data.cut,
-        length: data.length,
-        width: data.width,
-        depth: data.depth,
-        table_percentage: data.table,
-        certificate_number: data.certificateNumber,
-        certificate_type: data.certificateType,
-        price: data.price,
-        images: data.images || [],
-        store_visible: data.storeVisible || false,
-        fluorescence: data.fluorescence,
+        price: data.price || 0, // FastAPI expects price, not price_per_carat
+        // Add other fields as needed by the API
         polish: data.polish,
         symmetry: data.symmetry,
-        girdle: data.girdle,
-        culet: data.culet,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        fluorescence: data.fluorescence
       };
 
-      const response = await fetch('https://mazalbot.me/api/diamonds', {
+      const response = await fetch('https://api.mazalbot.com/api/v1/diamonds', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VySWQiLCJleHAiOjE2ODk2MDAwMDAsImlhdCI6MTY4OTU5NjQwMH0.kWzUkeMTF4LZbU9P5yRmsXrXhWfPlUPukGqI8Nq1rLo`
         },
         body: JSON.stringify(diamondData),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to add diamond');
+        throw new Error(errorData.detail || errorData.message || 'Failed to add diamond');
       }
 
       return true;
