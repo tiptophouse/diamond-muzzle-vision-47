@@ -8,6 +8,10 @@ import { DiamondForm } from '@/components/inventory/DiamondForm';
 export function AddDiamondButton() {
   const [isOpen, setIsOpen] = useState(false);
 
+  const handleSuccess = () => {
+    setIsOpen(false);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -20,7 +24,7 @@ export function AddDiamondButton() {
         <DialogHeader>
           <DialogTitle>Add New Diamond</DialogTitle>
         </DialogHeader>
-        <DiamondForm onSuccess={() => setIsOpen(false)} />
+        <DiamondForm onClose={handleSuccess} />
       </DialogContent>
     </Dialog>
   );

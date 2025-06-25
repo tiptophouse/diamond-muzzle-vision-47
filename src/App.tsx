@@ -11,7 +11,7 @@ import InventoryPage from './pages/InventoryPage';
 import SettingsPage from './pages/SettingsPage';
 import UploadPage from './pages/UploadPage';
 import AdminPanel from './pages/Admin';
-import TutorialProvider from './contexts/TutorialContext';
+import { TutorialProvider } from './contexts/TutorialContext';
 import { OpenAccessProvider } from '@/context/OpenAccessContext';
 
 const queryClient = new QueryClient({
