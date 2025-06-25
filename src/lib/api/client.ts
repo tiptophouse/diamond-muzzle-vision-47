@@ -1,5 +1,5 @@
 import { toast } from "@/components/ui/use-toast";
-import { API_BASE_URL, getCurrentUserId, BACKEND_ACCESS_TOKEN, getTelegramUserHeaders } from './config';
+import { API_BASE_URL, getCurrentUserId, getBackendAccessToken, getTelegramUserHeaders } from './config';
 
 interface ApiResponse<T> {
   data?: T;
@@ -10,9 +10,11 @@ interface ApiResponse<T> {
 async function testBackendConnectivity(): Promise<boolean> {
   try {
     console.log('🔍 API: Testing FastAPI backend connectivity to:', API_BASE_URL);
-    console.log('🔍 API: Using access token:', BACKEND_ACCESS_TOKEN ? 'Present' : 'Missing');
     
-    if (!BACKEND_ACCESS_TOKEN) {
+    const backendAccessToken = await getBackendAccessToken();
+    console.log('🔍 API: Using access token:', backendAccessToken ? 'Present' : 'Missing');
+    
+    if (!backendAccessToken) {
       console.error('❌ API: No backend access token available for connectivity test');
       return false;
     }
@@ -26,7 +28,7 @@ async function testBackendConnectivity(): Promise<boolean> {
       mode: 'cors',
       headers: {
         'Accept': 'application/json',
-        'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
+        'Authorization': `Bearer ${backendAccessToken}`,
       },
     });
     
@@ -55,8 +57,11 @@ export async function fetchApi<T>(
     const telegramUserId = getCurrentUserId();
     console.log('🚀 API: Making FastAPI request to:', url);
     console.log('🚀 API: Telegram user ID for data isolation:', telegramUserId);
-    console.log('🚀 API: Using backend token:', BACKEND_ACCESS_TOKEN ? 'Present' : 'Missing');
     console.log('🚀 API: Request method:', options.method || 'GET');
+    
+    // Get dynamic access token
+    const backendAccessToken = await getBackendAccessToken();
+    console.log('🚀 API: Using backend token:', backendAccessToken ? 'Present' : 'Missing');
     
     // Test connectivity first for GET requests
     if (!options.method || options.method === 'GET') {
@@ -76,8 +81,8 @@ export async function fetchApi<T>(
     };
 
     // Add Bearer token for authenticated endpoints
-    if (BACKEND_ACCESS_TOKEN) {
-      headers["Authorization"] = `Bearer ${BACKEND_ACCESS_TOKEN}`;
+    if (backendAccessToken) {
+      headers["Authorization"] = `Bearer ${backendAccessToken}`;
     }
     
     // Add Telegram user ID headers for data isolation

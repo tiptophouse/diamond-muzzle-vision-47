@@ -1,5 +1,5 @@
 
-import { API_BASE_URL, BACKEND_ACCESS_TOKEN } from './config';
+import { API_BASE_URL, getBackendAccessToken } from './config';
 import { apiEndpoints } from './endpoints';
 import { setCurrentUserId } from './config';
 
@@ -30,7 +30,8 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     console.log('🔐 API: Sending to:', `${API_BASE_URL}${apiEndpoints.verifyTelegram()}`);
     console.log('🔐 API: InitData length:', initData.length);
     
-    if (!BACKEND_ACCESS_TOKEN) {
+    const backendAccessToken = await getBackendAccessToken();
+    if (!backendAccessToken) {
       console.error('🔐 API: No backend access token available');
       verificationResult = null;
       return null;
@@ -39,7 +40,7 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
+      'Authorization': `Bearer ${backendAccessToken}`,
       'X-Timestamp': Date.now().toString(),
       'X-Client-Version': '1.0.0'
     };
@@ -88,8 +89,9 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
     "X-Client-Timestamp": Date.now().toString()
   };
   
-  if (BACKEND_ACCESS_TOKEN) {
-    headers["Authorization"] = `Bearer ${BACKEND_ACCESS_TOKEN}`;
+  const backendAccessToken = await getBackendAccessToken();
+  if (backendAccessToken) {
+    headers["Authorization"] = `Bearer ${backendAccessToken}`;
     console.log('🚀 API: Using backend access token for authenticated requests');
   } else {
     console.warn('⚠️ API: No backend access token available');
