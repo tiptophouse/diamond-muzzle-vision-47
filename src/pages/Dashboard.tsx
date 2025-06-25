@@ -43,6 +43,9 @@ export default function Dashboard() {
     avgPricePerCarat: stats?.totalValue && stats?.totalInventory 
       ? Math.round(stats.totalValue / stats.totalInventory) 
       : 0,
+    avgCaratWeight: 1.2, // Mock average carat weight
+    premiumDiamondsCount: Math.floor((stats?.totalInventory || 0) * 0.3), // 30% premium
+    unreadNotifications: 5, // Mock notifications
     inventoryByShape: [
       { name: 'Round', value: Math.floor(Math.random() * 10) + 1 },
       { name: 'Princess', value: Math.floor(Math.random() * 5) + 1 },
@@ -61,6 +64,9 @@ export default function Dashboard() {
         totalValue={mockData.totalValue}
         activeLeads={mockData.activeLeads}
         avgPricePerCarat={mockData.avgPricePerCarat}
+        avgCaratWeight={mockData.avgCaratWeight}
+        premiumDiamondsCount={mockData.premiumDiamondsCount}
+        unreadNotifications={mockData.unreadNotifications}
       />
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -54,7 +54,7 @@ export function GIAScannerButton({
       <QRCodeScanner
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        onScanResult={handleScanResult}
+        onScanSuccess={handleScanResult}
         onError={(error) => {
           console.error('GIA Scanner error:', error);
           trackFeatureUsage('gia_scanner', { action: 'error', error: error.message });

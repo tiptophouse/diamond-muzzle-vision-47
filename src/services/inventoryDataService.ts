@@ -9,31 +9,20 @@ export interface FetchInventoryResult {
 
 export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   const telegramUserId = getCurrentUserId();
-  console.log('🔍 INVENTORY SERVICE: Fetching data from FastAPI v1 with Bearer token');
+  console.log('🔍 INVENTORY SERVICE: Fetching data from FastAPI v1 get_all_stones endpoint');
   console.log('🔍 INVENTORY SERVICE: Current Telegram user ID:', telegramUserId);
   
   const debugInfo = { 
-    step: 'Starting inventory fetch with FastAPI v1 endpoints', 
+    step: 'Starting inventory fetch with FastAPI v1 get_all_stones endpoint', 
     timestamp: new Date().toISOString(),
     dataSource: 'fastapi_v1',
     authentication: 'Bearer Token',
-    telegramUserId: telegramUserId
+    telegramUserId: telegramUserId,
+    endpoint: '/api/v1/get_all_stones'
   };
   
-  if (!telegramUserId) {
-    console.error('❌ INVENTORY SERVICE: No Telegram user ID available');
-    return {
-      error: 'No authenticated Telegram user found. Please restart the app.',
-      debugInfo: {
-        ...debugInfo,
-        step: 'FAILED: No Telegram user ID',
-        error: 'Missing Telegram user authentication'
-      }
-    };
-  }
-  
   try {
-    // Test backend connectivity using correct endpoint
+    // Test backend connectivity first
     console.log('🚀 INVENTORY SERVICE: Testing backend connectivity...');
     const aliveResponse = await fetch('https://api.mazalbot.com/api/v1/alive');
     
@@ -51,9 +40,9 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     
     console.log('✅ INVENTORY SERVICE: Backend is alive, fetching stones...');
     
-    // Use the correct FastAPI v1 endpoint with Bearer token
+    // Use the correct FastAPI v1 get_all_stones endpoint with Bearer token
     const endpoint = 'https://api.mazalbot.com/api/v1/get_all_stones';
-    console.log('🚀 INVENTORY SERVICE: Using endpoint:', endpoint);
+    console.log('🚀 INVENTORY SERVICE: Using get_all_stones endpoint:', endpoint);
     
     const response = await fetch(endpoint, {
       method: 'GET',
@@ -63,27 +52,33 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       }
     });
     
+    console.log('📡 INVENTORY SERVICE: Response status:', response.status);
+    console.log('📡 INVENTORY SERVICE: Response headers:', Object.fromEntries(response.headers.entries()));
+    
     if (!response.ok) {
-      console.error('❌ INVENTORY SERVICE: FastAPI request failed:', response.statusText);
+      const errorText = await response.text();
+      console.error('❌ INVENTORY SERVICE: FastAPI request failed:', response.status, response.statusText);
+      console.error('❌ INVENTORY SERVICE: Error response:', errorText);
+      
       return {
-        error: `Failed to fetch stones: ${response.statusText}`,
+        error: `Failed to fetch stones from get_all_stones: ${response.status} ${response.statusText}`,
         debugInfo: {
           ...debugInfo,
-          step: 'FAILED: FastAPI stones request error',
-          error: response.statusText,
+          step: 'FAILED: get_all_stones request error',
+          error: `${response.status}: ${response.statusText}`,
+          errorResponse: errorText,
           endpoint
         }
       };
     }
     
     const result = await response.json();
+    console.log('📡 INVENTORY SERVICE: Raw response received:', typeof result, Array.isArray(result));
     
     if (result) {
-      console.log('✅ INVENTORY SERVICE: FastAPI returned data');
-      console.log('✅ INVENTORY SERVICE: Response type:', typeof result, 'Is array:', Array.isArray(result));
-      
       let stones = [];
       
+      // Handle different response formats
       if (Array.isArray(result)) {
         stones = result;
         console.log('✅ INVENTORY SERVICE: Direct array response with', stones.length, 'stones');
@@ -95,6 +90,8 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
           stones = result.data;
         } else if (Array.isArray(result.diamonds)) {
           stones = result.diamonds;
+        } else if (Array.isArray(result.inventory)) {
+          stones = result.inventory;
         } else {
           // Try to find any array in the response
           const possibleArrays = Object.values(result).filter(value => Array.isArray(value));
@@ -107,42 +104,48 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       }
       
       if (stones.length === 0) {
-        console.log('📊 INVENTORY SERVICE: No stones found');
+        console.log('📊 INVENTORY SERVICE: No stones found in response');
         return {
           data: [],
           debugInfo: {
             ...debugInfo,
-            step: 'SUCCESS: Connected but no stones found',
+            step: 'SUCCESS: Connected to get_all_stones but no stones found',
             totalStones: 0,
-            endpoint
+            endpoint,
+            rawResponse: result
           }
         };
       }
       
       // Process and validate stones data
-      const processedStones = stones.filter(stone => stone && typeof stone === 'object').map(stone => {
+      const processedStones = stones.filter(stone => stone && typeof stone === 'object').map((stone, index) => {
         return {
           ...stone,
-          id: stone.id || stone.diamond_id || `${stone.stock_number || Date.now()}`,
-          stock_number: stone.stock_number || stone.stockNumber || 'N/A',
+          id: stone.id || stone.stone_id || stone.diamond_id || `stone-${index}-${Date.now()}`,
+          stock_number: stone.stock_number || stone.stockNumber || stone.stock_no || `STOCK-${index + 1}`,
           shape: stone.shape || 'Round',
-          weight: parseFloat(stone.weight || stone.carat || 0),
+          weight: parseFloat(stone.weight || stone.carat || stone.size || 0),
           color: stone.color || 'D',
           clarity: stone.clarity || 'FL',
           cut: stone.cut || 'Excellent',
-          price: parseFloat(stone.price || 0),
+          price: parseFloat(stone.price || stone.price_per_carat || 0),
           status: stone.status || 'Available',
-          store_visible: stone.store_visible !== false
+          store_visible: stone.store_visible !== false,
+          picture: stone.picture || stone.image || stone.imageUrl,
+          certificate_url: stone.certificate_url || stone.certificateUrl,
+          certificate_number: stone.certificate_number || stone.certificateNumber,
+          lab: stone.lab || stone.laboratory
         };
       });
       
-      console.log('✅ INVENTORY SERVICE: Processed', processedStones.length, 'valid stones');
+      console.log('✅ INVENTORY SERVICE: Processed', processedStones.length, 'valid stones from get_all_stones');
+      console.log('✅ INVENTORY SERVICE: Sample processed stone:', processedStones[0]);
       
       return {
         data: processedStones,
         debugInfo: {
           ...debugInfo,
-          step: 'SUCCESS: Data fetched and processed',
+          step: 'SUCCESS: Data fetched and processed from get_all_stones',
           totalStones: processedStones.length,
           endpoint,
           sampleStone: processedStones[0]
@@ -150,24 +153,24 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       };
     }
     
-    console.log('⚠️ INVENTORY SERVICE: No data in response');
+    console.log('⚠️ INVENTORY SERVICE: No data in get_all_stones response');
     return {
-      error: 'No data received from FastAPI endpoint',
+      error: 'No data received from get_all_stones endpoint',
       debugInfo: {
         ...debugInfo,
-        step: 'FAILED: Empty response from endpoint',
+        step: 'FAILED: Empty response from get_all_stones',
         endpoint
       }
     };
     
   } catch (error) {
-    console.error("❌ INVENTORY SERVICE: Unexpected error:", error);
+    console.error("❌ INVENTORY SERVICE: Unexpected error calling get_all_stones:", error);
     
     return {
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      error: error instanceof Error ? error.message : 'Unknown error occurred calling get_all_stones',
       debugInfo: {
         ...debugInfo,
-        step: 'FAILED: Unexpected error',
+        step: 'FAILED: Unexpected error calling get_all_stones',
         error: error instanceof Error ? error.message : String(error)
       }
     };
