@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { MetricsGrid } from '@/components/dashboard/MetricsGrid';
 import { DashboardLoading } from '@/components/dashboard/DashboardLoading';
@@ -10,6 +11,7 @@ import { useEnhancedUserTracking } from '@/hooks/useEnhancedUserTracking';
 export default function Dashboard() {
   const { hasAccess, isBlocked, loading } = useOpenAccess();
   const { trackEnhancedPageVisit } = useEnhancedUserTracking();
+  const [emergencyMode, setEmergencyMode] = useState(false);
   
   const { stats, clients, isLoading, refetch } = useDashboardData();
 
@@ -17,8 +19,12 @@ export default function Dashboard() {
     trackEnhancedPageVisit('/dashboard', 'Dashboard');
   }, []);
 
-  if (loading) {
-    return <DashboardLoading />;
+  const handleEmergencyMode = () => {
+    setEmergencyMode(true);
+  };
+
+  if (loading && !emergencyMode) {
+    return <DashboardLoading onEmergencyMode={handleEmergencyMode} />;
   }
 
   if (isBlocked) {
@@ -43,14 +49,25 @@ export default function Dashboard() {
     );
   }
 
+  // Default metrics for when stats are not available
+  const defaultMetrics = {
+    totalInventory: stats?.totalInventory || 0,
+    totalValue: stats?.totalValue || 0,
+    activeLeads: stats?.pendingQueries || 0,
+    avgPricePerCarat: 5000,
+    avgCaratWeight: 1.2,
+    premiumDiamondsCount: 0,
+    unreadNotifications: 3
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <DashboardHeader />
+        <DashboardHeader emergencyMode={emergencyMode} />
         
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
           <div className="lg:col-span-3">
-            <MetricsGrid />
+            <MetricsGrid {...defaultMetrics} />
           </div>
           <div className="lg:col-span-1">
             <UserStatsCard />

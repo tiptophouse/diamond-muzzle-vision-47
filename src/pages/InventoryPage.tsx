@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { InventoryTable } from '@/components/inventory/InventoryTable';
 import { InventoryHeader } from '@/components/inventory/InventoryHeader';
 import { InventoryTableLoading } from '@/components/inventory/InventoryTableLoading';
@@ -7,10 +8,12 @@ import { BulkUploadButton } from '@/components/inventory/BulkUploadButton';
 import { GIAScannerButton } from '@/components/gia/GIAScannerButton';
 import { useOpenAccess } from '@/context/OpenAccessContext';
 import { useEnhancedUserTracking } from '@/hooks/useEnhancedUserTracking';
+import { useInventoryData } from '@/hooks/useInventoryData';
 
 export default function InventoryPage() {
   const { hasAccess, isBlocked, loading } = useOpenAccess();
   const { trackEnhancedPageVisit, trackFeatureUsage } = useEnhancedUserTracking();
+  const { allDiamonds, loading: inventoryLoading, fetchData } = useInventoryData();
   
   // Track page visit
   useEffect(() => {
@@ -21,6 +24,10 @@ export default function InventoryPage() {
     console.log('Inventory GIA scan result:', result);
     trackFeatureUsage('gia_scanner_inventory', { scan_result: result });
     // You can add logic here to auto-fill diamond form with GIA data
+  };
+
+  const handleRefresh = () => {
+    fetchData();
   };
 
   if (loading) {
@@ -41,7 +48,11 @@ export default function InventoryPage() {
   return (
     <div className="container mx-auto p-4 space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <InventoryHeader />
+        <InventoryHeader 
+          totalCount={allDiamonds.length}
+          onRefresh={handleRefresh}
+          loading={inventoryLoading}
+        />
         <div className="flex gap-2">
           <GIAScannerButton 
             onScanResult={handleGIAScanResult}
@@ -52,7 +63,10 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      <InventoryTable />
+      <InventoryTable 
+        data={allDiamonds}
+        loading={inventoryLoading}
+      />
     </div>
   );
 }
