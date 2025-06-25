@@ -467,6 +467,33 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_analytics_cache: {
+        Row: {
+          analytics_type: string
+          created_at: string | null
+          data: Json
+          expires_at: string
+          id: string
+          user_id: number
+        }
+        Insert: {
+          analytics_type: string
+          created_at?: string | null
+          data: Json
+          expires_at: string
+          id?: string
+          user_id: number
+        }
+        Update: {
+          analytics_type?: string
+          created_at?: string | null
+          data?: Json
+          expires_at?: string
+          id?: string
+          user_id?: number
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -522,31 +549,46 @@ export type Database = {
       }
       page_visits: {
         Row: {
+          clicks_count: number | null
           created_at: string | null
+          feature_used: string | null
+          form_interactions: number | null
           id: string
+          interaction_data: Json | null
           page_path: string
           page_title: string | null
           referrer: string | null
+          scroll_depth: number | null
           session_id: string | null
           time_spent: unknown | null
           visit_timestamp: string | null
         }
         Insert: {
+          clicks_count?: number | null
           created_at?: string | null
+          feature_used?: string | null
+          form_interactions?: number | null
           id?: string
+          interaction_data?: Json | null
           page_path: string
           page_title?: string | null
           referrer?: string | null
+          scroll_depth?: number | null
           session_id?: string | null
           time_spent?: unknown | null
           visit_timestamp?: string | null
         }
         Update: {
+          clicks_count?: number | null
           created_at?: string | null
+          feature_used?: string | null
+          form_interactions?: number | null
           id?: string
+          interaction_data?: Json | null
           page_path?: string
           page_title?: string | null
           referrer?: string | null
+          scroll_depth?: number | null
           session_id?: string | null
           time_spent?: unknown | null
           visit_timestamp?: string | null
@@ -617,6 +659,47 @@ export type Database = {
           },
         ]
       }
+      user_activity_log: {
+        Row: {
+          activity_data: Json | null
+          activity_type: string
+          created_at: string | null
+          id: string
+          page_url: string | null
+          session_id: string | null
+          telegram_id: number
+          timestamp: string | null
+        }
+        Insert: {
+          activity_data?: Json | null
+          activity_type: string
+          created_at?: string | null
+          id?: string
+          page_url?: string | null
+          session_id?: string | null
+          telegram_id: number
+          timestamp?: string | null
+        }
+        Update: {
+          activity_data?: Json | null
+          activity_type?: string
+          created_at?: string | null
+          id?: string
+          page_url?: string | null
+          session_id?: string | null
+          telegram_id?: number
+          timestamp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_activity_log_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "user_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_analytics: {
         Row: {
           api_calls_count: number | null
@@ -678,6 +761,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_behavior_analytics: {
+        Row: {
+          created_at: string | null
+          device_types: Json | null
+          diamonds_added: number | null
+          diamonds_deleted: number | null
+          diamonds_edited: number | null
+          engagement_score: number | null
+          favorite_pages: Json | null
+          first_visit: string | null
+          id: string
+          last_visit: string | null
+          searches_count: number | null
+          telegram_id: number
+          total_page_views: number | null
+          total_sessions: number | null
+          total_time_spent: unknown | null
+          updated_at: string | null
+          uploads_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_types?: Json | null
+          diamonds_added?: number | null
+          diamonds_deleted?: number | null
+          diamonds_edited?: number | null
+          engagement_score?: number | null
+          favorite_pages?: Json | null
+          first_visit?: string | null
+          id?: string
+          last_visit?: string | null
+          searches_count?: number | null
+          telegram_id: number
+          total_page_views?: number | null
+          total_sessions?: number | null
+          total_time_spent?: unknown | null
+          updated_at?: string | null
+          uploads_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          device_types?: Json | null
+          diamonds_added?: number | null
+          diamonds_deleted?: number | null
+          diamonds_edited?: number | null
+          engagement_score?: number | null
+          favorite_pages?: Json | null
+          first_visit?: string | null
+          id?: string
+          last_visit?: string | null
+          searches_count?: number | null
+          telegram_id?: number
+          total_page_views?: number | null
+          total_sessions?: number | null
+          total_time_spent?: unknown | null
+          updated_at?: string | null
+          uploads_count?: number | null
+        }
+        Relationships: []
       }
       user_logins: {
         Row: {
@@ -819,37 +962,58 @@ export type Database = {
       }
       user_sessions: {
         Row: {
+          browser_info: string | null
           created_at: string | null
+          device_type: string | null
+          entry_page: string | null
+          exit_page: string | null
           id: string
           is_active: boolean | null
           pages_visited: number | null
+          referrer_url: string | null
+          screen_resolution: string | null
           session_end: string | null
           session_start: string | null
           telegram_id: number
+          time_zone: string | null
           total_duration: unknown | null
           user_agent: string | null
           user_id: string | null
         }
         Insert: {
+          browser_info?: string | null
           created_at?: string | null
+          device_type?: string | null
+          entry_page?: string | null
+          exit_page?: string | null
           id?: string
           is_active?: boolean | null
           pages_visited?: number | null
+          referrer_url?: string | null
+          screen_resolution?: string | null
           session_end?: string | null
           session_start?: string | null
           telegram_id: number
+          time_zone?: string | null
           total_duration?: unknown | null
           user_agent?: string | null
           user_id?: string | null
         }
         Update: {
+          browser_info?: string | null
           created_at?: string | null
+          device_type?: string | null
+          entry_page?: string | null
+          exit_page?: string | null
           id?: string
           is_active?: boolean | null
           pages_visited?: number | null
+          referrer_url?: string | null
+          screen_resolution?: string | null
           session_end?: string | null
           session_start?: string | null
           telegram_id?: number
+          time_zone?: string | null
           total_duration?: unknown | null
           user_agent?: string | null
           user_id?: string | null
@@ -898,6 +1062,28 @@ export type Database = {
       }
     }
     Functions: {
+      add_diamond_for_user: {
+        Args: {
+          p_user_id: number
+          p_stock_number: string
+          p_shape: string
+          p_weight: number
+          p_color: string
+          p_clarity: string
+          p_cut: string
+          p_polish: string
+          p_symmetry: string
+          p_price_per_carat: number
+          p_status: string
+          p_picture: string
+          p_certificate_url: string
+        }
+        Returns: boolean
+      }
+      clean_expired_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       delete_diamond: {
         Args: { p_stock_number: string; p_user_id: number }
         Returns: boolean
@@ -919,6 +1105,10 @@ export type Database = {
       }
       is_admin_user: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      update_diamond_for_user: {
+        Args: { p_user_id: number; p_stock_number: string; p_update_data: Json }
         Returns: boolean
       }
     }

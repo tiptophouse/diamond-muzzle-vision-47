@@ -1,110 +1,145 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
+import { BrowserMultiFormatReader } from '@zxing/library';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Camera, X, Loader2, Upload } from 'lucide-react';
-import { useGiaScanner } from '@/hooks/useGiaScanner';
+import { Camera, X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-interface QRCodeScannerProps {
-  onScanSuccess: (giaData: any) => void;
-  onClose: () => void;
+export interface QRCodeScannerProps {
   isOpen: boolean;
+  onClose: () => void;
+  onScanSuccess: (result: string) => void;
+  onError?: (error: any) => void;
 }
 
-export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+export function QRCodeScanner({ isOpen, onClose, onScanSuccess, onError }: QRCodeScannerProps) {
+  const { toast } = useToast();
+  const [scanning, setScanning] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
 
-  const {
-    videoRef,
-    canvasRef,
-    isScanning,
-    isLoading,
-    isFetchingGIA,
-    error,
-    startScanning,
-    stopScanning,
-    handleFileUpload,
-  } = useGiaScanner({ onScanSuccess, isOpen });
+  useEffect(() => {
+    if (isOpen) {
+      startScanning();
+    } else {
+      stopScanning();
+    }
 
-  const triggerFileUpload = () => {
-    fileInputRef.current?.click();
+    return () => {
+      stopScanning();
+    };
+  }, [isOpen]);
+
+  const startScanning = async () => {
+    try {
+      setScanning(true);
+      
+      if (!codeReaderRef.current) {
+        codeReaderRef.current = new BrowserMultiFormatReader();
+      }
+
+      const videoInputDevices = await codeReaderRef.current.listVideoInputDevices();
+      
+      if (videoInputDevices.length === 0) {
+        throw new Error('No camera devices found');
+      }
+
+      // Try to find back camera first, otherwise use first available
+      const backCamera = videoInputDevices.find(device => 
+        device.label.toLowerCase().includes('back') || 
+        device.label.toLowerCase().includes('rear')
+      );
+      const selectedDevice = backCamera || videoInputDevices[0];
+
+      if (videoRef.current) {
+        codeReaderRef.current.decodeFromVideoDevice(
+          selectedDevice.deviceId,
+          videoRef.current,
+          (result, error) => {
+            if (result) {
+              const scannedText = result.getText();
+              console.log('QR Code scanned:', scannedText);
+              
+              toast({
+                title: "QR Code Scanned",
+                description: "Processing certificate data...",
+              });
+              
+              onScanSuccess(scannedText);
+              onClose();
+            }
+            if (error && error.name !== 'NotFoundException') {
+              console.error('QR Scanner error:', error);
+              handleError(error);
+            }
+          }
+        );
+      }
+    } catch (error) {
+      console.error('Failed to start scanning:', error);
+      handleError(error);
+    }
   };
 
-  if (!isOpen) return null;
+  const stopScanning = () => {
+    setScanning(false);
+    if (codeReaderRef.current) {
+      codeReaderRef.current.reset();
+    }
+  };
+
+  const handleError = (error: any) => {
+    toast({
+      title: "Scanner Error",
+      description: "Failed to access camera. Please check permissions.",
+      variant: "destructive",
+    });
+    
+    if (onError) {
+      onError(error);
+    }
+  };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Camera className="h-5 w-5" />
-              Scan GIA Certificate
-            </CardTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Camera className="h-5 w-5" />
+            Scan GIA Certificate QR Code
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4">
           <div className="relative">
             <video
               ref={videoRef}
-              className="w-full aspect-square rounded-lg bg-gray-100"
-              autoPlay
-              playsInline
-              muted
+              className="w-full h-64 object-cover rounded-lg bg-gray-100"
+              style={{ display: scanning ? 'block' : 'none' }}
             />
-            <canvas
-              ref={canvasRef}
-              className="hidden"
-            />
-            {(isLoading || isFetchingGIA) && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 rounded-lg">
-                <Loader2 className="h-8 w-8 animate-spin text-white mb-2" />
-                <p className="text-white text-sm text-center">
-                  {isFetchingGIA ? 'Processing certificate data...' : 'Starting camera...'}
-                </p>
+            {!scanning && (
+              <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+                <Camera className="h-12 w-12 text-gray-400" />
               </div>
             )}
           </div>
           
-          {error && (
-            <div className="text-red-600 text-sm text-center">{error}</div>
-          )}
-          
-          <div className="flex gap-2">
-            {!isScanning ? (
-              <>
-                <Button onClick={startScanning} className="flex-1" disabled={isFetchingGIA}>
-                  <Camera className="h-4 w-4 mr-2" />
-                  Start Scanning
-                </Button>
-                <Button onClick={triggerFileUpload} variant="outline" className="flex-1" disabled={isFetchingGIA}>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Image
-                </Button>
-              </>
-            ) : (
-              <Button onClick={stopScanning} variant="outline" className="flex-1" disabled={isFetchingGIA}>
-                Stop Scanning
-              </Button>
-            )}
+          <div className="flex justify-between gap-2">
+            <Button variant="outline" onClick={onClose}>
+              <X className="mr-2 h-4 w-4" />
+              Cancel
+            </Button>
+            <Button 
+              onClick={scanning ? stopScanning : startScanning}
+              variant={scanning ? "destructive" : "default"}
+            >
+              <Camera className="mr-2 h-4 w-4" />
+              {scanning ? 'Stop' : 'Start'} Scanner
+            </Button>
           </div>
-          
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileUpload}
-            className="hidden"
-          />
-          
-          <p className="text-sm text-gray-600 text-center">
-            Scan a GIA QR code or upload an image of a GIA certificate. The system will automatically extract diamond data using OCR if needed.
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -26,9 +26,9 @@ export function useReportsData() {
     setDataError(null);
     
     try {
-      console.log('📊 Fetching inventory data for user:', user.id);
+      console.log('📊 Fetching inventory data with JWT authentication for user:', user.id);
       
-      const response = await api.get<any[]>(apiEndpoints.getAllStones(user.id));
+      const response = await api.get<any[]>(apiEndpoints.getAllStones());
       
       if (response.error) {
         throw new Error(response.error);
@@ -37,6 +37,7 @@ export function useReportsData() {
       if (response.data) {
         console.log('✅ Received diamonds from API:', response.data.length, 'total diamonds');
         
+        // JWT authentication ensures we only get diamonds for the authenticated user
         const convertedDiamonds = convertDiamondsToInventoryFormat(response.data, user.id);
         console.log('✅ Converted diamonds for display:', convertedDiamonds.length, 'diamonds for user', user.id);
         

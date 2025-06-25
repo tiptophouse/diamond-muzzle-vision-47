@@ -2,79 +2,100 @@
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { api, apiEndpoints } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
+import { useInventoryDataSync } from './useInventoryDataSync';
+import { useEnhancedUserTracking } from '@/hooks/useEnhancedUserTracking';
 
 interface UseDeleteDiamondProps {
   onSuccess?: () => void;
-  removeDiamondFromState?: (diamondId: string) => void;
-  restoreDiamondToState?: (diamond: Diamond) => void;
 }
 
-export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDiamondToState }: UseDeleteDiamondProps) {
+export function useDeleteDiamond({ onSuccess }: UseDeleteDiamondProps) {
   const { user } = useTelegramAuth();
+  const { toast } = useToast();
+  const { triggerInventoryChange } = useInventoryDataSync();
+  const { trackDiamondOperation } = useEnhancedUserTracking();
 
-  const deleteDiamond = async (stockNumber: string, diamondData?: Diamond) => {
+  const deleteDiamond = async (diamondId: string) => {
     if (!user?.id) {
-      console.error('❌ DELETE: User not authenticated');
+      toast({
+        title: "Authentication Required ❌",
+        description: "Please log in to delete diamonds",
+        variant: "destructive",
+      });
       throw new Error('User not authenticated');
     }
 
     try {
-      console.log('🗑️ DELETE: Starting diamond deletion process');
-      console.log('🗑️ DELETE: Stock number to delete:', stockNumber);
-      console.log('🗑️ DELETE: Diamond data:', diamondData);
-      console.log('🗑️ DELETE: User ID:', user.id);
+      console.log('🗑️ DELETE DIAMOND: Starting deletion for user:', user.id, 'diamond:', diamondId);
       
-      // Optimistically remove from UI first (using diamond ID for state management)
-      if (removeDiamondFromState && diamondData) {
-        console.log('🗑️ DELETE: Optimistically removing diamond from UI');
-        removeDiamondFromState(diamondData.id);
-      }
+      // Show loading toast
+      toast({
+        title: "Deleting Diamond... ⏳",
+        description: "Please wait while we remove this diamond from your inventory",
+      });
       
-      // Use the stock number for the API endpoint - this aligns with the FastAPI backend
-      // The backend expects the diamond ID/stock number in the URL path
-      const deleteId = diamondData?.id || stockNumber;
-      const endpoint = apiEndpoints.deleteDiamond(deleteId);
-      console.log('🗑️ DELETE: API endpoint:', endpoint);
-      console.log('🗑️ DELETE: Using delete ID:', deleteId);
+      const endpoint = apiEndpoints.deleteDiamond(diamondId);
+      console.log('🗑️ DELETE DIAMOND: Using FastAPI endpoint:', endpoint);
       
-      console.log('🗑️ DELETE: Making DELETE request to FastAPI...');
       const result = await api.delete(endpoint);
       
-      console.log('🗑️ DELETE: FastAPI response received:', result);
-      
-      // Check if the delete operation was successful
       if (result.error) {
-        console.error('❌ DELETE: FastAPI returned error:', result.error);
+        console.error('❌ DELETE DIAMOND: FastAPI delete failed:', result.error);
+        toast({
+          title: "Delete Failed ❌",
+          description: `Failed to delete diamond: ${result.error}`,
+          variant: "destructive",
+        });
         
-        // Restore diamond to UI if delete failed
-        if (restoreDiamondToState && diamondData) {
-          console.log('🔄 DELETE: Restoring diamond to UI due to error');
-          restoreDiamondToState(diamondData);
-        }
+        // Track failed deletion
+        await trackDiamondOperation('delete', { 
+          diamond_id: diamondId, 
+          success: false, 
+          error: result.error 
+        });
         
-        throw new Error(`Delete failed: ${result.error}`);
+        throw new Error(result.error);
       }
 
-      console.log('✅ DELETE: Diamond deleted successfully from FastAPI backend');
-      console.log('✅ DELETE: Calling onSuccess callback');
+      console.log('✅ DELETE DIAMOND: Successfully deleted from FastAPI');
+      
+      // Show success toast
+      toast({
+        title: "Diamond Deleted Successfully ✅",
+        description: "The diamond has been permanently removed from your inventory",
+      });
+      
+      // Track successful deletion
+      await trackDiamondOperation('delete', { 
+        diamond_id: diamondId, 
+        success: true 
+      });
+      
+      // Trigger real-time inventory update
+      triggerInventoryChange();
       
       if (onSuccess) onSuccess();
       return true;
       
     } catch (error) {
-      console.error('❌ DELETE: Complete error details:', error);
-      console.error('❌ DELETE: Error type:', typeof error);
-      console.error('❌ DELETE: Error message:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('❌ DELETE DIAMOND: Unexpected error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred';
       
-      // Restore diamond to UI if delete failed
-      if (restoreDiamondToState && diamondData) {
-        console.log('🔄 DELETE: Restoring diamond to UI due to exception');
-        restoreDiamondToState(diamondData);
-      }
+      toast({
+        title: "Delete Failed ❌", 
+        description: `Could not delete diamond: ${errorMsg}. Please try again.`,
+        variant: "destructive",
+      });
       
-      // Re-throw with more context
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred during deletion';
-      throw new Error(`Failed to delete diamond: ${errorMessage}`);
+      // Track failed deletion
+      await trackDiamondOperation('delete', { 
+        diamond_id: diamondId, 
+        success: false, 
+        error: errorMsg 
+      });
+      
+      throw error;
     }
   };
 
