@@ -1,5 +1,5 @@
 
-import { getCurrentUserId } from "@/lib/api/config";
+import { getCurrentUserId, getBackendAccessToken } from "@/lib/api/config";
 
 export interface FetchInventoryResult {
   data?: any[];
@@ -22,8 +22,25 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   };
   
   try {
+    // Get the access token dynamically
+    console.log('🔐 INVENTORY SERVICE: Getting access token...');
+    const accessToken = await getBackendAccessToken();
+    
+    if (!accessToken) {
+      console.error('❌ INVENTORY SERVICE: No access token available');
+      return {
+        error: 'No access token available for authentication',
+        debugInfo: {
+          ...debugInfo,
+          step: 'FAILED: No access token available',
+          error: 'Authentication token missing'
+        }
+      };
+    }
+    
+    console.log('✅ INVENTORY SERVICE: Access token retrieved, testing backend connectivity...');
+    
     // Test backend connectivity first
-    console.log('🚀 INVENTORY SERVICE: Testing backend connectivity...');
     const aliveResponse = await fetch('https://api.mazalbot.com/api/v1/alive');
     
     if (!aliveResponse.ok) {
@@ -40,15 +57,17 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     
     console.log('✅ INVENTORY SERVICE: Backend is alive, fetching stones...');
     
-    // Use the correct FastAPI v1 get_all_stones endpoint with Bearer token
+    // Use the correct FastAPI v1 get_all_stones endpoint with dynamic Bearer token
     const endpoint = 'https://api.mazalbot.com/api/v1/get_all_stones';
     console.log('🚀 INVENTORY SERVICE: Using get_all_stones endpoint:', endpoint);
+    console.log('🚀 INVENTORY SERVICE: Using access token (first 20 chars):', accessToken.substring(0, 20) + '...');
     
     const response = await fetch(endpoint, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VySWQiLCJleHAiOjE2ODk2MDAwMDAsImlhdCI6MTY4OTU5NjQwMH0.kWzUkeMTF4LZbU9P5yRmsXrXhWfPlUPukGqI8Nq1rLo`,
-        'Content-Type': 'application/json'
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       }
     });
     
@@ -60,8 +79,15 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       console.error('❌ INVENTORY SERVICE: FastAPI request failed:', response.status, response.statusText);
       console.error('❌ INVENTORY SERVICE: Error response:', errorText);
       
+      let errorMessage = `Failed to fetch stones from get_all_stones: ${response.status} ${response.statusText}`;
+      if (response.status === 403) {
+        errorMessage = 'Authentication failed - invalid or expired token';
+      } else if (response.status === 401) {
+        errorMessage = 'Unauthorized - please check authentication';
+      }
+      
       return {
-        error: `Failed to fetch stones from get_all_stones: ${response.status} ${response.statusText}`,
+        error: errorMessage,
         debugInfo: {
           ...debugInfo,
           step: 'FAILED: get_all_stones request error',
