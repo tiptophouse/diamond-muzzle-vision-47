@@ -34,20 +34,9 @@ export function useInventoryCrud({ onSuccess }: UseInventoryCrudProps = {}) {
     try {
       await addDiamondFn(data);
       console.log('✅ CRUD: Diamond added successfully');
-      toast({
-        title: "Success ✅",
-        description: "Diamond added successfully to your inventory",
-      });
-      successHandler();
       return true;
     } catch (error) {
       console.error('❌ CRUD: Add diamond failed:', error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to add diamond. Please try again.";
-      toast({
-        variant: "destructive",
-        title: "Add Failed ❌",
-        description: errorMessage,
-      });
       return false;
     } finally {
       setIsLoading(false);
@@ -60,20 +49,9 @@ export function useInventoryCrud({ onSuccess }: UseInventoryCrudProps = {}) {
     try {
       await updateDiamondFn(diamondId, data);
       console.log('✅ CRUD: Diamond updated successfully');
-      toast({
-        title: "Success ✅",
-        description: "Diamond updated successfully",
-      });
-      successHandler();
       return true;
     } catch (error) {
       console.error('❌ CRUD: Update diamond failed:', error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to update diamond. Please try again.";
-      toast({
-        variant: "destructive",
-        title: "Update Failed ❌",
-        description: errorMessage,
-      });
       return false;
     } finally {
       setIsLoading(false);
@@ -86,20 +64,10 @@ export function useInventoryCrud({ onSuccess }: UseInventoryCrudProps = {}) {
     try {
       await deleteDiamondFn(diamondId);
       console.log('✅ CRUD: Diamond deleted successfully');
-      toast({
-        title: "Success ✅",
-        description: "Diamond deleted successfully from your inventory",
-      });
       successHandler();
       return true;
     } catch (error) {
       console.error('❌ CRUD: Delete diamond failed:', error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond. Please try again.";
-      toast({
-        variant: "destructive",
-        title: "Delete Failed ❌",
-        description: errorMessage,
-      });
       return false;
     } finally {
       setIsLoading(false);
