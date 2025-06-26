@@ -26,7 +26,7 @@ export function useInventoryCrud({ onSuccess }: UseInventoryCrudProps = {}) {
 
   const { addDiamond: addDiamondFn } = useAddDiamond(successHandler);
   const { updateDiamond: updateDiamondFn } = useUpdateDiamond(successHandler);
-  const { deleteDiamond: deleteDiamondFn } = useDeleteDiamond({ onSuccess: successHandler });
+  const { deleteDiamond: deleteDiamondFn } = useDeleteDiamond();
 
   const addDiamond = async (data: DiamondFormData) => {
     console.log('➕ CRUD: Starting add diamond operation');
@@ -38,6 +38,7 @@ export function useInventoryCrud({ onSuccess }: UseInventoryCrudProps = {}) {
         title: "Success ✅",
         description: "Diamond added successfully to your inventory",
       });
+      successHandler();
       return true;
     } catch (error) {
       console.error('❌ CRUD: Add diamond failed:', error);
@@ -63,6 +64,7 @@ export function useInventoryCrud({ onSuccess }: UseInventoryCrudProps = {}) {
         title: "Success ✅",
         description: "Diamond updated successfully",
       });
+      successHandler();
       return true;
     } catch (error) {
       console.error('❌ CRUD: Update diamond failed:', error);
@@ -88,6 +90,7 @@ export function useInventoryCrud({ onSuccess }: UseInventoryCrudProps = {}) {
         title: "Success ✅",
         description: "Diamond deleted successfully from your inventory",
       });
+      successHandler();
       return true;
     } catch (error) {
       console.error('❌ CRUD: Delete diamond failed:', error);
