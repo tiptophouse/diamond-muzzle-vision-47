@@ -1,10 +1,9 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useEnhancedUserTracking } from '@/hooks/useEnhancedUserTracking';
 import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
-import { getAccessToken } from '@/lib/api/config';
+import { HybridDiamondService } from '@/services/hybridDiamondService';
 
 export interface DiamondFormData {
   // Basic Info
@@ -47,6 +46,7 @@ export function useAddDiamond(onSuccess?: () => void) {
   const queryClient = useQueryClient();
   const { trackDiamondOperation } = useEnhancedUserTracking();
   const { triggerInventoryChange } = useInventoryDataSync();
+  const hybridService = new HybridDiamondService();
 
   const addDiamondMutation = useMutation({
     mutationFn: async (data: DiamondFormData): Promise<boolean> => {
@@ -54,49 +54,24 @@ export function useAddDiamond(onSuccess?: () => void) {
         throw new Error('User not authenticated');
       }
 
-      const accessToken = getAccessToken();
-      if (!accessToken) {
-        throw new Error('No authentication token available');
-      }
-
-      // Use the correct FastAPI v1 endpoint structure
       const diamondData = {
+        stock_number: data.stockNumber || `STOCK-${Date.now()}`,
         shape: data.shape,
-        weight: data.carat, // FastAPI expects 'weight' not 'carat'
+        weight: data.carat,
         color: data.color,
         clarity: data.clarity,
         cut: data.cut,
-        price: data.price || 0, // FastAPI expects price, not price_per_carat
-        // Add other fields as needed by the API
+        price: data.price || 0,
         polish: data.polish,
         symmetry: data.symmetry,
-        fluorescence: data.fluorescence
+        fluorescence: data.fluorescence,
+        certificate_url: data.certificateUrl,
+        certificate_number: data.certificateNumber,
+        store_visible: data.storeVisible !== false
       };
 
-      console.log('➕ ADD: Adding diamond with data:', diamondData);
-
-      const response = await fetch('https://api.mazalbot.com/api/v1/diamonds', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-          'X-Telegram-User-ID': user.id.toString()
-        },
-        body: JSON.stringify(diamondData),
-      });
-
-      console.log('➕ ADD: Response status:', response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('➕ ADD: Failed to add diamond:', errorData);
-        throw new Error(errorData.detail || errorData.message || 'Failed to add diamond');
-      }
-
-      const result = await response.json();
-      console.log('➕ ADD: Diamond added successfully:', result);
-
-      return true;
+      console.log('➕ ADD: Adding diamond with hybrid service:', diamondData);
+      return await hybridService.addDiamond(diamondData);
     },
     onSuccess: () => {
       toast({
@@ -105,8 +80,6 @@ export function useAddDiamond(onSuccess?: () => void) {
       });
       
       trackDiamondOperation('add', { success: true });
-      
-      // Trigger inventory refresh
       triggerInventoryChange();
       queryClient.invalidateQueries({ queryKey: ['diamonds'] });
       queryClient.invalidateQueries({ queryKey: ['inventory'] });

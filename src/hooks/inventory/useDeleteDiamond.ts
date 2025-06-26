@@ -3,13 +3,14 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
-import { getAccessToken } from '@/lib/api/config';
+import { HybridDiamondService } from '@/services/hybridDiamondService';
 
 export function useDeleteDiamond() {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
   const queryClient = useQueryClient();
   const { triggerInventoryChange } = useInventoryDataSync();
+  const hybridService = new HybridDiamondService();
 
   const deleteDiamondMutation = useMutation({
     mutationFn: async (stoneId: string): Promise<boolean> => {
@@ -17,35 +18,8 @@ export function useDeleteDiamond() {
         throw new Error('User not authenticated');
       }
 
-      const accessToken = getAccessToken();
-      if (!accessToken) {
-        throw new Error('No authentication token available');
-      }
-
-      console.log('🗑️ DELETE: Attempting to delete stone with ID:', stoneId);
-
-      // Use the correct FastAPI delete endpoint
-      const response = await fetch(`https://api.mazalbot.com/api/v1/delete_stone/${stoneId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-          'X-Telegram-User-ID': user.id.toString()
-        }
-      });
-
-      console.log('🗑️ DELETE: Response status:', response.status);
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error('🗑️ DELETE: Failed to delete stone:', errorData);
-        throw new Error(`Failed to delete stone: ${response.status} ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      console.log('🗑️ DELETE: Delete successful:', result);
-      
-      return true;
+      console.log('🗑️ DELETE: Deleting diamond with hybrid service:', stoneId);
+      return await hybridService.deleteDiamond(stoneId);
     },
     onSuccess: () => {
       toast({
@@ -53,7 +27,6 @@ export function useDeleteDiamond() {
         description: "Stone deleted successfully from your inventory!",
       });
       
-      // Trigger inventory refresh
       triggerInventoryChange();
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
       queryClient.invalidateQueries({ queryKey: ['diamonds'] });

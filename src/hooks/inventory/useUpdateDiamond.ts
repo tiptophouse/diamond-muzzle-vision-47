@@ -1,90 +1,82 @@
 
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { DiamondFormData } from '@/components/inventory/form/types';
-import { api, apiEndpoints } from '@/lib/api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { useInventoryDataSync } from './useInventoryDataSync';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
+import { HybridDiamondService } from '@/services/hybridDiamondService';
+
+interface DiamondFormData {
+  shape: string;
+  carat: number;
+  color: string;
+  clarity: string;
+  cut?: string;
+  price?: number;
+  polish?: string;
+  symmetry?: string;
+  fluorescence?: string;
+  certificateUrl?: string;
+  certificateNumber?: string;
+  storeVisible?: boolean;
+}
 
 export function useUpdateDiamond(onSuccess?: () => void) {
-  const { user } = useTelegramAuth();
   const { toast } = useToast();
+  const { user } = useTelegramAuth();
+  const queryClient = useQueryClient();
   const { triggerInventoryChange } = useInventoryDataSync();
+  const hybridService = new HybridDiamondService();
 
-  const updateDiamond = async (diamondId: string, data: DiamondFormData) => {
-    if (!user?.id) {
-      throw new Error('User not authenticated');
-    }
+  const updateDiamondMutation = useMutation({
+    mutationFn: async ({ diamondId, data }: { diamondId: string; data: DiamondFormData }): Promise<boolean> => {
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
 
-    try {
-      const updates = {
-        stock_number: data.stockNumber,
+      const diamondData = {
         shape: data.shape,
-        weight: Number(data.carat),
+        weight: data.carat,
         color: data.color,
         clarity: data.clarity,
         cut: data.cut,
-        price: Number(data.price),
-        price_per_carat: data.carat > 0 ? Math.round(Number(data.price) / Number(data.carat)) : Math.round(Number(data.price)),
-        status: data.status || 'Available',
-        store_visible: data.storeVisible !== false ? 1 : 0,
-        picture: data.picture || '',
-        certificate_number: data.certificateNumber || '',
-        certificate_url: data.certificateUrl || '',
-        lab: data.lab || 'GIA',
-        fluorescence: data.fluorescence || 'None',
-        polish: data.polish || 'Excellent',
-        symmetry: data.symmetry || 'Excellent',
-        gridle: data.gridle || 'Medium',
-        culet: data.culet || 'None',
-        length: data.length ? Number(data.length) : '',
-        width: data.width ? Number(data.width) : '',
-        depth: data.depth ? Number(data.depth) : '',
-        table_percentage: data.tablePercentage ? Number(data.tablePercentage) : '',
-        depth_percentage: data.depthPercentage ? Number(data.depthPercentage) : '',
-        certificate_comment: data.certificateComment || '',
+        price: data.price || 0,
+        polish: data.polish,
+        symmetry: data.symmetry,
+        fluorescence: data.fluorescence,
+        certificate_url: data.certificateUrl,
+        certificate_number: data.certificateNumber,
+        store_visible: data.storeVisible !== false
       };
 
-      console.log('📝 UPDATE DIAMOND: Updating stone for user:', user.id, 'stone ID:', diamondId);
-      
-      const endpoint = apiEndpoints.updateDiamond(diamondId);
-      const result = await api.put(endpoint, updates);
-      
-      if (result.error) {
-        console.error('❌ UPDATE DIAMOND: FastAPI update failed:', result.error);
-        toast({
-          title: "Update Failed ❌",
-          description: `Failed to update stone: ${result.error}`,
-          variant: "destructive",
-        });
-        throw new Error(result.error);
-      }
-
-      console.log('✅ UPDATE DIAMOND: Stone updated successfully');
-      
+      console.log('📝 UPDATE: Updating diamond with hybrid service:', diamondId);
+      return await hybridService.updateDiamond(diamondId, diamondData);
+    },
+    onSuccess: () => {
       toast({
-        title: "Success ✅",
-        description: "Stone updated successfully in your inventory",
+        title: "✅ Success",
+        description: "Diamond updated successfully!",
       });
       
-      // Trigger real-time inventory update
       triggerInventoryChange();
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['diamonds'] });
       
-      if (onSuccess) onSuccess();
-      return true;
-      
-    } catch (error) {
-      console.error('❌ UPDATE DIAMOND: Failed to update stone:', error);
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred';
-      
+      if (onSuccess) {
+        onSuccess();
+      }
+    },
+    onError: (error: Error) => {
+      console.error('📝 UPDATE: Error updating diamond:', error);
       toast({
-        title: "Update Failed ❌",
-        description: `Could not update stone: ${errorMsg}`,
+        title: "❌ Error",
+        description: error.message || "Failed to update diamond. Please try again.",
         variant: "destructive",
       });
-      
-      throw error;
-    }
-  };
+    },
+  });
 
-  return { updateDiamond };
+  return {
+    updateDiamond: updateDiamondMutation.mutateAsync,
+    isLoading: updateDiamondMutation.isPending,
+  };
 }
