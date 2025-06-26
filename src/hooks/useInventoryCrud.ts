@@ -47,7 +47,7 @@ export function useInventoryCrud({ onSuccess }: UseInventoryCrudProps = {}) {
     console.log('📝 CRUD: Starting update diamond operation for:', diamondId);
     setIsLoading(true);
     try {
-      await updateDiamondFn({ diamondId, data });
+      await updateDiamondFn(diamondId, data);
       console.log('✅ CRUD: Diamond updated successfully');
       return true;
     } catch (error) {
