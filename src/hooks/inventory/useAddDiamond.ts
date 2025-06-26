@@ -3,6 +3,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useEnhancedUserTracking } from '@/hooks/useEnhancedUserTracking';
+import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
+import { getAccessToken } from '@/lib/api/config';
 
 export interface DiamondFormData {
   // Basic Info
@@ -44,11 +46,17 @@ export function useAddDiamond(onSuccess?: () => void) {
   const { user } = useTelegramAuth();
   const queryClient = useQueryClient();
   const { trackDiamondOperation } = useEnhancedUserTracking();
+  const { triggerInventoryChange } = useInventoryDataSync();
 
   const addDiamondMutation = useMutation({
     mutationFn: async (data: DiamondFormData): Promise<boolean> => {
       if (!user?.id) {
         throw new Error('User not authenticated');
+      }
+
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        throw new Error('No authentication token available');
       }
 
       // Use the correct FastAPI v1 endpoint structure
@@ -65,29 +73,41 @@ export function useAddDiamond(onSuccess?: () => void) {
         fluorescence: data.fluorescence
       };
 
+      console.log('➕ ADD: Adding diamond with data:', diamondData);
+
       const response = await fetch('https://api.mazalbot.com/api/v1/diamonds', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VySWQiLCJleHAiOjE2ODk2MDAwMDAsImlhdCI6MTY4OTU5NjQwMH0.kWzUkeMTF4LZbU9P5yRmsXrXhWfPlUPukGqI8Nq1rLo`
+          'Authorization': `Bearer ${accessToken}`,
+          'X-Telegram-User-ID': user.id.toString()
         },
         body: JSON.stringify(diamondData),
       });
 
+      console.log('➕ ADD: Response status:', response.status);
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('➕ ADD: Failed to add diamond:', errorData);
         throw new Error(errorData.detail || errorData.message || 'Failed to add diamond');
       }
+
+      const result = await response.json();
+      console.log('➕ ADD: Diamond added successfully:', result);
 
       return true;
     },
     onSuccess: () => {
       toast({
-        title: "Success",
+        title: "✅ Success",
         description: "Diamond added successfully to your inventory!",
       });
       
       trackDiamondOperation('add', { success: true });
+      
+      // Trigger inventory refresh
+      triggerInventoryChange();
       queryClient.invalidateQueries({ queryKey: ['diamonds'] });
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
       
@@ -96,9 +116,9 @@ export function useAddDiamond(onSuccess?: () => void) {
       }
     },
     onError: (error: Error) => {
-      console.error('Error adding diamond:', error);
+      console.error('➕ ADD: Error adding diamond:', error);
       toast({
-        title: "Error",
+        title: "❌ Error",
         description: error.message || "Failed to add diamond. Please try again.",
         variant: "destructive",
       });

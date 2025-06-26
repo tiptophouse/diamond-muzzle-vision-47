@@ -1,5 +1,5 @@
 
-import { getCurrentUserId } from "@/lib/api/config";
+import { getCurrentUserId, getAccessToken } from "@/lib/api/config";
 
 export interface FetchInventoryResult {
   data?: any[];
@@ -9,22 +9,44 @@ export interface FetchInventoryResult {
 
 export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   const telegramUserId = getCurrentUserId();
+  const accessToken = getAccessToken();
+  
   console.log('🔍 INVENTORY SERVICE: Fetching data from FastAPI v1 get_all_stones endpoint');
   console.log('🔍 INVENTORY SERVICE: Current Telegram user ID:', telegramUserId);
+  console.log('🔍 INVENTORY SERVICE: Access token available:', !!accessToken);
   
   const debugInfo = { 
     step: 'Starting inventory fetch with FastAPI v1 get_all_stones endpoint', 
     timestamp: new Date().toISOString(),
     dataSource: 'fastapi_v1',
-    authentication: 'Bearer Token',
+    authentication: 'Bearer Token (Dynamic)',
     telegramUserId: telegramUserId,
-    endpoint: '/api/v1/get_all_stones'
+    endpoint: '/api/v1/get_all_stones',
+    tokenAvailable: !!accessToken
   };
   
   try {
+    // Check if we have authentication
+    if (!accessToken) {
+      console.error('❌ INVENTORY SERVICE: No access token available');
+      return {
+        error: 'Authentication required. Please refresh the app to authenticate.',
+        debugInfo: {
+          ...debugInfo,
+          step: 'FAILED: No access token available',
+          error: 'Missing authentication token'
+        }
+      };
+    }
+
     // Test backend connectivity first
     console.log('🚀 INVENTORY SERVICE: Testing backend connectivity...');
-    const aliveResponse = await fetch('https://api.mazalbot.com/api/v1/alive');
+    const aliveResponse = await fetch('https://api.mazalbot.com/api/v1/alive', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json'
+      }
+    });
     
     if (!aliveResponse.ok) {
       console.error('❌ INVENTORY SERVICE: Backend connectivity test failed');
@@ -40,16 +62,24 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     
     console.log('✅ INVENTORY SERVICE: Backend is alive, fetching stones...');
     
-    // Use the correct FastAPI v1 get_all_stones endpoint with Bearer token
+    // Use the correct FastAPI v1 get_all_stones endpoint with dynamic Bearer token
     const endpoint = 'https://api.mazalbot.com/api/v1/get_all_stones';
     console.log('🚀 INVENTORY SERVICE: Using get_all_stones endpoint:', endpoint);
     
+    const headers: Record<string, string> = {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    };
+
+    // Add Telegram user ID for data isolation
+    if (telegramUserId) {
+      headers['X-Telegram-User-ID'] = telegramUserId.toString();
+    }
+    
     const response = await fetch(endpoint, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VySWQiLCJleHAiOjE2ODk2MDAwMDAsImlhdCI6MTY4OTU5NjQwMH0.kWzUkeMTF4LZbU9P5yRmsXrXhWfPlUPukGqI8Nq1rLo`,
-        'Content-Type': 'application/json'
-      }
+      headers
     });
     
     console.log('📡 INVENTORY SERVICE: Response status:', response.status);
@@ -60,8 +90,16 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       console.error('❌ INVENTORY SERVICE: FastAPI request failed:', response.status, response.statusText);
       console.error('❌ INVENTORY SERVICE: Error response:', errorText);
       
+      let errorMessage = `Failed to fetch stones from get_all_stones: ${response.status} ${response.statusText}`;
+      
+      if (response.status === 401) {
+        errorMessage = 'Authentication expired. Please refresh the app to re-authenticate.';
+      } else if (response.status === 403) {
+        errorMessage = 'Access forbidden. Please check your permissions.';
+      }
+      
       return {
-        error: `Failed to fetch stones from get_all_stones: ${response.status} ${response.statusText}`,
+        error: errorMessage,
         debugInfo: {
           ...debugInfo,
           step: 'FAILED: get_all_stones request error',

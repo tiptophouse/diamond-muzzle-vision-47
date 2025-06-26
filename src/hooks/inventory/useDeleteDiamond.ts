@@ -1,103 +1,75 @@
 
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { Diamond } from '@/components/inventory/InventoryTable';
-import { api, apiEndpoints } from '@/lib/api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { useInventoryDataSync } from './useInventoryDataSync';
-import { useEnhancedUserTracking } from '@/hooks/useEnhancedUserTracking';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
+import { getAccessToken } from '@/lib/api/config';
 
-interface UseDeleteDiamondProps {
-  onSuccess?: () => void;
-}
-
-export function useDeleteDiamond({ onSuccess }: UseDeleteDiamondProps) {
-  const { user } = useTelegramAuth();
+export function useDeleteDiamond() {
   const { toast } = useToast();
+  const { user } = useTelegramAuth();
+  const queryClient = useQueryClient();
   const { triggerInventoryChange } = useInventoryDataSync();
-  const { trackDiamondOperation } = useEnhancedUserTracking();
 
-  const deleteDiamond = async (diamondId: string) => {
-    if (!user?.id) {
-      toast({
-        title: "Authentication Required ❌",
-        description: "Please log in to delete diamonds",
-        variant: "destructive",
-      });
-      throw new Error('User not authenticated');
-    }
-
-    try {
-      console.log('🗑️ DELETE DIAMOND: Starting deletion for user:', user.id, 'diamond:', diamondId);
-      
-      // Show loading toast
-      toast({
-        title: "Deleting Diamond... ⏳",
-        description: "Please wait while we remove this diamond from your inventory",
-      });
-      
-      const endpoint = apiEndpoints.deleteDiamond(diamondId);
-      console.log('🗑️ DELETE DIAMOND: Using FastAPI endpoint:', endpoint);
-      
-      const result = await api.delete(endpoint);
-      
-      if (result.error) {
-        console.error('❌ DELETE DIAMOND: FastAPI delete failed:', result.error);
-        toast({
-          title: "Delete Failed ❌",
-          description: `Failed to delete diamond: ${result.error}`,
-          variant: "destructive",
-        });
-        
-        // Track failed deletion
-        await trackDiamondOperation('delete', { 
-          diamond_id: diamondId, 
-          success: false, 
-          error: result.error 
-        });
-        
-        throw new Error(result.error);
+  const deleteDiamondMutation = useMutation({
+    mutationFn: async (stoneId: string): Promise<boolean> => {
+      if (!user?.id) {
+        throw new Error('User not authenticated');
       }
 
-      console.log('✅ DELETE DIAMOND: Successfully deleted from FastAPI');
-      
-      // Show success toast
-      toast({
-        title: "Diamond Deleted Successfully ✅",
-        description: "The diamond has been permanently removed from your inventory",
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        throw new Error('No authentication token available');
+      }
+
+      console.log('🗑️ DELETE: Attempting to delete stone with ID:', stoneId);
+
+      // Use the correct FastAPI delete endpoint
+      const response = await fetch(`https://api.mazalbot.com/api/v1/delete_stone/${stoneId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+          'X-Telegram-User-ID': user.id.toString()
+        }
       });
+
+      console.log('🗑️ DELETE: Response status:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('🗑️ DELETE: Failed to delete stone:', errorData);
+        throw new Error(`Failed to delete stone: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('🗑️ DELETE: Delete successful:', result);
       
-      // Track successful deletion
-      await trackDiamondOperation('delete', { 
-        diamond_id: diamondId, 
-        success: true 
-      });
-      
-      // Trigger real-time inventory update
-      triggerInventoryChange();
-      
-      if (onSuccess) onSuccess();
       return true;
-      
-    } catch (error) {
-      console.error('❌ DELETE DIAMOND: Unexpected error:', error);
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred';
-      
+    },
+    onSuccess: () => {
       toast({
-        title: "Delete Failed ❌", 
-        description: `Could not delete diamond: ${errorMsg}. Please try again.`,
+        title: "✅ Success",
+        description: "Stone deleted successfully from your inventory!",
+      });
+      
+      // Trigger inventory refresh
+      triggerInventoryChange();
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['diamonds'] });
+    },
+    onError: (error: Error) => {
+      console.error('🗑️ DELETE: Error deleting stone:', error);
+      toast({
+        title: "❌ Error",
+        description: error.message || "Failed to delete stone. Please try again.",
         variant: "destructive",
       });
-      
-      // Track failed deletion
-      await trackDiamondOperation('delete', { 
-        diamond_id: diamondId, 
-        success: false, 
-        error: errorMsg 
-      });
-      
-      throw error;
-    }
-  };
+    },
+  });
 
-  return { deleteDiamond };
+  return {
+    deleteDiamond: deleteDiamondMutation.mutateAsync,
+    isDeleting: deleteDiamondMutation.isPending,
+  };
 }

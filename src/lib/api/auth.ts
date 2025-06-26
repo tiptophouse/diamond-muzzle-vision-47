@@ -1,11 +1,13 @@
 
-import { API_BASE_URL, BACKEND_ACCESS_TOKEN } from './config';
+import { API_BASE_URL, setAccessToken, clearAccessToken } from './config';
 import { apiEndpoints } from './endpoints';
 import { setCurrentUserId } from './config';
 
 export interface TelegramVerificationResponse {
   success: boolean;
   user_id: number;
+  access_token: string;
+  expires_in?: number;
   user_data: any;
   message?: string;
   security_info?: {
@@ -30,16 +32,9 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     console.log('🔐 API: Sending to:', `${API_BASE_URL}${apiEndpoints.verifyTelegram()}`);
     console.log('🔐 API: InitData length:', initData.length);
     
-    if (!BACKEND_ACCESS_TOKEN) {
-      console.error('🔐 API: No backend access token available');
-      verificationResult = null;
-      return null;
-    }
-    
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
       'X-Timestamp': Date.now().toString(),
       'X-Client-Version': '1.0.0'
     };
@@ -70,15 +65,17 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     console.log('✅ API: Telegram InitData verification successful:', result);
     
     verificationResult = result;
-    if (result.success && result.user_id) {
-      console.log('✅ API: Setting current user ID from verified InitData:', result.user_id);
+    if (result.success && result.user_id && result.access_token) {
+      console.log('✅ API: Setting current user ID and access token from verified InitData:', result.user_id);
       setCurrentUserId(result.user_id);
+      setAccessToken(result.access_token, result.expires_in);
     }
     
     return result;
   } catch (error) {
     console.error('❌ API: Telegram InitData verification failed:', error);
     verificationResult = null;
+    clearAccessToken();
     return null;
   }
 }
@@ -88,11 +85,12 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
     "X-Client-Timestamp": Date.now().toString()
   };
   
-  if (BACKEND_ACCESS_TOKEN) {
-    headers["Authorization"] = `Bearer ${BACKEND_ACCESS_TOKEN}`;
-    console.log('🚀 API: Using backend access token for authenticated requests');
+  const token = (await import('./config')).getAccessToken();
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+    console.log('🚀 API: Using dynamic access token for authenticated requests');
   } else {
-    console.warn('⚠️ API: No backend access token available');
+    console.warn('⚠️ API: No valid access token available');
   }
   
   // Add enhanced auth headers if available from verification

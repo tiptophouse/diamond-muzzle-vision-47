@@ -1,12 +1,13 @@
 
-// FastAPI backend configuration with JWT authentication
+// FastAPI backend configuration with dynamic JWT authentication
 export const API_BASE_URL = "https://api.mazalbot.com";
-
-// Use the correct JWT Bearer token from your environment
-export const BACKEND_ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VySWQiLCJleHAiOjE2ODk2MDAwMDAsImlhdCI6MTY4OTU5NjQwMH0.kWzUkeMTF4LZbU9P5yRmsXrXhWfPlUPukGqI8Nq1rLo";
 
 // Current user ID from Telegram InitData verification
 let currentUserId: number | null = null;
+
+// Dynamic token storage
+let currentAccessToken: string | null = null;
+let tokenExpiry: number | null = null;
 
 export function setCurrentUserId(userId: number) {
   currentUserId = userId;
@@ -17,6 +18,34 @@ export function setCurrentUserId(userId: number) {
 export function getCurrentUserId(): number | null {
   console.log('🔧 API CONFIG: Getting current Telegram user ID for request filtering:', currentUserId);
   return currentUserId;
+}
+
+export function setAccessToken(token: string, expiresIn?: number) {
+  currentAccessToken = token;
+  tokenExpiry = expiresIn ? Date.now() + (expiresIn * 1000) : null;
+  console.log('🔧 API CONFIG: Setting access token with expiry:', tokenExpiry ? new Date(tokenExpiry) : 'no expiry');
+}
+
+export function getAccessToken(): string | null {
+  if (!currentAccessToken) {
+    console.warn('⚠️ API CONFIG: No access token available');
+    return null;
+  }
+  
+  if (tokenExpiry && Date.now() > tokenExpiry) {
+    console.warn('⚠️ API CONFIG: Access token expired, clearing...');
+    currentAccessToken = null;
+    tokenExpiry = null;
+    return null;
+  }
+  
+  return currentAccessToken;
+}
+
+export function clearAccessToken() {
+  currentAccessToken = null;
+  tokenExpiry = null;
+  console.log('🧹 API CONFIG: Cleared access token');
 }
 
 // Helper function to check if we're in development
