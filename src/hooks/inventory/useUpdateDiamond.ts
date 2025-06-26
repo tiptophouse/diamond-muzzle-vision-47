@@ -6,7 +6,6 @@ import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
 import { HybridDiamondService } from '@/services/hybridDiamondService';
 
 interface DiamondFormData {
-  stockNumber?: string;
   shape: string;
   carat: number;
   color: string;
@@ -35,7 +34,6 @@ export function useUpdateDiamond(onSuccess?: () => void) {
       }
 
       const diamondData = {
-        stock_number: data.stockNumber || `STOCK-${Date.now()}`,
         shape: data.shape,
         weight: data.carat,
         color: data.color,

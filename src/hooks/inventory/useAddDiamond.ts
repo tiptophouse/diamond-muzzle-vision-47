@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
@@ -8,7 +7,6 @@ import { HybridDiamondService } from '@/services/hybridDiamondService';
 
 export interface DiamondFormData {
   // Basic Info
-  stockNumber?: string;
   shape: string;
   carat: number;
   color: string;
@@ -23,7 +21,6 @@ export interface DiamondFormData {
   
   // Certificate
   certificateNumber?: string;
-  certificateUrl?: string;
   certificateType?: string;
   
   // Pricing

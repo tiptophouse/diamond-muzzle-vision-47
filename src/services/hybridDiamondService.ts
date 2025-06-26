@@ -1,6 +1,7 @@
+
 import { TelegramAuthService } from './telegramAuthService';
 import { supabase } from '@/integrations/supabase/client';
-import { getCurrentUserId } from '@/lib/api/config';
+import { getAccessToken, getCurrentUserId } from '@/lib/api/config';
 
 export interface DiamondData {
   id?: string;
@@ -34,15 +35,15 @@ export class HybridDiamondService {
       throw new Error('User not authenticated');
     }
 
-    // Try secure FastAPI proxy first
+    // Try FastAPI first
     try {
-      const result = await this.trySecureFastAPIFetch();
+      const result = await this.tryFastAPIFetch();
       if (result && result.length >= 0) {
-        console.log('✅ HYBRID SERVICE: Secure FastAPI fetch successful');
+        console.log('✅ HYBRID SERVICE: FastAPI fetch successful');
         return result;
       }
     } catch (error) {
-      console.warn('⚠️ HYBRID SERVICE: Secure FastAPI failed, trying Supabase...', error);
+      console.warn('⚠️ HYBRID SERVICE: FastAPI failed, trying Supabase...', error);
     }
 
     // Fallback to Supabase
@@ -57,15 +58,15 @@ export class HybridDiamondService {
       throw new Error('User not authenticated');
     }
 
-    // Try secure FastAPI proxy first
+    // Try FastAPI first
     try {
-      const result = await this.trySecureFastAPIAdd(data);
+      const result = await this.tryFastAPIAdd(data);
       if (result) {
-        console.log('✅ HYBRID SERVICE: Secure FastAPI add successful');
+        console.log('✅ HYBRID SERVICE: FastAPI add successful');
         return true;
       }
     } catch (error) {
-      console.warn('⚠️ HYBRID SERVICE: Secure FastAPI add failed, trying Supabase...', error);
+      console.warn('⚠️ HYBRID SERVICE: FastAPI add failed, trying Supabase...', error);
     }
 
     // Fallback to Supabase
@@ -80,15 +81,15 @@ export class HybridDiamondService {
       throw new Error('User not authenticated');
     }
 
-    // Try secure FastAPI proxy first
+    // Try FastAPI first
     try {
-      const result = await this.trySecureFastAPIUpdate(diamondId, data);
+      const result = await this.tryFastAPIUpdate(diamondId, data);
       if (result) {
-        console.log('✅ HYBRID SERVICE: Secure FastAPI update successful');
+        console.log('✅ HYBRID SERVICE: FastAPI update successful');
         return true;
       }
     } catch (error) {
-      console.warn('⚠️ HYBRID SERVICE: Secure FastAPI update failed, trying Supabase...', error);
+      console.warn('⚠️ HYBRID SERVICE: FastAPI update failed, trying Supabase...', error);
     }
 
     // Fallback to Supabase
@@ -103,109 +104,117 @@ export class HybridDiamondService {
       throw new Error('User not authenticated');
     }
 
-    // Try secure FastAPI proxy first
+    // Try FastAPI first
     try {
-      const result = await this.trySecureFastAPIDelete(diamondId);
+      const result = await this.tryFastAPIDelete(diamondId);
       if (result) {
-        console.log('✅ HYBRID SERVICE: Secure FastAPI delete successful');
+        console.log('✅ HYBRID SERVICE: FastAPI delete successful');
         return true;
       }
     } catch (error) {
-      console.warn('⚠️ HYBRID SERVICE: Secure FastAPI delete failed, trying Supabase...', error);
+      console.warn('⚠️ HYBRID SERVICE: FastAPI delete failed, trying Supabase...', error);
     }
 
     // Fallback to Supabase
     return this.trySupabaseDelete(diamondId);
   }
 
-  private async trySecureFastAPIFetch(): Promise<DiamondData[]> {
+  private async tryFastAPIFetch(): Promise<DiamondData[]> {
+    const accessToken = getAccessToken();
     const userId = getCurrentUserId();
     
-    const response = await supabase.functions.invoke('secure-fastapi-proxy', {
-      body: {
-        method: 'GET',
-        endpoint: '/api/v1/get_all_stones',
-        telegramUserId: userId
+    if (!accessToken) {
+      throw new Error('No access token available');
+    }
+
+    const response = await fetch('https://api.mazalbot.com/api/v1/get_all_stones', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'X-Telegram-User-ID': userId?.toString() || ''
       }
     });
 
-    if (response.error) {
-      throw new Error(response.error.message);
+    if (!response.ok) {
+      throw new Error(`FastAPI fetch failed: ${response.status}`);
     }
 
-    if (!response.data?.success) {
-      throw new Error(response.data?.error || 'FastAPI request failed');
-    }
-
-    const result = response.data.data;
+    const result = await response.json();
     return Array.isArray(result) ? result : (result.stones || result.data || []);
   }
 
-  private async trySecureFastAPIAdd(data: DiamondData): Promise<boolean> {
+  private async tryFastAPIAdd(data: DiamondData): Promise<boolean> {
+    const accessToken = getAccessToken();
     const userId = getCurrentUserId();
     
-    const response = await supabase.functions.invoke('secure-fastapi-proxy', {
-      body: {
-        method: 'POST',
-        endpoint: '/api/v1/diamonds',
-        telegramUserId: userId,
-        data: {
-          shape: data.shape,
-          weight: data.weight,
-          color: data.color,
-          clarity: data.clarity,
-          cut: data.cut,
-          price: data.price || 0,
-          polish: data.polish,
-          symmetry: data.symmetry,
-          fluorescence: data.fluorescence,
-          stock_number: data.stock_number
-        }
-      }
-    });
-
-    if (response.error) {
-      throw new Error(response.error.message);
+    if (!accessToken) {
+      throw new Error('No access token available');
     }
 
-    return response.data?.success || false;
+    const response = await fetch('https://api.mazalbot.com/api/v1/diamonds', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'X-Telegram-User-ID': userId?.toString() || ''
+      },
+      body: JSON.stringify({
+        shape: data.shape,
+        weight: data.weight,
+        color: data.color,
+        clarity: data.clarity,
+        cut: data.cut,
+        price: data.price || 0,
+        polish: data.polish,
+        symmetry: data.symmetry,
+        fluorescence: data.fluorescence,
+        stock_number: data.stock_number
+      })
+    });
+
+    return response.ok;
   }
 
-  private async trySecureFastAPIUpdate(diamondId: string, data: DiamondData): Promise<boolean> {
+  private async tryFastAPIUpdate(diamondId: string, data: DiamondData): Promise<boolean> {
+    const accessToken = getAccessToken();
     const userId = getCurrentUserId();
     
-    const response = await supabase.functions.invoke('secure-fastapi-proxy', {
-      body: {
-        method: 'PUT',
-        endpoint: `/api/v1/diamonds/${diamondId}`,
-        telegramUserId: userId,
-        data
-      }
-    });
-
-    if (response.error) {
-      throw new Error(response.error.message);
+    if (!accessToken) {
+      throw new Error('No access token available');
     }
 
-    return response.data?.success || false;
+    const response = await fetch(`https://api.mazalbot.com/api/v1/diamonds/${diamondId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'X-Telegram-User-ID': userId?.toString() || ''
+      },
+      body: JSON.stringify(data)
+    });
+
+    return response.ok;
   }
 
-  private async trySecureFastAPIDelete(diamondId: string): Promise<boolean> {
+  private async tryFastAPIDelete(diamondId: string): Promise<boolean> {
+    const accessToken = getAccessToken();
     const userId = getCurrentUserId();
     
-    const response = await supabase.functions.invoke('secure-fastapi-proxy', {
-      body: {
-        method: 'DELETE',
-        endpoint: `/api/v1/delete_stone/${diamondId}`,
-        telegramUserId: userId
+    if (!accessToken) {
+      throw new Error('No access token available');
+    }
+
+    const response = await fetch(`https://api.mazalbot.com/api/v1/delete_stone/${diamondId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'X-Telegram-User-ID': userId?.toString() || ''
       }
     });
 
-    if (response.error) {
-      throw new Error(response.error.message);
-    }
-
-    return response.data?.success || false;
+    return response.ok;
   }
 
   private async trySupabaseFetch(): Promise<DiamondData[]> {
