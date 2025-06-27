@@ -5,41 +5,7 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useEnhancedUserTracking } from '@/hooks/useEnhancedUserTracking';
 import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
 import { getAccessToken } from '@/lib/api/config';
-
-export interface DiamondFormData {
-  // Basic Info
-  shape: string;
-  carat: number;
-  color: string;
-  clarity: string;
-  cut?: string;
-  
-  // Measurements
-  length?: number;
-  width?: number;
-  depth?: number;
-  table?: number;
-  
-  // Certificate
-  certificateNumber?: string;
-  certificateType?: string;
-  
-  // Pricing
-  price?: number;
-  
-  // Images
-  images?: string[];
-  
-  // Store visibility
-  storeVisible?: boolean;
-  
-  // Additional properties
-  fluorescence?: string;
-  polish?: string;
-  symmetry?: string;
-  girdle?: string;
-  culet?: string;
-}
+import { DiamondFormData } from '@/components/inventory/form/types';
 
 export function useAddDiamond(onSuccess?: () => void) {
   const { toast } = useToast();
@@ -61,16 +27,31 @@ export function useAddDiamond(onSuccess?: () => void) {
 
       // Use the correct FastAPI v1 endpoint structure
       const diamondData = {
+        stock_number: data.stockNumber,
         shape: data.shape,
         weight: data.carat, // FastAPI expects 'weight' not 'carat'
         color: data.color,
         clarity: data.clarity,
         cut: data.cut,
-        price: data.price || 0, // FastAPI expects price, not price_per_carat
-        // Add other fields as needed by the API
-        polish: data.polish,
-        symmetry: data.symmetry,
-        fluorescence: data.fluorescence
+        price: data.price || 0,
+        price_per_carat: data.pricePerCarat || (data.carat > 0 ? Math.round(data.price / data.carat) : Math.round(data.price)),
+        status: data.status || 'Available',
+        store_visible: data.storeVisible !== false ? 1 : 0,
+        picture: data.picture || '',
+        certificate_number: data.certificateNumber || '',
+        certificate_url: data.certificateUrl || '',
+        lab: data.lab || 'GIA',
+        fluorescence: data.fluorescence || 'None',
+        polish: data.polish || 'Excellent',
+        symmetry: data.symmetry || 'Excellent',
+        gridle: data.gridle || 'Medium',
+        culet: data.culet || 'None',
+        length: data.length ? Number(data.length) : null,
+        width: data.width ? Number(data.width) : null,
+        depth: data.depth ? Number(data.depth) : null,
+        table_percentage: data.tablePercentage ? Number(data.tablePercentage) : null,
+        depth_percentage: data.depthPercentage ? Number(data.depthPercentage) : null,
+        certificate_comment: data.certificateComment || '',
       };
 
       console.log('➕ ADD: Adding diamond with data:', diamondData);
