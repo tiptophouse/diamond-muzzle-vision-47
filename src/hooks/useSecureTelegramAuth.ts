@@ -83,10 +83,6 @@ export function useSecureTelegramAuth(): AuthState {
           console.warn('⚠️ WebApp setup failed, continuing...', themeError);
         }
         
-        // Debug: Log available data
-        console.log('🔍 Telegram WebApp initData:', tg.initData ? 'Available' : 'Missing');
-        console.log('🔍 Telegram WebApp initDataUnsafe:', tg.initDataUnsafe);
-        
         // Try to get real user data from initData
         if (tg.initData && tg.initData.length > 0) {
           console.log('🔐 Found initData, verifying with backend...');

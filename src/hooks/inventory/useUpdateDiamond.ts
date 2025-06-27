@@ -36,11 +36,11 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         symmetry: data.symmetry || 'Excellent',
         gridle: data.gridle || 'Medium',
         culet: data.culet || 'None',
-        length: data.length ? Number(data.length) : null,
-        width: data.width ? Number(data.width) : null,
-        depth: data.depth ? Number(data.depth) : null,
-        table_percentage: data.tablePercentage ? Number(data.tablePercentage) : null,
-        depth_percentage: data.depthPercentage ? Number(data.depthPercentage) : null,
+        length: data.length ? Number(data.length) : '',
+        width: data.width ? Number(data.width) : '',
+        depth: data.depth ? Number(data.depth) : '',
+        table_percentage: data.tablePercentage ? Number(data.tablePercentage) : '',
+        depth_percentage: data.depthPercentage ? Number(data.depthPercentage) : '',
         certificate_comment: data.certificateComment || '',
       };
 

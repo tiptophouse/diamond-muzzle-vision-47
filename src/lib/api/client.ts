@@ -1,6 +1,5 @@
-
 import { toast } from "@/components/ui/use-toast";
-import { API_BASE_URL, getCurrentUserId, getAccessToken, getTelegramUserHeaders } from './config';
+import { API_BASE_URL, getCurrentUserId, BACKEND_ACCESS_TOKEN, getTelegramUserHeaders } from './config';
 
 interface ApiResponse<T> {
   data?: T;
@@ -11,26 +10,24 @@ interface ApiResponse<T> {
 async function testBackendConnectivity(): Promise<boolean> {
   try {
     console.log('🔍 API: Testing FastAPI backend connectivity to:', API_BASE_URL);
+    console.log('🔍 API: Using access token:', BACKEND_ACCESS_TOKEN ? 'Present' : 'Missing');
     
-    const token = getAccessToken();
-    console.log('🔍 API: Using access token:', token ? 'Present' : 'Missing');
+    if (!BACKEND_ACCESS_TOKEN) {
+      console.error('❌ API: No backend access token available for connectivity test');
+      return false;
+    }
     
     // Try a simple alive endpoint first
     const testUrl = `${API_BASE_URL}/api/v1/alive`;
     console.log('🔍 API: Testing alive endpoint:', testUrl);
     
-    const headers: Record<string, string> = {
-      'Accept': 'application/json',
-    };
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    
     const response = await fetch(testUrl, {
       method: 'GET',
       mode: 'cors',
-      headers,
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
+      },
     });
     
     console.log('🔍 API: Alive endpoint response status:', response.status);
@@ -56,11 +53,9 @@ export async function fetchApi<T>(
   
   try {
     const telegramUserId = getCurrentUserId();
-    const token = getAccessToken();
-    
     console.log('🚀 API: Making FastAPI request to:', url);
     console.log('🚀 API: Telegram user ID for data isolation:', telegramUserId);
-    console.log('🚀 API: Using access token:', token ? 'Present' : 'Missing');
+    console.log('🚀 API: Using backend token:', BACKEND_ACCESS_TOKEN ? 'Present' : 'Missing');
     console.log('🚀 API: Request method:', options.method || 'GET');
     
     // Test connectivity first for GET requests
@@ -81,8 +76,8 @@ export async function fetchApi<T>(
     };
 
     // Add Bearer token for authenticated endpoints
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
+    if (BACKEND_ACCESS_TOKEN) {
+      headers["Authorization"] = `Bearer ${BACKEND_ACCESS_TOKEN}`;
     }
     
     // Add Telegram user ID headers for data isolation
@@ -130,14 +125,7 @@ export async function fetchApi<T>(
     if (!response.ok) {
       let errorMessage = `FastAPI Error ${response.status}: ${response.statusText}`;
       
-      if (response.status === 401) {
-        errorMessage = 'Authentication failed. Please refresh the app and try again.';
-        // Clear invalid token
-        const { clearAccessToken } = await import('./config');
-        clearAccessToken();
-      } else if (response.status === 403) {
-        errorMessage = 'Access forbidden. Please check your permissions.';
-      } else if (typeof data === 'object' && data) {
+      if (typeof data === 'object' && data) {
         errorMessage = data.detail || data.message || errorMessage;
       } else if (typeof data === 'string') {
         errorMessage = data || errorMessage;
@@ -171,12 +159,6 @@ export async function fetchApi<T>(
       toast({
         title: "🔌 FastAPI Server Offline",
         description: `The FastAPI backend is not responding. Please contact support.`,
-        variant: "destructive",
-      });
-    } else if (errorMessage.includes('Authentication failed')) {
-      toast({
-        title: "🔐 Authentication Error",
-        description: `Please refresh the app to re-authenticate.`,
         variant: "destructive",
       });
     }
