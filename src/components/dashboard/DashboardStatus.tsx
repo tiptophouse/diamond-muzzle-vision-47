@@ -1,9 +1,8 @@
 
-import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { RefreshCw, Wifi, WifiOff, Database, AlertCircle } from "lucide-react";
+import React from 'react';
+import { RefreshCw, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface DashboardStatusProps {
   loading: boolean;
@@ -20,98 +19,50 @@ export function DashboardStatus({
   totalDiamonds, 
   onRefresh 
 }: DashboardStatusProps) {
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
-  const [countdown, setCountdown] = useState(30);
-
-  // Auto-refresh every 30 seconds
-  useEffect(() => {
-    if (!autoRefreshEnabled) return;
-
-    const interval = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          onRefresh();
-          return 30;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [autoRefreshEnabled, onRefresh]);
-
-  const getConnectionStatus = () => {
-    if (loading) return { status: 'updating', color: 'yellow', icon: RefreshCw };
-    if (error) return { status: 'error', color: 'red', icon: WifiOff };
-    return { status: 'connected', color: 'green', icon: Wifi };
+  const getStatusIcon = () => {
+    if (loading) return <RefreshCw className="h-4 w-4 animate-spin" />;
+    if (error) return <AlertCircle className="h-4 w-4 text-red-500" />;
+    return <CheckCircle className="h-4 w-4 text-green-500" />;
   };
 
-  const { status, color, icon: StatusIcon } = getConnectionStatus();
+  const getStatusText = () => {
+    if (loading) return 'Loading inventory data...';
+    if (error) return `Error: ${error}`;
+    return `Connected to FastAPI - ${totalDiamonds} diamonds loaded`;
+  };
+
+  const getStatusColor = () => {
+    if (loading) return 'border-blue-200 bg-blue-50';
+    if (error) return 'border-red-200 bg-red-50';
+    return 'border-green-200 bg-green-50';
+  };
 
   return (
-    <Card className="border-l-4 border-l-blue-500">
+    <Card className={`${getStatusColor()} transition-colors`}>
       <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <StatusIcon className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            <span className="font-medium">System Status</span>
-            <Badge variant={color === 'green' ? 'default' : color === 'yellow' ? 'secondary' : 'destructive'}>
-              {status}
-            </Badge>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onRefresh}
-              disabled={loading}
-              className="h-8"
-            >
-              <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <Database className="h-4 w-4 text-blue-500" />
-            <span className="text-muted-foreground">Inventory:</span>
-            <span className="font-medium">{totalDiamonds}</span>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Last Update:</span>
-            <span className="font-medium">
-              {lastUpdate ? lastUpdate.toLocaleTimeString() : 'Never'}
-            </span>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Auto-refresh:</span>
-            <button
-              onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
-              className={`text-xs px-2 py-1 rounded ${
-                autoRefreshEnabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-              }`}
-            >
-              {autoRefreshEnabled ? `ON (${countdown}s)` : 'OFF'}
-            </button>
-          </div>
-
-          {error && (
-            <div className="flex items-center gap-2 col-span-2 lg:col-span-3">
-              <AlertCircle className="h-4 w-4 text-red-500" />
-              <span className="text-red-600 text-xs">
-                Connection issue - please try refreshing
-              </span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {getStatusIcon()}
+            <div>
+              <p className="text-sm font-medium">{getStatusText()}</p>
+              {lastUpdate && !loading && (
+                <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                  <Clock className="h-3 w-3" />
+                  Last updated: {lastUpdate.toLocaleTimeString()}
+                </p>
+              )}
             </div>
-          )}
-        </div>
-
-        <div className="mt-3 text-xs text-muted-foreground">
-          <span>✅ Secure connection established - showing your personal inventory</span>
+          </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onRefresh}
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
       </CardContent>
     </Card>
