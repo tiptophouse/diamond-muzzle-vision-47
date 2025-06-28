@@ -22,13 +22,14 @@ export function useInsightsData() {
     
     setLoading(true);
     try {
-      console.log('Fetching real insights with JWT authentication for user:', user.id);
+      console.log('Fetching real insights for user:', user.id);
       
-      const response = await api.get<any[]>(apiEndpoints.getAllStones());
+      const response = await api.get<any[]>(apiEndpoints.getAllStones(user.id));
       
       if (response.data) {
-        // JWT authentication ensures we only get diamonds for the authenticated user
-        const diamonds = response.data;
+        const diamonds = response.data.filter(d => 
+          d.owners?.includes(user.id) || d.owner_id === user.id
+        );
         
         setTotalDiamonds(diamonds.length);
         

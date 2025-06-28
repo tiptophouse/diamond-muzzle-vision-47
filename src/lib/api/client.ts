@@ -1,5 +1,7 @@
 import { toast } from "@/components/ui/use-toast";
-import { API_BASE_URL, getCurrentUserId, BACKEND_ACCESS_TOKEN, getTelegramUserHeaders } from './config';
+import { API_BASE_URL, getCurrentUserId } from './config';
+import { getAuthHeaders } from './auth';
+import { getBackendAccessToken } from './secureConfig';
 
 interface ApiResponse<T> {
   data?: T;
@@ -10,37 +12,39 @@ interface ApiResponse<T> {
 async function testBackendConnectivity(): Promise<boolean> {
   try {
     console.log('🔍 API: Testing FastAPI backend connectivity to:', API_BASE_URL);
-    console.log('🔍 API: Using access token:', BACKEND_ACCESS_TOKEN ? 'Present' : 'Missing');
+    console.log('🔍 API: Expected to connect to your real diamond database with 500+ records');
     
-    if (!BACKEND_ACCESS_TOKEN) {
-      console.error('❌ API: No backend access token available for connectivity test');
+    const backendToken = await getBackendAccessToken();
+    if (!backendToken) {
+      console.error('❌ API: No secure backend access token available for connectivity test');
       return false;
     }
     
-    // Try a simple alive endpoint first
-    const testUrl = `${API_BASE_URL}/api/v1/alive`;
-    console.log('🔍 API: Testing alive endpoint:', testUrl);
+    // Try the root endpoint first
+    const testUrl = `${API_BASE_URL}/`;
+    console.log('🔍 API: Testing root endpoint:', testUrl);
     
     const response = await fetch(testUrl, {
       method: 'GET',
       mode: 'cors',
       headers: {
         'Accept': 'application/json',
-        'Authorization': `Bearer ${BACKEND_ACCESS_TOKEN}`,
+        'Authorization': `Bearer ${backendToken}`,
       },
     });
     
-    console.log('🔍 API: Alive endpoint response status:', response.status);
+    console.log('🔍 API: Root endpoint response status:', response.status);
     
-    if (response.ok) {
-      console.log('✅ API: FastAPI backend is reachable');
+    if (response.ok || response.status === 404) {
+      console.log('✅ API: FastAPI backend is reachable - your 500 diamonds should be accessible');
       return true;
     }
     
-    console.log('❌ API: FastAPI backend not reachable - Status:', response.status);
+    console.log('❌ API: FastAPI backend not reachable - this is why you see mock data (5 diamonds)');
+    console.log('❌ API: Status:', response.status, 'Check if your backend server is running');
     return false;
   } catch (error) {
-    console.error('❌ API: FastAPI backend connectivity test failed:', error);
+    console.error('❌ API: FastAPI backend connectivity test failed - this causes fallback to 5 mock diamonds:', error);
     return false;
   }
 }
@@ -52,37 +56,26 @@ export async function fetchApi<T>(
   const url = `${API_BASE_URL}${endpoint}`;
   
   try {
-    const telegramUserId = getCurrentUserId();
-    console.log('🚀 API: Making FastAPI request to:', url);
-    console.log('🚀 API: Telegram user ID for data isolation:', telegramUserId);
-    console.log('🚀 API: Using backend token:', BACKEND_ACCESS_TOKEN ? 'Present' : 'Missing');
-    console.log('🚀 API: Request method:', options.method || 'GET');
+    console.log('🚀 API: Making FastAPI request to fetch real diamonds:', url);
+    console.log('🚀 API: Current user ID:', getCurrentUserId(), 'type:', typeof getCurrentUserId());
+    console.log('🚀 API: This should return your 500+ diamonds, not mock data');
     
-    // Test connectivity first for GET requests
-    if (!options.method || options.method === 'GET') {
-      const isBackendReachable = await testBackendConnectivity();
-      if (!isBackendReachable) {
-        const errorMsg = 'FastAPI backend server is not reachable. Please check server status.';
-        console.error('❌ API: Backend unreachable');
-        throw new Error(errorMsg);
-      }
+    // Test connectivity first
+    const isBackendReachable = await testBackendConnectivity();
+    if (!isBackendReachable) {
+      const errorMsg = 'FastAPI backend server is not reachable. Please check if the server is running at ' + API_BASE_URL;
+      console.error('❌ API: Backend unreachable - this forces fallback to 5 mock diamonds');
+      throw new Error(errorMsg);
     }
     
+    const authHeaders = await getAuthHeaders();
     let headers: Record<string, string> = {
       "Content-Type": "application/json",
       "Accept": "application/json",
       "Origin": window.location.origin,
+      ...authHeaders,
       ...options.headers as Record<string, string>,
     };
-
-    // Add Bearer token for authenticated endpoints
-    if (BACKEND_ACCESS_TOKEN) {
-      headers["Authorization"] = `Bearer ${BACKEND_ACCESS_TOKEN}`;
-    }
-    
-    // Add Telegram user ID headers for data isolation
-    const telegramHeaders = getTelegramUserHeaders();
-    headers = { ...headers, ...telegramHeaders };
     
     const fetchOptions: RequestInit = {
       ...options,
@@ -91,14 +84,17 @@ export async function fetchApi<T>(
       credentials: 'omit',
     };
     
-    console.log('🚀 API: Request headers with Telegram isolation:', Object.keys(headers));
-    if (fetchOptions.body) {
-      console.log('🚀 API: Request body:', fetchOptions.body);
-    }
+    console.log('🚀 API: Fetch options for real data:', {
+      url,
+      method: fetchOptions.method || 'GET',
+      hasAuth: !!headers.Authorization,
+      hasBody: !!fetchOptions.body,
+      headers: Object.keys(headers),
+    });
     
     const response = await fetch(url, fetchOptions);
 
-    console.log('📡 API: Response status:', response.status);
+    console.log('📡 API: FastAPI Response status:', response.status);
     console.log('📡 API: Response headers:', Object.fromEntries(response.headers.entries()));
 
     let data;
@@ -106,19 +102,29 @@ export async function fetchApi<T>(
     
     if (contentType && contentType.includes('application/json')) {
       data = await response.json();
-      console.log('📡 API: JSON response received for Telegram user:', telegramUserId);
-      console.log('📡 API: Response data type:', typeof data);
+      console.log('📡 API: JSON response received from FastAPI');
+      console.log('📡 API: Data type:', typeof data, 'is array:', Array.isArray(data));
       if (Array.isArray(data)) {
-        console.log('📡 API: Array response length (user-specific data):', data.length);
-        if (data.length > 0) {
-          console.log('📡 API: Sample item from user data:', data[0]);
+        console.log('📡 API: SUCCESS! Array length:', data.length, '(expecting ~500 diamonds)');
+        if (data.length < 100) {
+          console.warn('⚠️ API: Expected 500+ diamonds but got', data.length, '- check your backend database');
         }
-      } else if (data && typeof data === 'object') {
-        console.log('📡 API: Object response keys:', Object.keys(data));
+        console.log('📡 API: Sample diamond:', data.slice(0, 1));
+      } else {
+        console.log('📡 API: Response data structure:', Object.keys(data || {}));
+        if (data && typeof data === 'object') {
+          const possibleArrays = Object.keys(data).filter(key => Array.isArray(data[key]));
+          if (possibleArrays.length > 0) {
+            console.log('📡 API: Found arrays in properties:', possibleArrays);
+            possibleArrays.forEach(key => {
+              console.log(`📡 API: ${key} has ${data[key].length} items`);
+            });
+          }
+        }
       }
     } else {
       const text = await response.text();
-      console.log('📡 API: Non-JSON response:', text.substring(0, 200));
+      console.log('📡 API: Non-JSON response from FastAPI:', text.substring(0, 200));
       data = text;
     }
 
@@ -131,34 +137,40 @@ export async function fetchApi<T>(
         errorMessage = data || errorMessage;
       }
       
-      console.error('❌ API: Request failed for Telegram user:', telegramUserId, 'Error:', errorMessage);
-      
-      toast({
-        title: "❌ API Error",
-        description: `Request failed: ${errorMessage}`,
-        variant: "destructive",
-      });
-      
+      console.error('❌ API: FastAPI request failed - this causes fallback to mock data:', errorMessage);
       throw new Error(errorMessage);
     }
 
-    console.log('✅ API: Request successful for Telegram user:', telegramUserId);
+    console.log('✅ API: FastAPI request successful - should have your real diamond data now');
     return { data: data as T };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error('❌ API: Request error for Telegram user:', getCurrentUserId(), 'Error:', errorMessage);
+    console.error('❌ API: FastAPI request error - this is why you see 5 mock diamonds instead of 500 real ones:', errorMessage);
+    console.error('❌ API: Error details:', error);
     
     // Show specific toast messages for different error types
     if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
       toast({
         title: "🌐 Connection Error",
-        description: `Cannot reach FastAPI server. Please check your internet connection.`,
+        description: `Cannot reach FastAPI server at ${API_BASE_URL}. Your 500 diamonds are not accessible. Please check if the server is running.`,
         variant: "destructive",
       });
     } else if (errorMessage.includes('not reachable')) {
       toast({
         title: "🔌 FastAPI Server Offline",
-        description: `The FastAPI backend is not responding. Please contact support.`,
+        description: `The FastAPI backend at ${API_BASE_URL} is not responding. This is why you see 5 mock diamonds instead of your 500 real diamonds.`,
+        variant: "destructive",
+      });
+    } else if (errorMessage.includes('CORS')) {
+      toast({
+        title: "🚫 CORS Issue",
+        description: "FastAPI server CORS configuration issue. Please check server settings to access your real diamond data.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "❌ FastAPI Error",
+        description: `FastAPI request failed: ${errorMessage}. Falling back to mock data (5 diamonds).`,
         variant: "destructive",
       });
     }
@@ -192,7 +204,7 @@ export const api = {
     fetchApi<T>(endpoint, { method: "DELETE" }),
     
   uploadCsv: async <T>(endpoint: string, csvData: any[], userId: number): Promise<ApiResponse<T>> => {
-    console.log('📤 API: Uploading CSV data to FastAPI with Telegram user isolation:', { endpoint, dataLength: csvData.length, userId });
+    console.log('📤 API: Uploading CSV data to FastAPI:', { endpoint, dataLength: csvData.length, userId });
     
     return fetchApi<T>(endpoint, {
       method: "POST",

@@ -4,14 +4,13 @@ import { processDiamondDataForDashboard } from '@/services/diamondAnalytics';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { InventoryChart } from '@/components/dashboard/InventoryChart';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { DashboardStatus } from '@/components/dashboard/DashboardStatus';
 import { WelcomeBanner } from '@/components/tutorial/WelcomeBanner';
 import { Layout } from '@/components/layout/Layout';
 import { Gem, Users, TrendingUp, Star, Plus, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { useNavigate } from 'react-router-dom';
 
@@ -19,14 +18,12 @@ interface DataDrivenDashboardProps {
   allDiamonds: Diamond[];
   loading: boolean;
   fetchData: () => void;
-  error?: string | null;
 }
 
-export function DataDrivenDashboard({ allDiamonds, loading, fetchData, error }: DataDrivenDashboardProps) {
+export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDrivenDashboardProps) {
   const { user } = useTelegramAuth();
   const { subscribeToInventoryChanges } = useInventoryDataSync();
   const navigate = useNavigate();
-  const [lastUpdate, setLastUpdate] = useState<Date | undefined>();
 
   console.log('🔍 DataDrivenDashboard: Processing data for user:', user?.id, 'Diamonds:', allDiamonds.length);
 
@@ -35,18 +32,10 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData, error }: 
     const unsubscribe = subscribeToInventoryChanges(() => {
       console.log('🔄 Dashboard: Inventory changed detected, refreshing dashboard data...');
       fetchData();
-      setLastUpdate(new Date());
     });
 
     return unsubscribe;
   }, [subscribeToInventoryChanges, fetchData]);
-
-  // Update last update time when data changes
-  useEffect(() => {
-    if (!loading && allDiamonds.length > 0) {
-      setLastUpdate(new Date());
-    }
-  }, [allDiamonds, loading]);
 
   // Process the data only if we have diamonds
   const { stats, inventoryByShape, salesByCategory } = allDiamonds.length > 0 
@@ -81,27 +70,13 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData, error }: 
     ? Math.round(totalValue / allDiamonds.reduce((sum, d) => sum + d.carat, 0))
     : 0;
 
-  const handleRefresh = () => {
-    console.log('🔄 Manual refresh triggered from dashboard');
-    fetchData();
-  };
-
   // Show empty state when no diamonds
-  if (!loading && allDiamonds.length === 0 && !error) {
+  if (!loading && allDiamonds.length === 0) {
     return (
       <Layout>
         <div className="space-y-6 p-2 sm:p-4">
           <WelcomeBanner />
           <DashboardHeader emergencyMode={false} />
-          
-          {/* Real-time Status */}
-          <DashboardStatus
-            loading={loading}
-            error={error}
-            lastUpdate={lastUpdate}
-            totalDiamonds={0}
-            onRefresh={handleRefresh}
-          />
           
           <Card className="text-center py-12">
             <CardHeader>
@@ -154,15 +129,6 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData, error }: 
         <WelcomeBanner />
         <DashboardHeader emergencyMode={false} />
         
-        {/* Real-time Status - Always show this */}
-        <DashboardStatus
-          loading={loading}
-          error={error}
-          lastUpdate={lastUpdate}
-          totalDiamonds={allDiamonds.length}
-          onRefresh={handleRefresh}
-        />
-        
         {/* Real Stats Grid */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <StatCard
@@ -177,14 +143,14 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData, error }: 
             value={availableDiamonds}
             icon={Users}
             loading={loading}
-            description={`${allDiamonds.length > 0 ? ((availableDiamonds / allDiamonds.length) * 100).toFixed(1) : 0}% of inventory`}
+            description={`${((availableDiamonds / allDiamonds.length) * 100).toFixed(1)}% of inventory`}
           />
           <StatCard
             title="Store Visible"
             value={storeVisibleDiamonds}
             icon={TrendingUp}
             loading={loading}
-            description={`${allDiamonds.length > 0 ? ((storeVisibleDiamonds / allDiamonds.length) * 100).toFixed(1) : 0}% visible`}
+            description={`${((storeVisibleDiamonds / allDiamonds.length) * 100).toFixed(1)}% visible`}
           />
           <StatCard
             title="Avg Price/Ct"
@@ -251,9 +217,8 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData, error }: 
             <div className="flex items-center gap-2 text-sm text-blue-800">
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
               <span>
-                {error ? 'Connection error - using fallback data' :
-                 allDiamonds.length > 0 ? `Showing real-time data from your FastAPI backend (${allDiamonds.length} diamonds)` :
-                 'Connected to FastAPI - no diamonds found in database'}
+                Showing data from {allDiamonds.length > 5 ? 'your uploaded inventory' : 'sample diamonds'}
+                {allDiamonds.length <= 5 && ' - Upload your CSV file to see real data'}
               </span>
             </div>
           </CardContent>

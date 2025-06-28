@@ -1,8 +1,8 @@
 
 import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { api, apiEndpoints } from '@/lib/api';
+import { useToast } from '@/components/ui/use-toast';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
 export function useInventoryManagement() {
   const [isLoading, setIsLoading] = useState(false);
@@ -12,8 +12,8 @@ export function useInventoryManagement() {
   const deleteAllInventory = async () => {
     if (!user?.id) {
       toast({
-        title: "Authentication Required",
-        description: "Please log in to delete inventory",
+        title: "Error",
+        description: "User not authenticated",
         variant: "destructive",
       });
       return false;
@@ -21,36 +21,23 @@ export function useInventoryManagement() {
 
     setIsLoading(true);
     try {
-      console.log('🗑️ BULK DELETE: Starting delete all inventory with JWT authentication');
+      console.log('🗑️ Deleting all inventory...');
+      const response = await api.delete(apiEndpoints.deleteAllInventory(user.id));
       
-      const endpoint = apiEndpoints.deleteAllInventory();
-      console.log('🗑️ BULK DELETE: Using JWT endpoint:', endpoint);
-      
-      const result = await api.delete(endpoint);
-      
-      if (result.error) {
-        console.error('❌ BULK DELETE: FastAPI delete all failed:', result.error);
-        toast({
-          title: "Delete Failed ❌",
-          description: `Failed to delete all inventory: ${result.error}`,
-          variant: "destructive",
-        });
-        return false;
+      if (response.error) {
+        throw new Error(response.error);
       }
 
-      console.log('✅ BULK DELETE: All inventory deleted successfully from FastAPI with JWT');
       toast({
-        title: "Success ✅",
-        description: "All inventory deleted successfully",
+        title: "Inventory Deleted",
+        description: "Successfully deleted all inventory items",
       });
-      
       return true;
     } catch (error) {
-      console.error('❌ BULK DELETE: Failed to delete all inventory:', error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to delete all inventory";
+      console.error('❌ Error deleting inventory:', error);
       toast({
-        title: "Delete Failed ❌",
-        description: errorMessage,
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete inventory",
         variant: "destructive",
       });
       return false;
@@ -62,8 +49,8 @@ export function useInventoryManagement() {
   const updateAllInventory = async (csvData: any[]) => {
     if (!user?.id) {
       toast({
-        title: "Authentication Required",
-        description: "Please log in to update inventory",
+        title: "Error",
+        description: "User not authenticated",
         variant: "destructive",
       });
       return false;
@@ -71,54 +58,25 @@ export function useInventoryManagement() {
 
     setIsLoading(true);
     try {
-      console.log('📤 BULK UPDATE: Starting bulk update with JWT auth for', csvData.length, 'items');
-      
-      const endpoint = apiEndpoints.updateAllInventory();
-      console.log('📤 BULK UPDATE: Using JWT endpoint:', endpoint);
-      
-      // Transform CSV data to match FastAPI expected format
-      const transformedData = csvData.map(item => ({
-        stock_number: item.stock_number || item.stockNumber || '',
-        shape: item.shape || 'Round',
-        weight: Number(item.weight || item.carat) || 0,
-        color: item.color || 'D',
-        clarity: item.clarity || 'FL',
-        cut: item.cut || 'Excellent',
-        price: Number(item.price) || 0,
-        price_per_carat: item.price_per_carat || Math.round((Number(item.price) || 0) / (Number(item.weight || item.carat) || 1)),
-        status: item.status || 'Available',
-        picture: item.picture || '',
-        certificate_number: item.certificate_number || '',
-        certificate_url: item.certificate_url || '',
-        lab: item.lab || 'GIA',
-        store_visible: item.store_visible !== false,
-      }));
-      
-      const result = await api.post(endpoint, { stones: transformedData });
-      
-      if (result.error) {
-        console.error('❌ BULK UPDATE: FastAPI bulk update failed:', result.error);
-        toast({
-          title: "Update Failed ❌",
-          description: `Failed to update inventory: ${result.error}`,
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      console.log('✅ BULK UPDATE: Inventory updated successfully in FastAPI with JWT');
-      toast({
-        title: "Success ✅",
-        description: `Successfully updated ${csvData.length} items in your inventory`,
+      console.log('🔄 Updating all inventory...');
+      const response = await api.post(apiEndpoints.updateAllInventory(user.id), {
+        diamonds: csvData
       });
       
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      toast({
+        title: "Inventory Updated",
+        description: `Successfully updated inventory with ${csvData.length} items`,
+      });
       return true;
     } catch (error) {
-      console.error('❌ BULK UPDATE: Failed to update inventory:', error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to update inventory";
+      console.error('❌ Error updating inventory:', error);
       toast({
-        title: "Update Failed ❌",
-        description: errorMessage,
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update inventory",
         variant: "destructive",
       });
       return false;

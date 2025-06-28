@@ -36,8 +36,8 @@ export function useDashboardData() {
     if (!user?.id) return;
     
     try {
-      console.log('📊 Fetching dashboard stats from FastAPI with JWT authentication...');
-      const response = await api.get(apiEndpoints.getDashboardStats());
+      console.log('📊 Fetching dashboard stats from FastAPI...');
+      const response = await api.get(apiEndpoints.getDashboardStats(user.id));
       
       if (response.error) {
         throw new Error(response.error);
@@ -60,7 +60,7 @@ export function useDashboardData() {
 
   const fetchClients = async () => {
     try {
-      console.log('👥 Fetching clients from FastAPI with JWT authentication...');
+      console.log('👥 Fetching clients from FastAPI...');
       const response = await api.get(apiEndpoints.getAllClients());
       
       if (response.error) {
