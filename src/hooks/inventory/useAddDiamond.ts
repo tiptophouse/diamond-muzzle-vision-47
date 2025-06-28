@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useEnhancedUserTracking } from '@/hooks/useEnhancedUserTracking';
+import { secureApiService } from '@/services/secureApiService';
 
 export interface DiamondFormData {
   // Basic Info
@@ -37,6 +38,7 @@ export interface DiamondFormData {
   symmetry?: string;
   girdle?: string;
   culet?: string;
+  stockNumber?: string;
 }
 
 export function useAddDiamond(onSuccess?: () => void) {
@@ -53,47 +55,43 @@ export function useAddDiamond(onSuccess?: () => void) {
 
       const diamondData = {
         user_id: user.id,
+        stock_number: data.stockNumber || `STK-${Date.now()}`,
         shape: data.shape,
-        carat: data.carat,
+        weight: data.carat,
         color: data.color,
         clarity: data.clarity,
-        cut: data.cut,
-        length: data.length,
-        width: data.width,
-        depth: data.depth,
-        table_percentage: data.table,
-        certificate_number: data.certificateNumber,
-        certificate_type: data.certificateType,
-        price: data.price,
-        images: data.images || [],
-        store_visible: data.storeVisible || false,
-        fluorescence: data.fluorescence,
-        polish: data.polish,
-        symmetry: data.symmetry,
-        girdle: data.girdle,
-        culet: data.culet,
+        cut: data.cut || 'Excellent',
+        price: data.price || 0,
+        price_per_carat: data.carat > 0 ? Math.round((data.price || 0) / data.carat) : 0,
+        status: 'Available',
+        store_visible: data.storeVisible !== false,
+        fluorescence: data.fluorescence || 'None',
+        polish: data.polish || 'Excellent',
+        symmetry: data.symmetry || 'Excellent',
+        certificate_number: data.certificateNumber || '',
+        certificate_url: '',
+        lab: data.certificateType || 'GIA',
+        length: data.length || 0,
+        width: data.width || 0,
+        depth: data.depth || 0,
+        table_percentage: data.table || 0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
 
-      const response = await fetch('https://mazalbot.me/api/diamonds', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(diamondData),
-      });
+      console.log('➕ ADD DIAMOND: Sending data to secure API:', diamondData);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to add diamond');
+      const result = await secureApiService.addStone(diamondData);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to add diamond');
       }
 
       return true;
     },
     onSuccess: () => {
       toast({
-        title: "Success",
+        title: "Success ✅",
         description: "Diamond added successfully to your inventory!",
       });
       
@@ -106,9 +104,9 @@ export function useAddDiamond(onSuccess?: () => void) {
       }
     },
     onError: (error: Error) => {
-      console.error('Error adding diamond:', error);
+      console.error('❌ ADD DIAMOND: Error:', error);
       toast({
-        title: "Error",
+        title: "Add Failed ❌",
         description: error.message || "Failed to add diamond. Please try again.",
         variant: "destructive",
       });

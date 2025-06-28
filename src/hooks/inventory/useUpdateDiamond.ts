@@ -1,9 +1,9 @@
 
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { api, apiEndpoints } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { useInventoryDataSync } from './useInventoryDataSync';
+import { secureApiService } from '@/services/secureApiService';
 
 export function useUpdateDiamond(onSuccess?: () => void) {
   const { user } = useTelegramAuth();
@@ -17,7 +17,7 @@ export function useUpdateDiamond(onSuccess?: () => void) {
 
     try {
       const updates = {
-        stock_number: data.stockNumber,
+        stock_number: data.stockNumber || diamondId,
         shape: data.shape,
         weight: Number(data.carat),
         color: data.color,
@@ -46,17 +46,16 @@ export function useUpdateDiamond(onSuccess?: () => void) {
 
       console.log('📝 UPDATE DIAMOND: Updating stone for user:', user.id, 'stone ID:', diamondId);
       
-      const endpoint = apiEndpoints.updateDiamond(diamondId);
-      const result = await api.put(endpoint, updates);
+      const result = await secureApiService.updateStone(diamondId, updates);
       
-      if (result.error) {
-        console.error('❌ UPDATE DIAMOND: FastAPI update failed:', result.error);
+      if (!result.success) {
+        console.error('❌ UPDATE DIAMOND: Secure API update failed:', result.error);
         toast({
           title: "Update Failed ❌",
           description: `Failed to update stone: ${result.error}`,
           variant: "destructive",
         });
-        throw new Error(result.error);
+        throw new Error(result.error || 'Update failed');
       }
 
       console.log('✅ UPDATE DIAMOND: Stone updated successfully');

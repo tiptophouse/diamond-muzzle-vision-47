@@ -1092,6 +1092,17 @@ export type Database = {
         Args: { p_stock_number: string; p_user_id: number }
         Returns: boolean
       }
+      get_realistic_analytics_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_sessions: number
+          total_page_views: number
+          total_users: number
+          active_users_last_hour: number
+          today_views: number
+          avg_session_duration_seconds: number
+        }[]
+      }
       get_user_statistics: {
         Args: Record<PropertyKey, never>
         Returns: {

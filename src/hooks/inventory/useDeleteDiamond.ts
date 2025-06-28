@@ -1,10 +1,9 @@
 
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { Diamond } from '@/components/inventory/InventoryTable';
-import { api, apiEndpoints } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { useInventoryDataSync } from './useInventoryDataSync';
 import { useEnhancedUserTracking } from '@/hooks/useEnhancedUserTracking';
+import { secureApiService } from '@/services/secureApiService';
 
 interface UseDeleteDiamondProps {
   onSuccess?: () => void;
@@ -35,13 +34,10 @@ export function useDeleteDiamond({ onSuccess }: UseDeleteDiamondProps) {
         description: "Please wait while we remove this diamond from your inventory",
       });
       
-      const endpoint = apiEndpoints.deleteDiamond(diamondId);
-      console.log('🗑️ DELETE DIAMOND: Using FastAPI endpoint:', endpoint);
+      const result = await secureApiService.deleteStone(diamondId);
       
-      const result = await api.delete(endpoint);
-      
-      if (result.error) {
-        console.error('❌ DELETE DIAMOND: FastAPI delete failed:', result.error);
+      if (!result.success) {
+        console.error('❌ DELETE DIAMOND: Secure API delete failed:', result.error);
         toast({
           title: "Delete Failed ❌",
           description: `Failed to delete diamond: ${result.error}`,
@@ -55,7 +51,7 @@ export function useDeleteDiamond({ onSuccess }: UseDeleteDiamondProps) {
           error: result.error 
         });
         
-        throw new Error(result.error);
+        throw new Error(result.error || 'Delete failed');
       }
 
       console.log('✅ DELETE DIAMOND: Successfully deleted from FastAPI');

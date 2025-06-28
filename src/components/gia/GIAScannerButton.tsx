@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Scan, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { QRCodeScanner } from '@/components/inventory/QRCodeScanner';
 import { useEnhancedUserTracking } from '@/hooks/useEnhancedUserTracking';
 
 interface GIAScannerButtonProps {
@@ -40,6 +39,17 @@ export function GIAScannerButton({
     setIsOpen(true);
   };
 
+  const handleManualInput = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const certificateNumber = formData.get('certificateNumber') as string;
+    
+    if (certificateNumber && certificateNumber.trim()) {
+      console.log('📱 GIA SCANNER: Manual input:', certificateNumber);
+      handleScanResult(certificateNumber.trim());
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -60,14 +70,33 @@ export function GIAScannerButton({
             GIA Certificate Scanner
           </DialogTitle>
         </DialogHeader>
-        <div className="p-4">
-          <QRCodeScanner
-            onScanResult={handleScanResult}
-            onError={(error) => {
-              console.error('GIA Scanner error:', error);
-              trackFeatureUsage('gia_scanner', { action: 'error', error: error.message });
-            }}
-          />
+        <div className="p-4 space-y-4">
+          <div className="text-center p-6 border-2 border-dashed border-gray-300 rounded-lg">
+            <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-sm text-gray-600 mb-4">
+              Camera scanning temporarily unavailable. Please enter the GIA certificate number manually.
+            </p>
+            
+            <form onSubmit={handleManualInput} className="space-y-3">
+              <div>
+                <input
+                  type="text"
+                  name="certificateNumber"
+                  placeholder="Enter GIA Certificate Number"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="flex-1">
+                  Cancel
+                </Button>
+                <Button type="submit" className="flex-1">
+                  Add Certificate
+                </Button>
+              </div>
+            </form>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
