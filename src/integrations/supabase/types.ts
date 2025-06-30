@@ -905,7 +905,9 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          business_name: string | null
           created_at: string | null
+          email: string | null
           first_name: string
           id: string
           is_premium: boolean | null
@@ -923,7 +925,9 @@ export type Database = {
           username: string | null
         }
         Insert: {
+          business_name?: string | null
           created_at?: string | null
+          email?: string | null
           first_name: string
           id?: string
           is_premium?: boolean | null
@@ -941,7 +945,9 @@ export type Database = {
           username?: string | null
         }
         Update: {
+          business_name?: string | null
           created_at?: string | null
+          email?: string | null
           first_name?: string
           id?: string
           is_premium?: boolean | null
