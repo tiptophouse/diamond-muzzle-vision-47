@@ -1,93 +1,87 @@
 
 import { useState } from 'react';
-import { api, apiEndpoints } from '@/lib/api';
-import { useToast } from '@/components/ui/use-toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { toast } from '@/hooks/use-toast';
+import { getCurrentUserId } from '@/lib/api';
 
 export function useInventoryManagement() {
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+  const [isDeleting, setIsDeleting] = useState(false);
   const { user } = useTelegramAuth();
+  const queryClient = useQueryClient();
 
-  const deleteAllInventory = async () => {
-    if (!user?.id) {
-      toast({
-        title: "Error",
-        description: "User not authenticated",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    setIsLoading(true);
-    try {
-      console.log('🗑️ Deleting all inventory...');
-      const response = await api.delete(apiEndpoints.deleteAllInventory(user.id));
+  const deleteAllInventory = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) throw new Error('User not authenticated');
       
-      if (response.error) {
-        throw new Error(response.error);
-      }
-
-      toast({
-        title: "Inventory Deleted",
-        description: "Successfully deleted all inventory items",
-      });
-      return true;
-    } catch (error) {
-      console.error('❌ Error deleting inventory:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete inventory",
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const updateAllInventory = async (csvData: any[]) => {
-    if (!user?.id) {
-      toast({
-        title: "Error",
-        description: "User not authenticated",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    setIsLoading(true);
-    try {
-      console.log('🔄 Updating all inventory...');
-      const response = await api.post(apiEndpoints.updateAllInventory(user.id), {
-        diamonds: csvData
-      });
+      setIsDeleting(true);
       
-      if (response.error) {
-        throw new Error(response.error);
-      }
+      // Delete from Supabase
+      const { error } = await supabase
+        .from('diamonds')
+        .delete()
+        .eq('user_id', user.id);
 
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['stones'] });
+      
       toast({
-        title: "Inventory Updated",
-        description: `Successfully updated inventory with ${csvData.length} items`,
+        title: "Success ✅",
+        description: "All inventory has been deleted successfully",
       });
-      return true;
-    } catch (error) {
-      console.error('❌ Error updating inventory:', error);
+    },
+    onError: (error) => {
+      console.error('Failed to delete all inventory:', error);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update inventory",
         variant: "destructive",
+        title: "Error ❌",
+        description: "Failed to delete inventory. Please try again.",
       });
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    onSettled: () => {
+      setIsDeleting(false);
+    },
+  });
+
+  const updateAllInventory = useMutation({
+    mutationFn: async (updates: Record<string, any>) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      const { error } = await supabase
+        .from('diamonds')
+        .update(updates)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['stones'] });
+      
+      toast({
+        title: "Success ✅",
+        description: "All inventory has been updated successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to update all inventory:', error);
+      toast({
+        variant: "destructive",
+        title: "Error ❌",
+        description: "Failed to update inventory. Please try again.",
+      });
+    },
+  });
 
   return {
-    isLoading,
-    deleteAllInventory,
-    updateAllInventory,
+    deleteAllInventory: deleteAllInventory.mutate,
+    updateAllInventory: updateAllInventory.mutate,
+    isDeleting,
+    isDeletingAll: deleteAllInventory.isPending,
+    isUpdatingAll: updateAllInventory.isPending,
   };
 }

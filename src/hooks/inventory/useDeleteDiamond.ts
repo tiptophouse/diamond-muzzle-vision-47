@@ -32,7 +32,7 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
     try {
       console.log('🗑️ Deleting diamond via FastAPI:', diamondId);
       
-      const endpoint = apiEndpoints.deleteDiamond(diamondId);
+      const endpoint = apiEndpoints.deleteDiamond(diamondId, user.id);
       const result = await api.delete(endpoint);
       
       if (result.error) {

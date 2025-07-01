@@ -1,106 +1,72 @@
 
-import { useState } from 'react';
-import { api, apiEndpoints } from '@/lib/api';
-import { useToast } from '@/components/ui/use-toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 export function useAdminActions() {
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const blockUser = async (userId: number, reason: string) => {
-    setIsLoading(true);
-    try {
-      console.log('🚫 Blocking user:', userId);
-      const response = await api.post(apiEndpoints.blockUser(), {
-        user_id: userId,
-        reason: reason
-      });
+  const blockUser = useMutation({
+    mutationFn: async ({ userId, reason }: { userId: number; reason: string }) => {
+      const adminId = 2138564172; // Fixed admin ID
       
-      if (response.error) {
-        throw new Error(response.error);
-      }
+      const { error } = await supabase
+        .from('blocked_users')
+        .insert({
+          telegram_id: userId,
+          blocked_by_telegram_id: adminId,
+          reason: reason
+        });
 
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['blocked-users'] });
       toast({
-        title: "User Blocked",
-        description: `Successfully blocked user ${userId}`,
+        title: "Success ✅",
+        description: "User has been blocked successfully",
       });
-      return true;
-    } catch (error) {
-      console.error('❌ Error blocking user:', error);
+    },
+    onError: (error) => {
+      console.error('Failed to block user:', error);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to block user",
         variant: "destructive",
+        title: "Error ❌",
+        description: "Failed to block user. Please try again.",
       });
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+  });
 
-  const unblockUser = async (userId: number) => {
-    setIsLoading(true);
-    try {
-      console.log('✅ Unblocking user:', userId);
-      const response = await api.delete(apiEndpoints.unblockUser(userId));
-      
-      if (response.error) {
-        throw new Error(response.error);
-      }
+  const unblockUser = useMutation({
+    mutationFn: async (userId: number) => {
+      const { error } = await supabase
+        .from('blocked_users')
+        .delete()
+        .eq('telegram_id', userId);
 
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['blocked-users'] });
       toast({
-        title: "User Unblocked",
-        description: `Successfully unblocked user ${userId}`,
+        title: "Success ✅",
+        description: "User has been unblocked successfully",
       });
-      return true;
-    } catch (error) {
-      console.error('❌ Error unblocking user:', error);
+    },
+    onError: (error) => {
+      console.error('Failed to unblock user:', error);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to unblock user",
         variant: "destructive",
+        title: "Error ❌",
+        description: "Failed to unblock user. Please try again.",
       });
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const sendMessageToUser = async (userId: number, message: string) => {
-    setIsLoading(true);
-    try {
-      console.log('💬 Sending message to user:', userId);
-      const response = await api.post(apiEndpoints.sendMessageToUser(), {
-        user_id: userId,
-        message: message
-      });
-      
-      if (response.error) {
-        throw new Error(response.error);
-      }
-
-      toast({
-        title: "Message Sent",
-        description: `Successfully sent message to user ${userId}`,
-      });
-      return true;
-    } catch (error) {
-      console.error('❌ Error sending message:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to send message",
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+  });
 
   return {
-    isLoading,
-    blockUser,
-    unblockUser,
-    sendMessageToUser,
+    blockUser: blockUser.mutate,
+    unblockUser: unblockUser.mutate,
+    isBlocking: blockUser.isPending,
+    isUnblocking: unblockUser.isPending,
   };
 }
