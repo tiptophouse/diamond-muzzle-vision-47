@@ -1,38 +1,17 @@
 
 export const apiEndpoints = {
-  getAllStones: (userId: number) => {
-    // Try the correct endpoint path for your backend
-    const endpoint = `/api/v1/get_all_stones?user_id=${userId}`;
-    console.log('🔧 API: Building getAllStones endpoint:', endpoint, 'for user:', userId, 'type:', typeof userId);
-    return endpoint;
-  },
-  verifyTelegram: () => `/api/v1/verify-telegram`,
-  uploadInventory: () => `/api/v1/upload-inventory`,
-  addDiamond: () => `/api/v1/diamonds`,
-  deleteDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,
-  updateDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,
-  soldDiamond: () => `/api/v1/sold`,
-  createReport: () => `/api/v1/create-report`,
-  getReport: (reportId: string) => `/api/v1/get-report?diamond_id=${reportId}`,
-  getDashboardStats: (userId: number) => `/api/v1/users/${userId}/dashboard/stats`,
-  getInventoryByShape: (userId: number) => `/api/v1/users/${userId}/inventory/by-shape`,
-  getRecentSales: (userId: number) => `/api/v1/users/${userId}/sales/recent`,
-  getInventory: (userId: number, page: number = 1, limit: number = 10) => `/api/v1/users/${userId}/inventory?page=${page}&limit=${limit}`,
+  // Authentication
+  verifyTelegram: () => '/auth/verify-telegram',
   
-  // Payment management endpoints
-  removeUserPayments: (userId: number) => `/api/v1/users/${userId}/payments/remove`,
-  removeAllPayments: () => `/api/v1/payments/remove-all`,
-  getUserPayments: (userId: number) => `/api/v1/users/${userId}/payments`,
-  getPaymentStats: () => `/api/v1/payments/stats`,
-
-  // New client and admin endpoints
-  getAllClients: () => `/api/v1/clients`,
-  getClientById: (clientId: number) => `/api/v1/clients/${clientId}`,
-  blockUser: () => `/api/v1/admin/block-user`,
-  unblockUser: (userId: number) => `/api/v1/admin/unblock-user/${userId}`,
-  sendMessageToUser: () => `/api/v1/admin/send-message`,
+  // Stones/Diamonds management
+  getAllStones: (userId: number) => `/api/v1/get_all_stones?user_id=${userId}`,
+  addIndividualStone: () => '/api/v1/add_individual_stone',
+  deleteStone: (stoneId: string, userId: number) => `/api/v1/delete_stone/${stoneId}?user_id=${userId}`,
+  updateStone: (stoneId: string) => `/api/v1/update_stone/${stoneId}`,
   
-  // Inventory management
-  deleteAllInventory: (userId: number) => `/api/v1/users/${userId}/inventory/delete-all`,
-  updateAllInventory: (userId: number) => `/api/v1/users/${userId}/inventory/update-all`,
+  // CSV operations
+  uploadCsv: () => '/api/v1/upload_csv',
+  
+  // Analytics
+  getAnalytics: (userId: number) => `/api/v1/analytics?user_id=${userId}`,
 };
