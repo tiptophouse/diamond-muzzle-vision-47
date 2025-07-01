@@ -9,9 +9,31 @@ export const apiEndpoints = {
   deleteStone: (stoneId: string, userId: number) => `/api/v1/delete_stone/${stoneId}?user_id=${userId}`,
   updateStone: (stoneId: string) => `/api/v1/update_stone/${stoneId}`,
   
+  // Legacy diamond endpoints (for backward compatibility)
+  addDiamond: () => '/api/v1/add_individual_stone',
+  deleteDiamond: (diamondId: string, userId: number) => `/api/v1/delete_stone/${diamondId}?user_id=${userId}`,
+  updateDiamond: (diamondId: string) => `/api/v1/update_stone/${diamondId}`,
+  
   // CSV operations
   uploadCsv: () => '/api/v1/upload_csv',
   
   // Analytics
   getAnalytics: (userId: number) => `/api/v1/analytics?user_id=${userId}`,
+  getDashboardStats: (userId: number) => `/api/v1/dashboard_stats?user_id=${userId}`,
+  
+  // Admin operations
+  blockUser: (userId: number) => `/api/v1/admin/block_user/${userId}`,
+  unblockUser: (userId: number) => `/api/v1/admin/unblock_user/${userId}`,
+  sendMessageToUser: () => '/api/v1/admin/send_message',
+  getAllClients: () => '/api/v1/admin/clients',
+  
+  // Inventory management
+  deleteAllInventory: (userId: number) => `/api/v1/inventory/delete_all?user_id=${userId}`,
+  updateAllInventory: () => '/api/v1/inventory/update_all',
+  
+  // Payment management
+  removeUserPayments: (userId: number) => `/api/v1/payments/user/${userId}`,
+  removeAllPayments: () => '/api/v1/payments/all',
+  getUserPayments: (userId: number) => `/api/v1/payments/user/${userId}`,
+  getPaymentStats: () => '/api/v1/payments/stats',
 };
