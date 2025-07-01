@@ -905,12 +905,15 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          bio: string | null
           business_name: string | null
+          company: string | null
           created_at: string | null
           email: string | null
           first_name: string
           id: string
           is_premium: boolean | null
+          language: string | null
           language_code: string | null
           last_login: string | null
           last_name: string | null
@@ -921,16 +924,21 @@ export type Database = {
           status: string | null
           subscription_plan: string | null
           telegram_id: number
+          timezone: string | null
           updated_at: string | null
           username: string | null
+          website: string | null
         }
         Insert: {
+          bio?: string | null
           business_name?: string | null
+          company?: string | null
           created_at?: string | null
           email?: string | null
           first_name: string
           id?: string
           is_premium?: boolean | null
+          language?: string | null
           language_code?: string | null
           last_login?: string | null
           last_name?: string | null
@@ -941,16 +949,21 @@ export type Database = {
           status?: string | null
           subscription_plan?: string | null
           telegram_id: number
+          timezone?: string | null
           updated_at?: string | null
           username?: string | null
+          website?: string | null
         }
         Update: {
+          bio?: string | null
           business_name?: string | null
+          company?: string | null
           created_at?: string | null
           email?: string | null
           first_name?: string
           id?: string
           is_premium?: boolean | null
+          language?: string | null
           language_code?: string | null
           last_login?: string | null
           last_name?: string | null
@@ -961,8 +974,10 @@ export type Database = {
           status?: string | null
           subscription_plan?: string | null
           telegram_id?: number
+          timezone?: string | null
           updated_at?: string | null
           username?: string | null
+          website?: string | null
         }
         Relationships: []
       }
@@ -1123,6 +1138,10 @@ export type Database = {
       is_admin_user: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      set_session_context: {
+        Args: { key: string; value: string }
+        Returns: undefined
       }
       update_diamond_for_user: {
         Args: { p_user_id: number; p_stock_number: string; p_update_data: Json }
