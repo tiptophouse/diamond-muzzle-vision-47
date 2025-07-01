@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { toast } from '@/hooks/use-toast';
-import { getCurrentUserId } from '@/lib/api';
+import { api, apiEndpoints } from '@/lib/api';
 
 export function useInventoryManagement() {
   const [isDeleting, setIsDeleting] = useState(false);
@@ -17,13 +17,15 @@ export function useInventoryManagement() {
       
       setIsDeleting(true);
       
-      // Delete from Supabase
-      const { error } = await supabase
-        .from('diamonds')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (error) throw error;
+      // Use FastAPI endpoint for deleting all inventory
+      const endpoint = apiEndpoints.deleteAllInventory(user.id);
+      const result = await api.delete(endpoint);
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
@@ -51,12 +53,15 @@ export function useInventoryManagement() {
     mutationFn: async (updates: Record<string, any>) => {
       if (!user?.id) throw new Error('User not authenticated');
       
-      const { error } = await supabase
-        .from('diamonds')
-        .update(updates)
-        .eq('user_id', user.id);
-
-      if (error) throw error;
+      // Use FastAPI endpoint for updating all inventory
+      const endpoint = apiEndpoints.updateAllInventory();
+      const result = await api.put(endpoint, { user_id: user.id, updates });
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
@@ -78,10 +83,11 @@ export function useInventoryManagement() {
   });
 
   return {
-    deleteAllInventory: deleteAllInventory.mutate,
-    updateAllInventory: updateAllInventory.mutate,
+    deleteAllInventory: () => deleteAllInventory.mutate(),
+    updateAllInventory: (data: Record<string, any>) => updateAllInventory.mutate(data),
     isDeleting,
     isDeletingAll: deleteAllInventory.isPending,
     isUpdatingAll: updateAllInventory.isPending,
+    isLoading: deleteAllInventory.isPending || updateAllInventory.isPending,
   };
 }
