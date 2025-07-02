@@ -2,6 +2,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { verifyTelegramUser, setCurrentUserId } from '@/lib/api';
 import { TelegramUser } from '@/types/telegram';
+import { getAdminTelegramId } from '@/lib/api/secureConfig';
+
+// This hook is deprecated in favor of useSecureAuth
+// Maintained for backward compatibility only
 
 export function useTelegramAuth() {
   const [user, setUser] = useState<TelegramUser | null>(null);
@@ -78,36 +82,54 @@ export function useTelegramAuth() {
           await handleFallbackAuth(tg);
         }
       } else {
-        // Not in Telegram environment - use development user
-        console.log('🔧 Not in Telegram - using development user');
-        const devUser: TelegramUser = {
-          id: 2138564172, // Your specific user ID
-          first_name: "Dev",
-          last_name: "User",
-          username: "devuser",
-          language_code: "en"
-        };
-        
-        setUser(devUser);
-        setCurrentUserId(devUser.id);
-        setIsAuthenticated(true);
-        setError(null);
+        // Not in Telegram environment - restricted development access
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🔧 Development mode - limited admin access');
+          try {
+            const adminId = await getAdminTelegramId();
+            const devUser: TelegramUser = {
+              id: adminId || 0,
+              first_name: "Dev",
+              last_name: "Admin",
+              username: "devadmin",
+              language_code: "en"
+            };
+            
+            setUser(devUser);
+            setCurrentUserId(devUser.id);
+            setIsAuthenticated(true);
+            setError('Development mode - limited access');
+          } catch (error) {
+            throw new Error('Development access configuration failed');
+          }
+        } else {
+          throw new Error('Production requires Telegram environment');
+        }
       }
     } catch (err) {
       console.error('❌ Auth initialization error:', err);
-      // Even on error, set up a working user for development
-      const fallbackUser: TelegramUser = {
-        id: 2138564172, // Your specific user ID
-        first_name: "Fallback",
-        last_name: "User",
-        username: "fallbackuser",
-        language_code: "en"
-      };
-      
-      setUser(fallbackUser);
-      setCurrentUserId(fallbackUser.id);
-      setIsAuthenticated(true);
-      setError('Using fallback authentication');
+      // Secure fallback - no automatic authentication in production
+      if (process.env.NODE_ENV === 'development') {
+        try {
+          const adminId = await getAdminTelegramId();
+          const fallbackUser: TelegramUser = {
+            id: adminId || 0,
+            first_name: "Fallback",
+            last_name: "User", 
+            username: "fallbackuser",
+            language_code: "en"
+          };
+          
+          setUser(fallbackUser);
+          setCurrentUserId(fallbackUser.id);
+          setIsAuthenticated(true);
+          setError('Development fallback authentication');
+        } catch (configError) {
+          setError('Authentication configuration failed');
+        }
+      } else {
+        setError('Authentication failed - please contact support');
+      }
     } finally {
       setIsLoading(false);
       initializedRef.current = true;
@@ -133,20 +155,29 @@ export function useTelegramAuth() {
       setIsAuthenticated(true);
       setError(null);
     } else {
-      // Use your specific user ID as ultimate fallback
-      console.log('🆘 Using hardcoded user ID for auth');
-      const hardcodedUser: TelegramUser = {
-        id: 2138564172, // Your specific user ID
-        first_name: "Telegram",
-        last_name: "User",
-        username: "telegramuser",
-        language_code: "en"
-      };
-      
-      setUser(hardcodedUser);
-      setCurrentUserId(hardcodedUser.id);
-      setIsAuthenticated(true);
-      setError(null);
+      // Secure fallback - require proper configuration
+      console.log('🔒 No user data available - authentication required');
+      if (process.env.NODE_ENV === 'development') {
+        try {
+          const adminId = await getAdminTelegramId();
+          const secureUser: TelegramUser = {
+            id: adminId || 0,
+            first_name: "Secure",
+            last_name: "User",
+            username: "secureuser",
+            language_code: "en"
+          };
+          
+          setUser(secureUser);
+          setCurrentUserId(secureUser.id);
+          setIsAuthenticated(true);
+          setError('Development mode with secure fallback');
+        } catch (error) {
+          setError('Secure authentication configuration required');
+        }
+      } else {
+        setError('Authentication required - invalid session');
+      }
     }
   };
 
@@ -155,23 +186,13 @@ export function useTelegramAuth() {
     
     const timeoutId = setTimeout(() => {
       if (isLoading && mountedRef.current && !initializedRef.current) {
-        console.warn('⚠️ Auth initialization timeout - using emergency user');
-        const emergencyUser: TelegramUser = {
-          id: 2138564172, // Your specific user ID
-          first_name: "Emergency",
-          last_name: "User",
-          username: "emergencyuser",
-          language_code: "en"
-        };
-        
-        setUser(emergencyUser);
-        setCurrentUserId(emergencyUser.id);
-        setIsAuthenticated(true);
-        setError('Authentication timeout - using emergency user');
+        console.warn('⚠️ Auth initialization timeout - secure mode');
+        setError('Authentication timeout - please refresh and try again');
         setIsLoading(false);
         initializedRef.current = true;
+        // No automatic user creation on timeout - force proper auth
       }
-    }, 5000);
+    }, 10000); // Increased timeout for security operations
 
     // Start initialization after a brief delay
     const initTimer = setTimeout(() => {

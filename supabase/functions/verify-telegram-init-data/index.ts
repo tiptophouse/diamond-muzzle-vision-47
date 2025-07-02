@@ -9,10 +9,21 @@ const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN') || '';
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Environment-specific CORS configuration
+const allowedOrigins = Deno.env.get('ALLOWED_ORIGINS')?.split(',') || ['https://api.mazalbot.com']
+
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const allowedOrigin = origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0]
+  return {
+    ...corsHeaders,
+    'Access-Control-Allow-Origin': allowedOrigin,
+  }
+}
 
 async function verifyTelegramInitData(initData: string): Promise<{ valid: boolean; user?: any; error?: string }> {
   try {

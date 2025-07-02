@@ -1,17 +1,30 @@
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { AlertTriangle, RefreshCw, Shield } from 'lucide-react';
+import { getAdminTelegramId } from '@/lib/api/secureConfig';
 
 interface AuthGuardProps {
   children: ReactNode;
   fallback?: ReactNode;
 }
 
-const ADMIN_TELEGRAM_ID = 2138564172;
-
 export function AuthGuard({ children, fallback }: AuthGuardProps) {
   const { isAuthenticated, isLoading, isTelegramEnvironment, user, error } = useTelegramAuth();
+  const [adminTelegramId, setAdminTelegramId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const loadAdminId = async () => {
+      try {
+        const adminId = await getAdminTelegramId();
+        setAdminTelegramId(adminId);
+      } catch (error) {
+        console.error('Failed to load admin ID:', error);
+        // Don't set fallback - force proper configuration
+      }
+    };
+    loadAdminId();
+  }, []);
 
   // Loading state
   if (isLoading) {
@@ -35,7 +48,7 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
   // Authenticated user gets access
   if (isAuthenticated && user) {
     // Show development indicator for admin in non-telegram environment
-    if (user.id === ADMIN_TELEGRAM_ID && (!isTelegramEnvironment || process.env.NODE_ENV === 'development')) {
+    if (adminTelegramId && user.id === adminTelegramId && (!isTelegramEnvironment || process.env.NODE_ENV === 'development')) {
       return (
         <div className="min-h-screen bg-background">
           <div className="bg-gradient-to-r from-green-100 to-emerald-100 border-b border-green-200 p-3">
