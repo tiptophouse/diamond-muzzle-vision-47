@@ -9,7 +9,7 @@ export const apiEndpoints = {
   verifyTelegram: () => `/api/v1/verify-telegram`,
   uploadInventory: () => `/api/v1/upload-inventory`,
   addDiamond: () => `/api/v1/diamonds`,
-  deleteDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,
+  deleteDiamond: (stockNumber: string) => `/api/v1/delete_stone?stock_number=${stockNumber}`, // Fixed: Use correct delete endpoint with stock_number
   updateDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,
   soldDiamond: () => `/api/v1/sold`,
   createReport: () => `/api/v1/create-report`,
