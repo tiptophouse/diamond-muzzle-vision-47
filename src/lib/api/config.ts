@@ -26,27 +26,3 @@ export function getFullApiUrl(endpoint: string): string {
   console.log('🔧 API: Full URL constructed:', fullUrl);
   return fullUrl;
 }
-
-// Add health check function
-export async function testApiConnection(): Promise<boolean> {
-  try {
-    const healthUrl = `${API_BASE_URL}/api/v1/alive`;
-    console.log('🔍 API: Testing FastAPI connection to:', healthUrl);
-    
-    const response = await fetch(healthUrl, {
-      method: 'GET',
-      mode: 'cors',
-      headers: { 
-        'Accept': 'application/json',
-        'Authorization': 'Bearer ifj9ov1rh20fslfp'
-      }
-    });
-    
-    const isHealthy = response.ok;
-    console.log(isHealthy ? '✅ API: FastAPI is healthy' : '❌ API: FastAPI health check failed');
-    return isHealthy;
-  } catch (error) {
-    console.error('❌ API: FastAPI connection test failed:', error);
-    return false;
-  }
-}
