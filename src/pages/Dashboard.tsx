@@ -8,7 +8,7 @@ import { getVerificationResult } from '@/lib/api';
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
-  const { loading, allDiamonds, fetchData } = useInventoryData();
+  const { loading, allDiamonds, debugInfo, fetchData } = useInventoryData();
   const verificationResult = getVerificationResult();
 
   console.log('🔍 DASHBOARD DEBUG:');

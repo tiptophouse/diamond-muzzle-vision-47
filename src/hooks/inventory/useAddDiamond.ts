@@ -51,7 +51,7 @@ export function useAddDiamond(onSuccess?: () => void) {
         store_visible: data.storeVisible,
       };
 
-      // Remove undefined keys
+      // Remove undefined keys to only send fields with values
       Object.keys(diamondDataPayload).forEach(key => {
         if (diamondDataPayload[key] === undefined) {
           delete diamondDataPayload[key];
@@ -60,62 +60,22 @@ export function useAddDiamond(onSuccess?: () => void) {
       
       console.log('Adding diamond via API with data:', diamondDataPayload);
       
-      // Try FastAPI first
-      try {
-        const endpoint = apiEndpoints.addDiamond();
-        const response = await api.post(endpoint, {
-          diamond_data: diamondDataPayload
-        });
-        
-        if (response.error) {
-          throw new Error(response.error);
-        }
-
-        toast({
-          title: "Success",
-          description: "Diamond added successfully to backend",
-        });
-        
-        if (onSuccess) onSuccess();
-        return true;
-        
-      } catch (apiError) {
-        console.warn('FastAPI add failed, using localStorage:', apiError);
-        
-        // Fallback to localStorage
-        const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
-        
-        // Convert to inventory format
-        const newDiamond = {
-          id: diamondDataPayload.id,
-          stockNumber: diamondDataPayload.stock_number,
-          shape: diamondDataPayload.shape,
-          carat: diamondDataPayload.weight,
-          color: diamondDataPayload.color,
-          clarity: diamondDataPayload.clarity,
-          cut: diamondDataPayload.cut,
-          price: diamondDataPayload.price_per_carat * diamondDataPayload.weight,
-          status: diamondDataPayload.status,
-          store_visible: diamondDataPayload.store_visible,
-          certificateNumber: diamondDataPayload.certificate_number,
-          certificateUrl: diamondDataPayload.certificate_url,
-          lab: diamondDataPayload.lab,
-          user_id: user.id,
-          created_at: new Date().toISOString()
-        };
-        
-        existingData.push(newDiamond);
-        localStorage.setItem('diamond_inventory', JSON.stringify(existingData));
-        
-        toast({
-          title: "Success",
-          description: "Diamond added successfully (stored locally)",
-        });
-        
-        if (onSuccess) onSuccess();
-        return true;
-      }
+      const endpoint = apiEndpoints.addDiamond();
+      const response = await api.post(endpoint, {
+        diamond_data: diamondDataPayload
+      });
       
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      toast({
+        title: "Success",
+        description: "Diamond added successfully",
+      });
+      
+      if (onSuccess) onSuccess();
+      return true;
     } catch (error) {
       console.error('Failed to add diamond:', error);
       const errorMessage = error instanceof Error ? error.message : "Failed to add diamond. Please try again.";
