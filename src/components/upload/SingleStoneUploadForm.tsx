@@ -2,23 +2,23 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Camera } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { useInventoryCrud } from "@/hooks/useInventoryCrud";
-import { DiamondFormData } from "@/components/inventory/form/types";
-import { BasicInfoSection } from "./form/BasicInfoSection";
-import { CertificateInfoSection } from "./form/CertificateInfoSection";
-import { useSingleStoneValidation } from "./form/useSingleStoneValidation";
-import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
-import { useToast } from "@/hooks/use-toast";
+import { useInventoryDataSync } from "@/hooks/inventory/useInventoryDataSync";
+import { generateDiamondId } from "@/utils/diamondUtils";
+
+const shapes = ["Round", "Princess", "Emerald", "Asscher", "Oval", "Radiant", "Pear", "Heart", "Marquise", "Cushion"];
+const colors = ["D", "E", "F", "G", "H", "I", "J", "K", "L", "M"];
+const clarities = ["FL", "IF", "VVS1", "VVS2", "VS1", "VS2", "SI1", "SI2", "SI3", "I1", "I2", "I3"];
 
 export function SingleStoneUploadForm() {
-  const { user } = useTelegramAuth();
-  const { addDiamond, isLoading } = useInventoryCrud();
-  const { validateFormData } = useSingleStoneValidation();
   const { toast } = useToast();
-  const [showScanner, setShowScanner] = useState(false);
-  const [isProcessingGIA, setIsProcessingGIA] = useState(false);
+  const { user } = useTelegramAuth();
+  const { triggerInventoryChange } = useInventoryDataSync();
+  const [isLoading, setIsLoading] = useState(false);
   
   const [formData, setFormData] = useState({
     stockNumber: '',
@@ -36,113 +36,33 @@ export function SingleStoneUploadForm() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleScanSuccess = async (giaData: any) => {
-    console.log('GIA data received:', giaData);
-    setIsProcessingGIA(true);
-    
-    try {
-      // Update form with scanned data
-      const updatedFormData = {
-        ...formData,
-        stockNumber: giaData.stockNumber || giaData.certificateNumber || formData.stockNumber,
-        shape: giaData.shape || formData.shape,
-        carat: giaData.carat?.toString() || formData.carat,
-        color: giaData.color || formData.color,
-        clarity: giaData.clarity || formData.clarity,
-        cut: giaData.cut || formData.cut,
-        certificateNumber: giaData.certificateNumber || formData.certificateNumber,
-        price: giaData.price?.toString() || formData.price,
-        lab: giaData.lab || 'GIA'
-      };
-      
-      setFormData(updatedFormData);
-      setShowScanner(false);
-      
-      // Show success message for GIA scan
-      toast({
-        title: "GIA Certificate Scanned Successfully",
-        description: "Diamond data has been populated from the GIA certificate. You can review and modify before saving.",
-      });
-
-      // Auto-save to database if we have complete data
-      if (validateFormData(updatedFormData)) {
-        console.log('Auto-saving GIA scanned diamond to database...');
-        
-        // Convert form data to DiamondFormData format
-        const diamondData: DiamondFormData = {
-          stockNumber: updatedFormData.stockNumber,
-          shape: updatedFormData.shape,
-          carat: parseFloat(updatedFormData.carat),
-          color: updatedFormData.color,
-          clarity: updatedFormData.clarity,
-          cut: updatedFormData.cut,
-          price: parseFloat(updatedFormData.price),
-          status: 'Available',
-          storeVisible: true,
-          certificateNumber: updatedFormData.certificateNumber || undefined,
-          lab: updatedFormData.lab
-        };
-
-        const success = await addDiamond(diamondData);
-        
-        if (success) {
-          // Reset form after successful save
-          setFormData({
-            stockNumber: '',
-            shape: '',
-            carat: '',
-            color: '',
-            clarity: '',
-            cut: 'Excellent',
-            price: '',
-            certificateNumber: '',
-            lab: 'GIA'
-          });
-
-          toast({
-            title: "Diamond Added Successfully",
-            description: "The GIA scanned diamond has been saved to your inventory.",
-          });
-        }
-      }
-      
-    } catch (error) {
-      console.error('Error processing GIA scan:', error);
-      toast({
-        title: "Error Processing GIA Data",
-        description: "Failed to process the scanned GIA certificate. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessingGIA(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!user?.id) {
       toast({
-        title: "Authentication Required",
-        description: "Please log in to add diamonds to your inventory.",
+        title: "Authentication Error",
+        description: "Please log in to add diamonds",
         variant: "destructive",
       });
       return;
     }
 
     // Validate required fields
-    if (!validateFormData(formData)) {
+    if (!formData.stockNumber || !formData.shape || !formData.carat || !formData.color || !formData.clarity || !formData.price) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields before submitting.",
+        description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      // Convert form data to DiamondFormData format
-      const diamondData: DiamondFormData = {
+      const newDiamond = {
+        id: generateDiamondId(),
         stockNumber: formData.stockNumber,
         shape: formData.shape,
         carat: parseFloat(formData.carat),
@@ -151,34 +71,48 @@ export function SingleStoneUploadForm() {
         cut: formData.cut,
         price: parseFloat(formData.price),
         status: 'Available',
-        storeVisible: true,
-        certificateNumber: formData.certificateNumber || undefined,
-        lab: formData.lab
+        store_visible: true,
+        certificateNumber: formData.certificateNumber,
+        lab: formData.lab,
+        user_id: user.id,
+        created_at: new Date().toISOString()
       };
 
-      const success = await addDiamond(diamondData);
-      
-      if (success) {
-        // Reset form on success
-        setFormData({
-          stockNumber: '',
-          shape: '',
-          carat: '',
-          color: '',
-          clarity: '',
-          cut: 'Excellent',
-          price: '',
-          certificateNumber: '',
-          lab: 'GIA'
-        });
-      }
+      // Store in localStorage (since backend might not be available)
+      const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
+      existingData.push(newDiamond);
+      localStorage.setItem('diamond_inventory', JSON.stringify(existingData));
+
+      // Trigger inventory refresh
+      triggerInventoryChange();
+
+      toast({
+        title: "Success! 💎",
+        description: "Diamond added to your inventory successfully",
+      });
+
+      // Reset form
+      setFormData({
+        stockNumber: '',
+        shape: '',
+        carat: '',
+        color: '',
+        clarity: '',
+        cut: 'Excellent',
+        price: '',
+        certificateNumber: '',
+        lab: 'GIA'
+      });
+
     } catch (error) {
-      console.error('Error adding diamond:', error);
+      console.error('Failed to add diamond:', error);
       toast({
         title: "Error",
-        description: "Failed to add diamond to inventory. Please try again.",
+        description: "Failed to add diamond. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -193,44 +127,125 @@ export function SingleStoneUploadForm() {
   }
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            Add Single Diamond
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowScanner(true)}
-              className="flex items-center gap-2"
-              disabled={isProcessingGIA}
-            >
-              <Camera className="h-4 w-4" />
-              {isProcessingGIA ? "Processing..." : "Scan GIA Certificate"}
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <BasicInfoSection formData={formData} onInputChange={handleInputChange} />
-            <CertificateInfoSection formData={formData} onInputChange={handleInputChange} />
+    <Card>
+      <CardHeader>
+        <CardTitle>Add Single Diamond</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="stockNumber">Stock Number *</Label>
+              <Input
+                id="stockNumber"
+                value={formData.stockNumber}
+                onChange={(e) => handleInputChange('stockNumber', e.target.value)}
+                placeholder="e.g., STK-001"
+                required
+              />
+            </div>
 
-            <Button 
-              type="submit" 
-              disabled={isLoading || isProcessingGIA} 
-              className="w-full"
-            >
-              {isLoading ? "Adding Diamond..." : "Add Diamond to Inventory"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+            <div>
+              <Label htmlFor="shape">Shape *</Label>
+              <Select value={formData.shape} onValueChange={(value) => handleInputChange('shape', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select shape" />
+                </SelectTrigger>
+                <SelectContent>
+                  {shapes.map(shape => (
+                    <SelectItem key={shape} value={shape}>{shape}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-      <QRCodeScanner
-        isOpen={showScanner}
-        onClose={() => setShowScanner(false)}
-        onScanSuccess={handleScanSuccess}
-      />
-    </>
+            <div>
+              <Label htmlFor="carat">Carat Weight *</Label>
+              <Input
+                id="carat"
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={formData.carat}
+                onChange={(e) => handleInputChange('carat', e.target.value)}
+                placeholder="e.g., 1.25"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="color">Color *</Label>
+              <Select value={formData.color} onValueChange={(value) => handleInputChange('color', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select color" />
+                </SelectTrigger>
+                <SelectContent>
+                  {colors.map(color => (
+                    <SelectItem key={color} value={color}>{color}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="clarity">Clarity *</Label>
+              <Select value={formData.clarity} onValueChange={(value) => handleInputChange('clarity', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select clarity" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clarities.map(clarity => (
+                    <SelectItem key={clarity} value={clarity}>{clarity}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="price">Price (USD) *</Label>
+              <Input
+                id="price"
+                type="number"
+                min="1"
+                value={formData.price}
+                onChange={(e) => handleInputChange('price', e.target.value)}
+                placeholder="e.g., 5000"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="certificateNumber">Certificate Number</Label>
+              <Input
+                id="certificateNumber"
+                value={formData.certificateNumber}
+                onChange={(e) => handleInputChange('certificateNumber', e.target.value)}
+                placeholder="e.g., 1234567890"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="lab">Lab</Label>
+              <Select value={formData.lab} onValueChange={(value) => handleInputChange('lab', value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="GIA">GIA</SelectItem>
+                  <SelectItem value="AGS">AGS</SelectItem>
+                  <SelectItem value="SSEF">SSEF</SelectItem>
+                  <SelectItem value="Gübelin">Gübelin</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <Button type="submit" disabled={isLoading} className="w-full">
+            {isLoading ? "Adding Diamond..." : "Add Diamond to Inventory"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

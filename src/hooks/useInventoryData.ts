@@ -31,40 +31,26 @@ export function useInventoryData() {
 
       if (result.data && result.data.length > 0) {
         console.log('📥 INVENTORY HOOK: Processing', result.data.length, 'diamonds');
-        console.log('📥 INVENTORY HOOK: Debug info:', result.debugInfo);
         
-        // Transform data to match Diamond interface with better field mapping
-        const transformedDiamonds: Diamond[] = result.data.map(item => {
-          // Better ID handling - use the actual backend ID if available
-          const diamondId = item.id || `${item.stock_number || item.stock || item.stockNumber}-${Date.now()}`;
-          
-          console.log('📥 INVENTORY HOOK: Processing diamond:', {
-            id: diamondId,
-            stock_number: item.stock_number,
-            stock: item.stock,
-            stockNumber: item.stockNumber
-          });
-
-          return {
-            id: diamondId,
-            stockNumber: item.stock_number || item.stock || item.stockNumber || '',
-            shape: item.shape || 'Round',
-            carat: Number(item.weight || item.carat) || 0,
-            color: item.color || 'D',
-            clarity: item.clarity || 'FL',
-            cut: item.cut || 'Excellent',
-            price: Number(item.price_per_carat ? item.price_per_carat * (item.weight || item.carat) : item.price) || 0,
-            status: item.status || 'Available',
-            imageUrl: item.picture || item.imageUrl || undefined,
-            store_visible: item.store_visible !== false,
-            certificateNumber: item.certificate_number || item.certificateNumber || undefined,
-            lab: item.lab || undefined,
-            certificateUrl: item.certificate_url || item.certificateUrl || undefined,
-          };
-        });
+        // Transform data to match Diamond interface
+        const transformedDiamonds: Diamond[] = result.data.map(item => ({
+          id: item.id || `${item.stock_number}-${Date.now()}`,
+          stockNumber: item.stock_number || item.stockNumber || '',
+          shape: item.shape || 'Round',
+          carat: Number(item.weight || item.carat) || 0,
+          color: item.color || 'D',
+          clarity: item.clarity || 'FL',
+          cut: item.cut || 'Excellent',
+          price: Number(item.price_per_carat ? item.price_per_carat * (item.weight || item.carat) : item.price) || 0,
+          status: item.status || 'Available',
+          imageUrl: item.picture || item.imageUrl || undefined,
+          store_visible: item.store_visible !== false,
+          certificateNumber: item.certificate_number || item.certificateNumber || undefined,
+          lab: item.lab || undefined,
+          certificateUrl: item.certificate_url || item.certificateUrl || undefined,
+        }));
 
         console.log('📥 INVENTORY HOOK: Transformed diamonds:', transformedDiamonds.length);
-        console.log('📥 INVENTORY HOOK: Sample transformed diamond:', transformedDiamonds[0]);
         setDiamonds(transformedDiamonds);
         setAllDiamonds(transformedDiamonds);
       } else {

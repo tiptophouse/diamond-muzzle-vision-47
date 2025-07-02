@@ -10,12 +10,10 @@ import { useInventorySearch } from "@/hooks/useInventorySearch";
 import { useInventoryCrud } from "@/hooks/useInventoryCrud";
 import { DiamondForm } from "@/components/inventory/DiamondForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Diamond } from "@/components/inventory/InventoryTable";
 
 export default function InventoryPage() {
-  const { toast } = useToast();
   const {
     loading,
     diamonds,
@@ -55,38 +53,17 @@ export default function InventoryPage() {
   };
 
   const handleDelete = async (diamondId: string) => {
-    console.log('🗑️ Delete diamond clicked for ID:', diamondId);
-    
-    // Find the complete diamond data using the ID
-    const diamond = allDiamonds.find(d => d.id === diamondId);
-    if (!diamond) {
-      console.error('❌ Diamond not found for deletion:', diamondId);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Diamond not found",
-      });
-      return;
-    }
-
-    console.log('🗑️ Found diamond for deletion:', {
-      id: diamond.id,
-      stockNumber: diamond.stockNumber,
-      shape: diamond.shape,
-      carat: diamond.carat
-    });
-    
-    if (window.confirm(`Are you sure you want to delete diamond ${diamond.stockNumber}?`)) {
-      console.log('🗑️ User confirmed deletion of:', diamond.stockNumber);
+    console.log('🗑️ Delete diamond clicked:', diamondId);
+    if (window.confirm('Are you sure you want to delete this diamond?')) {
+      const diamond = allDiamonds.find(d => d.id === diamondId);
+      console.log('🗑️ Deleting diamond:', diamond?.stockNumber);
       
       const success = await deleteDiamond(diamondId, diamond);
       if (success) {
-        console.log('✅ Diamond deleted successfully:', diamond.stockNumber);
+        console.log('✅ Diamond deleted successfully');
       } else {
-        console.error('❌ Failed to delete diamond:', diamond.stockNumber);
+        console.error('❌ Failed to delete diamond');
       }
-    } else {
-      console.log('🚫 User cancelled deletion of:', diamond.stockNumber);
     }
   };
 
