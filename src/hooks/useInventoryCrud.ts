@@ -39,21 +39,20 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     console.log('➕ CRUD: Starting add diamond operation');
     setIsLoading(true);
     try {
-      const result = await addDiamondFn(data);
-      if (result) {
-        console.log('✅ CRUD: Diamond added successfully');
-        toast({
-          title: "Success",
-          description: "Diamond added successfully",
-        });
-      }
-      return result;
+      await addDiamondFn(data);
+      console.log('✅ CRUD: Diamond added successfully');
+      toast({
+        title: "Success ✅",
+        description: "Diamond added successfully to your inventory",
+      });
+      return true;
     } catch (error) {
       console.error('❌ CRUD: Add diamond failed:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to add diamond. Please try again.";
       toast({
-        title: "Error",
-        description: "Failed to add diamond",
         variant: "destructive",
+        title: "Add Failed ❌",
+        description: errorMessage,
       });
       return false;
     } finally {
@@ -65,21 +64,20 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     console.log('📝 CRUD: Starting update diamond operation for:', diamondId);
     setIsLoading(true);
     try {
-      const result = await updateDiamondFn(diamondId, data);
-      if (result) {
-        console.log('✅ CRUD: Diamond updated successfully');
-        toast({
-          title: "Success",
-          description: "Diamond updated successfully",
-        });
-      }
-      return result;
+      await updateDiamondFn(diamondId, data);
+      console.log('✅ CRUD: Diamond updated successfully');
+      toast({
+        title: "Success ✅",
+        description: "Diamond updated successfully",
+      });
+      return true;
     } catch (error) {
       console.error('❌ CRUD: Update diamond failed:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to update diamond. Please try again.";
       toast({
-        title: "Error",
-        description: "Failed to update diamond",
         variant: "destructive",
+        title: "Update Failed ❌",
+        description: errorMessage,
       });
       return false;
     } finally {
@@ -91,21 +89,20 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     console.log('🗑️ CRUD: Starting delete diamond operation for:', diamondId);
     setIsLoading(true);
     try {
-      const result = await deleteDiamondFn(diamondId, diamondData);
-      if (result) {
-        console.log('✅ CRUD: Diamond deleted successfully');
-        toast({
-          title: "Success",
-          description: "Diamond deleted successfully",
-        });
-      }
-      return result;
+      await deleteDiamondFn(diamondId, diamondData);
+      console.log('✅ CRUD: Diamond deleted successfully');
+      toast({
+        title: "Success ✅",
+        description: "Diamond deleted successfully from your inventory",
+      });
+      return true;
     } catch (error) {
       console.error('❌ CRUD: Delete diamond failed:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond. Please try again.";
       toast({
-        title: "Error",
-        description: "Failed to delete diamond",
         variant: "destructive",
+        title: "Delete Failed ❌",
+        description: errorMessage,
       });
       return false;
     } finally {

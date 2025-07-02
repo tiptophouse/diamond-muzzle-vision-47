@@ -1,21 +1,14 @@
 
-import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { LocalStorageService } from '@/services/localStorageService';
+import { api, apiEndpoints } from '@/lib/api';
 
 export function useUpdateDiamond(onSuccess?: () => void) {
-  const { toast } = useToast();
   const { user } = useTelegramAuth();
 
   const updateDiamond = async (diamondId: string, data: DiamondFormData) => {
     if (!user?.id) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "User not authenticated",
-      });
-      return false;
+      throw new Error('User not authenticated');
     }
 
     try {
@@ -30,34 +23,29 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         price_per_carat: data.carat > 0 ? Math.round(Number(data.price) / Number(data.carat)) : Math.round(Number(data.price)),
         status: data.status,
         store_visible: data.storeVisible,
+        picture: data.picture || '',
+        certificate_number: data.certificateNumber || '',
+        certificate_url: data.certificateUrl || '',
+        lab: data.lab || '',
       };
 
-      console.log('📝 Updating diamond in local storage:', diamondId, updates);
+      console.log('📝 Updating diamond via FastAPI:', diamondId, updates);
       
-      const result = LocalStorageService.updateDiamond(diamondId, updates);
+      const endpoint = apiEndpoints.updateDiamond(diamondId);
+      const result = await api.put(endpoint, updates);
       
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to update diamond');
+      if (result.error) {
+        throw new Error(result.error);
       }
 
-      toast({
-        title: "Success ✅",
-        description: "Diamond updated successfully",
-      });
+      console.log('✅ Diamond updated successfully in FastAPI backend');
       
       if (onSuccess) onSuccess();
       return true;
       
     } catch (error) {
-      console.error('❌ Failed to update diamond:', error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to update diamond. Please try again.";
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      return false;
+      console.error('❌ Failed to update diamond in FastAPI:', error);
+      throw error;
     }
   };
 
