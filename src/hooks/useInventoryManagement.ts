@@ -1,93 +1,93 @@
 
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { toast } from '@/hooks/use-toast';
 import { api, apiEndpoints } from '@/lib/api';
+import { useToast } from '@/components/ui/use-toast';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
 export function useInventoryManagement() {
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
   const { user } = useTelegramAuth();
-  const queryClient = useQueryClient();
 
-  const deleteAllInventory = useMutation({
-    mutationFn: async () => {
-      if (!user?.id) throw new Error('User not authenticated');
-      
-      setIsDeleting(true);
-      
-      // Use FastAPI endpoint for deleting all inventory
-      const endpoint = apiEndpoints.deleteAllInventory(user.id);
-      const result = await api.delete(endpoint);
-      
-      if (result.error) {
-        throw new Error(result.error);
-      }
-      
-      return result;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      queryClient.invalidateQueries({ queryKey: ['stones'] });
-      
+  const deleteAllInventory = async () => {
+    if (!user?.id) {
       toast({
-        title: "Success ✅",
-        description: "All inventory has been deleted successfully",
-      });
-    },
-    onError: (error) => {
-      console.error('Failed to delete all inventory:', error);
-      toast({
+        title: "Error",
+        description: "User not authenticated",
         variant: "destructive",
-        title: "Error ❌",
-        description: "Failed to delete inventory. Please try again.",
       });
-    },
-    onSettled: () => {
-      setIsDeleting(false);
-    },
-  });
+      return false;
+    }
 
-  const updateAllInventory = useMutation({
-    mutationFn: async (updates: Record<string, any>) => {
-      if (!user?.id) throw new Error('User not authenticated');
+    setIsLoading(true);
+    try {
+      console.log('🗑️ Deleting all inventory...');
+      const response = await api.delete(apiEndpoints.deleteAllInventory(user.id));
       
-      // Use FastAPI endpoint for updating all inventory
-      const endpoint = apiEndpoints.updateAllInventory();
-      const result = await api.put(endpoint, { user_id: user.id, updates });
-      
-      if (result.error) {
-        throw new Error(result.error);
+      if (response.error) {
+        throw new Error(response.error);
       }
-      
-      return result;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      queryClient.invalidateQueries({ queryKey: ['stones'] });
-      
+
       toast({
-        title: "Success ✅",
-        description: "All inventory has been updated successfully",
+        title: "Inventory Deleted",
+        description: "Successfully deleted all inventory items",
       });
-    },
-    onError: (error) => {
-      console.error('Failed to update all inventory:', error);
+      return true;
+    } catch (error) {
+      console.error('❌ Error deleting inventory:', error);
       toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete inventory",
         variant: "destructive",
-        title: "Error ❌",
-        description: "Failed to update inventory. Please try again.",
       });
-    },
-  });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateAllInventory = async (csvData: any[]) => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "User not authenticated",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    setIsLoading(true);
+    try {
+      console.log('🔄 Updating all inventory...');
+      const response = await api.post(apiEndpoints.updateAllInventory(user.id), {
+        diamonds: csvData
+      });
+      
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      toast({
+        title: "Inventory Updated",
+        description: `Successfully updated inventory with ${csvData.length} items`,
+      });
+      return true;
+    } catch (error) {
+      console.error('❌ Error updating inventory:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update inventory",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return {
-    deleteAllInventory: () => deleteAllInventory.mutate(),
-    updateAllInventory: (data: Record<string, any>) => updateAllInventory.mutate(data),
-    isDeleting,
-    isDeletingAll: deleteAllInventory.isPending,
-    isUpdatingAll: updateAllInventory.isPending,
-    isLoading: deleteAllInventory.isPending || updateAllInventory.isPending,
+    isLoading,
+    deleteAllInventory,
+    updateAllInventory,
   };
 }

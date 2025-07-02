@@ -23,9 +23,9 @@ export function InventoryManagementActions({ onRefresh }: InventoryManagementAct
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
 
-  const handleDeleteAll = () => {
-    deleteAllInventory();
-    if (onRefresh) {
+  const handleDeleteAll = async () => {
+    const success = await deleteAllInventory();
+    if (success && onRefresh) {
       onRefresh();
     }
     setShowDeleteDialog(false);
@@ -36,7 +36,7 @@ export function InventoryManagementActions({ onRefresh }: InventoryManagementAct
     if (file && file.type === 'text/csv') {
       // Process CSV file
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         const text = e.target?.result as string;
         const lines = text.split('\n');
         const headers = lines[0].split(',');
@@ -50,8 +50,8 @@ export function InventoryManagementActions({ onRefresh }: InventoryManagementAct
           return obj;
         }).filter(obj => Object.keys(obj).length > 1); // Filter empty rows
 
-        updateAllInventory(csvData);
-        if (onRefresh) {
+        const success = await updateAllInventory(csvData);
+        if (success && onRefresh) {
           onRefresh();
         }
       };
