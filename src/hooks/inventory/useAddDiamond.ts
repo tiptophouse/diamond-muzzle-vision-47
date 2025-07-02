@@ -21,8 +21,9 @@ export function useAddDiamond(onSuccess?: () => void) {
 
     try {
       const diamondDataPayload: Record<string, any> = {
+        id: generateDiamondId(),
         user_id: user.id,
-        stock_number: data.stockNumber, // Fixed: Use stock_number consistently
+        stock_number: data.stockNumber,
         shape: data.shape,
         weight: Number(data.carat),
         color: data.color,
@@ -57,8 +58,7 @@ export function useAddDiamond(onSuccess?: () => void) {
         }
       });
       
-      console.log('📤 ADD DIAMOND: Sending to FastAPI endpoint:', apiEndpoints.addDiamond());
-      console.log('📤 ADD DIAMOND: Payload:', diamondDataPayload);
+      console.log('Adding diamond via API with data:', diamondDataPayload);
       
       // Try FastAPI first
       try {
@@ -68,12 +68,9 @@ export function useAddDiamond(onSuccess?: () => void) {
         });
         
         if (response.error) {
-          console.error('❌ ADD DIAMOND: FastAPI error:', response.error);
           throw new Error(response.error);
         }
 
-        console.log('✅ ADD DIAMOND: FastAPI success, response:', response.data);
-        
         toast({
           title: "Success",
           description: "Diamond added successfully to backend",
@@ -83,14 +80,14 @@ export function useAddDiamond(onSuccess?: () => void) {
         return true;
         
       } catch (apiError) {
-        console.warn('⚠️ ADD DIAMOND: FastAPI failed, using localStorage fallback:', apiError);
+        console.warn('FastAPI add failed, using localStorage:', apiError);
         
         // Fallback to localStorage
         const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
         
-        // Convert to inventory format with proper ID
+        // Convert to inventory format
         const newDiamond = {
-          id: generateDiamondId(),
+          id: diamondDataPayload.id,
           stockNumber: diamondDataPayload.stock_number,
           shape: diamondDataPayload.shape,
           carat: diamondDataPayload.weight,
@@ -120,7 +117,7 @@ export function useAddDiamond(onSuccess?: () => void) {
       }
       
     } catch (error) {
-      console.error('❌ ADD DIAMOND: Unexpected error:', error);
+      console.error('Failed to add diamond:', error);
       const errorMessage = error instanceof Error ? error.message : "Failed to add diamond. Please try again.";
       toast({
         variant: "destructive",

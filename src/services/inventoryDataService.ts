@@ -24,10 +24,8 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     // First, try to get data from FastAPI backend
     console.log('🔍 INVENTORY SERVICE: Attempting FastAPI connection...');
     const endpoint = apiEndpoints.getAllStones(userId);
-    console.log('🔍 INVENTORY SERVICE: Using endpoint:', endpoint);
     
     const result = await api.get(endpoint);
-    console.log('🔍 INVENTORY SERVICE: FastAPI response:', result);
     
     if (result.data && !result.error) {
       let dataArray: any[] = [];
@@ -41,7 +39,6 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
         for (const key of possibleArrayKeys) {
           if (Array.isArray(dataObj[key])) {
             dataArray = dataObj[key];
-            console.log('🔍 INVENTORY SERVICE: Found data in key:', key);
             break;
           }
         }
@@ -49,25 +46,14 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       
       if (dataArray && dataArray.length > 0) {
         console.log('✅ INVENTORY SERVICE: FastAPI returned', dataArray.length, 'diamonds');
-        console.log('🔍 INVENTORY SERVICE: Sample diamond structure:', dataArray[0]);
-        
-        // Better data mapping - handle both stock and stock_number fields
-        const mappedData = dataArray.map(item => ({
-          ...item,
-          // Ensure stock_number field exists (map from stock if needed)
-          stock_number: item.stock_number || item.stock || item.stockNumber,
-          // Ensure consistent ID field
-          id: item.id || `${item.stock_number || item.stock}-${Date.now()}-${Math.random()}`,
-        }));
         
         return {
-          data: mappedData,
+          data: dataArray,
           debugInfo: {
             ...debugInfo,
             step: 'SUCCESS: FastAPI data fetched',
-            totalDiamonds: mappedData.length,
-            dataSource: 'fastapi',
-            sampleDiamond: mappedData[0]
+            totalDiamonds: dataArray.length,
+            dataSource: 'fastapi'
           }
         };
       }
@@ -120,7 +106,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     };
     
   } catch (error) {
-    console.error("❌ INVENTORY SERVICE: Error occurred:", error);
+    console.error("🔍 INVENTORY SERVICE: Error occurred:", error);
     
     // Try localStorage as emergency fallback
     const localData = localStorage.getItem('diamond_inventory');
