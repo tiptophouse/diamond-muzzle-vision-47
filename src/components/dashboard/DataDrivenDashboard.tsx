@@ -1,10 +1,11 @@
-
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useUserLoginTracking } from '@/hooks/useUserLoginTracking';
 import { processDiamondDataForDashboard } from '@/services/diamondAnalytics';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { InventoryChart } from '@/components/dashboard/InventoryChart';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { WelcomeBanner } from '@/components/tutorial/WelcomeBanner';
+import { UserLoginsSection } from '@/components/dashboard/UserLoginsSection';
 import { Layout } from '@/components/layout/Layout';
 import { Gem, Users, TrendingUp, Star, Plus, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,9 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
   const { user } = useTelegramAuth();
   const { subscribeToInventoryChanges } = useInventoryDataSync();
   const navigate = useNavigate();
+
+  // Track user logins automatically when dashboard loads
+  useUserLoginTracking();
 
   console.log('🔍 DataDrivenDashboard: Processing data for user:', user?.id, 'Diamonds:', allDiamonds.length);
 
@@ -78,6 +82,9 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
           <WelcomeBanner />
           <DashboardHeader emergencyMode={false} />
           
+          {/* User Login Tracking */}
+          <UserLoginsSection />
+          
           <Card className="text-center py-12">
             <CardHeader>
               <Gem className="h-16 w-16 text-gray-400 mx-auto mb-4" />
@@ -128,6 +135,9 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
       <div className="space-y-6 p-2 sm:p-4">
         <WelcomeBanner />
         <DashboardHeader emergencyMode={false} />
+        
+        {/* User Login Tracking Section */}
+        <UserLoginsSection />
         
         {/* Real Stats Grid */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
