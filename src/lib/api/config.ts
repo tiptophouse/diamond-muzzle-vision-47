@@ -1,6 +1,6 @@
 
 // FastAPI backend configuration
-export const API_BASE_URL = "https://mazalbot.me"; // Updated to correct FastAPI backend URL
+export const API_BASE_URL = "https://api.mazalbot.com"; // Updated to correct FastAPI backend URL
 
 let currentUserId: number | null = null;
 
