@@ -19,7 +19,11 @@ export function SingleStoneUploadForm() {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
   const [isScanning, setIsScanning] = useState(false);
-  const { addDiamond, isLoading } = useInventoryCrud();
+  const { addDiamond, isLoading } = useInventoryCrud({
+    onSuccess: () => {
+      console.log('✅ Diamond added successfully, form will reset');
+    }
+  });
   
   const [formData, setFormData] = useState({
     stockNumber: '',
