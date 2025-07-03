@@ -60,38 +60,35 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
     try {
       setIsFetchingGIA(true);
       toast({
-        title: "Processing with OCR",
-        description: "Analyzing image for GIA certificate data...",
+        title: "Processing Certificate",
+        description: "Extracting diamond data with AI...",
       });
 
-      const { data, error } = await supabase.functions.invoke('fetch-gia-data', {
-        body: { 
-          imageData,
-          useOCR: true 
-        }
+      const { data, error } = await supabase.functions.invoke('extract-gia-data', {
+        body: { imageData }
       });
 
       if (error) {
-        throw new Error(error.message || 'Failed to process image with OCR');
+        throw new Error(error.message || 'Failed to extract certificate data');
       }
 
-      if (data) {
-        onScanSuccess(data);
+      if (data?.success && data?.data) {
+        onScanSuccess(data.data);
         stopScanning();
         toast({
-          title: "Success",
+          title: "Success! 💎",
           description: "GIA certificate data extracted successfully",
         });
       } else {
-        throw new Error('No data extracted from image');
+        throw new Error('No data extracted from certificate');
       }
 
     } catch (error) {
-      console.error('Error processing with OCR:', error);
+      console.error('Error extracting certificate data:', error);
       toast({
         variant: "destructive",
-        title: "OCR Processing Failed",
-        description: error instanceof Error ? error.message : "Failed to extract certificate data from image",
+        title: "Extraction Failed",
+        description: error instanceof Error ? error.message : "Failed to extract certificate data",
       });
     } finally {
       setIsFetchingGIA(false);

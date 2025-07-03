@@ -467,6 +467,33 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_analytics_cache: {
+        Row: {
+          analytics_type: string
+          created_at: string | null
+          data: Json
+          expires_at: string
+          id: string
+          user_id: number
+        }
+        Insert: {
+          analytics_type: string
+          created_at?: string | null
+          data: Json
+          expires_at: string
+          id?: string
+          user_id: number
+        }
+        Update: {
+          analytics_type?: string
+          created_at?: string | null
+          data?: Json
+          expires_at?: string
+          id?: string
+          user_id?: number
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -522,31 +549,46 @@ export type Database = {
       }
       page_visits: {
         Row: {
+          clicks_count: number | null
           created_at: string | null
+          feature_used: string | null
+          form_interactions: number | null
           id: string
+          interaction_data: Json | null
           page_path: string
           page_title: string | null
           referrer: string | null
+          scroll_depth: number | null
           session_id: string | null
           time_spent: unknown | null
           visit_timestamp: string | null
         }
         Insert: {
+          clicks_count?: number | null
           created_at?: string | null
+          feature_used?: string | null
+          form_interactions?: number | null
           id?: string
+          interaction_data?: Json | null
           page_path: string
           page_title?: string | null
           referrer?: string | null
+          scroll_depth?: number | null
           session_id?: string | null
           time_spent?: unknown | null
           visit_timestamp?: string | null
         }
         Update: {
+          clicks_count?: number | null
           created_at?: string | null
+          feature_used?: string | null
+          form_interactions?: number | null
           id?: string
+          interaction_data?: Json | null
           page_path?: string
           page_title?: string | null
           referrer?: string | null
+          scroll_depth?: number | null
           session_id?: string | null
           time_spent?: unknown | null
           visit_timestamp?: string | null
@@ -617,6 +659,47 @@ export type Database = {
           },
         ]
       }
+      user_activity_log: {
+        Row: {
+          activity_data: Json | null
+          activity_type: string
+          created_at: string | null
+          id: string
+          page_url: string | null
+          session_id: string | null
+          telegram_id: number
+          timestamp: string | null
+        }
+        Insert: {
+          activity_data?: Json | null
+          activity_type: string
+          created_at?: string | null
+          id?: string
+          page_url?: string | null
+          session_id?: string | null
+          telegram_id: number
+          timestamp?: string | null
+        }
+        Update: {
+          activity_data?: Json | null
+          activity_type?: string
+          created_at?: string | null
+          id?: string
+          page_url?: string | null
+          session_id?: string | null
+          telegram_id?: number
+          timestamp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_activity_log_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "user_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_analytics: {
         Row: {
           api_calls_count: number | null
@@ -679,6 +762,114 @@ export type Database = {
           },
         ]
       }
+      user_behavior_analytics: {
+        Row: {
+          created_at: string | null
+          device_types: Json | null
+          diamonds_added: number | null
+          diamonds_deleted: number | null
+          diamonds_edited: number | null
+          engagement_score: number | null
+          favorite_pages: Json | null
+          first_visit: string | null
+          id: string
+          last_visit: string | null
+          searches_count: number | null
+          telegram_id: number
+          total_page_views: number | null
+          total_sessions: number | null
+          total_time_spent: unknown | null
+          updated_at: string | null
+          uploads_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_types?: Json | null
+          diamonds_added?: number | null
+          diamonds_deleted?: number | null
+          diamonds_edited?: number | null
+          engagement_score?: number | null
+          favorite_pages?: Json | null
+          first_visit?: string | null
+          id?: string
+          last_visit?: string | null
+          searches_count?: number | null
+          telegram_id: number
+          total_page_views?: number | null
+          total_sessions?: number | null
+          total_time_spent?: unknown | null
+          updated_at?: string | null
+          uploads_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          device_types?: Json | null
+          diamonds_added?: number | null
+          diamonds_deleted?: number | null
+          diamonds_edited?: number | null
+          engagement_score?: number | null
+          favorite_pages?: Json | null
+          first_visit?: string | null
+          id?: string
+          last_visit?: string | null
+          searches_count?: number | null
+          telegram_id?: number
+          total_page_views?: number | null
+          total_sessions?: number | null
+          total_time_spent?: unknown | null
+          updated_at?: string | null
+          uploads_count?: number | null
+        }
+        Relationships: []
+      }
+      user_logins: {
+        Row: {
+          created_at: string
+          first_name: string | null
+          id: string
+          init_data_hash: string | null
+          ip_address: string | null
+          is_premium: boolean | null
+          language_code: string | null
+          last_name: string | null
+          login_timestamp: string
+          photo_url: string | null
+          telegram_id: number
+          user_agent: string | null
+          username: string | null
+        }
+        Insert: {
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          init_data_hash?: string | null
+          ip_address?: string | null
+          is_premium?: boolean | null
+          language_code?: string | null
+          last_name?: string | null
+          login_timestamp?: string
+          photo_url?: string | null
+          telegram_id: number
+          user_agent?: string | null
+          username?: string | null
+        }
+        Update: {
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          init_data_hash?: string | null
+          ip_address?: string | null
+          is_premium?: boolean | null
+          language_code?: string | null
+          last_name?: string | null
+          login_timestamp?: string
+          photo_url?: string | null
+          telegram_id?: number
+          user_agent?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
       user_management_log: {
         Row: {
           action_type: string
@@ -714,10 +905,15 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          bio: string | null
+          business_name: string | null
+          company: string | null
           created_at: string | null
+          email: string | null
           first_name: string
           id: string
           is_premium: boolean | null
+          language: string | null
           language_code: string | null
           last_login: string | null
           last_name: string | null
@@ -728,14 +924,21 @@ export type Database = {
           status: string | null
           subscription_plan: string | null
           telegram_id: number
+          timezone: string | null
           updated_at: string | null
           username: string | null
+          website: string | null
         }
         Insert: {
+          bio?: string | null
+          business_name?: string | null
+          company?: string | null
           created_at?: string | null
+          email?: string | null
           first_name: string
           id?: string
           is_premium?: boolean | null
+          language?: string | null
           language_code?: string | null
           last_login?: string | null
           last_name?: string | null
@@ -746,14 +949,21 @@ export type Database = {
           status?: string | null
           subscription_plan?: string | null
           telegram_id: number
+          timezone?: string | null
           updated_at?: string | null
           username?: string | null
+          website?: string | null
         }
         Update: {
+          bio?: string | null
+          business_name?: string | null
+          company?: string | null
           created_at?: string | null
+          email?: string | null
           first_name?: string
           id?: string
           is_premium?: boolean | null
+          language?: string | null
           language_code?: string | null
           last_login?: string | null
           last_name?: string | null
@@ -764,44 +974,67 @@ export type Database = {
           status?: string | null
           subscription_plan?: string | null
           telegram_id?: number
+          timezone?: string | null
           updated_at?: string | null
           username?: string | null
+          website?: string | null
         }
         Relationships: []
       }
       user_sessions: {
         Row: {
+          browser_info: string | null
           created_at: string | null
+          device_type: string | null
+          entry_page: string | null
+          exit_page: string | null
           id: string
           is_active: boolean | null
           pages_visited: number | null
+          referrer_url: string | null
+          screen_resolution: string | null
           session_end: string | null
           session_start: string | null
           telegram_id: number
+          time_zone: string | null
           total_duration: unknown | null
           user_agent: string | null
           user_id: string | null
         }
         Insert: {
+          browser_info?: string | null
           created_at?: string | null
+          device_type?: string | null
+          entry_page?: string | null
+          exit_page?: string | null
           id?: string
           is_active?: boolean | null
           pages_visited?: number | null
+          referrer_url?: string | null
+          screen_resolution?: string | null
           session_end?: string | null
           session_start?: string | null
           telegram_id: number
+          time_zone?: string | null
           total_duration?: unknown | null
           user_agent?: string | null
           user_id?: string | null
         }
         Update: {
+          browser_info?: string | null
           created_at?: string | null
+          device_type?: string | null
+          entry_page?: string | null
+          exit_page?: string | null
           id?: string
           is_active?: boolean | null
           pages_visited?: number | null
+          referrer_url?: string | null
+          screen_resolution?: string | null
           session_end?: string | null
           session_start?: string | null
           telegram_id?: number
+          time_zone?: string | null
           total_duration?: unknown | null
           user_agent?: string | null
           user_id?: string | null
@@ -836,9 +1069,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      recent_user_logins: {
+        Row: {
+          first_login: string | null
+          first_name: string | null
+          last_login: string | null
+          last_name: string | null
+          login_count: number | null
+          telegram_id: number | null
+          username: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      add_diamond_for_user: {
+        Args: {
+          p_user_id: number
+          p_stock_number: string
+          p_shape: string
+          p_weight: number
+          p_color: string
+          p_clarity: string
+          p_cut: string
+          p_polish: string
+          p_symmetry: string
+          p_price_per_carat: number
+          p_status: string
+          p_picture: string
+          p_certificate_url: string
+        }
+        Returns: boolean
+      }
+      clean_expired_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       delete_diamond: {
         Args: { p_stock_number: string; p_user_id: number }
         Returns: boolean
@@ -846,6 +1112,17 @@ export type Database = {
       delete_diamond_by_stock: {
         Args: { p_stock_number: string; p_user_id: number }
         Returns: boolean
+      }
+      get_realistic_analytics_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_sessions: number
+          total_page_views: number
+          total_users: number
+          active_users_last_hour: number
+          today_views: number
+          avg_session_duration_seconds: number
+        }[]
       }
       get_user_statistics: {
         Args: Record<PropertyKey, never>
@@ -857,6 +1134,18 @@ export type Database = {
           users_with_phone: number
           recent_signups: number
         }[]
+      }
+      is_admin_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      set_session_context: {
+        Args: { key: string; value: string }
+        Returns: undefined
+      }
+      update_diamond_for_user: {
+        Args: { p_user_id: number; p_stock_number: string; p_update_data: Json }
+        Returns: boolean
       }
     }
     Enums: {

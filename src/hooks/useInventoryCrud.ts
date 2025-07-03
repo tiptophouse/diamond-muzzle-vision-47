@@ -40,21 +40,9 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     setIsLoading(true);
     try {
       const result = await addDiamondFn(data);
-      if (result) {
-        console.log('✅ CRUD: Diamond added successfully');
-        toast({
-          title: "Success",
-          description: "Diamond added successfully",
-        });
-      }
       return result;
     } catch (error) {
       console.error('❌ CRUD: Add diamond failed:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add diamond",
-        variant: "destructive",
-      });
       return false;
     } finally {
       setIsLoading(false);
