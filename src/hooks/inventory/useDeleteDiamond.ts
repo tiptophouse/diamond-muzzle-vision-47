@@ -33,7 +33,10 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
       // Try FastAPI first
       try {
         const endpoint = apiEndpoints.deleteDiamond(diamondId);
-        const response = await api.delete(endpoint);
+        console.log('🗑️ DELETE: Using endpoint:', endpoint, 'for diamond:', diamondId);
+        
+        // FastAPI expects diamond_id as query parameter
+        const response = await api.delete(`${endpoint}?diamond_id=${diamondId}`);
         
         if (response.error) {
           throw new Error(response.error);

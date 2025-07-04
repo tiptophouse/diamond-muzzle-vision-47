@@ -8,6 +8,8 @@ import { CaratRangeFilter } from "./filters/CaratRangeFilter";
 import { ClarityFilter } from "./filters/ClarityFilter";
 import { ColorFilter } from "./filters/ColorFilter";
 import { ShapeFilter } from "./filters/ShapeFilter";
+import { CutFilter } from "./filters/CutFilter";
+import { FluorescenceFilter } from "./filters/FluorescenceFilter";
 
 interface StoreFiltersProps {
   filters: any;
@@ -87,6 +89,28 @@ export function StoreFilters({ filters, onUpdateFilter, onClearFilters, diamonds
     onUpdateFilter('colors', Array.from(selectedColors));
   };
 
+  const handleCutToggle = (cut: string) => {
+    const selectedCuts = new Set(filters.cuts);
+    if (selectedCuts.has(cut)) {
+      selectedCuts.delete(cut);
+    } else {
+      selectedCuts.add(cut);
+    }
+    
+    onUpdateFilter('cuts', Array.from(selectedCuts));
+  };
+
+  const handleFluorescenceToggle = (fluorescence: string) => {
+    const selectedFluorescence = new Set(filters.fluorescence);
+    if (selectedFluorescence.has(fluorescence)) {
+      selectedFluorescence.delete(fluorescence);
+    } else {
+      selectedFluorescence.add(fluorescence);
+    }
+    
+    onUpdateFilter('fluorescence', Array.from(selectedFluorescence));
+  };
+
   const activeFiltersCount =
     (filters.priceRange?.min ? 1 : 0) +
     (filters.priceRange?.max ? 1 : 0) +
@@ -94,7 +118,9 @@ export function StoreFilters({ filters, onUpdateFilter, onClearFilters, diamonds
     (filters.caratRange?.max ? 1 : 0) +
     (filters.shapes?.length || 0) +
     (filters.clarities?.length || 0) +
-    (filters.colors?.length || 0);
+    (filters.colors?.length || 0) +
+    (filters.cuts?.length || 0) +
+    (filters.fluorescence?.length || 0);
 
   return (
     <div className="bg-white rounded-xl shadow-md p-6 space-y-6">
@@ -164,6 +190,14 @@ export function StoreFilters({ filters, onUpdateFilter, onClearFilters, diamonds
           <ColorFilter
             selectedColors={filters.colors || []}
             onColorToggle={handleColorToggle}
+          />
+          <CutFilter
+            selectedCuts={filters.cuts || []}
+            onCutToggle={handleCutToggle}
+          />
+          <FluorescenceFilter
+            selectedFluorescence={filters.fluorescence || []}
+            onFluorescenceToggle={handleFluorescenceToggle}
           />
         </div>
       )}

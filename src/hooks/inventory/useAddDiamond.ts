@@ -20,35 +20,31 @@ export function useAddDiamond(onSuccess?: () => void) {
     }
 
     try {
-      const diamondDataPayload: Record<string, any> = {
-        id: generateDiamondId(),
-        user_id: user.id,
-        stock_number: data.stockNumber,
-        shape: data.shape,
-        weight: Number(data.carat),
-        color: data.color,
-        clarity: data.clarity,
-        cut: data.cut,
-        price_per_carat: data.carat > 0 ? Math.round(Number(data.price) / Number(data.carat)) : Math.round(Number(data.price)),
-        status: data.status,
-        picture: data.picture,
-        certificate_number: data.certificateNumber,
-        certificate_url: data.certificateUrl,
-        certificate_comment: data.certificateComment,
-        lab: data.lab,
-        length: data.length,
-        width: data.width,
-        depth: data.depth,
-        ratio: data.ratio,
-        table_percentage: data.tablePercentage,
-        depth_percentage: data.depthPercentage,
-        fluorescence: data.fluorescence,
-        polish: data.polish,
-        symmetry: data.symmetry,
-        gridle: data.gridle,
-        culet: data.culet,
-        rapnet: data.rapnet,
-        store_visible: data.storeVisible,
+      // Match FastAPI DiamondCreateRequest schema exactly
+      const diamondDataPayload = {
+        stock: data.stockNumber,
+        shape: data.shape?.toLowerCase() || 'round brilliant',
+        weight: Number(data.carat) || 1,
+        color: data.color || 'G',
+        clarity: data.clarity || 'VS1',
+        lab: data.lab || 'GIA',
+        certificate_number: parseInt(data.certificateNumber || '0') || Math.floor(Math.random() * 1000000),
+        length: Number(data.length) || 6.5,
+        width: Number(data.width) || 6.5,
+        depth: Number(data.depth) || 4.0,
+        ratio: Number(data.ratio) || 1.0,
+        cut: data.cut?.toUpperCase() || 'EXCELLENT',
+        polish: data.polish?.toUpperCase() || 'EXCELLENT',
+        symmetry: data.symmetry?.toUpperCase() || 'EXCELLENT',
+        fluorescence: data.fluorescence?.toUpperCase() || 'NONE',
+        table: Number(data.tablePercentage) || 60,
+        depth_percentage: Number(data.depthPercentage) || 62,
+        gridle: data.gridle || 'Medium',
+        culet: data.culet?.toUpperCase() || 'NONE',
+        certificate_comment: data.certificateComment || null,
+        rapnet: data.rapnet ? parseInt(data.rapnet.toString()) : null,
+        price_per_carat: data.carat > 0 ? Math.round(Number(data.price) / Number(data.carat)) : Math.round(Number(data.price)) || null,
+        picture: data.picture || null,
       };
 
       // Remove undefined keys
@@ -63,9 +59,10 @@ export function useAddDiamond(onSuccess?: () => void) {
       // Try FastAPI first
       try {
         const endpoint = apiEndpoints.addDiamond();
-        const response = await api.post(endpoint, {
-          diamond_data: diamondDataPayload
-        });
+        console.log('➕ ADD: Using endpoint:', endpoint, 'with data:', diamondDataPayload);
+        
+        // Send data directly as per FastAPI schema
+        const response = await api.post(endpoint, diamondDataPayload);
         
         if (response.error) {
           throw new Error(response.error);
@@ -87,18 +84,18 @@ export function useAddDiamond(onSuccess?: () => void) {
         
         // Convert to inventory format
         const newDiamond = {
-          id: diamondDataPayload.id,
-          stockNumber: diamondDataPayload.stock_number,
+          id: generateDiamondId(),
+          stockNumber: diamondDataPayload.stock,
           shape: diamondDataPayload.shape,
           carat: diamondDataPayload.weight,
           color: diamondDataPayload.color,
           clarity: diamondDataPayload.clarity,
           cut: diamondDataPayload.cut,
           price: diamondDataPayload.price_per_carat * diamondDataPayload.weight,
-          status: diamondDataPayload.status,
-          store_visible: diamondDataPayload.store_visible,
-          certificateNumber: diamondDataPayload.certificate_number,
-          certificateUrl: diamondDataPayload.certificate_url,
+          status: 'Available',
+          store_visible: true,
+          certificateNumber: diamondDataPayload.certificate_number.toString(),
+          certificateUrl: diamondDataPayload.picture,
           lab: diamondDataPayload.lab,
           user_id: user.id,
           created_at: new Date().toISOString()
