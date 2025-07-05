@@ -90,7 +90,7 @@ export function StoreFilters({ filters, onUpdateFilter, onClearFilters, diamonds
   };
 
   const handleCutToggle = (cut: string) => {
-    const selectedCuts = new Set(filters.cuts);
+    const selectedCuts = new Set(filters.cuts || []);
     if (selectedCuts.has(cut)) {
       selectedCuts.delete(cut);
     } else {
@@ -101,7 +101,7 @@ export function StoreFilters({ filters, onUpdateFilter, onClearFilters, diamonds
   };
 
   const handleFluorescenceToggle = (fluorescence: string) => {
-    const selectedFluorescence = new Set(filters.fluorescence);
+    const selectedFluorescence = new Set(filters.fluorescence || []);
     if (selectedFluorescence.has(fluorescence)) {
       selectedFluorescence.delete(fluorescence);
     } else {

@@ -47,8 +47,23 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       if (dataArray && dataArray.length > 0) {
         console.log('✅ INVENTORY SERVICE: FastAPI returned', dataArray.length, 'diamonds');
         
+        // Filter out blacklisted diamonds
+        const blacklistJson = localStorage.getItem('deleted_diamonds_blacklist');
+        const blacklist = blacklistJson ? new Set(JSON.parse(blacklistJson)) : new Set();
+        
+        const filteredData = dataArray.filter(item => {
+          const diamondId = item.id || item.diamond_id || item.stock_number;
+          const isBlacklisted = blacklist.has(String(diamondId));
+          if (isBlacklisted) {
+            console.log('🚫 INVENTORY SERVICE: Filtering out blacklisted diamond:', diamondId);
+          }
+          return !isBlacklisted;
+        });
+        
+        console.log('🔍 INVENTORY SERVICE: After blacklist filter:', filteredData.length, 'diamonds');
+        
         // Sort diamonds by updated_at desc (most recently edited first)
-        const sortedData = dataArray.sort((a, b) => {
+        const sortedData = filteredData.sort((a, b) => {
           const dateA = new Date(a.updated_at || a.created_at || 0);
           const dateB = new Date(b.updated_at || b.created_at || 0);
           return dateB.getTime() - dateA.getTime();
@@ -58,8 +73,9 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
           data: sortedData,
           debugInfo: {
             ...debugInfo,
-            step: 'SUCCESS: FastAPI data fetched',
+            step: 'SUCCESS: FastAPI data fetched and filtered',
             totalDiamonds: sortedData.length,
+            blacklistedCount: dataArray.length - filteredData.length,
             dataSource: 'fastapi'
           }
         };
@@ -74,20 +90,28 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       try {
         const parsedData = JSON.parse(localData);
         if (Array.isArray(parsedData) && parsedData.length > 0) {
-          // Filter for current user
+          // Filter for current user and apply blacklist
           const userDiamonds = parsedData.filter(item => 
             !item.user_id || item.user_id === userId
           );
           
-          if (userDiamonds.length > 0) {
-            console.log('✅ INVENTORY SERVICE: Found', userDiamonds.length, 'diamonds in localStorage');
+          const blacklistJson = localStorage.getItem('deleted_diamonds_blacklist');
+          const blacklist = blacklistJson ? new Set(JSON.parse(blacklistJson)) : new Set();
+          
+          const filteredDiamonds = userDiamonds.filter(item => {
+            const diamondId = item.id || item.diamond_id || item.stock_number;
+            return !blacklist.has(String(diamondId));
+          });
+          
+          if (filteredDiamonds.length > 0) {
+            console.log('✅ INVENTORY SERVICE: Found', filteredDiamonds.length, 'diamonds in localStorage (after blacklist)');
             
             return {
-              data: userDiamonds,
+              data: filteredDiamonds,
               debugInfo: {
                 ...debugInfo,
-                step: 'SUCCESS: localStorage data found',
-                totalDiamonds: userDiamonds.length,
+                step: 'SUCCESS: localStorage data found and filtered',
+                totalDiamonds: filteredDiamonds.length,
                 dataSource: 'localStorage'
               }
             };
@@ -125,12 +149,21 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
             !item.user_id || item.user_id === userId
           );
           
+          // Apply blacklist filter
+          const blacklistJson = localStorage.getItem('deleted_diamonds_blacklist');
+          const blacklist = blacklistJson ? new Set(JSON.parse(blacklistJson)) : new Set();
+          
+          const filteredDiamonds = userDiamonds.filter(item => {
+            const diamondId = item.id || item.diamond_id || item.stock_number;
+            return !blacklist.has(String(diamondId));
+          });
+          
           return {
-            data: userDiamonds,
+            data: filteredDiamonds,
             debugInfo: {
               ...debugInfo,
-              step: 'EMERGENCY: localStorage fallback after error',
-              totalDiamonds: userDiamonds.length,
+              step: 'EMERGENCY: localStorage fallback after error with blacklist',
+              totalDiamonds: filteredDiamonds.length,
               dataSource: 'localStorage_emergency'
             }
           };

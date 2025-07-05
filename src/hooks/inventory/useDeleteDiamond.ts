@@ -3,6 +3,7 @@ import { useToast } from '@/hooks/use-toast';
 import { api, apiEndpoints } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { Diamond } from '@/components/inventory/InventoryTable';
+import { useDeletedDiamondsBlacklist } from '@/hooks/useDeletedDiamondsBlacklist';
 
 interface UseDeleteDiamondProps {
   onSuccess?: () => void;
@@ -12,6 +13,7 @@ interface UseDeleteDiamondProps {
 export function useDeleteDiamond({ onSuccess, onRefreshInventory }: UseDeleteDiamondProps = {}) {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
+  const { addToBlacklist } = useDeletedDiamondsBlacklist();
 
   const deleteDiamond = async (diamondId: string) => {
     if (!user?.id) {
@@ -26,6 +28,9 @@ export function useDeleteDiamond({ onSuccess, onRefreshInventory }: UseDeleteDia
     try {
       console.log('🗑️ DELETE: Starting delete operation for diamond:', diamondId);
       
+      // Immediately add to blacklist to prevent showing in UI
+      addToBlacklist(diamondId);
+      
       // Call DELETE /api/v1/delete_stone/{id}?diamond_id={diamond_id}
       const endpoint = apiEndpoints.deleteDiamond(diamondId);
       const response = await api.delete(`${endpoint}?diamond_id=${diamondId}`);
@@ -34,7 +39,7 @@ export function useDeleteDiamond({ onSuccess, onRefreshInventory }: UseDeleteDia
         throw new Error(response.error);
       }
 
-      console.log('✅ DELETE: Diamond deleted successfully');
+      console.log('✅ DELETE: Diamond deleted successfully and blacklisted');
       
       // Show success message
       toast({
@@ -53,6 +58,9 @@ export function useDeleteDiamond({ onSuccess, onRefreshInventory }: UseDeleteDia
       
     } catch (error) {
       console.error('❌ DELETE: Failed to delete diamond:', error);
+      
+      // Remove from blacklist on error so it shows up again
+      // removeFromBlacklist(diamondId);
       
       const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond. Please try again.";
       toast({
