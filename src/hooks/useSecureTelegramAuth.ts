@@ -209,20 +209,12 @@ export function useSecureTelegramAuth(): AuthState {
       if (!authenticatedUser && (process.env.NODE_ENV === 'development' || !inTelegram)) {
         console.log('🔧 Setting up admin JWT token for development');
         try {
-          // Mock initData for admin user in development - matching your backend format
-          const mockInitData = `auth_date=${Math.floor(Date.now() / 1000)}&query_id=dev_query_${Date.now()}&user={"id":${ADMIN_TELEGRAM_ID},"first_name":"Admin","last_name":"User","username":"admin","language_code":"en"}&hash=mock_hash_${Date.now()}`;
-          console.log('🔧 Mock initData for development:', mockInitData);
-          
+          // Mock initData for admin user in development
+          const mockInitData = `user=%7B%22id%22%3A${ADMIN_TELEGRAM_ID}%2C%22first_name%22%3A%22Admin%22%2C%22last_name%22%3A%22User%22%2C%22username%22%3A%22admin%22%2C%22language_code%22%3A%22en%22%7D&auth_date=${Math.floor(Date.now() / 1000)}&hash=mock_hash`;
           const signInResult = await telegramAuthService.signIn(mockInitData);
           
           if (signInResult) {
-            console.log('✅ Admin JWT token set successfully:', {
-              token: !!signInResult.token,
-              user_id: signInResult.user_id,
-              expires_at: signInResult.expires_at
-            });
-          } else {
-            console.log('❌ Admin JWT token failed - no result returned');
+            console.log('✅ Admin JWT token set successfully');
           }
         } catch (error) {
           console.warn('⚠️ Failed to set admin JWT token:', error);
