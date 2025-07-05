@@ -11,8 +11,8 @@ export const apiEndpoints = {
     return endpoint;
   },
   
-  // Create diamond - POST /api/v1/diamonds
-  addDiamond: () => `/api/v1/diamonds`,
+  // Create diamond - POST /api/v1/diamonds?user_id={user_id}
+  addDiamond: (userId: number) => `/api/v1/diamonds?user_id=${userId}`,
   
   // Update diamond - PUT /api/v1/diamonds/{diamond_id}
   updateDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,

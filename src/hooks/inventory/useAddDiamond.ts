@@ -58,7 +58,7 @@ export function useAddDiamond(onSuccess?: () => void) {
       
       // Try FastAPI first
       try {
-        const endpoint = apiEndpoints.addDiamond();
+        const endpoint = apiEndpoints.addDiamond(user.id);
         console.log('➕ ADD: Using endpoint:', endpoint);
         
         const response = await api.post(endpoint, diamondDataPayload);
