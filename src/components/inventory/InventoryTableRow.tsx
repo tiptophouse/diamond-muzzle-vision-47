@@ -33,6 +33,9 @@ export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle }: 
           </div>
         )}
       </TableCell>
+      <TableCell className="font-mono text-xs font-medium text-slate-600 dark:text-slate-400">
+        {diamond.diamondId || 'N/A'}
+      </TableCell>
       <TableCell className="font-mono text-xs font-medium text-slate-900 dark:text-slate-100">
         {diamond.stockNumber}
       </TableCell>

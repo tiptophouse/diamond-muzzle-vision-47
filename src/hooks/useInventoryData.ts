@@ -35,6 +35,7 @@ export function useInventoryData() {
         // Transform data to match Diamond interface
         const transformedDiamonds: Diamond[] = result.data.map(item => ({
           id: item.id || `${item.stock_number}-${Date.now()}`,
+          diamondId: item.id || item.diamond_id, // FastAPI diamond ID
           stockNumber: item.stock_number || item.stockNumber || '',
           shape: item.shape || 'Round',
           carat: Number(item.weight || item.carat) || 0,

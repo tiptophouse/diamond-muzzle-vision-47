@@ -56,7 +56,7 @@ export default function InventoryPage() {
     console.log('🗑️ Delete diamond clicked:', diamondId);
     if (window.confirm('Are you sure you want to delete this diamond?')) {
       const diamond = allDiamonds.find(d => d.id === diamondId);
-      console.log('🗑️ Deleting diamond:', diamond?.stockNumber);
+      console.log('🗑️ Deleting diamond:', diamond?.stockNumber, 'Diamond ID:', diamond?.diamondId);
       
       const success = await deleteDiamond(diamondId, diamond);
       if (success) {
@@ -96,7 +96,11 @@ export default function InventoryPage() {
   const handleEditSubmit = async (data: any) => {
     console.log('💾 Saving edited diamond:', data);
     if (editingDiamond) {
-      const success = await updateDiamond(editingDiamond.id, data);
+      // Use the FastAPI diamond ID if available for the update
+      const diamondIdToUpdate = editingDiamond.diamondId?.toString() || editingDiamond.id;
+      console.log('📝 Using diamond ID for update:', diamondIdToUpdate);
+      
+      const success = await updateDiamond(diamondIdToUpdate, data);
       if (success) {
         console.log('✅ Diamond updated successfully');
         setEditingDiamond(null);

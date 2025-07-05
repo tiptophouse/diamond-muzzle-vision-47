@@ -25,6 +25,10 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
     }
 
     console.log('🗑️ DELETE: Starting delete for diamond:', diamondId);
+    
+    // Use the actual FastAPI diamond ID if available
+    const fastApiDiamondId = diamondData?.diamondId || diamondId;
+    console.log('🗑️ DELETE: Using FastAPI diamond ID:', fastApiDiamondId);
 
     // Optimistically remove from UI
     if (removeDiamondFromState) {
@@ -34,11 +38,11 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
     try {
       // Try FastAPI first - DELETE /api/v1/delete_stone/{id}?diamond_id={diamond_id}
       try {
-        const endpoint = apiEndpoints.deleteDiamond(diamondId);
+        const endpoint = apiEndpoints.deleteDiamond(fastApiDiamondId.toString());
         console.log('🗑️ DELETE: Using endpoint:', endpoint);
         
         // FastAPI delete_stone endpoint expects diamond_id as query parameter
-        const response = await api.delete(`${endpoint}?diamond_id=${diamondId}`);
+        const response = await api.delete(`${endpoint}?diamond_id=${fastApiDiamondId}`);
         
         if (response.error) {
           throw new Error(response.error);

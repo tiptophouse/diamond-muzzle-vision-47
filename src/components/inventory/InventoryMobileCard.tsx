@@ -40,6 +40,10 @@ export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobi
             <h3 className="font-mono text-sm font-semibold text-slate-900 dark:text-slate-100 truncate mb-1">
               {diamond.stockNumber}
             </h3>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">ID:</span>
+              <span className="text-xs font-mono text-slate-600 dark:text-slate-400">{diamond.diamondId || 'N/A'}</span>
+            </div>
             <p className="text-lg font-bold text-slate-800 dark:text-slate-200 capitalize">{diamond.shape}</p>
           </div>
           <div className="text-right flex-shrink-0 ml-4">

@@ -11,6 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface Diamond {
   id: string;
+  diamondId?: string | number; // FastAPI diamond ID
   stockNumber: string;
   shape: string;
   carat: number;
