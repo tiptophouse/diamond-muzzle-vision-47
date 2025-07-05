@@ -1,42 +1,23 @@
 
 export const apiEndpoints = {
-  getAllStones: (userId?: number) => {
-    // Use the correct endpoint with optional user_id parameter
-    const endpoint = `/api/v1/get_all_stones${userId ? `?user_id=${userId}` : ''}`;
-    console.log('🔧 API: Building getAllStones endpoint:', endpoint, 'for user:', userId);
-    return endpoint;
-  },
-  verifyTelegram: () => `/api/v1/verify-telegram`,
-  uploadInventory: () => `/api/v1/upload-inventory`,
-  addDiamond: () => `/api/v1/diamonds`,
-  deleteDiamond: (diamondId: string) => `/api/v1/delete_stone/${diamondId}`,
-  updateDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,
-  soldDiamond: () => `/api/v1/sold`,
-  createReport: () => `/api/v1/create-report`,
-  getReport: (reportId: string) => `/api/v1/get-report?diamond_id=${reportId}`,
-  getDashboardStats: (userId: number) => `/api/v1/users/${userId}/dashboard/stats`,
-  getInventoryByShape: (userId: number) => `/api/v1/users/${userId}/inventory/by-shape`,
-  getRecentSales: (userId: number) => `/api/v1/users/${userId}/sales/recent`,
-  getInventory: (userId: number, page: number = 1, limit: number = 10) => `/api/v1/users/${userId}/inventory?page=${page}&limit=${limit}`,
+  // Authentication
+  signIn: () => '/api/v1/signin',
+  verifyTelegram: () => '/api/v1/verify-telegram',
   
-  // Health check endpoint
-  alive: () => `/api/v1/alive`,
+  // Diamonds/Inventory
+  getAllStones: (userId: number) => `/api/v1/get_all_stones?user_id=${userId}`,
+  addStone: () => '/api/v1/add_stone',
+  updateStone: () => '/api/v1/update_stone',
+  deleteStone: () => '/api/v1/delete_stone',
+  uploadCsv: () => '/api/v1/upload_csv',
   
-  // Payment management endpoints
-  paymentRequest: () => `/api/v1/payment_request`,
-  removeUserPayments: (userId: number) => `/api/v1/users/${userId}/payments/remove`,
-  removeAllPayments: () => `/api/v1/payments/remove-all`,
-  getUserPayments: (userId: number) => `/api/v1/users/${userId}/payments`,
-  getPaymentStats: () => `/api/v1/payments/stats`,
-
-  // New client and admin endpoints
-  getAllClients: () => `/api/v1/clients`,
-  getClientById: (clientId: number) => `/api/v1/clients/${clientId}`,
-  blockUser: () => `/api/v1/admin/block-user`,
-  unblockUser: (userId: number) => `/api/v1/admin/unblock-user/${userId}`,
-  sendMessageToUser: () => `/api/v1/admin/send-message`,
+  // Store
+  getStoreStones: () => '/api/v1/store/stones',
   
-  // Inventory management
-  deleteAllInventory: (userId: number) => `/api/v1/users/${userId}/inventory/delete-all`,
-  updateAllInventory: (userId: number) => `/api/v1/users/${userId}/inventory/update-all`,
+  // Analytics & Insights
+  getInsights: (userId: number) => `/api/v1/insights?user_id=${userId}`,
+  getDashboard: (userId: number) => `/api/v1/dashboard?user_id=${userId}`,
+  
+  // Reports
+  getReports: (userId: number) => `/api/v1/reports?user_id=${userId}`,
 };
