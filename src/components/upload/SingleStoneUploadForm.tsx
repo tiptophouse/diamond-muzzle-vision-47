@@ -68,6 +68,8 @@ export function SingleStoneUploadForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('🔍 UPLOAD: Form submitted', { user: user?.id, formData });
+    
     if (!user?.id) {
       toast({
         title: "Authentication Error",
@@ -78,6 +80,7 @@ export function SingleStoneUploadForm() {
     }
 
     // Validate required fields
+    console.log('🔍 UPLOAD: Validating form data', formData);
     if (!formData.stockNumber || !formData.shape || !formData.carat || !formData.color || !formData.clarity || !formData.price) {
       toast({
         title: "Validation Error",
@@ -101,7 +104,9 @@ export function SingleStoneUploadForm() {
       lab: formData.lab
     };
 
+    console.log('🔍 UPLOAD: Calling addDiamond with:', diamondData);
     const success = await addDiamond(diamondData);
+    console.log('🔍 UPLOAD: addDiamond result:', success);
     
     if (success) {
       // Reset form
