@@ -82,26 +82,14 @@ export function useSecureTelegramAuth(): AuthState {
       
       updateState({ isTelegramEnvironment: inTelegram });
 
-      // Always allow admin access regardless of environment
-      if (process.env.NODE_ENV === 'development' || !inTelegram) {
-        console.log('🔧 Providing admin access for development/non-telegram environment');
-        const adminUser = createAdminUser();
-        
-        logSecurityEvent('Admin Access Granted', {
-          environment: process.env.NODE_ENV,
-          telegramEnv: inTelegram,
-          userId: adminUser.id
-        });
-        
-        // Set the current user ID for API client
-        const { setCurrentUserId } = await import('@/lib/api/config');
-        setCurrentUserId(adminUser.id);
-        
+      // Only allow authentication through Telegram
+      if (!inTelegram) {
+        console.log('❌ Not in Telegram environment - authentication required');
         updateState({
-          user: adminUser,
-          isAuthenticated: true,
+          user: null,
+          isAuthenticated: false,
           isLoading: false,
-          error: null
+          error: 'כניסה אפשרית רק דרך טלגרם'
         });
         initializedRef.current = true;
         return;
@@ -125,22 +113,12 @@ export function useSecureTelegramAuth(): AuthState {
       }
 
       if (!tg) {
-        console.log('🆘 Telegram WebApp not available, using admin fallback');
-        const adminUser = createAdminUser();
-        
-        logSecurityEvent('Fallback Admin Access', {
-          reason: 'WebApp not available'
-        });
-        
-        // Set the current user ID for API client
-        const { setCurrentUserId } = await import('@/lib/api/config');
-        setCurrentUserId(adminUser.id);
-        
+        console.log('❌ Telegram WebApp not available');
         updateState({
-          user: adminUser,
-          isAuthenticated: true,
+          user: null,
+          isAuthenticated: false,
           isLoading: false,
-          error: 'Telegram WebApp not available - using admin access'
+          error: 'Telegram WebApp לא זמין'
         });
         initializedRef.current = true;
         return;
@@ -205,38 +183,17 @@ export function useSecureTelegramAuth(): AuthState {
         }
       }
 
-      // For development/admin fallback, also initialize JWT token manually
-      if (!authenticatedUser && (process.env.NODE_ENV === 'development' || !inTelegram)) {
-        console.log('🔧 Setting up admin JWT token for development');
-        try {
-          // Mock initData for admin user in development - matching your backend format
-          const mockInitData = `auth_date=${Math.floor(Date.now() / 1000)}&query_id=dev_query_${Date.now()}&user={"id":${ADMIN_TELEGRAM_ID},"first_name":"Admin","last_name":"User","username":"admin","language_code":"en"}&hash=mock_hash_${Date.now()}`;
-          console.log('🔧 Mock initData for development:', mockInitData);
-          
-          const signInResult = await telegramAuthService.signIn(mockInitData);
-          
-          if (signInResult) {
-            console.log('✅ Admin JWT token set successfully:', {
-              token: !!signInResult.token,
-              user_id: signInResult.user_id,
-              expires_at: signInResult.expires_at
-            });
-          } else {
-            console.log('❌ Admin JWT token failed - no result returned');
-          }
-        } catch (error) {
-          console.warn('⚠️ Failed to set admin JWT token:', error);
-        }
-      }
-
-      // Fallback to admin if no authenticated user
+      // No authentication without valid Telegram initData
       if (!authenticatedUser) {
-        console.log('🆘 No JWT authentication, using admin fallback');
-        authenticatedUser = createAdminUser();
-        
-        logSecurityEvent('Final Admin Fallback', {
-          reason: 'JWT authentication failed'
+        console.log('❌ No valid JWT authentication from Telegram');
+        updateState({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: 'נכשלה הזדהות דרך טלגרם'
         });
+        initializedRef.current = true;
+        return;
       }
 
       console.log('✅ Final authenticated user:', authenticatedUser.first_name, 'ID:', authenticatedUser.id);
@@ -260,18 +217,12 @@ export function useSecureTelegramAuth(): AuthState {
         attempt: authAttempts.current
       });
       
-      // Always fall back to admin user on any error
-      const adminUser = createAdminUser();
-      
-      // Set the current user ID for API client
-      const { setCurrentUserId } = await import('@/lib/api/config');
-      setCurrentUserId(adminUser.id);
-      
+      // Show authentication error
       updateState({
-        user: adminUser,
-        isAuthenticated: true,
+        user: null,
+        isAuthenticated: false,
         isLoading: false,
-        error: 'Authentication error - using admin access'
+        error: 'שגיאה בהזדהות - נסה שוב'
       });
     } finally {
       initializedRef.current = true;
@@ -291,17 +242,11 @@ export function useSecureTelegramAuth(): AuthState {
           maxAttempts: maxAuthAttempts
         });
         
-        const adminUser = createAdminUser();
-        
-        // Set the current user ID for API client  
-        const { setCurrentUserId } = await import('@/lib/api/config');
-        setCurrentUserId(adminUser.id);
-        
         updateState({
-          user: adminUser,
-          isAuthenticated: true,
+          user: null,
+          isAuthenticated: false,
           isLoading: false,
-          error: 'Authentication timeout - using admin access'
+          error: 'תם הזמן להזדהות - נסה שוב'
         });
         initializedRef.current = true;
       }
