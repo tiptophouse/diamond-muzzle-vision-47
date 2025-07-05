@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Edit, Trash, Upload, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,8 @@ import { api, apiEndpoints } from "@/lib/api";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { getAdminTelegramId } from "@/lib/api/secureConfig";
 import { useEffect } from "react";
+import { useTokenSystem } from "@/hooks/useTokenSystem";
+import { TokenDisplay } from "./TokenDisplay";
 
 interface AdminStoreControlsProps {
   diamond: Diamond;
@@ -22,7 +23,6 @@ interface AdminStoreControlsProps {
 
 export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreControlsProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [adminTelegramId, setAdminTelegramId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
@@ -32,6 +32,7 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
   });
   const { toast } = useToast();
   const { user, isTelegramEnvironment } = useTelegramAuth();
+  const { tokens, canGenerate, consumeTokens, isLoading, setIsLoading } = useTokenSystem();
 
   useEffect(() => {
     const loadAdminId = async () => {
@@ -56,7 +57,11 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
   };
 
   const generateDescription = async () => {
-    setIsGenerating(true);
+    if (!consumeTokens()) {
+      return;
+    }
+
+    setIsLoading(true);
     try {
       const response = await supabase.functions.invoke('openai-chat', {
         body: {
@@ -77,7 +82,7 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
         setFormData(prev => ({ ...prev, description: response.data.generatedText }));
         toast({
           title: "Description Generated",
-          description: "AI has created a beautiful description for your diamond",
+          description: `AI created a description using ${5} tokens. You have ${tokens - 5} tokens remaining.`,
         });
       }
     } catch (error) {
@@ -88,8 +93,15 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
         variant: "destructive",
       });
     } finally {
-      setIsGenerating(false);
+      setIsLoading(false);
     }
+  };
+
+  const handlePurchaseTokens = () => {
+    toast({
+      title: "Purchase Tokens",
+      description: "Token purchase feature coming soon! Contact support for more tokens.",
+    });
   };
 
   const handleSave = async () => {
@@ -215,15 +227,21 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label htmlFor="description">Description</Label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={generateDescription}
-                  disabled={isGenerating}
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  {isGenerating ? 'Generating...' : 'AI Generate'}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <TokenDisplay 
+                    showPurchaseButton={!canGenerate}
+                    onPurchaseClick={handlePurchaseTokens}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={generateDescription}
+                    disabled={isLoading || !canGenerate}
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    {isLoading ? 'Generating...' : 'AI Generate'}
+                  </Button>
+                </div>
               </div>
               <Textarea
                 id="description"
