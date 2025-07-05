@@ -10,6 +10,7 @@ import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useInventoryCrud } from "@/hooks/useInventoryCrud";
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
 import { Camera } from "lucide-react";
+import { UploadSuccessCard } from "./UploadSuccessCard";
 
 const shapes = ["Round", "Princess", "Emerald", "Asscher", "Oval", "Radiant", "Pear", "Heart", "Marquise", "Cushion"];
 const colors = ["D", "E", "F", "G", "H", "I", "J", "K", "L", "M"];
@@ -19,9 +20,11 @@ export function SingleStoneUploadForm() {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
   const [isScanning, setIsScanning] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   const { addDiamond, isLoading } = useInventoryCrud({
     onSuccess: () => {
-      console.log('✅ Diamond added successfully, form will reset');
+      console.log('✅ Diamond added successfully, showing success card');
+      setUploadSuccess(true);
     }
   });
   
@@ -109,20 +112,43 @@ export function SingleStoneUploadForm() {
     console.log('🔍 UPLOAD: addDiamond result:', success);
     
     if (success) {
-      // Reset form
-      setFormData({
-        stockNumber: '',
-        shape: '',
-        carat: '',
-        color: '',
-        clarity: '',
-        cut: 'Excellent',
-        price: '',
-        certificateNumber: '',
-        lab: 'GIA'
-      });
+      console.log('✅ Stone uploaded and added to inventory');
+      // Success is now handled by the onSuccess callback which shows the success card
     }
   };
+
+  // Show success card after successful upload
+  if (uploadSuccess) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center px-4">
+        <UploadSuccessCard
+          title="Stone Uploaded Successfully"
+          description="Your diamond has been added to your inventory. Ready to share or continue adding more stones."
+          onContinue={() => {
+            setUploadSuccess(false);
+            // Reset form
+            setFormData({
+              stockNumber: '',
+              shape: '',
+              carat: '',
+              color: '',
+              clarity: '',
+              cut: 'Excellent',
+              price: '',
+              certificateNumber: '',
+              lab: 'GIA'
+            });
+          }}
+          onShare={() => {
+            toast({
+              title: "✨ Ready to Share",
+              description: "Your diamond is now visible in your store",
+            });
+          }}
+        />
+      </div>
+    );
+  }
 
   if (!user) {
     return (
