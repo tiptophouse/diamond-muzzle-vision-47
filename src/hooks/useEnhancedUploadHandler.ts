@@ -74,7 +74,12 @@ export function useEnhancedUploadHandler() {
         };
         
         setResult(successResult);
-        triggerInventoryChange();
+        
+        // Force refresh inventory data with delay to ensure backend processing
+        setTimeout(() => {
+          triggerInventoryChange();
+          window.location.reload(); // Force full refresh to see new diamonds
+        }, 2000);
         
         // Show detailed success message
         toast({
