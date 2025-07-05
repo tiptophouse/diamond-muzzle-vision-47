@@ -1,9 +1,9 @@
 
 export const apiEndpoints = {
-  getAllStones: (userId?: number) => {
-    // Use the correct endpoint with optional user_id parameter
-    const endpoint = `/api/v1/get_all_stones${userId ? `?user_id=${userId}` : ''}`;
-    console.log('🔧 API: Building getAllStones endpoint:', endpoint, 'for user:', userId);
+  getAllStones: (userId: number) => {
+    // Try the correct endpoint path for your backend
+    const endpoint = `/api/v1/get_all_stones?user_id=${userId}`;
+    console.log('🔧 API: Building getAllStones endpoint:', endpoint, 'for user:', userId, 'type:', typeof userId);
     return endpoint;
   },
   verifyTelegram: () => `/api/v1/verify-telegram`,
@@ -19,11 +19,7 @@ export const apiEndpoints = {
   getRecentSales: (userId: number) => `/api/v1/users/${userId}/sales/recent`,
   getInventory: (userId: number, page: number = 1, limit: number = 10) => `/api/v1/users/${userId}/inventory?page=${page}&limit=${limit}`,
   
-  // Health check endpoint
-  alive: () => `/api/v1/alive`,
-  
   // Payment management endpoints
-  paymentRequest: () => `/api/v1/payment_request`,
   removeUserPayments: (userId: number) => `/api/v1/users/${userId}/payments/remove`,
   removeAllPayments: () => `/api/v1/payments/remove-all`,
   getUserPayments: (userId: number) => `/api/v1/users/${userId}/payments`,

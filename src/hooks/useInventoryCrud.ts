@@ -7,33 +7,32 @@ import { Diamond } from '@/components/inventory/InventoryTable';
 import { useAddDiamond } from './inventory/useAddDiamond';
 import { useUpdateDiamond } from './inventory/useUpdateDiamond';
 import { useDeleteDiamond } from './inventory/useDeleteDiamond';
+import { useInventoryDataSync } from './inventory/useInventoryDataSync';
 
 interface UseInventoryCrudProps {
   onSuccess?: () => void;
-  onRefreshInventory?: () => void;
+  removeDiamondFromState?: (diamondId: string) => void;
+  restoreDiamondToState?: (diamond: Diamond) => void;
 }
 
-export function useInventoryCrud({ onSuccess, onRefreshInventory }: UseInventoryCrudProps = {}) {
+export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDiamondToState }: UseInventoryCrudProps = {}) {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const { triggerInventoryChange } = useInventoryDataSync();
 
   const successHandler = () => {
-    console.log('🔄 CRUD: Operation successful');
+    console.log('🔄 CRUD: Operation successful, triggering inventory change...');
+    triggerInventoryChange();
     if (onSuccess) onSuccess();
   };
 
-  const { addDiamond: addDiamondFn } = useAddDiamond({ 
-    onSuccess: successHandler, 
-    onRefreshInventory 
-  });
-  const { updateDiamond: updateDiamondFn } = useUpdateDiamond({ 
-    onSuccess: successHandler, 
-    onRefreshInventory 
-  });
+  const { addDiamond: addDiamondFn } = useAddDiamond(successHandler);
+  const { updateDiamond: updateDiamondFn } = useUpdateDiamond(successHandler);
   const { deleteDiamond: deleteDiamondFn } = useDeleteDiamond({ 
     onSuccess: successHandler, 
-    onRefreshInventory 
+    removeDiamondFromState, 
+    restoreDiamondToState 
   });
 
   const addDiamond = async (data: DiamondFormData) => {
@@ -55,23 +54,47 @@ export function useInventoryCrud({ onSuccess, onRefreshInventory }: UseInventory
     setIsLoading(true);
     try {
       const result = await updateDiamondFn(diamondId, data);
+      if (result) {
+        console.log('✅ CRUD: Diamond updated successfully');
+        toast({
+          title: "Success",
+          description: "Diamond updated successfully",
+        });
+      }
       return result;
     } catch (error) {
       console.error('❌ CRUD: Update diamond failed:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update diamond",
+        variant: "destructive",
+      });
       return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const deleteDiamond = async (diamondId: string) => {
+  const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
     console.log('🗑️ CRUD: Starting delete diamond operation for:', diamondId);
     setIsLoading(true);
     try {
-      const result = await deleteDiamondFn(diamondId);
+      const result = await deleteDiamondFn(diamondId, diamondData);
+      if (result) {
+        console.log('✅ CRUD: Diamond deleted successfully');
+        toast({
+          title: "Success",
+          description: "Diamond deleted successfully",
+        });
+      }
       return result;
     } catch (error) {
       console.error('❌ CRUD: Delete diamond failed:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete diamond",
+        variant: "destructive",
+      });
       return false;
     } finally {
       setIsLoading(false);

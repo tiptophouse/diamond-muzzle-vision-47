@@ -21,7 +21,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   };
   
   try {
-    // Call GET /api/v1/get_all_stones?user_id={user_id}
+    // First, try to get data from FastAPI backend
     console.log('🔍 INVENTORY SERVICE: Attempting FastAPI connection...');
     const endpoint = apiEndpoints.getAllStones(userId);
     
@@ -47,42 +47,19 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       if (dataArray && dataArray.length > 0) {
         console.log('✅ INVENTORY SERVICE: FastAPI returned', dataArray.length, 'diamonds');
         
-        // Filter out blacklisted diamonds
-        const blacklistJson = localStorage.getItem('deleted_diamonds_blacklist');
-        const blacklist = blacklistJson ? new Set(JSON.parse(blacklistJson)) : new Set();
-        
-        const filteredData = dataArray.filter(item => {
-          const diamondId = item.id || item.diamond_id || item.stock_number;
-          const isBlacklisted = blacklist.has(String(diamondId));
-          if (isBlacklisted) {
-            console.log('🚫 INVENTORY SERVICE: Filtering out blacklisted diamond:', diamondId);
-          }
-          return !isBlacklisted;
-        });
-        
-        console.log('🔍 INVENTORY SERVICE: After blacklist filter:', filteredData.length, 'diamonds');
-        
-        // Sort diamonds by updated_at desc (most recently edited first)
-        const sortedData = filteredData.sort((a, b) => {
-          const dateA = new Date(a.updated_at || a.created_at || 0);
-          const dateB = new Date(b.updated_at || b.created_at || 0);
-          return dateB.getTime() - dateA.getTime();
-        });
-        
         return {
-          data: sortedData,
+          data: dataArray,
           debugInfo: {
             ...debugInfo,
-            step: 'SUCCESS: FastAPI data fetched and filtered',
-            totalDiamonds: sortedData.length,
-            blacklistedCount: dataArray.length - filteredData.length,
+            step: 'SUCCESS: FastAPI data fetched',
+            totalDiamonds: dataArray.length,
             dataSource: 'fastapi'
           }
         };
       }
     }
     
-    // If FastAPI fails, try localStorage as fallback
+    // If FastAPI fails, try localStorage
     console.log('🔄 INVENTORY SERVICE: FastAPI failed, checking localStorage...');
     const localData = localStorage.getItem('diamond_inventory');
     
@@ -90,28 +67,20 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       try {
         const parsedData = JSON.parse(localData);
         if (Array.isArray(parsedData) && parsedData.length > 0) {
-          // Filter for current user and apply blacklist
+          // Filter for current user
           const userDiamonds = parsedData.filter(item => 
             !item.user_id || item.user_id === userId
           );
           
-          const blacklistJson = localStorage.getItem('deleted_diamonds_blacklist');
-          const blacklist = blacklistJson ? new Set(JSON.parse(blacklistJson)) : new Set();
-          
-          const filteredDiamonds = userDiamonds.filter(item => {
-            const diamondId = item.id || item.diamond_id || item.stock_number;
-            return !blacklist.has(String(diamondId));
-          });
-          
-          if (filteredDiamonds.length > 0) {
-            console.log('✅ INVENTORY SERVICE: Found', filteredDiamonds.length, 'diamonds in localStorage (after blacklist)');
+          if (userDiamonds.length > 0) {
+            console.log('✅ INVENTORY SERVICE: Found', userDiamonds.length, 'diamonds in localStorage');
             
             return {
-              data: filteredDiamonds,
+              data: userDiamonds,
               debugInfo: {
                 ...debugInfo,
-                step: 'SUCCESS: localStorage data found and filtered',
-                totalDiamonds: filteredDiamonds.length,
+                step: 'SUCCESS: localStorage data found',
+                totalDiamonds: userDiamonds.length,
                 dataSource: 'localStorage'
               }
             };
@@ -149,21 +118,12 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
             !item.user_id || item.user_id === userId
           );
           
-          // Apply blacklist filter
-          const blacklistJson = localStorage.getItem('deleted_diamonds_blacklist');
-          const blacklist = blacklistJson ? new Set(JSON.parse(blacklistJson)) : new Set();
-          
-          const filteredDiamonds = userDiamonds.filter(item => {
-            const diamondId = item.id || item.diamond_id || item.stock_number;
-            return !blacklist.has(String(diamondId));
-          });
-          
           return {
-            data: filteredDiamonds,
+            data: userDiamonds,
             debugInfo: {
               ...debugInfo,
-              step: 'EMERGENCY: localStorage fallback after error with blacklist',
-              totalDiamonds: filteredDiamonds.length,
+              step: 'EMERGENCY: localStorage fallback after error',
+              totalDiamonds: userDiamonds.length,
               dataSource: 'localStorage_emergency'
             }
           };
