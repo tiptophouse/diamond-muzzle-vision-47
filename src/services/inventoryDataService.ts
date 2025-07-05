@@ -47,8 +47,33 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       if (dataArray && dataArray.length > 0) {
         console.log('✅ INVENTORY SERVICE: FastAPI returned', dataArray.length, 'diamonds');
         
+        // Transform and map API data to our Diamond interface
+        const transformedData = dataArray.map(item => ({
+          // Map API fields to our Diamond interface
+          id: item.id?.toString() || `${item.stock_number || item.stock || Date.now()}`,
+          diamond_id: item.id || item.diamond_id, // Store the API diamond ID
+          stockNumber: item.stock_number || item.stock || item.stockNumber || '',
+          stock_number: item.stock_number || item.stock, // Keep original API field
+          shape: item.shape || 'Round',
+          carat: Number(item.weight || item.carat) || 0,
+          weight: Number(item.weight || item.carat) || 0, // Keep original API field
+          color: item.color || 'D',
+          clarity: item.clarity || 'FL',
+          cut: item.cut || 'Excellent',
+          price: Number(item.price_per_carat ? item.price_per_carat * (item.weight || item.carat) : item.price) || 0,
+          status: item.status || 'Available',
+          imageUrl: item.picture || item.imageUrl || item.image_url || undefined,
+          picture: item.picture, // Keep original API field
+          store_visible: item.store_visible !== false,
+          certificateNumber: item.certificate_number?.toString() || item.certificateNumber || undefined,
+          lab: item.lab || undefined,
+          certificateUrl: item.certificate_url || item.certificateUrl || undefined,
+          // Include all other API fields for compatibility
+          ...item
+        }));
+        
         // Sort diamonds by updated_at desc (most recently edited first)
-        const sortedData = dataArray.sort((a, b) => {
+        const sortedData = transformedData.sort((a, b) => {
           const dateA = new Date(a.updated_at || a.created_at || 0);
           const dateB = new Date(b.updated_at || b.created_at || 0);
           return dateB.getTime() - dateA.getTime();
@@ -58,7 +83,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
           data: sortedData,
           debugInfo: {
             ...debugInfo,
-            step: 'SUCCESS: FastAPI data fetched',
+            step: 'SUCCESS: FastAPI data fetched and transformed',
             totalDiamonds: sortedData.length,
             dataSource: 'fastapi'
           }
