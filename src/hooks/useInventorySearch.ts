@@ -31,21 +31,21 @@ export function useInventorySearch(allDiamonds: Diamond[], currentPage: number =
     }
 
     // Apply filters
-    if (filters.shape && filters.shape !== "all") {
+    if (filters.shape && filters.shape !== "" && filters.shape !== "all") {
       filtered = filtered.filter(diamond => 
-        diamond.shape.toLowerCase() === filters.shape?.toLowerCase()
+        diamond.shape === filters.shape
       );
     }
 
-    if (filters.color && filters.color !== "all") {
+    if (filters.color && filters.color !== "" && filters.color !== "all") {
       filtered = filtered.filter(diamond => 
-        diamond.color.toLowerCase() === filters.color?.toLowerCase()
+        diamond.color === filters.color
       );
     }
 
-    if (filters.clarity && filters.clarity !== "all") {
+    if (filters.clarity && filters.clarity !== "" && filters.clarity !== "all") {
       filtered = filtered.filter(diamond => 
-        diamond.clarity.toLowerCase() === filters.clarity?.toLowerCase()
+        diamond.clarity === filters.clarity
       );
     }
 

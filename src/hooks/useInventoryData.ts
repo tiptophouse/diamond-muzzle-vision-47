@@ -13,6 +13,28 @@ export function useInventoryData() {
   const [error, setError] = useState<string | null>(null);
   const { subscribeToInventoryChanges } = useInventoryDataSync();
 
+  // Map API shape formats to display formats
+  const normalizeShape = (apiShape: string): string => {
+    if (!apiShape) return 'Round';
+    
+    const shapeMap: Record<string, string> = {
+      'round brilliant': 'Round',
+      'round': 'Round',
+      'princess': 'Princess',
+      'cushion': 'Cushion',
+      'emerald': 'Emerald',
+      'oval': 'Oval',
+      'pear': 'Pear',
+      'marquise': 'Marquise',
+      'radiant': 'Radiant',
+      'asscher': 'Asscher',
+      'heart': 'Heart'
+    };
+    
+    const normalized = apiShape.toLowerCase().trim();
+    return shapeMap[normalized] || apiShape.charAt(0).toUpperCase() + apiShape.slice(1).toLowerCase();
+  };
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
@@ -34,13 +56,13 @@ export function useInventoryData() {
         
         // Transform data to match Diamond interface
         const transformedDiamonds: Diamond[] = result.data.map(item => ({
-          id: item.id || `${item.stock_number}-${Date.now()}`,
+          id: item.id || `${item.stock || item.stock_number}-${Date.now()}`,
           diamondId: item.id || item.diamond_id, // FastAPI diamond ID
-          stockNumber: item.stock_number || item.stockNumber || '',
-          shape: item.shape || 'Round',
+          stockNumber: item.stock || item.stock_number || item.stockNumber || '',
+          shape: normalizeShape(item.shape),
           carat: Number(item.weight || item.carat) || 0,
-          color: item.color || 'D',
-          clarity: item.clarity || 'FL',
+          color: (item.color || 'D').toUpperCase(),
+          clarity: (item.clarity || 'FL').toUpperCase(),
           cut: item.cut || 'Excellent',
           price: Number(item.price_per_carat ? item.price_per_carat * (item.weight || item.carat) : item.price) || 0,
           status: item.status || 'Available',
