@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { Send, Users, MessageSquare, Bell } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NotificationSenderProps {
   onSendNotification?: (notification: any) => void;
@@ -38,22 +39,92 @@ export function NotificationSender({ onSendNotification }: NotificationSenderPro
 
     setIsLoading(true);
     try {
-      // In a real implementation, this would call the Telegram Bot API
+      // Create notification record first
       const notificationData = {
-        ...notification,
-        timestamp: new Date().toISOString(),
-        id: Math.random().toString(36).substr(2, 9)
+        telegram_id: notification.target === 'specific' ? parseInt(notification.specificUserId) : null,
+        message_type: notification.type,
+        message_content: `**${notification.title}**\n\n${notification.message}`,
+        status: 'pending',
+        metadata: { 
+          title: notification.title,
+          sent_by: 'admin',
+          target: notification.target
+        }
       };
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (notification.target === 'all' || notification.target === 'premium') {
+        // Get target users
+        let query = supabase.from('user_profiles').select('telegram_id');
+        if (notification.target === 'premium') {
+          query = query.eq('is_premium', true);
+        }
+        
+        const { data: users, error: usersError } = await query;
+        if (usersError) throw usersError;
+
+        // Insert notifications for all target users
+        const notificationInserts = users.map(user => ({
+          ...notificationData,
+          telegram_id: user.telegram_id
+        }));
+
+        const { data: insertedNotifications, error: insertError } = await supabase
+          .from('notifications')
+          .insert(notificationInserts)
+          .select('id, telegram_id');
+
+        if (insertError) throw insertError;
+
+        // Send notifications via Telegram
+        let successCount = 0;
+        for (const notif of insertedNotifications) {
+          try {
+            const { error: sendError } = await supabase.functions.invoke('send-telegram-notification', {
+              body: {
+                telegram_id: notif.telegram_id,
+                message: notificationData.message_content,
+                message_type: notification.type,
+                notification_id: notif.id
+              }
+            });
+            if (!sendError) successCount++;
+          } catch (error) {
+            console.error(`Failed to send to ${notif.telegram_id}:`, error);
+          }
+        }
+
+        toast({
+          title: "Notification Sent",
+          description: `Successfully sent to ${successCount}/${users.length} ${notification.target} users.`,
+        });
+      } else {
+        // Send to specific user
+        const { data: insertedNotification, error: insertError } = await supabase
+          .from('notifications')
+          .insert([notificationData])
+          .select('id')
+          .single();
+
+        if (insertError) throw insertError;
+
+        const { error: sendError } = await supabase.functions.invoke('send-telegram-notification', {
+          body: {
+            telegram_id: parseInt(notification.specificUserId),
+            message: notificationData.message_content,
+            message_type: notification.type,
+            notification_id: insertedNotification.id
+          }
+        });
+
+        if (sendError) throw sendError;
+
+        toast({
+          title: "Notification Sent",
+          description: `Successfully sent notification to user ${notification.specificUserId}.`,
+        });
+      }
       
       onSendNotification?.(notificationData);
-      
-      toast({
-        title: "Notification Sent",
-        description: `Successfully sent notification to ${notification.target === 'all' ? 'all users' : 'specific user'}.`,
-      });
 
       // Reset form
       setNotification({

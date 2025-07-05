@@ -52,19 +52,48 @@ export function NotificationCenter({ notifications, onRefresh }: NotificationCen
         telegram_id: user.telegram_id,
         message_type: selectedType,
         message_content: newMessage,
-        status: 'sent',
+        status: 'pending',
         metadata: { broadcast: true, sent_by: 'admin' }
       }));
 
-      const { error: insertError } = await supabase
+      const { data: insertedNotifications, error: insertError } = await supabase
         .from('notifications')
-        .insert(notificationInserts);
+        .insert(notificationInserts)
+        .select('id, telegram_id');
 
       if (insertError) throw insertError;
+
+      // Send notifications via Telegram Bot API
+      let successCount = 0;
+      const failedUsers: number[] = [];
+
+      for (const notification of insertedNotifications) {
+        try {
+          const { error: sendError } = await supabase.functions.invoke('send-telegram-notification', {
+            body: {
+              telegram_id: notification.telegram_id,
+              message: newMessage,
+              message_type: selectedType,
+              notification_id: notification.id
+            }
+          });
+
+          if (!sendError) {
+            successCount++;
+          } else {
+            failedUsers.push(notification.telegram_id);
+            console.error(`Failed to send to ${notification.telegram_id}:`, sendError);
+          }
+        } catch (error) {
+          failedUsers.push(notification.telegram_id);
+          console.error(`Error sending to ${notification.telegram_id}:`, error);
+        }
+      }
       
       toast({
-        title: "Broadcast Sent",
-        description: `Message sent to ${users.length} users as ${selectedType} notification`,
+        title: "Broadcast Completed",
+        description: `Successfully sent to ${successCount}/${users.length} users${failedUsers.length > 0 ? `. ${failedUsers.length} failed.` : ''}`,
+        variant: failedUsers.length > 0 ? "destructive" : "default"
       });
 
       setNewMessage('');
