@@ -145,17 +145,18 @@ export default function InventoryPage() {
         
         <div className="flex flex-col lg:flex-row gap-6">
           <aside className="lg:w-80">
-            <div className="space-y-6">
-              <InventorySearch
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                onSubmit={handleSearch}
-                allDiamonds={allDiamonds}
-              />
-              <InventoryFilters
-                onFilterChange={setFilters}
-              />
-            </div>
+        <div className="space-y-6">
+          <InventorySearch
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onSubmit={handleSearch}
+            allDiamonds={allDiamonds}
+            data-tutorial="inventory-search"
+          />
+          <InventoryFilters
+            onFilterChange={setFilters}
+          />
+        </div>
           </aside>
           
           <main className="flex-1">
@@ -166,6 +167,7 @@ export default function InventoryPage() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onStoreToggle={handleStoreToggle}
+                data-tutorial="inventory-table"
               />
               
               <InventoryPagination
