@@ -197,6 +197,22 @@ export function useSecureTelegramAuth(): AuthState {
         }
       }
 
+      // For development/admin fallback, also initialize JWT token manually
+      if (!authenticatedUser && (process.env.NODE_ENV === 'development' || !inTelegram)) {
+        console.log('🔧 Setting up admin JWT token for development');
+        try {
+          // Mock initData for admin user in development
+          const mockInitData = `user=%7B%22id%22%3A${ADMIN_TELEGRAM_ID}%2C%22first_name%22%3A%22Admin%22%2C%22last_name%22%3A%22User%22%2C%22username%22%3A%22admin%22%2C%22language_code%22%3A%22en%22%7D&auth_date=${Math.floor(Date.now() / 1000)}&hash=mock_hash`;
+          const signInResult = await telegramAuthService.signIn(mockInitData);
+          
+          if (signInResult) {
+            console.log('✅ Admin JWT token set successfully');
+          }
+        } catch (error) {
+          console.warn('⚠️ Failed to set admin JWT token:', error);
+        }
+      }
+
       // Fallback to admin if no authenticated user
       if (!authenticatedUser) {
         console.log('🆘 No JWT authentication, using admin fallback');
