@@ -12,6 +12,7 @@ import { DiamondForm } from "@/components/inventory/DiamondForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useState } from "react";
 import { Diamond } from "@/components/inventory/InventoryTable";
+import { UploadSuccessCard } from "@/components/upload/UploadSuccessCard";
 
 export default function InventoryPage() {
   const {
@@ -46,6 +47,7 @@ export default function InventoryPage() {
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingDiamond, setEditingDiamond] = useState<Diamond | null>(null);
+  const [showAddSuccess, setShowAddSuccess] = useState(false);
 
   const handleEdit = (diamond: Diamond) => {
     console.log('📝 Edit diamond clicked:', diamond.stockNumber);
@@ -114,6 +116,7 @@ export default function InventoryPage() {
     if (success) {
       console.log('✅ Diamond added successfully');
       setShowAddForm(false);
+      setShowAddSuccess(true);
     }
   };
 
@@ -201,6 +204,21 @@ export default function InventoryPage() {
               onSubmit={handleAddSubmit}
               onCancel={() => setShowAddForm(false)}
               isLoading={crudLoading}
+            />
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Success Modal */}
+        <Dialog open={showAddSuccess} onOpenChange={setShowAddSuccess}>
+          <DialogContent className="max-w-md border-none bg-transparent shadow-none">
+            <UploadSuccessCard
+              title="Diamond Added Successfully"
+              description="Your diamond has been added to your inventory and is ready to share."
+              onContinue={() => setShowAddSuccess(false)}
+              onShare={() => {
+                setShowAddSuccess(false);
+                // Could navigate to store or show share options
+              }}
             />
           </DialogContent>
         </Dialog>
