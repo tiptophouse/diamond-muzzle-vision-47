@@ -23,16 +23,7 @@ interface TelegramAuthContextType {
 const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(undefined);
 
 export function TelegramAuthProvider({ children }: { children: ReactNode }) {
-  console.log('🔧 TelegramAuthProvider: Initializing...');
-  
   const authState = useSecureTelegramAuth();
-  
-  console.log('🔧 TelegramAuthProvider: Auth state:', {
-    isAuthenticated: authState.isAuthenticated,
-    isLoading: authState.isLoading,
-    user: authState.user?.id,
-    error: authState.error
-  });
 
   return (
     <TelegramAuthContext.Provider value={authState}>
@@ -42,12 +33,8 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function useTelegramAuth() {
-  console.log('🔧 useTelegramAuth: Getting context...');
   const context = useContext(TelegramAuthContext);
-  console.log('🔧 useTelegramAuth: Context value:', context ? 'Found' : 'Undefined');
-  
   if (context === undefined) {
-    console.error('❌ useTelegramAuth: Context is undefined - Provider not found');
     throw new Error('useTelegramAuth must be used within a TelegramAuthProvider');
   }
   return context;
