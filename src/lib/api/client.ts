@@ -1,20 +1,22 @@
-
 import { toast } from "@/components/ui/use-toast";
 import { API_BASE_URL, getCurrentUserId } from './config';
-import { telegramAuthService } from './telegramAuth';
+import { getAuthHeaders } from './auth';
+import { getBackendAccessToken } from './secureConfig';
 
 interface ApiResponse<T> {
   data?: T;
   error?: string;
 }
 
-// Enhanced backend connectivity test with JWT auth
+// Enhanced backend connectivity test
 async function testBackendConnectivity(): Promise<boolean> {
   try {
-    console.log('🔍 API: Testing FastAPI backend connectivity with JWT auth to:', API_BASE_URL);
+    console.log('🔍 API: Testing FastAPI backend connectivity to:', API_BASE_URL);
+    console.log('🔍 API: Expected to connect to your real diamond database with 500+ records');
     
-    if (!telegramAuthService.isAuthenticated()) {
-      console.warn('❌ API: No JWT token available for connectivity test');
+    const backendToken = await getBackendAccessToken();
+    if (!backendToken) {
+      console.error('❌ API: No secure backend access token available for connectivity test');
       return false;
     }
     
@@ -25,20 +27,24 @@ async function testBackendConnectivity(): Promise<boolean> {
     const response = await fetch(testUrl, {
       method: 'GET',
       mode: 'cors',
-      headers: telegramAuthService.getAuthHeaders(),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${backendToken}`,
+      },
     });
     
     console.log('🔍 API: Root endpoint response status:', response.status);
     
     if (response.ok || response.status === 404) {
-      console.log('✅ API: FastAPI backend is reachable with JWT auth');
+      console.log('✅ API: FastAPI backend is reachable - your 500 diamonds should be accessible');
       return true;
     }
     
-    console.log('❌ API: FastAPI backend not reachable with JWT auth');
+    console.log('❌ API: FastAPI backend not reachable - this is why you see mock data (5 diamonds)');
+    console.log('❌ API: Status:', response.status, 'Check if your backend server is running');
     return false;
   } catch (error) {
-    console.error('❌ API: FastAPI backend connectivity test failed:', error);
+    console.error('❌ API: FastAPI backend connectivity test failed - this causes fallback to 5 mock diamonds:', error);
     return false;
   }
 }
@@ -50,27 +56,24 @@ export async function fetchApi<T>(
   const url = `${API_BASE_URL}${endpoint}`;
   
   try {
-    console.log('🚀 API: Making FastAPI request with JWT auth:', url);
-    console.log('🚀 API: Current user ID:', getCurrentUserId());
-    
-    // Check if we have a valid JWT token
-    if (!telegramAuthService.isAuthenticated()) {
-      const errorMsg = 'No valid JWT token available. Please sign in again.';
-      console.error('❌ API: JWT token missing or expired');
-      throw new Error(errorMsg);
-    }
+    console.log('🚀 API: Making FastAPI request to fetch real diamonds:', url);
+    console.log('🚀 API: Current user ID:', getCurrentUserId(), 'type:', typeof getCurrentUserId());
+    console.log('🚀 API: This should return your 500+ diamonds, not mock data');
     
     // Test connectivity first
     const isBackendReachable = await testBackendConnectivity();
     if (!isBackendReachable) {
       const errorMsg = 'FastAPI backend server is not reachable. Please check if the server is running at ' + API_BASE_URL;
-      console.error('❌ API: Backend unreachable');
+      console.error('❌ API: Backend unreachable - this forces fallback to 5 mock diamonds');
       throw new Error(errorMsg);
     }
     
+    const authHeaders = await getAuthHeaders();
     let headers: Record<string, string> = {
-      ...telegramAuthService.getAuthHeaders(),
+      "Content-Type": "application/json",
+      "Accept": "application/json",
       "Origin": window.location.origin,
+      ...authHeaders,
       ...options.headers as Record<string, string>,
     };
     
@@ -81,16 +84,18 @@ export async function fetchApi<T>(
       credentials: 'omit',
     };
     
-    console.log('🚀 API: Fetch options with JWT auth:', {
+    console.log('🚀 API: Fetch options for real data:', {
       url,
       method: fetchOptions.method || 'GET',
-      hasJWTAuth: headers.Authorization?.startsWith('Bearer '),
+      hasAuth: !!headers.Authorization,
       hasBody: !!fetchOptions.body,
+      headers: Object.keys(headers),
     });
     
     const response = await fetch(url, fetchOptions);
 
     console.log('📡 API: FastAPI Response status:', response.status);
+    console.log('📡 API: Response headers:', Object.fromEntries(response.headers.entries()));
 
     let data;
     const contentType = response.headers.get('content-type');
@@ -98,8 +103,24 @@ export async function fetchApi<T>(
     if (contentType && contentType.includes('application/json')) {
       data = await response.json();
       console.log('📡 API: JSON response received from FastAPI');
+      console.log('📡 API: Data type:', typeof data, 'is array:', Array.isArray(data));
       if (Array.isArray(data)) {
-        console.log('📡 API: Array length:', data.length);
+        console.log('📡 API: SUCCESS! Array length:', data.length, '(expecting ~500 diamonds)');
+        if (data.length < 100) {
+          console.warn('⚠️ API: Expected 500+ diamonds but got', data.length, '- check your backend database');
+        }
+        console.log('📡 API: Sample diamond:', data.slice(0, 1));
+      } else {
+        console.log('📡 API: Response data structure:', Object.keys(data || {}));
+        if (data && typeof data === 'object') {
+          const possibleArrays = Object.keys(data).filter(key => Array.isArray(data[key]));
+          if (possibleArrays.length > 0) {
+            console.log('📡 API: Found arrays in properties:', possibleArrays);
+            possibleArrays.forEach(key => {
+              console.log(`📡 API: ${key} has ${data[key].length} items`);
+            });
+          }
+        }
       }
     } else {
       const text = await response.text();
@@ -116,41 +137,40 @@ export async function fetchApi<T>(
         errorMessage = data || errorMessage;
       }
       
-      console.error('❌ API: FastAPI request failed:', errorMessage);
-      
-      // Handle authentication errors
-      if (response.status === 401) {
-        console.error('❌ JWT token expired or invalid, clearing auth');
-        telegramAuthService.clearAuth();
-        throw new Error('Authentication expired. Please refresh the app.');
-      }
-      
+      console.error('❌ API: FastAPI request failed - this causes fallback to mock data:', errorMessage);
       throw new Error(errorMessage);
     }
 
-    console.log('✅ API: FastAPI request successful with JWT auth');
+    console.log('✅ API: FastAPI request successful - should have your real diamond data now');
     return { data: data as T };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error('❌ API: FastAPI request error:', errorMessage);
+    console.error('❌ API: FastAPI request error - this is why you see 5 mock diamonds instead of 500 real ones:', errorMessage);
+    console.error('❌ API: Error details:', error);
     
     // Show specific toast messages for different error types
-    if (errorMessage.includes('JWT token') || errorMessage.includes('Authentication expired')) {
-      toast({
-        title: "🔐 Authentication Required",
-        description: "Your session has expired. Please refresh the app to sign in again.",
-        variant: "destructive",
-      });
-    } else if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+    if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
       toast({
         title: "🌐 Connection Error",
-        description: `Cannot reach FastAPI server at ${API_BASE_URL}. Please check your connection.`,
+        description: `Cannot reach FastAPI server at ${API_BASE_URL}. Your 500 diamonds are not accessible. Please check if the server is running.`,
+        variant: "destructive",
+      });
+    } else if (errorMessage.includes('not reachable')) {
+      toast({
+        title: "🔌 FastAPI Server Offline",
+        description: `The FastAPI backend at ${API_BASE_URL} is not responding. This is why you see 5 mock diamonds instead of your 500 real diamonds.`,
+        variant: "destructive",
+      });
+    } else if (errorMessage.includes('CORS')) {
+      toast({
+        title: "🚫 CORS Issue",
+        description: "FastAPI server CORS configuration issue. Please check server settings to access your real diamond data.",
         variant: "destructive",
       });
     } else {
       toast({
         title: "❌ FastAPI Error",
-        description: `Request failed: ${errorMessage}`,
+        description: `FastAPI request failed: ${errorMessage}. Falling back to mock data (5 diamonds).`,
         variant: "destructive",
       });
     }
@@ -184,7 +204,7 @@ export const api = {
     fetchApi<T>(endpoint, { method: "DELETE" }),
     
   uploadCsv: async <T>(endpoint: string, csvData: any[], userId: number): Promise<ApiResponse<T>> => {
-    console.log('📤 API: Uploading CSV data to FastAPI with JWT auth:', { endpoint, dataLength: csvData.length, userId });
+    console.log('📤 API: Uploading CSV data to FastAPI:', { endpoint, dataLength: csvData.length, userId });
     
     return fetchApi<T>(endpoint, {
       method: "POST",

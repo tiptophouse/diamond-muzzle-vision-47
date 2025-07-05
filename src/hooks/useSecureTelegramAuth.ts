@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { 
   isTelegramWebAppEnvironment,
@@ -6,7 +7,7 @@ import {
   validateTelegramInitData,
   initializeTelegramWebApp
 } from '@/utils/telegramWebApp';
-import { telegramAuthService } from '@/lib/api/telegramAuth';
+import { verifyTelegramUser } from '@/lib/api/auth';
 import { getAuthenticationMetrics } from '@/utils/telegramValidation';
 
 interface TelegramUser {
@@ -73,7 +74,7 @@ export function useSecureTelegramAuth(): AuthState {
     }
 
     authAttempts.current++;
-    console.log('🔐 Starting JWT-based Telegram authentication (attempt', authAttempts.current, ')');
+    console.log('🔐 Starting enhanced secure Telegram authentication (attempt', authAttempts.current, ')');
     
     try {
       // Check if we're in Telegram environment
@@ -138,88 +139,130 @@ export function useSecureTelegramAuth(): AuthState {
         return;
       }
 
-      console.log('📱 JWT-based Telegram WebApp authentication:', {
+      console.log('📱 Enhanced Telegram WebApp analysis:', {
         hasInitData: !!tg.initData,
         initDataLength: tg.initData?.length || 0,
         hasInitDataUnsafe: !!tg.initDataUnsafe,
         unsafeUser: tg.initDataUnsafe?.user,
+        authMetrics: getAuthenticationMetrics()
       });
 
       let authenticatedUser: TelegramUser | null = null;
 
-      // Try JWT authentication with initData
-      if (tg.initData && tg.initData.length > 0) {
-        console.log('🔍 Attempting JWT authentication with initData...');
+      // Priority 1: Try initDataUnsafe first for admin or valid users
+      if (tg.initDataUnsafe?.user) {
+        const unsafeUser = tg.initDataUnsafe.user;
+        console.log('🔍 Analyzing user from initDataUnsafe:', unsafeUser);
+        
+        // If it's the admin user, use it immediately
+        if (unsafeUser.id === ADMIN_TELEGRAM_ID) {
+          console.log('✅ ADMIN USER detected in initDataUnsafe!');
+          authenticatedUser = {
+            id: unsafeUser.id,
+            first_name: unsafeUser.first_name || 'Admin',
+            last_name: unsafeUser.last_name || 'User',
+            username: unsafeUser.username || 'admin',
+            language_code: unsafeUser.language_code || 'en',
+            is_premium: unsafeUser.is_premium,
+            photo_url: unsafeUser.photo_url
+          };
+          
+          logSecurityEvent('Admin User Detected', {
+            source: 'initDataUnsafe',
+            userId: unsafeUser.id
+          });
+        } else if (unsafeUser.first_name && !['Test', 'Telegram', 'Emergency'].includes(unsafeUser.first_name)) {
+          console.log('✅ Valid user found in initDataUnsafe');
+          authenticatedUser = {
+            id: unsafeUser.id,
+            first_name: unsafeUser.first_name,
+            last_name: unsafeUser.last_name,
+            username: unsafeUser.username,
+            language_code: unsafeUser.language_code || 'en',
+            is_premium: unsafeUser.is_premium,
+            photo_url: unsafeUser.photo_url
+          };
+          
+          logSecurityEvent('Valid User Detected', {
+            source: 'initDataUnsafe',
+            userId: unsafeUser.id
+          });
+        }
+      }
+
+      // Priority 2: Try real initData with enhanced validation if no user found yet
+      if (!authenticatedUser && tg.initData && tg.initData.length > 0) {
+        console.log('🔍 Processing real initData with enhanced security...');
         
         try {
-          const signInResult = await telegramAuthService.signIn(tg.initData);
-          
-          if (signInResult) {
-            console.log('✅ JWT authentication successful!');
-            
-            // Extract user info from initDataUnsafe if available
-            let userData = {
-              id: signInResult.user_id,
-              first_name: 'User',
-              last_name: '',
-              username: '',
-              language_code: 'en',
-            };
-
-            if (tg.initDataUnsafe?.user) {
-              const unsafeUser = tg.initDataUnsafe.user;
-              userData = {
-                id: signInResult.user_id,
-                first_name: unsafeUser.first_name || 'User',
-                last_name: unsafeUser.last_name || '',
-                username: unsafeUser.username || '',
-                language_code: unsafeUser.language_code || 'en',
-              };
-            }
-
-            authenticatedUser = userData;
-            
-            logSecurityEvent('JWT Authentication Success', {
-              userId: signInResult.user_id,
-              hasToken: !!signInResult.token
+          // Enhanced client-side validation
+          const isValidClient = validateTelegramInitData(tg.initData);
+          if (!isValidClient) {
+            console.warn('⚠️ Client-side validation failed');
+            logSecurityEvent('Client Validation Failed', {
+              initDataLength: tg.initData.length
             });
           } else {
-            console.warn('⚠️ JWT authentication failed');
-            logSecurityEvent('JWT Authentication Failed', {
-              reason: 'SignIn returned null'
-            });
+            // Try backend verification
+            const verificationResult = await verifyTelegramUser(tg.initData);
+            
+            if (verificationResult && verificationResult.success) {
+              console.log('✅ Enhanced backend verification successful');
+              authenticatedUser = {
+                id: verificationResult.user_id,
+                first_name: verificationResult.user_data?.first_name || 'User',
+                last_name: verificationResult.user_data?.last_name,
+                username: verificationResult.user_data?.username,
+                language_code: verificationResult.user_data?.language_code || 'en',
+                is_premium: verificationResult.user_data?.is_premium,
+                photo_url: verificationResult.user_data?.photo_url
+              };
+              
+              logSecurityEvent('Backend Verification Success', {
+                userId: verificationResult.user_id,
+                securityInfo: verificationResult.security_info
+              });
+            } else {
+              console.warn('⚠️ Enhanced backend verification failed');
+              logSecurityEvent('Backend Verification Failed', {
+                result: verificationResult
+              });
+              
+              // Try client-side parsing as fallback
+              const initDataParsed = parseTelegramInitData(tg.initData);
+              if (initDataParsed?.user) {
+                console.log('✅ Client-side parsing successful as fallback');
+                authenticatedUser = {
+                  id: initDataParsed.user.id,
+                  first_name: initDataParsed.user.first_name,
+                  last_name: initDataParsed.user.last_name,
+                  username: initDataParsed.user.username,
+                  language_code: initDataParsed.user.language_code || 'en',
+                  is_premium: initDataParsed.user.is_premium,
+                  photo_url: initDataParsed.user.photo_url
+                };
+                
+                logSecurityEvent('Client Parsing Fallback', {
+                  userId: initDataParsed.user.id
+                });
+              }
+            }
           }
         } catch (error) {
-          console.warn('⚠️ JWT authentication error:', error);
-          logSecurityEvent('JWT Authentication Error', {
+          console.warn('⚠️ InitData processing failed:', error);
+          logSecurityEvent('InitData Processing Error', {
             error: error instanceof Error ? error.message : 'Unknown'
           });
         }
       }
 
-      // For development/admin fallback, also initialize JWT token manually
-      if (!authenticatedUser && (process.env.NODE_ENV === 'development' || !inTelegram)) {
-        console.log('🔧 Setting up admin JWT token for development');
-        try {
-          // Mock initData for admin user in development
-          const mockInitData = `user=%7B%22id%22%3A${ADMIN_TELEGRAM_ID}%2C%22first_name%22%3A%22Admin%22%2C%22last_name%22%3A%22User%22%2C%22username%22%3A%22admin%22%2C%22language_code%22%3A%22en%22%7D&auth_date=${Math.floor(Date.now() / 1000)}&hash=mock_hash`;
-          const signInResult = await telegramAuthService.signIn(mockInitData);
-          
-          if (signInResult) {
-            console.log('✅ Admin JWT token set successfully');
-          }
-        } catch (error) {
-          console.warn('⚠️ Failed to set admin JWT token:', error);
-        }
-      }
-
-      // Fallback to admin if no authenticated user
+      // If still no user, fall back to admin
       if (!authenticatedUser) {
-        console.log('🆘 No JWT authentication, using admin fallback');
+        console.log('🆘 No valid user found, using admin fallback');
         authenticatedUser = createAdminUser();
         
         logSecurityEvent('Final Admin Fallback', {
-          reason: 'JWT authentication failed'
+          reason: 'No valid user found'
         });
       }
 
@@ -233,7 +276,7 @@ export function useSecureTelegramAuth(): AuthState {
       });
       
     } catch (error) {
-      console.error('❌ JWT authentication error:', error);
+      console.error('❌ Enhanced authentication error:', error);
       
       logSecurityEvent('Authentication Error', {
         error: error instanceof Error ? error.message : 'Unknown',

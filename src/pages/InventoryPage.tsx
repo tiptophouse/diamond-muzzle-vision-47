@@ -5,6 +5,7 @@ import { InventoryTable } from "@/components/inventory/InventoryTable";
 import { InventoryPagination } from "@/components/inventory/InventoryPagination";
 import { InventorySearch } from "@/components/inventory/InventorySearch";
 import { InventoryFilters } from "@/components/inventory/InventoryFilters";
+import { DeleteConfirmationDialog } from "@/components/inventory/DeleteConfirmationDialog";
 import { useInventoryData } from "@/hooks/useInventoryData";
 import { useInventorySearch } from "@/hooks/useInventorySearch";
 import { useInventoryCrud } from "@/hooks/useInventoryCrud";
@@ -19,7 +20,9 @@ export default function InventoryPage() {
     diamonds,
     allDiamonds,
     handleRefresh,
-    fetchData
+    fetchData,
+    removeDiamondFromState,
+    restoreDiamondToState
   } = useInventoryData();
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -45,26 +48,48 @@ export default function InventoryPage() {
     onRefreshInventory: () => {
       console.log('🔄 Refreshing inventory via fetchData');
       fetchData();
-    }
+    },
+    onOptimisticDelete: removeDiamondFromState,
+    onRestoreDiamond: restoreDiamondToState
   });
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingDiamond, setEditingDiamond] = useState<Diamond | null>(null);
+  const [deletingDiamond, setDeletingDiamond] = useState<Diamond | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleEdit = (diamond: Diamond) => {
     console.log('📝 Edit diamond clicked:', diamond.stockNumber);
     setEditingDiamond(diamond);
   };
 
-  const handleDelete = async (diamondId: string) => {
+  const handleDeleteClick = (diamondId: string) => {
     console.log('🗑️ Delete diamond clicked:', diamondId);
-    if (window.confirm('Are you sure you want to delete this diamond?')) {
-      const success = await deleteDiamond(diamondId);
+    const diamond = allDiamonds.find(d => d.id === diamondId);
+    if (diamond) {
+      setDeletingDiamond(diamond);
+      setShowDeleteDialog(true);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingDiamond) return;
+    
+    setIsDeleting(true);
+    console.log('🗑️ Confirming delete for diamond:', deletingDiamond.stockNumber);
+    
+    try {
+      const success = await deleteDiamond(deletingDiamond);
       if (success) {
         console.log('✅ Diamond deleted successfully');
-      } else {
-        console.error('❌ Failed to delete diamond');
+        setShowDeleteDialog(false);
+        setDeletingDiamond(null);
       }
+    } catch (error) {
+      console.error('❌ Failed to delete diamond:', error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -158,7 +183,7 @@ export default function InventoryPage() {
                 data={filteredDiamonds}
                 loading={loading}
                 onEdit={handleEdit}
-                onDelete={handleDelete}
+                onDelete={handleDeleteClick}
                 onStoreToggle={handleStoreToggle}
               />
               
@@ -170,6 +195,15 @@ export default function InventoryPage() {
             </div>
           </main>
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        <DeleteConfirmationDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          diamond={deletingDiamond}
+          onConfirm={handleDeleteConfirm}
+          isDeleting={isDeleting}
+        />
 
         {/* Edit Diamond Modal */}
         <Dialog open={!!editingDiamond} onOpenChange={() => setEditingDiamond(null)}>

@@ -6,8 +6,6 @@ interface StoreFilters {
   shapes: string[];
   colors: string[];
   clarities: string[];
-  cuts: string[];
-  fluorescence: string[];
   caratRange: [number, number];
   priceRange: [number, number];
 }
@@ -34,8 +32,6 @@ export function useStoreFilters(diamonds: Diamond[]) {
     shapes: [],
     colors: [],
     clarities: [],
-    cuts: [],
-    fluorescence: [],
     ...getInitialRanges()
   }));
 
@@ -66,17 +62,6 @@ export function useStoreFilters(diamonds: Diamond[]) {
         return false;
       }
 
-      // Cut filter
-      if (filters.cuts.length > 0 && !filters.cuts.includes(diamond.cut)) {
-        return false;
-      }
-
-      // Fluorescence filter (assuming diamond has fluorescence property)
-      const diamondFluorescence = (diamond as any).fluorescence || 'None';
-      if (filters.fluorescence.length > 0 && !filters.fluorescence.includes(diamondFluorescence)) {
-        return false;
-      }
-
       // Carat range filter
       if (diamond.carat < filters.caratRange[0] || diamond.carat > filters.caratRange[1]) {
         return false;
@@ -104,8 +89,6 @@ export function useStoreFilters(diamonds: Diamond[]) {
       shapes: [],
       colors: [],
       clarities: [],
-      cuts: [],
-      fluorescence: [],
       ...ranges
     });
   };

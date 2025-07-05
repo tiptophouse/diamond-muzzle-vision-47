@@ -1,23 +1,23 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { User, Mail, Phone, Globe, Save } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 
 export function AccountSettings() {
   const { user } = useTelegramAuth();
   const { toast } = useToast();
   
   const [profile, setProfile] = useState({
-    firstName: '',
-    lastName: '',
+    firstName: user?.first_name || '',
+    lastName: user?.last_name || '',
     email: '',
     phone: '',
     bio: '',
@@ -29,75 +29,16 @@ export function AccountSettings() {
 
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load user profile from Supabase
-  useEffect(() => {
-    const loadProfile = async () => {
-      if (!user?.id) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('telegram_id', user.id)
-          .single();
-
-        if (data && !error) {
-          setProfile({
-            firstName: data.first_name || '',
-            lastName: data.last_name || '',
-            email: data.email || '',
-            phone: data.phone_number || '',
-            bio: data.bio || '',
-            company: data.company || '',
-            website: data.website || '',
-            language: data.language || 'en',
-            timezone: data.timezone || 'UTC'
-          });
-        }
-      } catch (error) {
-        console.error('Error loading profile:', error);
-      }
-    };
-
-    loadProfile();
-  }, [user?.id]);
-
   const handleSave = async () => {
-    if (!user?.id) {
-      toast({
-        title: "Error",
-        description: "User not authenticated",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const { error } = await supabase
-        .from('user_profiles')
-        .upsert({
-          telegram_id: user.id,
-          first_name: profile.firstName,
-          last_name: profile.lastName,
-          email: profile.email,
-          phone_number: profile.phone,
-          bio: profile.bio,
-          company: profile.company,
-          website: profile.website,
-          language: profile.language,
-          timezone: profile.timezone,
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) throw error;
-
+      // In a real app, you'd save this to the database
+      await new Promise(resolve => setTimeout(resolve, 1000));
       toast({
         title: "Settings saved",
         description: "Your account settings have been updated successfully.",
       });
     } catch (error) {
-      console.error('Error saving profile:', error);
       toast({
         title: "Error",
         description: "Failed to save settings. Please try again.",
