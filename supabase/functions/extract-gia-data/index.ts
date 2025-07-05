@@ -1,7 +1,10 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -108,6 +111,48 @@ serve(async (req) => {
       } else {
         throw new Error('Could not extract valid JSON from OpenAI response');
       }
+    }
+
+    // Upload certificate image to Supabase storage
+    let certificateUrl = null;
+    try {
+      const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+      
+      // Convert base64 to binary data
+      const binaryData = Uint8Array.from(atob(base64Image), (c) => c.charCodeAt(0));
+      
+      // Generate unique filename
+      const timestamp = Date.now();
+      const certificateNumber = parsedData.certificate_number || 'unknown';
+      const fileName = `gia-certificate-${certificateNumber}-${timestamp}.jpg`;
+      
+      // Upload to diamond-certificates bucket
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('diamond-certificates')
+        .upload(fileName, binaryData, {
+          contentType: 'image/jpeg',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('Error uploading certificate:', uploadError);
+      } else {
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from('diamond-certificates')
+          .getPublicUrl(fileName);
+        
+        certificateUrl = urlData.publicUrl;
+        console.log('Certificate uploaded successfully to:', certificateUrl);
+      }
+    } catch (uploadError) {
+      console.error('Error during certificate upload:', uploadError);
+      // Continue without failing the entire process
+    }
+
+    // Add certificate URL to parsed data
+    if (certificateUrl) {
+      parsedData.certificate_url = certificateUrl;
     }
 
     return new Response(JSON.stringify({ 

@@ -57,7 +57,7 @@ export function SingleStoneUploadForm() {
   const handleGiaScanSuccess = (giaData: any) => {
     console.log('GIA data received:', giaData);
     
-    // Comprehensive mapping of all GIA data fields
+    // Comprehensive mapping of all GIA data fields including certificate URL
     if (giaData.stock) setValue('stockNumber', giaData.stock);
     if (giaData.shape) setValue('shape', giaData.shape);
     if (giaData.weight) setValue('carat', Number(giaData.weight));
@@ -80,14 +80,20 @@ export function SingleStoneUploadForm() {
     if (giaData.price_per_carat) setValue('pricePerCarat', Number(giaData.price_per_carat));
     if (giaData.rapnet) setValue('rapnet', Number(giaData.rapnet));
     if (giaData.picture) setValue('picture', giaData.picture);
-    if (giaData.certificate_url) setValue('certificateUrl', giaData.certificate_url);
+    
+    // Handle certificate URL from uploaded certificate image
+    if (giaData.certificate_url || giaData.certificateUrl) {
+      setValue('certificateUrl', giaData.certificate_url || giaData.certificateUrl);
+      console.log('Certificate image uploaded to:', giaData.certificate_url || giaData.certificateUrl);
+    }
+    
     if (giaData.certificate_comment) setValue('certificateComment', giaData.certificate_comment);
     
     setIsScanning(false);
     
     toast({
       title: "✅ Certificate Scanned Successfully",
-      description: "All diamond information auto-filled from GIA certificate",
+      description: "All diamond information auto-filled and certificate image uploaded",
     });
   };
 

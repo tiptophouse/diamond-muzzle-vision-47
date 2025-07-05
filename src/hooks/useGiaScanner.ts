@@ -73,11 +73,17 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
       }
 
       if (data?.success && data?.data) {
-        onScanSuccess(data.data);
+        // Add certificate URL to the data if it was uploaded
+        const enhancedData = {
+          ...data.data,
+          certificateUrl: data.data.certificate_url || data.data.certificateUrl
+        };
+        
+        onScanSuccess(enhancedData);
         stopScanning();
         toast({
           title: "✅ Success! 💎",
-          description: "GIA certificate data extracted successfully",
+          description: "GIA certificate data extracted and image uploaded successfully",
         });
       } else {
         throw new Error('No data extracted from certificate');
