@@ -11,16 +11,9 @@ import { useDeleteDiamond } from './inventory/useDeleteDiamond';
 interface UseInventoryCrudProps {
   onSuccess?: () => void;
   onRefreshInventory?: () => void;
-  onOptimisticDelete?: (diamondId: string) => void;
-  onRestoreDiamond?: (diamond: Diamond) => void;
 }
 
-export function useInventoryCrud({ 
-  onSuccess, 
-  onRefreshInventory,
-  onOptimisticDelete,
-  onRestoreDiamond 
-}: UseInventoryCrudProps = {}) {
+export function useInventoryCrud({ onSuccess, onRefreshInventory }: UseInventoryCrudProps = {}) {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -40,9 +33,7 @@ export function useInventoryCrud({
   });
   const { deleteDiamond: deleteDiamondFn } = useDeleteDiamond({ 
     onSuccess: successHandler, 
-    onRefreshInventory,
-    onOptimisticDelete,
-    onRestoreDiamond
+    onRefreshInventory 
   });
 
   const addDiamond = async (data: DiamondFormData) => {
@@ -73,11 +64,11 @@ export function useInventoryCrud({
     }
   };
 
-  const deleteDiamond = async (diamond: Diamond) => {
-    console.log('🗑️ CRUD: Starting delete diamond operation for:', diamond.id, diamond.stockNumber);
+  const deleteDiamond = async (diamondId: string) => {
+    console.log('🗑️ CRUD: Starting delete diamond operation for:', diamondId);
     setIsLoading(true);
     try {
-      const result = await deleteDiamondFn(diamond);
+      const result = await deleteDiamondFn(diamondId);
       return result;
     } catch (error) {
       console.error('❌ CRUD: Delete diamond failed:', error);
