@@ -37,6 +37,22 @@ export const useFormValidation = () => {
       symmetry: data.symmetry || 'Excellent',
       status: data.status || 'Available',
       picture: data.picture?.trim() || '',
+      // Include all comprehensive fields
+      certificateNumber: data.certificateNumber?.trim() || '',
+      certificateUrl: data.certificateUrl?.trim() || '',
+      certificateComment: data.certificateComment?.trim() || '',
+      lab: data.lab || 'GIA',
+      length: data.length ? Number(data.length) : undefined,
+      width: data.width ? Number(data.width) : undefined,
+      depth: data.depth ? Number(data.depth) : undefined,
+      ratio: data.ratio ? Number(data.ratio) : undefined,
+      tablePercentage: data.tablePercentage ? Number(data.tablePercentage) : undefined,
+      depthPercentage: data.depthPercentage ? Number(data.depthPercentage) : undefined,
+      gridle: data.gridle || 'Medium',
+      culet: data.culet || 'None',
+      pricePerCarat: data.pricePerCarat ? Number(data.pricePerCarat) : undefined,
+      rapnet: data.rapnet ? Number(data.rapnet) : undefined,
+      storeVisible: data.storeVisible !== undefined ? data.storeVisible : true,
     };
   };
 
