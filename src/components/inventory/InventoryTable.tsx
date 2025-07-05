@@ -20,6 +20,7 @@ export interface Diamond {
   cut: string;
   price: number;
   status: string;
+  fluorescence?: string;
   imageUrl?: string;
   store_visible?: boolean;
   certificateNumber?: string;

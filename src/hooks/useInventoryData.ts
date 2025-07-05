@@ -44,6 +44,7 @@ export function useInventoryData() {
           cut: item.cut || 'Excellent',
           price: Number(item.price_per_carat ? item.price_per_carat * (item.weight || item.carat) : item.price) || 0,
           status: item.status || 'Available',
+          fluorescence: item.fluorescence || undefined,
           imageUrl: item.picture || item.imageUrl || undefined,
           store_visible: item.store_visible !== false,
           certificateNumber: item.certificate_number || item.certificateNumber || undefined,
