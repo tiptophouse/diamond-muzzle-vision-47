@@ -4,6 +4,7 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DataDrivenDashboard } from '@/components/dashboard/DataDrivenDashboard';
 import { DashboardLoading } from '@/components/dashboard/DashboardLoading';
 import { SecurityMonitor } from '@/components/auth/SecurityMonitor';
+import { ApiStatusIndicator } from '@/components/dashboard/ApiStatusIndicator';
 import { getVerificationResult } from '@/lib/api';
 
 export default function Dashboard() {
@@ -55,11 +56,14 @@ export default function Dashboard() {
   return (
     <>
       <div className="min-h-screen bg-gray-50">
-        <DataDrivenDashboard 
-          allDiamonds={allDiamonds} 
-          loading={loading}
-          fetchData={fetchData} 
-        />
+        <div className="max-w-7xl mx-auto p-6 space-y-6">
+          <ApiStatusIndicator />
+          <DataDrivenDashboard 
+            allDiamonds={allDiamonds} 
+            loading={loading}
+            fetchData={fetchData} 
+          />
+        </div>
       </div>
       <SecurityMonitor />
     </>
