@@ -21,7 +21,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   };
   
   try {
-    // First, try to get data from FastAPI backend
+    // Call GET /api/v1/get_all_stones?user_id={user_id}
     console.log('🔍 INVENTORY SERVICE: Attempting FastAPI connection...');
     const endpoint = apiEndpoints.getAllStones(userId);
     
@@ -47,19 +47,26 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       if (dataArray && dataArray.length > 0) {
         console.log('✅ INVENTORY SERVICE: FastAPI returned', dataArray.length, 'diamonds');
         
+        // Sort diamonds by updated_at desc (most recently edited first)
+        const sortedData = dataArray.sort((a, b) => {
+          const dateA = new Date(a.updated_at || a.created_at || 0);
+          const dateB = new Date(b.updated_at || b.created_at || 0);
+          return dateB.getTime() - dateA.getTime();
+        });
+        
         return {
-          data: dataArray,
+          data: sortedData,
           debugInfo: {
             ...debugInfo,
             step: 'SUCCESS: FastAPI data fetched',
-            totalDiamonds: dataArray.length,
+            totalDiamonds: sortedData.length,
             dataSource: 'fastapi'
           }
         };
       }
     }
     
-    // If FastAPI fails, try localStorage
+    // If FastAPI fails, try localStorage as fallback
     console.log('🔄 INVENTORY SERVICE: FastAPI failed, checking localStorage...');
     const localData = localStorage.getItem('diamond_inventory');
     

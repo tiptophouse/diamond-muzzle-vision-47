@@ -19,6 +19,7 @@ export default function InventoryPage() {
     diamonds,
     allDiamonds,
     handleRefresh,
+    fetchData
   } = useInventoryData();
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -39,9 +40,12 @@ export default function InventoryPage() {
     isLoading: crudLoading 
   } = useInventoryCrud({
     onSuccess: () => {
-      console.log('🔄 CRUD operation completed, refreshing inventory...');
-      handleRefresh();
+      console.log('🔄 CRUD operation completed');
     },
+    onRefreshInventory: () => {
+      console.log('🔄 Refreshing inventory via fetchData');
+      fetchData();
+    }
   });
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -55,10 +59,7 @@ export default function InventoryPage() {
   const handleDelete = async (diamondId: string) => {
     console.log('🗑️ Delete diamond clicked:', diamondId);
     if (window.confirm('Are you sure you want to delete this diamond?')) {
-      const diamond = allDiamonds.find(d => d.id === diamondId);
-      console.log('🗑️ Deleting diamond:', diamond?.stockNumber);
-      
-      const success = await deleteDiamond(diamondId, diamond);
+      const success = await deleteDiamond(diamondId);
       if (success) {
         console.log('✅ Diamond deleted successfully');
       } else {
