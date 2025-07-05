@@ -93,6 +93,10 @@ export function useSecureTelegramAuth(): AuthState {
           userId: adminUser.id
         });
         
+        // Set the current user ID for API client
+        const { setCurrentUserId } = await import('@/lib/api/config');
+        setCurrentUserId(adminUser.id);
+        
         updateState({
           user: adminUser,
           isAuthenticated: true,
@@ -127,6 +131,10 @@ export function useSecureTelegramAuth(): AuthState {
         logSecurityEvent('Fallback Admin Access', {
           reason: 'WebApp not available'
         });
+        
+        // Set the current user ID for API client
+        const { setCurrentUserId } = await import('@/lib/api/config');
+        setCurrentUserId(adminUser.id);
         
         updateState({
           user: adminUser,
@@ -225,6 +233,10 @@ export function useSecureTelegramAuth(): AuthState {
 
       console.log('✅ Final authenticated user:', authenticatedUser.first_name, 'ID:', authenticatedUser.id);
 
+      // Set the current user ID for API client
+      const { setCurrentUserId } = await import('@/lib/api/config');
+      setCurrentUserId(authenticatedUser.id);
+
       updateState({
         user: authenticatedUser,
         isAuthenticated: true,
@@ -242,6 +254,11 @@ export function useSecureTelegramAuth(): AuthState {
       
       // Always fall back to admin user on any error
       const adminUser = createAdminUser();
+      
+      // Set the current user ID for API client
+      const { setCurrentUserId } = await import('@/lib/api/config');
+      setCurrentUserId(adminUser.id);
+      
       updateState({
         user: adminUser,
         isAuthenticated: true,
@@ -257,7 +274,7 @@ export function useSecureTelegramAuth(): AuthState {
     mountedRef.current = true;
     
     // Shorter timeout for faster fallback with enhanced security
-    const timeoutId = setTimeout(() => {
+    const timeoutId = setTimeout(async () => {
       if (state.isLoading && mountedRef.current && !initializedRef.current) {
         console.warn('⚠️ Enhanced authentication timeout - using admin fallback');
         
@@ -267,6 +284,11 @@ export function useSecureTelegramAuth(): AuthState {
         });
         
         const adminUser = createAdminUser();
+        
+        // Set the current user ID for API client  
+        const { setCurrentUserId } = await import('@/lib/api/config');
+        setCurrentUserId(adminUser.id);
+        
         updateState({
           user: adminUser,
           isAuthenticated: true,

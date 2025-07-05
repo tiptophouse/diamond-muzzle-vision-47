@@ -50,10 +50,26 @@ export async function fetchApi<T>(
   const url = `${API_BASE_URL}${endpoint}`;
   
   try {
-    console.log('🚀 API: Making FastAPI request with JWT auth:', url);
+    console.log('🚀 API: Making FastAPI request:', url);
     console.log('🚀 API: Current user ID:', getCurrentUserId());
     
-    // Check if we have a valid JWT token
+    // In development mode, try to authenticate as admin if not already authenticated
+    if (!telegramAuthService.isAuthenticated() && process.env.NODE_ENV === 'development') {
+      console.log('🔧 API: Attempting admin authentication for development...');
+      const ADMIN_TELEGRAM_ID = 2138564172;
+      const mockInitData = `user=%7B%22id%22%3A${ADMIN_TELEGRAM_ID}%2C%22first_name%22%3A%22Admin%22%2C%22last_name%22%3A%22User%22%2C%22username%22%3A%22admin%22%2C%22language_code%22%3A%22en%22%7D&auth_date=${Math.floor(Date.now() / 1000)}&hash=mock_hash`;
+      
+      try {
+        const signInResult = await telegramAuthService.signIn(mockInitData);
+        if (signInResult) {
+          console.log('✅ API: Admin authentication successful for development');
+        }
+      } catch (error) {
+        console.warn('⚠️ API: Admin authentication failed:', error);
+      }
+    }
+    
+    // Check if we have a valid JWT token after potential admin auth
     if (!telegramAuthService.isAuthenticated()) {
       const errorMsg = 'No valid JWT token available. Please sign in again.';
       console.error('❌ API: JWT token missing or expired');
