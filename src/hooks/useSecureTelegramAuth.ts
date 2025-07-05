@@ -95,6 +95,25 @@ export function useSecureTelegramAuth(): AuthState {
         return;
       }
 
+      // Add development mode for testing
+      if (process.env.NODE_ENV === 'development' && window.location.search.includes('dev=true')) {
+        console.log('🔧 Development mode enabled - creating test user');
+        const testUser = createAdminUser();
+        
+        // Set the current user ID for API client
+        const { setCurrentUserId } = await import('@/lib/api/config');
+        setCurrentUserId(testUser.id);
+        
+        updateState({
+          user: testUser,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null
+        });
+        initializedRef.current = true;
+        return;
+      }
+
       // Initialize Telegram WebApp with timeout
       let tg = null;
       try {
@@ -193,11 +212,22 @@ export function useSecureTelegramAuth(): AuthState {
       // No authentication without valid Telegram initData
       if (!authenticatedUser) {
         console.log('❌ No valid JWT authentication from Telegram');
+        
+        // Show detailed debugging info
+        logSecurityEvent('Authentication Failed Details', {
+          hasInitData: !!tg.initData,
+          initDataLength: tg.initData?.length || 0,
+          hasInitDataUnsafe: !!tg.initDataUnsafe,
+          unsafeUserType: typeof tg.initDataUnsafe?.user,
+          webAppReady: tg.isExpanded !== undefined,
+          telegramVersion: tg.version || 'unknown'
+        });
+        
         updateState({
           user: null,
           isAuthenticated: false,
           isLoading: false,
-          error: 'נכשלה הזדהות דרך טלגרם'
+          error: 'לא ניתן לקבל מידע מטלגרם - נסה לפתוח שוב את האפליקציה'
         });
         initializedRef.current = true;
         return;
