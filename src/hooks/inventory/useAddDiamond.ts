@@ -110,7 +110,7 @@ export function useAddDiamond(onSuccess?: () => void) {
         localStorage.setItem('diamond_inventory', JSON.stringify(existingData));
         
         toast({
-          title: "⚠️ Partial Success",
+          title: "⚠️ Partial Success", 
           description: "Diamond added locally (API connection failed)",
           variant: "default",
         });

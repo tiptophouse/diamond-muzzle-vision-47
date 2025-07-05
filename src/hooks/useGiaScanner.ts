@@ -76,7 +76,7 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
         onScanSuccess(data.data);
         stopScanning();
         toast({
-          title: "Success! 💎",
+          title: "✅ Success! 💎",
           description: "GIA certificate data extracted successfully",
         });
       } else {
@@ -154,7 +154,7 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
         onScanSuccess(data);
         stopScanning();
         toast({
-          title: "Success",
+          title: "✅ Success", 
           description: "GIA diamond information loaded successfully",
         });
       } else {

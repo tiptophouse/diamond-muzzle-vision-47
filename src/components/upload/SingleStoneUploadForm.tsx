@@ -63,8 +63,8 @@ export function SingleStoneUploadForm() {
     setIsScanning(false);
     
     toast({
-      title: "Certificate Scanned! 📋",
-      description: "Diamond information auto-filled from certificate",
+      title: "✅ Certificate Scanned Successfully",
+      description: "Diamond information auto-filled from GIA certificate",
     });
   };
 
@@ -114,6 +114,12 @@ export function SingleStoneUploadForm() {
     if (success) {
       console.log('✅ Stone uploaded and added to inventory');
       // Success is now handled by the onSuccess callback which shows the success card
+    } else {
+      toast({
+        title: "❌ Upload Failed",
+        description: "Failed to add diamond to inventory. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

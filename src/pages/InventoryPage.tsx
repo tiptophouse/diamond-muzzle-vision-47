@@ -117,6 +117,8 @@ export default function InventoryPage() {
       console.log('✅ Diamond added successfully');
       setShowAddForm(false);
       setShowAddSuccess(true);
+    } else {
+      console.error('❌ Failed to add diamond from inventory page');
     }
   };
 
