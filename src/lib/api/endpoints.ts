@@ -1,19 +1,36 @@
-
 export const apiEndpoints = {
-  getAllStones: (userId: number) => {
-    // Try the correct endpoint path for your backend
-    const endpoint = `/api/v1/get_all_stones?user_id=${userId}`;
-    console.log('🔧 API: Building getAllStones endpoint:', endpoint, 'for user:', userId, 'type:', typeof userId);
+  // Health check
+  alive: () => `/api/v1/alive`,
+  
+  // Stone/Diamond management
+  getAllStones: (userId?: number) => {
+    const endpoint = `/api/v1/get_all_stones`;
+    if (userId) {
+      return `${endpoint}?user_id=${userId}`;
+    }
     return endpoint;
   },
+  
+  // Create diamond - POST /api/v1/diamonds
+  addDiamond: () => `/api/v1/diamonds`,
+  
+  // Update diamond - PUT /api/v1/diamonds/{diamond_id}
+  updateDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,
+  
+  // Delete diamond - DELETE /api/v1/delete_stone/{id}?diamond_id={diamond_id}
+  deleteDiamond: (diamondId: string) => `/api/v1/delete_stone/${diamondId}`,
+  
+  // Reports
+  createReport: () => `/api/v1/create-report`,
+  getReport: (diamondId: string) => `/api/v1/get-report?diamond_id=${diamondId}`,
+  
+  // Payment
+  paymentRequest: () => `/api/v1/payment_request`,
+  
+  // Legacy endpoints (keeping for compatibility)
   verifyTelegram: () => `/api/v1/verify-telegram`,
   uploadInventory: () => `/api/v1/upload-inventory`,
-  addDiamond: () => `/api/v1/diamonds`,
-  deleteDiamond: (diamondId: string) => `/api/v1/delete_stone/${diamondId}`,
-  updateDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,
   soldDiamond: () => `/api/v1/sold`,
-  createReport: () => `/api/v1/create-report`,
-  getReport: (reportId: string) => `/api/v1/get-report?diamond_id=${reportId}`,
   getDashboardStats: (userId: number) => `/api/v1/users/${userId}/dashboard/stats`,
   getInventoryByShape: (userId: number) => `/api/v1/users/${userId}/inventory/by-shape`,
   getRecentSales: (userId: number) => `/api/v1/users/${userId}/sales/recent`,
@@ -25,7 +42,7 @@ export const apiEndpoints = {
   getUserPayments: (userId: number) => `/api/v1/users/${userId}/payments`,
   getPaymentStats: () => `/api/v1/payments/stats`,
 
-  // New client and admin endpoints
+  // Client and admin endpoints
   getAllClients: () => `/api/v1/clients`,
   getClientById: (clientId: number) => `/api/v1/clients/${clientId}`,
   blockUser: () => `/api/v1/admin/block-user`,

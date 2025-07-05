@@ -21,31 +21,37 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   };
   
   try {
-    // First, try to get data from FastAPI backend
+    // First, try to get data from FastAPI backend using get_all_stones
     console.log('🔍 INVENTORY SERVICE: Attempting FastAPI connection...');
     const endpoint = apiEndpoints.getAllStones(userId);
+    console.log('🔍 INVENTORY SERVICE: Using endpoint:', endpoint);
     
     const result = await api.get(endpoint);
     
     if (result.data && !result.error) {
       let dataArray: any[] = [];
       
+      // The FastAPI endpoint should return an array directly
       if (Array.isArray(result.data)) {
         dataArray = result.data;
+        console.log('✅ INVENTORY SERVICE: FastAPI returned array with', dataArray.length, 'diamonds');
       } else if (typeof result.data === 'object' && result.data !== null) {
+        // Handle if the response is wrapped in an object
         const dataObj = result.data as Record<string, any>;
         const possibleArrayKeys = ['data', 'diamonds', 'items', 'stones', 'results', 'inventory', 'records'];
         
         for (const key of possibleArrayKeys) {
           if (Array.isArray(dataObj[key])) {
             dataArray = dataObj[key];
+            console.log('✅ INVENTORY SERVICE: Found array in property:', key, 'with', dataArray.length, 'items');
             break;
           }
         }
       }
       
       if (dataArray && dataArray.length > 0) {
-        console.log('✅ INVENTORY SERVICE: FastAPI returned', dataArray.length, 'diamonds');
+        console.log('✅ INVENTORY SERVICE: Successfully fetched', dataArray.length, 'diamonds from FastAPI');
+        console.log('📊 INVENTORY SERVICE: Sample diamond data:', dataArray[0]);
         
         return {
           data: dataArray,
@@ -53,10 +59,15 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
             ...debugInfo,
             step: 'SUCCESS: FastAPI data fetched',
             totalDiamonds: dataArray.length,
-            dataSource: 'fastapi'
+            dataSource: 'fastapi',
+            endpoint: endpoint
           }
         };
+      } else {
+        console.log('⚠️ INVENTORY SERVICE: FastAPI returned empty result');
       }
+    } else {
+      console.log('❌ INVENTORY SERVICE: FastAPI returned error:', result.error);
     }
     
     // If FastAPI fails, try localStorage
@@ -87,7 +98,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
           }
         }
       } catch (parseError) {
-        console.warn('Failed to parse localStorage data:', parseError);
+        console.warn('❌ INVENTORY SERVICE: Failed to parse localStorage data:', parseError);
       }
     }
     
@@ -106,7 +117,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     };
     
   } catch (error) {
-    console.error("🔍 INVENTORY SERVICE: Error occurred:", error);
+    console.error("❌ INVENTORY SERVICE: Error occurred:", error);
     
     // Try localStorage as emergency fallback
     const localData = localStorage.getItem('diamond_inventory');
@@ -129,7 +140,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
           };
         }
       } catch (parseError) {
-        console.warn('Emergency localStorage parse failed:', parseError);
+        console.warn('❌ INVENTORY SERVICE: Emergency localStorage parse failed:', parseError);
       }
     }
     

@@ -54,32 +54,37 @@ export function useAddDiamond(onSuccess?: () => void) {
         }
       });
       
-      console.log('Adding diamond via API with data:', diamondDataPayload);
+      console.log('➕ ADD: Sending diamond data to FastAPI:', diamondDataPayload);
       
       // Try FastAPI first
       try {
         const endpoint = apiEndpoints.addDiamond();
-        console.log('➕ ADD: Using endpoint:', endpoint, 'with data:', diamondDataPayload);
+        console.log('➕ ADD: Using endpoint:', endpoint);
         
-        // Send data directly as per FastAPI schema
         const response = await api.post(endpoint, diamondDataPayload);
         
         if (response.error) {
           throw new Error(response.error);
         }
 
+        console.log('✅ ADD: FastAPI response:', response.data);
+
         toast({
-          title: "Success",
-          description: "Diamond added successfully to backend",
+          title: "✅ Success",
+          description: "Diamond added successfully to your inventory",
         });
         
         if (onSuccess) onSuccess();
         return true;
         
       } catch (apiError) {
-        console.warn('FastAPI add failed, using localStorage:', apiError);
+        console.error('❌ ADD: FastAPI add failed:', apiError);
+        
+        // Show specific error message
+        const errorMessage = apiError instanceof Error ? apiError.message : "Failed to add diamond via API";
         
         // Fallback to localStorage
+        console.log('🔄 ADD: Falling back to localStorage...');
         const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
         
         // Convert to inventory format
@@ -105,8 +110,9 @@ export function useAddDiamond(onSuccess?: () => void) {
         localStorage.setItem('diamond_inventory', JSON.stringify(existingData));
         
         toast({
-          title: "Success",
-          description: "Diamond added successfully (stored locally)",
+          title: "⚠️ Partial Success",
+          description: "Diamond added locally (API connection failed)",
+          variant: "default",
         });
         
         if (onSuccess) onSuccess();
@@ -114,13 +120,16 @@ export function useAddDiamond(onSuccess?: () => void) {
       }
       
     } catch (error) {
-      console.error('Failed to add diamond:', error);
+      console.error('❌ ADD: Unexpected error:', error);
+      
       const errorMessage = error instanceof Error ? error.message : "Failed to add diamond. Please try again.";
+      
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "❌ Failed to Add Diamond",
         description: errorMessage,
       });
+      
       return false;
     }
   };
