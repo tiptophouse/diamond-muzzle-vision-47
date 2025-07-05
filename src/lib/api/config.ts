@@ -1,6 +1,6 @@
 
-// Updated to point to your actual FastAPI backend with correct base path
-export const API_BASE_URL = "https://api.mazalbot.com/api/v1";
+// Updated to point to your actual FastAPI backend
+export const API_BASE_URL = "https://api.mazalbot.com";
 
 let currentUserId: number | null = null;
 

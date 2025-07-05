@@ -50,21 +50,10 @@ export async function fetchApi<T>(
   const url = `${API_BASE_URL}${endpoint}`;
   
   try {
-    console.log('🚀 API: Making FastAPI request:', url);
+    console.log('🚀 API: Making FastAPI request with JWT auth:', url);
     console.log('🚀 API: Current user ID:', getCurrentUserId());
-    console.log('🚀 API: Is authenticated?', telegramAuthService.isAuthenticated());
-    console.log('🚀 API: Auth token exists?', !!telegramAuthService.getAuthToken());
-    console.log('🚀 API: Environment:', process.env.NODE_ENV);
     
-    // Only proceed if already authenticated through Telegram
-    if (!telegramAuthService.isAuthenticated()) {
-      console.log('❌ API: Not authenticated - Telegram authentication required');
-    }
-    
-    // Check if we have a valid JWT token after potential admin auth
-    const authToken = telegramAuthService.getAuthToken();
-    console.log('🔧 API: Final auth token check:', !!authToken);
-    
+    // Check if we have a valid JWT token
     if (!telegramAuthService.isAuthenticated()) {
       const errorMsg = 'No valid JWT token available. Please sign in again.';
       console.error('❌ API: JWT token missing or expired');

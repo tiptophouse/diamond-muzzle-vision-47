@@ -6,16 +6,12 @@ import { PriceRangeFilter } from "./filters/PriceRangeFilter";
 import { CaratRangeFilter } from "./filters/CaratRangeFilter";
 import { ColorFilter } from "./filters/ColorFilter";
 import { ClarityFilter } from "./filters/ClarityFilter";
-import { CutFilter } from "./filters/CutFilter";
-import { FluorescenceFilter } from "./filters/FluorescenceFilter";
 
 interface PremiumStoreFiltersProps {
   filters: {
     shapes: string[];
     colors: string[];
     clarities: string[];
-    cuts: string[];
-    fluorescence: string[];
     caratRange: [number, number];
     priceRange: [number, number];
   };
@@ -52,8 +48,6 @@ export function PremiumStoreFilters({
     filters.shapes.length + 
     filters.colors.length + 
     filters.clarities.length + 
-    (filters.cuts?.length || 0) +
-    (filters.fluorescence?.length || 0) +
     (filters.caratRange[0] > minCarat || filters.caratRange[1] < maxCarat ? 1 : 0) +
     (filters.priceRange[0] > minPrice || filters.priceRange[1] < maxPrice ? 1 : 0);
 
@@ -77,7 +71,7 @@ export function PremiumStoreFilters({
         onShapeToggle={(shape) => toggleFilter('shapes', shape)}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-6 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <PriceRangeFilter
           priceRange={filters.priceRange}
           minPrice={minPrice}
@@ -100,16 +94,6 @@ export function PremiumStoreFilters({
         <ClarityFilter
           selectedClarities={filters.clarities}
           onClarityToggle={(clarity) => toggleFilter('clarities', clarity)}
-        />
-
-        <CutFilter
-          selectedCuts={filters.cuts || []}
-          onCutToggle={(cut) => toggleFilter('cuts', cut)}
-        />
-
-        <FluorescenceFilter
-          selectedFluorescence={filters.fluorescence || []}
-          onFluorescenceToggle={(fluorescence) => toggleFilter('fluorescence', fluorescence)}
         />
       </div>
     </div>
