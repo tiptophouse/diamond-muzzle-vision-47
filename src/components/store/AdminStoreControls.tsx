@@ -135,7 +135,7 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
       try {
         console.log('🗑️ Deleting diamond via API endpoint:', diamond.id);
         
-        const endpoint = apiEndpoints.deleteDiamond(diamond.id);
+        const endpoint = apiEndpoints.deleteDiamond(diamond.id, user.id);
         const result = await api.delete(endpoint);
 
         if (result.error) {

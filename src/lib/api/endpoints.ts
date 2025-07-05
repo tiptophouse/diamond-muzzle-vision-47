@@ -17,8 +17,8 @@ export const apiEndpoints = {
   // Update diamond - PUT /api/v1/diamonds/{diamond_id}
   updateDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,
   
-  // Delete diamond - DELETE /api/v1/delete_stone/{id}?diamond_id={diamond_id}
-  deleteDiamond: (diamondId: string) => `/api/v1/delete_stone/${diamondId}`,
+  // Delete diamond - DELETE /api/v1/delete_stone/{diamond_id}?user_id={user_id}&diamond_id={diamond_id}
+  deleteDiamond: (diamondId: string, userId: number) => `/api/v1/delete_stone/${diamondId}?user_id=${userId}&diamond_id=${diamondId}`,
   
   // Reports
   createReport: () => `/api/v1/create-report`,
