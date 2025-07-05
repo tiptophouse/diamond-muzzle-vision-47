@@ -15,7 +15,10 @@ class TelegramAuthService {
 
   async signIn(initData: string): Promise<SignInResponse | null> {
     try {
-      console.log('🔐 Signing in with Telegram init data...');
+      console.log('🔐 Signing in with Telegram init data to FastAPI...');
+      console.log('🔐 API URL:', `${API_BASE_URL}${apiEndpoints.signIn()}`);
+      console.log('🔐 InitData length:', initData.length);
+      console.log('🔐 InitData preview:', initData.substring(0, 100) + '...');
       
       const response = await fetch(`${API_BASE_URL}${apiEndpoints.signIn()}`, {
         method: 'POST',
@@ -27,6 +30,9 @@ class TelegramAuthService {
           init_data: initData
         }),
       });
+
+      console.log('🔐 SignIn response status:', response.status);
+      console.log('🔐 SignIn response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
