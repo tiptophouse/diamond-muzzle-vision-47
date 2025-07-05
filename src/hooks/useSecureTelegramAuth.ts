@@ -136,6 +136,7 @@ export function useSecureTelegramAuth(): AuthState {
       // Try JWT authentication with initData
       if (tg.initData && tg.initData.length > 0) {
         console.log('🔍 Attempting JWT authentication with initData...');
+        console.log('🔍 Raw initData:', tg.initData);
         
         try {
           const signInResult = await telegramAuthService.signIn(tg.initData);
@@ -181,6 +182,12 @@ export function useSecureTelegramAuth(): AuthState {
             error: error instanceof Error ? error.message : 'Unknown'
           });
         }
+      } else {
+        console.log('⚠️ No initData available from Telegram WebApp');
+        logSecurityEvent('No InitData', {
+          hasInitData: !!tg.initData,
+          initDataLength: tg.initData?.length || 0
+        });
       }
 
       // No authentication without valid Telegram initData
