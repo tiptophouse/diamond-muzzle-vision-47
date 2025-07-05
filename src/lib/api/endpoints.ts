@@ -1,42 +1,52 @@
 
-export const apiEndpoints = {
-  getAllStones: (userId?: number) => {
-    // Use the correct endpoint with optional user_id parameter
-    const endpoint = `/api/v1/get_all_stones${userId ? `?user_id=${userId}` : ''}`;
-    console.log('🔧 API: Building getAllStones endpoint:', endpoint, 'for user:', userId);
-    return endpoint;
-  },
-  verifyTelegram: () => `/api/v1/verify-telegram`,
-  uploadInventory: () => `/api/v1/upload-inventory`,
-  addDiamond: () => `/api/v1/diamonds`,
-  deleteDiamond: (diamondId: string) => `/api/v1/delete_stone/${diamondId}`,
-  updateDiamond: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,
-  soldDiamond: () => `/api/v1/sold`,
-  createReport: () => `/api/v1/create-report`,
-  getReport: (reportId: string) => `/api/v1/get-report?diamond_id=${reportId}`,
-  getDashboardStats: (userId: number) => `/api/v1/users/${userId}/dashboard/stats`,
-  getInventoryByShape: (userId: number) => `/api/v1/users/${userId}/inventory/by-shape`,
-  getRecentSales: (userId: number) => `/api/v1/users/${userId}/sales/recent`,
-  getInventory: (userId: number, page: number = 1, limit: number = 10) => `/api/v1/users/${userId}/inventory?page=${page}&limit=${limit}`,
-  
-  // Health check endpoint
-  alive: () => `/api/v1/alive`,
-  
-  // Payment management endpoints
-  paymentRequest: () => `/api/v1/payment_request`,
-  removeUserPayments: (userId: number) => `/api/v1/users/${userId}/payments/remove`,
-  removeAllPayments: () => `/api/v1/payments/remove-all`,
-  getUserPayments: (userId: number) => `/api/v1/users/${userId}/payments`,
-  getPaymentStats: () => `/api/v1/payments/stats`,
 
-  // New client and admin endpoints
-  getAllClients: () => `/api/v1/clients`,
-  getClientById: (clientId: number) => `/api/v1/clients/${clientId}`,
-  blockUser: () => `/api/v1/admin/block-user`,
-  unblockUser: (userId: number) => `/api/v1/admin/unblock-user/${userId}`,
-  sendMessageToUser: () => `/api/v1/admin/send-message`,
+export const apiEndpoints = {
+  // Authentication
+  signIn: () => '/sign-in/',
+  verifyTelegram: () => '/verify-telegram',
   
-  // Inventory management
-  deleteAllInventory: (userId: number) => `/api/v1/users/${userId}/inventory/delete-all`,
-  updateAllInventory: (userId: number) => `/api/v1/users/${userId}/inventory/update-all`,
+  // Diamonds/Inventory
+  getAllStones: (userId: number) => `/get_all_stones?user_id=${userId}`,
+  addStone: () => '/add_stone',
+  addDiamond: () => '/diamonds',
+  updateStone: () => '/update_stone',
+  updateDiamond: (diamondId: string) => `/diamonds/${diamondId}`,
+  deleteStone: () => '/delete_stone',
+  deleteDiamond: (diamondId: string) => `/delete_stone/${diamondId}?diamond_id=${diamondId}`,
+  uploadCsv: () => '/upload_csv',
+  uploadInventory: () => '/upload_csv',
+  
+  // Inventory Management
+  deleteAllInventory: (userId: number) => `/inventory/delete_all?user_id=${userId}`,
+  updateAllInventory: (userId: number) => `/inventory/update_all?user_id=${userId}`,
+  
+  // Store
+  getStoreStones: () => '/store/stones',
+  
+  // Analytics & Insights
+  getInsights: (userId: number) => `/insights?user_id=${userId}`,
+  getDashboard: (userId: number) => `/dashboard?user_id=${userId}`,
+  getDashboardStats: (userId: number) => `/dashboard/stats?user_id=${userId}`,
+  
+  // Reports  
+  getReports: (userId: number) => `/reports?user_id=${userId}`,
+  createReport: () => '/create-report',
+  getReport: (diamondId: number) => `/get-report?diamond_id=${diamondId}`,
+  
+  // Admin Actions
+  blockUser: () => '/admin/block_user',
+  unblockUser: (userId: number) => `/admin/unblock_user/${userId}`,
+  sendMessageToUser: () => '/admin/send_message',
+  getAllClients: () => '/admin/clients',
+  
+  // Payment Management
+  removeUserPayments: (userId: number) => `/payments/user/${userId}`,
+  removeAllPayments: () => '/payments/all',
+  getUserPayments: (userId: number) => `/payments/user/${userId}`,
+  getPaymentStats: () => '/payments/stats',
+  sendPaymentRequest: () => '/payment_request',
+  
+  // Health Check
+  isApiAlive: () => '/alive',
 };
+

@@ -72,11 +72,19 @@ export function useOpenAIChat() {
 
       setMessages(prev => [...prev, assistantMessage]);
       
-      if (data?.error) {
-        console.error('🤖 OpenAI function returned an error message:', data.error);
+      // Show success toast for successful responses
+      if (data?.success && !data?.error) {
         toast({
-          title: "AI Assistant Issue",
-          description: `The AI returned an error: ${data.error}. You can continue chatting with fallback responses.`,
+          title: "💎 Diamond Assistant",
+          description: "Response generated with live inventory data",
+        });
+      }
+      
+      if (data?.error && !data?.success) {
+        console.error('🤖 OpenAI function returned an error:', data.error);
+        toast({
+          title: "⚠️ AI Assistant Issue",
+          description: `Service issue: ${data.error}. Please check your configuration.`,
           variant: "destructive",
         });
       }
@@ -84,7 +92,17 @@ export function useOpenAIChat() {
     } catch (error) {
       console.error('🤖 Chat hook error:', error);
       
-      const errorMessageText = 'I\'m currently offline. Please check your internet connection and try again. As your diamond assistant, I can help with grading, pricing, and more once I\'m back online.';
+      const errorMessageText = `I'm currently offline due to a technical issue. Please check the following:
+
+🔧 **Configuration Check:**
+• OpenAI API key is set in Supabase Edge Function Secrets
+• BACKEND_URL points to your FastAPI server  
+• BACKEND_ACCESS_TOKEN is configured correctly
+• Your FastAPI backend is running and accessible
+
+As your diamond assistant, I can help with grading, pricing, inventory analysis, and market insights once I'm reconnected. Please try again in a moment.
+
+**Technical details:** ${error instanceof Error ? error.message : 'Unknown error'}`;
       
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -95,8 +113,8 @@ export function useOpenAIChat() {
       setMessages(prev => [...prev, errorMessage]);
 
       toast({
-        title: "Connection Error",
-        description: "Could not reach the AI assistant. Please check your network connection.",
+        title: "🔌 Connection Error",
+        description: "Could not reach the AI assistant. Please check your network connection and configuration.",
         variant: "destructive",
       });
     } finally {
@@ -106,6 +124,10 @@ export function useOpenAIChat() {
 
   const clearMessages = () => {
     setMessages([]);
+    toast({
+      title: "Chat Cleared",
+      description: "Started a new conversation",
+    });
   };
 
   return {

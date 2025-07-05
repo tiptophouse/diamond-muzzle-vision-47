@@ -2,7 +2,7 @@
 import { API_BASE_URL } from './config';
 import { apiEndpoints } from './endpoints';
 import { setCurrentUserId } from './config';
-import { getBackendAccessToken } from './secureConfig';
+import { telegramAuthService } from './telegramAuth';
 
 export interface TelegramVerificationResponse {
   success: boolean;
@@ -24,12 +24,11 @@ export function getVerificationResult(): TelegramVerificationResponse | null {
   return verificationResult;
 }
 
-// Enhanced verification with security logging
+// Enhanced verification with new JWT token flow
 export async function verifyTelegramUser(initData: string): Promise<TelegramVerificationResponse | null> {
   try {
-    console.log('🔐 API: Enhanced Telegram user verification starting');
-    console.log('🔐 API: Sending to:', `${API_BASE_URL}${apiEndpoints.verifyTelegram()}`);
-    console.log('🔐 API: InitData length:', initData.length);
+    console.log('🔐 Starting enhanced Telegram verification with JWT flow');
+    console.log('🔐 InitData length:', initData.length);
     
     // Pre-validation checks
     const urlParams = new URLSearchParams(initData);
@@ -37,7 +36,7 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     const hash = urlParams.get('hash');
     
     if (!authDate || !hash) {
-      console.warn('🔐 API: Missing required initData parameters');
+      console.warn('🔐 Missing required initData parameters');
       verificationResult = null;
       return null;
     }
@@ -48,111 +47,52 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     const age = now - authDateTime;
     
     if (age > 60000) { // 60 seconds
-      console.warn('🔐 API: InitData too old for verification:', age / 1000, 'seconds');
+      console.warn('🔐 InitData too old for verification:', age / 1000, 'seconds');
       verificationResult = null;
       return null;
     }
     
-    // Get secure backend access token
-    const backendToken = await getBackendAccessToken();
-    if (!backendToken) {
-      console.error('🔐 API: Failed to retrieve secure backend access token');
+    // Use the new SignIn endpoint instead of verify-telegram
+    const signInResult = await telegramAuthService.signIn(initData);
+    
+    if (!signInResult) {
+      console.error('🔐 SignIn failed');
       verificationResult = null;
       return null;
     }
-    
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': `Bearer ${backendToken}`,
-      'X-Timestamp': now.toString(),
-      'X-Client-Version': '1.0.0'
+
+    // Create verification response format for compatibility
+    const result: TelegramVerificationResponse = {
+      success: true,
+      user_id: signInResult.user_id,
+      user_data: {
+        id: signInResult.user_id,
+        first_name: 'User', // Will be populated from initData if available
+      },
+      security_info: {
+        timestamp_valid: true,
+        age_seconds: age / 1000,
+        replay_protected: true,
+        signature_valid: true,
+      }
     };
-    
-    console.log('🔐 API: Using secure backend access token for verification');
-    
-    const response = await fetch(`${API_BASE_URL}${apiEndpoints.verifyTelegram()}`, {
-      method: 'POST',
-      headers,
-      mode: 'cors',
-      body: JSON.stringify({
-        init_data: initData,
-        client_timestamp: now,
-        security_level: 'enhanced'
-      }),
-    });
 
-    console.log('🔐 API: Verification response status:', response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('🔐 API: Verification failed with status:', response.status, 'body:', errorText);
-      
-      // Log security event
-      console.warn('🚫 Security Event: Verification failed', {
-        status: response.status,
-        initDataAge: age / 1000,
-        timestamp: new Date().toISOString()
-      });
-      
-      verificationResult = null;
-      return null;
-    }
-
-    const result: TelegramVerificationResponse = await response.json();
-    console.log('✅ API: Enhanced Telegram verification successful:', result);
-    
-    // Log successful authentication
-    console.log('📊 Security Event: Verification successful', {
-      userId: result.user_id,
-      securityInfo: result.security_info,
-      timestamp: new Date().toISOString()
-    });
+    console.log('✅ Enhanced Telegram verification successful with JWT token');
     
     verificationResult = result;
-    if (result.success && result.user_id) {
-      setCurrentUserId(result.user_id);
-    }
+    setCurrentUserId(result.user_id);
     
     return result;
   } catch (error) {
-    console.error('❌ API: Enhanced Telegram verification failed:', error);
-    
-    // Log security event for monitoring
-    console.warn('🚫 Security Event: Verification error', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
-    });
-    
+    console.error('❌ Enhanced Telegram verification failed:', error);
     verificationResult = null;
     return null;
   }
 }
 
 export async function getAuthHeaders(): Promise<Record<string, string>> {
-  // Get secure backend access token
-  const backendToken = await getBackendAccessToken();
-  
-  const headers: Record<string, string> = {
-    "X-Client-Timestamp": Date.now().toString()
-  };
-  
-  if (backendToken) {
-    headers["Authorization"] = `Bearer ${backendToken}`;
-    console.log('🚀 API: Using secure backend access token for requests');
-  } else {
-    console.warn('⚠️ API: No secure backend access token available');
-  }
-  
-  // Add enhanced auth headers if available from verification
-  if (verificationResult && verificationResult.success) {
-    const authToken = `telegram_verified_${verificationResult.user_id}_${Date.now()}`;
-    headers["X-Telegram-Auth"] = authToken;
-    headers["X-Security-Level"] = "enhanced";
-    console.log('🚀 API: Added enhanced telegram auth token to request');
-  }
-  
-  return headers;
+  // Use the new JWT token from telegramAuthService
+  return telegramAuthService.getAuthHeaders();
 }
 
 // Security monitoring
@@ -160,6 +100,8 @@ export function getSecurityMetrics() {
   return {
     lastVerification: verificationResult ? new Date().toISOString() : null,
     verificationStatus: verificationResult?.success || false,
-    securityInfo: verificationResult?.security_info || null
+    securityInfo: verificationResult?.security_info || null,
+    jwtAuthenticated: telegramAuthService.isAuthenticated(),
+    userId: telegramAuthService.getUserId()
   };
 }

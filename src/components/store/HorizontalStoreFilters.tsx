@@ -13,8 +13,6 @@ interface HorizontalStoreFiltersProps {
     shapes: string[];
     colors: string[];
     clarities: string[];
-    cuts: string[];
-    fluorescence: string[];
     caratRange: [number, number];
     priceRange: [number, number];
   };
@@ -51,8 +49,6 @@ export function HorizontalStoreFilters({
     filters.shapes.length + 
     filters.colors.length + 
     filters.clarities.length + 
-    filters.cuts.length +
-    filters.fluorescence.length +
     (filters.caratRange[0] > minCarat || filters.caratRange[1] < maxCarat ? 1 : 0) +
     (filters.priceRange[0] > minPrice || filters.priceRange[1] < maxPrice ? 1 : 0);
 
@@ -67,7 +63,6 @@ export function HorizontalStoreFilters({
   const colors = ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
   const clarities = ['FL', 'IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'I1', 'I2'];
   const cuts = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'];
-  const fluorescenceOptions = ['None', 'Faint', 'Medium', 'Strong', 'Very Strong'];
 
   return (
     <div className="bg-white space-y-6">
@@ -185,14 +180,14 @@ export function HorizontalStoreFilters({
             {cuts.map((cut) => (
               <Button
                 key={cut}
-                variant={filters.cuts.includes(cut) ? "default" : "outline"}
+                variant={filters.colors.includes(cut) ? "default" : "outline"}
                 size="sm"
                 className={`h-8 px-3 text-xs ${
-                  filters.cuts.includes(cut) 
+                  filters.colors.includes(cut) 
                     ? "bg-blue-600 text-white" 
                     : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
                 }`}
-                onClick={() => toggleFilter('cuts', cut)}
+                onClick={() => toggleFilter('colors', cut)}
               >
                 {cut}
               </Button>
@@ -201,8 +196,8 @@ export function HorizontalStoreFilters({
         </div>
       </div>
 
-      {/* Color, Clarity and Fluorescence Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Color and Clarity Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Color Filter */}
         <div className="space-y-3">
           <h4 className="font-medium text-gray-900 flex items-center gap-2">
@@ -248,31 +243,6 @@ export function HorizontalStoreFilters({
                 onClick={() => toggleFilter('clarities', clarity)}
               >
                 {clarity}
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        {/* Fluorescence Filter */}
-        <div className="space-y-3">
-          <h4 className="font-medium text-gray-900 flex items-center gap-2">
-            Fluorescence
-            <span className="w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center text-xs">?</span>
-          </h4>
-          <div className="flex flex-wrap gap-1">
-            {fluorescenceOptions.map((fluorescence) => (
-              <Button
-                key={fluorescence}
-                variant={filters.fluorescence.includes(fluorescence) ? "default" : "outline"}
-                size="sm"
-                className={`h-8 px-2 text-xs ${
-                  filters.fluorescence.includes(fluorescence) 
-                    ? "bg-blue-600 text-white border-blue-600" 
-                    : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-                }`}
-                onClick={() => toggleFilter('fluorescence', fluorescence)}
-              >
-                {fluorescence}
               </Button>
             ))}
           </div>
