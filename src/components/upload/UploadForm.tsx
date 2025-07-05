@@ -4,18 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Upload, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { useCsvProcessor } from "@/hooks/useCsvProcessor";
-import { useUploadHandler } from "@/hooks/useUploadHandler";
+import { useIntelligentCsvProcessor } from "@/hooks/useIntelligentCsvProcessor";
+import { useEnhancedUploadHandler } from "@/hooks/useEnhancedUploadHandler";
 import { FileUploadArea } from "./FileUploadArea";
 import { UploadProgress } from "./UploadProgress";
-import { UploadResult } from "./UploadResult";
+import { EnhancedUploadResult } from "./EnhancedUploadResult";
 import { UploadInstructions } from "./UploadInstructions";
 
 export function UploadForm() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { user, isAuthenticated } = useTelegramAuth();
-  const { validateFile } = useCsvProcessor();
-  const { uploading, progress, result, handleUpload, resetState } = useUploadHandler();
+  const { validateFile } = useIntelligentCsvProcessor();
+  const { uploading, progress, result, handleUpload, resetState } = useEnhancedUploadHandler();
 
   const handleFileChange = (file: File | null) => {
     if (!validateFile(file)) {
@@ -62,7 +62,7 @@ export function UploadForm() {
             />
 
             <UploadProgress progress={progress} uploading={uploading} />
-            <UploadResult result={result} />
+            <EnhancedUploadResult result={result} />
 
             {selectedFile && (
               <div className="flex justify-end gap-3">
@@ -79,7 +79,7 @@ export function UploadForm() {
                   disabled={uploading || !!result}
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  {uploading ? "Processing..." : "Process CSV"}
+                  {uploading ? "Smart Processing..." : "Smart Process CSV"}
                 </Button>
               </div>
             )}
