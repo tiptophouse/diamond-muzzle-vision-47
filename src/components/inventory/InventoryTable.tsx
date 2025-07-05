@@ -1,4 +1,3 @@
-
 import {
   Table,
   TableBody,
@@ -26,11 +25,6 @@ export interface Diamond {
   lab?: string;
   gem360Url?: string;
   certificateUrl?: string;
-  // Add API-specific fields
-  diamond_id?: number; // This is the FastAPI diamond ID
-  stock_number?: string; // Alternative stock field
-  weight?: number; // Alternative carat field
-  picture?: string; // Alternative image field
 }
 
 interface InventoryTableProps {
