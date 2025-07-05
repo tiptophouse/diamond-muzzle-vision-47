@@ -103,7 +103,7 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
         certificate_comment: formData.description
       };
 
-      const endpoint = apiEndpoints.updateDiamond(diamond.id);
+      const endpoint = apiEndpoints.updateDiamond(diamond.id, user!.id);
       const result = await api.put(endpoint, updateData);
 
       if (result.error) {
