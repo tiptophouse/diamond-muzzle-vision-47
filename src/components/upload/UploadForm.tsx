@@ -79,7 +79,7 @@ export function UploadForm() {
                   disabled={uploading || !!result}
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  {uploading ? "Smart Processing..." : "Smart Process CSV"}
+                  {uploading ? "📱 Processing..." : "📊 Process File"}
                 </Button>
               </div>
             )}

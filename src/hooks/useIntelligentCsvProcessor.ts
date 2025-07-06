@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
+import * as XLSX from 'xlsx';
 
 interface FieldMapping {
   detectedField: string;
@@ -292,18 +293,75 @@ export function useIntelligentCsvProcessor() {
 
   const processIntelligentCsv = async (file: File): Promise<ProcessedCsvData> => {
     try {
-      const text = await file.text();
-      const lines = text.split('\n').filter(line => line.trim());
-      
-      if (lines.length < 2) {
-        throw new Error('CSV file must contain at least a header row and one data row');
-      }
+      const fileName = file.name.toLowerCase();
+      let headers: string[] = [];
+      let rawData: any[] = [];
 
-      // Parse headers
-      const headerLine = lines[0];
-      const headers = headerLine.split(',').map(h => h.trim().replace(/['"]/g, ''));
+      if (fileName.endsWith('.xlsx')) {
+        console.log('📱 Processing XLSX file for mobile upload...');
+        
+        // Read XLSX file
+        const arrayBuffer = await file.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        
+        // Convert to JSON
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        
+        if (jsonData.length < 2) {
+          throw new Error('XLSX file must contain at least a header row and one data row');
+        }
+        
+        headers = (jsonData[0] as any[]).map(h => String(h || '').trim());
+        
+        // Convert remaining rows to objects
+        for (let i = 1; i < jsonData.length; i++) {
+          const rowArray = jsonData[i] as any[];
+          if (rowArray && rowArray.some(cell => cell !== null && cell !== undefined && cell !== '')) {
+            const row: any = {};
+            headers.forEach((header, index) => {
+              const value = rowArray[index];
+              row[header] = value !== null && value !== undefined ? String(value).trim() : '';
+            });
+            rawData.push(row);
+          }
+        }
+      } else {
+        console.log('📱 Processing CSV file for mobile upload...');
+        
+        // Handle CSV as before
+        const text = await file.text();
+        const lines = text.split('\n').filter(line => line.trim());
+        
+        if (lines.length < 2) {
+          throw new Error('CSV file must contain at least a header row and one data row');
+        }
+
+        // Parse headers
+        const headerLine = lines[0];
+        headers = headerLine.split(',').map(h => h.trim().replace(/['"]/g, ''));
+        
+        // Process each data row
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+          
+          // Parse CSV line handling quoted values
+          const values = parseCsvLine(line);
+          
+          if (values.length >= headers.length) {
+            const row: any = {};
+            headers.forEach((header, index) => {
+              const value = values[index] || '';
+              row[header] = value.replace(/['"]/g, '').trim();
+            });
+            rawData.push(row);
+          }
+        }
+      }
       
-      console.log('🔍 CSV Headers detected:', headers);
+      console.log('🔍 Headers detected:', headers);
       
       // Map headers to standard fields
       const { mappings, unmapped } = mapHeaders(headers);
@@ -311,28 +369,7 @@ export function useIntelligentCsvProcessor() {
       console.log('🎯 Field mappings:', mappings);
       console.log('❓ Unmapped fields:', unmapped);
 
-      const processedData = [];
-      
-      // Process each data row
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        
-        // Parse CSV line handling quoted values
-        const values = parseCsvLine(line);
-        
-        if (values.length >= headers.length) {
-          const row: any = {};
-          headers.forEach((header, index) => {
-            const value = values[index] || '';
-            row[header] = value.replace(/['"]/g, '').trim();
-          });
-          
-          // Transform row using intelligent mapping
-          const transformedRow = transformDataRow(row, mappings);
-          processedData.push(transformedRow);
-        }
-      }
+      const processedData = rawData.map(row => transformDataRow(row, mappings));
       
       return {
         data: processedData,
@@ -343,8 +380,8 @@ export function useIntelligentCsvProcessor() {
       };
       
     } catch (error) {
-      console.error('Intelligent CSV processing error:', error);
-      throw new Error(`Failed to process CSV: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Intelligent file processing error:', error);
+      throw new Error(`Failed to process file: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -381,15 +418,18 @@ export function useIntelligentCsvProcessor() {
       return false;
     }
 
-    // Check file type
+    // Check file type - support both CSV and XLSX for mobile users
+    const fileName = file.name.toLowerCase();
     const isValidType = file.type === 'text/csv' || 
                        file.type === 'application/vnd.ms-excel' ||
-                       file.name.toLowerCase().endsWith('.csv');
+                       file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+                       fileName.endsWith('.csv') ||
+                       fileName.endsWith('.xlsx');
     
     if (!isValidType) {
       toast({
         title: "Invalid file type",
-        description: "Please select a CSV file (.csv)",
+        description: "Please select a CSV or XLSX file (.csv or .xlsx)",
         variant: "destructive",
       });
       return false;

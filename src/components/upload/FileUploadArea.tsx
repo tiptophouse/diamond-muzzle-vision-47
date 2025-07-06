@@ -16,8 +16,9 @@ export function FileUploadArea({ selectedFile, onFileChange, onReset }: FileUplo
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       
-      // Validate file type
-      if (!file.name.toLowerCase().endsWith('.csv')) {
+      // Validate file type - support both CSV and XLSX for mobile users
+      const fileName = file.name.toLowerCase();
+      if (!fileName.endsWith('.csv') && !fileName.endsWith('.xlsx')) {
         // Let parent handle validation error
         onFileChange(null);
         return;
@@ -30,21 +31,22 @@ export function FileUploadArea({ selectedFile, onFileChange, onReset }: FileUplo
   if (!selectedFile) {
     return (
       <div 
-        className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-diamond-300 transition-colors cursor-pointer"
+        className="border-2 border-dashed border-gray-300 rounded-lg p-8 md:p-12 text-center hover:border-diamond-300 transition-colors cursor-pointer touch-manipulation"
         onClick={() => fileInputRef.current?.click()}
       >
-        <Upload className="h-12 w-12 mx-auto text-gray-400" />
-        <p className="mt-4 text-sm text-gray-600">
-          Drag and drop your CSV file here, or <span className="text-diamond-600 font-medium">browse</span> to select
+        <Upload className="h-10 w-10 md:h-12 md:w-12 mx-auto text-gray-400" />
+        <p className="mt-3 md:mt-4 text-sm md:text-base text-gray-600">
+          <span className="hidden md:inline">Drag and drop your inventory file here, or </span>
+          <span className="text-diamond-600 font-medium text-base md:text-sm">Tap to select file</span>
         </p>
-        <p className="mt-2 text-xs text-gray-500">
-          Supported format: CSV
+        <p className="mt-2 text-xs md:text-sm text-gray-500">
+          📱 Mobile-friendly: CSV & XLSX supported
         </p>
         <input
           ref={fileInputRef}
           type="file"
           className="hidden"
-          accept=".csv"
+          accept=".csv,.xlsx"
           onChange={handleFileChange}
         />
       </div>
