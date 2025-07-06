@@ -6,17 +6,28 @@ import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { AdminStoreControls } from "./AdminStoreControls";
 import { Gem360Viewer } from "./Gem360Viewer";
+import { DiamondDetailsModal } from "./DiamondDetailsModal";
 
 const ADMIN_TELEGRAM_ID = 2138564172;
 
 interface ProfessionalDiamondCardProps {
   diamond: Diamond;
   onUpdate?: () => void;
+  onAddToWishlist?: (diamond: Diamond) => void;
+  isInWishlist?: boolean;
+  diamondOwnerTelegramId?: number;
 }
 
-export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamondCardProps) {
+export function ProfessionalDiamondCard({ 
+  diamond, 
+  onUpdate, 
+  onAddToWishlist,
+  isInWishlist = false,
+  diamondOwnerTelegramId 
+}: ProfessionalDiamondCardProps) {
   const [imageError, setImageError] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
+  const [isLiked, setIsLiked] = useState(isInWishlist);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const { user, isTelegramEnvironment } = useTelegramAuth();
   
   // Only show admin controls if:
@@ -63,154 +74,185 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
   const diamondImageUrl = !hasGem360View && diamond.imageUrl && !diamond.imageUrl.includes('gem360') 
     ? diamond.imageUrl 
     : `https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop&crop=center`;
-
+  
   const handleDelete = () => {
     // Trigger refetch of data
     if (onUpdate) onUpdate();
   };
 
-  return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 group relative">
-      {/* Admin Controls - Only show for verified admin in Telegram environment */}
-      {isAdmin && (
-        <>
-          {/* Admin Badge */}
-          <div className="absolute top-2 left-2 z-20">
-            <Badge className="bg-blue-600 text-white text-xs px-2 py-1">
-              ADMIN
-            </Badge>
-          </div>
-          
-          {/* Admin Controls Component */}
-          <AdminStoreControls 
-            diamond={diamond}
-            onUpdate={onUpdate || (() => {})}
-            onDelete={handleDelete}
-          />
-        </>
-      )}
+  const handleAddToWishlist = () => {
+    if (onAddToWishlist) {
+      onAddToWishlist(diamond);
+      setIsLiked(true);
+    }
+  };
 
-      {/* Image/3D Viewer Container */}
-      <div className="relative aspect-square bg-gray-50 overflow-hidden">
-        {hasGem360View ? (
-          // Show 3D Gem360 viewer
-          <Gem360Viewer 
-            gem360Url={gem360Url!}
-            stockNumber={diamond.stockNumber}
-            isInline={true}
-          />
-        ) : (
-          // Show regular image
+  const handleViewDetails = () => {
+    setShowDetailsModal(true);
+  };
+
+  return (
+    <>
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 group relative">
+        {/* Admin Controls - Only show for verified admin in Telegram environment */}
+        {isAdmin && (
           <>
-            {!imageError ? (
-              <img
-                src={diamondImageUrl}
-                alt={`${diamond.shape} Diamond`}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                onError={() => setImageError(true)}
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-200 to-purple-200 rounded-full"></div>
-                </div>
-              </div>
-            )}
+            {/* Admin Badge */}
+            <div className="absolute top-2 left-2 z-20">
+              <Badge className="bg-blue-600 text-white text-xs px-2 py-1">
+                ADMIN
+              </Badge>
+            </div>
+            
+            {/* Admin Controls Component */}
+            <AdminStoreControls 
+              diamond={diamond}
+              onUpdate={onUpdate || (() => {})}
+              onDelete={handleDelete}
+            />
           </>
         )}
-        
-        {/* Action Icons - only show for non-admin users and when not showing 3D viewer */}
-        {!isAdmin && !hasGem360View && (
-          <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
-              size="icon"
-              variant="secondary"
-              className={`w-8 h-8 rounded-full bg-white/90 hover:bg-white ${isLiked ? 'text-red-500' : 'text-gray-600'}`}
-              onClick={() => setIsLiked(!isLiked)}
-            >
-              <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
-            </Button>
-            <Button
-              size="icon"
-              variant="secondary"
-              className="w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-600"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-            <Button
-              size="icon"
-              variant="secondary"
-              className="w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-600"
-            >
-              <Share className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
 
-        {/* GIA Badge - only show when not showing 3D viewer */}
-        {!hasGem360View && (
-          <div className="absolute bottom-3 left-3">
-            <div className="bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
-              <div className="w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs font-bold">G</span>
+        {/* Image/3D Viewer Container */}
+        <div className="relative aspect-square bg-gray-50 overflow-hidden">
+          {hasGem360View ? (
+            // Show 3D Gem360 viewer
+            <Gem360Viewer 
+              gem360Url={gem360Url!}
+              stockNumber={diamond.stockNumber}
+              isInline={true}
+            />
+          ) : (
+            // Show regular image
+            <>
+              {!imageError ? (
+                <img
+                  src={diamondImageUrl}
+                  alt={`${diamond.shape} Diamond`}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  onError={() => setImageError(true)}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                  <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-200 to-purple-200 rounded-full"></div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+          
+          {/* Action Icons - only show for non-admin users and when not showing 3D viewer */}
+          {!isAdmin && !hasGem360View && (
+            <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button
+                size="icon"
+                variant="secondary"
+                className={`w-8 h-8 rounded-full bg-white/90 hover:bg-white ${isLiked ? 'text-red-500' : 'text-gray-600'}`}
+                onClick={handleAddToWishlist}
+                disabled={isLiked}
+              >
+                <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
+              </Button>
+              <Button
+                size="icon"
+                variant="secondary"
+                className="w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-600"
+                onClick={handleViewDetails}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+              <Button
+                size="icon"
+                variant="secondary"
+                className="w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-600"
+              >
+                <Share className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
+          {/* GIA Badge - only show when not showing 3D viewer */}
+          {!hasGem360View && (
+            <div className="absolute bottom-3 left-3">
+              <div className="bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
+                <div className="w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">G</span>
+                </div>
+                <span className="text-xs font-medium text-gray-900">GIA</span>
               </div>
-              <span className="text-xs font-medium text-gray-900">GIA</span>
+            </div>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="p-4 space-y-3">
+          {/* Title */}
+          <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
+            GIA {diamond.carat} Carat {diamond.color}-{diamond.clarity} {diamond.cut} Cut {diamond.shape} Diamond
+          </h3>
+
+          {/* Price */}
+          <div className="text-lg font-bold text-gray-900">
+            ${diamond.price.toLocaleString()}
+          </div>
+
+          {/* Quick Details - Horizontal Layout */}
+          <div className="grid grid-cols-4 gap-2 text-xs">
+            <div className="text-center">
+              <div className="text-gray-500">Carat</div>
+              <div className="font-medium">{diamond.carat}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-gray-500">Color</div>
+              <div className="font-medium">{diamond.color}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-gray-500">Clarity</div>
+              <div className="font-medium">{diamond.clarity}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-gray-500">Cut</div>
+              <div className="font-medium text-xs">{diamond.cut.slice(0, 4)}</div>
             </div>
           </div>
-        )}
+
+          {/* Stock Number */}
+          <div className="text-xs text-gray-500 border-t pt-2">
+            Stock #{diamond.stockNumber}
+          </div>
+
+          {/* 3D View Badge */}
+          {hasGem360View && (
+            <div className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">
+              ✨ Interactive 3D view available above
+            </div>
+          )}
+
+          {/* Admin Info - only show for admin users */}
+          {isAdmin && (
+            <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+              Admin: Click edit/delete buttons above to manage this diamond
+            </div>
+          )}
+
+          {/* Wishlist Status */}
+          {!isAdmin && isLiked && (
+            <div className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
+              ❤️ Added to your wishlist
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="p-4 space-y-3">
-        {/* Title */}
-        <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
-          GIA {diamond.carat} Carat {diamond.color}-{diamond.clarity} {diamond.cut} Cut {diamond.shape} Diamond
-        </h3>
-
-        {/* Price */}
-        <div className="text-lg font-bold text-gray-900">
-          ${diamond.price.toLocaleString()}
-        </div>
-
-        {/* Quick Details - Horizontal Layout */}
-        <div className="grid grid-cols-4 gap-2 text-xs">
-          <div className="text-center">
-            <div className="text-gray-500">Carat</div>
-            <div className="font-medium">{diamond.carat}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-gray-500">Color</div>
-            <div className="font-medium">{diamond.color}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-gray-500">Clarity</div>
-            <div className="font-medium">{diamond.clarity}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-gray-500">Cut</div>
-            <div className="font-medium text-xs">{diamond.cut.slice(0, 4)}</div>
-          </div>
-        </div>
-
-        {/* Stock Number */}
-        <div className="text-xs text-gray-500 border-t pt-2">
-          Stock #{diamond.stockNumber}
-        </div>
-
-        {/* 3D View Badge */}
-        {hasGem360View && (
-          <div className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">
-            ✨ Interactive 3D view available above
-          </div>
-        )}
-
-        {/* Admin Info - only show for admin users */}
-        {isAdmin && (
-          <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-            Admin: Click edit/delete buttons above to manage this diamond
-          </div>
-        )}
-      </div>
-    </div>
+      {/* Diamond Details Modal */}
+      <DiamondDetailsModal
+        diamond={diamond}
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+        onAddToWishlist={onAddToWishlist}
+        isInWishlist={isInWishlist}
+      />
+    </>
   );
 }
