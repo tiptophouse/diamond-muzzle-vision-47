@@ -55,11 +55,11 @@ export function useEnhancedUploadHandler() {
 
       setProgress(30);
 
-      // Enhance data with OpenAI for better field mapping
-      console.log('🤖 Enhancing data with OpenAI...');
+      // Enhance data with built-in logic (faster than OpenAI)
+      console.log('🤖 Applying built-in data enhancement...');
       const enhancedData = await enhanceDataWithOpenAI(processedCsv.data);
       
-      setProgress(50);
+      setProgress(70);
 
       // Try to upload to FastAPI backend first
       try {
@@ -69,8 +69,15 @@ export function useEnhancedUploadHandler() {
         // Upload each diamond individually using the correct endpoint
         let successCount = 0;
         const errors = [];
+        const totalDiamonds = enhancedData.length;
         
-        for (const diamondData of enhancedData) {
+        for (let i = 0; i < enhancedData.length; i++) {
+          const diamondData = enhancedData[i];
+          
+          // Update progress for each diamond
+          const uploadProgress = 70 + Math.round((i / totalDiamonds) * 25);
+          setProgress(uploadProgress);
+          
           try {
             const payload = {
               stock: diamondData.stock || "string",
@@ -105,14 +112,20 @@ export function useEnhancedUploadHandler() {
               successCount++;
             }
           } catch (error) {
-            errors.push(`Row ${successCount + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            const errorMsg = `Diamond ${i + 1}: ${error instanceof Error ? error.message : 'Upload failed'}`;
+            errors.push(errorMsg);
+            console.warn('❌ Individual diamond upload failed:', errorMsg);
           }
         }
         
+        // Ensure we reach 95% before final processing
+        setProgress(95);
+        
         if (errors.length > 0 && successCount === 0) {
-          throw new Error(`All uploads failed: ${errors.join(', ')}`);
+          throw new Error(`All uploads failed. Most common issues: ${errors.slice(0, 3).join('; ')}`);
         }
 
+        // Complete progress
         setProgress(100);
         
         const successResult: UploadResult = {
@@ -133,10 +146,10 @@ export function useEnhancedUploadHandler() {
           window.location.reload(); // Force full refresh to see new diamonds
         }, 2000);
         
-        // Show beautiful AI-powered success summary
+        // Show immediate success toast
         toast({
-          title: "🎉 Upload Analysis Complete!",
-          description: `Your ${enhancedData.length} diamonds have been intelligently processed with detailed insights available.`,
+          title: "🎉 Upload Complete!",
+          description: `${successCount} diamonds uploaded successfully${errors.length > 0 ? `, ${errors.length} failed` : ''}. Check the detailed analysis below.`,
         });
 
         // Show field mapping summary if there are unmapped fields
@@ -187,9 +200,10 @@ export function useEnhancedUploadHandler() {
         setResult(fallbackResult);
         triggerInventoryChange();
         
+        // Show fallback success message
         toast({
-          title: "✅ Smart Processing Complete",
-          description: `Processed ${enhancedData.length} diamonds with intelligent field mapping`,
+          title: "✅ Processing Complete",
+          description: `${enhancedData.length} diamonds processed locally. Detailed analysis available below.`,
           variant: "default",
         });
       }
@@ -200,15 +214,16 @@ export function useEnhancedUploadHandler() {
       
       const errorResult: UploadResult = {
         success: false,
-        message: errorMessage,
-        errors: [errorMessage]
+        message: `Upload failed: ${errorMessage}. Please check your CSV format and try again.`,
+        errors: [errorMessage],
+        totalProcessed: 0
       };
       
       setResult(errorResult);
       
       toast({
         title: "❌ Upload Failed",
-        description: errorMessage,
+        description: errorMessage.length > 50 ? errorMessage.substring(0, 50) + "..." : errorMessage,
         variant: "destructive",
       });
     } finally {
