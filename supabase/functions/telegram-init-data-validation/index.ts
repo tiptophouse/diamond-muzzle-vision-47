@@ -1,6 +1,5 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createHmac } from "https://deno.land/std@0.190.0/node/crypto.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,14 +33,43 @@ if (!TELEGRAM_BOT_TOKEN) {
 }
 
 /**
+ * Helper function to create HMAC-SHA256 using Web Crypto API
+ */
+async function createHmacSha256(key: Uint8Array | string, data: string): Promise<Uint8Array> {
+  const encoder = new TextEncoder();
+  const keyBuffer = typeof key === 'string' ? encoder.encode(key) : key;
+  const dataBuffer = encoder.encode(data);
+  
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyBuffer,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  
+  const signature = await crypto.subtle.sign('HMAC', cryptoKey, dataBuffer);
+  return new Uint8Array(signature);
+}
+
+/**
+ * Convert Uint8Array to hex string
+ */
+function uint8ArrayToHex(array: Uint8Array): string {
+  return Array.from(array)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+/**
  * Validates Telegram Web App initData according to official Telegram specification
  * https://docs.telegram-mini-apps.com/platform/init-data#validating
  */
-function validateTelegramInitData(initData: string, botToken: string): {
+async function validateTelegramInitData(initData: string, botToken: string): Promise<{
   isValid: boolean;
   userData?: any;
   error?: string;
-} {
+}> {
   try {
     console.log('🔍 Starting Telegram initData validation');
     
@@ -71,14 +99,11 @@ function validateTelegramInitData(initData: string, botToken: string): {
     console.log('📊 Data check string created:', dataCheckString);
     
     // Step 4: Create HMAC-SHA256 with 'WebAppData' key applied to bot token
-    const secretKey = createHmac('sha256', 'WebAppData')
-      .update(botToken)
-      .digest();
+    const secretKey = await createHmacSha256('WebAppData', botToken);
     
     // Step 5: Create HMAC-SHA256 using the secret key applied to data check string
-    const calculatedHash = createHmac('sha256', secretKey)
-      .update(dataCheckString)
-      .digest('hex');
+    const calculatedHashBuffer = await createHmacSha256(secretKey, dataCheckString);
+    const calculatedHash = uint8ArrayToHex(calculatedHashBuffer);
     
     console.log('🔑 Calculated hash:', calculatedHash);
     console.log('🔑 Received hash:', receivedHash);
@@ -174,7 +199,7 @@ serve(async (req) => {
     console.log('🛡️ Security checks:', securityChecks);
     
     // Validate using proper Telegram algorithm
-    const validation = validateTelegramInitData(init_data, TELEGRAM_BOT_TOKEN);
+    const validation = await validateTelegramInitData(init_data, TELEGRAM_BOT_TOKEN);
     
     if (!validation.isValid) {
       console.warn('❌ Telegram initData validation failed:', validation.error);
