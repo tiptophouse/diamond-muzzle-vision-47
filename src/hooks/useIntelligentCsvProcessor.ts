@@ -47,10 +47,10 @@ export function useIntelligentCsvProcessor() {
       'cut', 'cut_grade', 'polish', 'make', 'finish', 'excellent', 'very_good',
       'good', 'fair', 'poor', 'ideal', 'premium'
     ],
-    price: [
+    price_per_carat: [
       'price', 'cost', 'amount', 'value', 'precio', 'prix', 'preco',
-      'total_price', 'unit_price', 'price_per_carat', 'rap', 'rapnet',
-      'asking_price', 'selling_price', 'market_price', 'wholesale_price'
+      'total_price', 'unit_price', 'price_per_carat', 'price/crt', 'price per carat',
+      'rap', 'rapnet', 'asking_price', 'selling_price', 'market_price', 'wholesale_price'
     ],
     lab: [
       'lab', 'laboratory', 'cert', 'certificate', 'certification', 'grading_lab',
@@ -177,7 +177,7 @@ export function useIntelligentCsvProcessor() {
     console.log('🔍 Raw row data:', row);
     console.log('🎯 Transformed row data:', transformedRow);
 
-    // Build the final diamond data, using actual CSV values when available
+    // Build the final diamond data, using the correctly mapped field names
     const result = {
       stock: transformedRow.stock || `AUTO-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
       shape: transformedRow.shape || 'round brilliant',
@@ -185,7 +185,8 @@ export function useIntelligentCsvProcessor() {
       color: transformedRow.color || 'G', 
       clarity: transformedRow.clarity || 'VS1',
       cut: transformedRow.cut || 'EXCELLENT',
-      price_per_carat: transformedRow.price || 5000,
+      // Fixed: Use price_per_carat field name, not just 'price'
+      price_per_carat: transformedRow.price_per_carat || transformedRow.price || 5000,
       lab: transformedRow.lab || 'GIA',
       certificate_number: transformedRow.certificate_number || Math.floor(Math.random() * 1000000),
       length: transformedRow.length || 6.5,
