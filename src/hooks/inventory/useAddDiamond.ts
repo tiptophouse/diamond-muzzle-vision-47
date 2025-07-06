@@ -36,7 +36,7 @@ export function useAddDiamond(onSuccess?: () => void) {
       // Match your exact FastAPI endpoint format
       const diamondDataPayload = {
         stock: data.stockNumber || `MANUAL-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-        shape: data.shape?.toLowerCase() || "round brilliant",
+        shape: data.shape === 'Round' ? "round brilliant" : (data.shape?.toLowerCase() || "round brilliant"),
         weight: Number(data.carat) || 1.0,
         color: data.color || "G",
         clarity: data.clarity || "VS1",
@@ -92,9 +92,11 @@ export function useAddDiamond(onSuccess?: () => void) {
         
       } catch (apiError) {
         console.error('❌ ADD: FastAPI add failed:', apiError);
+        console.error('❌ ADD: Full API error details:', JSON.stringify(apiError, null, 2));
         
         // Show specific error message
         const errorMessage = apiError instanceof Error ? apiError.message : "Failed to add diamond via API";
+        console.error('❌ ADD: Error message:', errorMessage);
         
         // Fallback to localStorage
         console.log('🔄 ADD: Falling back to localStorage...');
@@ -134,8 +136,10 @@ export function useAddDiamond(onSuccess?: () => void) {
       
     } catch (error) {
       console.error('❌ ADD: Unexpected error:', error);
+      console.error('❌ ADD: Full unexpected error details:', JSON.stringify(error, null, 2));
       
       const errorMessage = error instanceof Error ? error.message : "Failed to add diamond. Please try again.";
+      console.error('❌ ADD: Final error message:', errorMessage);
       
       toast({
         variant: "destructive",
