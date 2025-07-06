@@ -192,9 +192,10 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
           </div>
         </div>
 
-        {/* Stock Number */}
-        <div className="text-xs text-gray-500 border-t pt-2">
-          Stock #{diamond.stockNumber}
+        {/* Stock Number & Certificate */}
+        <div className="text-xs text-gray-500 border-t pt-2 space-y-1">
+          <div>Stock #{diamond.stockNumber}</div>
+          <div>Cert #{diamond.certificateNumber || 'N/A'}</div>
         </div>
 
         {/* 3D View Badge */}

@@ -8,6 +8,7 @@ export function InventoryTableHeader() {
         <TableHead className="font-semibold text-slate-900 bg-slate-50">Image</TableHead>
         <TableHead className="font-semibold text-slate-900 bg-slate-50">Diamond ID</TableHead>
         <TableHead className="font-semibold text-slate-900 bg-slate-50">Stock #</TableHead>
+        <TableHead className="font-semibold text-slate-900 bg-slate-50">Cert #</TableHead>
         <TableHead className="font-semibold text-slate-900 bg-slate-50">Shape</TableHead>
         <TableHead className="font-semibold text-slate-900 bg-slate-50 text-right">Carat</TableHead>
         <TableHead className="font-semibold text-slate-900 bg-slate-50">Color</TableHead>
