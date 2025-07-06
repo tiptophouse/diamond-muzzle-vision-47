@@ -164,18 +164,26 @@ export function useIntelligentCsvProcessor() {
   };
 
   const transformDataRow = (row: any, fieldMappings: FieldMapping[]) => {
+    console.log('🔍 RAW ROW INPUT:', JSON.stringify(row, null, 2));
+    console.log('🎯 FIELD MAPPINGS:', JSON.stringify(fieldMappings, null, 2));
+    
     const transformedRow: any = {};
     
     // Map detected fields to standard fields
     for (const mapping of fieldMappings) {
       const value = row[mapping.detectedField];
+      console.log(`🔍 MAPPING: ${mapping.detectedField} -> ${mapping.mappedTo}, value: "${value}"`);
+      
       if (value !== undefined && value !== null && value !== '') {
-        transformedRow[mapping.mappedTo] = cleanValue(value, mapping.mappedTo);
+        const cleanedValue = cleanValue(value, mapping.mappedTo);
+        transformedRow[mapping.mappedTo] = cleanedValue;
+        console.log(`✅ MAPPED: ${mapping.mappedTo} = "${cleanedValue}"`);
+      } else {
+        console.log(`❌ EMPTY VALUE for ${mapping.detectedField}`);
       }
     }
 
-    console.log('🔍 Raw row data:', row);
-    console.log('🎯 Transformed row data:', transformedRow);
+    console.log('🎯 FINAL TRANSFORMED ROW:', JSON.stringify(transformedRow, null, 2));
 
     // Build the final diamond data, using the correctly mapped field names
     const result = {
