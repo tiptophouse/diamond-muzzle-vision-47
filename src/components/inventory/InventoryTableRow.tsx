@@ -2,6 +2,7 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Diamond } from "./InventoryTable";
 import { Edit, Trash, ImageIcon } from "lucide-react";
 import { StoreVisibilityToggle } from "./StoreVisibilityToggle";
@@ -11,11 +12,20 @@ interface InventoryTableRowProps {
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
   onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
+  isSelected?: boolean;
+  onSelect?: (selected: boolean) => void;
 }
 
-export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle }: InventoryTableRowProps) {
+export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle, isSelected, onSelect }: InventoryTableRowProps) {
   return (
-    <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-800">
+    <TableRow className={`hover:bg-slate-50 dark:hover:bg-slate-800 ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
+      <TableCell className="w-12">
+        <Checkbox
+          checked={isSelected}
+          onCheckedChange={onSelect}
+          aria-label={`Select diamond ${diamond.stockNumber}`}
+        />
+      </TableCell>
       <TableCell className="w-16">
         {diamond.imageUrl ? (
           <img 

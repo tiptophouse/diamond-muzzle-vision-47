@@ -35,9 +35,27 @@ interface InventoryTableProps {
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
   onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
+  onBulkDelete?: (diamondIds: string[]) => void;
+  selectedIds?: string[];
+  onSelectionChange?: (selectedIds: string[]) => void;
+  sortField?: keyof Diamond;
+  sortDirection?: 'asc' | 'desc';
+  onSort?: (field: keyof Diamond) => void;
 }
 
-export function InventoryTable({ data, loading = false, onEdit, onDelete, onStoreToggle }: InventoryTableProps) {
+export function InventoryTable({ 
+  data, 
+  loading = false, 
+  onEdit, 
+  onDelete, 
+  onStoreToggle, 
+  onBulkDelete,
+  selectedIds = [],
+  onSelectionChange,
+  sortField,
+  sortDirection,
+  onSort
+}: InventoryTableProps) {
   const isMobile = useIsMobile();
 
   if (loading) {
@@ -69,7 +87,14 @@ export function InventoryTable({ data, loading = false, onEdit, onDelete, onStor
     <div className="w-full rounded-md border overflow-hidden bg-background">
       <div className="w-full overflow-x-auto">
         <Table className="w-full min-w-full">
-          <InventoryTableHeader />
+          <InventoryTableHeader 
+            onSort={onSort}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            selectedIds={selectedIds}
+            allIds={data.map(d => d.id)}
+            onSelectionChange={onSelectionChange}
+          />
           <TableBody>
             {data.length === 0 ? (
               <InventoryTableEmpty />
@@ -81,6 +106,15 @@ export function InventoryTable({ data, loading = false, onEdit, onDelete, onStor
                   onEdit={onEdit}
                   onDelete={onDelete}
                   onStoreToggle={onStoreToggle}
+                  isSelected={selectedIds.includes(diamond.id)}
+                  onSelect={(selected) => {
+                    if (!onSelectionChange) return;
+                    if (selected) {
+                      onSelectionChange([...selectedIds, diamond.id]);
+                    } else {
+                      onSelectionChange(selectedIds.filter(id => id !== diamond.id));
+                    }
+                  }}
                 />
               ))
             )}
