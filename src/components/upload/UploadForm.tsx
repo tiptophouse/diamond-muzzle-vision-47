@@ -62,7 +62,7 @@ export function UploadForm() {
             />
 
             <UploadProgress progress={progress} uploading={uploading} />
-            <EnhancedUploadResult result={result} />
+            <EnhancedUploadResult result={result} fileName={selectedFile?.name} />
 
             {selectedFile && (
               <div className="flex justify-end gap-3">

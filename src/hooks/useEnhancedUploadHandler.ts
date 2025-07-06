@@ -13,6 +13,7 @@ interface UploadResult {
   errors?: string[];
   fieldMappings?: any[];
   unmappedFields?: string[];
+  totalProcessed?: number;
 }
 
 export function useEnhancedUploadHandler() {
@@ -120,7 +121,8 @@ export function useEnhancedUploadHandler() {
           processedCount: successCount,
           fieldMappings: processedCsv.fieldMappings,
           unmappedFields: processedCsv.unmappedFields,
-          errors: errors.length > 0 ? errors : undefined
+          errors: errors.length > 0 ? errors : undefined,
+          totalProcessed: enhancedData.length
         };
         
         setResult(successResult);
@@ -131,10 +133,10 @@ export function useEnhancedUploadHandler() {
           window.location.reload(); // Force full refresh to see new diamonds
         }, 2000);
         
-        // Show detailed success message
+        // Show beautiful AI-powered success summary
         toast({
-          title: "🎉 Smart Upload Successful!",
-          description: `Processed ${enhancedData.length} diamonds with ${processedCsv.successfulMappings} field mappings`,
+          title: "🎉 Upload Analysis Complete!",
+          description: `Your ${enhancedData.length} diamonds have been intelligently processed with detailed insights available.`,
         });
 
         // Show field mapping summary if there are unmapped fields
@@ -178,7 +180,8 @@ export function useEnhancedUploadHandler() {
           message: `Processed ${enhancedData.length} diamonds locally (backend unavailable). Smart mapping applied ${processedCsv.successfulMappings} fields.`,
           processedCount: enhancedData.length,
           fieldMappings: processedCsv.fieldMappings,
-          unmappedFields: processedCsv.unmappedFields
+          unmappedFields: processedCsv.unmappedFields,
+          totalProcessed: enhancedData.length
         };
         
         setResult(fallbackResult);
