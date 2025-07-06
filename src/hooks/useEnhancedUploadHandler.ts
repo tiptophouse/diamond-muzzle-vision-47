@@ -78,32 +78,45 @@ export function useEnhancedUploadHandler() {
           const uploadProgress = 70 + Math.round((i / totalDiamonds) * 25);
           setProgress(uploadProgress);
           
-          try {
-            const payload = {
-              stock: diamondData.stock || "string",
-              shape: diamondData.shape?.toLowerCase() || "round brilliant", 
-              weight: Number(diamondData.weight) || 1,
-              color: diamondData.color || "D",
-              clarity: diamondData.clarity || "FL",
-              lab: diamondData.lab || "string",
-              certificate_number: parseInt(diamondData.certificate_number || '0') || 0,
-              length: Number(diamondData.length) || 1,
-              width: Number(diamondData.width) || 1,
-              depth: Number(diamondData.depth) || 1,
-              ratio: Number(diamondData.ratio) || 1,
-              cut: diamondData.cut?.toUpperCase() || "EXCELLENT",
-              polish: diamondData.polish?.toUpperCase() || "EXCELLENT",
-              symmetry: diamondData.symmetry?.toUpperCase() || "EXCELLENT",
-              fluorescence: diamondData.fluorescence?.toUpperCase() || "NONE",
-              table: Number(diamondData.table) || 1,
-              depth_percentage: Number(diamondData.depth_percentage) || 1,
-              gridle: diamondData.gridle || "string",
-              culet: diamondData.culet?.toUpperCase() || "NONE",
-              certificate_comment: diamondData.certificate_comment || "string",
-              rapnet: diamondData.rapnet ? parseInt(diamondData.rapnet.toString()) : 0,
-              price_per_carat: Number(diamondData.price_per_carat) || 0,
-              picture: diamondData.picture || "string",
-            };
+            try {
+              // Helper function to validate cut values
+              const validateCut = (cut: any): string => {
+                const validCuts = ['EXCELLENT', 'VERY GOOD', 'GOOD', 'POOR'];
+                const cutUpper = cut?.toString().toUpperCase();
+                return validCuts.includes(cutUpper) ? cutUpper : 'EXCELLENT';
+              };
+
+              // Helper function to ensure positive ratio
+              const validateRatio = (ratio: any): number => {
+                const num = Number(ratio);
+                return isNaN(num) || num <= 0 ? 1 : Math.abs(num);
+              };
+
+              const payload = {
+                stock: diamondData.stock || "string",
+                shape: diamondData.shape?.toLowerCase() || "round brilliant", 
+                weight: Number(diamondData.weight) || 1,
+                color: diamondData.color || "D",
+                clarity: diamondData.clarity || "FL",
+                lab: diamondData.lab || "string",
+                certificate_number: parseInt(diamondData.certificate_number || '0') || 0,
+                length: Number(diamondData.length) || 1,
+                width: Number(diamondData.width) || 1,
+                depth: Number(diamondData.depth) || 1,
+                ratio: validateRatio(diamondData.ratio),
+                cut: validateCut(diamondData.cut),
+                polish: diamondData.polish?.toUpperCase() || "EXCELLENT",
+                symmetry: diamondData.symmetry?.toUpperCase() || "EXCELLENT",
+                fluorescence: diamondData.fluorescence?.toUpperCase() || "NONE",
+                table: Number(diamondData.table) || 1,
+                depth_percentage: Number(diamondData.depth_percentage) || 1,
+                gridle: diamondData.gridle || "string",
+                culet: diamondData.culet?.toUpperCase() || "NONE",
+                certificate_comment: diamondData.certificate_comment || "string",
+                rapnet: diamondData.rapnet ? parseInt(diamondData.rapnet.toString()) : 0,
+                price_per_carat: Number(diamondData.price_per_carat) || 0,
+                picture: diamondData.picture || "string",
+              };
             
             const response = await api.post(apiEndpoints.addDiamond(user.id), payload);
             if (response.error) {

@@ -20,6 +20,19 @@ export function useAddDiamond(onSuccess?: () => void) {
     }
 
     try {
+      // Helper function to validate cut values
+      const validateCut = (cut: any): string => {
+        const validCuts = ['EXCELLENT', 'VERY GOOD', 'GOOD', 'POOR'];
+        const cutUpper = cut?.toString().toUpperCase();
+        return validCuts.includes(cutUpper) ? cutUpper : 'EXCELLENT';
+      };
+
+      // Helper function to ensure positive ratio
+      const validateRatio = (ratio: any): number => {
+        const num = Number(ratio);
+        return isNaN(num) || num <= 0 ? 1 : Math.abs(num);
+      };
+
       // Match your exact FastAPI endpoint format
       const diamondDataPayload = {
         stock: data.stockNumber || "string",
@@ -32,8 +45,8 @@ export function useAddDiamond(onSuccess?: () => void) {
         length: Number(data.length) || 1,
         width: Number(data.width) || 1,
         depth: Number(data.depth) || 1,
-        ratio: Number(data.ratio) || 1,
-        cut: data.cut?.toUpperCase() || "EXCELLENT",
+        ratio: validateRatio(data.ratio),
+        cut: validateCut(data.cut),
         polish: data.polish?.toUpperCase() || "EXCELLENT",
         symmetry: data.symmetry?.toUpperCase() || "EXCELLENT",
         fluorescence: data.fluorescence?.toUpperCase() || "NONE",
