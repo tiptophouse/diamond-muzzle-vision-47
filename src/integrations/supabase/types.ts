@@ -1181,6 +1181,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      remove_all_duplicate_certificates: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      remove_duplicate_certificates: {
+        Args: { p_user_id: number }
+        Returns: number
+      }
       set_session_context: {
         Args: { key: string; value: string }
         Returns: undefined

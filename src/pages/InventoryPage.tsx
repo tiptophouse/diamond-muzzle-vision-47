@@ -44,6 +44,7 @@ export default function InventoryPage() {
     addDiamond,
     updateDiamond, 
     deleteDiamond,
+    removeDuplicates,
     isLoading: crudLoading 
   } = useInventoryCrud({
     onSuccess: () => {
@@ -177,6 +178,7 @@ export default function InventoryPage() {
             console.log('➕ Add diamond button clicked');
             setShowAddForm(true);
           }}
+          onRemoveDuplicates={removeDuplicates}
         />
         
         <div className="flex flex-col lg:flex-row gap-6">

@@ -8,6 +8,7 @@ import { useAddDiamond } from './inventory/useAddDiamond';
 import { useUpdateDiamond } from './inventory/useUpdateDiamond';
 import { useDeleteDiamond } from './inventory/useDeleteDiamond';
 import { useInventoryDataSync } from './inventory/useInventoryDataSync';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UseInventoryCrudProps {
   onSuccess?: () => void;
@@ -101,10 +102,59 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     }
   };
 
+  const removeDuplicates = async () => {
+    console.log('🔄 CRUD: Starting remove duplicates operation');
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "User not authenticated",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('remove_duplicate_certificates', {
+        p_user_id: user.id
+      });
+
+      if (error) {
+        console.error('❌ CRUD: Remove duplicates failed:', error);
+        toast({
+          title: "Error",
+          description: "Failed to remove duplicates",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      console.log('✅ CRUD: Removed', data, 'duplicate certificates');
+      toast({
+        title: "Success",
+        description: `Removed ${data || 0} duplicate certificates`,
+      });
+      
+      successHandler();
+      return true;
+    } catch (error) {
+      console.error('❌ CRUD: Remove duplicates failed:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove duplicates",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     addDiamond,
     updateDiamond,
     deleteDiamond,
+    removeDuplicates,
     isLoading,
   };
 }

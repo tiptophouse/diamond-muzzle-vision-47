@@ -1,19 +1,21 @@
 
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Plus } from "lucide-react";
+import { RefreshCw, Plus, Copy } from "lucide-react";
 
 interface InventoryHeaderProps {
   totalCount: number;
   onRefresh: () => void;
   loading?: boolean;
   onAddDiamond?: () => void;
+  onRemoveDuplicates?: () => void;
 }
 
 export function InventoryHeader({ 
   totalCount, 
   onRefresh, 
   loading = false,
-  onAddDiamond 
+  onAddDiamond,
+  onRemoveDuplicates 
 }: InventoryHeaderProps) {
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -24,7 +26,7 @@ export function InventoryHeader({
         </p>
       </div>
       
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {onAddDiamond && (
           <Button
             onClick={onAddDiamond}
@@ -32,6 +34,17 @@ export function InventoryHeader({
           >
             <Plus className="mr-2 h-4 w-4" />
             Add Diamond
+          </Button>
+        )}
+        {onRemoveDuplicates && (
+          <Button
+            variant="outline"
+            onClick={onRemoveDuplicates}
+            disabled={loading}
+            className="border-orange-300 text-orange-700 hover:bg-orange-50"
+          >
+            <Copy className="mr-2 h-4 w-4" />
+            Remove Duplicates
           </Button>
         )}
         <Button
