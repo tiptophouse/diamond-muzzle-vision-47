@@ -3,6 +3,7 @@ import { API_BASE_URL } from './config';
 import { apiEndpoints } from './endpoints';
 import { setCurrentUserId } from './config';
 import { getBackendAccessToken } from './secureConfig';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface TelegramVerificationResponse {
   success: boolean;
@@ -28,8 +29,6 @@ export function getVerificationResult(): TelegramVerificationResponse | null {
 export async function verifyTelegramUser(initData: string): Promise<TelegramVerificationResponse | null> {
   try {
     console.log('🔐 API: Enhanced Telegram user verification starting');
-    console.log('🔐 API: Sending to:', `${API_BASE_URL}${apiEndpoints.verifyTelegram()}`);
-    console.log('🔐 API: InitData length:', initData.length);
     
     // Pre-validation checks
     const urlParams = new URLSearchParams(initData);
@@ -47,60 +46,44 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     const now = Date.now();
     const age = now - authDateTime;
     
-    if (age > 60000) { // 60 seconds
+    if (age > 300000) { // 5 minutes (as per Telegram recommendation)
       console.warn('🔐 API: InitData too old for verification:', age / 1000, 'seconds');
       verificationResult = null;
       return null;
     }
     
-    // Get secure backend access token
-    const backendToken = await getBackendAccessToken();
-    if (!backendToken) {
-      console.error('🔐 API: Failed to retrieve secure backend access token');
-      verificationResult = null;
-      return null;
-    }
+    console.log('🔐 API: Using proper Telegram initData validation via Supabase Edge Function');
     
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': `Bearer ${backendToken}`,
-      'X-Timestamp': now.toString(),
-      'X-Client-Version': '1.0.0'
-    };
-    
-    console.log('🔐 API: Using secure backend access token for verification');
-    
-    const response = await fetch(`${API_BASE_URL}${apiEndpoints.verifyTelegram()}`, {
-      method: 'POST',
-      headers,
-      mode: 'cors',
-      body: JSON.stringify({
+    // Use Supabase Edge Function for proper validation
+    const { data, error } = await supabase.functions.invoke('telegram-init-data-validation', {
+      body: {
         init_data: initData,
         client_timestamp: now,
         security_level: 'enhanced'
-      }),
+      }
     });
-
-    console.log('🔐 API: Verification response status:', response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('🔐 API: Verification failed with status:', response.status, 'body:', errorText);
-      
-      // Log security event
-      console.warn('🚫 Security Event: Verification failed', {
-        status: response.status,
-        initDataAge: age / 1000,
-        timestamp: new Date().toISOString()
-      });
-      
+    
+    if (error) {
+      console.error('🔐 API: Supabase Edge Function error:', error);
+      verificationResult = null;
+      return null;
+    }
+    
+    if (!data || !data.success) {
+      console.warn('🔐 API: Telegram validation failed:', data?.message);
       verificationResult = null;
       return null;
     }
 
-    const result: TelegramVerificationResponse = await response.json();
-    console.log('✅ API: Enhanced Telegram verification successful:', result);
+    console.log('✅ API: Proper Telegram validation successful:', data);
+    
+    const result: TelegramVerificationResponse = {
+      success: data.success,
+      user_id: data.user_id,
+      user_data: data.user_data,
+      message: data.message,
+      security_info: data.security_info
+    };
     
     // Log successful authentication
     console.log('📊 Security Event: Verification successful', {
