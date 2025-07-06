@@ -1147,6 +1147,10 @@ export type Database = {
         Args: { p_stock_number: string; p_user_id: number }
         Returns: boolean
       }
+      delete_diamonds_with_5000_price: {
+        Args: { p_user_id: number }
+        Returns: number
+      }
       get_realistic_analytics_summary: {
         Args: Record<PropertyKey, never>
         Returns: {
