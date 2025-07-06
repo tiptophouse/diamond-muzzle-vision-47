@@ -59,8 +59,8 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
   console.log('🔍 Final gem360Url:', gem360Url);
   console.log('🔍 hasGem360View:', hasGem360View);
 
-  // Priority: show actual diamond image from CSV, then fallback
-  const diamondImageUrl = diamond.imageUrl && !diamond.imageUrl.includes('gem360')
+  // Priority: show actual diamond image, then fallback to placeholder
+  const diamondImageUrl = diamond.imageUrl 
     ? diamond.imageUrl 
     : `https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop&crop=center`;
 
