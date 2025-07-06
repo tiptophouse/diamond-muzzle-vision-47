@@ -67,27 +67,17 @@ export function useEnhancedUploadHandler() {
         console.log('🔄 Uploading diamonds one by one to FastAPI backend...');
         console.log('📤 Sample enhanced data being sent:', enhancedData.slice(0, 2));
         
-        // Prepare all certificate numbers for bulk duplicate checking
-        const certificateNumbers = enhancedData
-          .map(d => d.certificate_number)
-          .filter(cert => cert && !isNaN(parseInt(cert.toString())));
-        
-        // Check for duplicates in bulk to improve performance
+        // Get existing certificate numbers from FastAPI backend for duplicate checking
         let existingCertificates = new Set();
-        if (certificateNumbers.length > 0) {
-          try {
-            const { data: existingCerts } = await supabase
-              .from('inventory')
-              .select('certificate_number')
-              .eq('user_id', user.id)
-              .in('certificate_number', certificateNumbers);
-            
-            if (existingCerts) {
-              existingCertificates = new Set(existingCerts.map(c => c.certificate_number));
-            }
-          } catch (error) {
-            console.warn('Error checking bulk duplicates:', error);
+        try {
+          console.log('🔍 BULK: Fetching existing certificates from FastAPI for duplicate check...');
+          const existingData = await api.get(apiEndpoints.getAllStones(user.id));
+          if (existingData.data && Array.isArray(existingData.data)) {
+            existingCertificates = new Set(existingData.data.map(stone => stone.certificate_number));
+            console.log('🔍 BULK: Found', existingCertificates.size, 'existing certificates');
           }
+        } catch (error) {
+          console.warn('Error fetching existing certificates for duplicate check:', error);
         }
 
         // Upload each diamond individually using the correct endpoint
