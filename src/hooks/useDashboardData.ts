@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { api, apiEndpoints } from '@/lib/api';
 import { useToast } from '@/components/ui/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useInventoryDataSync } from './inventory/useInventoryDataSync';
 
 interface DashboardStats {
   totalClients: number;
@@ -31,6 +32,7 @@ export function useDashboardData() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useTelegramAuth();
+  const { subscribeToInventoryChanges } = useInventoryDataSync();
 
   const fetchDashboardStats = async () => {
     if (!user?.id) return;
@@ -90,6 +92,15 @@ export function useDashboardData() {
       loadData();
     }
   }, [user?.id]);
+
+  // Subscribe to inventory changes
+  useEffect(() => {
+    return subscribeToInventoryChanges(() => {
+      if (user?.id) {
+        fetchDashboardStats();
+      }
+    });
+  }, [user?.id, subscribeToInventoryChanges]);
 
   const refetch = async () => {
     await Promise.all([fetchDashboardStats(), fetchClients()]);

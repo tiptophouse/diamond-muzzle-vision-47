@@ -3,9 +3,11 @@ import { useState, useEffect } from "react";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { fetchInventoryData } from "@/services/inventoryDataService";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { useInventoryDataSync } from "./inventory/useInventoryDataSync";
 
 export function useStoreData() {
   const { user, isLoading: authLoading } = useTelegramAuth();
+  const { subscribeToInventoryChanges } = useInventoryDataSync();
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,6 +24,15 @@ export function useStoreData() {
       setError("Please log in to view your store items.");
     }
   }, [user, authLoading]);
+
+  // Subscribe to inventory changes
+  useEffect(() => {
+    return subscribeToInventoryChanges(() => {
+      if (user && !authLoading) {
+        fetchStoreData();
+      }
+    });
+  }, [user, authLoading, subscribeToInventoryChanges]);
 
   const fetchStoreData = async () => {
     try {
