@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { fetchApi } from '@/lib/api/client';
 import { 
   User, 
   Diamond, 
@@ -90,7 +91,7 @@ export function ClientAnalyticsDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Fetch real data from Supabase
+  // Fetch real data from Supabase and FastAPI
   useEffect(() => {
     const fetchRealData = async () => {
       setIsLoading(true);
@@ -107,20 +108,6 @@ export function ClientAnalyticsDashboard() {
 
         if (profileError) throw profileError;
 
-        // Fetch inventory counts per user
-        const { data: inventoryCounts, error: inventoryError } = await supabase
-          .from('inventory')
-          .select('user_id')
-          .is('deleted_at', null);
-
-        if (inventoryError) throw inventoryError;
-
-        // Count diamonds per user
-        const diamondCounts = inventoryCounts?.reduce((acc: Record<number, number>, item) => {
-          acc[item.user_id] = (acc[item.user_id] || 0) + 1;
-          return acc;
-        }, {}) || {};
-
         // Fetch login counts per user
         const { data: loginCounts, error: loginError } = await supabase
           .from('user_logins')
@@ -134,6 +121,21 @@ export function ClientAnalyticsDashboard() {
           acc[login.telegram_id] = (acc[login.telegram_id] || 0) + 1;
           return acc;
         }, {}) || {};
+
+        // Fetch real diamond data from FastAPI for each user
+        const diamondCounts: Record<number, number> = {};
+        
+        for (const profile of profiles || []) {
+          try {
+            // Fetch diamonds from FastAPI for each user
+            const diamondData = await fetchApi(`/api/v1/get_all_stones?user_id=${profile.telegram_id}`);
+            diamondCounts[profile.telegram_id] = Array.isArray(diamondData) ? diamondData.length : 0;
+            console.log(`User ${profile.telegram_id} has ${diamondCounts[profile.telegram_id]} diamonds`);
+          } catch (error) {
+            console.error(`Error fetching diamonds for user ${profile.telegram_id}:`, error);
+            diamondCounts[profile.telegram_id] = 0;
+          }
+        }
 
         // Transform profiles to ClientMetrics
         const transformedClients: ClientMetrics[] = profiles?.map(profile => {
