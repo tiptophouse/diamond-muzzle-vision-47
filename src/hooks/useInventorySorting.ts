@@ -17,15 +17,25 @@ export function useInventorySorting(diamonds: Diamond[]) {
       if (aVal == null) return 1;
       if (bVal == null) return -1;
 
-      // Convert to strings for comparison if not numbers
-      if (typeof aVal !== 'number' && typeof bVal !== 'number') {
-        aVal = String(aVal).toLowerCase();
-        bVal = String(bVal).toLowerCase();
+      // Handle numeric fields (price, carat, etc.)
+      const numericFields: (keyof Diamond)[] = ['price', 'carat'];
+      
+      if (numericFields.includes(sortField)) {
+        // Ensure we're comparing numbers
+        const aNum = typeof aVal === 'number' ? aVal : parseFloat(String(aVal)) || 0;
+        const bNum = typeof bVal === 'number' ? bVal : parseFloat(String(bVal)) || 0;
+        
+        const comparison = aNum - bNum;
+        return sortDirection === 'asc' ? comparison : -comparison;
       }
 
+      // For non-numeric fields, convert to strings
+      const aStr = String(aVal).toLowerCase();
+      const bStr = String(bVal).toLowerCase();
+
       let comparison = 0;
-      if (aVal < bVal) comparison = -1;
-      else if (aVal > bVal) comparison = 1;
+      if (aStr < bStr) comparison = -1;
+      else if (aStr > bStr) comparison = 1;
 
       return sortDirection === 'asc' ? comparison : -comparison;
     });
