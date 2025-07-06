@@ -4,7 +4,6 @@ import { api, apiEndpoints } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { generateDiamondId } from '@/utils/diamondUtils';
-import { supabase } from '@/integrations/supabase/client';
 
 export function useAddDiamond(onSuccess?: () => void) {
   const { toast } = useToast();
@@ -57,25 +56,6 @@ export function useAddDiamond(onSuccess?: () => void) {
       
       console.log('➕ ADD: Sending diamond data to FastAPI:', diamondDataPayload);
       
-      // Check for duplicate certificate number before uploading
-      if (diamondDataPayload.certificate_number && diamondDataPayload.certificate_number !== 0) {
-        const { data: existingCheck, error: checkError } = await supabase.rpc('check_certificate_exists', {
-          p_certificate_number: diamondDataPayload.certificate_number,
-          p_user_id: user.id
-        });
-        
-        if (checkError) {
-          console.warn('Error checking duplicate:', checkError);
-        } else if (existingCheck === true) {
-          toast({
-            variant: "destructive",
-            title: "❌ Duplicate Diamond",
-            description: `Certificate ${diamondDataPayload.certificate_number} already exists in your inventory`,
-          });
-          return false;
-        }
-      }
-      
       // Try FastAPI first
       try {
         const endpoint = apiEndpoints.addDiamond(user.id);
@@ -106,23 +86,6 @@ export function useAddDiamond(onSuccess?: () => void) {
         // Fallback to localStorage
         console.log('🔄 ADD: Falling back to localStorage...');
         const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
-        
-        // Check for duplicate certificate number in localStorage
-        if (diamondDataPayload.certificate_number && diamondDataPayload.certificate_number !== 0) {
-          const duplicateExists = existingData.some((diamond: any) => 
-            diamond.certificateNumber === diamondDataPayload.certificate_number.toString() ||
-            parseInt(diamond.certificateNumber || '0') === diamondDataPayload.certificate_number
-          );
-          
-          if (duplicateExists) {
-            toast({
-              variant: "destructive",
-              title: "❌ Duplicate Diamond",
-              description: `Certificate ${diamondDataPayload.certificate_number} already exists in your inventory`,
-            });
-            return false;
-          }
-        }
         
         // Convert to inventory format
         const newDiamond = {

@@ -5,21 +5,16 @@ import { InventoryTable } from "@/components/inventory/InventoryTable";
 import { InventoryPagination } from "@/components/inventory/InventoryPagination";
 import { InventorySearch } from "@/components/inventory/InventorySearch";
 import { InventoryFilters } from "@/components/inventory/InventoryFilters";
-import { BulkDeleteButton } from "@/components/inventory/BulkDeleteButton";
 import { useInventoryData } from "@/hooks/useInventoryData";
 import { useInventorySearch } from "@/hooks/useInventorySearch";
-import { useInventorySorting } from "@/hooks/useInventorySorting";
 import { useInventoryCrud } from "@/hooks/useInventoryCrud";
 import { DiamondForm } from "@/components/inventory/DiamondForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useState } from "react";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { UploadSuccessCard } from "@/components/upload/UploadSuccessCard";
-import { useToast } from "@/hooks/use-toast";
-import { CreateKeshettModal } from "@/components/keshett/CreateKeshettModal";
 
 export default function InventoryPage() {
-  const { toast } = useToast();
   const {
     loading,
     diamonds,
@@ -29,7 +24,6 @@ export default function InventoryPage() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState<Record<string, string>>({});
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const {
     searchQuery,
@@ -39,53 +33,21 @@ export default function InventoryPage() {
     handleSearch,
   } = useInventorySearch(allDiamonds, currentPage, filters);
 
-  const { sortedDiamonds, sortField, sortDirection, handleSort } = useInventorySorting(filteredDiamonds);
-
   const { 
     addDiamond,
     updateDiamond, 
     deleteDiamond,
-    removeDuplicates,
     isLoading: crudLoading 
   } = useInventoryCrud({
     onSuccess: () => {
       console.log('🔄 CRUD operation completed, refreshing inventory...');
       handleRefresh();
-      setSelectedIds([]); // Clear selection after operations
     },
   });
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingDiamond, setEditingDiamond] = useState<Diamond | null>(null);
   const [showAddSuccess, setShowAddSuccess] = useState(false);
-  const [showKeshettModal, setShowKeshettModal] = useState(false);
-  const [selectedDiamondForKeshett, setSelectedDiamondForKeshett] = useState<Diamond | null>(null);
-
-  const handleBulkDelete = async () => {
-    if (selectedIds.length === 0) return;
-    
-    console.log('🗑️ Bulk delete started for:', selectedIds.length, 'diamonds');
-    let successCount = 0;
-    let failureCount = 0;
-
-    for (const diamondId of selectedIds) {
-      const diamond = allDiamonds.find(d => d.id === diamondId);
-      const success = await deleteDiamond(diamondId, diamond);
-      if (success) {
-        successCount++;
-      } else {
-        failureCount++;
-      }
-    }
-
-    toast({
-      title: successCount > 0 ? "✅ Bulk Delete Completed" : "❌ Bulk Delete Failed",
-      description: `Successfully deleted ${successCount} diamond${successCount === 1 ? '' : 's'}${failureCount > 0 ? `. Failed to delete ${failureCount} diamond${failureCount === 1 ? '' : 's'}.` : '.'}`,
-      variant: failureCount > 0 ? "destructive" : "default",
-    });
-
-    setSelectedIds([]);
-  };
 
   const handleEdit = (diamond: Diamond) => {
     console.log('📝 Edit diamond clicked:', diamond.stockNumber);
@@ -181,7 +143,6 @@ export default function InventoryPage() {
             console.log('➕ Add diamond button clicked');
             setShowAddForm(true);
           }}
-          onRemoveDuplicates={removeDuplicates}
         />
         
         <div className="flex flex-col lg:flex-row gap-6">
@@ -202,35 +163,12 @@ export default function InventoryPage() {
           
           <main className="flex-1">
             <div className="space-y-4">
-              {/* Bulk Actions Bar */}
-              {selectedIds.length > 0 && (
-                <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <span className="text-sm text-blue-700 dark:text-blue-300">
-                    {selectedIds.length} diamond{selectedIds.length === 1 ? '' : 's'} selected
-                  </span>
-                  <BulkDeleteButton 
-                    selectedCount={selectedIds.length}
-                    onBulkDelete={handleBulkDelete}
-                    isLoading={crudLoading}
-                  />
-                </div>
-              )}
-              
               <InventoryTable
-                data={sortedDiamonds}
+                data={filteredDiamonds}
                 loading={loading}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onStoreToggle={handleStoreToggle}
-                onCreateKeshett={(diamond) => {
-                  setSelectedDiamondForKeshett(diamond);
-                  setShowKeshettModal(true);
-                }}
-                selectedIds={selectedIds}
-                onSelectionChange={setSelectedIds}
-                sortField={sortField}
-                sortDirection={sortDirection}
-                onSort={handleSort}
                 data-tutorial="inventory-table"
               />
               
@@ -273,19 +211,6 @@ export default function InventoryPage() {
             />
           </DialogContent>
         </Dialog>
-
-        {/* Keshett Modal */}
-        <CreateKeshettModal
-          diamond={selectedDiamondForKeshett}
-          isOpen={showKeshettModal}
-          onClose={() => {
-            setShowKeshettModal(false);
-            setSelectedDiamondForKeshett(null);
-          }}
-          onSuccess={() => {
-            console.log('✅ Keshett agreement created successfully');
-          }}
-        />
 
         {/* Add Success Modal */}
         <Dialog open={showAddSuccess} onOpenChange={setShowAddSuccess}>

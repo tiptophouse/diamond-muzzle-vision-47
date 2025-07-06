@@ -59,8 +59,8 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
   console.log('🔍 Final gem360Url:', gem360Url);
   console.log('🔍 hasGem360View:', hasGem360View);
 
-  // Priority: show actual diamond image, then fallback to placeholder
-  const diamondImageUrl = diamond.imageUrl 
+  // Use a fallback diamond image when not showing 3D viewer
+  const diamondImageUrl = !hasGem360View && diamond.imageUrl && !diamond.imageUrl.includes('gem360') 
     ? diamond.imageUrl 
     : `https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop&crop=center`;
 
@@ -192,10 +192,9 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
           </div>
         </div>
 
-        {/* Stock Number & Certificate */}
-        <div className="text-xs text-gray-500 border-t pt-2 space-y-1">
-          <div>Stock #{diamond.stockNumber}</div>
-          <div>Cert #{diamond.certificateNumber || 'N/A'}</div>
+        {/* Stock Number */}
+        <div className="text-xs text-gray-500 border-t pt-2">
+          Stock #{diamond.stockNumber}
         </div>
 
         {/* 3D View Badge */}

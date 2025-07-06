@@ -1,14 +1,14 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { User, Mail, Phone, Globe, Save } from 'lucide-react';
 
 export function AccountSettings() {
@@ -16,8 +16,8 @@ export function AccountSettings() {
   const { toast } = useToast();
   
   const [profile, setProfile] = useState({
-    firstName: '',
-    lastName: '',
+    firstName: user?.first_name || '',
+    lastName: user?.last_name || '',
     email: '',
     phone: '',
     bio: '',
@@ -28,88 +28,17 @@ export function AccountSettings() {
   });
 
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
-
-  // Load user profile from Supabase
-  useEffect(() => {
-    const loadProfile = async () => {
-      if (!user?.id) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('telegram_id', user.id)
-          .single();
-
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error loading profile:', error);
-          return;
-        }
-
-        if (data) {
-          setProfile({
-            firstName: data.first_name || '',
-            lastName: data.last_name || '',
-            email: data.email || '',
-            phone: data.phone_number || '',
-            bio: data.bio || '',
-            company: data.company || '',
-            website: data.website || '',
-            language: data.language || 'en',
-            timezone: data.timezone || 'UTC'
-          });
-        } else {
-          // Set defaults from Telegram user if no profile exists
-          setProfile(prev => ({
-            ...prev,
-            firstName: user.first_name || '',
-            lastName: user.last_name || ''
-          }));
-        }
-      } catch (error) {
-        console.error('Error loading profile:', error);
-      } finally {
-        setIsLoadingProfile(false);
-      }
-    };
-
-    loadProfile();
-  }, [user]);
 
   const handleSave = async () => {
-    if (!user?.id) return;
-    
     setIsLoading(true);
     try {
-      const { error } = await supabase
-        .from('user_profiles')
-        .upsert({
-          telegram_id: user.id,
-          first_name: profile.firstName,
-          last_name: profile.lastName,
-          email: profile.email || null,
-          phone_number: profile.phone || null,
-          bio: profile.bio || null,
-          company: profile.company || null,
-          website: profile.website || null,
-          language: profile.language,
-          timezone: profile.timezone,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'telegram_id'
-        });
-
-      if (error) {
-        throw error;
-      }
-
+      // In a real app, you'd save this to the database
+      await new Promise(resolve => setTimeout(resolve, 1000));
       toast({
         title: "Settings saved",
         description: "Your account settings have been updated successfully.",
       });
     } catch (error) {
-      console.error('Error saving profile:', error);
       toast({
         title: "Error",
         description: "Failed to save settings. Please try again.",
@@ -257,11 +186,7 @@ export function AccountSettings() {
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button 
-            onClick={handleSave} 
-            disabled={isLoading || isLoadingProfile}
-            className="bg-primary hover:bg-primary/90"
-          >
+          <Button onClick={handleSave} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700">
             <Save className="h-4 w-4 mr-2" />
             {isLoading ? 'Saving...' : 'Save Changes'}
           </Button>

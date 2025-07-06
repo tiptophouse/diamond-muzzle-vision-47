@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import * as XLSX from 'xlsx';
 
 interface FieldMapping {
   detectedField: string;
@@ -72,8 +71,7 @@ export function useIntelligentCsvProcessor() {
     girdle: ['girdle', 'gridle', 'cinta', 'rondiste'],
     culet: ['culet', 'culeta', 'colette'],
     symmetry: ['symmetry', 'simetria', 'symetrie'],
-    polish: ['polish', 'pulido', 'polissage'],
-    picture: ['picture', 'image', 'photo', 'img', 'image_url', 'photo_url', 'picture_url', 'imagen', 'foto']
+    polish: ['polish', 'pulido', 'polissage']
   };
 
   const fuzzyMatch = (input: string, candidates: string[]): { match: string; score: number } => {
@@ -170,36 +168,36 @@ export function useIntelligentCsvProcessor() {
     // Map detected fields to standard fields
     for (const mapping of fieldMappings) {
       const value = row[mapping.detectedField];
-      if (value !== undefined && value !== null) {
+      if (value !== undefined && value !== null && value !== '') {
         transformedRow[mapping.mappedTo] = cleanValue(value, mapping.mappedTo);
       }
     }
 
-    // Set defaults only for truly missing required fields
+    // Set defaults for missing required fields
     return {
       stock: transformedRow.stock || `AUTO-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-      shape: transformedRow.shape || 'round brilliant',
-      weight: transformedRow.weight !== undefined ? parseFloat(transformedRow.weight) || 0 : 1.0,
-      color: transformedRow.color !== undefined ? transformedRow.color : 'G', 
-      clarity: transformedRow.clarity !== undefined ? transformedRow.clarity : 'VS1',
-      cut: transformedRow.cut !== undefined ? transformedRow.cut : 'EXCELLENT',
-      price_per_carat: transformedRow.price !== undefined ? parseFloat(transformedRow.price) || 0 : 5000,
+      shape: transformedRow.shape || 'round',
+      weight: parseFloat(transformedRow.weight) || 1.0,
+      color: transformedRow.color || 'G', 
+      clarity: transformedRow.clarity || 'VS1',
+      cut: transformedRow.cut || 'EXCELLENT',
+      price_per_carat: parseFloat(transformedRow.price) || 5000,
       lab: transformedRow.lab || 'GIA',
       certificate_number: parseInt(transformedRow.certificate_number) || Math.floor(Math.random() * 1000000),
-      length: transformedRow.length !== undefined ? parseFloat(transformedRow.length) || 0 : 6.5,
-      width: transformedRow.width !== undefined ? parseFloat(transformedRow.width) || 0 : 6.5,
-      depth: transformedRow.depth !== undefined ? parseFloat(transformedRow.depth) || 0 : 4.0,
+      length: parseFloat(transformedRow.length) || 6.5,
+      width: parseFloat(transformedRow.width) || 6.5,
+      depth: parseFloat(transformedRow.depth) || 4.0,
       ratio: 1.0,
       polish: transformedRow.polish || 'EXCELLENT',
       symmetry: transformedRow.symmetry || 'EXCELLENT',
       fluorescence: transformedRow.fluorescence || 'NONE',
-      table: transformedRow.table !== undefined ? parseFloat(transformedRow.table) || 0 : 60,
-      depth_percentage: transformedRow.depth_percentage !== undefined ? parseFloat(transformedRow.depth_percentage) || 0 : 62,
+      table: parseFloat(transformedRow.table) || 60,
+      depth_percentage: parseFloat(transformedRow.depth_percentage) || 62,
       gridle: transformedRow.girdle || 'Medium',
       culet: transformedRow.culet || 'NONE',
-      certificate_comment: transformedRow.certificate_comment || null,
-      rapnet: transformedRow.rapnet || null,
-      picture: transformedRow.picture || null
+      certificate_comment: null,
+      rapnet: null,
+      picture: null
     };
   };
 
@@ -230,62 +228,15 @@ export function useIntelligentCsvProcessor() {
         return parseInt(certStr) || 0;
         
       case 'color':
-        // Strict validation for color grades
-        const colorUpper = strValue.toUpperCase();
-        const validColors = ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'];
-        return validColors.includes(colorUpper) ? colorUpper : 'G';
-        
       case 'clarity':
-        const clarityUpper = strValue.toUpperCase();
-        const validClarities = ['FL', 'IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'SI3', 'I1', 'I2', 'I3'];
-        return validClarities.includes(clarityUpper) ? clarityUpper : 'VS1';
-        
       case 'cut':
+      case 'fluorescence':
       case 'polish':
       case 'symmetry':
-        const gradeUpper = strValue.toUpperCase();
-        const validGrades = ['EXCELLENT', 'VERY GOOD', 'GOOD', 'FAIR', 'POOR'];
-        return validGrades.includes(gradeUpper) ? gradeUpper : 'EXCELLENT';
-        
-      case 'fluorescence':
-        const fluorUpper = strValue.toUpperCase();
-        const validFluor = ['NONE', 'FAINT', 'MEDIUM', 'STRONG', 'VERY STRONG'];
-        return validFluor.includes(fluorUpper) ? fluorUpper : 'NONE';
+        return strValue.toUpperCase();
         
       case 'shape':
-        // Map common shape variants to API accepted values
-        const shapeLower = strValue.toLowerCase().trim();
-        const shapeMap: { [key: string]: string } = {
-          'round': 'round brilliant',
-          'rd': 'round brilliant', 
-          'rbc': 'round brilliant',
-          'brilliant': 'round brilliant',
-          'round brilliant': 'round brilliant',
-          'princess': 'princess',
-          'pr': 'princess',
-          'cushion': 'cushion',
-          'cu': 'cushion',
-          'oval': 'oval',
-          'ov': 'oval',
-          'emerald': 'emerald',
-          'em': 'emerald',
-          'pear': 'pear',
-          'ps': 'pear',
-          'marquise': 'marquise',
-          'mq': 'marquise',
-          'asscher': 'asscher',
-          'as': 'asscher',
-          'radiant': 'radiant',
-          'ra': 'radiant',
-          'heart': 'heart',
-          'ht': 'heart'
-        };
-        return shapeMap[shapeLower] || 'round brilliant';
-        
-      case 'culet':
-        const culetUpper = strValue.toUpperCase();
-        const validCulets = ['NONE', 'VERY SMALL', 'SMALL', 'MEDIUM', 'SLIGHTLY LARGE', 'LARGE', 'VERY LARGE'];
-        return validCulets.includes(culetUpper) ? culetUpper : 'NONE';
+        return strValue.toLowerCase().replace(/\s+/g, ' ');
         
       default:
         return strValue;
@@ -294,75 +245,18 @@ export function useIntelligentCsvProcessor() {
 
   const processIntelligentCsv = async (file: File): Promise<ProcessedCsvData> => {
     try {
-      const fileName = file.name.toLowerCase();
-      let headers: string[] = [];
-      let rawData: any[] = [];
-
-      if (fileName.endsWith('.xlsx')) {
-        console.log('📱 Processing XLSX file for mobile upload...');
-        
-        // Read XLSX file
-        const arrayBuffer = await file.arrayBuffer();
-        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        
-        // Convert to JSON
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        
-        if (jsonData.length < 2) {
-          throw new Error('XLSX file must contain at least a header row and one data row');
-        }
-        
-        headers = (jsonData[0] as any[]).map(h => String(h || '').trim());
-        
-        // Convert remaining rows to objects
-        for (let i = 1; i < jsonData.length; i++) {
-          const rowArray = jsonData[i] as any[];
-          if (rowArray && rowArray.some(cell => cell !== null && cell !== undefined && cell !== '')) {
-            const row: any = {};
-            headers.forEach((header, index) => {
-              const value = rowArray[index];
-              row[header] = value !== null && value !== undefined ? String(value).trim() : '';
-            });
-            rawData.push(row);
-          }
-        }
-      } else {
-        console.log('📱 Processing CSV file for mobile upload...');
-        
-        // Handle CSV as before
-        const text = await file.text();
-        const lines = text.split('\n').filter(line => line.trim());
-        
-        if (lines.length < 2) {
-          throw new Error('CSV file must contain at least a header row and one data row');
-        }
-
-        // Parse headers
-        const headerLine = lines[0];
-        headers = headerLine.split(',').map(h => h.trim().replace(/['"]/g, ''));
-        
-        // Process each data row
-        for (let i = 1; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (!line) continue;
-          
-          // Parse CSV line handling quoted values
-          const values = parseCsvLine(line);
-          
-          if (values.length >= headers.length) {
-            const row: any = {};
-            headers.forEach((header, index) => {
-              const value = values[index] || '';
-              row[header] = value.replace(/['"]/g, '').trim();
-            });
-            rawData.push(row);
-          }
-        }
-      }
+      const text = await file.text();
+      const lines = text.split('\n').filter(line => line.trim());
       
-      console.log('🔍 Headers detected:', headers);
+      if (lines.length < 2) {
+        throw new Error('CSV file must contain at least a header row and one data row');
+      }
+
+      // Parse headers
+      const headerLine = lines[0];
+      const headers = headerLine.split(',').map(h => h.trim().replace(/['"]/g, ''));
+      
+      console.log('🔍 CSV Headers detected:', headers);
       
       // Map headers to standard fields
       const { mappings, unmapped } = mapHeaders(headers);
@@ -370,7 +264,28 @@ export function useIntelligentCsvProcessor() {
       console.log('🎯 Field mappings:', mappings);
       console.log('❓ Unmapped fields:', unmapped);
 
-      const processedData = rawData.map(row => transformDataRow(row, mappings));
+      const processedData = [];
+      
+      // Process each data row
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        // Parse CSV line handling quoted values
+        const values = parseCsvLine(line);
+        
+        if (values.length >= headers.length) {
+          const row: any = {};
+          headers.forEach((header, index) => {
+            const value = values[index] || '';
+            row[header] = value.replace(/['"]/g, '').trim();
+          });
+          
+          // Transform row using intelligent mapping
+          const transformedRow = transformDataRow(row, mappings);
+          processedData.push(transformedRow);
+        }
+      }
       
       return {
         data: processedData,
@@ -381,8 +296,8 @@ export function useIntelligentCsvProcessor() {
       };
       
     } catch (error) {
-      console.error('Intelligent file processing error:', error);
-      throw new Error(`Failed to process file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Intelligent CSV processing error:', error);
+      throw new Error(`Failed to process CSV: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -419,18 +334,15 @@ export function useIntelligentCsvProcessor() {
       return false;
     }
 
-    // Check file type - support both CSV and XLSX for mobile users
-    const fileName = file.name.toLowerCase();
+    // Check file type
     const isValidType = file.type === 'text/csv' || 
                        file.type === 'application/vnd.ms-excel' ||
-                       file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-                       fileName.endsWith('.csv') ||
-                       fileName.endsWith('.xlsx');
+                       file.name.toLowerCase().endsWith('.csv');
     
     if (!isValidType) {
       toast({
         title: "Invalid file type",
-        description: "Please select a CSV or XLSX file (.csv or .xlsx)",
+        description: "Please select a CSV file (.csv)",
         variant: "destructive",
       });
       return false;

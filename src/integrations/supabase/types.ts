@@ -494,57 +494,6 @@ export type Database = {
         }
         Relationships: []
       }
-      keshett_agreements: {
-        Row: {
-          accepted_at: string | null
-          agreed_price: number
-          buyer_telegram_id: number
-          completed_at: string | null
-          created_at: string
-          diamond_data: Json
-          diamond_stock_number: string
-          expiry_at: string
-          id: string
-          notes: string | null
-          seller_telegram_id: number
-          status: string
-          terms: Json | null
-          updated_at: string
-        }
-        Insert: {
-          accepted_at?: string | null
-          agreed_price: number
-          buyer_telegram_id: number
-          completed_at?: string | null
-          created_at?: string
-          diamond_data: Json
-          diamond_stock_number: string
-          expiry_at: string
-          id?: string
-          notes?: string | null
-          seller_telegram_id: number
-          status?: string
-          terms?: Json | null
-          updated_at?: string
-        }
-        Update: {
-          accepted_at?: string | null
-          agreed_price?: number
-          buyer_telegram_id?: number
-          completed_at?: string | null
-          created_at?: string
-          diamond_data?: Json
-          diamond_stock_number?: string
-          expiry_at?: string
-          id?: string
-          notes?: string | null
-          seller_telegram_id?: number
-          status?: string
-          terms?: Json | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       notifications: {
         Row: {
           created_at: string
@@ -1182,10 +1131,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      check_certificate_exists: {
-        Args: { p_certificate_number: number; p_user_id: number }
-        Returns: boolean
-      }
       clean_expired_cache: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -1197,14 +1142,6 @@ export type Database = {
       delete_diamond_by_stock: {
         Args: { p_stock_number: string; p_user_id: number }
         Returns: boolean
-      }
-      delete_diamonds_with_5000_price: {
-        Args: { p_user_id: number }
-        Returns: number
-      }
-      expire_keshett_agreements: {
-        Args: Record<PropertyKey, never>
-        Returns: number
       }
       get_realistic_analytics_summary: {
         Args: Record<PropertyKey, never>
@@ -1235,14 +1172,6 @@ export type Database = {
       is_current_user_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
-      }
-      remove_all_duplicate_certificates: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      remove_duplicate_certificates: {
-        Args: { p_user_id: number }
-        Returns: number
       }
       set_session_context: {
         Args: { key: string; value: string }
