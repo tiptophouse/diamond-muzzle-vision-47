@@ -54,23 +54,65 @@ export function useEnhancedUploadHandler() {
 
       // Try to upload to FastAPI backend first
       try {
-        console.log('🔄 Uploading to FastAPI backend...');
+        console.log('🔄 Uploading diamonds one by one to FastAPI backend...');
         console.log('📤 Sample data being sent:', processedCsv.data.slice(0, 2));
         
-        const response = await api.uploadCsv(apiEndpoints.uploadInventory(), processedCsv.data, user.id);
+        // Upload each diamond individually using the correct endpoint
+        let successCount = 0;
+        const errors = [];
         
-        if (response.error) {
-          throw new Error(response.error);
+        for (const diamondData of processedCsv.data) {
+          try {
+            const payload = {
+              stock: diamondData.stock || "string",
+              shape: diamondData.shape?.toLowerCase() || "round brilliant", 
+              weight: Number(diamondData.weight) || 1,
+              color: diamondData.color || "D",
+              clarity: diamondData.clarity || "FL",
+              lab: diamondData.lab || "string",
+              certificate_number: parseInt(diamondData.certificate_number || '0') || 0,
+              length: Number(diamondData.length) || 1,
+              width: Number(diamondData.width) || 1,
+              depth: Number(diamondData.depth) || 1,
+              ratio: Number(diamondData.ratio) || 1,
+              cut: diamondData.cut?.toUpperCase() || "EXCELLENT",
+              polish: diamondData.polish?.toUpperCase() || "EXCELLENT",
+              symmetry: diamondData.symmetry?.toUpperCase() || "EXCELLENT",
+              fluorescence: diamondData.fluorescence?.toUpperCase() || "NONE",
+              table: Number(diamondData.table_percentage) || 1,
+              depth_percentage: Number(diamondData.depth_percentage) || 1,
+              gridle: diamondData.gridle || "string",
+              culet: diamondData.culet?.toUpperCase() || "NONE",
+              certificate_comment: diamondData.certificate_comment || "string",
+              rapnet: diamondData.rapnet ? parseInt(diamondData.rapnet.toString()) : 0,
+              price_per_carat: Number(diamondData.price_per_carat) || 0,
+              picture: diamondData.picture || "string",
+            };
+            
+            const response = await api.post(apiEndpoints.addDiamond(user.id), payload);
+            if (response.error) {
+              errors.push(`Row ${successCount + 1}: ${response.error}`);
+            } else {
+              successCount++;
+            }
+          } catch (error) {
+            errors.push(`Row ${successCount + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
+        }
+        
+        if (errors.length > 0 && successCount === 0) {
+          throw new Error(`All uploads failed: ${errors.join(', ')}`);
         }
 
         setProgress(100);
         
         const successResult: UploadResult = {
           success: true,
-          message: `Successfully uploaded ${processedCsv.totalRows} diamonds! Mapped ${processedCsv.successfulMappings} fields automatically.`,
-          processedCount: processedCsv.totalRows,
+          message: `Successfully uploaded ${successCount} out of ${processedCsv.totalRows} diamonds! ${errors.length > 0 ? `${errors.length} failed.` : 'All succeeded.'}`,
+          processedCount: successCount,
           fieldMappings: processedCsv.fieldMappings,
-          unmappedFields: processedCsv.unmappedFields
+          unmappedFields: processedCsv.unmappedFields,
+          errors: errors.length > 0 ? errors : undefined
         };
         
         setResult(successResult);

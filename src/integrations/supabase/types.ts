@@ -1067,6 +1067,36 @@ export type Database = {
         }
         Relationships: []
       }
+      wishlist: {
+        Row: {
+          created_at: string
+          diamond_data: Json
+          diamond_owner_telegram_id: number
+          diamond_stock_number: string
+          id: string
+          updated_at: string
+          visitor_telegram_id: number
+        }
+        Insert: {
+          created_at?: string
+          diamond_data: Json
+          diamond_owner_telegram_id: number
+          diamond_stock_number: string
+          id?: string
+          updated_at?: string
+          visitor_telegram_id: number
+        }
+        Update: {
+          created_at?: string
+          diamond_data?: Json
+          diamond_owner_telegram_id?: number
+          diamond_stock_number?: string
+          id?: string
+          updated_at?: string
+          visitor_telegram_id?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       recent_user_logins: {
