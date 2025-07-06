@@ -25,12 +25,20 @@ export function FluorescenceFilter({ selectedFluorescence, onFluorescenceToggle 
             <Checkbox
               id={`fluorescence-${fluorescence}`}
               checked={selectedFluorescence.includes(fluorescence)}
-              onCheckedChange={() => onFluorescenceToggle(fluorescence)}
+              onCheckedChange={(checked) => {
+                if (checked !== 'indeterminate') {
+                  onFluorescenceToggle(fluorescence);
+                }
+              }}
               className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
             />
             <label
               htmlFor={`fluorescence-${fluorescence}`}
               className="text-sm font-medium text-slate-700 cursor-pointer hover:text-slate-900 transition-colors"
+              onClick={(e) => {
+                e.preventDefault();
+                onFluorescenceToggle(fluorescence);
+              }}
             >
               {fluorescence}
             </label>

@@ -81,8 +81,12 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
       <div className="flex flex-wrap gap-2 mb-4">
         <Button 
           variant="outline" 
+          type="button"
           className="flex items-center gap-2"
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={(e) => {
+            e.preventDefault();
+            setIsOpen(!isOpen);
+          }}
         >
           <Filter size={16} />
           Filters
@@ -92,9 +96,13 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
         {filters.shape !== "all" && (
           <Button 
             variant="outline" 
+            type="button"
             size="sm"
             className="bg-diamond-50 text-diamond-700 border-diamond-200"
-            onClick={() => handleChange('shape', 'all')}
+            onClick={(e) => {
+              e.preventDefault();
+              handleChange('shape', 'all');
+            }}
           >
             Shape: {filters.shape}
             <X size={14} className="ml-1" />
@@ -103,9 +111,13 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
         {filters.color !== "all" && (
           <Button 
             variant="outline" 
+            type="button"
             size="sm"
             className="bg-diamond-50 text-diamond-700 border-diamond-200"
-            onClick={() => handleChange('color', 'all')}
+            onClick={(e) => {
+              e.preventDefault();
+              handleChange('color', 'all');
+            }}
           >
             Color: {filters.color}
             <X size={14} className="ml-1" />
@@ -114,9 +126,13 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
         {filters.clarity !== "all" && (
           <Button 
             variant="outline" 
+            type="button"
             size="sm"
             className="bg-diamond-50 text-diamond-700 border-diamond-200"
-            onClick={() => handleChange('clarity', 'all')}
+            onClick={(e) => {
+              e.preventDefault();
+              handleChange('clarity', 'all');
+            }}
           >
             Clarity: {filters.clarity}
             <X size={14} className="ml-1" />
@@ -125,9 +141,11 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
         {(filters.caratMin || filters.caratMax) && (
           <Button 
             variant="outline" 
+            type="button"
             size="sm"
             className="bg-diamond-50 text-diamond-700 border-diamond-200"
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault();
               handleChange('caratMin', '');
               handleChange('caratMax', '');
             }}
@@ -141,8 +159,12 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
         {(filters.shape !== "all" || filters.color !== "all" || filters.clarity !== "all" || filters.caratMin || filters.caratMax) && (
           <Button 
             variant="ghost" 
+            type="button"
             size="sm"
-            onClick={clearFilters}
+            onClick={(e) => {
+              e.preventDefault();  
+              clearFilters();
+            }}
           >
             Clear all
           </Button>
@@ -242,10 +264,23 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
           </div>
           
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsOpen(false)}>
+            <Button 
+              variant="outline" 
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                setIsOpen(false);
+              }}
+            >
               Cancel
             </Button>
-            <Button onClick={applyFilters}>
+            <Button 
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                applyFilters();
+              }}
+            >
               Apply Filters
             </Button>
           </div>

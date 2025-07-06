@@ -21,6 +21,7 @@ export function ClarityFilter({ selectedClarities, onClarityToggle }: ClarityFil
         {CLARITIES.map((clarity) => (
           <Button
             key={clarity}
+            type="button"
             variant={selectedClarities.includes(clarity) ? "default" : "outline"}
             size="sm"
             className={`px-3 h-10 text-xs font-medium transition-all ${
@@ -28,7 +29,11 @@ export function ClarityFilter({ selectedClarities, onClarityToggle }: ClarityFil
                 ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white border-0 shadow-lg scale-105" 
                 : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"
             }`}
-            onClick={() => onClarityToggle(clarity)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClarityToggle(clarity);
+            }}
           >
             {clarity}
           </Button>
