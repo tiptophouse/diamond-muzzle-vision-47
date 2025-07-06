@@ -4,6 +4,7 @@ import { api, apiEndpoints } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useInventoryDataSync } from './inventory/useInventoryDataSync';
 import { useIntelligentCsvProcessor } from './useIntelligentCsvProcessor';
+import { useOpenAICsvEnhancer } from './useOpenAICsvEnhancer';
 
 interface UploadResult {
   success: boolean;
@@ -22,6 +23,7 @@ export function useEnhancedUploadHandler() {
   const { user } = useTelegramAuth();
   const { triggerInventoryChange } = useInventoryDataSync();
   const { processIntelligentCsv } = useIntelligentCsvProcessor();
+  const { enhanceDataWithOpenAI } = useOpenAICsvEnhancer();
 
   const handleUpload = async (file: File) => {
     if (!user?.id) {
@@ -50,18 +52,24 @@ export function useEnhancedUploadHandler() {
         unmappedFields: processedCsv.unmappedFields.length
       });
 
+      setProgress(30);
+
+      // Enhance data with OpenAI for better field mapping
+      console.log('🤖 Enhancing data with OpenAI...');
+      const enhancedData = await enhanceDataWithOpenAI(processedCsv.data);
+      
       setProgress(50);
 
       // Try to upload to FastAPI backend first
       try {
         console.log('🔄 Uploading diamonds one by one to FastAPI backend...');
-        console.log('📤 Sample data being sent:', processedCsv.data.slice(0, 2));
+        console.log('📤 Sample enhanced data being sent:', enhancedData.slice(0, 2));
         
         // Upload each diamond individually using the correct endpoint
         let successCount = 0;
         const errors = [];
         
-        for (const diamondData of processedCsv.data) {
+        for (const diamondData of enhancedData) {
           try {
             const payload = {
               stock: diamondData.stock || "string",
@@ -79,7 +87,7 @@ export function useEnhancedUploadHandler() {
               polish: diamondData.polish?.toUpperCase() || "EXCELLENT",
               symmetry: diamondData.symmetry?.toUpperCase() || "EXCELLENT",
               fluorescence: diamondData.fluorescence?.toUpperCase() || "NONE",
-              table: Number(diamondData.table_percentage) || 1,
+              table: Number(diamondData.table) || 1,
               depth_percentage: Number(diamondData.depth_percentage) || 1,
               gridle: diamondData.gridle || "string",
               culet: diamondData.culet?.toUpperCase() || "NONE",
@@ -108,7 +116,7 @@ export function useEnhancedUploadHandler() {
         
         const successResult: UploadResult = {
           success: true,
-          message: `Successfully uploaded ${successCount} out of ${processedCsv.totalRows} diamonds! ${errors.length > 0 ? `${errors.length} failed.` : 'All succeeded.'}`,
+          message: `Successfully uploaded ${successCount} out of ${enhancedData.length} diamonds! ${errors.length > 0 ? `${errors.length} failed.` : 'All succeeded.'}`,
           processedCount: successCount,
           fieldMappings: processedCsv.fieldMappings,
           unmappedFields: processedCsv.unmappedFields,
@@ -126,7 +134,7 @@ export function useEnhancedUploadHandler() {
         // Show detailed success message
         toast({
           title: "🎉 Smart Upload Successful!",
-          description: `Processed ${processedCsv.totalRows} diamonds with ${processedCsv.successfulMappings} field mappings`,
+          description: `Processed ${enhancedData.length} diamonds with ${processedCsv.successfulMappings} field mappings`,
         });
 
         // Show field mapping summary if there are unmapped fields
@@ -145,7 +153,7 @@ export function useEnhancedUploadHandler() {
         
         // Fallback: Store in localStorage 
         const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
-        const newData = processedCsv.data.map((item, index) => ({
+        const newData = enhancedData.map((item, index) => ({
           id: `upload-${Date.now()}-${index}`,
           stockNumber: item.stock,
           shape: item.shape,
@@ -167,8 +175,8 @@ export function useEnhancedUploadHandler() {
         
         const fallbackResult: UploadResult = {
           success: true,
-          message: `Processed ${processedCsv.totalRows} diamonds locally (backend unavailable). Smart mapping applied ${processedCsv.successfulMappings} fields.`,
-          processedCount: processedCsv.totalRows,
+          message: `Processed ${enhancedData.length} diamonds locally (backend unavailable). Smart mapping applied ${processedCsv.successfulMappings} fields.`,
+          processedCount: enhancedData.length,
           fieldMappings: processedCsv.fieldMappings,
           unmappedFields: processedCsv.unmappedFields
         };
@@ -178,7 +186,7 @@ export function useEnhancedUploadHandler() {
         
         toast({
           title: "✅ Smart Processing Complete",
-          description: `Processed ${processedCsv.totalRows} diamonds with intelligent field mapping`,
+          description: `Processed ${enhancedData.length} diamonds with intelligent field mapping`,
           variant: "default",
         });
       }

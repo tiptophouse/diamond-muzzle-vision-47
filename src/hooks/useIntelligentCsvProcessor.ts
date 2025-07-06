@@ -176,7 +176,7 @@ export function useIntelligentCsvProcessor() {
     // Set defaults for missing required fields
     return {
       stock: transformedRow.stock || `AUTO-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-      shape: transformedRow.shape || 'round',
+      shape: transformedRow.shape || 'round brilliant',
       weight: parseFloat(transformedRow.weight) || 1.0,
       color: transformedRow.color || 'G', 
       clarity: transformedRow.clarity || 'VS1',
@@ -228,15 +228,62 @@ export function useIntelligentCsvProcessor() {
         return parseInt(certStr) || 0;
         
       case 'color':
+        // Strict validation for color grades
+        const colorUpper = strValue.toUpperCase();
+        const validColors = ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'];
+        return validColors.includes(colorUpper) ? colorUpper : 'G';
+        
       case 'clarity':
+        const clarityUpper = strValue.toUpperCase();
+        const validClarities = ['FL', 'IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'SI3', 'I1', 'I2', 'I3'];
+        return validClarities.includes(clarityUpper) ? clarityUpper : 'VS1';
+        
       case 'cut':
-      case 'fluorescence':
       case 'polish':
       case 'symmetry':
-        return strValue.toUpperCase();
+        const gradeUpper = strValue.toUpperCase();
+        const validGrades = ['EXCELLENT', 'VERY GOOD', 'GOOD', 'FAIR', 'POOR'];
+        return validGrades.includes(gradeUpper) ? gradeUpper : 'EXCELLENT';
+        
+      case 'fluorescence':
+        const fluorUpper = strValue.toUpperCase();
+        const validFluor = ['NONE', 'FAINT', 'MEDIUM', 'STRONG', 'VERY STRONG'];
+        return validFluor.includes(fluorUpper) ? fluorUpper : 'NONE';
         
       case 'shape':
-        return strValue.toLowerCase().replace(/\s+/g, ' ');
+        // Map common shape variants to API accepted values
+        const shapeLower = strValue.toLowerCase().trim();
+        const shapeMap: { [key: string]: string } = {
+          'round': 'round brilliant',
+          'rd': 'round brilliant', 
+          'rbc': 'round brilliant',
+          'brilliant': 'round brilliant',
+          'round brilliant': 'round brilliant',
+          'princess': 'princess',
+          'pr': 'princess',
+          'cushion': 'cushion',
+          'cu': 'cushion',
+          'oval': 'oval',
+          'ov': 'oval',
+          'emerald': 'emerald',
+          'em': 'emerald',
+          'pear': 'pear',
+          'ps': 'pear',
+          'marquise': 'marquise',
+          'mq': 'marquise',
+          'asscher': 'asscher',
+          'as': 'asscher',
+          'radiant': 'radiant',
+          'ra': 'radiant',
+          'heart': 'heart',
+          'ht': 'heart'
+        };
+        return shapeMap[shapeLower] || 'round brilliant';
+        
+      case 'culet':
+        const culetUpper = strValue.toUpperCase();
+        const validCulets = ['NONE', 'VERY SMALL', 'SMALL', 'MEDIUM', 'SLIGHTLY LARGE', 'LARGE', 'VERY LARGE'];
+        return validCulets.includes(culetUpper) ? culetUpper : 'NONE';
         
       default:
         return strValue;
