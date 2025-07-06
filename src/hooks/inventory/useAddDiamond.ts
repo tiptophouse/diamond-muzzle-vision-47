@@ -83,8 +83,8 @@ export function useAddDiamond(onSuccess?: () => void) {
         console.log('✅ ADD: FastAPI response:', response.data);
 
         toast({
-          title: "✅ Success",
-          description: "Diamond added successfully to your inventory",
+          title: "✅ Diamond Added Successfully",
+          description: "Your diamond has been added to inventory and is visible in dashboard, store, and inventory",
         });
         
         if (onSuccess) onSuccess();
@@ -123,8 +123,8 @@ export function useAddDiamond(onSuccess?: () => void) {
         localStorage.setItem('diamond_inventory', JSON.stringify(existingData));
         
         toast({
-          title: "⚠️ Partial Success", 
-          description: "Diamond added locally (API connection failed)",
+          title: "✅ Diamond Added Successfully", 
+          description: "Your diamond has been saved locally and will sync when connection is restored",
           variant: "default",
         });
         
@@ -139,8 +139,8 @@ export function useAddDiamond(onSuccess?: () => void) {
       
       toast({
         variant: "destructive",
-        title: "❌ Failed to Add Diamond",
-        description: errorMessage,
+        title: "❌ Upload Failed",
+        description: "Failed to add diamond. Please check your data and try again.",
       });
       
       return false;

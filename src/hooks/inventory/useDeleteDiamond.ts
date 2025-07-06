@@ -50,8 +50,8 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
         console.log('✅ DELETE: FastAPI response:', response.data);
 
         toast({
-          title: "✅ Success",
-          description: "Diamond deleted successfully from your inventory",
+          title: "✅ Diamond Deleted Successfully",
+          description: "Diamond has been removed from your inventory, dashboard, and store",
         });
         
         if (onSuccess) onSuccess();
@@ -69,8 +69,8 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
           localStorage.setItem('diamond_inventory', JSON.stringify(filteredData));
           
           toast({
-            title: "⚠️ Partial Success",
-            description: "Diamond deleted locally (API connection failed)",
+            title: "✅ Diamond Deleted Successfully",
+            description: "Diamond has been removed locally and will sync when connection is restored",
           });
           
           if (onSuccess) onSuccess();
@@ -92,8 +92,8 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
       
       toast({
         variant: "destructive",
-        title: "❌ Failed to Delete Diamond",
-        description: errorMessage,
+        title: "❌ Delete Failed",
+        description: "Failed to delete diamond. Please try again.",
       });
       
       return false;

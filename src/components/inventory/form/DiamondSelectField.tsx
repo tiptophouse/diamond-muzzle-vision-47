@@ -24,12 +24,22 @@ export function DiamondSelectField({
     <div>
       <Label htmlFor={id}>{label}</Label>
       <Select onValueChange={onValueChange} value={value}>
-        <SelectTrigger>
+        <SelectTrigger className="bg-background">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent 
+          className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto"
+          position="popper"
+          sideOffset={4}
+        >
           {options.map((option) => (
-            <SelectItem key={option} value={option}>{option}</SelectItem>
+            <SelectItem 
+              key={option} 
+              value={option}
+              className="cursor-pointer hover:bg-accent focus:bg-accent"
+            >
+              {option}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>

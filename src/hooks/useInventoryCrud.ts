@@ -57,16 +57,16 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
       if (result) {
         console.log('✅ CRUD: Diamond updated successfully');
         toast({
-          title: "Success",
-          description: "Diamond updated successfully",
+          title: "✅ Diamond Updated",
+          description: "Changes saved and synced across dashboard, store, and inventory",
         });
       }
       return result;
     } catch (error) {
       console.error('❌ CRUD: Update diamond failed:', error);
       toast({
-        title: "Error",
-        description: "Failed to update diamond",
+        title: "❌ Update Failed",
+        description: "Failed to update diamond. Please try again.",
         variant: "destructive",
       });
       return false;
@@ -83,16 +83,16 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
       if (result) {
         console.log('✅ CRUD: Diamond deleted successfully');
         toast({
-          title: "Success",
-          description: "Diamond deleted successfully",
+          title: "✅ Diamond Deleted",
+          description: "Diamond removed from inventory, dashboard, and store",
         });
       }
       return result;
     } catch (error) {
       console.error('❌ CRUD: Delete diamond failed:', error);
       toast({
-        title: "Error",
-        description: "Failed to delete diamond",
+        title: "❌ Delete Failed",
+        description: "Failed to delete diamond. Please try again.",
         variant: "destructive",
       });
       return false;
