@@ -18,7 +18,6 @@ export function useEnhancedUploadHandler() {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<UploadResult | null>(null);
-  const [processedCsvData, setProcessedCsvData] = useState<any>(null);
   const { toast } = useToast();
   const { user } = useTelegramAuth();
   const { triggerInventoryChange } = useInventoryDataSync();
@@ -57,9 +56,6 @@ export function useEnhancedUploadHandler() {
       try {
         console.log('🔄 Uploading to FastAPI backend...');
         console.log('📤 Sample data being sent:', processedCsv.data.slice(0, 2));
-        
-        // Store processed data for potential manual mapping
-        setProcessedCsvData(processedCsv);
         
         const response = await api.uploadCsv(apiEndpoints.uploadInventory(), processedCsv.data, user.id);
         
@@ -167,88 +163,10 @@ export function useEnhancedUploadHandler() {
     }
   };
 
-  const handleMappingCompletion = async (userMappings: Record<string, string>) => {
-    if (!processedCsvData || !user?.id) return;
-
-    console.log('🎯 Completing manual mapping with user selections:', userMappings);
-    
-    setUploading(true);
-    setProgress(50);
-
-    try {
-      // Apply user mappings to the processed data
-      const enhancedData = processedCsvData.data.map((item: any) => {
-        const updatedItem = { ...item };
-        
-        // Apply user mappings
-        Object.entries(userMappings).forEach(([detectedField, mappedTo]) => {
-          if (mappedTo !== 'ignore' && processedCsvData.originalRow && processedCsvData.originalRow[detectedField]) {
-            updatedItem[mappedTo] = processedCsvData.originalRow[detectedField];
-          }
-        });
-        
-        return updatedItem;
-      });
-
-      // Upload with enhanced mappings
-      const response = await api.uploadCsv(apiEndpoints.uploadInventory(), enhancedData, user.id);
-      
-      if (response.error) {
-        throw new Error(response.error);
-      }
-
-      setProgress(100);
-      
-      const successResult: UploadResult = {
-        success: true,
-        message: `Successfully uploaded ${enhancedData.length} diamonds with enhanced field mapping!`,
-        processedCount: enhancedData.length,
-        fieldMappings: [...(processedCsvData.fieldMappings || []), ...Object.entries(userMappings).map(([detectedField, mappedTo]) => ({
-          detectedField,
-          mappedTo,
-          confidence: 1.0 // User mapping has 100% confidence
-        }))],
-        unmappedFields: []
-      };
-      
-      setResult(successResult);
-      
-      // Force refresh inventory data with delay to ensure backend processing
-      setTimeout(() => {
-        triggerInventoryChange();
-        window.location.reload(); // Force full refresh to see new diamonds
-      }, 2000);
-      
-      toast({
-        title: "🎉 Enhanced Upload Complete!",
-        description: `Processed ${enhancedData.length} diamonds with your custom field mappings`,
-      });
-
-    } catch (error) {
-      console.error('Enhanced upload failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Enhanced upload failed';
-      
-      setResult({
-        success: false,
-        message: errorMessage,
-        errors: [errorMessage]
-      });
-      
-      toast({
-        title: "❌ Enhanced Upload Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
-
   const resetState = () => {
     setProgress(0);
     setResult(null);
     setUploading(false);
-    setProcessedCsvData(null);
   };
 
   return {
@@ -256,7 +174,6 @@ export function useEnhancedUploadHandler() {
     progress,
     result,
     handleUpload,
-    handleMappingCompletion,
     resetState,
   };
 }

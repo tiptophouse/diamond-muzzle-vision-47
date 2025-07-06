@@ -75,46 +75,35 @@ export function useIntelligentCsvProcessor() {
   };
 
   const fuzzyMatch = (input: string, candidates: string[]): { match: string; score: number } => {
-    const inputLower = input.toLowerCase().replace(/[_\s-#]/g, '');
+    const inputLower = input.toLowerCase().replace(/[_\s-]/g, '');
     let bestMatch = '';
     let bestScore = 0;
 
     for (const candidate of candidates) {
-      const candidateLower = candidate.toLowerCase().replace(/[_\s-#]/g, '');
+      const candidateLower = candidate.toLowerCase().replace(/[_\s-]/g, '');
       
       // Exact match gets highest score
       if (inputLower === candidateLower) {
         return { match: candidate, score: 1.0 };
       }
       
-      // Check if input starts with candidate or vice versa (high priority)
-      if (inputLower.startsWith(candidateLower) || candidateLower.startsWith(inputLower)) {
-        const score = Math.min(candidateLower.length, inputLower.length) / Math.max(candidateLower.length, inputLower.length) * 0.95;
+      // Contains match
+      if (inputLower.includes(candidateLower) || candidateLower.includes(inputLower)) {
+        const score = Math.max(candidateLower.length / inputLower.length, inputLower.length / candidateLower.length) * 0.8;
         if (score > bestScore) {
           bestScore = score;
           bestMatch = candidate;
         }
       }
       
-      // Contains match (medium priority)
-      else if (inputLower.includes(candidateLower) || candidateLower.includes(inputLower)) {
-        const score = Math.min(candidateLower.length, inputLower.length) / Math.max(candidateLower.length, inputLower.length) * 0.85;
-        if (score > bestScore) {
-          bestScore = score;
-          bestMatch = candidate;
-        }
-      }
+      // Levenshtein distance for similar strings
+      const distance = levenshteinDistance(inputLower, candidateLower);
+      const maxLen = Math.max(inputLower.length, candidateLower.length);
+      const similarity = (maxLen - distance) / maxLen;
       
-      // Levenshtein distance for similar strings (lower priority)
-      else {
-        const distance = levenshteinDistance(inputLower, candidateLower);
-        const maxLen = Math.max(inputLower.length, candidateLower.length);
-        const similarity = (maxLen - distance) / maxLen;
-        
-        if (similarity > 0.75 && similarity > bestScore) {
-          bestScore = similarity * 0.7; // Lower the score for fuzzy matches
-          bestMatch = candidate;
-        }
+      if (similarity > 0.7 && similarity > bestScore) {
+        bestScore = similarity;
+        bestMatch = candidate;
       }
     }
 
@@ -144,72 +133,31 @@ export function useIntelligentCsvProcessor() {
   const mapHeaders = (headers: string[]): { mappings: FieldMapping[]; unmapped: string[] } => {
     const mappings: FieldMapping[] = [];
     const unmapped: string[] = [];
-    const usedFields = new Set<string>(); // Prevent duplicate mappings
-
-    console.log('🔍 Mapping headers:', headers);
 
     for (const header of headers) {
-      const cleanHeader = header.toLowerCase().replace(/[_\s-#]/g, '');
       let bestMapping = '';
       let bestScore = 0;
       let bestField = '';
 
-      console.log(`\n🎯 Processing header: "${header}" (cleaned: "${cleanHeader}")`);
-
-      // Priority order: exact matches first, then partial matches
       for (const [standardField, variations] of Object.entries(fieldMappings)) {
-        if (usedFields.has(standardField)) continue; // Skip already used fields
-        
-        for (const variation of variations) {
-          const cleanVariation = variation.toLowerCase().replace(/[_\s-#]/g, '');
-          let score = 0;
-
-          // Exact match (highest priority)
-          if (cleanHeader === cleanVariation) {
-            score = 1.0;
-            console.log(`✅ Exact match: "${header}" → ${standardField} (${variation}) - Score: ${score}`);
-          }
-          // Header starts with variation or vice versa (high priority)
-          else if (cleanHeader.startsWith(cleanVariation) || cleanVariation.startsWith(cleanHeader)) {
-            score = 0.9;
-            console.log(`🎯 Starts with match: "${header}" → ${standardField} (${variation}) - Score: ${score}`);
-          }
-          // Header contains variation (medium priority)
-          else if (cleanHeader.includes(cleanVariation) && cleanVariation.length >= 3) {
-            score = 0.8;
-            console.log(`📍 Contains match: "${header}" → ${standardField} (${variation}) - Score: ${score}`);
-          }
-          // Variation contains header (lower priority)
-          else if (cleanVariation.includes(cleanHeader) && cleanHeader.length >= 3) {
-            score = 0.7;
-            console.log(`📍 Contained in match: "${header}" → ${standardField} (${variation}) - Score: ${score}`);
-          }
-
-          if (score > bestScore) {
-            bestScore = score;
-            bestMapping = variation;
-            bestField = standardField;
-          }
+        const { match, score } = fuzzyMatch(header, variations);
+        if (score > bestScore && score >= 0.6) { // Minimum confidence threshold
+          bestScore = score;
+          bestMapping = match;
+          bestField = standardField;
         }
       }
 
-      if (bestField && bestScore >= 0.7) { // Raised threshold
+      if (bestMapping && bestScore >= 0.6) {
         mappings.push({
           detectedField: header,
           mappedTo: bestField,
           confidence: bestScore
         });
-        usedFields.add(bestField); // Mark field as used
-        console.log(`✅ Final mapping: "${header}" → ${bestField} (confidence: ${Math.round(bestScore * 100)}%)`);
       } else {
         unmapped.push(header);
-        console.log(`❌ No mapping found for: "${header}" (best score: ${Math.round(bestScore * 100)}%)`);
       }
     }
-
-    console.log('\n📊 Final mapping results:');
-    mappings.forEach(m => console.log(`  ${m.detectedField} → ${m.mappedTo} (${Math.round(m.confidence * 100)}%)`));
-    console.log('🚫 Unmapped fields:', unmapped);
 
     return { mappings, unmapped };
   };
