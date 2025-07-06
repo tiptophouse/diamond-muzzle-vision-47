@@ -19,10 +19,10 @@ interface ProcessedCsvData {
 export function useIntelligentCsvProcessor() {
   const { toast } = useToast();
 
-  // Comprehensive field mapping definitions
+  // Comprehensive field mapping definitions with exact CSV header matches
   const fieldMappings = {
     stock: [
-      'stock', 'stock_number', 'stocknumber', 'stock number', 'sku', 'item_number', 
+      'stock#', 'stock', 'stock_number', 'stocknumber', 'stock number', 'sku', 'item_number', 
       'item number', 'product_id', 'id', 'ref', 'reference', 'lot', 'lot_number',
       'certificate_id', 'stone_id', 'diamond_id', 'inventory_id'
     ],
@@ -48,62 +48,84 @@ export function useIntelligentCsvProcessor() {
       'good', 'fair', 'poor', 'ideal', 'premium'
     ],
     price_per_carat: [
-      'price', 'cost', 'amount', 'value', 'precio', 'prix', 'preco',
-      'total_price', 'unit_price', 'price_per_carat', 'price/crt', 'price per carat',
-      'rap', 'rapnet', 'asking_price', 'selling_price', 'market_price', 'wholesale_price'
+      'price/crt', 'price_per_carat', 'price per carat', 'price/ct', 'price', 'cost', 'amount', 'value', 
+      'precio', 'prix', 'preco', 'total_price', 'unit_price', 'rap', 'rapnet', 
+      'asking_price', 'selling_price', 'market_price', 'wholesale_price'
     ],
     lab: [
       'lab', 'laboratory', 'cert', 'certificate', 'certification', 'grading_lab',
       'gia', 'ags', 'ssef', 'gubelin', 'grs', 'agl', 'lotus', 'ggtl'
     ],
     certificate_number: [
-      'certificate_number', 'cert_number', 'certification_number', 'report_number',
+      'certnumber', 'certificate_number', 'cert_number', 'certification_number', 'report_number',
       'gia_number', 'lab_number', 'grading_report', 'certificate_id'
     ],
     fluorescence: [
-      'fluorescence', 'fluor', 'fluorescencia', 'fluorescente', 'none', 'faint',
+      'fluo', 'fluorescence', 'fluor', 'fluorescencia', 'fluorescente', 'none', 'faint',
       'medium', 'strong', 'very_strong'
     ],
     length: ['length', 'l', 'largo', 'longueur', 'comprimento'],
     width: ['width', 'w', 'ancho', 'largeur', 'largura'],
     depth: ['depth', 'd', 'profondeur', 'profundidad', 'altura'],
     table: ['table', 'table_percentage', 'table%', 'mesa'],
-    depth_percentage: ['depth_percentage', 'depth%', 'total_depth', 'profundidad%'],
+    depth_percentage: ['depth%', 'depth_percentage', 'total_depth', 'profundidad%'],
     girdle: ['girdle', 'gridle', 'cinta', 'rondiste'],
     culet: ['culet', 'culeta', 'colette'],
-    symmetry: ['symmetry', 'simetria', 'symetrie'],
-    polish: ['polish', 'pulido', 'polissage']
+    symmetry: ['symm', 'symmetry', 'simetria', 'symetrie'],
+    polish: ['polish', 'pulido', 'polissage'],
+    ratio: ['ratio', 'measurements'],
+    rapnet: ['rap%', 'rap_percent', 'rapnet', 'rap'],
+    certificate_comment: ['certcomments', 'cert_comments', 'certificate_comment', 'comments'],
+    picture: ['pic', 'picture', 'image', 'photo']
   };
 
   const fuzzyMatch = (input: string, candidates: string[]): { match: string; score: number } => {
-    const inputLower = input.toLowerCase().replace(/[_\s-]/g, '');
+    const inputLower = input.toLowerCase().trim();
     let bestMatch = '';
     let bestScore = 0;
 
     for (const candidate of candidates) {
-      const candidateLower = candidate.toLowerCase().replace(/[_\s-]/g, '');
+      const candidateLower = candidate.toLowerCase().trim();
       
-      // Exact match gets highest score
+      // Exact match (case insensitive) gets highest score
       if (inputLower === candidateLower) {
         return { match: candidate, score: 1.0 };
       }
       
-      // Contains match
+      // Handle special characters by creating normalized versions
+      const inputNormalized = inputLower.replace(/[#\/%\s_-]/g, '');
+      const candidateNormalized = candidateLower.replace(/[#\/%\s_-]/g, '');
+      
+      // Exact match on normalized versions
+      if (inputNormalized === candidateNormalized) {
+        return { match: candidate, score: 0.95 };
+      }
+      
+      // Contains match on original strings
       if (inputLower.includes(candidateLower) || candidateLower.includes(inputLower)) {
-        const score = Math.max(candidateLower.length / inputLower.length, inputLower.length / candidateLower.length) * 0.8;
+        const score = Math.max(candidateLower.length / inputLower.length, inputLower.length / candidateLower.length) * 0.9;
         if (score > bestScore) {
           bestScore = score;
           bestMatch = candidate;
         }
       }
       
-      // Levenshtein distance for similar strings
-      const distance = levenshteinDistance(inputLower, candidateLower);
-      const maxLen = Math.max(inputLower.length, candidateLower.length);
-      const similarity = (maxLen - distance) / maxLen;
+      // Contains match on normalized strings
+      if (inputNormalized.includes(candidateNormalized) || candidateNormalized.includes(inputNormalized)) {
+        const score = Math.max(candidateNormalized.length / inputNormalized.length, inputNormalized.length / candidateNormalized.length) * 0.85;
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = candidate;
+        }
+      }
+      
+      // Levenshtein distance for similar strings (normalized)
+      const distance = levenshteinDistance(inputNormalized, candidateNormalized);
+      const maxLen = Math.max(inputNormalized.length, candidateNormalized.length);
+      const similarity = maxLen > 0 ? (maxLen - distance) / maxLen : 0;
       
       if (similarity > 0.7 && similarity > bestScore) {
-        bestScore = similarity;
+        bestScore = similarity * 0.8;
         bestMatch = candidate;
       }
     }
@@ -135,13 +157,19 @@ export function useIntelligentCsvProcessor() {
     const mappings: FieldMapping[] = [];
     const unmapped: string[] = [];
 
+    console.log('🔍 MAPPING HEADERS:', headers);
+
     for (const header of headers) {
       let bestMapping = '';
       let bestScore = 0;
       let bestField = '';
 
+      console.log(`\n🎯 Processing header: "${header}"`);
+
       for (const [standardField, variations] of Object.entries(fieldMappings)) {
         const { match, score } = fuzzyMatch(header, variations);
+        console.log(`   Checking ${standardField}: score=${score.toFixed(3)}, match="${match}"`);
+        
         if (score > bestScore && score >= 0.6) { // Minimum confidence threshold
           bestScore = score;
           bestMapping = match;
@@ -150,12 +178,14 @@ export function useIntelligentCsvProcessor() {
       }
 
       if (bestMapping && bestScore >= 0.6) {
+        console.log(`✅ MAPPED: "${header}" -> ${bestField} (confidence: ${bestScore.toFixed(3)})`);
         mappings.push({
           detectedField: header,
           mappedTo: bestField,
           confidence: bestScore
         });
       } else {
+        console.log(`❌ UNMAPPED: "${header}" (best score: ${bestScore.toFixed(3)})`);
         unmapped.push(header);
       }
     }
@@ -234,6 +264,7 @@ export function useIntelligentCsvProcessor() {
         return parseFloat(numStr) || 0;
         
       case 'price':
+      case 'price_per_carat':
         // Remove currency symbols and commas
         const priceStr = strValue.replace(/[$,€£¥]/g, '').replace(/[^\d.]/g, '');
         return parseFloat(priceStr) || 0;
