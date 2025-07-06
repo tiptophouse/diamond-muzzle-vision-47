@@ -20,31 +20,31 @@ export function useAddDiamond(onSuccess?: () => void) {
     }
 
     try {
-      // Match FastAPI DiamondCreateRequest schema exactly - same as curl example
+      // Match FastAPI DiamondCreateRequest schema exactly
       const diamondDataPayload = {
-        stock: data.stockNumber || "string",
-        shape: data.shape?.toLowerCase() || "round brilliant", 
+        stock: data.stockNumber,
+        shape: data.shape?.toLowerCase() || 'round brilliant',
         weight: Number(data.carat) || 1,
-        color: data.color || "D",
-        clarity: data.clarity || "FL", 
-        lab: data.lab || "GIA",
-        certificate_number: parseInt(data.certificateNumber || '0') || 0,
-        length: Number(data.length) || 1,
-        width: Number(data.width) || 1,
-        depth: Number(data.depth) || 1,
-        ratio: Number(data.ratio) || 1,
-        cut: data.cut?.toUpperCase() || "EXCELLENT",
-        polish: data.polish?.toUpperCase() || "EXCELLENT", 
-        symmetry: data.symmetry?.toUpperCase() || "EXCELLENT",
-        fluorescence: data.fluorescence?.toUpperCase() || "NONE",
-        table: Number(data.tablePercentage) || 1,
-        depth_percentage: Number(data.depthPercentage) || 1,
-        gridle: data.gridle || "string",
-        culet: data.culet?.toUpperCase() || "NONE",
-        certificate_comment: data.certificateComment || "string",
-        rapnet: data.rapnet ? parseInt(data.rapnet.toString()) : 0,
-        price_per_carat: Number(data.pricePerCarat) || 0,
-        picture: data.picture || "string"
+        color: data.color || 'G',
+        clarity: data.clarity || 'VS1',
+        lab: data.lab || 'GIA',
+        certificate_number: parseInt(data.certificateNumber || '0') || Math.floor(Math.random() * 1000000),
+        length: Number(data.length) || 6.5,
+        width: Number(data.width) || 6.5,
+        depth: Number(data.depth) || 4.0,
+        ratio: Number(data.ratio) || 1.0,
+        cut: data.cut?.toUpperCase() || 'EXCELLENT',
+        polish: data.polish?.toUpperCase() || 'EXCELLENT',
+        symmetry: data.symmetry?.toUpperCase() || 'EXCELLENT',
+        fluorescence: data.fluorescence?.toUpperCase() || 'NONE',
+        table: Number(data.tablePercentage) || 60,
+        depth_percentage: Number(data.depthPercentage) || 62,
+        gridle: data.gridle || 'Medium',
+        culet: data.culet?.toUpperCase() || 'NONE',
+        certificate_comment: data.certificateComment || null,
+        rapnet: data.rapnet ? parseInt(data.rapnet.toString()) : null,
+        price_per_carat: data.carat > 0 ? Math.round(Number(data.price) / Number(data.carat)) : Math.round(Number(data.price)) || null,
+        picture: data.picture || null,
       };
 
       // Remove undefined keys

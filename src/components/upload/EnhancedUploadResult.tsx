@@ -1,9 +1,10 @@
-import { CheckCircle, XCircle, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { CheckCircle, XCircle, AlertCircle, ChevronDown, ChevronUp, FileText } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { UploadSuccessCard } from "./UploadSuccessCard";
+import { FieldMappingInterface } from "./FieldMappingInterface";
 
 interface FieldMapping {
   detectedField: string;
@@ -22,10 +23,20 @@ interface UploadResult {
 
 interface EnhancedUploadResultProps {
   result: UploadResult | null;
+  onCompleteMapping?: (mappings: Record<string, string>) => void;
+  onRestart?: () => void;
+  isProcessing?: boolean;
 }
 
-export function EnhancedUploadResult({ result }: EnhancedUploadResultProps) {
+export function EnhancedUploadResult({ 
+  result, 
+  onCompleteMapping, 
+  onRestart,
+  isProcessing = false 
+}: EnhancedUploadResultProps) {
   const [showDetails, setShowDetails] = useState(false);
+  const [showMappingInterface, setShowMappingInterface] = useState(false);
+  const [userMappings, setUserMappings] = useState<Record<string, string>>({});
 
   // Helper functions for confidence display
   function getConfidenceColor(confidence: number) {
@@ -41,6 +52,26 @@ export function EnhancedUploadResult({ result }: EnhancedUploadResultProps) {
   }
 
   if (!result) return null;
+
+  // Show mapping interface if there are unmapped fields and user chose to map them
+  if (showMappingInterface && result.unmappedFields && result.unmappedFields.length > 0) {
+    return (
+      <FieldMappingInterface
+        mappedFields={result.fieldMappings || []}
+        unmappedFields={result.unmappedFields}
+        onMappingUpdate={(detectedField, mappedTo) => {
+          setUserMappings(prev => ({ ...prev, [detectedField]: mappedTo }));
+        }}
+        onProceed={() => {
+          if (onCompleteMapping) {
+            onCompleteMapping(userMappings);
+          }
+        }}
+        onBack={() => setShowMappingInterface(false)}
+        isProcessing={isProcessing}
+      />
+    );
+  }
 
   // Use the beautiful success card for successful uploads
   if (result.success) {
@@ -115,9 +146,19 @@ export function EnhancedUploadResult({ result }: EnhancedUploadResultProps) {
                           </Badge>
                         ))}
                       </div>
-                      <p className="text-xs text-amber-700 bg-amber-50 p-2 rounded">
-                        💡 These fields weren't automatically mapped, but your diamonds were processed successfully.
-                      </p>
+                      <div className="space-y-3">
+                        <p className="text-xs text-amber-700 bg-amber-50 p-2 rounded">
+                          💡 These fields weren't automatically mapped, but your diamonds were processed successfully.
+                        </p>
+                        <Button 
+                          size="sm" 
+                          onClick={() => setShowMappingInterface(true)}
+                          className="bg-amber-600 hover:bg-amber-700 text-white"
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Map Fields Manually
+                        </Button>
+                      </div>
                     </div>
                   )}
 
