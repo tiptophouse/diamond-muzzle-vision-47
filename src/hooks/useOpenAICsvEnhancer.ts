@@ -16,55 +16,88 @@ export function useOpenAICsvEnhancer() {
     setIsEnhancing(true);
     
     try {
-      // Create a sample of problematic data to send to OpenAI
-      const sampleData = csvData.slice(0, 5).map(row => ({
-        stock: row.stock,
-        shape: row.shape,
-        color: row.color,
-        clarity: row.clarity,
-        cut: row.cut,
-        weight: row.weight
-      }));
-
-      console.log('🤖 Enhancing CSV data with OpenAI...');
+      // Skip OpenAI enhancement for now and use built-in logic
+      console.log('🤖 Applying built-in data enhancement (OpenAI temporarily disabled)...');
       
-      const response = await fetch('https://bc6a5b8a-3262-41f9-a127-aae26f8063fe.supabase.co/functions/v1/enhance-csv-data', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGxqcWd4aGRoYmJocG9oeGxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0ODY1NTMsImV4cCI6MjA2MzA2MjU1M30._CGnKnTyltp1lIUmmOVI1nC4jRew2WkAU-bSf22HCDE`,
-        },
-        body: JSON.stringify({
-          sampleData: sampleData,
-          validShapes: ['round brilliant', 'princess', 'cushion', 'oval', 'emerald', 'pear', 'marquise', 'asscher', 'radiant', 'heart'],
-          validColors: ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'],
-          validClarities: ['FL', 'IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'SI3', 'I1', 'I2', 'I3'],
-          validCuts: ['EXCELLENT', 'VERY GOOD', 'GOOD', 'FAIR', 'POOR']
-        }),
+      // Apply built-in enhancement logic directly
+      const enhancedData = csvData.map(row => {
+        const enhanced = { ...row };
+        
+        // Fix common shape issues
+        if (enhanced.shape) {
+          const shapeLower = enhanced.shape.toLowerCase().trim();
+          const shapeMap: { [key: string]: string } = {
+            'round': 'round brilliant',
+            'rd': 'round brilliant', 
+            'rbc': 'round brilliant',
+            'brilliant': 'round brilliant',
+            'round brilliant': 'round brilliant',
+            'princess': 'princess',
+            'pr': 'princess',
+            'cushion': 'cushion',
+            'cu': 'cushion',
+            'oval': 'oval',
+            'ov': 'oval',
+            'emerald': 'emerald',
+            'em': 'emerald',
+            'pear': 'pear',
+            'ps': 'pear',
+            'marquise': 'marquise',
+            'mq': 'marquise',
+            'asscher': 'asscher',
+            'as': 'asscher',
+            'radiant': 'radiant',
+            'ra': 'radiant',
+            'heart': 'heart',
+            'ht': 'heart'
+          };
+          enhanced.shape = shapeMap[shapeLower] || 'round brilliant';
+        }
+        
+        // Fix color values - ensure they're valid
+        if (enhanced.color) {
+          const colorUpper = enhanced.color.toString().toUpperCase();
+          const validColors = ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'];
+          enhanced.color = validColors.includes(colorUpper) ? colorUpper : 'G';
+        }
+        
+        // Fix clarity values
+        if (enhanced.clarity) {
+          const clarityUpper = enhanced.clarity.toString().toUpperCase();
+          const validClarities = ['FL', 'IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'SI3', 'I1', 'I2', 'I3'];
+          enhanced.clarity = validClarities.includes(clarityUpper) ? clarityUpper : 'VS1';
+        }
+        
+        // Fix cut/polish/symmetry values
+        ['cut', 'polish', 'symmetry'].forEach(field => {
+          if (enhanced[field]) {
+            const gradeUpper = enhanced[field].toString().toUpperCase();
+            const validGrades = ['EXCELLENT', 'VERY GOOD', 'GOOD', 'FAIR', 'POOR'];
+            enhanced[field] = validGrades.includes(gradeUpper) ? gradeUpper : 'EXCELLENT';
+          }
+        });
+        
+        // Fix fluorescence values
+        if (enhanced.fluorescence) {
+          const fluorUpper = enhanced.fluorescence.toString().toUpperCase();
+          const validFluor = ['NONE', 'FAINT', 'MEDIUM', 'STRONG', 'VERY STRONG'];
+          enhanced.fluorescence = validFluor.includes(fluorUpper) ? fluorUpper : 'NONE';
+        }
+        
+        // Fix culet values
+        if (enhanced.culet) {
+          const culetUpper = enhanced.culet.toString().toUpperCase();
+          const validCulets = ['NONE', 'VERY SMALL', 'SMALL', 'MEDIUM', 'SLIGHTLY LARGE', 'LARGE', 'VERY LARGE'];
+          enhanced.culet = validCulets.includes(culetUpper) ? culetUpper : 'NONE';
+        }
+        
+        return enhanced;
       });
 
-      if (response.ok) {
-        const enhancedMappings = await response.json();
-        
-        // Apply the enhanced mappings to all data
-        const enhancedData = csvData.map(row => {
-          const enhanced = { ...row };
-          
-          // Apply OpenAI enhancements if available
-          enhancedMappings.forEach((mapping: OpenAIEnhancedMapping) => {
-            if (enhanced[mapping.field] === mapping.originalValue) {
-              enhanced[mapping.field] = mapping.enhancedValue;
-            }
-          });
-          
-          return enhanced;
-        });
-
-        console.log('✅ OpenAI enhancement complete');
-        return enhancedData;
-      }
+      console.log('✅ Built-in enhancement complete');
+      return enhancedData;
     } catch (error) {
-      console.warn('⚠️ OpenAI enhancement failed, using fallback logic:', error);
+      console.warn('⚠️ Data enhancement failed, using original data:', error);
     } finally {
       setIsEnhancing(false);
     }
