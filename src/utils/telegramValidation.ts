@@ -88,23 +88,12 @@ export function validateTelegramData(initData: string): boolean {
       return false;
     }
     
-    // Check timestamp validity (within 5 minutes as per Telegram recommendation)
+    // Check timestamp validity (within 5 minutes)
     const authDateTime = parseInt(authDate) * 1000;
     const now = Date.now();
     const maxAge = 5 * 60 * 1000; // 5 minutes
     
-    const isTimestampValid = (now - authDateTime) <= maxAge;
-    
-    if (!isTimestampValid) {
-      console.warn('🔐 Telegram initData timestamp expired');
-      return false;
-    }
-    
-    // Note: Full HMAC-SHA256 validation is now done server-side
-    // This client-side check only validates basic structure and timestamp
-    console.log('✅ Basic Telegram initData validation passed (full validation on server)');
-    return true;
-    
+    return (now - authDateTime) <= maxAge;
   } catch (error) {
     console.error('Telegram data validation failed:', error);
     return false;

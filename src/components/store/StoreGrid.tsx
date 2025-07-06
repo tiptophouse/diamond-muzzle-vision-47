@@ -3,8 +3,6 @@ import { ProfessionalDiamondCard } from "./ProfessionalDiamondCard";
 import { DiamondCardSkeleton } from "./DiamondCardSkeleton";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { AlertCircle } from "lucide-react";
-import { useWishlist } from "@/hooks/useWishlist";
-import { useTelegramAuth } from "@/context/TelegramAuthContext";
 
 interface StoreGridProps {
   diamonds: Diamond[];
@@ -14,15 +12,6 @@ interface StoreGridProps {
 }
 
 export function StoreGrid({ diamonds, loading, error, onUpdate }: StoreGridProps) {
-  const { user } = useTelegramAuth();
-  const { addToWishlist, isInWishlist } = useWishlist();
-
-  // For now, assume current user is the diamond owner (this would be dynamic in a real store)
-  const currentOwnerTelegramId = user?.id || 0;
-
-  const handleAddToWishlist = async (diamond: Diamond) => {
-    await addToWishlist(diamond, currentOwnerTelegramId);
-  };
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
@@ -66,9 +55,6 @@ export function StoreGrid({ diamonds, loading, error, onUpdate }: StoreGridProps
           key={diamond.id} 
           diamond={diamond}
           onUpdate={onUpdate}
-          onAddToWishlist={handleAddToWishlist}
-          isInWishlist={isInWishlist(diamond.stockNumber, currentOwnerTelegramId)}
-          diamondOwnerTelegramId={currentOwnerTelegramId}
         />
       ))}
     </div>

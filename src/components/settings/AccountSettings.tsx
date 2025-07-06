@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,8 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { User, Mail, Phone, Globe, Save, Loader2 } from 'lucide-react';
+import { User, Mail, Phone, Globe, Save } from 'lucide-react';
 
 export function AccountSettings() {
   const { user } = useTelegramAuth();
@@ -29,97 +28,17 @@ export function AccountSettings() {
   });
 
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
-
-  // Load existing profile data
-  useEffect(() => {
-    const loadProfile = async () => {
-      if (!user?.id) return;
-      
-      try {
-        const { data: profileData, error } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('telegram_id', user.id)
-          .single();
-
-        if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-          console.error('Error loading profile:', error);
-          return;
-        }
-
-        if (profileData) {
-          setProfile({
-            firstName: profileData.first_name || user?.first_name || '',
-            lastName: profileData.last_name || user?.last_name || '',
-            email: profileData.email || '',
-            phone: profileData.phone_number || '',
-            bio: profileData.bio || '',
-            company: profileData.company || '',
-            website: profileData.website || '',
-            language: profileData.language || 'en',
-            timezone: profileData.timezone || 'UTC'
-          });
-        }
-      } catch (error) {
-        console.error('Error loading profile:', error);
-      } finally {
-        setIsLoadingProfile(false);
-      }
-    };
-
-    loadProfile();
-  }, [user]);
 
   const handleSave = async () => {
-    if (!user?.id) {
-      toast({
-        title: "Error",
-        description: "User not authenticated. Please try logging in again.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const profileData = {
-        telegram_id: user.id,
-        first_name: profile.firstName,
-        last_name: profile.lastName,
-        email: profile.email || null,
-        phone_number: profile.phone || null,
-        bio: profile.bio || null,
-        company: profile.company || null,
-        website: profile.website || null,
-        language: profile.language,
-        timezone: profile.timezone,
-        updated_at: new Date().toISOString()
-      };
-
-      // Try to update first, if no rows affected, then insert
-      const { error: updateError } = await supabase
-        .from('user_profiles')
-        .update(profileData)
-        .eq('telegram_id', user.id);
-
-      if (updateError) {
-        // If update failed, try to insert (user profile might not exist)
-        const { error: insertError } = await supabase
-          .from('user_profiles')
-          .insert([profileData]);
-
-        if (insertError) {
-          throw insertError;
-        }
-      }
-
+      // In a real app, you'd save this to the database
+      await new Promise(resolve => setTimeout(resolve, 1000));
       toast({
         title: "Settings saved",
         description: "Your account settings have been updated successfully.",
       });
     } catch (error) {
-      console.error('Error saving profile:', error);
       toast({
         title: "Error",
         description: "Failed to save settings. Please try again.",
@@ -129,28 +48,6 @@ export function AccountSettings() {
       setIsLoading(false);
     }
   };
-
-  if (isLoadingProfile) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Account Information
-          </CardTitle>
-          <CardDescription>
-            Manage your personal information and account preferences
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center py-8">
-          <div className="flex items-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Loading profile...</span>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card>

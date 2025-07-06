@@ -10,14 +10,12 @@ import { FileUploadArea } from "./FileUploadArea";
 import { UploadProgress } from "./UploadProgress";
 import { EnhancedUploadResult } from "./EnhancedUploadResult";
 import { UploadInstructions } from "./UploadInstructions";
-import { useToast } from "@/hooks/use-toast";
 
 export function UploadForm() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { user, isAuthenticated } = useTelegramAuth();
   const { validateFile } = useIntelligentCsvProcessor();
-  const { uploading, progress, result, handleUpload, resetState, handleMappingCompletion } = useEnhancedUploadHandler();
-  const { toast } = useToast();
+  const { uploading, progress, result, handleUpload, resetState } = useEnhancedUploadHandler();
 
   const handleFileChange = (file: File | null) => {
     if (!validateFile(file)) {
@@ -64,12 +62,7 @@ export function UploadForm() {
             />
 
             <UploadProgress progress={progress} uploading={uploading} />
-            <EnhancedUploadResult 
-              result={result} 
-              onCompleteMapping={handleMappingCompletion}
-              onRestart={resetForm}
-              isProcessing={uploading}
-            />
+            <EnhancedUploadResult result={result} />
 
             {selectedFile && (
               <div className="flex justify-end gap-3">
