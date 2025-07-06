@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { StoreHeader } from "@/components/store/StoreHeader";
 import { PremiumStoreFilters } from "@/components/store/PremiumStoreFilters";
 import { StoreGrid } from "@/components/store/StoreGrid";
@@ -16,8 +17,14 @@ export default function StorePage() {
   const { diamonds, loading, error, refetch } = useStoreData();
   const { filters, filteredDiamonds, updateFilter, clearFilters } = useStoreFilters(diamonds || []);
   const [showUpload, setShowUpload] = useState(false);
+  const { user, isTelegramEnvironment } = useTelegramAuth();
 
   const navigate = useNavigate();
+
+  // Only show admin controls if user is authenticated and owns this store
+  // For now, we'll assume the authenticated user is the store owner
+  // In a multi-user system, you'd check if user owns this specific store
+  const isStoreOwner = user && isTelegramEnvironment;
 
   const handleImageUploaded = (imageUrl: string) => {
     console.log('Image uploaded to store:', imageUrl);
@@ -26,19 +33,21 @@ export default function StorePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
-      {/* Back to Main Menu Button */}
-      <div className="flex items-center pt-4 pb-2 pl-2 sm:pl-0">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="flex items-center gap-2 px-3 py-2 text-slate-700"
-          onClick={() => navigate('/dashboard')}
-        >
-          <ArrowLeft className="h-5 w-5" />
-          <span className="hidden sm:inline">Back to Menu</span>
-          <span className="sm:hidden">Back</span>
-        </Button>
-      </div>
+      {/* Back to Main Menu Button - Only show to authenticated store owner */}
+      {isStoreOwner && (
+        <div className="flex items-center pt-4 pb-2 pl-2 sm:pl-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex items-center gap-2 px-3 py-2 text-slate-700"
+            onClick={() => navigate('/dashboard')}
+          >
+            <ArrowLeft className="h-5 w-5" />
+            <span className="hidden sm:inline">Back to Menu</span>
+            <span className="sm:hidden">Back</span>
+          </Button>
+        </div>
+      )}
 
       <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-6">
         {/* Header with Upload Button */}
@@ -48,24 +57,27 @@ export default function StorePage() {
             onOpenFilters={() => {}}
           />
           
-          <Dialog open={showUpload} onOpenChange={setShowUpload}>
-            <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto flex items-center justify-center gap-2 h-10 sm:h-9 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                <Upload className="h-4 w-4" />
-                <span className="hidden sm:inline">Upload Photo</span>
-                <span className="sm:hidden">Upload</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="w-[95vw] max-w-md mx-auto">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                  <Image className="h-5 w-5" />
-                  Upload Image to Store
-                </DialogTitle>
-              </DialogHeader>
-              <ImageUpload onImageUploaded={handleImageUploaded} />
-            </DialogContent>
-          </Dialog>
+          {/* Upload Photo - Only show to authenticated store owner */}
+          {isStoreOwner && (
+            <Dialog open={showUpload} onOpenChange={setShowUpload}>
+              <DialogTrigger asChild>
+                <Button className="w-full sm:w-auto flex items-center justify-center gap-2 h-10 sm:h-9 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                  <Upload className="h-4 w-4" />
+                  <span className="hidden sm:inline">Upload Photo</span>
+                  <span className="sm:hidden">Upload</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="w-[95vw] max-w-md mx-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                    <Image className="h-5 w-5" />
+                    Upload Image to Store
+                  </DialogTitle>
+                </DialogHeader>
+                <ImageUpload onImageUploaded={handleImageUploaded} />
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         {/* Premium Fixed Filters */}
