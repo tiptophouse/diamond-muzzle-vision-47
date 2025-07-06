@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { api, apiEndpoints } from '@/lib/api';
-import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useInventoryDataSync } from './inventory/useInventoryDataSync';
 import { useIntelligentCsvProcessor } from './useIntelligentCsvProcessor';
@@ -81,43 +80,30 @@ export function useEnhancedUploadHandler() {
           
           try {
             const payload = {
-              stock: diamondData.stock || `AUTO-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+              stock: diamondData.stock || "string",
               shape: diamondData.shape?.toLowerCase() || "round brilliant", 
-              weight: diamondData.weight !== undefined ? Number(diamondData.weight) : 1,
-              color: diamondData.color !== undefined ? diamondData.color : "D",
-              clarity: diamondData.clarity !== undefined ? diamondData.clarity : "FL",
-              lab: diamondData.lab !== undefined ? diamondData.lab : "GIA",
-              certificate_number: diamondData.certificate_number !== undefined ? parseInt(diamondData.certificate_number.toString()) : Math.floor(Math.random() * 1000000),
-              length: diamondData.length !== undefined ? Number(diamondData.length) : 1,
-              width: diamondData.width !== undefined ? Number(diamondData.width) : 1,
-              depth: diamondData.depth !== undefined ? Number(diamondData.depth) : 1,
-              ratio: diamondData.ratio !== undefined ? Number(diamondData.ratio) : 1,
-              cut: diamondData.cut !== undefined ? diamondData.cut.toUpperCase() : "EXCELLENT",
-              polish: diamondData.polish !== undefined ? diamondData.polish.toUpperCase() : "EXCELLENT",
-              symmetry: diamondData.symmetry !== undefined ? diamondData.symmetry.toUpperCase() : "EXCELLENT",
-              fluorescence: diamondData.fluorescence !== undefined ? diamondData.fluorescence.toUpperCase() : "NONE",
-              table: diamondData.table !== undefined ? Number(diamondData.table) : 60,
-              depth_percentage: diamondData.depth_percentage !== undefined ? Number(diamondData.depth_percentage) : 62,
-              gridle: diamondData.gridle !== undefined ? diamondData.gridle : "Medium",
-              culet: diamondData.culet !== undefined ? diamondData.culet.toUpperCase() : "NONE",
-              certificate_comment: diamondData.certificate_comment !== undefined ? diamondData.certificate_comment : null,
-              rapnet: diamondData.rapnet !== undefined ? parseInt(diamondData.rapnet.toString()) : null,
-              price_per_carat: diamondData.price_per_carat !== undefined ? Number(diamondData.price_per_carat) : 0,
-              picture: diamondData.picture !== undefined ? diamondData.picture : null,
+              weight: Number(diamondData.weight) || 1,
+              color: diamondData.color || "D",
+              clarity: diamondData.clarity || "FL",
+              lab: diamondData.lab || "string",
+              certificate_number: parseInt(diamondData.certificate_number || '0') || 0,
+              length: Number(diamondData.length) || 1,
+              width: Number(diamondData.width) || 1,
+              depth: Number(diamondData.depth) || 1,
+              ratio: Number(diamondData.ratio) || 1,
+              cut: diamondData.cut?.toUpperCase() || "EXCELLENT",
+              polish: diamondData.polish?.toUpperCase() || "EXCELLENT",
+              symmetry: diamondData.symmetry?.toUpperCase() || "EXCELLENT",
+              fluorescence: diamondData.fluorescence?.toUpperCase() || "NONE",
+              table: Number(diamondData.table) || 1,
+              depth_percentage: Number(diamondData.depth_percentage) || 1,
+              gridle: diamondData.gridle || "string",
+              culet: diamondData.culet?.toUpperCase() || "NONE",
+              certificate_comment: diamondData.certificate_comment || "string",
+              rapnet: diamondData.rapnet ? parseInt(diamondData.rapnet.toString()) : 0,
+              price_per_carat: Number(diamondData.price_per_carat) || 0,
+              picture: diamondData.picture || "string",
             };
-            
-            // Check for duplicate certificate number before uploading
-            const { data: existingCheck, error: checkError } = await supabase.rpc('check_certificate_exists', {
-              p_certificate_number: payload.certificate_number,
-              p_user_id: user.id
-            });
-            
-            if (checkError) {
-              console.warn('Error checking duplicate:', checkError);
-            } else if (existingCheck === true) {
-              errors.push(`Certificate ${payload.certificate_number} already exists - duplicate skipped`);
-              continue;
-            }
             
             const response = await api.post(apiEndpoints.addDiamond(user.id), payload);
             if (response.error) {

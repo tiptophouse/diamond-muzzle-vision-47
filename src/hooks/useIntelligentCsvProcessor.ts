@@ -72,8 +72,7 @@ export function useIntelligentCsvProcessor() {
     girdle: ['girdle', 'gridle', 'cinta', 'rondiste'],
     culet: ['culet', 'culeta', 'colette'],
     symmetry: ['symmetry', 'simetria', 'symetrie'],
-    polish: ['polish', 'pulido', 'polissage'],
-    picture: ['picture', 'image', 'photo', 'img', 'image_url', 'photo_url', 'picture_url', 'imagen', 'foto']
+    polish: ['polish', 'pulido', 'polissage']
   };
 
   const fuzzyMatch = (input: string, candidates: string[]): { match: string; score: number } => {
@@ -170,36 +169,36 @@ export function useIntelligentCsvProcessor() {
     // Map detected fields to standard fields
     for (const mapping of fieldMappings) {
       const value = row[mapping.detectedField];
-      if (value !== undefined && value !== null) {
+      if (value !== undefined && value !== null && value !== '') {
         transformedRow[mapping.mappedTo] = cleanValue(value, mapping.mappedTo);
       }
     }
 
-    // Set defaults only for truly missing required fields
+    // Set defaults for missing required fields
     return {
       stock: transformedRow.stock || `AUTO-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
       shape: transformedRow.shape || 'round brilliant',
-      weight: transformedRow.weight !== undefined ? parseFloat(transformedRow.weight) || 0 : 1.0,
-      color: transformedRow.color !== undefined ? transformedRow.color : 'G', 
-      clarity: transformedRow.clarity !== undefined ? transformedRow.clarity : 'VS1',
-      cut: transformedRow.cut !== undefined ? transformedRow.cut : 'EXCELLENT',
-      price_per_carat: transformedRow.price !== undefined ? parseFloat(transformedRow.price) || 0 : 5000,
+      weight: parseFloat(transformedRow.weight) || 1.0,
+      color: transformedRow.color || 'G', 
+      clarity: transformedRow.clarity || 'VS1',
+      cut: transformedRow.cut || 'EXCELLENT',
+      price_per_carat: parseFloat(transformedRow.price) || 5000,
       lab: transformedRow.lab || 'GIA',
       certificate_number: parseInt(transformedRow.certificate_number) || Math.floor(Math.random() * 1000000),
-      length: transformedRow.length !== undefined ? parseFloat(transformedRow.length) || 0 : 6.5,
-      width: transformedRow.width !== undefined ? parseFloat(transformedRow.width) || 0 : 6.5,
-      depth: transformedRow.depth !== undefined ? parseFloat(transformedRow.depth) || 0 : 4.0,
+      length: parseFloat(transformedRow.length) || 6.5,
+      width: parseFloat(transformedRow.width) || 6.5,
+      depth: parseFloat(transformedRow.depth) || 4.0,
       ratio: 1.0,
       polish: transformedRow.polish || 'EXCELLENT',
       symmetry: transformedRow.symmetry || 'EXCELLENT',
       fluorescence: transformedRow.fluorescence || 'NONE',
-      table: transformedRow.table !== undefined ? parseFloat(transformedRow.table) || 0 : 60,
-      depth_percentage: transformedRow.depth_percentage !== undefined ? parseFloat(transformedRow.depth_percentage) || 0 : 62,
+      table: parseFloat(transformedRow.table) || 60,
+      depth_percentage: parseFloat(transformedRow.depth_percentage) || 62,
       gridle: transformedRow.girdle || 'Medium',
       culet: transformedRow.culet || 'NONE',
-      certificate_comment: transformedRow.certificate_comment || null,
-      rapnet: transformedRow.rapnet || null,
-      picture: transformedRow.picture || null
+      certificate_comment: null,
+      rapnet: null,
+      picture: null
     };
   };
 
