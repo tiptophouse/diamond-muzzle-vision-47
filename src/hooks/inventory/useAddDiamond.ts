@@ -82,13 +82,18 @@ export function useAddDiamond(onSuccess?: () => void) {
 
         console.log('✅ ADD: FastAPI response:', response.data);
 
-        toast({
-          title: "✅ Diamond Added Successfully",
-          description: "Your diamond has been added to inventory and is visible in dashboard, store, and inventory",
-        });
-        
-        if (onSuccess) onSuccess();
-        return true;
+        // Only show success message if API call actually succeeded
+        if (response.data) {
+          toast({
+            title: "✅ Diamond Added Successfully",
+            description: "Your diamond has been added to inventory and is visible in dashboard, store, and inventory",
+          });
+          
+          if (onSuccess) onSuccess();
+          return true;
+        } else {
+          throw new Error("No data returned from API");
+        }
         
       } catch (apiError) {
         console.error('❌ ADD: FastAPI add failed:', apiError);
