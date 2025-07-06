@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { api, apiEndpoints } from '@/lib/api';
+import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useInventoryDataSync } from './inventory/useInventoryDataSync';
 import { useIntelligentCsvProcessor } from './useIntelligentCsvProcessor';
@@ -104,6 +105,19 @@ export function useEnhancedUploadHandler() {
               price_per_carat: diamondData.price_per_carat !== undefined ? Number(diamondData.price_per_carat) : 0,
               picture: diamondData.picture !== undefined ? diamondData.picture : null,
             };
+            
+            // Check for duplicate certificate number before uploading
+            const { data: existingCheck, error: checkError } = await supabase.rpc('check_certificate_exists', {
+              p_certificate_number: payload.certificate_number,
+              p_user_id: user.id
+            });
+            
+            if (checkError) {
+              console.warn('Error checking duplicate:', checkError);
+            } else if (existingCheck === true) {
+              errors.push(`Certificate ${payload.certificate_number} already exists - duplicate skipped`);
+              continue;
+            }
             
             const response = await api.post(apiEndpoints.addDiamond(user.id), payload);
             if (response.error) {

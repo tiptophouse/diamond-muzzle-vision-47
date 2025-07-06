@@ -1131,6 +1131,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_certificate_exists: {
+        Args: { p_certificate_number: number; p_user_id: number }
+        Returns: boolean
+      }
       clean_expired_cache: {
         Args: Record<PropertyKey, never>
         Returns: undefined
