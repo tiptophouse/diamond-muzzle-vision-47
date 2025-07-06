@@ -196,9 +196,9 @@ export function useIntelligentCsvProcessor() {
       depth_percentage: parseFloat(transformedRow.depth_percentage) || 62,
       gridle: transformedRow.girdle || 'Medium',
       culet: transformedRow.culet || 'NONE',
-      certificate_comment: null,
-      rapnet: null,
-      picture: null
+      certificate_comment: 'No comments',
+      rapnet: 0,
+      picture: ''
     };
   };
 
