@@ -174,32 +174,38 @@ export function useIntelligentCsvProcessor() {
       }
     }
 
-    // Set defaults for missing required fields
-    return {
+    console.log('🔍 Raw row data:', row);
+    console.log('🎯 Transformed row data:', transformedRow);
+
+    // Build the final diamond data, using actual CSV values when available
+    const result = {
       stock: transformedRow.stock || `AUTO-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
       shape: transformedRow.shape || 'round brilliant',
-      weight: parseFloat(transformedRow.weight) || 1.0,
+      weight: transformedRow.weight || 1.0,
       color: transformedRow.color || 'G', 
       clarity: transformedRow.clarity || 'VS1',
       cut: transformedRow.cut || 'EXCELLENT',
-      price_per_carat: parseFloat(transformedRow.price) || 5000,
+      price_per_carat: transformedRow.price || 5000,
       lab: transformedRow.lab || 'GIA',
-      certificate_number: parseInt(transformedRow.certificate_number) || Math.floor(Math.random() * 1000000),
-      length: parseFloat(transformedRow.length) || 6.5,
-      width: parseFloat(transformedRow.width) || 6.5,
-      depth: parseFloat(transformedRow.depth) || 4.0,
-      ratio: 1.0,
+      certificate_number: transformedRow.certificate_number || Math.floor(Math.random() * 1000000),
+      length: transformedRow.length || 6.5,
+      width: transformedRow.width || 6.5,
+      depth: transformedRow.depth || 4.0,
+      ratio: transformedRow.ratio || 1.0,
       polish: transformedRow.polish || 'EXCELLENT',
       symmetry: transformedRow.symmetry || 'EXCELLENT',
       fluorescence: transformedRow.fluorescence || 'NONE',
-      table: parseFloat(transformedRow.table) || 60,
-      depth_percentage: parseFloat(transformedRow.depth_percentage) || 62,
+      table: transformedRow.table || 60,
+      depth_percentage: transformedRow.depth_percentage || 62,
       gridle: transformedRow.girdle || 'Medium',
       culet: transformedRow.culet || 'NONE',
-      certificate_comment: 'No comments',
-      rapnet: 0,
-      picture: ''
+      certificate_comment: transformedRow.certificate_comment || 'No comments',
+      rapnet: transformedRow.rapnet || 0,
+      picture: transformedRow.picture || ''
     };
+
+    console.log('✅ Final diamond data:', result);
+    return result;
   };
 
   const cleanValue = (value: any, fieldType: string): any => {
