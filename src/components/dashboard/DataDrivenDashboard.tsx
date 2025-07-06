@@ -6,7 +6,7 @@ import { InventoryChart } from '@/components/dashboard/InventoryChart';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { WelcomeBanner } from '@/components/tutorial/WelcomeBanner';
 import { Layout } from '@/components/layout/Layout';
-import { Gem, Users, TrendingUp, Star, Plus, Upload } from 'lucide-react';
+import { Gem, Users, TrendingUp, Star, Plus, Upload, PieChart, BarChart3, Scissors, Weight, Eye, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
@@ -69,6 +69,47 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
   const avgPricePerCarat = allDiamonds.length > 0 
     ? Math.round(totalValue / allDiamonds.reduce((sum, d) => sum + d.carat, 0))
     : 0;
+
+  // Enhanced analytics calculations
+  const totalCarats = allDiamonds.reduce((sum, d) => sum + d.carat, 0);
+  const avgCarat = allDiamonds.length > 0 ? (totalCarats / allDiamonds.length).toFixed(2) : 0;
+  
+  // Cut distribution
+  const cutDistribution = allDiamonds.reduce((acc, diamond) => {
+    const cut = diamond.cut || 'Unknown';
+    acc[cut] = (acc[cut] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Carat ranges
+  const caratRanges = {
+    'Under 0.5ct': allDiamonds.filter(d => d.carat < 0.5).length,
+    '0.5-1.0ct': allDiamonds.filter(d => d.carat >= 0.5 && d.carat < 1.0).length,
+    '1.0-2.0ct': allDiamonds.filter(d => d.carat >= 1.0 && d.carat < 2.0).length,
+    '2.0ct+': allDiamonds.filter(d => d.carat >= 2.0).length,
+  };
+
+  // Clarity distribution
+  const clarityDistribution = allDiamonds.reduce((acc, diamond) => {
+    const clarity = diamond.clarity || 'Unknown';
+    acc[clarity] = (acc[clarity] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Price ranges
+  const priceRanges = {
+    'Under $1K': allDiamonds.filter(d => d.price < 1000).length,
+    '$1K-$5K': allDiamonds.filter(d => d.price >= 1000 && d.price < 5000).length,
+    '$5K-$10K': allDiamonds.filter(d => d.price >= 5000 && d.price < 10000).length,
+    '$10K+': allDiamonds.filter(d => d.price >= 10000).length,
+  };
+
+  // Premium stones (high value)
+  const premiumStones = allDiamonds.filter(d => 
+    (d.color && ['D', 'E', 'F'].includes(d.color)) &&
+    (d.clarity && ['FL', 'IF', 'VVS1', 'VVS2'].includes(d.clarity)) &&
+    d.carat >= 1.0
+  ).length;
 
   // Show empty state when no diamonds
   if (!loading && allDiamonds.length === 0) {
@@ -161,6 +202,199 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
             description="Per carat average"
           />
         </div>
+
+        {/* Enhanced Analytics Section */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Total Carats"
+            value={Number(totalCarats.toFixed(2))}
+            suffix="ct"
+            icon={Weight}
+            loading={loading}
+            description={`${avgCarat}ct average weight`}
+          />
+          <StatCard
+            title="Premium Stones"
+            value={premiumStones}
+            icon={Star}
+            loading={loading}
+            description="D-F color, VVS+ clarity, 1ct+"
+          />
+          <StatCard
+            title="Highest Price"
+            value={Math.max(...allDiamonds.map(d => d.price), 0)}
+            prefix="$"
+            icon={DollarSign}
+            loading={loading}
+            description="Most valuable stone"
+          />
+          <StatCard
+            title="Cut Excellence"
+            value={allDiamonds.filter(d => d.cut === 'Excellent').length}
+            icon={Scissors}
+            loading={loading}
+            description={`${((allDiamonds.filter(d => d.cut === 'Excellent').length / allDiamonds.length) * 100).toFixed(1)}% excellent cut`}
+          />
+        </div>
+
+        {/* Detailed Analytics Charts */}
+        <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+          {/* Cut Distribution */}
+          <InventoryChart
+            data={Object.entries(cutDistribution).map(([name, value]) => ({ name, value })).filter(item => item.value > 0)}
+            title="Cut Distribution"
+            loading={loading}
+          />
+          
+          {/* Carat Ranges */}
+          <InventoryChart
+            data={Object.entries(caratRanges).map(([name, value]) => ({ name, value })).filter(item => item.value > 0)}
+            title="Carat Weight Ranges"
+            loading={loading}
+          />
+          
+          {/* Clarity Distribution */}
+          <InventoryChart
+            data={Object.entries(clarityDistribution).map(([name, value]) => ({ name, value })).filter(item => item.value > 0)}
+            title="Clarity Distribution"
+            loading={loading}
+          />
+        </div>
+
+        {/* Price Analysis */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              Price Analysis
+            </CardTitle>
+            <CardDescription>Inventory value distribution and insights</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div>
+                <h4 className="font-semibold mb-3">Price Ranges</h4>
+                <div className="space-y-2">
+                  {Object.entries(priceRanges).map(([range, count]) => (
+                    <div key={range} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                      <span className="text-sm">{range}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{count}</span>
+                        <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-blue-500 rounded-full" 
+                            style={{ width: `${(count / allDiamonds.length) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold mb-3">Value Insights</h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                    <span className="text-sm text-green-800">Total Portfolio Value</span>
+                    <span className="font-bold text-green-900">${totalValue.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                    <span className="text-sm text-blue-800">Average Diamond Value</span>
+                    <span className="font-bold text-blue-900">${Math.round(totalValue / allDiamonds.length).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
+                    <span className="text-sm text-purple-800">Value per Carat</span>
+                    <span className="font-bold text-purple-900">${avgPricePerCarat.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Inventory Quality Overview */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Quality Overview
+            </CardTitle>
+            <CardDescription>Quality distribution across your inventory</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 lg:grid-cols-3">
+              <div>
+                <h4 className="font-semibold mb-3 text-center">Color Grades</h4>
+                <div className="space-y-2">
+                  {['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'].map(color => {
+                    const count = allDiamonds.filter(d => d.color === color).length;
+                    return count > 0 ? (
+                      <div key={color} className="flex justify-between items-center">
+                        <span className="text-sm font-medium">{color}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">{count}</span>
+                          <div className="w-12 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full" 
+                              style={{ width: `${(count / allDiamonds.length) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold mb-3 text-center">Clarity Grades</h4>
+                <div className="space-y-2">
+                  {['FL', 'IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'I1'].map(clarity => {
+                    const count = allDiamonds.filter(d => d.clarity === clarity).length;
+                    return count > 0 ? (
+                      <div key={clarity} className="flex justify-between items-center">
+                        <span className="text-sm font-medium">{clarity}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">{count}</span>
+                          <div className="w-12 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-purple-400 to-purple-600 rounded-full" 
+                              style={{ width: `${(count / allDiamonds.length) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold mb-3 text-center">Cut Quality</h4>
+                <div className="space-y-2">
+                  {['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'].map(cut => {
+                    const count = allDiamonds.filter(d => d.cut === cut).length;
+                    return count > 0 ? (
+                      <div key={cut} className="flex justify-between items-center">
+                        <span className="text-sm font-medium">{cut}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">{count}</span>
+                          <div className="w-12 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full" 
+                              style={{ width: `${(count / allDiamonds.length) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Charts with Real Data */}
         <div className="grid gap-6 lg:grid-cols-2">
