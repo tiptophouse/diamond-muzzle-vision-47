@@ -8,6 +8,7 @@ import { useIntelligentCsvProcessor } from "@/hooks/useIntelligentCsvProcessor";
 import { useEnhancedUploadHandler } from "@/hooks/useEnhancedUploadHandler";
 import { FileUploadArea } from "./FileUploadArea";
 import { UploadProgress } from "./UploadProgress";
+import { ProcessingSteps } from "./ProcessingSteps";
 import { EnhancedUploadResult } from "./EnhancedUploadResult";
 import { UploadInstructions } from "./UploadInstructions";
 
@@ -61,8 +62,8 @@ export function UploadForm() {
               onReset={resetForm}
             />
 
-            <UploadProgress progress={progress} uploading={uploading} />
-            <EnhancedUploadResult result={result} />
+            <ProcessingSteps progress={progress} uploading={uploading} />
+            <EnhancedUploadResult result={result} fileName={selectedFile?.name} />
 
             {selectedFile && (
               <div className="flex justify-end gap-3">
@@ -79,7 +80,7 @@ export function UploadForm() {
                   disabled={uploading || !!result}
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  {uploading ? "Smart Processing..." : "Smart Process CSV"}
+                  {uploading ? "📱 Processing..." : "🚀 Process File"}
                 </Button>
               </div>
             )}

@@ -1131,6 +1131,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_certificate_exists: {
+        Args: { p_certificate_number: number; p_user_id: number }
+        Returns: boolean
+      }
       clean_expired_cache: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -1142,6 +1146,10 @@ export type Database = {
       delete_diamond_by_stock: {
         Args: { p_stock_number: string; p_user_id: number }
         Returns: boolean
+      }
+      delete_diamonds_with_5000_price: {
+        Args: { p_user_id: number }
+        Returns: number
       }
       get_realistic_analytics_summary: {
         Args: Record<PropertyKey, never>

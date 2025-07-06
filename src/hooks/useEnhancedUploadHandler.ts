@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { api, apiEndpoints } from '@/lib/api';
+import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useInventoryDataSync } from './inventory/useInventoryDataSync';
 import { useIntelligentCsvProcessor } from './useIntelligentCsvProcessor';
+import { useOpenAICsvEnhancer } from './useOpenAICsvEnhancer';
 
 interface UploadResult {
   success: boolean;
@@ -12,6 +14,7 @@ interface UploadResult {
   errors?: string[];
   fieldMappings?: any[];
   unmappedFields?: string[];
+  totalProcessed?: number;
 }
 
 export function useEnhancedUploadHandler() {
@@ -22,6 +25,7 @@ export function useEnhancedUploadHandler() {
   const { user } = useTelegramAuth();
   const { triggerInventoryChange } = useInventoryDataSync();
   const { processIntelligentCsv } = useIntelligentCsvProcessor();
+  const { enhanceDataWithOpenAI } = useOpenAICsvEnhancer();
 
   const handleUpload = async (file: File) => {
     if (!user?.id) {
@@ -50,44 +54,70 @@ export function useEnhancedUploadHandler() {
         unmappedFields: processedCsv.unmappedFields.length
       });
 
-      setProgress(50);
+      setProgress(30);
+
+      // Enhance data with built-in logic (faster than OpenAI)
+      console.log('🤖 Applying built-in data enhancement...');
+      const enhancedData = await enhanceDataWithOpenAI(processedCsv.data);
+      
+      setProgress(70);
 
       // Try to upload to FastAPI backend first
       try {
         console.log('🔄 Uploading diamonds one by one to FastAPI backend...');
-        console.log('📤 Sample data being sent:', processedCsv.data.slice(0, 2));
+        console.log('📤 Sample enhanced data being sent:', enhancedData.slice(0, 2));
         
         // Upload each diamond individually using the correct endpoint
         let successCount = 0;
         const errors = [];
+        const totalDiamonds = enhancedData.length;
         
-        for (const diamondData of processedCsv.data) {
+        for (let i = 0; i < enhancedData.length; i++) {
+          const diamondData = enhancedData[i];
+          
+          // Update progress for each diamond
+          const uploadProgress = 70 + Math.round((i / totalDiamonds) * 25);
+          setProgress(uploadProgress);
+          
           try {
             const payload = {
-              stock: diamondData.stock || "string",
+              stock: diamondData.stock || `AUTO-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
               shape: diamondData.shape?.toLowerCase() || "round brilliant", 
-              weight: Number(diamondData.weight) || 1,
-              color: diamondData.color || "D",
-              clarity: diamondData.clarity || "FL",
-              lab: diamondData.lab || "string",
-              certificate_number: parseInt(diamondData.certificate_number || '0') || 0,
-              length: Number(diamondData.length) || 1,
-              width: Number(diamondData.width) || 1,
-              depth: Number(diamondData.depth) || 1,
-              ratio: Number(diamondData.ratio) || 1,
-              cut: diamondData.cut?.toUpperCase() || "EXCELLENT",
-              polish: diamondData.polish?.toUpperCase() || "EXCELLENT",
-              symmetry: diamondData.symmetry?.toUpperCase() || "EXCELLENT",
-              fluorescence: diamondData.fluorescence?.toUpperCase() || "NONE",
-              table: Number(diamondData.table_percentage) || 1,
-              depth_percentage: Number(diamondData.depth_percentage) || 1,
-              gridle: diamondData.gridle || "string",
-              culet: diamondData.culet?.toUpperCase() || "NONE",
-              certificate_comment: diamondData.certificate_comment || "string",
-              rapnet: diamondData.rapnet ? parseInt(diamondData.rapnet.toString()) : 0,
-              price_per_carat: Number(diamondData.price_per_carat) || 0,
-              picture: diamondData.picture || "string",
+              weight: diamondData.weight !== undefined ? Number(diamondData.weight) : 1,
+              color: diamondData.color !== undefined ? diamondData.color : "D",
+              clarity: diamondData.clarity !== undefined ? diamondData.clarity : "FL",
+              lab: diamondData.lab !== undefined ? diamondData.lab : "GIA",
+              certificate_number: diamondData.certificate_number !== undefined ? parseInt(diamondData.certificate_number.toString()) : Math.floor(Math.random() * 1000000),
+              length: diamondData.length !== undefined ? Number(diamondData.length) : 1,
+              width: diamondData.width !== undefined ? Number(diamondData.width) : 1,
+              depth: diamondData.depth !== undefined ? Number(diamondData.depth) : 1,
+              ratio: diamondData.ratio !== undefined ? Number(diamondData.ratio) : 1,
+              cut: diamondData.cut !== undefined ? diamondData.cut.toUpperCase() : "EXCELLENT",
+              polish: diamondData.polish !== undefined ? diamondData.polish.toUpperCase() : "EXCELLENT",
+              symmetry: diamondData.symmetry !== undefined ? diamondData.symmetry.toUpperCase() : "EXCELLENT",
+              fluorescence: diamondData.fluorescence !== undefined ? diamondData.fluorescence.toUpperCase() : "NONE",
+              table: diamondData.table !== undefined ? Number(diamondData.table) : 60,
+              depth_percentage: diamondData.depth_percentage !== undefined ? Number(diamondData.depth_percentage) : 62,
+              gridle: diamondData.gridle !== undefined ? diamondData.gridle : "Medium",
+              culet: diamondData.culet !== undefined ? diamondData.culet.toUpperCase() : "NONE",
+              certificate_comment: diamondData.certificate_comment !== undefined ? diamondData.certificate_comment : null,
+              rapnet: diamondData.rapnet !== undefined ? parseInt(diamondData.rapnet.toString()) : null,
+              price_per_carat: diamondData.price_per_carat !== undefined ? Number(diamondData.price_per_carat) : 0,
+              picture: diamondData.picture !== undefined ? diamondData.picture : null,
             };
+            
+            // Check for duplicate certificate number before uploading
+            const { data: existingCheck, error: checkError } = await supabase.rpc('check_certificate_exists', {
+              p_certificate_number: payload.certificate_number,
+              p_user_id: user.id
+            });
+            
+            if (checkError) {
+              console.warn('Error checking duplicate:', checkError);
+            } else if (existingCheck === true) {
+              errors.push(`Certificate ${payload.certificate_number} already exists - duplicate skipped`);
+              continue;
+            }
             
             const response = await api.post(apiEndpoints.addDiamond(user.id), payload);
             if (response.error) {
@@ -96,23 +126,30 @@ export function useEnhancedUploadHandler() {
               successCount++;
             }
           } catch (error) {
-            errors.push(`Row ${successCount + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            const errorMsg = `Diamond ${i + 1}: ${error instanceof Error ? error.message : 'Upload failed'}`;
+            errors.push(errorMsg);
+            console.warn('❌ Individual diamond upload failed:', errorMsg);
           }
         }
         
+        // Ensure we reach 95% before final processing
+        setProgress(95);
+        
         if (errors.length > 0 && successCount === 0) {
-          throw new Error(`All uploads failed: ${errors.join(', ')}`);
+          throw new Error(`All uploads failed. Most common issues: ${errors.slice(0, 3).join('; ')}`);
         }
 
+        // Complete progress
         setProgress(100);
         
         const successResult: UploadResult = {
           success: true,
-          message: `Successfully uploaded ${successCount} out of ${processedCsv.totalRows} diamonds! ${errors.length > 0 ? `${errors.length} failed.` : 'All succeeded.'}`,
+          message: `Successfully uploaded ${successCount} out of ${enhancedData.length} diamonds! ${errors.length > 0 ? `${errors.length} failed.` : 'All succeeded.'}`,
           processedCount: successCount,
           fieldMappings: processedCsv.fieldMappings,
           unmappedFields: processedCsv.unmappedFields,
-          errors: errors.length > 0 ? errors : undefined
+          errors: errors.length > 0 ? errors : undefined,
+          totalProcessed: enhancedData.length
         };
         
         setResult(successResult);
@@ -123,10 +160,10 @@ export function useEnhancedUploadHandler() {
           window.location.reload(); // Force full refresh to see new diamonds
         }, 2000);
         
-        // Show detailed success message
+        // Show immediate success toast
         toast({
-          title: "🎉 Smart Upload Successful!",
-          description: `Processed ${processedCsv.totalRows} diamonds with ${processedCsv.successfulMappings} field mappings`,
+          title: "🎉 Upload Complete!",
+          description: `${successCount} diamonds uploaded successfully${errors.length > 0 ? `, ${errors.length} failed` : ''}. Check the detailed analysis below.`,
         });
 
         // Show field mapping summary if there are unmapped fields
@@ -145,7 +182,7 @@ export function useEnhancedUploadHandler() {
         
         // Fallback: Store in localStorage 
         const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
-        const newData = processedCsv.data.map((item, index) => ({
+        const newData = enhancedData.map((item, index) => ({
           id: `upload-${Date.now()}-${index}`,
           stockNumber: item.stock,
           shape: item.shape,
@@ -167,18 +204,20 @@ export function useEnhancedUploadHandler() {
         
         const fallbackResult: UploadResult = {
           success: true,
-          message: `Processed ${processedCsv.totalRows} diamonds locally (backend unavailable). Smart mapping applied ${processedCsv.successfulMappings} fields.`,
-          processedCount: processedCsv.totalRows,
+          message: `Processed ${enhancedData.length} diamonds locally (backend unavailable). Smart mapping applied ${processedCsv.successfulMappings} fields.`,
+          processedCount: enhancedData.length,
           fieldMappings: processedCsv.fieldMappings,
-          unmappedFields: processedCsv.unmappedFields
+          unmappedFields: processedCsv.unmappedFields,
+          totalProcessed: enhancedData.length
         };
         
         setResult(fallbackResult);
         triggerInventoryChange();
         
+        // Show fallback success message
         toast({
-          title: "✅ Smart Processing Complete",
-          description: `Processed ${processedCsv.totalRows} diamonds with intelligent field mapping`,
+          title: "✅ Processing Complete",
+          description: `${enhancedData.length} diamonds processed locally. Detailed analysis available below.`,
           variant: "default",
         });
       }
@@ -189,15 +228,16 @@ export function useEnhancedUploadHandler() {
       
       const errorResult: UploadResult = {
         success: false,
-        message: errorMessage,
-        errors: [errorMessage]
+        message: `Upload failed: ${errorMessage}. Please check your CSV format and try again.`,
+        errors: [errorMessage],
+        totalProcessed: 0
       };
       
       setResult(errorResult);
       
       toast({
         title: "❌ Upload Failed",
-        description: errorMessage,
+        description: errorMessage.length > 50 ? errorMessage.substring(0, 50) + "..." : errorMessage,
         variant: "destructive",
       });
     } finally {
