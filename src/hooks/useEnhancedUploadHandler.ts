@@ -67,6 +67,29 @@ export function useEnhancedUploadHandler() {
         console.log('🔄 Uploading diamonds one by one to FastAPI backend...');
         console.log('📤 Sample enhanced data being sent:', enhancedData.slice(0, 2));
         
+        // Prepare all certificate numbers for bulk duplicate checking
+        const certificateNumbers = enhancedData
+          .map(d => d.certificate_number)
+          .filter(cert => cert && !isNaN(parseInt(cert.toString())));
+        
+        // Check for duplicates in bulk to improve performance
+        let existingCertificates = new Set();
+        if (certificateNumbers.length > 0) {
+          try {
+            const { data: existingCerts } = await supabase
+              .from('inventory')
+              .select('certificate_number')
+              .eq('user_id', user.id)
+              .in('certificate_number', certificateNumbers);
+            
+            if (existingCerts) {
+              existingCertificates = new Set(existingCerts.map(c => c.certificate_number));
+            }
+          } catch (error) {
+            console.warn('Error checking bulk duplicates:', error);
+          }
+        }
+
         // Upload each diamond individually using the correct endpoint
         let successCount = 0;
         const errors = [];
@@ -106,15 +129,8 @@ export function useEnhancedUploadHandler() {
               picture: diamondData.picture !== undefined ? diamondData.picture : null,
             };
             
-            // Check for duplicate certificate number before uploading
-            const { data: existingCheck, error: checkError } = await supabase.rpc('check_certificate_exists', {
-              p_certificate_number: payload.certificate_number,
-              p_user_id: user.id
-            });
-            
-            if (checkError) {
-              console.warn('Error checking duplicate:', checkError);
-            } else if (existingCheck === true) {
+            // Skip if certificate already exists (using bulk check)
+            if (existingCertificates.has(payload.certificate_number)) {
               errors.push(`Certificate ${payload.certificate_number} already exists - duplicate skipped`);
               continue;
             }
