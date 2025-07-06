@@ -494,6 +494,57 @@ export type Database = {
         }
         Relationships: []
       }
+      keshett_agreements: {
+        Row: {
+          accepted_at: string | null
+          agreed_price: number
+          buyer_telegram_id: number
+          completed_at: string | null
+          created_at: string
+          diamond_data: Json
+          diamond_stock_number: string
+          expiry_at: string
+          id: string
+          notes: string | null
+          seller_telegram_id: number
+          status: string
+          terms: Json | null
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          agreed_price: number
+          buyer_telegram_id: number
+          completed_at?: string | null
+          created_at?: string
+          diamond_data: Json
+          diamond_stock_number: string
+          expiry_at: string
+          id?: string
+          notes?: string | null
+          seller_telegram_id: number
+          status?: string
+          terms?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          agreed_price?: number
+          buyer_telegram_id?: number
+          completed_at?: string | null
+          created_at?: string
+          diamond_data?: Json
+          diamond_stock_number?: string
+          expiry_at?: string
+          id?: string
+          notes?: string | null
+          seller_telegram_id?: number
+          status?: string
+          terms?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -1149,6 +1200,10 @@ export type Database = {
       }
       delete_diamonds_with_5000_price: {
         Args: { p_user_id: number }
+        Returns: number
+      }
+      expire_keshett_agreements: {
+        Args: Record<PropertyKey, never>
         Returns: number
       }
       get_realistic_analytics_summary: {

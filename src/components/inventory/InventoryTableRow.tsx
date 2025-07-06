@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Diamond } from "./InventoryTable";
-import { Edit, Trash, ImageIcon } from "lucide-react";
+import { Edit, Trash, ImageIcon, Handshake } from "lucide-react";
 import { StoreVisibilityToggle } from "./StoreVisibilityToggle";
 
 interface InventoryTableRowProps {
@@ -12,11 +12,12 @@ interface InventoryTableRowProps {
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
   onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
+  onCreateKeshett?: (diamond: Diamond) => void;
   isSelected?: boolean;
   onSelect?: (selected: boolean) => void;
 }
 
-export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle, isSelected, onSelect }: InventoryTableRowProps) {
+export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle, onCreateKeshett, isSelected, onSelect }: InventoryTableRowProps) {
   return (
     <TableRow className={`hover:bg-slate-50 dark:hover:bg-slate-800 ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
       <TableCell className="w-12">
@@ -96,6 +97,17 @@ export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle, is
               isVisible={diamond.store_visible || false}
               onToggle={onStoreToggle}
             />
+          )}
+          {onCreateKeshett && diamond.status === 'Available' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onCreateKeshett(diamond)}
+              className="h-8 w-8 p-0 hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-600 dark:text-blue-400"
+              title="Create Keshett Agreement"
+            >
+              <Handshake className="h-4 w-4" />
+            </Button>
           )}
           {onEdit && (
             <Button

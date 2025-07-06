@@ -35,6 +35,7 @@ interface InventoryTableProps {
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
   onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
+  onCreateKeshett?: (diamond: Diamond) => void;
   onBulkDelete?: (diamondIds: string[]) => void;
   selectedIds?: string[];
   onSelectionChange?: (selectedIds: string[]) => void;
@@ -48,7 +49,8 @@ export function InventoryTable({
   loading = false, 
   onEdit, 
   onDelete, 
-  onStoreToggle, 
+  onStoreToggle,
+  onCreateKeshett,
   onBulkDelete,
   selectedIds = [],
   onSelectionChange,
@@ -106,6 +108,7 @@ export function InventoryTable({
                   onEdit={onEdit}
                   onDelete={onDelete}
                   onStoreToggle={onStoreToggle}
+                  onCreateKeshett={onCreateKeshett}
                   isSelected={selectedIds.includes(diamond.id)}
                   onSelect={(selected) => {
                     if (!onSelectionChange) return;

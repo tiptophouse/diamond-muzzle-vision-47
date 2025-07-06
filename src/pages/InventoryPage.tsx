@@ -16,6 +16,7 @@ import { useState } from "react";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { UploadSuccessCard } from "@/components/upload/UploadSuccessCard";
 import { useToast } from "@/hooks/use-toast";
+import { CreateKeshettModal } from "@/components/keshett/CreateKeshettModal";
 
 export default function InventoryPage() {
   const { toast } = useToast();
@@ -57,6 +58,8 @@ export default function InventoryPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingDiamond, setEditingDiamond] = useState<Diamond | null>(null);
   const [showAddSuccess, setShowAddSuccess] = useState(false);
+  const [showKeshettModal, setShowKeshettModal] = useState(false);
+  const [selectedDiamondForKeshett, setSelectedDiamondForKeshett] = useState<Diamond | null>(null);
 
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
@@ -219,6 +222,10 @@ export default function InventoryPage() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onStoreToggle={handleStoreToggle}
+                onCreateKeshett={(diamond) => {
+                  setSelectedDiamondForKeshett(diamond);
+                  setShowKeshettModal(true);
+                }}
                 selectedIds={selectedIds}
                 onSelectionChange={setSelectedIds}
                 sortField={sortField}
@@ -266,6 +273,19 @@ export default function InventoryPage() {
             />
           </DialogContent>
         </Dialog>
+
+        {/* Keshett Modal */}
+        <CreateKeshettModal
+          diamond={selectedDiamondForKeshett}
+          isOpen={showKeshettModal}
+          onClose={() => {
+            setShowKeshettModal(false);
+            setSelectedDiamondForKeshett(null);
+          }}
+          onSuccess={() => {
+            console.log('✅ Keshett agreement created successfully');
+          }}
+        />
 
         {/* Add Success Modal */}
         <Dialog open={showAddSuccess} onOpenChange={setShowAddSuccess}>
