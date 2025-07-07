@@ -103,12 +103,11 @@ export function SingleStoneUploadForm() {
   const handleFormSubmit = (data: DiamondFormData) => {
     console.log('🔍 UPLOAD: Form submitted', { user: user?.id, data });
     console.log('🔍 UPLOAD: Form submit button clicked - processing data...');
-    console.log('🔍 UPLOAD: Raw form data received:', JSON.stringify(data, null, 2));
     
     if (!user?.id) {
       console.log('❌ UPLOAD: No user ID found');
       toast({
-        title: "Authentication Error", 
+        title: "Authentication Error",
         description: "Please log in to add diamonds",
         variant: "destructive",
       });
@@ -116,11 +115,8 @@ export function SingleStoneUploadForm() {
     }
 
     console.log('🔍 UPLOAD: User authenticated, validating form data...');
-    console.log('🔍 UPLOAD: Required field check - stockNumber:', data.stockNumber, 'carat:', data.carat, 'price:', data.price);
-    
     if (!validateFormData(data)) {
       console.log('❌ UPLOAD: Form validation failed');
-      console.log('❌ UPLOAD: Validation details - stockNumber:', !!data.stockNumber, 'carat:', data.carat > 0, 'price:', data.price > 0);
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields",
@@ -131,28 +127,25 @@ export function SingleStoneUploadForm() {
 
     console.log('✅ UPLOAD: Form validation passed, formatting data...');
     const formattedData = formatFormData(data, showCutField);
-    console.log('🔍 UPLOAD: Formatted data:', JSON.stringify(formattedData, null, 2));
-    console.log('🔍 UPLOAD: Calling addDiamond with user ID:', user.id);
+    console.log('🔍 UPLOAD: Calling addDiamond with:', formattedData);
     console.log('🔍 UPLOAD: About to make API call to FastAPI create diamond endpoint...');
     
     addDiamond(formattedData).then(success => {
-      console.log('🔍 UPLOAD: addDiamond promise resolved with result:', success);
-      console.log('🔍 UPLOAD: API call completed, success status:', success);
+      console.log('🔍 UPLOAD: addDiamond result:', success);
+      console.log('🔍 UPLOAD: API call completed, success:', success);
       
       if (!success) {
-        console.log('❌ UPLOAD: Diamond creation failed - API returned false');
+        console.log('❌ UPLOAD: Diamond creation failed');
         toast({
           title: "❌ Upload Failed",
           description: "Failed to add diamond to inventory. Please try again.",
           variant: "destructive",
         });
       } else {
-        console.log('✅ UPLOAD: Diamond creation successful! Setting success state...');
-        console.log('✅ UPLOAD: Success callback should trigger inventory refresh');
+        console.log('✅ UPLOAD: Diamond creation successful!');
       }
     }).catch(error => {
       console.error('❌ UPLOAD: Error in addDiamond promise:', error);
-      console.error('❌ UPLOAD: Full error object:', JSON.stringify(error, null, 2));
       toast({
         title: "❌ Upload Error",
         description: "An error occurred while uploading. Please try again.",
