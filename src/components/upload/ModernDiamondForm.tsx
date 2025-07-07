@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { useInventoryCrud } from "@/hooks/useInventoryCrud";
+import { useAddDiamond } from "@/hooks/inventory/useAddDiamond";
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { shapes, colors, clarities, cuts, fluorescences, polishGrades, symmetryGrades, girdleTypes, culetGrades, labOptions, statuses } from '@/components/inventory/form/diamondFormConstants';
 import { FloatingLabelInput } from './form/FloatingLabelInput';
@@ -18,41 +19,13 @@ export function ModernDiamondForm() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { addDiamond, isLoading } = useInventoryCrud({
-    onSuccess: () => {
-      toast({
-        title: "✅ Success",
-        description: "Diamond has been added to your inventory",
-      });
-      reset();
-      setApiError(null);
-    },
-    onError: (error: Error) => {
-      console.error('❌ Form submission error:', error);
-      setApiError(error.message);
-      
-      // Show specific error toast based on error type
-      let title = "❌ Upload Failed";
-      let description = error.message;
-      
-      if (error.message.includes('Network error')) {
-        title = "🌐 Connection Error";
-      } else if (error.message.includes('Authentication')) {
-        title = "🔐 Authentication Error";
-      } else if (error.message.includes('Access denied')) {
-        title = "🚫 Access Denied";
-      } else if (error.message.includes('Invalid data')) {
-        title = "📝 Invalid Data";
-      } else if (error.message.includes('Server')) {
-        title = "⚠️ Server Error";
-      }
-      
-      toast({
-        title,
-        description,
-        variant: "destructive",
-      });
-    }
+  const { addDiamond } = useAddDiamond(() => {
+    toast({
+      title: "✅ Success",
+      description: "Diamond has been added to your inventory",
+    });
+    reset();
+    setApiError(null);
   });
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<DiamondFormData>({
@@ -196,65 +169,76 @@ export function ModernDiamondForm() {
 
   if (!user) {
     return (
-      <div className="p-6 text-center">
-        <p className="text-gray-500">Please log in to add diamonds to your inventory.</p>
+      <div className="flex items-center justify-center min-h-screen p-4 bg-gray-50">
+        <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg p-6 text-center">
+          <p className="text-gray-600 text-lg">Please log in to add diamonds to your inventory.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b px-4 py-4 sm:px-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Add Diamond</h1>
-            <p className="text-sm text-gray-500 mt-1">Complete all fields to add diamond to inventory</p>
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile-First Header */}
+      <div className="sticky top-0 z-10 bg-white shadow-sm border-b">
+        <div className="px-4 py-3">
+          <h1 className="text-xl font-bold text-gray-900">Add Diamond</h1>
+          <p className="text-sm text-gray-500 mt-1">Complete all fields to add diamond</p>
+        </div>
+        <div className="px-4 pb-3">
           <Button
             type="button"
             variant="outline"
             onClick={() => setIsScanning(true)}
-            className="flex items-center gap-2 h-10 px-3 sm:h-12 sm:px-4"
+            className="w-full h-12 text-base font-medium"
           >
-            <Camera className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="hidden sm:inline">Scan Certificate</span>
-            <span className="sm:hidden">Scan</span>
+            <Camera className="h-5 w-5 mr-2" />
+            Scan Certificate
           </Button>
         </div>
       </div>
 
-      {/* Enhanced Error Display */}
+      {/* Enhanced Mobile Error Display */}
       {apiError && (
-        <div className="mx-4 mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <h3 className="text-sm font-medium text-red-800 mb-1">Upload Error</h3>
-            <p className="text-sm text-red-700">{apiError}</p>
-            {apiError.includes('Network error') && (
-              <p className="text-xs text-red-600 mt-2">
-                💡 Tip: Check your internet connection and ensure the server is running.
-              </p>
-            )}
-            {apiError.includes('401') && (
-              <p className="text-xs text-red-600 mt-2">
-                💡 Tip: Please log out and log back in to refresh your authentication.
-              </p>
-            )}
-            {apiError.includes('400') && (
-              <p className="text-xs text-red-600 mt-2">
-                💡 Tip: Please check all required fields are filled correctly.
-              </p>
-            )}
+        <div className="mx-4 mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-6 w-6 text-red-600 flex-shrink-0 mt-1" />
+            <div className="flex-1">
+              <h3 className="text-base font-semibold text-red-800 mb-2">Upload Error</h3>
+              <p className="text-sm text-red-700 leading-relaxed">{apiError}</p>
+              {apiError.includes('Network error') && (
+                <div className="mt-3 p-3 bg-red-100 rounded-lg">
+                  <p className="text-sm text-red-600 font-medium">
+                    💡 Check your internet connection and ensure the server is running.
+                  </p>
+                </div>
+              )}
+              {apiError.includes('401') && (
+                <div className="mt-3 p-3 bg-red-100 rounded-lg">
+                  <p className="text-sm text-red-600 font-medium">
+                    💡 Please log out and log back in to refresh your authentication.
+                  </p>
+                </div>
+              )}
+              {apiError.includes('400') && (
+                <div className="mt-3 p-3 bg-red-100 rounded-lg">
+                  <p className="text-sm text-red-600 font-medium">
+                    💡 Please check all required fields are filled correctly.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
 
-      <form onSubmit={handleSubmit(handleFormSubmit)} className="p-4 sm:p-6 space-y-8">
+      <form onSubmit={handleSubmit(handleFormSubmit)} className="pb-32">
+        {/* Mobile-Optimized Form Sections */}
+        
         {/* Basic Information Section */}
-        <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
+        <div className="m-4 bg-white rounded-xl shadow-sm border p-4">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="space-y-4">
             <FloatingLabelInput
               id="stockNumber"
               label="Stock Number *"
@@ -262,41 +246,45 @@ export function ModernDiamondForm() {
               error={errors.stockNumber?.message}
             />
             
-            <FloatingLabelSelect
-              id="shape"
-              label="Shape *"
-              value={watch('shape')}
-              options={shapes}
-              onValueChange={(value) => setValue('shape', value)}
-            />
+            <div className="grid grid-cols-2 gap-3">
+              <FloatingLabelSelect
+                id="shape"
+                label="Shape *"
+                value={watch('shape')}
+                options={shapes}
+                onValueChange={(value) => setValue('shape', value)}
+              />
+              
+              <FloatingLabelInput
+                id="carat"
+                label="Carat *"
+                type="number"
+                step="0.01"
+                {...register('carat', { 
+                  required: 'Carat weight is required',
+                  min: { value: 0.01, message: 'Carat must be greater than 0' }
+                })}
+                error={errors.carat?.message}
+              />
+            </div>
             
-            <FloatingLabelInput
-              id="carat"
-              label="Carat Weight *"
-              type="number"
-              step="0.01"
-              {...register('carat', { 
-                required: 'Carat weight is required',
-                min: { value: 0.01, message: 'Carat must be greater than 0' }
-              })}
-              error={errors.carat?.message}
-            />
-            
-            <FloatingLabelSelect
-              id="color"
-              label="Color *"
-              value={watch('color')}
-              options={colors}
-              onValueChange={(value) => setValue('color', value)}
-            />
-            
-            <FloatingLabelSelect
-              id="clarity"
-              label="Clarity *"
-              value={watch('clarity')}
-              options={clarities}
-              onValueChange={(value) => setValue('clarity', value)}
-            />
+            <div className="grid grid-cols-2 gap-3">
+              <FloatingLabelSelect
+                id="color"
+                label="Color *"
+                value={watch('color')}
+                options={colors}
+                onValueChange={(value) => setValue('color', value)}
+              />
+              
+              <FloatingLabelSelect
+                id="clarity"
+                label="Clarity *"
+                value={watch('clarity')}
+                options={clarities}
+                onValueChange={(value) => setValue('clarity', value)}
+              />
+            </div>
             
             {showCutField && (
               <FloatingLabelSelect
@@ -311,74 +299,74 @@ export function ModernDiamondForm() {
         </div>
 
         {/* Certificate Information Section */}
-        <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
+        <div className="m-4 bg-white rounded-xl shadow-sm border p-4">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Certificate Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            <FloatingLabelSelect
-              id="lab"
-              label="Laboratory"
-              value={watch('lab')}
-              options={labOptions}
-              onValueChange={(value) => setValue('lab', value)}
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <FloatingLabelSelect
+                id="lab"
+                label="Laboratory"
+                value={watch('lab')}
+                options={labOptions}
+                onValueChange={(value) => setValue('lab', value)}
+              />
+              
+              <FloatingLabelInput
+                id="certificateNumber"
+                label="Certificate #"
+                {...register('certificateNumber')}
+                error={errors.certificateNumber?.message}
+              />
+            </div>
+            
+            <FloatingLabelInput
+              id="certificateUrl"
+              label="Certificate URL"
+              {...register('certificateUrl')}
+              error={errors.certificateUrl?.message}
             />
             
             <FloatingLabelInput
-              id="certificateNumber"
-              label="Certificate Number"
-              {...register('certificateNumber')}
-              error={errors.certificateNumber?.message}
+              id="certificateComment"
+              label="Certificate Comments"
+              {...register('certificateComment')}
+              error={errors.certificateComment?.message}
             />
-            
-            <div className="md:col-span-2">
-              <FloatingLabelInput
-                id="certificateUrl"
-                label="Certificate URL"
-                {...register('certificateUrl')}
-                error={errors.certificateUrl?.message}
-              />
-            </div>
-            
-            <div className="md:col-span-2">
-              <FloatingLabelInput
-                id="certificateComment"
-                label="Certificate Comments"
-                {...register('certificateComment')}
-                error={errors.certificateComment?.message}
-              />
-            </div>
           </div>
         </div>
 
         {/* Physical Measurements Section */}
-        <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Physical Measurements</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            <FloatingLabelInput
-              id="length"
-              label="Length (mm)"
-              type="number"
-              step="0.01"
-              {...register('length', { min: { value: 0, message: 'Length must be positive' } })}
-              error={errors.length?.message}
-            />
-            
-            <FloatingLabelInput
-              id="width"
-              label="Width (mm)"
-              type="number"
-              step="0.01"
-              {...register('width', { min: { value: 0, message: 'Width must be positive' } })}
-              error={errors.width?.message}
-            />
-            
-            <FloatingLabelInput
-              id="depth"
-              label="Depth (mm)"
-              type="number"
-              step="0.01"
-              {...register('depth', { min: { value: 0, message: 'Depth must be positive' } })}
-              error={errors.depth?.message}
-            />
+        <div className="m-4 bg-white rounded-xl shadow-sm border p-4">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Measurements</h2>
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              <FloatingLabelInput
+                id="length"
+                label="Length (mm)"
+                type="number"
+                step="0.01"
+                {...register('length', { min: { value: 0, message: 'Length must be positive' } })}
+                error={errors.length?.message}
+              />
+              
+              <FloatingLabelInput
+                id="width"
+                label="Width (mm)"
+                type="number"
+                step="0.01"
+                {...register('width', { min: { value: 0, message: 'Width must be positive' } })}
+                error={errors.width?.message}
+              />
+              
+              <FloatingLabelInput
+                id="depth"
+                label="Depth (mm)"
+                type="number"
+                step="0.01"
+                {...register('depth', { min: { value: 0, message: 'Depth must be positive' } })}
+                error={errors.depth?.message}
+              />
+            </div>
             
             <FloatingLabelInput
               id="ratio"
@@ -392,24 +380,26 @@ export function ModernDiamondForm() {
         </div>
 
         {/* Grading Details Section */}
-        <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
+        <div className="m-4 bg-white rounded-xl shadow-sm border p-4">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Grading Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            <FloatingLabelSelect
-              id="polish"
-              label="Polish"
-              value={watch('polish')}
-              options={polishGrades}
-              onValueChange={(value) => setValue('polish', value)}
-            />
-            
-            <FloatingLabelSelect
-              id="symmetry"
-              label="Symmetry"
-              value={watch('symmetry')}
-              options={symmetryGrades}
-              onValueChange={(value) => setValue('symmetry', value)}
-            />
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <FloatingLabelSelect
+                id="polish"
+                label="Polish"
+                value={watch('polish')}
+                options={polishGrades}
+                onValueChange={(value) => setValue('polish', value)}
+              />
+              
+              <FloatingLabelSelect
+                id="symmetry"
+                label="Symmetry"
+                value={watch('symmetry')}
+                options={symmetryGrades}
+                onValueChange={(value) => setValue('symmetry', value)}
+              />
+            </div>
             
             <FloatingLabelSelect
               id="fluorescence"
@@ -419,52 +409,56 @@ export function ModernDiamondForm() {
               onValueChange={(value) => setValue('fluorescence', value)}
             />
             
-            <FloatingLabelInput
-              id="tablePercentage"
-              label="Table %"
-              type="number"
-              step="0.1"
-              {...register('tablePercentage', { 
-                min: { value: 0, message: 'Table % must be positive' },
-                max: { value: 100, message: 'Table % cannot exceed 100' }
-              })}
-              error={errors.tablePercentage?.message}
-            />
+            <div className="grid grid-cols-2 gap-3">
+              <FloatingLabelInput
+                id="tablePercentage"
+                label="Table %"
+                type="number"
+                step="0.1"
+                {...register('tablePercentage', { 
+                  min: { value: 0, message: 'Table % must be positive' },
+                  max: { value: 100, message: 'Table % cannot exceed 100' }
+                })}
+                error={errors.tablePercentage?.message}
+              />
+              
+              <FloatingLabelInput
+                id="depthPercentage"
+                label="Depth %"
+                type="number"
+                step="0.1"
+                {...register('depthPercentage', { 
+                  min: { value: 0, message: 'Depth % must be positive' },
+                  max: { value: 100, message: 'Depth % cannot exceed 100' }
+                })}
+                error={errors.depthPercentage?.message}
+              />
+            </div>
             
-            <FloatingLabelInput
-              id="depthPercentage"
-              label="Depth %"
-              type="number"
-              step="0.1"
-              {...register('depthPercentage', { 
-                min: { value: 0, message: 'Depth % must be positive' },
-                max: { value: 100, message: 'Depth % cannot exceed 100' }
-              })}
-              error={errors.depthPercentage?.message}
-            />
-            
-            <FloatingLabelSelect
-              id="gridle"
-              label="Girdle"
-              value={watch('gridle')}
-              options={girdleTypes}
-              onValueChange={(value) => setValue('gridle', value)}
-            />
-            
-            <FloatingLabelSelect
-              id="culet"
-              label="Culet"
-              value={watch('culet')}
-              options={culetGrades}
-              onValueChange={(value) => setValue('culet', value)}
-            />
+            <div className="grid grid-cols-2 gap-3">
+              <FloatingLabelSelect
+                id="gridle"
+                label="Girdle"
+                value={watch('gridle')}
+                options={girdleTypes}
+                onValueChange={(value) => setValue('gridle', value)}
+              />
+              
+              <FloatingLabelSelect
+                id="culet"
+                label="Culet"
+                value={watch('culet')}
+                options={culetGrades}
+                onValueChange={(value) => setValue('culet', value)}
+              />
+            </div>
           </div>
         </div>
 
         {/* Pricing Information Section */}
-        <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
+        <div className="m-4 bg-white rounded-xl shadow-sm border p-4">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Pricing Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="space-y-4">
             <FloatingLabelInput
               id="pricePerCarat"
               label="Price per Carat (USD) *"
@@ -487,22 +481,24 @@ export function ModernDiamondForm() {
               readOnly
             />
             
-            <FloatingLabelInput
-              id="rapnet"
-              label="Rapnet"
-              type="number"
-              {...register('rapnet')}
-              error={errors.rapnet?.message}
-            />
-            
-            <FloatingLabelInput
-              id="rapPercentage"
-              label="Rap %"
-              type="number"
-              step="0.1"
-              {...register('rapPercentage')}
-              error={errors.rapPercentage?.message}
-            />
+            <div className="grid grid-cols-2 gap-3">
+              <FloatingLabelInput
+                id="rapnet"
+                label="Rapnet"
+                type="number"
+                {...register('rapnet')}
+                error={errors.rapnet?.message}
+              />
+              
+              <FloatingLabelInput
+                id="rapPercentage"
+                label="Rap %"
+                type="number"
+                step="0.1"
+                {...register('rapPercentage')}
+                error={errors.rapPercentage?.message}
+              />
+            </div>
             
             <FloatingLabelSelect
               id="status"
@@ -515,7 +511,7 @@ export function ModernDiamondForm() {
         </div>
 
         {/* Image Upload Section */}
-        <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
+        <div className="m-4 bg-white rounded-xl shadow-sm border p-4">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Diamond Image</h2>
           <FloatingLabelInput
             id="picture"
@@ -524,29 +520,32 @@ export function ModernDiamondForm() {
             error={errors.picture?.message}
           />
         </div>
+      </form>
 
-        {/* Form Actions */}
-        <div className="flex flex-col sm:flex-row gap-3 sticky bottom-4 bg-white p-4 rounded-xl shadow-lg border">
+      {/* Fixed Bottom Action Bar - Mobile Optimized */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4 z-20">
+        <div className="flex gap-3">
           <Button 
             type="button"
             variant="outline" 
             onClick={resetForm}
-            disabled={isLoading || isSubmitting}
+            disabled={isSubmitting}
             className="flex-1 h-12 text-base font-medium"
           >
             <RotateCcw className="h-4 w-4 mr-2" />
-            Reset Form
+            Reset
           </Button>
           <Button 
             type="submit"
-            disabled={isLoading || isSubmitting}
-            className="flex-1 h-12 text-base font-medium"
+            onClick={handleSubmit(handleFormSubmit)}
+            disabled={isSubmitting}
+            className="flex-1 h-12 text-base font-medium bg-blue-600 hover:bg-blue-700"
           >
             <Save className="h-4 w-4 mr-2" />
-            {isSubmitting ? "Adding Diamond..." : "Add Diamond"}
+            {isSubmitting ? "Adding..." : "Add Diamond"}
           </Button>
         </div>
-      </form>
+      </div>
 
       <QRCodeScanner
         isOpen={isScanning}
