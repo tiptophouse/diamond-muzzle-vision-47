@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -10,7 +11,7 @@ export function ApiTestButton() {
   const testApi = async () => {
     setTesting(true);
     
-    // Test data that matches the FastAPI schema exactly
+    // Test data that matches the FastAPI schema exactly for api.mazalbot.com
     const testData = {
       stock: "TEST-12345",
       shape: "round brilliant",
@@ -38,10 +39,10 @@ export function ApiTestButton() {
     };
 
     try {
-      console.log('🧪 Testing FastAPI connection:', `${API_BASE_URL}/api/v1/diamonds?user_id=6485315240`);
+      console.log('🧪 Testing FastAPI connection:', `${API_BASE_URL}/api/v1/diamonds?user_id=2138564172`);
       console.log('🧪 Test payload:', testData);
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/diamonds?user_id=6485315240`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/diamonds?user_id=2138564172`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -68,7 +69,7 @@ export function ApiTestButton() {
       toast({
         variant: "destructive",
         title: "❌ FastAPI Connection Failed",
-        description: `Could not connect to ${API_BASE_URL}. Check if your FastAPI server is running on localhost:8000`,
+        description: `Could not connect to ${API_BASE_URL}. Check if your FastAPI server is accessible.`,
       });
     } finally {
       setTesting(false);

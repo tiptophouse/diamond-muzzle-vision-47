@@ -1,6 +1,6 @@
 
-// FastAPI backend configuration - UPDATED FOR LOCAL TESTING
-export const API_BASE_URL = "http://localhost:8000"; // ✅ Your FastAPI backend
+// FastAPI backend configuration - UPDATED FOR PRODUCTION
+export const API_BASE_URL = "https://api.mazalbot.com"; // ✅ Your production FastAPI backend
 
 let currentUserId: number | null = null;
 

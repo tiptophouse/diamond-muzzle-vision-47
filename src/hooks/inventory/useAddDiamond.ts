@@ -56,7 +56,7 @@ export function useAddDiamond(onSuccess?: () => void) {
         ? Number(data.pricePerCarat)
         : Math.round(Number(data.price) / Number(data.carat));
 
-      // Map form data to FastAPI format - EXACT SCHEMA MATCH
+      // Map form data to FastAPI format - EXACT SCHEMA MATCH for api.mazalbot.com
       const diamondDataPayload = {
         // Required fields - exact schema match
         stock: data.stockNumber.trim(),
@@ -94,14 +94,13 @@ export function useAddDiamond(onSuccess?: () => void) {
         picture: data.picture?.trim() || "",
       };
 
-      console.log('💎 Sending diamond data to FastAPI (exact schema match):', diamondDataPayload);
+      console.log('💎 Sending diamond data to FastAPI (api.mazalbot.com):', diamondDataPayload);
       
-      // Try FastAPI with exact schema match
+      // Try FastAPI backend at api.mazalbot.com
       try {
         const endpoint = apiEndpoints.addDiamond(user.id);
         console.log('➕ ADD: Using endpoint:', endpoint);
         console.log('➕ ADD: Making POST request to:', `${API_BASE_URL}${endpoint}`);
-      
         
         const response = await api.post(endpoint, diamondDataPayload);
         
@@ -111,11 +110,11 @@ export function useAddDiamond(onSuccess?: () => void) {
 
         console.log('✅ ADD: FastAPI response:', response.data);
 
-        // Show success message only if API call succeeded
+        // Show success message - API call succeeded
         if (response.data) {
           toast({
-            title: "✅ Diamond Added Successfully",
-            description: "Your diamond has been added to inventory via FastAPI backend",
+            title: "✅ Diamond Added Successfully!",
+            description: `Stone "${data.stockNumber}" has been added to your inventory via FastAPI backend`,
           });
           
           if (onSuccess) onSuccess();
@@ -136,7 +135,7 @@ export function useAddDiamond(onSuccess?: () => void) {
         toast({
           variant: "destructive",
           title: "❌ FastAPI Connection Failed",
-          description: `Unable to connect to FastAPI backend at ${API_BASE_URL}. Check if your server is running.`,
+          description: `Unable to connect to FastAPI backend at ${API_BASE_URL}. Stone will be saved locally.`,
         });
         
         // Fallback to localStorage with clear messaging
@@ -166,8 +165,8 @@ export function useAddDiamond(onSuccess?: () => void) {
         localStorage.setItem('diamond_inventory', JSON.stringify(existingData));
         
         toast({
-          title: "✅ Diamond Saved Locally", 
-          description: "Your diamond has been saved offline and will sync when the server connection is restored",
+          title: "⚠️ Stone Saved Locally", 
+          description: `Stone "${data.stockNumber}" saved offline. Will sync when backend connection is restored.`,
           variant: "default",
         });
         
