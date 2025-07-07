@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'react-hook-form';
-import { DiamondSelectField } from '@/components/inventory/form/DiamondSelectField';
+import { ModernSelectField } from '@/components/inventory/form/ModernSelectField';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { 
   fluorescences, 
@@ -25,7 +25,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
       <p className="text-sm text-gray-600">Professional grading details from certificate</p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <DiamondSelectField
+        <ModernSelectField
           id="fluorescence"
           label="Fluorescence"
           value={watch('fluorescence') || 'None'}
@@ -33,7 +33,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
           options={fluorescences}
         />
 
-        <DiamondSelectField
+        <ModernSelectField
           id="polish"
           label="Polish"
           value={watch('polish') || 'Excellent'}
@@ -41,7 +41,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
           options={polishGrades}
         />
 
-        <DiamondSelectField
+        <ModernSelectField
           id="symmetry"
           label="Symmetry"
           value={watch('symmetry') || 'Excellent'}
@@ -49,7 +49,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
           options={symmetryGrades}
         />
 
-        <DiamondSelectField
+        <ModernSelectField
           id="gridle"
           label="Girdle"
           value={watch('gridle') || 'Medium'}
@@ -57,7 +57,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
           options={girdleTypes}
         />
 
-        <DiamondSelectField
+        <ModernSelectField
           id="culet"
           label="Culet"
           value={watch('culet') || 'None'}

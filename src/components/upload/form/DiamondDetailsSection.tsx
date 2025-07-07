@@ -2,7 +2,7 @@
 import React from 'react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'react-hook-form';
 import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
-import { DiamondSelectField } from '@/components/inventory/form/DiamondSelectField';
+import { ModernSelectField } from '@/components/inventory/form/ModernSelectField';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { shapes, colors, clarities, cuts, fluorescences, polishGrades, symmetryGrades } from '@/components/inventory/form/diamondFormConstants';
 
@@ -32,7 +32,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           errors={errors}
         />
 
-        <DiamondSelectField
+        <ModernSelectField
           id="shape"
           label="Shape"
           value={watch('shape') || 'Round'}
@@ -54,7 +54,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           errors={errors}
         />
 
-        <DiamondSelectField
+        <ModernSelectField
           id="color"
           label="Color Grade"
           value={watch('color') || 'G'}
@@ -62,7 +62,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           options={colors}
         />
 
-        <DiamondSelectField
+        <ModernSelectField
           id="clarity"
           label="Clarity Grade"
           value={watch('clarity') || 'VS1'}
@@ -71,7 +71,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
         />
 
         {showCutField && (
-          <DiamondSelectField
+          <ModernSelectField
             id="cut"
             label="Cut Grade"
             value={watch('cut') || 'Excellent'}
@@ -80,7 +80,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           />
         )}
 
-        <DiamondSelectField
+        <ModernSelectField
           id="fluorescence"
           label="Fluorescence"
           value={watch('fluorescence') || 'None'}
@@ -88,7 +88,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           options={fluorescences}
         />
 
-        <DiamondSelectField
+        <ModernSelectField
           id="polish"
           label="Polish"
           value={watch('polish') || 'Excellent'}
@@ -96,7 +96,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           options={polishGrades}
         />
 
-        <DiamondSelectField
+        <ModernSelectField
           id="symmetry"
           label="Symmetry"
           value={watch('symmetry') || 'Excellent'}

@@ -2,7 +2,7 @@
 import React from 'react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'react-hook-form';
 import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
-import { DiamondSelectField } from '@/components/inventory/form/DiamondSelectField';
+import { ModernSelectField } from '@/components/inventory/form/ModernSelectField';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { labOptions } from '@/components/inventory/form/diamondFormConstants';
 
@@ -28,7 +28,7 @@ export function CertificateSection({ register, setValue, watch, errors }: Certif
           errors={errors}
         />
 
-        <DiamondSelectField
+        <ModernSelectField
           id="lab"
           label="Grading Laboratory"
           value={watch('lab') || 'GIA'}
