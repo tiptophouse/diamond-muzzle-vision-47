@@ -69,46 +69,36 @@ export function useAddDiamond(onSuccess?: () => void) {
 
       console.log('💰 ADD_DIAMOND: Calculated price per carat:', actualPricePerCarat);
 
-      // Map form data to FastAPI format - using REAL data only
+      // Map form data to FastAPI format - EXACTLY matching your structure
       const diamondDataPayload = {
-        // Required fields from form
         stock: data.stockNumber.trim(),
-        shape: data.shape === 'Round' ? "round brilliant" : data.shape.toLowerCase(),
+        shape: data.shape || "Round",
         weight: Number(data.carat),
-        color: data.color,
-        clarity: data.clarity,
-        
-        // Certificate data - use actual values or null
+        color: data.color || "G",
+        clarity: data.clarity || "VS1",
         lab: data.lab || "GIA",
         certificate_number: data.certificateNumber && data.certificateNumber.trim() 
           ? parseInt(data.certificateNumber) || 0
           : 0,
-        certificate_comment: data.certificateComment?.trim() || "",
-        certificate_url: data.certificateUrl?.trim() || "",
-        
-        // Physical measurements - use actual values or sensible defaults based on carat
-        length: data.length && data.length > 0 ? Number(data.length) : Math.round((data.carat * 6.5) * 100) / 100,
-        width: data.width && data.width > 0 ? Number(data.width) : Math.round((data.carat * 6.5) * 100) / 100,
-        depth: data.depth && data.depth > 0 ? Number(data.depth) : Math.round((data.carat * 4.0) * 100) / 100,
-        ratio: data.ratio && data.ratio > 0 ? Number(data.ratio) : 1.0,
-        
-        // Grading details
-        cut: data.cut?.toUpperCase() || "EXCELLENT",
-        polish: data.polish?.toUpperCase() || "EXCELLENT", 
-        symmetry: data.symmetry?.toUpperCase() || "EXCELLENT",
-        fluorescence: data.fluorescence?.toUpperCase() || "NONE",
-        table: data.tablePercentage && data.tablePercentage > 0 ? Number(data.tablePercentage) : 60,
-        depth_percentage: data.depthPercentage && data.depthPercentage > 0 ? Number(data.depthPercentage) : 62,
+        length: data.length ? Number(data.length) : 0,
+        width: data.width ? Number(data.width) : 0,
+        depth: data.depth ? Number(data.depth) : 0,
+        ratio: data.ratio ? Number(data.ratio) : 0,
+        cut: data.cut || "Excellent",
+        polish: data.polish || "Excellent", 
+        symmetry: data.symmetry || "Excellent",
+        fluorescence: data.fluorescence || "None",
+        table: data.tablePercentage ? Number(data.tablePercentage) : 0,
+        depth_percentage: data.depthPercentage ? Number(data.depthPercentage) : 0,
         gridle: data.gridle || "Medium",
-        culet: data.culet?.toUpperCase() || "NONE",
-        
-        // Business data
+        culet: data.culet || "None",
+        certificate_comment: data.certificateComment?.trim() || "",
+        rapnet: data.rapnet ? Number(data.rapnet) : 0,
         price_per_carat: actualPricePerCarat,
-        rapnet: data.rapnet && data.rapnet > 0 ? parseInt(data.rapnet.toString()) : 0,
-        picture: data.picture?.trim() || "",
+        picture: data.picture?.trim() || ""
       };
 
-      console.log('💎 ADD_DIAMOND: Prepared diamond payload for API:', JSON.stringify(diamondDataPayload, null, 2));
+      console.log('💎 ADD_DIAMOND: Prepared diamond payload (EXACT FastAPI structure):', JSON.stringify(diamondDataPayload, null, 2));
       
       console.log('➕ ADD_DIAMOND: Sending diamond data to FastAPI with user ID:', user.id);
       
