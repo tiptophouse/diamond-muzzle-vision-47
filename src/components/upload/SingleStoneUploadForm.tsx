@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from 'react-hook-form';
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,6 @@ import { ImageUploadSection } from './form/ImageUploadSection';
 import { FormActions } from './form/FormActions';
 import { useFormValidation } from './form/useFormValidation';
 import { ApiStatusIndicator } from '@/components/ui/ApiStatusIndicator';
-import { ApiTestButton } from '@/components/ui/ApiTestButton';
 
 export function SingleStoneUploadForm() {
   const { toast } = useToast();
@@ -60,7 +58,6 @@ export function SingleStoneUploadForm() {
   const handleGiaScanSuccess = (giaData: any) => {
     console.log('GIA data received:', giaData);
     
-    // Comprehensive mapping of all GIA data fields including certificate URL
     if (giaData.stock) setValue('stockNumber', giaData.stock);
     if (giaData.shape) setValue('shape', giaData.shape);
     if (giaData.weight) setValue('carat', Number(giaData.weight));
@@ -84,7 +81,6 @@ export function SingleStoneUploadForm() {
     if (giaData.rapnet) setValue('rapnet', Number(giaData.rapnet));
     if (giaData.picture) setValue('picture', giaData.picture);
     
-    // Handle certificate URL from uploaded certificate image
     if (giaData.certificate_url || giaData.certificateUrl) {
       setValue('certificateUrl', giaData.certificate_url || giaData.certificateUrl);
       console.log('Certificate image uploaded to:', giaData.certificate_url || giaData.certificateUrl);
@@ -231,7 +227,6 @@ export function SingleStoneUploadForm() {
           </div>
         </CardHeader>
         <CardContent>
-          <ApiTestButton />
           <ApiStatusIndicator isConnected={apiConnected} className="mb-4" />
           
           <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
