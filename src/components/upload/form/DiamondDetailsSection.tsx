@@ -24,7 +24,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <DiamondInputField
-          id="stockNumber"
+          id="stock"
           label="Stock Number / Certificate Number"
           placeholder="Enter stock or certificate number"
           register={register}
@@ -41,7 +41,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
         />
 
         <DiamondInputField
-          id="carat"
+          id="weight"
           label="Carat Weight"
           type="number"
           step="0.01"

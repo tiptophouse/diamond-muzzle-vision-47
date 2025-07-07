@@ -4,18 +4,18 @@ import { DiamondFormData } from '@/components/inventory/form/types';
 export const useFormValidation = () => {
   const validateFormData = (data: DiamondFormData): boolean => {
     // Validate required fields
-    if (!data.stockNumber || data.stockNumber.trim() === '') {
+    if (!data.stock || data.stock.trim() === '') {
       console.error('Stock number is required');
       return false;
     }
     
-    if (!data.carat || data.carat <= 0) {
-      console.error('Valid carat weight is required');
+    if (!data.weight || data.weight <= 0) {
+      console.error('Valid weight is required');
       return false;
     }
     
-    if (!data.price || data.price <= 0) {
-      console.error('Valid price is required');
+    if (!data.price_per_carat || data.price_per_carat <= 0) {
+      console.error('Valid price per carat is required');
       return false;
     }
     
@@ -25,9 +25,9 @@ export const useFormValidation = () => {
   const formatFormData = (data: DiamondFormData, showCutField: boolean): DiamondFormData => {
     return {
       ...data,
-      stockNumber: data.stockNumber.trim(),
-      carat: Number(data.carat),
-      price: Number(data.price),
+      stock: data.stock.trim(),
+      weight: Number(data.weight),
+      price_per_carat: Number(data.price_per_carat),
       shape: data.shape || 'Round',
       color: data.color || 'G',
       clarity: data.clarity || 'VS1',
@@ -35,24 +35,20 @@ export const useFormValidation = () => {
       fluorescence: data.fluorescence || 'None',
       polish: data.polish || 'Excellent',
       symmetry: data.symmetry || 'Excellent',
-      status: data.status || 'Available',
       picture: data.picture?.trim() || '',
       // Include all comprehensive fields
-      certificateNumber: data.certificateNumber?.trim() || '',
-      certificateUrl: data.certificateUrl?.trim() || '',
-      certificateComment: data.certificateComment?.trim() || '',
+      certificate_number: data.certificate_number || 0,
+      certificate_comment: data.certificate_comment?.trim() || '',
       lab: data.lab || 'GIA',
-      length: data.length ? Number(data.length) : undefined,
-      width: data.width ? Number(data.width) : undefined,
-      depth: data.depth ? Number(data.depth) : undefined,
-      ratio: data.ratio ? Number(data.ratio) : undefined,
-      tablePercentage: data.tablePercentage ? Number(data.tablePercentage) : undefined,
-      depthPercentage: data.depthPercentage ? Number(data.depthPercentage) : undefined,
+      length: data.length ? Number(data.length) : 0,
+      width: data.width ? Number(data.width) : 0,
+      depth: data.depth ? Number(data.depth) : 0,
+      ratio: data.ratio ? Number(data.ratio) : 0,
+      table: data.table ? Number(data.table) : 0,
+      depth_percentage: data.depth_percentage ? Number(data.depth_percentage) : 0,
       gridle: data.gridle || 'Medium',
       culet: data.culet || 'None',
-      pricePerCarat: data.pricePerCarat ? Number(data.pricePerCarat) : undefined,
-      rapnet: data.rapnet ? Number(data.rapnet) : undefined,
-      storeVisible: data.storeVisible !== undefined ? data.storeVisible : true,
+      rapnet: data.rapnet ? Number(data.rapnet) : 0,
     };
   };
 
