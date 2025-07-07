@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'react-hook-form';
+import { ModernSelectField } from '@/components/inventory/form/ModernSelectField';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { 
   fluorescences, 
@@ -9,7 +10,6 @@ import {
   girdleTypes, 
   culetGrades 
 } from '@/components/inventory/form/diamondFormConstants';
-import { MobilePicker } from '@/components/ui/MobilePicker';
 
 interface DetailedGradingSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -20,14 +20,12 @@ interface DetailedGradingSectionProps {
 
 export function DetailedGradingSection({ register, setValue, watch, errors }: DetailedGradingSectionProps) {
   return (
-    <div className="space-y-6 border-t pt-6">
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold text-foreground">Detailed Grading</h3>
-        <p className="text-sm text-muted-foreground">Professional grading details from certificate</p>
-      </div>
+    <div className="space-y-4 border-t pt-6">
+      <h3 className="text-lg font-semibold text-gray-900">Detailed Grading</h3>
+      <p className="text-sm text-gray-600">Professional grading details from certificate</p>
       
-      <div className="grid grid-cols-1 gap-6">
-        <MobilePicker
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <ModernSelectField
           id="fluorescence"
           label="Fluorescence"
           value={watch('fluorescence') || 'None'}
@@ -35,7 +33,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
           options={fluorescences}
         />
 
-        <MobilePicker
+        <ModernSelectField
           id="polish"
           label="Polish"
           value={watch('polish') || 'Excellent'}
@@ -43,7 +41,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
           options={polishGrades}
         />
 
-        <MobilePicker
+        <ModernSelectField
           id="symmetry"
           label="Symmetry"
           value={watch('symmetry') || 'Excellent'}
@@ -51,7 +49,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
           options={symmetryGrades}
         />
 
-        <MobilePicker
+        <ModernSelectField
           id="gridle"
           label="Girdle"
           value={watch('gridle') || 'Medium'}
@@ -59,7 +57,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
           options={girdleTypes}
         />
 
-        <MobilePicker
+        <ModernSelectField
           id="culet"
           label="Culet"
           value={watch('culet') || 'None'}

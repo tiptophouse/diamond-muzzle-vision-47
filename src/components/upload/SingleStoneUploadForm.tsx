@@ -18,15 +18,12 @@ import { BusinessInfoSection } from './form/BusinessInfoSection';
 import { ImageUploadSection } from './form/ImageUploadSection';
 import { FormActions } from './form/FormActions';
 import { useFormValidation } from './form/useFormValidation';
-import { ApiStatusIndicator } from '@/components/ui/ApiStatusIndicator';
-import { ApiTestButton } from '@/components/ui/ApiTestButton';
 
 export function SingleStoneUploadForm() {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
   const [isScanning, setIsScanning] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
-  const [apiConnected, setApiConnected] = useState(true); // Track API connection status
   const { addDiamond, isLoading } = useInventoryCrud({
     onSuccess: () => {
       console.log('✅ Diamond added successfully, showing success card');
@@ -105,10 +102,8 @@ export function SingleStoneUploadForm() {
 
   const handleFormSubmit = (data: DiamondFormData) => {
     console.log('🔍 UPLOAD: Form submitted', { user: user?.id, data });
-    console.log('🔍 UPLOAD: Form submit button clicked - processing data...');
     
     if (!user?.id) {
-      console.log('❌ UPLOAD: No user ID found');
       toast({
         title: "Authentication Error",
         description: "Please log in to add diamonds",
@@ -117,9 +112,7 @@ export function SingleStoneUploadForm() {
       return;
     }
 
-    console.log('🔍 UPLOAD: User authenticated, validating form data...');
     if (!validateFormData(data)) {
-      console.log('❌ UPLOAD: Form validation failed');
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields",
@@ -128,35 +121,19 @@ export function SingleStoneUploadForm() {
       return;
     }
 
-    console.log('✅ UPLOAD: Form validation passed, formatting data...');
     const formattedData = formatFormData(data, showCutField);
     console.log('🔍 UPLOAD: Calling addDiamond with:', formattedData);
-    console.log('🔍 UPLOAD: About to make API call to FastAPI create diamond endpoint...');
     
     addDiamond(formattedData).then(success => {
       console.log('🔍 UPLOAD: addDiamond result:', success);
-      console.log('🔍 UPLOAD: API call completed, success:', success);
       
       if (!success) {
-        console.log('❌ UPLOAD: Diamond creation failed');
-        setApiConnected(false); // Mark API as disconnected
         toast({
           title: "❌ Upload Failed",
           description: "Failed to add diamond to inventory. Please try again.",
           variant: "destructive",
         });
-      } else {
-        console.log('✅ UPLOAD: Diamond creation successful!');
-        setApiConnected(true); // Mark API as connected
       }
-    }).catch(error => {
-      console.error('❌ UPLOAD: Error in addDiamond promise:', error);
-      setApiConnected(false); // Mark API as disconnected
-      toast({
-        title: "❌ Upload Error",
-        description: "An error occurred while uploading. Please try again.",
-        variant: "destructive",
-      });
     });
   };
 
@@ -226,14 +203,11 @@ export function SingleStoneUploadForm() {
               className="flex items-center gap-2"
             >
               <Camera className="h-4 w-4" />
-              Scan Diamond Certificate
+              Scan GIA Certificate
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          <ApiTestButton />
-          <ApiStatusIndicator isConnected={apiConnected} className="mb-4" />
-          
           <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
             <DiamondDetailsSection
               register={register}

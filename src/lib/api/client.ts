@@ -56,16 +56,9 @@ export async function fetchApi<T>(
   const url = `${API_BASE_URL}${endpoint}`;
   
   try {
-    console.log('🚀 API: Making FastAPI request:', url);
-    console.log('🚀 API: Method:', options.method || 'GET');
+    console.log('🚀 API: Making FastAPI request to fetch real diamonds:', url);
     console.log('🚀 API: Current user ID:', getCurrentUserId(), 'type:', typeof getCurrentUserId());
-    
-    if (options.method === 'POST') {
-      console.log('📤 API: This is a POST request (CREATE diamond)');
-      console.log('📤 API: Should create diamond in FastAPI backend');
-    } else {
-      console.log('🚀 API: This should return your 500+ diamonds, not mock data');
-    }
+    console.log('🚀 API: This should return your 500+ diamonds, not mock data');
     
     // Test connectivity first
     const isBackendReachable = await testBackendConnectivity();
@@ -189,20 +182,14 @@ export async function fetchApi<T>(
 export const api = {
   get: <T>(endpoint: string) => fetchApi<T>(endpoint, { method: "GET" }),
   
-  post: <T>(endpoint: string, body: Record<string, any>) => {
-    console.log('📤 API: POST request initiated');
-    console.log('📤 API: Endpoint:', endpoint);
-    console.log('📤 API: Body data:', JSON.stringify(body, null, 2));
-    console.log('📤 API: This should be a CREATE diamond request to FastAPI');
-    
-    return fetchApi<T>(endpoint, {
+  post: <T>(endpoint: string, body: Record<string, any>) =>
+    fetchApi<T>(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
-    });
-  },
+    }),
   
   put: <T>(endpoint: string, body: Record<string, any>) =>
     fetchApi<T>(endpoint, {

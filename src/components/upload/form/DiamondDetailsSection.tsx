@@ -2,10 +2,9 @@
 import React from 'react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'react-hook-form';
 import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
+import { ModernSelectField } from '@/components/inventory/form/ModernSelectField';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { shapes, colors, clarities, cuts, fluorescences, polishGrades, symmetryGrades } from '@/components/inventory/form/diamondFormConstants';
-import { MobileButtonSelector } from '@/components/ui/MobileButtonSelector';
-import { MobilePicker } from '@/components/ui/MobilePicker';
 
 interface DiamondDetailsSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -19,13 +18,11 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
   const showCutField = currentShape === 'Round';
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold text-foreground">Diamond Details</h3>
-        <p className="text-sm text-muted-foreground">These fields can be auto-filled by scanning a GIA certificate</p>
-      </div>
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-gray-900">Diamond Details</h3>
+      <p className="text-sm text-gray-600">These fields can be auto-filled by scanning a GIA certificate</p>
       
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <DiamondInputField
           id="stockNumber"
           label="Stock Number / Certificate Number"
@@ -35,13 +32,12 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           errors={errors}
         />
 
-        <MobileButtonSelector
+        <ModernSelectField
           id="shape"
           label="Shape"
           value={watch('shape') || 'Round'}
           onValueChange={(value) => setValue('shape', value)}
           options={shapes}
-          columns={3}
         />
 
         <DiamondInputField
@@ -58,36 +54,33 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           errors={errors}
         />
 
-        <MobileButtonSelector
+        <ModernSelectField
           id="color"
           label="Color Grade"
           value={watch('color') || 'G'}
           onValueChange={(value) => setValue('color', value)}
           options={colors}
-          columns={4}
         />
 
-        <MobileButtonSelector
+        <ModernSelectField
           id="clarity"
           label="Clarity Grade"
           value={watch('clarity') || 'VS1'}
           onValueChange={(value) => setValue('clarity', value)}
           options={clarities}
-          columns={3}
         />
 
         {showCutField && (
-          <MobileButtonSelector
+          <ModernSelectField
             id="cut"
             label="Cut Grade"
             value={watch('cut') || 'Excellent'}
             onValueChange={(value) => setValue('cut', value)}
             options={cuts}
-            columns={2}
           />
         )}
 
-        <MobilePicker
+        <ModernSelectField
           id="fluorescence"
           label="Fluorescence"
           value={watch('fluorescence') || 'None'}
@@ -95,7 +88,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           options={fluorescences}
         />
 
-        <MobilePicker
+        <ModernSelectField
           id="polish"
           label="Polish"
           value={watch('polish') || 'Excellent'}
@@ -103,7 +96,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           options={polishGrades}
         />
 
-        <MobilePicker
+        <ModernSelectField
           id="symmetry"
           label="Symmetry"
           value={watch('symmetry') || 'Excellent'}

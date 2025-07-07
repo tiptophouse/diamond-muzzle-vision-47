@@ -2,11 +2,11 @@
 import React from 'react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'react-hook-form';
 import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
+import { DiamondSelectField } from '@/components/inventory/form/DiamondSelectField';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { statuses } from '@/components/inventory/form/diamondFormConstants';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { MobilePicker } from '@/components/ui/MobilePicker';
 
 interface BusinessInfoSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -28,13 +28,11 @@ export function BusinessInfoSection({ register, setValue, watch, errors }: Busin
   }, [carat, price, setValue]);
 
   return (
-    <div className="space-y-6 border-t pt-6">
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold text-foreground">Business Information</h3>
-        <p className="text-sm text-muted-foreground">Pricing and inventory management details</p>
-      </div>
+    <div className="space-y-4 border-t pt-6">
+      <h3 className="text-lg font-semibold text-gray-900">Business Information</h3>
+      <p className="text-sm text-gray-600">Pricing and inventory management details</p>
       
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <DiamondInputField
           id="price"
           label="Total Price (USD) *"
@@ -66,7 +64,7 @@ export function BusinessInfoSection({ register, setValue, watch, errors }: Busin
           errors={errors}
         />
 
-        <MobilePicker
+        <DiamondSelectField
           id="status"
           label="Inventory Status"
           value={watch('status') || 'Available'}
@@ -74,15 +72,13 @@ export function BusinessInfoSection({ register, setValue, watch, errors }: Busin
           options={statuses}
         />
 
-        <div className="flex items-center space-x-3 p-4 bg-accent/10 rounded-lg">
+        <div className="md:col-span-2 flex items-center space-x-2">
           <Switch
             id="storeVisible"
             checked={watch('storeVisible') || false}
             onCheckedChange={(checked) => setValue('storeVisible', checked)}
           />
-          <Label htmlFor="storeVisible" className="text-base font-medium">
-            Make visible in public store
-          </Label>
+          <Label htmlFor="storeVisible">Make visible in public store</Label>
         </div>
       </div>
     </div>

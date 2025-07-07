@@ -54,25 +54,14 @@ const Index = () => {
   // Show loading state while auth is initializing
   if (isLoading || loadingConfig) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-cyan-50">
-        <div className="text-center space-y-8 p-8 max-w-md premium-card animate-scale-in">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-20 w-20 border-4 border-gradient-to-r from-blue-500 to-purple-600 border-t-transparent mx-auto"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-lg">💎</span>
-              </div>
-            </div>
-          </div>
-          <div className="space-y-3">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Diamond Muzzle</h1>
-            <p className="text-lg text-muted-foreground font-medium">
-              {loadingConfig ? 'Loading configuration...' : 'Initializing your premium experience...'}
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
+        <div className="text-center space-y-6 p-8 max-w-md">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mx-auto"></div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-blue-700">Diamond Muzzle</h1>
+            <p className="text-blue-600">
+              {loadingConfig ? 'Loading configuration...' : 'Initializing your session...'}
             </p>
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse-subtle"></div>
-              <span>Secure • Fast • Reliable</span>
-            </div>
           </div>
           
           {/* Debug info in development */}

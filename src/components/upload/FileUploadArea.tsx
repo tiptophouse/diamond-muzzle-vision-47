@@ -31,20 +31,17 @@ export function FileUploadArea({ selectedFile, onFileChange, onReset }: FileUplo
   if (!selectedFile) {
     return (
       <div 
-        className="border-2 border-dashed border-gray-300 rounded-lg p-6 sm:p-8 md:p-12 text-center hover:border-diamond-300 active:border-diamond-400 transition-colors cursor-pointer touch-manipulation min-h-[120px] flex flex-col justify-center"
+        className="border-2 border-dashed border-gray-300 rounded-lg p-8 md:p-12 text-center hover:border-diamond-300 transition-colors cursor-pointer touch-manipulation"
         onClick={() => fileInputRef.current?.click()}
       >
-        <Upload className="h-12 w-12 sm:h-14 sm:w-14 mx-auto text-gray-400 mb-3" />
-        <p className="text-base sm:text-lg font-medium text-gray-700 mb-2">
-          <span className="hidden sm:inline">Drop your file here or </span>
-          <span className="text-diamond-600 font-semibold">Tap to Select</span>
+        <Upload className="h-10 w-10 md:h-12 md:w-12 mx-auto text-gray-400" />
+        <p className="mt-3 md:mt-4 text-sm md:text-base text-gray-600">
+          <span className="hidden md:inline">Drag and drop your inventory file here, or </span>
+          <span className="text-diamond-600 font-medium text-base md:text-sm">Tap to select file</span>
         </p>
-        <p className="text-sm text-gray-500">
-          📱 CSV & XLSX files supported
+        <p className="mt-2 text-xs md:text-sm text-gray-500">
+          📱 Mobile-friendly: CSV & XLSX supported
         </p>
-        <div className="mt-3 px-4 py-2 bg-diamond-50 rounded-full inline-block">
-          <span className="text-xs text-diamond-700">Mobile optimized upload</span>
-        </div>
         <input
           ref={fileInputRef}
           type="file"
@@ -57,24 +54,23 @@ export function FileUploadArea({ selectedFile, onFileChange, onReset }: FileUplo
   }
 
   return (
-    <div className="flex items-center p-4 bg-gray-50 rounded-lg border">
-      <File className="h-8 w-8 text-diamond-600 mr-3 flex-shrink-0" />
+    <div className="flex items-center p-4 bg-gray-50 rounded-lg">
+      <File className="h-8 w-8 text-diamond-600 mr-3" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm sm:text-base font-medium text-gray-900 truncate">
+        <p className="text-sm font-medium text-gray-900 truncate">
           {selectedFile.name}
         </p>
-        <p className="text-xs sm:text-sm text-gray-500">
-          {(selectedFile.size / 1024).toFixed(2)} KB • Ready to upload
+        <p className="text-xs text-gray-500">
+          {(selectedFile.size / 1024).toFixed(2)} KB
         </p>
       </div>
       <Button 
         variant="ghost" 
-        size="lg" 
+        size="sm" 
         onClick={onReset}
-        className="text-gray-600 min-h-[44px] min-w-[44px] touch-manipulation ml-2"
-        aria-label="Remove file"
+        className="text-gray-600"
       >
-        <XCircle className="h-5 w-5" />
+        <XCircle className="h-4 w-4" />
       </Button>
     </div>
   );
