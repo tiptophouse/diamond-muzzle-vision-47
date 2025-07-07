@@ -26,6 +26,14 @@ export function MobileInputField({
   validation,
   required = false
 }: MobileInputFieldProps) {
+  // Handle number field transformation
+  const registerOptions = type === 'number' 
+    ? {
+        ...validation,
+        setValueAs: (value: string) => value === '' ? 0 : Number(value)
+      }
+    : validation;
+
   return (
     <div className="mb-6">
       <label htmlFor={id} className="block text-lg font-semibold text-gray-900 mb-3">
@@ -36,7 +44,7 @@ export function MobileInputField({
         type={type}
         step={step}
         placeholder={placeholder}
-        {...register(id, validation)}
+        {...register(id, registerOptions)}
         className="w-full h-14 px-4 bg-white border-2 border-gray-300 rounded-xl text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
       />
       {errors[id] && (
