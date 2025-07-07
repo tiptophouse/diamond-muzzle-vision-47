@@ -14,6 +14,9 @@ export const apiEndpoints = {
   // Create diamond - POST /api/v1/diamonds?user_id={user_id}
   addDiamond: (userId: number) => `/api/v1/diamonds?user_id=${userId}`,
   
+  // Batch diamond upload - POST /api/v1/diamonds/batch?user_id={user_id}
+  addDiamondsBatch: (userId: number) => `/api/v1/diamonds/batch?user_id=${userId}`,
+  
   // Update diamond - PUT /api/v1/diamonds/{diamond_id}?user_id={user_id}
   updateDiamond: (diamondId: string, userId: number) => `/api/v1/diamonds/${diamondId}?user_id=${userId}`,
   

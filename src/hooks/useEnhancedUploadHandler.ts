@@ -76,23 +76,42 @@ export function useEnhancedUploadHandler() {
       
       setProgress(60);
 
-      // Upload each diamond individually to FastAPI backend
-      console.log('📤 Uploading diamonds to FastAPI backend...');
+      // Helper functions for validation and processing
+      const validateRatio = (ratio: any): number => {
+        const num = Number(ratio);
+        return isNaN(num) || num <= 0 ? 1 : Math.abs(num);
+      };
+
+      const processCertificateNumber = (certNum: any): number => {
+        if (certNum === null || certNum === undefined || certNum === '') {
+          return 0;
+        }
+        
+        if (typeof certNum === 'number') {
+          return Math.floor(Math.abs(certNum)) || 0;
+        }
+        
+        if (typeof certNum === 'string') {
+          const cleanedCert = certNum.trim().replace(/\D/g, '');
+          return parseInt(cleanedCert) || 0;
+        }
+        
+        return 0;
+      };
+
+      // Prepare diamonds for batch upload
+      console.log('📤 Preparing diamonds for batch upload to FastAPI backend...');
       console.log('📤 Sample enhanced data being sent:', enhancedData.slice(0, 2));
       
-      let successCount = 0;
       const errors = [];
-      const totalDiamonds = enhancedData.length;
+      const validDiamonds = [];
       
+      // Validate and format each diamond
       for (let i = 0; i < enhancedData.length; i++) {
         const diamondData = enhancedData[i];
         
-        // Update progress for each diamond
-        const uploadProgress = 60 + Math.round((i / totalDiamonds) * 35);
-        setProgress(uploadProgress);
-        
         try {
-          // Validate required fields from CSV data
+          // Validate required fields
           if (!diamondData.stock?.trim()) {
             errors.push(`Row ${i + 1}: Stock Number is required`);
             continue;
@@ -108,35 +127,8 @@ export function useEnhancedUploadHandler() {
             continue;
           }
 
-          // Helper function to ensure positive ratio
-          const validateRatio = (ratio: any): number => {
-            const num = Number(ratio);
-            return isNaN(num) || num <= 0 ? 1 : Math.abs(num);
-          };
-
-          // Helper function to safely handle certificate number
-          const processCertificateNumber = (certNum: any): number => {
-            if (certNum === null || certNum === undefined || certNum === '') {
-              return 0;
-            }
-            
-            // If it's already a number, use it
-            if (typeof certNum === 'number') {
-              return Math.floor(Math.abs(certNum)) || 0;
-            }
-            
-            // If it's a string, clean it and convert to number
-            if (typeof certNum === 'string') {
-              const cleanedCert = certNum.trim().replace(/\D/g, ''); // Remove non-digits
-              return parseInt(cleanedCert) || 0;
-            }
-            
-            // Fallback for any other type
-            return 0;
-          };
-
-          // Map CSV data to FastAPI format - using REAL data only with proper enum validation
-          const payload = {
+          // Format diamond for batch API
+          const formattedDiamond = {
             stock: diamondData.stock.trim(),
             shape: diamondData.shape === 'Round' ? "round brilliant" : (diamondData.shape?.toLowerCase() || "round brilliant"),
             weight: Number(diamondData.weight),
@@ -145,8 +137,6 @@ export function useEnhancedUploadHandler() {
             lab: diamondData.lab || "GIA",
             certificate_number: processCertificateNumber(diamondData.certificate_number),
             certificate_comment: diamondData.certificate_comment?.toString().trim() || "",
-            certificate_url: diamondData.certificate_url?.toString().trim() || "",
-            // Physical measurements - use actual values or sensible defaults based on carat
             length: diamondData.length && Number(diamondData.length) > 0 
               ? Number(diamondData.length) 
               : Math.round((Number(diamondData.weight) * 6.5) * 100) / 100,
@@ -169,32 +159,36 @@ export function useEnhancedUploadHandler() {
             price_per_carat: Number(diamondData.price_per_carat),
             picture: diamondData.picture?.toString().trim() || "",
           };
-        
-          const response = await api.post(apiEndpoints.addDiamond(user.id), payload);
+          
+          validDiamonds.push(formattedDiamond);
+        } catch (error) {
+          const errorMsg = `Row ${i + 1} (${diamondData.stock || 'unknown'}): ${error instanceof Error ? error.message : 'Validation failed'}`;
+          errors.push(errorMsg);
+        }
+      }
+
+      setProgress(80);
+
+      let successCount = 0;
+      
+      // Upload valid diamonds in batch if any exist
+      if (validDiamonds.length > 0) {
+        try {
+          console.log(`📤 Uploading ${validDiamonds.length} diamonds in batch...`);
+          const batchPayload = { diamonds: validDiamonds };
+          
+          const response = await api.post(apiEndpoints.addDiamondsBatch(user.id), batchPayload);
           
           if (response.error) {
-            // Parse structured error response for better error messages
-            let errorDetails = response.error;
-            try {
-              const errorData = JSON.parse(response.error);
-              if (errorData.detail && Array.isArray(errorData.detail)) {
-                errorDetails = errorData.detail.map((err: any) => {
-                  const field = err.loc ? err.loc[err.loc.length - 1] : 'unknown';
-                  return `${field}: ${err.msg}`;
-                }).join(', ');
-              }
-            } catch {
-              // Keep original error if not JSON
-            }
-            errors.push(`Row ${i + 1} (${diamondData.stock}): ${errorDetails}`);
+            console.error('❌ Batch upload failed:', response.error);
+            errors.push(`Batch upload failed: ${response.error}`);
           } else {
-            successCount++;
-            console.log(`✅ Diamond ${i + 1} uploaded successfully`);
+            successCount = validDiamonds.length;
+            console.log(`✅ Batch upload successful: ${successCount} diamonds uploaded`);
           }
         } catch (error) {
-          const errorMsg = `Row ${i + 1} (${diamondData.stock || 'unknown'}): ${error instanceof Error ? error.message : 'Upload failed'}`;
-          errors.push(errorMsg);
-          console.warn('❌ Individual diamond upload failed:', errorMsg);
+          console.error('❌ Batch upload error:', error);
+          errors.push(`Batch upload error: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       }
       
