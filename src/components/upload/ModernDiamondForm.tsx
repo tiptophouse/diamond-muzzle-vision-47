@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,32 @@ export function ModernDiamondForm() {
       });
       reset();
       setApiError(null);
+    },
+    onError: (error: Error) => {
+      console.error('❌ Form submission error:', error);
+      setApiError(error.message);
+      
+      // Show specific error toast based on error type
+      let title = "❌ Upload Failed";
+      let description = error.message;
+      
+      if (error.message.includes('Network error')) {
+        title = "🌐 Connection Error";
+      } else if (error.message.includes('Authentication')) {
+        title = "🔐 Authentication Error";
+      } else if (error.message.includes('Access denied')) {
+        title = "🚫 Access Denied";
+      } else if (error.message.includes('Invalid data')) {
+        title = "📝 Invalid Data";
+      } else if (error.message.includes('Server')) {
+        title = "⚠️ Server Error";
+      }
+      
+      toast({
+        title,
+        description,
+        variant: "destructive",
+      });
     }
   });
 
@@ -115,20 +140,29 @@ export function ModernDiamondForm() {
     setIsSubmitting(true);
     
     if (!user?.id) {
+      const authError = "Please log in to add diamonds";
+      setApiError(authError);
       toast({
-        title: "Authentication Error",
-        description: "Please log in to add diamonds",
+        title: "🔐 Authentication Error",
+        description: authError,
         variant: "destructive",
       });
       setIsSubmitting(false);
       return;
     }
 
-    // Validate required fields
-    if (!data.stockNumber || !data.carat || !data.pricePerCarat) {
+    // Enhanced validation with specific error messages
+    const validationErrors = [];
+    if (!data.stockNumber?.trim()) validationErrors.push("Stock Number is required");
+    if (!data.carat || data.carat <= 0) validationErrors.push("Valid Carat Weight is required");
+    if (!data.pricePerCarat || data.pricePerCarat <= 0) validationErrors.push("Valid Price per Carat is required");
+    
+    if (validationErrors.length > 0) {
+      const validationError = `Validation failed: ${validationErrors.join(', ')}`;
+      setApiError(validationError);
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
+        title: "📝 Validation Error",
+        description: validationError,
         variant: "destructive",
       });
       setIsSubmitting(false);
@@ -138,22 +172,18 @@ export function ModernDiamondForm() {
     try {
       const success = await addDiamond(data);
       if (!success) {
-        setApiError("Failed to add diamond. Please check your data and try again.");
+        const failError = "Failed to add diamond. Please check your data and try again.";
+        setApiError(failError);
         toast({
           title: "❌ Upload Failed",
-          description: "Failed to add diamond to inventory. Please try again.",
+          description: failError,
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error('Form submission error:', error);
+      console.error('❌ Form submission error:', error);
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
       setApiError(errorMessage);
-      toast({
-        title: "❌ Upload Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
     } finally {
       setIsSubmitting(false);
     }
@@ -194,13 +224,28 @@ export function ModernDiamondForm() {
         </div>
       </div>
 
-      {/* Error Display */}
+      {/* Enhanced Error Display */}
       {apiError && (
         <div className="mx-4 mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
           <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <h3 className="text-sm font-medium text-red-800">Upload Error</h3>
-            <p className="text-sm text-red-700 mt-1">{apiError}</p>
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-red-800 mb-1">Upload Error</h3>
+            <p className="text-sm text-red-700">{apiError}</p>
+            {apiError.includes('Network error') && (
+              <p className="text-xs text-red-600 mt-2">
+                💡 Tip: Check your internet connection and ensure the server is running.
+              </p>
+            )}
+            {apiError.includes('401') && (
+              <p className="text-xs text-red-600 mt-2">
+                💡 Tip: Please log out and log back in to refresh your authentication.
+              </p>
+            )}
+            {apiError.includes('400') && (
+              <p className="text-xs text-red-600 mt-2">
+                💡 Tip: Please check all required fields are filled correctly.
+              </p>
+            )}
           </div>
         </div>
       )}

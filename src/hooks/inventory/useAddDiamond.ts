@@ -29,7 +29,7 @@ export function useAddDiamond(onSuccess?: () => void) {
       };
 
       // Match the exact FastAPI endpoint format
-      const diamondDataPayload = {
+      const diamondPayload = {
         stock: data.stockNumber || `MANUAL-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
         shape: data.shape === 'Round' ? "round brilliant" : (data.shape?.toLowerCase() || "round brilliant"),
         weight: Number(data.carat) || 1.0,
@@ -56,22 +56,30 @@ export function useAddDiamond(onSuccess?: () => void) {
       };
 
       // Remove undefined keys
-      Object.keys(diamondDataPayload).forEach(key => {
-        if (diamondDataPayload[key] === undefined) {
-          delete diamondDataPayload[key];
+      Object.keys(diamondPayload).forEach(key => {
+        if (diamondPayload[key] === undefined) {
+          delete diamondPayload[key];
         }
       });
       
-      console.log('➕ ADD: Sending diamond data to FastAPI:', diamondDataPayload);
+      console.log('➕ ADD: Sending diamond data to FastAPI:', diamondPayload);
       
       const endpoint = apiEndpoints.addDiamond(user.id);
       console.log('➕ ADD: Using endpoint:', endpoint);
       
-      const response = await api.post(endpoint, diamondDataPayload);
+      const response = await api.post(endpoint, diamondPayload);
       
-      // Check for API errors and throw them to be caught by the form
+      // Enhanced error handling for non-200 responses
       if (response.error) {
         console.error('❌ ADD: API error:', response.error);
+        
+        // Show detailed error message to user
+        toast({
+          title: "❌ Upload Failed",
+          description: `API Error: ${response.error}`,
+          variant: "destructive",
+        });
+        
         throw new Error(`API Error: ${response.error}`);
       }
 
@@ -79,25 +87,60 @@ export function useAddDiamond(onSuccess?: () => void) {
 
       // Only show success message if API call actually succeeded
       if (response.data) {
+        toast({
+          title: "✅ Success",
+          description: "Diamond has been added to your inventory successfully!",
+        });
+        
         if (onSuccess) onSuccess();
         return true;
       } else {
-        throw new Error("No data returned from API - the diamond may not have been saved");
+        const errorMsg = "No data returned from API - the diamond may not have been saved";
+        toast({
+          title: "❌ Upload Failed",
+          description: errorMsg,
+          variant: "destructive",
+        });
+        throw new Error(errorMsg);
       }
         
     } catch (apiError) {
       console.error('❌ ADD: API operation failed:', apiError);
       
-      // Check if it's a network error or API error
+      // Enhanced error handling with specific error messages
+      let errorMessage = "An unexpected error occurred";
+      let toastTitle = "❌ Upload Failed";
+      
       if (apiError instanceof Error) {
         if (apiError.message.includes('Failed to fetch') || apiError.message.includes('NetworkError')) {
-          throw new Error("Network error: Cannot connect to server. Please check your internet connection and try again.");
+          errorMessage = "Network error: Cannot connect to server. Please check your internet connection and try again.";
+          toastTitle = "🌐 Connection Error";
         } else if (apiError.message.includes('API Error:')) {
-          throw apiError; // Re-throw API errors as-is
+          errorMessage = apiError.message;
+          toastTitle = "🔴 Server Error";
+        } else if (apiError.message.includes('401')) {
+          errorMessage = "Authentication failed. Please log in again.";
+          toastTitle = "🔐 Authentication Error";
+        } else if (apiError.message.includes('403')) {
+          errorMessage = "Access denied. You don't have permission to perform this action.";
+          toastTitle = "🚫 Access Denied";
+        } else if (apiError.message.includes('400')) {
+          errorMessage = "Invalid data provided. Please check your input and try again.";
+          toastTitle = "📝 Invalid Data";
+        } else if (apiError.message.includes('500')) {
+          errorMessage = "Server internal error. Please try again later or contact support.";
+          toastTitle = "⚠️ Server Error";
         } else {
-          throw new Error(`Server error: ${apiError.message}`);
+          errorMessage = `Server error: ${apiError.message}`;
         }
       }
+      
+      // Show error toast to user
+      toast({
+        title: toastTitle,
+        description: errorMessage,
+        variant: "destructive",
+      });
       
       // Fallback to localStorage as last resort
       console.log('🔄 ADD: Falling back to localStorage...');
@@ -106,18 +149,18 @@ export function useAddDiamond(onSuccess?: () => void) {
         
         const newDiamond = {
           id: generateDiamondId(),
-          stockNumber: diamondDataPayload.stock,
-          shape: diamondDataPayload.shape,
-          carat: diamondDataPayload.weight,
-          color: diamondDataPayload.color,
-          clarity: diamondDataPayload.clarity,
-          cut: diamondDataPayload.cut,
-          price: diamondDataPayload.price_per_carat * diamondDataPayload.weight,
+          stockNumber: diamondPayload.stock,
+          shape: diamondPayload.shape,
+          carat: diamondPayload.weight,
+          color: diamondPayload.color,
+          clarity: diamondPayload.clarity,
+          cut: diamondPayload.cut,
+          price: diamondPayload.price_per_carat * diamondPayload.weight,
           status: 'Available',
           store_visible: true,
-          certificateNumber: diamondDataPayload.certificate_number.toString(),
-          certificateUrl: diamondDataPayload.picture,
-          lab: diamondDataPayload.lab,
+          certificateNumber: diamondPayload.certificate_number.toString(),
+          certificateUrl: diamondPayload.picture,
+          lab: diamondPayload.lab,
           user_id: user.id,
           created_at: new Date().toISOString()
         };
@@ -135,7 +178,15 @@ export function useAddDiamond(onSuccess?: () => void) {
         return true;
       } catch (localError) {
         console.error('❌ ADD: Local storage fallback failed:', localError);
-        throw new Error("Failed to save diamond both online and locally. Please try again.");
+        const fallbackError = "Failed to save diamond both online and locally. Please try again.";
+        
+        toast({
+          title: "❌ Complete Failure",
+          description: fallbackError,
+          variant: "destructive",
+        });
+        
+        throw new Error(fallbackError);
       }
     }
   };
