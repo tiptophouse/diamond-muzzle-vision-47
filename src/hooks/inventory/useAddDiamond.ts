@@ -12,7 +12,10 @@ export function useAddDiamond(onSuccess?: () => void) {
   const { sendInventoryAlert } = useTelegramAlerts();
 
   const addDiamond = async (data: DiamondFormData) => {
+    console.log('➕ ADD_DIAMOND: Starting addDiamond function with data:', JSON.stringify(data, null, 2));
+    
     if (!user?.id) {
+      console.log('❌ ADD_DIAMOND: No user ID found, user object:', user);
       toast({
         variant: "destructive",
         title: "Error",
@@ -21,11 +24,14 @@ export function useAddDiamond(onSuccess?: () => void) {
       return false;
     }
 
+    console.log('✅ ADD_DIAMOND: User authenticated with ID:', user.id);
+
     try {
-      console.log('📝 Processing form data:', data);
+      console.log('📝 ADD_DIAMOND: Processing form data:', data);
 
       // Validate required fields first
       if (!data.stockNumber?.trim()) {
+        console.log('❌ ADD_DIAMOND: Missing stock number');
         toast({
           variant: "destructive",
           title: "❌ Missing Required Field",
@@ -35,6 +41,7 @@ export function useAddDiamond(onSuccess?: () => void) {
       }
 
       if (!data.carat || data.carat <= 0) {
+        console.log('❌ ADD_DIAMOND: Invalid carat weight:', data.carat);
         toast({
           variant: "destructive",
           title: "❌ Missing Required Field", 
@@ -44,6 +51,7 @@ export function useAddDiamond(onSuccess?: () => void) {
       }
 
       if (!data.price || data.price <= 0) {
+        console.log('❌ ADD_DIAMOND: Invalid price:', data.price);
         toast({
           variant: "destructive",
           title: "❌ Missing Required Field",
@@ -52,10 +60,14 @@ export function useAddDiamond(onSuccess?: () => void) {
         return false;
       }
 
+      console.log('✅ ADD_DIAMOND: All required fields validated successfully');
+
       // Calculate price per carat from actual form data
       const actualPricePerCarat = data.pricePerCarat && data.pricePerCarat > 0 
         ? Number(data.pricePerCarat)
         : Math.round(Number(data.price) / Number(data.carat));
+
+      console.log('💰 ADD_DIAMOND: Calculated price per carat:', actualPricePerCarat);
 
       // Map form data to FastAPI format - using REAL data only
       const diamondDataPayload = {
@@ -96,25 +108,31 @@ export function useAddDiamond(onSuccess?: () => void) {
         picture: data.picture?.trim() || "",
       };
 
-      console.log('💎 Sending REAL diamond data to FastAPI:', diamondDataPayload);
+      console.log('💎 ADD_DIAMOND: Prepared diamond payload for API:', JSON.stringify(diamondDataPayload, null, 2));
       
-      console.log('➕ ADD: Sending diamond data to FastAPI:', diamondDataPayload);
+      console.log('➕ ADD_DIAMOND: Sending diamond data to FastAPI with user ID:', user.id);
       
       // Try FastAPI first
       try {
         const endpoint = apiEndpoints.addDiamond(user.id);
-        console.log('➕ ADD: Using endpoint:', endpoint);
+        console.log('🌐 ADD_DIAMOND: Using API endpoint:', endpoint);
         
+        console.log('📡 ADD_DIAMOND: Making POST request to FastAPI...');
         const response = await api.post(endpoint, diamondDataPayload);
         
+        console.log('📡 ADD_DIAMOND: FastAPI response received:', JSON.stringify(response, null, 2));
+        
         if (response.error) {
+          console.log('❌ ADD_DIAMOND: API returned error:', response.error);
           throw new Error(response.error);
         }
 
-        console.log('✅ ADD: FastAPI response:', response.data);
+        console.log('✅ ADD_DIAMOND: FastAPI response data:', response.data);
 
         // Only show success message if API call actually succeeded
         if (response.data) {
+          console.log('🎉 ADD_DIAMOND: API call successful, sending alerts and showing success message');
+          
           // Send Telegram alert
           sendInventoryAlert('added', diamondDataPayload);
           
@@ -123,22 +141,24 @@ export function useAddDiamond(onSuccess?: () => void) {
             description: "Your diamond has been added to inventory and is visible in dashboard, store, and inventory",
           });
           
+          console.log('🔄 ADD_DIAMOND: Calling onSuccess callback to refresh data');
           if (onSuccess) onSuccess();
           return true;
         } else {
+          console.log('❌ ADD_DIAMOND: No data in API response');
           throw new Error("No data returned from API");
         }
         
       } catch (apiError) {
-        console.error('❌ ADD: FastAPI add failed:', apiError);
-        console.error('❌ ADD: Full API error details:', JSON.stringify(apiError, null, 2));
+        console.error('❌ ADD_DIAMOND: FastAPI add failed with error:', apiError);
+        console.error('❌ ADD_DIAMOND: Full API error details:', JSON.stringify(apiError, null, 2));
         
         // Show specific error message
         const errorMessage = apiError instanceof Error ? apiError.message : "Failed to add diamond via API";
-        console.error('❌ ADD: Error message:', errorMessage);
+        console.error('❌ ADD_DIAMOND: Error message to show user:', errorMessage);
         
         // Fallback to localStorage
-        console.log('🔄 ADD: Falling back to localStorage...');
+        console.log('🔄 ADD_DIAMOND: API failed, falling back to localStorage...');
         const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
         
         // Convert to inventory format
@@ -160,6 +180,7 @@ export function useAddDiamond(onSuccess?: () => void) {
           created_at: new Date().toISOString()
         };
         
+        console.log('💾 ADD_DIAMOND: Saving to localStorage:', JSON.stringify(newDiamond, null, 2));
         existingData.push(newDiamond);
         localStorage.setItem('diamond_inventory', JSON.stringify(existingData));
         
@@ -169,16 +190,17 @@ export function useAddDiamond(onSuccess?: () => void) {
           variant: "default",
         });
         
+        console.log('🔄 ADD_DIAMOND: localStorage fallback complete, calling onSuccess callback');
         if (onSuccess) onSuccess();
         return true;
       }
       
     } catch (error) {
-      console.error('❌ ADD: Unexpected error:', error);
-      console.error('❌ ADD: Full unexpected error details:', JSON.stringify(error, null, 2));
+      console.error('❌ ADD_DIAMOND: Unexpected error in main try-catch:', error);
+      console.error('❌ ADD_DIAMOND: Full unexpected error details:', JSON.stringify(error, null, 2));
       
       const errorMessage = error instanceof Error ? error.message : "Failed to add diamond. Please try again.";
-      console.error('❌ ADD: Final error message:', errorMessage);
+      console.error('❌ ADD_DIAMOND: Final error message for user:', errorMessage);
       
       toast({
         variant: "destructive",
