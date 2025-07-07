@@ -2,7 +2,10 @@
 import { useState } from "react";
 import { useForm } from 'react-hook-form';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useInventoryCrud } from "@/hooks/useInventoryCrud";
@@ -10,13 +13,7 @@ import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
 import { Camera } from "lucide-react";
 import { UploadSuccessCard } from "./UploadSuccessCard";
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { DiamondDetailsSection } from './form/DiamondDetailsSection';
-import { CertificateSection } from './form/CertificateSection';
-import { MeasurementsSection } from './form/MeasurementsSection';
-import { DetailedGradingSection } from './form/DetailedGradingSection';
-import { BusinessInfoSection } from './form/BusinessInfoSection';
-import { ImageUploadSection } from './form/ImageUploadSection';
-import { FormActions } from './form/FormActions';
+import { shapes, colors, clarities, cuts, fluorescences, polishGrades, symmetryGrades, girdleTypes, culetGrades, labOptions, statuses } from '@/components/inventory/form/diamondFormConstants';
 import { useFormValidation } from './form/useFormValidation';
 
 export function SingleStoneUploadForm() {
@@ -182,85 +179,244 @@ export function SingleStoneUploadForm() {
 
   if (!user) {
     return (
-      <Card>
-        <CardContent className="pt-6 text-center">
-          <p className="text-muted-foreground">Please log in to add diamonds to your inventory.</p>
-        </CardContent>
-      </Card>
+      <div className="p-4 text-center">
+        <p className="text-muted-foreground">Please log in to add diamonds to your inventory.</p>
+      </div>
     );
   }
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Add Single Diamond</CardTitle>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsScanning(true)}
-              className="flex items-center gap-2"
-            >
-              <Camera className="h-4 w-4" />
-              Scan GIA Certificate
-            </Button>
+    <div className="p-4 space-y-4">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-xl font-semibold">Add Diamond</h1>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setIsScanning(true)}
+          className="flex items-center gap-2"
+        >
+          <Camera className="h-4 w-4" />
+          Scan
+        </Button>
+      </div>
+
+      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+        <div>
+          <Label htmlFor="stockNumber">Stock Number *</Label>
+          <Input
+            id="stockNumber"
+            {...register('stockNumber', { required: 'Stock number is required' })}
+            placeholder="Enter stock number"
+          />
+          {errors.stockNumber && (
+            <p className="text-sm text-red-600 mt-1">{errors.stockNumber.message}</p>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="shape">Shape</Label>
+          <Select onValueChange={(value) => setValue('shape', value)} value={watch('shape')}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select shape" />
+            </SelectTrigger>
+            <SelectContent>
+              {shapes.map((shape) => (
+                <SelectItem key={shape} value={shape}>{shape}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="carat">Carat Weight *</Label>
+          <Input
+            id="carat"
+            type="number"
+            step="0.01"
+            {...register('carat', { 
+              required: 'Carat is required',
+              min: { value: 0.01, message: 'Carat must be greater than 0' }
+            })}
+            placeholder="Enter carat weight"
+          />
+          {errors.carat && (
+            <p className="text-sm text-red-600 mt-1">{errors.carat.message}</p>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="color">Color</Label>
+          <Select onValueChange={(value) => setValue('color', value)} value={watch('color')}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select color" />
+            </SelectTrigger>
+            <SelectContent>
+              {colors.map((color) => (
+                <SelectItem key={color} value={color}>{color}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="clarity">Clarity</Label>
+          <Select onValueChange={(value) => setValue('clarity', value)} value={watch('clarity')}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select clarity" />
+            </SelectTrigger>
+            <SelectContent>
+              {clarities.map((clarity) => (
+                <SelectItem key={clarity} value={clarity}>{clarity}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {showCutField && (
+          <div>
+            <Label htmlFor="cut">Cut</Label>
+            <Select onValueChange={(value) => setValue('cut', value)} value={watch('cut')}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select cut" />
+              </SelectTrigger>
+              <SelectContent>
+                {cuts.map((cut) => (
+                  <SelectItem key={cut} value={cut}>{cut}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-            <DiamondDetailsSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
+        )}
 
-            <CertificateSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
+        <div>
+          <Label htmlFor="price">Price (USD) *</Label>
+          <Input
+            id="price"
+            type="number"
+            {...register('price', { 
+              required: 'Price is required',
+              min: { value: 1, message: 'Price must be greater than 0' }
+            })}
+            placeholder="Enter price"
+          />
+          {errors.price && (
+            <p className="text-sm text-red-600 mt-1">{errors.price.message}</p>
+          )}
+        </div>
 
-            <MeasurementsSection
-              register={register}
-              watch={watch}
-              errors={errors}
-            />
+        <div>
+          <Label htmlFor="certificateNumber">Certificate Number</Label>
+          <Input
+            id="certificateNumber"
+            {...register('certificateNumber')}
+            placeholder="Enter certificate number"
+          />
+        </div>
 
-            <DetailedGradingSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
+        <div>
+          <Label htmlFor="lab">Laboratory</Label>
+          <Select onValueChange={(value) => setValue('lab', value)} value={watch('lab')}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select lab" />
+            </SelectTrigger>
+            <SelectContent>
+              {labOptions.map((lab) => (
+                <SelectItem key={lab} value={lab}>{lab}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-            <BusinessInfoSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
+        <div>
+          <Label htmlFor="fluorescence">Fluorescence</Label>
+          <Select onValueChange={(value) => setValue('fluorescence', value)} value={watch('fluorescence')}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select fluorescence" />
+            </SelectTrigger>
+            <SelectContent>
+              {fluorescences.map((fluor) => (
+                <SelectItem key={fluor} value={fluor}>{fluor}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-            <ImageUploadSection
-              setValue={setValue}
-              watch={watch}
-            />
+        <div>
+          <Label htmlFor="polish">Polish</Label>
+          <Select onValueChange={(value) => setValue('polish', value)} value={watch('polish')}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select polish" />
+            </SelectTrigger>
+            <SelectContent>
+              {polishGrades.map((polish) => (
+                <SelectItem key={polish} value={polish}>{polish}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-            <FormActions
-              onReset={resetForm}
-              isLoading={isLoading}
-            />
-          </form>
-        </CardContent>
-      </Card>
+        <div>
+          <Label htmlFor="symmetry">Symmetry</Label>
+          <Select onValueChange={(value) => setValue('symmetry', value)} value={watch('symmetry')}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select symmetry" />
+            </SelectTrigger>
+            <SelectContent>
+              {symmetryGrades.map((symmetry) => (
+                <SelectItem key={symmetry} value={symmetry}>{symmetry}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="status">Status</Label>
+          <Select onValueChange={(value) => setValue('status', value)} value={watch('status')}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              {statuses.map((status) => (
+                <SelectItem key={status} value={status}>{status}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="storeVisible"
+            checked={watch('storeVisible') || false}
+            onCheckedChange={(checked) => setValue('storeVisible', checked)}
+          />
+          <Label htmlFor="storeVisible">Visible in store</Label>
+        </div>
+
+        <div className="flex gap-3 pt-4">
+          <Button 
+            type="button"
+            variant="outline" 
+            onClick={resetForm}
+            disabled={isLoading}
+            className="flex-1"
+          >
+            Reset
+          </Button>
+          <Button 
+            type="submit"
+            disabled={isLoading}
+            className="flex-1"
+          >
+            {isLoading ? "Adding..." : "Add Diamond"}
+          </Button>
+        </div>
+      </form>
 
       <QRCodeScanner
         isOpen={isScanning}
         onClose={() => setIsScanning(false)}
         onScanSuccess={handleGiaScanSuccess}
       />
-    </>
+    </div>
   );
 }
