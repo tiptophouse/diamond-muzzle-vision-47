@@ -23,8 +23,17 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
 
   const successHandler = () => {
     console.log('🔄 CRUD: Operation successful, triggering inventory change...');
+    console.log('🔄 CRUD: About to call triggerInventoryChange()');
     triggerInventoryChange();
-    if (onSuccess) onSuccess();
+    console.log('🔄 CRUD: triggerInventoryChange() called');
+    
+    if (onSuccess) {
+      console.log('🔄 CRUD: Calling provided onSuccess callback...');
+      onSuccess();
+      console.log('✅ CRUD: onSuccess callback completed');
+    } else {
+      console.log('⚠️ CRUD: No onSuccess callback provided');
+    }
   };
 
   const { addDiamond: addDiamondFn } = useAddDiamond(successHandler);

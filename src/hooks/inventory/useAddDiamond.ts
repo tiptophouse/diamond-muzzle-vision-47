@@ -122,6 +122,7 @@ export function useAddDiamond(onSuccess?: () => void) {
         // Only show success message if API call actually succeeded
         if (response.data) {
           console.log('🎉 ADD_DIAMOND: API call successful, sending alerts and showing success message');
+          console.log('🎉 ADD_DIAMOND: Response data details:', JSON.stringify(response.data, null, 2));
           
           // Send Telegram alert
           sendInventoryAlert('added', diamondDataPayload);
@@ -132,10 +133,17 @@ export function useAddDiamond(onSuccess?: () => void) {
           });
           
           console.log('🔄 ADD_DIAMOND: Calling onSuccess callback to refresh data');
-          if (onSuccess) onSuccess();
+          console.log('🔄 ADD_DIAMOND: This should trigger dashboard refresh...');
+          if (onSuccess) {
+            onSuccess();
+            console.log('✅ ADD_DIAMOND: onSuccess callback executed');
+          } else {
+            console.log('⚠️ ADD_DIAMOND: No onSuccess callback provided!');
+          }
           return true;
         } else {
           console.log('❌ ADD_DIAMOND: No data in API response');
+          console.log('❌ ADD_DIAMOND: Full response object:', JSON.stringify(response, null, 2));
           throw new Error("No data returned from API");
         }
         
