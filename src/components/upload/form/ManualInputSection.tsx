@@ -2,9 +2,9 @@
 import React from 'react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'react-hook-form';
 import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
-import { DiamondSelectField } from '@/components/inventory/form/DiamondSelectField';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { statuses } from '@/components/inventory/form/diamondFormConstants';
+import { Label } from '@/components/ui/label';
 
 interface ManualInputSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -33,13 +33,20 @@ export function ManualInputSection({ register, setValue, watch, errors }: Manual
           errors={errors}
         />
 
-        <DiamondSelectField
-          id="status"
-          label="Status"
-          value={watch('status') || 'Available'}
-          onValueChange={(value) => setValue('status', value)}
-          options={statuses}
-        />
+        <div>
+          <Label htmlFor="status">Status</Label>
+          <select
+            id="status"
+            {...register('status')}
+            className="w-full h-10 px-3 py-2 text-sm bg-background border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+          >
+            {statuses.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div className="md:col-span-2">
           <DiamondInputField
