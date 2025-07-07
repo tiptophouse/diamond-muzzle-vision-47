@@ -171,16 +171,13 @@ export function BasicDetailsTab({ register, setValue, watch, errors, showCutFiel
         {/* Fluorescence */}
         <div className="space-y-2">
           <Label htmlFor="fluorescence" className="text-sm font-medium">Fluorescence</Label>
-          <Select value={watch('fluorescence') || 'None'} onValueChange={(value) => setValue('fluorescence', value)}>
+          <Select value={watch('fluorescence') || 'No'} onValueChange={(value) => setValue('fluorescence', value)}>
             <SelectTrigger type="button">
               <SelectValue placeholder="Select fluorescence" />
             </SelectTrigger>
             <SelectContent>
-              {fluorescences.map((fluorescence) => (
-                <SelectItem key={fluorescence} value={fluorescence}>
-                  {fluorescence}
-                </SelectItem>
-              ))}
+              <SelectItem value="No">No</SelectItem>
+              <SelectItem value="Yes">Yes</SelectItem>
             </SelectContent>
           </Select>
         </div>
