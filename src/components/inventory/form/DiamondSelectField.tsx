@@ -31,6 +31,8 @@ export function DiamondSelectField({
           className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto"
           position="popper"
           sideOffset={4}
+          align="start"
+          avoidCollisions={true}
         >
           {options.map((option) => (
             <SelectItem 
