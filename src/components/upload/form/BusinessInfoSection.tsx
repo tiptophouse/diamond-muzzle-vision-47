@@ -2,11 +2,11 @@
 import React from 'react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'react-hook-form';
 import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
-import { DiamondSelectField } from '@/components/inventory/form/DiamondSelectField';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { statuses } from '@/components/inventory/form/diamondFormConstants';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { MobileButtonSelector } from '@/components/ui/MobileButtonSelector';
 
 interface BusinessInfoSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -66,12 +66,13 @@ export function BusinessInfoSection({ register, setValue, watch, errors }: Busin
           errors={errors}
         />
 
-        <DiamondSelectField
+        <MobileButtonSelector
           id="status"
           label="Inventory Status"
           value={watch('status') || 'Available'}
           onValueChange={(value) => setValue('status', value)}
           options={statuses}
+          columns={2}
         />
 
         <div className="md:col-span-2 flex items-center space-x-2">

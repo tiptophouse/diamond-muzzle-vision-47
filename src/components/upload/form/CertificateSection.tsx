@@ -4,8 +4,7 @@ import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'rea
 import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { labOptions } from '@/components/inventory/form/diamondFormConstants';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MobileSearchSelector } from '@/components/ui/MobileSearchSelector';
 
 interface CertificateSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -31,23 +30,15 @@ export function CertificateSection({ register, setValue, watch, errors }: Certif
           errors={errors}
         />
 
-        <div className="space-y-2">
-          <Label htmlFor="lab" className="text-sm font-medium text-foreground">
-            Grading Laboratory
-          </Label>
-          <Select value={watch('lab') || 'GIA'} onValueChange={(value) => setValue('lab', value)}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select laboratory" />
-            </SelectTrigger>
-            <SelectContent>
-              {labOptions.map((lab) => (
-                <SelectItem key={lab} value={lab}>
-                  {lab}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <MobileSearchSelector
+          id="lab"
+          label="Grading Laboratory"
+          value={watch('lab') || 'GIA'}
+          onValueChange={(value) => setValue('lab', value)}
+          options={labOptions}
+          placeholder="Select laboratory"
+          searchPlaceholder="Search laboratories..."
+        />
 
         <div className="md:col-span-2">
           <DiamondInputField
