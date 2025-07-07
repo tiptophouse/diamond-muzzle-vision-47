@@ -2,9 +2,10 @@
 import React from 'react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'react-hook-form';
 import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
-import { ModernSelectField } from '@/components/inventory/form/ModernSelectField';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { shapes, colors, clarities, cuts, fluorescences, polishGrades, symmetryGrades } from '@/components/inventory/form/diamondFormConstants';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface DiamondDetailsSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -18,9 +19,11 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
   const showCutField = currentShape === 'Round';
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">Diamond Details</h3>
-      <p className="text-sm text-gray-600">These fields can be auto-filled by scanning a GIA certificate</p>
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold text-foreground">Diamond Details</h3>
+        <p className="text-sm text-muted-foreground">These fields can be auto-filled by scanning a GIA certificate</p>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <DiamondInputField
@@ -32,13 +35,23 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           errors={errors}
         />
 
-        <ModernSelectField
-          id="shape"
-          label="Shape"
-          value={watch('shape') || 'Round'}
-          onValueChange={(value) => setValue('shape', value)}
-          options={shapes}
-        />
+        <div className="space-y-2">
+          <Label htmlFor="shape" className="text-sm font-medium text-foreground">
+            Shape
+          </Label>
+          <Select value={watch('shape') || 'Round'} onValueChange={(value) => setValue('shape', value)}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select shape" />
+            </SelectTrigger>
+            <SelectContent>
+              {shapes.map((shape) => (
+                <SelectItem key={shape} value={shape}>
+                  {shape}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         <DiamondInputField
           id="carat"
@@ -54,55 +67,115 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           errors={errors}
         />
 
-        <ModernSelectField
-          id="color"
-          label="Color Grade"
-          value={watch('color') || 'G'}
-          onValueChange={(value) => setValue('color', value)}
-          options={colors}
-        />
+        <div className="space-y-2">
+          <Label htmlFor="color" className="text-sm font-medium text-foreground">
+            Color Grade
+          </Label>
+          <Select value={watch('color') || 'G'} onValueChange={(value) => setValue('color', value)}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select color" />
+            </SelectTrigger>
+            <SelectContent>
+              {colors.map((color) => (
+                <SelectItem key={color} value={color}>
+                  {color}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <ModernSelectField
-          id="clarity"
-          label="Clarity Grade"
-          value={watch('clarity') || 'VS1'}
-          onValueChange={(value) => setValue('clarity', value)}
-          options={clarities}
-        />
+        <div className="space-y-2">
+          <Label htmlFor="clarity" className="text-sm font-medium text-foreground">
+            Clarity Grade
+          </Label>
+          <Select value={watch('clarity') || 'VS1'} onValueChange={(value) => setValue('clarity', value)}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select clarity" />
+            </SelectTrigger>
+            <SelectContent>
+              {clarities.map((clarity) => (
+                <SelectItem key={clarity} value={clarity}>
+                  {clarity}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {showCutField && (
-          <ModernSelectField
-            id="cut"
-            label="Cut Grade"
-            value={watch('cut') || 'Excellent'}
-            onValueChange={(value) => setValue('cut', value)}
-            options={cuts}
-          />
+          <div className="space-y-2">
+            <Label htmlFor="cut" className="text-sm font-medium text-foreground">
+              Cut Grade
+            </Label>
+            <Select value={watch('cut') || 'Excellent'} onValueChange={(value) => setValue('cut', value)}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select cut" />
+              </SelectTrigger>
+              <SelectContent>
+                {cuts.map((cut) => (
+                  <SelectItem key={cut} value={cut}>
+                    {cut}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         )}
 
-        <ModernSelectField
-          id="fluorescence"
-          label="Fluorescence"
-          value={watch('fluorescence') || 'None'}
-          onValueChange={(value) => setValue('fluorescence', value)}
-          options={fluorescences}
-        />
+        <div className="space-y-2">
+          <Label htmlFor="fluorescence" className="text-sm font-medium text-foreground">
+            Fluorescence
+          </Label>
+          <Select value={watch('fluorescence') || 'None'} onValueChange={(value) => setValue('fluorescence', value)}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select fluorescence" />
+            </SelectTrigger>
+            <SelectContent>
+              {fluorescences.map((fluorescence) => (
+                <SelectItem key={fluorescence} value={fluorescence}>
+                  {fluorescence}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <ModernSelectField
-          id="polish"
-          label="Polish"
-          value={watch('polish') || 'Excellent'}
-          onValueChange={(value) => setValue('polish', value)}
-          options={polishGrades}
-        />
+        <div className="space-y-2">
+          <Label htmlFor="polish" className="text-sm font-medium text-foreground">
+            Polish
+          </Label>
+          <Select value={watch('polish') || 'Excellent'} onValueChange={(value) => setValue('polish', value)}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select polish" />
+            </SelectTrigger>
+            <SelectContent>
+              {polishGrades.map((polish) => (
+                <SelectItem key={polish} value={polish}>
+                  {polish}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <ModernSelectField
-          id="symmetry"
-          label="Symmetry"
-          value={watch('symmetry') || 'Excellent'}
-          onValueChange={(value) => setValue('symmetry', value)}
-          options={symmetryGrades}
-        />
+        <div className="space-y-2">
+          <Label htmlFor="symmetry" className="text-sm font-medium text-foreground">
+            Symmetry
+          </Label>
+          <Select value={watch('symmetry') || 'Excellent'} onValueChange={(value) => setValue('symmetry', value)}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select symmetry" />
+            </SelectTrigger>
+            <SelectContent>
+              {symmetryGrades.map((symmetry) => (
+                <SelectItem key={symmetry} value={symmetry}>
+                  {symmetry}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </div>
   );
