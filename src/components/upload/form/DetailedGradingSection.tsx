@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'react-hook-form';
+import { ModernSelectField } from '@/components/inventory/form/ModernSelectField';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { 
   fluorescences, 
@@ -9,7 +10,6 @@ import {
   girdleTypes, 
   culetGrades 
 } from '@/components/inventory/form/diamondFormConstants';
-import { Label } from '@/components/ui/label';
 
 interface DetailedGradingSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -25,80 +25,45 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
       <p className="text-sm text-gray-600">Professional grading details from certificate</p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div>
-          <Label htmlFor="fluorescence">Fluorescence</Label>
-          <select
-            id="fluorescence"
-            {...register('fluorescence')}
-            className="w-full h-10 px-3 py-2 text-sm bg-background border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-          >
-            {fluorescences.map((fluorescence) => (
-              <option key={fluorescence} value={fluorescence}>
-                {fluorescence}
-              </option>
-            ))}
-          </select>
-        </div>
+        <ModernSelectField
+          id="fluorescence"
+          label="Fluorescence"
+          value={watch('fluorescence') || 'None'}
+          onValueChange={(value) => setValue('fluorescence', value)}
+          options={fluorescences}
+        />
 
-        <div>
-          <Label htmlFor="polish">Polish</Label>
-          <select
-            id="polish"
-            {...register('polish')}
-            className="w-full h-10 px-3 py-2 text-sm bg-background border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-          >
-            {polishGrades.map((polish) => (
-              <option key={polish} value={polish}>
-                {polish}
-              </option>
-            ))}
-          </select>
-        </div>
+        <ModernSelectField
+          id="polish"
+          label="Polish"
+          value={watch('polish') || 'Excellent'}
+          onValueChange={(value) => setValue('polish', value)}
+          options={polishGrades}
+        />
 
-        <div>
-          <Label htmlFor="symmetry">Symmetry</Label>
-          <select
-            id="symmetry"
-            {...register('symmetry')}
-            className="w-full h-10 px-3 py-2 text-sm bg-background border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-          >
-            {symmetryGrades.map((symmetry) => (
-              <option key={symmetry} value={symmetry}>
-                {symmetry}
-              </option>
-            ))}
-          </select>
-        </div>
+        <ModernSelectField
+          id="symmetry"
+          label="Symmetry"
+          value={watch('symmetry') || 'Excellent'}
+          onValueChange={(value) => setValue('symmetry', value)}
+          options={symmetryGrades}
+        />
 
-        <div>
-          <Label htmlFor="gridle">Girdle</Label>
-          <select
-            id="gridle"
-            {...register('gridle')}
-            className="w-full h-10 px-3 py-2 text-sm bg-background border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-          >
-            {girdleTypes.map((girdle) => (
-              <option key={girdle} value={girdle}>
-                {girdle}
-              </option>
-            ))}
-          </select>
-        </div>
+        <ModernSelectField
+          id="gridle"
+          label="Girdle"
+          value={watch('gridle') || 'Medium'}
+          onValueChange={(value) => setValue('gridle', value)}
+          options={girdleTypes}
+        />
 
-        <div>
-          <Label htmlFor="culet">Culet</Label>
-          <select
-            id="culet"
-            {...register('culet')}
-            className="w-full h-10 px-3 py-2 text-sm bg-background border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-          >
-            {culetGrades.map((culet) => (
-              <option key={culet} value={culet}>
-                {culet}
-              </option>
-            ))}
-          </select>
-        </div>
+        <ModernSelectField
+          id="culet"
+          label="Culet"
+          value={watch('culet') || 'None'}
+          onValueChange={(value) => setValue('culet', value)}
+          options={culetGrades}
+        />
       </div>
     </div>
   );

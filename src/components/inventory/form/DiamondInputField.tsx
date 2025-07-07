@@ -26,6 +26,14 @@ export function DiamondInputField({
   validation = {}, 
   errors 
 }: DiamondInputFieldProps) {
+  // Handle number field transformation
+  const registerOptions = type === 'number' 
+    ? {
+        ...validation,
+        setValueAs: (value: string) => value === '' ? 0 : Number(value)
+      }
+    : validation;
+
   return (
     <div>
       <Label htmlFor={id}>{label}</Label>
@@ -33,7 +41,7 @@ export function DiamondInputField({
         id={id}
         type={type}
         step={step}
-        {...register(id, validation)}
+        {...register(id, registerOptions)}
         placeholder={placeholder}
       />
       {errors[id] && (

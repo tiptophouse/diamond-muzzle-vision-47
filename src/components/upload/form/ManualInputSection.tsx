@@ -2,9 +2,8 @@
 import React from 'react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'react-hook-form';
 import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
+import { ModernSelectField } from '@/components/inventory/form/ModernSelectField';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { statuses } from '@/components/inventory/form/diamondFormConstants';
-import { Label } from '@/components/ui/label';
 
 interface ManualInputSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -15,47 +14,37 @@ interface ManualInputSectionProps {
 
 export function ManualInputSection({ register, setValue, watch, errors }: ManualInputSectionProps) {
   return (
-    <div className="space-y-4 border-t pt-6">
-      <h3 className="text-lg font-semibold text-gray-900">Manual Input Required</h3>
-      <p className="text-sm text-gray-600">These fields must be filled manually</p>
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-gray-900">Manual Entry</h3>
+      <p className="text-sm text-gray-600">Enter diamond details manually</p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <DiamondInputField
-          id="price"
-          label="Price (USD) *"
+          id="price_per_carat"
+          label="Price per Carat ($)"
           type="number"
-          placeholder="Enter price in USD"
+          placeholder="Enter price per carat"
           register={register}
           validation={{ 
-            required: 'Price is required',
-            min: { value: 1, message: 'Price must be greater than 0' }
+            required: 'Price per carat is required',
+            min: { value: 0.01, message: 'Price must be greater than 0' }
           }}
           errors={errors}
         />
 
         <div>
-          <Label htmlFor="status">Status</Label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Diamond Status
+          </label>
           <select
-            id="status"
-            {...register('status')}
-            className="w-full h-10 px-3 py-2 text-sm bg-background border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+            {...register('picture')}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {statuses.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
+            <option value="">Select status</option>
+            <option value="Available">Available</option>
+            <option value="Reserved">Reserved</option>
+            <option value="Sold">Sold</option>
           </select>
-        </div>
-
-        <div className="md:col-span-2">
-          <DiamondInputField
-            id="picture"
-            label="Stone Image URL (Optional)"
-            placeholder="Enter image URL or upload separately"
-            register={register}
-            errors={errors}
-          />
         </div>
       </div>
     </div>

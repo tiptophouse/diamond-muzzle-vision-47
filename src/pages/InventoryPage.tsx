@@ -1,4 +1,3 @@
-
 import { Layout } from "@/components/layout/Layout";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -48,10 +47,38 @@ export default function InventoryPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingDiamond, setEditingDiamond] = useState<Diamond | null>(null);
   const [showAddSuccess, setShowAddSuccess] = useState(false);
+  const [isAddingDiamond, setIsAddingDiamond] = useState(false);
 
-  const handleEdit = (diamond: Diamond) => {
-    console.log('📝 Edit diamond clicked:', diamond.stockNumber);
-    setEditingDiamond(diamond);
+  const handleEdit = (diamond: any) => {
+    const formData: DiamondFormData = {
+      stock: diamond.stockNumber || diamond.stock || '',
+      shape: diamond.shape || '',
+      weight: diamond.carat || diamond.weight || 0,
+      color: diamond.color || '',
+      clarity: diamond.clarity || '',
+      cut: diamond.cut || '',
+      polish: diamond.polish || 'Excellent',
+      symmetry: diamond.symmetry || 'Excellent',
+      fluorescence: diamond.fluorescence || 'None',
+      price_per_carat: diamond.price_per_carat || (diamond.price && diamond.carat ? diamond.price / diamond.carat : 0),
+      picture: diamond.picture || '',
+      certificate_number: parseInt(diamond.certificateNumber || diamond.certificate_number || '0') || 0,
+      certificate_comment: diamond.certificateComment || diamond.certificate_comment || '',
+      lab: diamond.lab || 'GIA',
+      length: diamond.length || 0,
+      width: diamond.width || 0,
+      depth: diamond.depth || 0,
+      ratio: diamond.ratio || 0,
+      table: diamond.table || 0,
+      depth_percentage: diamond.depth_percentage || 0,
+      gridle: diamond.gridle || 'Medium',
+      culet: diamond.culet || 'None',
+      rapnet: diamond.rapnet || 0,
+    };
+    
+    console.log('📝 INVENTORY: Opening edit form with data:', formData);
+    setEditingDiamond(formData);
+    setIsAddingDiamond(true);
   };
 
   const handleDelete = async (diamondId: string) => {

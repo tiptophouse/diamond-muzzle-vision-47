@@ -78,7 +78,7 @@ export function MeasurementsSection({ register, watch, errors }: MeasurementsSec
         />
 
         <DiamondInputField
-          id="tablePercentage"
+          id="table"
           label="Table %"
           type="number"
           step="0.1"
@@ -92,7 +92,7 @@ export function MeasurementsSection({ register, watch, errors }: MeasurementsSec
         />
 
         <DiamondInputField
-          id="depthPercentage"
+          id="depth_percentage"
           label="Depth %"
           type="number"
           step="0.1"
