@@ -96,11 +96,9 @@ export function ImageUploadSection({ setValue, watch }: ImageUploadSectionProps)
   };
 
   return (
-    <div className="space-y-6 border-t pt-6">
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold text-foreground">Diamond Image</h3>
-        <p className="text-sm text-muted-foreground">Upload a high-quality image of the diamond</p>
-      </div>
+    <div className="space-y-4 border-t pt-6">
+      <h3 className="text-lg font-semibold text-gray-900">Diamond Image</h3>
+      <p className="text-sm text-gray-600">Upload a high-quality image of the diamond</p>
       
       <div className="space-y-4">
         {imagePreview ? (
@@ -108,7 +106,7 @@ export function ImageUploadSection({ setValue, watch }: ImageUploadSectionProps)
             <img
               src={imagePreview}
               alt="Diamond preview"
-              className="w-32 h-32 object-cover rounded-lg border border-border"
+              className="w-32 h-32 object-cover rounded-lg border border-gray-200"
             />
             <Button
               type="button"
@@ -121,8 +119,8 @@ export function ImageUploadSection({ setValue, watch }: ImageUploadSectionProps)
             </Button>
           </div>
         ) : (
-          <div className="flex items-center justify-center w-32 h-32 border-2 border-dashed border-border rounded-lg">
-            <Image className="h-8 w-8 text-muted-foreground" />
+          <div className="flex items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg">
+            <Image className="h-8 w-8 text-gray-400" />
           </div>
         )}
 
