@@ -1,11 +1,6 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from 'react-hook-form';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useInventoryCrud } from "@/hooks/useInventoryCrud";
@@ -15,6 +10,8 @@ import { UploadSuccessCard } from "./UploadSuccessCard";
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { shapes, colors, clarities, cuts, fluorescences, polishGrades, symmetryGrades, girdleTypes, culetGrades, labOptions, statuses } from '@/components/inventory/form/diamondFormConstants';
 import { useFormValidation } from './form/useFormValidation';
+import { MobileSelectField } from './form/MobileSelectField';
+import { MobileInputField } from './form/MobileInputField';
 
 export function SingleStoneUploadForm() {
   const { toast } = useToast();
@@ -25,6 +22,17 @@ export function SingleStoneUploadForm() {
     onSuccess: () => {
       console.log('✅ Diamond added successfully, showing success card');
       setUploadSuccess(true);
+      toast({
+        title: "✅ Success",
+        description: "Diamond has been added to your inventory",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "❌ Upload Failed",
+        description: "Failed to add diamond to inventory. Please try again.",
+        variant: "destructive",
+      });
     }
   });
 
@@ -51,10 +59,25 @@ export function SingleStoneUploadForm() {
 
   const { validateFormData, formatFormData } = useFormValidation();
 
+  // Prevent body scroll when selects are open
+  useEffect(() => {
+    const handleTouchMove = (e: TouchEvent) => {
+      const target = e.target as Element;
+      if (target.closest('[aria-expanded="true"]')) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    
+    return () => {
+      document.removeEventListener('touchmove', handleTouchMove);
+    };
+  }, []);
+
   const handleGiaScanSuccess = (giaData: any) => {
     console.log('GIA data received:', giaData);
     
-    // Comprehensive mapping of all GIA data fields including certificate URL
     if (giaData.stock) setValue('stockNumber', giaData.stock);
     if (giaData.shape) setValue('shape', giaData.shape);
     if (giaData.weight) setValue('carat', Number(giaData.weight));
@@ -78,7 +101,6 @@ export function SingleStoneUploadForm() {
     if (giaData.rapnet) setValue('rapnet', Number(giaData.rapnet));
     if (giaData.picture) setValue('picture', giaData.picture);
     
-    // Handle certificate URL from uploaded certificate image
     if (giaData.certificate_url || giaData.certificateUrl) {
       setValue('certificateUrl', giaData.certificate_url || giaData.certificateUrl);
       console.log('Certificate image uploaded to:', giaData.certificate_url || giaData.certificateUrl);
@@ -121,17 +143,7 @@ export function SingleStoneUploadForm() {
     const formattedData = formatFormData(data, showCutField);
     console.log('🔍 UPLOAD: Calling addDiamond with:', formattedData);
     
-    addDiamond(formattedData).then(success => {
-      console.log('🔍 UPLOAD: addDiamond result:', success);
-      
-      if (!success) {
-        toast({
-          title: "❌ Upload Failed",
-          description: "Failed to add diamond to inventory. Please try again.",
-          variant: "destructive",
-        });
-      }
-    });
+    addDiamond(formattedData);
   };
 
   const resetForm = () => {
@@ -155,7 +167,6 @@ export function SingleStoneUploadForm() {
     });
   };
 
-  // Show success card after successful upload
   if (uploadSuccess) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-4">
@@ -186,226 +197,155 @@ export function SingleStoneUploadForm() {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-6 pb-24">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold">Add Diamond</h1>
+        <h1 className="text-2xl font-bold">Add Diamond</h1>
         <Button
           type="button"
           variant="outline"
           onClick={() => setIsScanning(true)}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 h-12 px-4"
         >
-          <Camera className="h-4 w-4" />
+          <Camera className="h-5 w-5" />
           Scan
         </Button>
       </div>
 
-      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-        <div>
-          <Label htmlFor="stockNumber">Stock Number *</Label>
-          <Input
-            id="stockNumber"
-            {...register('stockNumber', { required: 'Stock number is required' })}
-            placeholder="Enter stock number"
-          />
-          {errors.stockNumber && (
-            <p className="text-sm text-red-600 mt-1">{errors.stockNumber.message}</p>
-          )}
-        </div>
+      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+        <MobileInputField
+          id="stockNumber"
+          label="Stock Number *"
+          type="text"
+          placeholder="Enter stock number"
+          register={register}
+          errors={errors}
+          validation={{ required: 'Stock number is required' }}
+        />
 
-        <div>
-          <Label htmlFor="shape">Shape</Label>
-          <Select onValueChange={(value) => setValue('shape', value)} value={watch('shape')}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select shape" />
-            </SelectTrigger>
-            <SelectContent>
-              {shapes.map((shape) => (
-                <SelectItem key={shape} value={shape}>{shape}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <MobileSelectField
+          id="shape"
+          label="Shape"
+          value={watch('shape')}
+          options={shapes}
+          onValueChange={(value) => setValue('shape', value)}
+        />
 
-        <div>
-          <Label htmlFor="carat">Carat Weight *</Label>
-          <Input
-            id="carat"
-            type="number"
-            step="0.01"
-            {...register('carat', { 
-              required: 'Carat is required',
-              min: { value: 0.01, message: 'Carat must be greater than 0' }
-            })}
-            placeholder="Enter carat weight"
-          />
-          {errors.carat && (
-            <p className="text-sm text-red-600 mt-1">{errors.carat.message}</p>
-          )}
-        </div>
+        <MobileInputField
+          id="carat"
+          label="Carat Weight *"
+          type="number"
+          step="0.01"
+          placeholder="Enter carat weight"
+          register={register}
+          errors={errors}
+          validation={{ 
+            required: 'Carat is required',
+            min: { value: 0.01, message: 'Carat must be greater than 0' }
+          }}
+        />
 
-        <div>
-          <Label htmlFor="color">Color</Label>
-          <Select onValueChange={(value) => setValue('color', value)} value={watch('color')}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select color" />
-            </SelectTrigger>
-            <SelectContent>
-              {colors.map((color) => (
-                <SelectItem key={color} value={color}>{color}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <MobileSelectField
+          id="color"
+          label="Color"
+          value={watch('color')}
+          options={colors}
+          onValueChange={(value) => setValue('color', value)}
+        />
 
-        <div>
-          <Label htmlFor="clarity">Clarity</Label>
-          <Select onValueChange={(value) => setValue('clarity', value)} value={watch('clarity')}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select clarity" />
-            </SelectTrigger>
-            <SelectContent>
-              {clarities.map((clarity) => (
-                <SelectItem key={clarity} value={clarity}>{clarity}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <MobileSelectField
+          id="clarity"
+          label="Clarity"
+          value={watch('clarity')}
+          options={clarities}
+          onValueChange={(value) => setValue('clarity', value)}
+        />
 
         {showCutField && (
-          <div>
-            <Label htmlFor="cut">Cut</Label>
-            <Select onValueChange={(value) => setValue('cut', value)} value={watch('cut')}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select cut" />
-              </SelectTrigger>
-              <SelectContent>
-                {cuts.map((cut) => (
-                  <SelectItem key={cut} value={cut}>{cut}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <MobileSelectField
+            id="cut"
+            label="Cut"
+            value={watch('cut')}
+            options={cuts}
+            onValueChange={(value) => setValue('cut', value)}
+          />
         )}
 
-        <div>
-          <Label htmlFor="price">Price (USD) *</Label>
-          <Input
-            id="price"
-            type="number"
-            {...register('price', { 
-              required: 'Price is required',
-              min: { value: 1, message: 'Price must be greater than 0' }
-            })}
-            placeholder="Enter price"
-          />
-          {errors.price && (
-            <p className="text-sm text-red-600 mt-1">{errors.price.message}</p>
-          )}
-        </div>
+        <MobileInputField
+          id="price"
+          label="Price (USD) *"
+          type="number"
+          placeholder="Enter price"
+          register={register}
+          errors={errors}
+          validation={{ 
+            required: 'Price is required',
+            min: { value: 1, message: 'Price must be greater than 0' }
+          }}
+        />
 
-        <div>
-          <Label htmlFor="certificateNumber">Certificate Number</Label>
-          <Input
-            id="certificateNumber"
-            {...register('certificateNumber')}
-            placeholder="Enter certificate number"
-          />
-        </div>
+        <MobileInputField
+          id="certificateNumber"
+          label="Certificate Number"
+          type="text"
+          placeholder="Enter certificate number"
+          register={register}
+          errors={errors}
+        />
 
-        <div>
-          <Label htmlFor="lab">Laboratory</Label>
-          <Select onValueChange={(value) => setValue('lab', value)} value={watch('lab')}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select lab" />
-            </SelectTrigger>
-            <SelectContent>
-              {labOptions.map((lab) => (
-                <SelectItem key={lab} value={lab}>{lab}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <MobileSelectField
+          id="lab"
+          label="Laboratory"
+          value={watch('lab')}
+          options={labOptions}
+          onValueChange={(value) => setValue('lab', value)}
+        />
 
-        <div>
-          <Label htmlFor="fluorescence">Fluorescence</Label>
-          <Select onValueChange={(value) => setValue('fluorescence', value)} value={watch('fluorescence')}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select fluorescence" />
-            </SelectTrigger>
-            <SelectContent>
-              {fluorescences.map((fluor) => (
-                <SelectItem key={fluor} value={fluor}>{fluor}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <MobileSelectField
+          id="fluorescence"
+          label="Fluorescence"
+          value={watch('fluorescence')}
+          options={fluorescences}
+          onValueChange={(value) => setValue('fluorescence', value)}
+        />
 
-        <div>
-          <Label htmlFor="polish">Polish</Label>
-          <Select onValueChange={(value) => setValue('polish', value)} value={watch('polish')}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select polish" />
-            </SelectTrigger>
-            <SelectContent>
-              {polishGrades.map((polish) => (
-                <SelectItem key={polish} value={polish}>{polish}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <MobileSelectField
+          id="polish"
+          label="Polish"
+          value={watch('polish')}
+          options={polishGrades}
+          onValueChange={(value) => setValue('polish', value)}
+        />
 
-        <div>
-          <Label htmlFor="symmetry">Symmetry</Label>
-          <Select onValueChange={(value) => setValue('symmetry', value)} value={watch('symmetry')}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select symmetry" />
-            </SelectTrigger>
-            <SelectContent>
-              {symmetryGrades.map((symmetry) => (
-                <SelectItem key={symmetry} value={symmetry}>{symmetry}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <MobileSelectField
+          id="symmetry"
+          label="Symmetry"
+          value={watch('symmetry')}
+          options={symmetryGrades}
+          onValueChange={(value) => setValue('symmetry', value)}
+        />
 
-        <div>
-          <Label htmlFor="status">Status</Label>
-          <Select onValueChange={(value) => setValue('status', value)} value={watch('status')}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent>
-              {statuses.map((status) => (
-                <SelectItem key={status} value={status}>{status}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <MobileSelectField
+          id="status"
+          label="Status"
+          value={watch('status')}
+          options={statuses}
+          onValueChange={(value) => setValue('status', value)}
+        />
 
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="storeVisible"
-            checked={watch('storeVisible') || false}
-            onCheckedChange={(checked) => setValue('storeVisible', checked)}
-          />
-          <Label htmlFor="storeVisible">Visible in store</Label>
-        </div>
-
-        <div className="flex gap-3 pt-4">
+        <div className="flex gap-3 pt-4 sticky bottom-4 bg-white">
           <Button 
             type="button"
             variant="outline" 
             onClick={resetForm}
             disabled={isLoading}
-            className="flex-1"
+            className="flex-1 h-12 text-lg"
           >
             Reset
           </Button>
           <Button 
             type="submit"
             disabled={isLoading}
-            className="flex-1"
+            className="flex-1 h-12 text-lg"
           >
             {isLoading ? "Adding..." : "Add Diamond"}
           </Button>
