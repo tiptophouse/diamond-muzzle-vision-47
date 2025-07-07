@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from 'react-hook-form';
 import { Button } from "@/components/ui/button";
@@ -7,23 +6,23 @@ import { useToast } from "@/components/ui/use-toast";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useInventoryCrud } from "@/hooks/useInventoryCrud";
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
-import { Camera } from "lucide-react";
+import { Camera, Save, RefreshCw, Diamond, FileText, Image, Settings } from "lucide-react";
 import { UploadSuccessCard } from "./UploadSuccessCard";
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { DiamondDetailsSection } from './form/DiamondDetailsSection';
-import { CertificateSection } from './form/CertificateSection';
-import { MeasurementsSection } from './form/MeasurementsSection';
-import { DetailedGradingSection } from './form/DetailedGradingSection';
-import { BusinessInfoSection } from './form/BusinessInfoSection';
-import { ImageUploadSection } from './form/ImageUploadSection';
-import { FormActions } from './form/FormActions';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BasicDetailsTab } from './tabs/BasicDetailsTab';
+import { CertificateTab } from './tabs/CertificateTab';
+import { MeasurementsTab } from './tabs/MeasurementsTab';
+import { BusinessTab } from './tabs/BusinessTab';
 import { useFormValidation } from './form/useFormValidation';
 
-export function SingleStoneUploadForm() {
+export function ModernSingleStoneForm() {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
   const [isScanning, setIsScanning] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [activeTab, setActiveTab] = useState("basic");
+  
   const { addDiamond, isLoading } = useInventoryCrud({
     onSuccess: () => {
       console.log('✅ Diamond added successfully, showing success card');
@@ -57,7 +56,7 @@ export function SingleStoneUploadForm() {
   const handleGiaScanSuccess = (giaData: any) => {
     console.log('GIA data received:', giaData);
     
-    // Comprehensive mapping of all GIA data fields including certificate URL
+    // Map all GIA data fields
     if (giaData.stock) setValue('stockNumber', giaData.stock);
     if (giaData.shape) setValue('shape', giaData.shape);
     if (giaData.weight) setValue('carat', Number(giaData.weight));
@@ -81,10 +80,8 @@ export function SingleStoneUploadForm() {
     if (giaData.rapnet) setValue('rapnet', Number(giaData.rapnet));
     if (giaData.picture) setValue('picture', giaData.picture);
     
-    // Handle certificate URL from uploaded certificate image
     if (giaData.certificate_url || giaData.certificateUrl) {
       setValue('certificateUrl', giaData.certificate_url || giaData.certificateUrl);
-      console.log('Certificate image uploaded to:', giaData.certificate_url || giaData.certificateUrl);
     }
     
     if (giaData.certificate_comment) setValue('certificateComment', giaData.certificate_comment);
@@ -102,7 +99,6 @@ export function SingleStoneUploadForm() {
 
   const handleFormSubmit = (data: DiamondFormData) => {
     console.log('🔍 UPLOAD: Form submitted', { user: user?.id, data });
-    console.log('🔍 UPLOAD: Form submit button clicked - processing data...');
     
     if (!user?.id) {
       console.log('❌ UPLOAD: No user ID found');
@@ -128,11 +124,9 @@ export function SingleStoneUploadForm() {
     console.log('✅ UPLOAD: Form validation passed, formatting data...');
     const formattedData = formatFormData(data, showCutField);
     console.log('🔍 UPLOAD: Calling addDiamond with:', formattedData);
-    console.log('🔍 UPLOAD: About to make API call to FastAPI create diamond endpoint...');
     
     addDiamond(formattedData).then(success => {
       console.log('🔍 UPLOAD: addDiamond result:', success);
-      console.log('🔍 UPLOAD: API call completed, success:', success);
       
       if (!success) {
         console.log('❌ UPLOAD: Diamond creation failed');
@@ -143,6 +137,10 @@ export function SingleStoneUploadForm() {
         });
       } else {
         console.log('✅ UPLOAD: Diamond creation successful!');
+        toast({
+          title: "✅ Diamond Added Successfully",
+          description: "Your diamond has been added to your inventory",
+        });
       }
     }).catch(error => {
       console.error('❌ UPLOAD: Error in addDiamond promise:', error);
@@ -173,6 +171,7 @@ export function SingleStoneUploadForm() {
       culet: 'None',
       storeVisible: true
     });
+    setActiveTab("basic");
   };
 
   // Show success card after successful upload
@@ -199,7 +198,7 @@ export function SingleStoneUploadForm() {
 
   if (!user) {
     return (
-      <Card>
+      <Card className="max-w-md mx-auto">
         <CardContent className="pt-6 text-center">
           <p className="text-muted-foreground">Please log in to add diamonds to your inventory.</p>
         </CardContent>
@@ -208,67 +207,156 @@ export function SingleStoneUploadForm() {
   }
 
   return (
-    <>
-      <Card>
+    <div className="max-w-4xl mx-auto px-4 space-y-6">
+      {/* Header */}
+      <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Add Single Diamond</CardTitle>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Diamond className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">Add Single Diamond</CardTitle>
+                <p className="text-sm text-muted-foreground">Fill in diamond details or scan certificate</p>
+              </div>
+            </div>
             <Button
               type="button"
               variant="outline"
               onClick={() => setIsScanning(true)}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 min-h-10"
             >
               <Camera className="h-4 w-4" />
-              Scan Diamond Certificate
+              <span className="hidden sm:inline">Scan Certificate</span>
+              <span className="sm:hidden">Scan</span>
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-            <DiamondDetailsSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
+      </Card>
 
-            <CertificateSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
+      {/* Main Form */}
+      <Card>
+        <CardContent className="p-0">
+          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-0">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <div className="border-b bg-muted/30 px-6 py-4">
+                <TabsList className="grid w-full grid-cols-4 h-auto p-1">
+                  <TabsTrigger 
+                    value="basic" 
+                    className="flex flex-col sm:flex-row items-center gap-2 py-3 px-2 sm:px-4 text-xs sm:text-sm"
+                  >
+                    <Diamond className="h-4 w-4" />
+                    <span className="hidden sm:inline">Basic Details</span>
+                    <span className="sm:hidden">Basic</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="certificate" 
+                    className="flex flex-col sm:flex-row items-center gap-2 py-3 px-2 sm:px-4 text-xs sm:text-sm"
+                  >
+                    <FileText className="h-4 w-4" />
+                    <span className="hidden sm:inline">Certificate</span>
+                    <span className="sm:hidden">Cert</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="measurements" 
+                    className="flex flex-col sm:flex-row items-center gap-2 py-3 px-2 sm:px-4 text-xs sm:text-sm"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span className="hidden sm:inline">Measurements</span>
+                    <span className="sm:hidden">Measure</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="business" 
+                    className="flex flex-col sm:flex-row items-center gap-2 py-3 px-2 sm:px-4 text-xs sm:text-sm"
+                  >
+                    <Image className="h-4 w-4" />
+                    <span className="hidden sm:inline">Business</span>
+                    <span className="sm:hidden">Biz</span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
-            <MeasurementsSection
-              register={register}
-              watch={watch}
-              errors={errors}
-            />
+              <div className="p-6">
+                <TabsContent value="basic" className="mt-0">
+                  <BasicDetailsTab
+                    register={register}
+                    setValue={setValue}
+                    watch={watch}
+                    errors={errors}
+                    showCutField={showCutField}
+                  />
+                </TabsContent>
 
-            <DetailedGradingSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
+                <TabsContent value="certificate" className="mt-0">
+                  <CertificateTab
+                    register={register}
+                    setValue={setValue}
+                    watch={watch}
+                    errors={errors}
+                  />
+                </TabsContent>
 
-            <BusinessInfoSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
+                <TabsContent value="measurements" className="mt-0">
+                  <MeasurementsTab
+                    register={register}
+                    setValue={setValue}
+                    watch={watch}
+                    errors={errors}
+                  />
+                </TabsContent>
 
-            <ImageUploadSection
-              setValue={setValue}
-              watch={watch}
-            />
+                <TabsContent value="business" className="mt-0">
+                  <BusinessTab
+                    register={register}
+                    setValue={setValue}
+                    watch={watch}
+                    errors={errors}
+                  />
+                </TabsContent>
+              </div>
+            </Tabs>
 
-            <FormActions
-              onReset={resetForm}
-              isLoading={isLoading}
-            />
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row justify-between gap-4 p-6 bg-muted/30 border-t">
+              <Button 
+                type="button"
+                variant="outline" 
+                onClick={resetForm}
+                disabled={isLoading}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Reset Form
+              </Button>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                {activeTab !== "business" && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const tabs = ["basic", "certificate", "measurements", "business"];
+                      const currentIndex = tabs.indexOf(activeTab);
+                      if (currentIndex < tabs.length - 1) {
+                        setActiveTab(tabs[currentIndex + 1]);
+                      }
+                    }}
+                  >
+                    Next Step
+                  </Button>
+                )}
+                
+                <Button 
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex items-center gap-2 min-w-[140px]"
+                >
+                  <Save className="h-4 w-4" />
+                  {isLoading ? "Adding..." : "Add Diamond"}
+                </Button>
+              </div>
+            </div>
           </form>
         </CardContent>
       </Card>
@@ -278,6 +366,6 @@ export function SingleStoneUploadForm() {
         onClose={() => setIsScanning(false)}
         onScanSuccess={handleGiaScanSuccess}
       />
-    </>
+    </div>
   );
 }

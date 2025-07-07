@@ -2,9 +2,10 @@
 import React from 'react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'react-hook-form';
 import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
-import { ModernSelectField } from '@/components/inventory/form/ModernSelectField';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { labOptions } from '@/components/inventory/form/diamondFormConstants';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface CertificateSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -15,9 +16,11 @@ interface CertificateSectionProps {
 
 export function CertificateSection({ register, setValue, watch, errors }: CertificateSectionProps) {
   return (
-    <div className="space-y-4 border-t pt-6">
-      <h3 className="text-lg font-semibold text-gray-900">Certificate Information</h3>
-      <p className="text-sm text-gray-600">GIA or other grading laboratory certificate details</p>
+    <div className="space-y-6 border-t pt-6">
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold text-foreground">Certificate Information</h3>
+        <p className="text-sm text-muted-foreground">GIA or other grading laboratory certificate details</p>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <DiamondInputField
@@ -28,13 +31,23 @@ export function CertificateSection({ register, setValue, watch, errors }: Certif
           errors={errors}
         />
 
-        <ModernSelectField
-          id="lab"
-          label="Grading Laboratory"
-          value={watch('lab') || 'GIA'}
-          onValueChange={(value) => setValue('lab', value)}
-          options={labOptions}
-        />
+        <div className="space-y-2">
+          <Label htmlFor="lab" className="text-sm font-medium text-foreground">
+            Grading Laboratory
+          </Label>
+          <Select value={watch('lab') || 'GIA'} onValueChange={(value) => setValue('lab', value)}>
+            <SelectTrigger className="w-full" type="button">
+              <SelectValue placeholder="Select laboratory" />
+            </SelectTrigger>
+            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
+              {labOptions.map((lab) => (
+                <SelectItem key={lab} value={lab}>
+                  {lab}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         <div className="md:col-span-2">
           <DiamondInputField

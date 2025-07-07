@@ -1,6 +1,6 @@
 
 import { Layout } from "@/components/layout/Layout";
-import { SingleStoneUploadForm } from "@/components/upload/SingleStoneUploadForm";
+import { ModernSingleStoneForm } from "@/components/upload/ModernSingleStoneForm";
 import { UploadForm } from "@/components/upload/UploadForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, Plus } from "lucide-react";
@@ -29,7 +29,7 @@ export default function UploadSingleStonePage() {
           </TabsList>
           
           <TabsContent value="single" className="mt-6">
-            <SingleStoneUploadForm />
+            <ModernSingleStoneForm />
           </TabsContent>
           
           <TabsContent value="bulk" className="mt-6">

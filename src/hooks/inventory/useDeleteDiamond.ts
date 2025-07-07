@@ -3,7 +3,6 @@ import { useToast } from '@/hooks/use-toast';
 import { api, apiEndpoints } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { Diamond } from '@/components/inventory/InventoryTable';
-import { useTelegramAlerts } from '@/hooks/useTelegramAlerts';
 
 interface UseDeleteDiamondProps {
   onSuccess?: () => void;
@@ -14,7 +13,6 @@ interface UseDeleteDiamondProps {
 export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDiamondToState }: UseDeleteDiamondProps) {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
-  const { sendInventoryAlert } = useTelegramAlerts();
 
   const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
     if (!user?.id) {
@@ -50,11 +48,6 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
         }
 
         console.log('✅ DELETE: FastAPI response:', response.data);
-
-        // Send Telegram alert
-        if (diamondData) {
-          sendInventoryAlert('deleted', diamondData);
-        }
 
         toast({
           title: "✅ Diamond Deleted Successfully",

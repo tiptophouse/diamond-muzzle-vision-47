@@ -1,49 +1,51 @@
-
-import React from 'react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'react-hook-form';
-import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { shapes, colors, clarities, cuts, fluorescences, polishGrades, symmetryGrades } from '@/components/inventory/form/diamondFormConstants';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-interface DiamondDetailsSectionProps {
+interface BasicDetailsTabProps {
   register: UseFormRegister<DiamondFormData>;
   setValue: UseFormSetValue<DiamondFormData>;
   watch: UseFormWatch<DiamondFormData>;
   errors: FieldErrors<DiamondFormData>;
+  showCutField: boolean;
 }
 
-export function DiamondDetailsSection({ register, setValue, watch, errors }: DiamondDetailsSectionProps) {
-  const currentShape = watch('shape');
-  const showCutField = currentShape === 'Round';
-
+export function BasicDetailsTab({ register, setValue, watch, errors, showCutField }: BasicDetailsTabProps) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
         <h3 className="text-lg font-semibold text-foreground">Diamond Details</h3>
-        <p className="text-sm text-muted-foreground">These fields can be auto-filled by scanning a GIA certificate</p>
+        <p className="text-sm text-muted-foreground">Essential diamond characteristics and identification</p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <DiamondInputField
-          id="stockNumber"
-          label="Stock Number / Certificate Number"
-          placeholder="Enter stock or certificate number"
-          register={register}
-          validation={{ required: 'Stock number is required' }}
-          errors={errors}
-        />
-
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Stock Number */}
         <div className="space-y-2">
-          <Label htmlFor="shape" className="text-sm font-medium text-foreground">
-            Shape
+          <Label htmlFor="stockNumber" className="text-sm font-medium">
+            Stock Number / Certificate Number *
           </Label>
+          <Input
+            id="stockNumber"
+            {...register('stockNumber', { required: 'Stock number is required' })}
+            placeholder="Enter stock or certificate number"
+            className="h-10"
+          />
+          {errors.stockNumber && (
+            <p className="text-sm text-destructive">{errors.stockNumber.message}</p>
+          )}
+        </div>
+
+        {/* Shape */}
+        <div className="space-y-2">
+          <Label htmlFor="shape" className="text-sm font-medium">Shape</Label>
           <Select value={watch('shape') || 'Round'} onValueChange={(value) => setValue('shape', value)}>
-            <SelectTrigger className="w-full" type="button">
+            <SelectTrigger>
               <SelectValue placeholder="Select shape" />
             </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
+            <SelectContent>
               {shapes.map((shape) => (
                 <SelectItem key={shape} value={shape}>
                   {shape}
@@ -53,29 +55,35 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           </Select>
         </div>
 
-        <DiamondInputField
-          id="carat"
-          label="Carat Weight"
-          type="number"
-          step="0.01"
-          placeholder="Enter carat weight"
-          register={register}
-          validation={{ 
-            required: 'Carat is required',
-            min: { value: 0.01, message: 'Carat must be greater than 0' }
-          }}
-          errors={errors}
-        />
-
+        {/* Carat */}
         <div className="space-y-2">
-          <Label htmlFor="color" className="text-sm font-medium text-foreground">
-            Color Grade
+          <Label htmlFor="carat" className="text-sm font-medium">
+            Carat Weight *
           </Label>
+          <Input
+            id="carat"
+            type="number"
+            step="0.01"
+            {...register('carat', { 
+              required: 'Carat is required',
+              min: { value: 0.01, message: 'Carat must be greater than 0' }
+            })}
+            placeholder="e.g., 1.25"
+            className="h-10"
+          />
+          {errors.carat && (
+            <p className="text-sm text-destructive">{errors.carat.message}</p>
+          )}
+        </div>
+
+        {/* Color */}
+        <div className="space-y-2">
+          <Label htmlFor="color" className="text-sm font-medium">Color Grade</Label>
           <Select value={watch('color') || 'G'} onValueChange={(value) => setValue('color', value)}>
-            <SelectTrigger className="w-full" type="button">
+            <SelectTrigger>
               <SelectValue placeholder="Select color" />
             </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
+            <SelectContent>
               {colors.map((color) => (
                 <SelectItem key={color} value={color}>
                   {color}
@@ -85,15 +93,14 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           </Select>
         </div>
 
+        {/* Clarity */}
         <div className="space-y-2">
-          <Label htmlFor="clarity" className="text-sm font-medium text-foreground">
-            Clarity Grade
-          </Label>
+          <Label htmlFor="clarity" className="text-sm font-medium">Clarity Grade</Label>
           <Select value={watch('clarity') || 'VS1'} onValueChange={(value) => setValue('clarity', value)}>
-            <SelectTrigger className="w-full" type="button">
+            <SelectTrigger>
               <SelectValue placeholder="Select clarity" />
             </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
+            <SelectContent>
               {clarities.map((clarity) => (
                 <SelectItem key={clarity} value={clarity}>
                   {clarity}
@@ -103,16 +110,15 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           </Select>
         </div>
 
+        {/* Cut - Only for Round diamonds */}
         {showCutField && (
           <div className="space-y-2">
-            <Label htmlFor="cut" className="text-sm font-medium text-foreground">
-              Cut Grade
-            </Label>
+            <Label htmlFor="cut" className="text-sm font-medium">Cut Grade</Label>
             <Select value={watch('cut') || 'Excellent'} onValueChange={(value) => setValue('cut', value)}>
-              <SelectTrigger className="w-full" type="button">
+              <SelectTrigger>
                 <SelectValue placeholder="Select cut" />
               </SelectTrigger>
-              <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
+              <SelectContent>
                 {cuts.map((cut) => (
                   <SelectItem key={cut} value={cut}>
                     {cut}
@@ -123,15 +129,14 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           </div>
         )}
 
+        {/* Fluorescence */}
         <div className="space-y-2">
-          <Label htmlFor="fluorescence" className="text-sm font-medium text-foreground">
-            Fluorescence
-          </Label>
+          <Label htmlFor="fluorescence" className="text-sm font-medium">Fluorescence</Label>
           <Select value={watch('fluorescence') || 'None'} onValueChange={(value) => setValue('fluorescence', value)}>
-            <SelectTrigger className="w-full" type="button">
+            <SelectTrigger>
               <SelectValue placeholder="Select fluorescence" />
             </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
+            <SelectContent>
               {fluorescences.map((fluorescence) => (
                 <SelectItem key={fluorescence} value={fluorescence}>
                   {fluorescence}
@@ -141,15 +146,14 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           </Select>
         </div>
 
+        {/* Polish */}
         <div className="space-y-2">
-          <Label htmlFor="polish" className="text-sm font-medium text-foreground">
-            Polish
-          </Label>
+          <Label htmlFor="polish" className="text-sm font-medium">Polish</Label>
           <Select value={watch('polish') || 'Excellent'} onValueChange={(value) => setValue('polish', value)}>
-            <SelectTrigger className="w-full" type="button">
+            <SelectTrigger>
               <SelectValue placeholder="Select polish" />
             </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
+            <SelectContent>
               {polishGrades.map((polish) => (
                 <SelectItem key={polish} value={polish}>
                   {polish}
@@ -159,15 +163,14 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           </Select>
         </div>
 
+        {/* Symmetry */}
         <div className="space-y-2">
-          <Label htmlFor="symmetry" className="text-sm font-medium text-foreground">
-            Symmetry
-          </Label>
+          <Label htmlFor="symmetry" className="text-sm font-medium">Symmetry</Label>
           <Select value={watch('symmetry') || 'Excellent'} onValueChange={(value) => setValue('symmetry', value)}>
-            <SelectTrigger className="w-full" type="button">
+            <SelectTrigger>
               <SelectValue placeholder="Select symmetry" />
             </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
+            <SelectContent>
               {symmetryGrades.map((symmetry) => (
                 <SelectItem key={symmetry} value={symmetry}>
                   {symmetry}

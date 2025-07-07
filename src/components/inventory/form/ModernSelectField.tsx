@@ -29,7 +29,7 @@ export function ModernSelectField({
   );
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+    const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
         setSearchTerm('');
@@ -38,12 +38,15 @@ export function ModernSelectField({
 
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('touchstart', handleClickOutside);
+      // Prevent body scroll when dropdown is open
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
+      document.body.style.overflow = '';
     };
   }, [isOpen]);
 
@@ -95,44 +98,49 @@ export function ModernSelectField({
         </button>
 
         {isOpen && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-input rounded-md shadow-lg z-50 max-h-60 overflow-hidden">
-            {/* Search input */}
-            <div className="p-2 border-b border-border">
-              <input
-                ref={inputRef}
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={`Search ${label.toLowerCase()}...`}
-                className="w-full px-2 py-1 text-sm bg-background border border-input rounded focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
+          <>
+            {/* Backdrop overlay */}
+            <div className="fixed inset-0 bg-black/20 z-40" />
             
-            {/* Options list */}
-            <div className="max-h-48 overflow-y-auto">
-              {filteredOptions.length > 0 ? (
-                filteredOptions.map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => handleSelect(option)}
-                    onTouchStart={() => handleSelect(option)}
-                    className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none transition-colors active:bg-accent active:text-accent-foreground"
-                  >
-                    <span className="block truncate">{option}</span>
-                    {value === option && (
-                      <Check className="h-4 w-4 text-primary" />
-                    )}
-                  </button>
-                ))
-              ) : (
-                <div className="px-3 py-2 text-sm text-muted-foreground">
-                  No results found
-                </div>
-              )}
+            {/* Dropdown */}
+            <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-input rounded-md shadow-lg z-50 max-h-60 overflow-hidden">
+              {/* Search input */}
+              <div className="p-2 border-b border-border">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={`Search ${label.toLowerCase()}...`}
+                  className="w-full px-2 py-1 text-sm bg-background border border-input rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+              
+              {/* Options list */}
+              <div className="max-h-48 overflow-y-auto">
+                {filteredOptions.length > 0 ? (
+                  filteredOptions.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => handleSelect(option)}
+                      className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none transition-colors"
+                    >
+                      <span className="block truncate">{option}</span>
+                      {value === option && (
+                        <Check className="h-4 w-4 text-primary" />
+                      )}
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-3 py-2 text-sm text-muted-foreground">
+                    No results found
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>
