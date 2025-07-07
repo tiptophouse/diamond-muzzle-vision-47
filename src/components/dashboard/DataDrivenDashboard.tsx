@@ -78,46 +78,69 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
           <WelcomeBanner />
           <DashboardHeader emergencyMode={false} />
           
-          <Card className="text-center py-12">
-            <CardHeader>
-              <Gem className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <CardTitle className="text-2xl">Welcome to Diamond Muzzle! 💎</CardTitle>
-              <CardDescription className="text-lg">
-                Your diamond inventory management system is ready to go
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-gray-600">
-                Get started by adding diamonds to your inventory using one of the methods below:
-              </p>
+          <div className="premium-card text-center py-16 animate-scale-in">
+            <div className="space-y-6">
+              <div className="relative">
+                <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+                  <Gem className="h-12 w-12 text-white" />
+                </div>
+                <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                  <span className="text-white text-xs font-bold">✨</span>
+                </div>
+              </div>
               
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button 
-                  onClick={() => navigate('/upload')} 
-                  className="flex items-center gap-2"
-                  size="lg"
-                >
-                  <Upload className="h-5 w-5" />
-                  Upload CSV File
-                </Button>
+              <div className="space-y-3">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 bg-clip-text text-transparent animate-gradient-shift">
+                  Welcome to Diamond Muzzle
+                </h1>
+                <p className="text-xl text-muted-foreground font-medium">
+                  Your premium diamond inventory management platform
+                </p>
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse-subtle"></div>
+                  <span>System Ready • Secure • Fast</span>
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 space-y-4">
+                <p className="text-foreground font-medium">
+                  Get started by adding diamonds to your inventory:
+                </p>
                 
-                <Button 
-                  onClick={() => navigate('/upload')} 
-                  variant="outline"
-                  className="flex items-center gap-2"
-                  size="lg"
-                >
-                  <Plus className="h-5 w-5" />
-                  Add Single Diamond
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Button 
+                    onClick={() => navigate('/upload')} 
+                    className="flex items-center gap-2 premium-button"
+                    size="lg"
+                  >
+                    <Upload className="h-5 w-5" />
+                    Upload CSV File
+                  </Button>
+                  
+                  <Button 
+                    onClick={() => navigate('/upload')} 
+                    variant="outline"
+                    className="flex items-center gap-2"
+                    size="lg"
+                  >
+                    <Plus className="h-5 w-5" />
+                    Add Single Diamond
+                  </Button>
+                </div>
               </div>
               
-              <div className="mt-8 text-sm text-gray-500">
-                <p>💡 <strong>Tip:</strong> You can upload a CSV file with multiple diamonds or add them one by one</p>
-                <p>📊 Your dashboard will show analytics once you have inventory data</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-1 rounded-full bg-blue-500"></div>
+                  <span><strong>Smart Import:</strong> Upload CSV files with automatic mapping</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-1 rounded-full bg-purple-500"></div>
+                  <span><strong>Real-time Analytics:</strong> Dashboard updates instantly</span>
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </Layout>
     );
