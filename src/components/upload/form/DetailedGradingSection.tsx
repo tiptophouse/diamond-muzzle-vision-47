@@ -1,15 +1,8 @@
 
 import React from 'react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'react-hook-form';
-import { ModernSelectField } from '@/components/inventory/form/ModernSelectField';
+import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { 
-  fluorescences, 
-  polishGrades, 
-  symmetryGrades, 
-  girdleTypes, 
-  culetGrades 
-} from '@/components/inventory/form/diamondFormConstants';
 
 interface DetailedGradingSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -25,44 +18,44 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
       <p className="text-sm text-gray-600">Professional grading details from certificate</p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <ModernSelectField
+        <DiamondInputField
           id="fluorescence"
           label="Fluorescence"
-          value={watch('fluorescence') || 'None'}
-          onValueChange={(value) => setValue('fluorescence', value)}
-          options={fluorescences}
+          placeholder="e.g., None, Faint, Medium, Strong"
+          register={register}
+          errors={errors}
         />
 
-        <ModernSelectField
+        <DiamondInputField
           id="polish"
           label="Polish"
-          value={watch('polish') || 'Excellent'}
-          onValueChange={(value) => setValue('polish', value)}
-          options={polishGrades}
+          placeholder="e.g., Excellent, Very Good, Good"
+          register={register}
+          errors={errors}
         />
 
-        <ModernSelectField
+        <DiamondInputField
           id="symmetry"
           label="Symmetry"
-          value={watch('symmetry') || 'Excellent'}
-          onValueChange={(value) => setValue('symmetry', value)}
-          options={symmetryGrades}
+          placeholder="e.g., Excellent, Very Good, Good"
+          register={register}
+          errors={errors}
         />
 
-        <ModernSelectField
+        <DiamondInputField
           id="gridle"
           label="Girdle"
-          value={watch('gridle') || 'Medium'}
-          onValueChange={(value) => setValue('gridle', value)}
-          options={girdleTypes}
+          placeholder="e.g., Medium, Thin, Thick"
+          register={register}
+          errors={errors}
         />
 
-        <ModernSelectField
+        <DiamondInputField
           id="culet"
           label="Culet"
-          value={watch('culet') || 'None'}
-          onValueChange={(value) => setValue('culet', value)}
-          options={culetGrades}
+          placeholder="e.g., None, Small, Medium"
+          register={register}
+          errors={errors}
         />
       </div>
     </div>

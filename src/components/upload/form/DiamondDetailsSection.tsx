@@ -71,37 +71,37 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
         />
 
         {showCutField && (
-          <ModernSelectField
+          <DiamondInputField
             id="cut"
             label="Cut Grade"
-            value={watch('cut') || 'Excellent'}
-            onValueChange={(value) => setValue('cut', value)}
-            options={cuts}
+            placeholder="e.g., Excellent, Very Good, Good"
+            register={register}
+            errors={errors}
           />
         )}
 
-        <ModernSelectField
+        <DiamondInputField
           id="fluorescence"
           label="Fluorescence"
-          value={watch('fluorescence') || 'None'}
-          onValueChange={(value) => setValue('fluorescence', value)}
-          options={fluorescences}
+          placeholder="e.g., None, Faint, Medium, Strong"
+          register={register}
+          errors={errors}
         />
 
-        <ModernSelectField
+        <DiamondInputField
           id="polish"
           label="Polish"
-          value={watch('polish') || 'Excellent'}
-          onValueChange={(value) => setValue('polish', value)}
-          options={polishGrades}
+          placeholder="e.g., Excellent, Very Good, Good"
+          register={register}
+          errors={errors}
         />
 
-        <ModernSelectField
+        <DiamondInputField
           id="symmetry"
           label="Symmetry"
-          value={watch('symmetry') || 'Excellent'}
-          onValueChange={(value) => setValue('symmetry', value)}
-          options={symmetryGrades}
+          placeholder="e.g., Excellent, Very Good, Good"
+          register={register}
+          errors={errors}
         />
       </div>
     </div>
