@@ -93,8 +93,13 @@ export function SingleStoneUploadForm() {
     
     toast({
       title: "✅ Certificate Scanned Successfully",
-      description: "All diamond information auto-filled and certificate image uploaded",
+      description: "Diamond information loaded - please review and confirm upload",
     });
+
+    // Auto-submit the form after successful scan
+    setTimeout(() => {
+      handleSubmit(handleFormSubmit)();
+    }, 1000);
   };
 
   const currentShape = watch('shape');
@@ -211,65 +216,81 @@ export function SingleStoneUploadForm() {
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Add Single Diamond</CardTitle>
+          <div className="flex flex-col items-center text-center space-y-4">
+            <CardTitle>Scan Diamond Certificate</CardTitle>
+            <p className="text-muted-foreground">
+              Upload diamonds by scanning their GIA certificate. The form will auto-fill and upload after scanning.
+            </p>
             <Button
               type="button"
-              variant="outline"
               onClick={() => setIsScanning(true)}
               className="flex items-center gap-2"
+              size="lg"
             >
-              <Camera className="h-4 w-4" />
-              Scan Diamond Certificate
+              <Camera className="h-5 w-5" />
+              Scan Certificate to Upload Diamond
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-            <DiamondDetailsSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
+          {watch('certificateNumber') ? (
+            <div className="space-y-6">
+              <div className="p-4 bg-muted rounded-lg">
+                <h3 className="font-semibold text-center mb-4">Scanned Diamond Information</h3>
+                <p className="text-sm text-muted-foreground text-center mb-4">
+                  Information extracted from certificate. Processing upload...
+                </p>
+              </div>
+              
+              <form className="space-y-6 opacity-75 pointer-events-none">
+                <DiamondDetailsSection
+                  register={register}
+                  setValue={setValue}
+                  watch={watch}
+                  errors={errors}
+                />
 
-            <CertificateSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
+                <CertificateSection
+                  register={register}
+                  setValue={setValue}
+                  watch={watch}
+                  errors={errors}
+                />
 
-            <MeasurementsSection
-              register={register}
-              watch={watch}
-              errors={errors}
-            />
+                <MeasurementsSection
+                  register={register}
+                  watch={watch}
+                  errors={errors}
+                />
 
-            <DetailedGradingSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
+                <DetailedGradingSection
+                  register={register}
+                  setValue={setValue}
+                  watch={watch}
+                  errors={errors}
+                />
 
-            <BusinessInfoSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
+                <BusinessInfoSection
+                  register={register}
+                  setValue={setValue}
+                  watch={watch}
+                  errors={errors}
+                />
 
-            <ImageUploadSection
-              setValue={setValue}
-              watch={watch}
-            />
-
-            <FormActions
-              onReset={resetForm}
-              isLoading={isLoading}
-            />
-          </form>
+                <ImageUploadSection
+                  setValue={setValue}
+                  watch={watch}
+                />
+              </form>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Camera className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">
+                No certificate scanned yet. Click the button above to start scanning.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
