@@ -1,4 +1,3 @@
-
 import { Layout } from "@/components/layout/Layout";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -60,7 +59,7 @@ export default function InventoryPage() {
       const diamond = allDiamonds.find(d => d.id === diamondId);
       console.log('🗑️ Deleting diamond:', diamond?.stockNumber, 'Diamond ID:', diamond?.diamondId);
       
-      const success = await deleteDiamond(diamondId, diamond);
+      const success = await deleteDiamond(diamondId);
       if (success) {
         console.log('✅ Diamond deleted successfully');
       } else {
