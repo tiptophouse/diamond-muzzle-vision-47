@@ -33,7 +33,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
             Fluorescence
           </Label>
           <Select value={watch('fluorescence') || 'None'} onValueChange={(value) => setValue('fluorescence', value)}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select fluorescence" />
             </SelectTrigger>
             <SelectContent>
@@ -51,7 +51,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
             Polish
           </Label>
           <Select value={watch('polish') || 'Excellent'} onValueChange={(value) => setValue('polish', value)}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select polish" />
             </SelectTrigger>
             <SelectContent>
@@ -69,7 +69,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
             Symmetry
           </Label>
           <Select value={watch('symmetry') || 'Excellent'} onValueChange={(value) => setValue('symmetry', value)}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select symmetry" />
             </SelectTrigger>
             <SelectContent>
@@ -87,7 +87,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
             Girdle
           </Label>
           <Select value={watch('gridle') || 'Medium'} onValueChange={(value) => setValue('gridle', value)}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select girdle" />
             </SelectTrigger>
             <SelectContent>
@@ -105,7 +105,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
             Culet
           </Label>
           <Select value={watch('culet') || 'None'} onValueChange={(value) => setValue('culet', value)}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select culet" />
             </SelectTrigger>
             <SelectContent>

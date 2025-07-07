@@ -40,7 +40,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
             Shape
           </Label>
           <Select value={watch('shape') || 'Round'} onValueChange={(value) => setValue('shape', value)}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select shape" />
             </SelectTrigger>
             <SelectContent>
@@ -72,7 +72,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
             Color Grade
           </Label>
           <Select value={watch('color') || 'G'} onValueChange={(value) => setValue('color', value)}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select color" />
             </SelectTrigger>
             <SelectContent>
@@ -90,7 +90,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
             Clarity Grade
           </Label>
           <Select value={watch('clarity') || 'VS1'} onValueChange={(value) => setValue('clarity', value)}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select clarity" />
             </SelectTrigger>
             <SelectContent>
@@ -109,7 +109,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
               Cut Grade
             </Label>
             <Select value={watch('cut') || 'Excellent'} onValueChange={(value) => setValue('cut', value)}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full" type="button">
                 <SelectValue placeholder="Select cut" />
               </SelectTrigger>
               <SelectContent>
@@ -128,7 +128,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
             Fluorescence
           </Label>
           <Select value={watch('fluorescence') || 'None'} onValueChange={(value) => setValue('fluorescence', value)}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select fluorescence" />
             </SelectTrigger>
             <SelectContent>
@@ -146,7 +146,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
             Polish
           </Label>
           <Select value={watch('polish') || 'Excellent'} onValueChange={(value) => setValue('polish', value)}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select polish" />
             </SelectTrigger>
             <SelectContent>
@@ -164,7 +164,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
             Symmetry
           </Label>
           <Select value={watch('symmetry') || 'Excellent'} onValueChange={(value) => setValue('symmetry', value)}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select symmetry" />
             </SelectTrigger>
             <SelectContent>
