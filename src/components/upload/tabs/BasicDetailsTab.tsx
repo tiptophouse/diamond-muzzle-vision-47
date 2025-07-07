@@ -42,7 +42,7 @@ export function BasicDetailsTab({ register, setValue, watch, errors, showCutFiel
         <div className="space-y-2">
           <Label htmlFor="shape" className="text-sm font-medium">Shape</Label>
           <Select value={watch('shape') || 'Round'} onValueChange={(value) => setValue('shape', value)}>
-            <SelectTrigger>
+            <SelectTrigger type="button">
               <SelectValue placeholder="Select shape" />
             </SelectTrigger>
             <SelectContent>
@@ -80,7 +80,7 @@ export function BasicDetailsTab({ register, setValue, watch, errors, showCutFiel
         <div className="space-y-2">
           <Label htmlFor="color" className="text-sm font-medium">Color Grade</Label>
           <Select value={watch('color') || 'G'} onValueChange={(value) => setValue('color', value)}>
-            <SelectTrigger>
+            <SelectTrigger type="button">
               <SelectValue placeholder="Select color" />
             </SelectTrigger>
             <SelectContent>
@@ -97,7 +97,7 @@ export function BasicDetailsTab({ register, setValue, watch, errors, showCutFiel
         <div className="space-y-2">
           <Label htmlFor="clarity" className="text-sm font-medium">Clarity Grade</Label>
           <Select value={watch('clarity') || 'VS1'} onValueChange={(value) => setValue('clarity', value)}>
-            <SelectTrigger>
+            <SelectTrigger type="button">
               <SelectValue placeholder="Select clarity" />
             </SelectTrigger>
             <SelectContent>
@@ -115,7 +115,7 @@ export function BasicDetailsTab({ register, setValue, watch, errors, showCutFiel
           <div className="space-y-2">
             <Label htmlFor="cut" className="text-sm font-medium">Cut Grade</Label>
             <Select value={watch('cut') || 'Excellent'} onValueChange={(value) => setValue('cut', value)}>
-              <SelectTrigger>
+              <SelectTrigger type="button">
                 <SelectValue placeholder="Select cut" />
               </SelectTrigger>
               <SelectContent>
@@ -133,7 +133,7 @@ export function BasicDetailsTab({ register, setValue, watch, errors, showCutFiel
         <div className="space-y-2">
           <Label htmlFor="fluorescence" className="text-sm font-medium">Fluorescence</Label>
           <Select value={watch('fluorescence') || 'None'} onValueChange={(value) => setValue('fluorescence', value)}>
-            <SelectTrigger>
+            <SelectTrigger type="button">
               <SelectValue placeholder="Select fluorescence" />
             </SelectTrigger>
             <SelectContent>
@@ -150,7 +150,7 @@ export function BasicDetailsTab({ register, setValue, watch, errors, showCutFiel
         <div className="space-y-2">
           <Label htmlFor="polish" className="text-sm font-medium">Polish</Label>
           <Select value={watch('polish') || 'Excellent'} onValueChange={(value) => setValue('polish', value)}>
-            <SelectTrigger>
+            <SelectTrigger type="button">
               <SelectValue placeholder="Select polish" />
             </SelectTrigger>
             <SelectContent>
@@ -167,7 +167,7 @@ export function BasicDetailsTab({ register, setValue, watch, errors, showCutFiel
         <div className="space-y-2">
           <Label htmlFor="symmetry" className="text-sm font-medium">Symmetry</Label>
           <Select value={watch('symmetry') || 'Excellent'} onValueChange={(value) => setValue('symmetry', value)}>
-            <SelectTrigger>
+            <SelectTrigger type="button">
               <SelectValue placeholder="Select symmetry" />
             </SelectTrigger>
             <SelectContent>
