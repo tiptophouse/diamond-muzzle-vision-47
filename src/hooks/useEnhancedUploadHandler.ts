@@ -26,6 +26,20 @@ export function useEnhancedUploadHandler() {
   const { processIntelligentCsv } = useIntelligentCsvProcessor();
   const { enhanceDataWithOpenAI } = useOpenAICsvEnhancer();
 
+  // Helper function to map form values to FastAPI enum values
+  const mapToApiEnum = (value: any): string => {
+    const stringValue = value?.toString().toUpperCase();
+    
+    // Map "FAIR" to "POOR" since FastAPI doesn't accept "FAIR"
+    if (stringValue === 'FAIR') {
+      return 'POOR';
+    }
+    
+    // Valid FastAPI enum values
+    const validValues = ['EXCELLENT', 'VERY GOOD', 'GOOD', 'POOR'];
+    return validValues.includes(stringValue) ? stringValue : 'EXCELLENT';
+  };
+
   const handleUpload = async (file: File) => {
     if (!user?.id) {
       toast({
@@ -95,20 +109,13 @@ export function useEnhancedUploadHandler() {
                 continue;
               }
 
-              // Helper function to validate cut values
-              const validateCut = (cut: any): string => {
-                const validCuts = ['EXCELLENT', 'VERY GOOD', 'GOOD', 'POOR'];
-                const cutUpper = cut?.toString().toUpperCase();
-                return validCuts.includes(cutUpper) ? cutUpper : 'EXCELLENT';
-              };
-
               // Helper function to ensure positive ratio
               const validateRatio = (ratio: any): number => {
                 const num = Number(ratio);
                 return isNaN(num) || num <= 0 ? 1 : Math.abs(num);
               };
 
-              // Map CSV data to FastAPI format - using REAL data only
+              // Map CSV data to FastAPI format - using REAL data only with proper enum validation
               const payload = {
                 stock: diamondData.stock.trim(),
                 shape: diamondData.shape === 'Round' ? "round brilliant" : (diamondData.shape?.toLowerCase() || "round brilliant"),
@@ -132,9 +139,9 @@ export function useEnhancedUploadHandler() {
                   ? Number(diamondData.depth) 
                   : Math.round((Number(diamondData.weight) * 4.0) * 100) / 100,
                 ratio: validateRatio(diamondData.ratio),
-                cut: validateCut(diamondData.cut),
-                polish: diamondData.polish?.toUpperCase() || "EXCELLENT",
-                symmetry: diamondData.symmetry?.toUpperCase() || "EXCELLENT",
+                cut: mapToApiEnum(diamondData.cut),
+                polish: mapToApiEnum(diamondData.polish),
+                symmetry: mapToApiEnum(diamondData.symmetry),
                 fluorescence: diamondData.fluorescence?.toUpperCase() || "NONE",
                 table: diamondData.table && Number(diamondData.table) > 0 ? Number(diamondData.table) : 60,
                 depth_percentage: diamondData.depth_percentage && Number(diamondData.depth_percentage) > 0 ? Number(diamondData.depth_percentage) : 62,
@@ -147,7 +154,20 @@ export function useEnhancedUploadHandler() {
             
             const response = await api.post(apiEndpoints.addDiamond(user.id), payload);
             if (response.error) {
-              errors.push(`Row ${successCount + 1}: ${response.error}`);
+              // Parse structured error response for better error messages
+              let errorDetails = response.error;
+              try {
+                const errorData = JSON.parse(response.error);
+                if (errorData.detail && Array.isArray(errorData.detail)) {
+                  errorDetails = errorData.detail.map((err: any) => {
+                    const field = err.loc ? err.loc[err.loc.length - 1] : 'unknown';
+                    return `${field}: ${err.msg}`;
+                  }).join(', ');
+                }
+              } catch {
+                // Keep original error if not JSON
+              }
+              errors.push(`Row ${successCount + 1}: ${errorDetails}`);
             } else {
               successCount++;
             }

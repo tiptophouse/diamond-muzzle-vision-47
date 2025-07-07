@@ -20,20 +20,23 @@ export const clarities = [
   'FL', 'IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'SI3', 'I1', 'I2', 'I3'
 ];
 
+// Updated to match FastAPI backend - removed "Fair" and added proper mapping
 export const cuts = [
-  'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'
+  'Excellent', 'Very Good', 'Good', 'Poor'
 ];
 
 export const fluorescences = [
   'None', 'Faint', 'Medium', 'Strong', 'Very Strong'
 ];
 
+// Updated to match FastAPI backend - removed "Fair" 
 export const polishGrades = [
-  'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'
+  'Excellent', 'Very Good', 'Good', 'Poor'
 ];
 
+// Updated to match FastAPI backend - removed "Fair"
 export const symmetryGrades = [
-  'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'
+  'Excellent', 'Very Good', 'Good', 'Poor'
 ];
 
 export const girdleTypes = [

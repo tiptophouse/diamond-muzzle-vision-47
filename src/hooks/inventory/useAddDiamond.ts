@@ -56,6 +56,20 @@ export function useAddDiamond(onSuccess?: () => void) {
         ? Number(data.pricePerCarat)
         : Math.round(Number(data.price) / Number(data.carat));
 
+      // Helper function to map form values to FastAPI enum values
+      const mapToApiEnum = (value: string): string => {
+        const upperValue = value?.toUpperCase();
+        
+        // Map "FAIR" to "POOR" since FastAPI doesn't accept "FAIR"
+        if (upperValue === 'FAIR') {
+          return 'POOR';
+        }
+        
+        // Valid FastAPI enum values
+        const validValues = ['EXCELLENT', 'VERY GOOD', 'GOOD', 'POOR'];
+        return validValues.includes(upperValue) ? upperValue : 'EXCELLENT';
+      };
+
       // Map form data to FastAPI format - EXACT SCHEMA MATCH for api.mazalbot.com
       const diamondDataPayload = {
         // Required fields - exact schema match
@@ -78,10 +92,10 @@ export function useAddDiamond(onSuccess?: () => void) {
         depth: data.depth && data.depth > 0 ? Number(data.depth) : 1,
         ratio: data.ratio && data.ratio > 0 ? Number(data.ratio) : 1,
         
-        // Grading details - match schema exactly
-        cut: data.cut?.toUpperCase() || "EXCELLENT",
-        polish: data.polish?.toUpperCase() || "EXCELLENT", 
-        symmetry: data.symmetry?.toUpperCase() || "EXCELLENT",
+        // Grading details - match schema exactly with proper enum mapping
+        cut: mapToApiEnum(data.cut || 'Excellent'),
+        polish: mapToApiEnum(data.polish || 'Excellent'), 
+        symmetry: mapToApiEnum(data.symmetry || 'Excellent'),
         fluorescence: data.fluorescence?.toUpperCase() || "NONE",
         table: data.tablePercentage && data.tablePercentage > 0 ? Number(data.tablePercentage) : 1,
         depth_percentage: data.depthPercentage && data.depthPercentage > 0 ? Number(data.depthPercentage) : 1,
@@ -125,17 +139,33 @@ export function useAddDiamond(onSuccess?: () => void) {
         
       } catch (apiError) {
         console.error('❌ ADD: FastAPI add failed:', apiError);
-        console.error('❌ ADD: Full API error details:', JSON.stringify(apiError, null, 2));
+        
+        // Parse and show specific backend validation errors
+        let errorMessage = "Failed to add diamond via FastAPI";
+        
+        if (apiError instanceof Error) {
+          try {
+            // Try to parse structured error response
+            const errorData = JSON.parse(apiError.message);
+            if (errorData.detail && Array.isArray(errorData.detail)) {
+              // Format validation errors from FastAPI
+              const validationErrors = errorData.detail.map((err: any) => {
+                const field = err.loc ? err.loc[err.loc.length - 1] : 'unknown';
+                return `${field}: ${err.msg}`;
+              }).join(', ');
+              errorMessage = `Validation errors: ${validationErrors}`;
+            }
+          } catch {
+            // If not JSON, use the error message directly
+            errorMessage = apiError.message;
+          }
+        }
         
         // Show specific error message to user with API details
-        const errorMessage = apiError instanceof Error ? apiError.message : "Failed to add diamond via FastAPI";
-        console.error('❌ ADD: Error message:', errorMessage);
-        
-        // Show detailed error message for debugging
         toast({
           variant: "destructive",
-          title: "❌ FastAPI Connection Failed",
-          description: `Unable to connect to FastAPI backend at ${API_BASE_URL}. Stone will be saved locally.`,
+          title: "❌ Backend Validation Error",
+          description: errorMessage,
         });
         
         // Fallback to localStorage with clear messaging
@@ -166,7 +196,7 @@ export function useAddDiamond(onSuccess?: () => void) {
         
         toast({
           title: "⚠️ Stone Saved Locally", 
-          description: `Stone "${data.stockNumber}" saved offline. Will sync when backend connection is restored.`,
+          description: `Stone "${data.stockNumber}" saved offline. Backend error: ${errorMessage}`,
           variant: "default",
         });
         
@@ -176,15 +206,13 @@ export function useAddDiamond(onSuccess?: () => void) {
       
     } catch (error) {
       console.error('❌ ADD: Unexpected error:', error);
-      console.error('❌ ADD: Full unexpected error details:', JSON.stringify(error, null, 2));
       
       const errorMessage = error instanceof Error ? error.message : "Failed to add diamond. Please try again.";
-      console.error('❌ ADD: Final error message:', errorMessage);
       
       toast({
         variant: "destructive",
         title: "❌ Upload Failed",
-        description: "Failed to add diamond. Please check your data and try again.",
+        description: errorMessage,
       });
       
       return false;
