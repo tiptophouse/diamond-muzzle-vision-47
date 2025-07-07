@@ -44,13 +44,16 @@ export function useIntelligentCsvProcessor() {
       'fl', 'if', 'vvs1', 'vvs2', 'vs1', 'vs2', 'si1', 'si2', 'si3', 'i1', 'i2', 'i3'
     ],
     cut: [
-      'cut', 'cut_grade', 'polish', 'make', 'finish', 'excellent', 'very_good',
+      'cut', 'cut_grade', 'make', 'finish', 'excellent', 'very_good',
       'good', 'fair', 'poor', 'ideal', 'premium'
     ],
     price_per_carat: [
-      'price/crt', 'price_per_carat', 'price per carat', 'price/ct', 'price', 'cost', 'amount', 'value', 
-      'precio', 'prix', 'preco', 'total_price', 'unit_price', 'rap', 'rapnet', 
-      'asking_price', 'selling_price', 'market_price', 'wholesale_price'
+      'price/crt', 'price_per_carat', 'price per carat', 'price/ct', 'price/carat', 
+      'ppc', 'per_carat', 'carat_price', 'unit_price', 'asking_price', 'selling_price'
+    ],
+    price: [
+      'price', 'total_price', 'cost', 'amount', 'value', 'precio', 'prix', 'preco', 
+      'market_price', 'wholesale_price'
     ],
     lab: [
       'lab', 'laboratory', 'cert', 'certificate', 'certification', 'grading_lab',
@@ -223,8 +226,10 @@ export function useIntelligentCsvProcessor() {
       color: transformedRow.color || 'G', 
       clarity: transformedRow.clarity || 'VS1',
       cut: transformedRow.cut || 'EXCELLENT',
-      // Fixed: Use price_per_carat field name, not just 'price'
-      price_per_carat: transformedRow.price_per_carat || transformedRow.price || 5000,
+      // Enhanced price handling - prioritize price_per_carat, fallback to price
+      price_per_carat: transformedRow.price_per_carat || 
+                      (transformedRow.price && transformedRow.weight ? transformedRow.price / transformedRow.weight : null) ||
+                      5000,
       lab: transformedRow.lab || 'GIA',
       certificate_number: transformedRow.certificate_number || Math.floor(Math.random() * 1000000),
       length: transformedRow.length || 6.5,
