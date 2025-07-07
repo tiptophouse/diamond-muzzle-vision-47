@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from 'react-hook-form';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -51,21 +51,6 @@ export function SingleStoneUploadForm() {
   });
 
   const { validateFormData, formatFormData } = useFormValidation();
-
-  useEffect(() => {
-    const handleTouchMove = (e: TouchEvent) => {
-      const target = e.target as Element;
-      if (target.closest('[aria-expanded="true"]')) {
-        e.preventDefault();
-      }
-    };
-
-    document.addEventListener('touchmove', handleTouchMove, { passive: false });
-    
-    return () => {
-      document.removeEventListener('touchmove', handleTouchMove);
-    };
-  }, []);
 
   const handleGiaScanSuccess = (giaData: any) => {
     console.log('GIA data received:', giaData);
