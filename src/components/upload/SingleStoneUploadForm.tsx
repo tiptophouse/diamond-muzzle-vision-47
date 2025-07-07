@@ -55,44 +55,149 @@ export function SingleStoneUploadForm() {
   const { validateFormData, formatFormData } = useFormValidation();
 
   const handleGiaScanSuccess = (giaData: any) => {
-    console.log('GIA data received:', giaData);
+    console.log('🔍 GIA scan received data:', giaData);
     
-    // Comprehensive mapping of all GIA data fields including certificate URL
-    if (giaData.stock) setValue('stockNumber', giaData.stock);
-    if (giaData.shape) setValue('shape', giaData.shape);
-    if (giaData.weight) setValue('carat', Number(giaData.weight));
-    if (giaData.color) setValue('color', giaData.color);
-    if (giaData.clarity) setValue('clarity', giaData.clarity);
-    if (giaData.cut) setValue('cut', giaData.cut);
-    if (giaData.certificate_number) setValue('certificateNumber', giaData.certificate_number.toString());
-    if (giaData.lab) setValue('lab', giaData.lab);
-    if (giaData.fluorescence) setValue('fluorescence', giaData.fluorescence);
-    if (giaData.polish) setValue('polish', giaData.polish);
-    if (giaData.symmetry) setValue('symmetry', giaData.symmetry);
-    if (giaData.gridle) setValue('gridle', giaData.gridle);
-    if (giaData.culet) setValue('culet', giaData.culet);
-    if (giaData.length) setValue('length', Number(giaData.length));
-    if (giaData.width) setValue('width', Number(giaData.width));
-    if (giaData.depth) setValue('depth', Number(giaData.depth));
-    if (giaData.ratio) setValue('ratio', Number(giaData.ratio));
-    if (giaData.table_percentage) setValue('tablePercentage', Number(giaData.table_percentage));
-    if (giaData.depth_percentage) setValue('depthPercentage', Number(giaData.depth_percentage));
-    if (giaData.price_per_carat) setValue('pricePerCarat', Number(giaData.price_per_carat));
-    if (giaData.rapnet) setValue('rapnet', Number(giaData.rapnet));
-    if (giaData.picture) setValue('picture', giaData.picture);
-    
-    if (giaData.certificate_url || giaData.certificateUrl) {
-      setValue('certificateUrl', giaData.certificate_url || giaData.certificateUrl);
-      console.log('Certificate image uploaded to:', giaData.certificate_url || giaData.certificateUrl);
+    // Enhanced mapping for GIA data to form fields
+    const mappingLog: string[] = [];
+
+    // Stock/Certificate mapping
+    if (giaData.stock || giaData.certificate_number) {
+      const stockValue = giaData.stock || giaData.certificate_number?.toString() || '';
+      setValue('stockNumber', stockValue);
+      mappingLog.push(`✅ Stock: ${stockValue}`);
+    }
+
+    if (giaData.certificate_number) {
+      setValue('certificateNumber', giaData.certificate_number.toString());
+      mappingLog.push(`✅ Cert Number: ${giaData.certificate_number}`);
+    }
+
+    // Basic diamond properties
+    if (giaData.shape) {
+      setValue('shape', giaData.shape);
+      mappingLog.push(`✅ Shape: ${giaData.shape}`);
+    }
+
+    if (giaData.weight) {
+      setValue('carat', Number(giaData.weight));
+      mappingLog.push(`✅ Weight: ${giaData.weight}`);
+    }
+
+    if (giaData.color) {
+      setValue('color', giaData.color);
+      mappingLog.push(`✅ Color: ${giaData.color}`);
+    }
+
+    if (giaData.clarity) {
+      setValue('clarity', giaData.clarity);
+      mappingLog.push(`✅ Clarity: ${giaData.clarity}`);
+    }
+
+    if (giaData.cut) {
+      setValue('cut', giaData.cut);
+      mappingLog.push(`✅ Cut: ${giaData.cut}`);
+    }
+
+    // Lab and certificate info
+    if (giaData.lab) {
+      setValue('lab', giaData.lab);
+      mappingLog.push(`✅ Lab: ${giaData.lab}`);
+    }
+
+    // Detailed grading
+    if (giaData.fluorescence) {
+      setValue('fluorescence', giaData.fluorescence);
+      mappingLog.push(`✅ Fluorescence: ${giaData.fluorescence}`);
+    }
+
+    if (giaData.polish) {
+      setValue('polish', giaData.polish);
+      mappingLog.push(`✅ Polish: ${giaData.polish}`);
+    }
+
+    if (giaData.symmetry) {
+      setValue('symmetry', giaData.symmetry);
+      mappingLog.push(`✅ Symmetry: ${giaData.symmetry}`);
+    }
+
+    if (giaData.gridle) {
+      setValue('gridle', giaData.gridle);
+      mappingLog.push(`✅ Girdle: ${giaData.gridle}`);
+    }
+
+    if (giaData.culet) {
+      setValue('culet', giaData.culet);
+      mappingLog.push(`✅ Culet: ${giaData.culet}`);
+    }
+
+    // Measurements
+    if (giaData.length) {
+      setValue('length', Number(giaData.length));
+      mappingLog.push(`✅ Length: ${giaData.length}`);
+    }
+
+    if (giaData.width) {
+      setValue('width', Number(giaData.width));
+      mappingLog.push(`✅ Width: ${giaData.width}`);
+    }
+
+    if (giaData.depth) {
+      setValue('depth', Number(giaData.depth));
+      mappingLog.push(`✅ Depth: ${giaData.depth}`);
+    }
+
+    if (giaData.ratio) {
+      setValue('ratio', Number(giaData.ratio));
+      mappingLog.push(`✅ Ratio: ${giaData.ratio}`);
+    }
+
+    // Percentages and additional measurements
+    if (giaData.table_percentage || giaData.table) {
+      const tableValue = giaData.table_percentage || giaData.table;
+      setValue('tablePercentage', Number(tableValue));
+      mappingLog.push(`✅ Table %: ${tableValue}`);
+    }
+
+    if (giaData.depth_percentage) {
+      setValue('depthPercentage', Number(giaData.depth_percentage));
+      mappingLog.push(`✅ Depth %: ${giaData.depth_percentage}`);
+    }
+
+    // Business data
+    if (giaData.price_per_carat) {
+      setValue('pricePerCarat', Number(giaData.price_per_carat));
+      mappingLog.push(`✅ Price/Carat: ${giaData.price_per_carat}`);
+    }
+
+    if (giaData.rapnet) {
+      setValue('rapnet', Number(giaData.rapnet));
+      mappingLog.push(`✅ RapNet: ${giaData.rapnet}`);
+    }
+
+    // Images and URLs
+    if (giaData.picture) {
+      setValue('picture', giaData.picture);
+      mappingLog.push(`✅ Picture: ${giaData.picture}`);
     }
     
-    if (giaData.certificate_comment) setValue('certificateComment', giaData.certificate_comment);
+    if (giaData.certificate_url || giaData.certificateUrl) {
+      const certUrl = giaData.certificate_url || giaData.certificateUrl;
+      setValue('certificateUrl', certUrl);
+      mappingLog.push(`✅ Certificate URL: ${certUrl}`);
+    }
+    
+    if (giaData.certificate_comment) {
+      setValue('certificateComment', giaData.certificate_comment);
+      mappingLog.push(`✅ Certificate Comment: ${giaData.certificate_comment}`);
+    }
+    
+    console.log('🔍 GIA Data Mapping Summary:', mappingLog);
     
     setIsScanning(false);
     
     toast({
       title: "✅ Certificate Scanned Successfully",
-      description: "All diamond information auto-filled and certificate image uploaded",
+      description: `Mapped ${mappingLog.length} fields from GIA certificate`,
     });
   };
 
