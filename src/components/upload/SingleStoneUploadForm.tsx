@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from 'react-hook-form';
 import { Button } from "@/components/ui/button";
@@ -7,23 +6,25 @@ import { useToast } from "@/components/ui/use-toast";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useInventoryCrud } from "@/hooks/useInventoryCrud";
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
-import { Camera } from "lucide-react";
+import { Camera, Smartphone, Plus } from "lucide-react";
 import { UploadSuccessCard } from "./UploadSuccessCard";
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { DiamondDetailsSection } from './form/DiamondDetailsSection';
-import { CertificateSection } from './form/CertificateSection';
-import { MeasurementsSection } from './form/MeasurementsSection';
-import { DetailedGradingSection } from './form/DetailedGradingSection';
-import { BusinessInfoSection } from './form/BusinessInfoSection';
-import { ImageUploadSection } from './form/ImageUploadSection';
-import { FormActions } from './form/FormActions';
+import { MobileDiamondDetailsSection } from './form/MobileDiamondDetailsSection';
+import { MobileCertificateSection } from './form/MobileCertificateSection';
+import { MobileMeasurementsSection } from './form/MobileMeasurementsSection';
+import { MobileDetailedGradingSection } from './form/MobileDetailedGradingSection';
+import { MobileBusinessInfoSection } from './form/MobileBusinessInfoSection';
+import { MobileImageUploadSection } from './form/MobileImageUploadSection';
+import { MobileFormActions } from './form/MobileFormActions';
 import { useFormValidation } from './form/useFormValidation';
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function SingleStoneUploadForm() {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
   const [isScanning, setIsScanning] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const isMobile = useIsMobile();
   const { addDiamond, isLoading } = useInventoryCrud({
     onSuccess: () => {
       console.log('✅ Diamond added successfully, showing success card');
@@ -57,7 +58,6 @@ export function SingleStoneUploadForm() {
   const handleGiaScanSuccess = (giaData: any) => {
     console.log('GIA data received:', giaData);
     
-    // Comprehensive mapping of all GIA data fields including certificate URL
     if (giaData.stock) setValue('stockNumber', giaData.stock);
     if (giaData.shape) setValue('shape', giaData.shape);
     if (giaData.weight) setValue('carat', Number(giaData.weight));
@@ -81,7 +81,6 @@ export function SingleStoneUploadForm() {
     if (giaData.rapnet) setValue('rapnet', Number(giaData.rapnet));
     if (giaData.picture) setValue('picture', giaData.picture);
     
-    // Handle certificate URL from uploaded certificate image
     if (giaData.certificate_url || giaData.certificateUrl) {
       setValue('certificateUrl', giaData.certificate_url || giaData.certificateUrl);
       console.log('Certificate image uploaded to:', giaData.certificate_url || giaData.certificateUrl);
@@ -182,73 +181,89 @@ export function SingleStoneUploadForm() {
 
   if (!user) {
     return (
-      <Card>
+      <Card className="mx-4">
         <CardContent className="pt-6 text-center">
-          <p className="text-muted-foreground">Please log in to add diamonds to your inventory.</p>
+          <div className="space-y-3 py-8">
+            <div className="p-3 bg-gray-100 rounded-full w-fit mx-auto">
+              <Smartphone className="h-8 w-8 text-gray-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">Login Required</h3>
+            <p className="text-sm text-gray-600">Please log in to add diamonds to your inventory.</p>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Add Single Diamond</CardTitle>
+    <div className="space-y-4 px-4 pb-6">
+      <Card className="border border-gray-200 shadow-sm">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <CardTitle className="text-lg sm:text-xl font-semibold text-gray-900 flex items-center gap-2">
+                {isMobile && <Plus className="h-5 w-5 text-diamond-600" />}
+                Add Single Diamond
+              </CardTitle>
+              <p className="text-sm text-gray-600 mt-1">
+                {isMobile ? "Fill details or scan GIA certificate" : "Enter diamond details manually or scan GIA certificate"}
+              </p>
+            </div>
             <Button
               type="button"
               variant="outline"
               onClick={() => setIsScanning(true)}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full sm:w-auto bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
             >
               <Camera className="h-4 w-4" />
-              Scan GIA Certificate
+              {isMobile ? "Scan GIA" : "Scan GIA Certificate"}
             </Button>
           </div>
         </CardHeader>
+        
         <CardContent>
           <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-            <DiamondDetailsSection
+            <MobileDiamondDetailsSection
               register={register}
               setValue={setValue}
               watch={watch}
               errors={errors}
             />
 
-            <CertificateSection
+            <MobileCertificateSection
               register={register}
               setValue={setValue}
               watch={watch}
               errors={errors}
             />
 
-            <MeasurementsSection
-              register={register}
-              watch={watch}
-              errors={errors}
-            />
-
-            <DetailedGradingSection
+            <MobileMeasurementsSection
               register={register}
               setValue={setValue}
               watch={watch}
               errors={errors}
             />
 
-            <BusinessInfoSection
+            <MobileDetailedGradingSection
               register={register}
               setValue={setValue}
               watch={watch}
               errors={errors}
             />
 
-            <ImageUploadSection
+            <MobileBusinessInfoSection
+              register={register}
+              setValue={setValue}
+              watch={watch}
+              errors={errors}
+            />
+
+            <MobileImageUploadSection
               setValue={setValue}
               watch={watch}
             />
 
-            <FormActions
+            <MobileFormActions
               onReset={resetForm}
               isLoading={isLoading}
             />
@@ -261,6 +276,6 @@ export function SingleStoneUploadForm() {
         onClose={() => setIsScanning(false)}
         onScanSuccess={handleGiaScanSuccess}
       />
-    </>
+    </div>
   );
 }
