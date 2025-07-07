@@ -51,14 +51,3 @@ export const labOptions = [
 export const statuses = [
   'Available', 'Reserved', 'Sold', 'On Hold'
 ];
-
-// Export with DIAMOND_ prefix for mobile form
-export const DIAMOND_SHAPES = shapes;
-export const DIAMOND_COLORS = colors;
-export const DIAMOND_CLARITIES = clarities;
-export const DIAMOND_CUTS = cuts;
-export const DIAMOND_POLISH_GRADES = polishGrades;
-export const DIAMOND_SYMMETRY_GRADES = symmetryGrades;
-export const DIAMOND_FLUORESCENCE_INTENSITIES = fluorescences;
-export const DIAMOND_CULET_SIZES = culetGrades;
-export const DIAMOND_GIRDLE_DESCRIPTIONS = girdleTypes;

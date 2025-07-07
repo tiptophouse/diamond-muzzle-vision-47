@@ -52,7 +52,7 @@ export function UploadForm() {
   }
 
   return (
-    <div className="max-w-xl mx-auto">
+    <div className="max-w-xl mx-auto px-4 sm:px-0">
       <Card className="diamond-card mb-6">
         <CardContent className="pt-6">
           <div className="space-y-4">
@@ -66,20 +66,24 @@ export function UploadForm() {
             <EnhancedUploadResult result={result} fileName={selectedFile?.name} />
 
             {selectedFile && (
-              <div className="flex justify-end gap-3">
+              <div className="flex flex-col sm:flex-row justify-end gap-3">
                 <Button 
                   variant="outline" 
                   onClick={resetForm}
                   disabled={uploading}
+                  size="lg"
+                  className="w-full sm:w-auto min-h-[48px] touch-manipulation"
                 >
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                  <RefreshCw className="h-5 w-5 mr-2" />
                   Reset
                 </Button>
                 <Button 
                   onClick={handleUploadClick}
                   disabled={uploading || !!result}
+                  size="lg"
+                  className="w-full sm:w-auto min-h-[48px] touch-manipulation"
                 >
-                  <Upload className="h-4 w-4 mr-2" />
+                  <Upload className="h-5 w-5 mr-2" />
                   {uploading ? "📱 Processing..." : "🚀 Process File"}
                 </Button>
               </div>

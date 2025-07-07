@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
@@ -39,21 +40,9 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     setIsLoading(true);
     try {
       const result = await addDiamondFn(data);
-      if (result) {
-        console.log('✅ CRUD: Diamond added successfully');
-        toast({
-          title: "✅ Diamond Added",
-          description: "Diamond has been successfully added to your inventory",
-        });
-      }
       return result;
     } catch (error) {
       console.error('❌ CRUD: Add diamond failed:', error);
-      toast({
-        title: "❌ Add Failed",
-        description: "Failed to add diamond. Please try again.",
-        variant: "destructive",
-      });
       return false;
     } finally {
       setIsLoading(false);

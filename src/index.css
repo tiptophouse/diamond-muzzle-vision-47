@@ -24,7 +24,28 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 250 84% 65%;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
+    
+    /* Premium Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(250 84% 65%) 0%, hsl(280 84% 65%) 50%, hsl(310 84% 65%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(210 40% 96.1%) 0%, hsl(250 40% 96.1%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(250 95% 92%) 0%, hsl(280 95% 92%) 100%);
+    --gradient-surface: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(250 20% 98%) 100%);
+    
+    /* Premium Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.1), 0 4px 6px -4px hsl(0 0% 0% / 0.1);
+    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.1), 0 8px 10px -6px hsl(0 0% 0% / 0.1);
+    --shadow-premium: 0 25px 50px -12px hsl(250 84% 65% / 0.15);
+    
+    /* Premium Colors */
+    --success: 142 76% 36%;
+    --success-foreground: 355 7% 97%;
+    --warning: 48 96% 54%;
+    --warning-foreground: 26 83% 14%;
+    --info: 211 96% 36%;
+    --info-foreground: 210 40% 98%;
     --sidebar-background: 250 45% 15%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 250 84% 65%;
@@ -88,11 +109,13 @@
     min-width: 0;
     margin: 0;
     padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', Roboto, sans-serif;
     overscroll-behavior: none;
     -webkit-overflow-scrolling: touch;
     height: 100vh;
     height: var(--tg-viewport-height, 100vh);
+    background: var(--gradient-surface);
+    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1, 'pnum' 1, 'tnum' 0, 'onum' 1, 'lnum' 0, 'dlig' 0;
   }
 
   #root {
@@ -215,12 +238,19 @@
 
 @layer components {
   .diamond-card {
-    @apply relative overflow-hidden bg-gradient-to-br from-white to-blue-50 rounded-xl border border-blue-100 shadow-md hover:shadow-lg transition-all duration-300;
+    @apply relative overflow-hidden rounded-xl border border-border/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl;
+    background: var(--gradient-surface);
+    box-shadow: var(--shadow-md);
+  }
+  
+  .diamond-card:hover {
+    box-shadow: var(--shadow-premium);
   }
   
   .diamond-card::before {
     content: '';
-    @apply absolute -top-8 -right-8 w-16 h-16 bg-blue-200 rounded-full opacity-50 blur-xl;
+    @apply absolute -top-8 -right-8 w-16 h-16 rounded-full opacity-30 blur-xl;
+    background: var(--gradient-primary);
   }
   
   .data-grid {
@@ -278,18 +308,20 @@
     }
   }
 
-  /* Cosmic Admin Components */
-  .cosmic-button {
-    @apply relative overflow-hidden bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-300;
-    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+  /* Premium Components */
+  .premium-button {
+    @apply relative overflow-hidden font-semibold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl;
+    background: var(--gradient-primary);
+    color: white;
+    transform: translateY(-1px);
   }
 
-  .cosmic-button:hover {
+  .premium-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.6);
+    box-shadow: var(--shadow-premium);
   }
 
-  .cosmic-button::before {
+  .premium-button::before {
     content: '';
     position: absolute;
     top: 0;
@@ -297,11 +329,22 @@
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-    transition: left 0.5s;
+    transition: left 0.5s ease;
   }
 
-  .cosmic-button:hover::before {
+  .premium-button:hover::before {
     left: 100%;
+  }
+  
+  .premium-card {
+    @apply relative overflow-hidden rounded-2xl border border-border/50 transition-all duration-300;
+    background: var(--gradient-surface);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .premium-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-premium);
   }
 
   .cosmic-stats {

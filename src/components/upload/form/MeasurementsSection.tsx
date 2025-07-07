@@ -23,9 +23,11 @@ export function MeasurementsSection({ register, watch, errors }: MeasurementsSec
   }, [length, width]);
 
   return (
-    <div className="space-y-4 border-t pt-6">
-      <h3 className="text-lg font-semibold text-gray-900">Physical Measurements</h3>
-      <p className="text-sm text-gray-600">Precise measurements of the diamond</p>
+    <div className="space-y-6 border-t pt-6">
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold text-foreground">Physical Measurements</h3>
+        <p className="text-sm text-muted-foreground">Precise measurements of the diamond</p>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <DiamondInputField
@@ -78,7 +80,7 @@ export function MeasurementsSection({ register, watch, errors }: MeasurementsSec
         />
 
         <DiamondInputField
-          id="table"
+          id="tablePercentage"
           label="Table %"
           type="number"
           step="0.1"
@@ -92,7 +94,7 @@ export function MeasurementsSection({ register, watch, errors }: MeasurementsSec
         />
 
         <DiamondInputField
-          id="depth_percentage"
+          id="depthPercentage"
           label="Depth %"
           type="number"
           step="0.1"

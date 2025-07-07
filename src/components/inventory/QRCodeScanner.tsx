@@ -39,7 +39,7 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Camera className="h-5 w-5" />
-              Scan GIA Certificate
+              Scan Diamond Certificate
             </CardTitle>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-4 w-4" />
