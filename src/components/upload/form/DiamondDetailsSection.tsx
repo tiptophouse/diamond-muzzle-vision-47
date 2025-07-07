@@ -2,6 +2,7 @@
 import React from 'react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'react-hook-form';
 import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
+import { AutocompleteInputField } from '@/components/inventory/form/AutocompleteInputField';
 import { ModernSelectField } from '@/components/inventory/form/ModernSelectField';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { shapes, colors, clarities, cuts, fluorescences, polishGrades, symmetryGrades } from '@/components/inventory/form/diamondFormConstants';
@@ -71,36 +72,48 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
         />
 
         {showCutField && (
-          <DiamondInputField
+          <AutocompleteInputField
             id="cut"
             label="Cut Grade"
-            placeholder="e.g., Excellent, Very Good, Good"
+            placeholder="Type cut grade (e.g., Excellent)"
+            suggestions={cuts}
             register={register}
+            value={watch('cut') || ''}
+            onChange={(value) => setValue('cut', value)}
             errors={errors}
           />
         )}
 
-        <DiamondInputField
+        <AutocompleteInputField
           id="fluorescence"
           label="Fluorescence"
-          placeholder="e.g., None, Faint, Medium, Strong"
+          placeholder="Type fluorescence (e.g., None)"
+          suggestions={fluorescences}
           register={register}
+          value={watch('fluorescence') || ''}
+          onChange={(value) => setValue('fluorescence', value)}
           errors={errors}
         />
 
-        <DiamondInputField
+        <AutocompleteInputField
           id="polish"
           label="Polish"
-          placeholder="e.g., Excellent, Very Good, Good"
+          placeholder="Type polish grade (e.g., Excellent)"
+          suggestions={polishGrades}
           register={register}
+          value={watch('polish') || ''}
+          onChange={(value) => setValue('polish', value)}
           errors={errors}
         />
 
-        <DiamondInputField
+        <AutocompleteInputField
           id="symmetry"
           label="Symmetry"
-          placeholder="e.g., Excellent, Very Good, Good"
+          placeholder="Type symmetry grade (e.g., Excellent)"
+          suggestions={symmetryGrades}
           register={register}
+          value={watch('symmetry') || ''}
+          onChange={(value) => setValue('symmetry', value)}
           errors={errors}
         />
       </div>
