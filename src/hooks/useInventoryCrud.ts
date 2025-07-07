@@ -1,9 +1,9 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { Diamond } from '@/components/inventory/InventoryTable';
+import { useAddDiamond } from './inventory/useAddDiamond';
 import { useUpdateDiamond } from './inventory/useUpdateDiamond';
 import { useDeleteDiamond } from './inventory/useDeleteDiamond';
 import { useInventoryDataSync } from './inventory/useInventoryDataSync';
@@ -26,6 +26,7 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     if (onSuccess) onSuccess();
   };
 
+  const { addDiamond: addDiamondFn } = useAddDiamond(successHandler);
   const { updateDiamond: updateDiamondFn } = useUpdateDiamond(successHandler);
   const { deleteDiamond: deleteDiamondFn } = useDeleteDiamond({ 
     onSuccess: successHandler, 
@@ -34,13 +35,29 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
   });
 
   const addDiamond = async (data: DiamondFormData) => {
-    console.log('➕ CRUD: Add diamond operation not available - use bulk upload instead');
-    toast({
-      title: "❌ Feature Not Available",
-      description: "Please use the bulk CSV upload to add diamonds to your inventory.",
-      variant: "destructive",
-    });
-    return false;
+    console.log('➕ CRUD: Starting add diamond operation');
+    setIsLoading(true);
+    try {
+      const result = await addDiamondFn(data);
+      if (result) {
+        console.log('✅ CRUD: Diamond added successfully');
+        toast({
+          title: "✅ Diamond Added",
+          description: "Diamond has been successfully added to your inventory",
+        });
+      }
+      return result;
+    } catch (error) {
+      console.error('❌ CRUD: Add diamond failed:', error);
+      toast({
+        title: "❌ Add Failed",
+        description: "Failed to add diamond. Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const updateDiamond = async (diamondId: string, data: DiamondFormData) => {

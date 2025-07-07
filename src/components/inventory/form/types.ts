@@ -1,47 +1,40 @@
 
 export interface DiamondFormData {
   // Basic Information
-  stockNumber: string;
+  stock: string;
   shape: string;
-  carat: number;
+  weight: number;
   color: string;
   clarity: string;
-  cut: string;
+  lab: string;
   
   // Certificate Information
-  certificateNumber?: string;
-  certificateUrl?: string;
-  certificateComment?: string;
-  lab?: string;
+  certificate_number: number;
+  certificate_comment: string;
+  picture: string;
   
   // Physical Measurements
-  length?: number;
-  width?: number;
-  depth?: number;
-  ratio?: number;
+  length: number;
+  width: number;
+  depth: number;
+  ratio: number;
+  table: number;
+  depth_percentage: number;
   
   // Detailed Grading
-  tablePercentage?: number;
-  depthPercentage?: number;
-  fluorescence?: string;
-  polish?: string;
-  symmetry?: string;
-  gridle?: string;
-  culet?: string;
+  cut: string;
+  polish: string;
+  symmetry: string;
+  fluorescence: string;
+  gridle: string;
+  culet: string;
   
   // Business Information
-  price: number;
-  pricePerCarat?: number;
-  rapnet?: number;
-  rapPercentage?: number;
-  status: string;
-  storeVisible?: boolean;
-  
-  // Image
-  picture?: string;
+  rapnet: number;
+  price_per_carat: number;
 }
 
-// API payload format based on the backend expectations
+// API payload format that matches your backend exactly
 export interface DiamondApiPayload {
   stock: string;
   shape: string;
