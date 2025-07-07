@@ -51,6 +51,24 @@ export function BasicDetailsTab({ register, setValue, watch, errors, showCutFiel
   const getSymmetryFromValue = (value: number) => {
     return symmetryGrades[value] || 'Excellent';
   };
+  
+  // Fluorescence mapping
+  const fluorescenceOptions = ['N', 'F', 'M', 'S', 'VS'];
+  const fluorescenceLabels = ['None', 'Faint', 'Medium', 'Strong', 'Very Strong'];
+  
+  const getFluorescenceValue = (fluorescence: string) => {
+    const index = fluorescenceOptions.indexOf(fluorescence);
+    return index >= 0 ? index : 0; // Default to None
+  };
+  
+  const getFluorescenceFromValue = (value: number) => {
+    return fluorescenceOptions[value] || 'N';
+  };
+  
+  const getFluorescenceLabel = (fluorescence: string) => {
+    const index = fluorescenceOptions.indexOf(fluorescence);
+    return index >= 0 ? fluorescenceLabels[index] : 'None';
+  };
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -169,17 +187,21 @@ export function BasicDetailsTab({ register, setValue, watch, errors, showCutFiel
         )}
 
         {/* Fluorescence */}
-        <div className="space-y-2">
-          <Label htmlFor="fluorescence" className="text-sm font-medium">Fluorescence</Label>
-          <Select value={watch('fluorescence') || 'No'} onValueChange={(value) => setValue('fluorescence', value)}>
-            <SelectTrigger type="button">
-              <SelectValue placeholder="Select fluorescence" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="No">No</SelectItem>
-              <SelectItem value="Yes">Yes</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="space-y-3">
+          <Label htmlFor="fluorescence" className="text-sm font-medium">
+            Fluorescence: {watch('fluorescence') || 'N'} ({getFluorescenceLabel(watch('fluorescence') || 'N')})
+          </Label>
+          <Slider
+            value={[getFluorescenceValue(watch('fluorescence') || 'N')]}
+            onValueChange={(value) => setValue('fluorescence', getFluorescenceFromValue(value[0]))}
+            max={fluorescenceOptions.length - 1}
+            step={1}
+            className="w-full"
+          />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>N (None)</span>
+            <span>VS (Very Strong)</span>
+          </div>
         </div>
 
         {/* Polish */}
