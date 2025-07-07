@@ -4,7 +4,7 @@ import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'rea
 import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
 import { MobileFriendlySelect } from '@/components/ui/MobileFriendlySelect';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { labOptions } from '@/components/inventory/form/diamondFormConstants';
+import { labOptionsList } from '@/components/inventory/form/optionHelpers';
 
 interface CertificateSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -35,7 +35,7 @@ export function CertificateSection({ register, setValue, watch, errors }: Certif
           label="Grading Laboratory"
           value={watch('lab') || 'GIA'}
           onValueChange={(value) => setValue('lab', value)}
-          options={labOptions}
+          options={labOptionsList}
           placeholder="Select laboratory"
         />
 

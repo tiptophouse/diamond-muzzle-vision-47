@@ -4,12 +4,12 @@ import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'rea
 import { MobileFriendlySelect } from '@/components/ui/MobileFriendlySelect';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { 
-  fluorescences, 
-  polishGrades, 
-  symmetryGrades, 
-  girdleTypes, 
-  culetGrades 
-} from '@/components/inventory/form/diamondFormConstants';
+  fluorescenceOptions, 
+  polishOptions, 
+  symmetryOptions, 
+  girdleOptions, 
+  culetOptions 
+} from '@/components/inventory/form/optionHelpers';
 
 interface DetailedGradingSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -32,7 +32,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
           label="Fluorescence"
           value={watch('fluorescence') || 'None'}
           onValueChange={(value) => setValue('fluorescence', value)}
-          options={fluorescences}
+          options={fluorescenceOptions}
           placeholder="Select fluorescence"
         />
 
@@ -41,7 +41,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
           label="Polish"
           value={watch('polish') || 'Excellent'}
           onValueChange={(value) => setValue('polish', value)}
-          options={polishGrades}
+          options={polishOptions}
           placeholder="Select polish grade"
         />
 
@@ -50,7 +50,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
           label="Symmetry"
           value={watch('symmetry') || 'Excellent'}
           onValueChange={(value) => setValue('symmetry', value)}
-          options={symmetryGrades}
+          options={symmetryOptions}
           placeholder="Select symmetry grade"
         />
 
@@ -59,7 +59,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
           label="Girdle"
           value={watch('gridle') || 'Medium'}
           onValueChange={(value) => setValue('gridle', value)}
-          options={girdleTypes}
+          options={girdleOptions}
           placeholder="Select girdle type"
         />
 
@@ -68,7 +68,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
           label="Culet"
           value={watch('culet') || 'None'}
           onValueChange={(value) => setValue('culet', value)}
-          options={culetGrades}
+          options={culetOptions}
           placeholder="Select culet grade"
         />
       </div>

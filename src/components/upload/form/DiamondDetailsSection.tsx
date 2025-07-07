@@ -4,7 +4,15 @@ import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'rea
 import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
 import { MobileFriendlySelect } from '@/components/ui/MobileFriendlySelect';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { shapes, colors, clarities, cuts, fluorescences, polishGrades, symmetryGrades } from '@/components/inventory/form/diamondFormConstants';
+import { 
+  shapeOptions, 
+  colorOptions, 
+  clarityOptions, 
+  cutOptions, 
+  fluorescenceOptions, 
+  polishOptions, 
+  symmetryOptions 
+} from '@/components/inventory/form/optionHelpers';
 
 interface DiamondDetailsSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -39,7 +47,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           label="Shape"
           value={watch('shape') || 'Round'}
           onValueChange={(value) => setValue('shape', value)}
-          options={shapes}
+          options={shapeOptions}
           placeholder="Select diamond shape"
         />
 
@@ -62,7 +70,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           label="Color Grade"
           value={watch('color') || 'G'}
           onValueChange={(value) => setValue('color', value)}
-          options={colors}
+          options={colorOptions}
           placeholder="Select color grade"
         />
 
@@ -71,7 +79,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           label="Clarity Grade"
           value={watch('clarity') || 'VS1'}
           onValueChange={(value) => setValue('clarity', value)}
-          options={clarities}
+          options={clarityOptions}
           placeholder="Select clarity grade"
         />
 
@@ -81,7 +89,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
             label="Cut Grade"
             value={watch('cut') || 'Excellent'}
             onValueChange={(value) => setValue('cut', value)}
-            options={cuts}
+            options={cutOptions}
             placeholder="Select cut grade"
           />
         )}
@@ -91,7 +99,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           label="Fluorescence"
           value={watch('fluorescence') || 'None'}
           onValueChange={(value) => setValue('fluorescence', value)}
-          options={fluorescences}
+          options={fluorescenceOptions}
           placeholder="Select fluorescence"
         />
 
@@ -100,7 +108,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           label="Polish"
           value={watch('polish') || 'Excellent'}
           onValueChange={(value) => setValue('polish', value)}
-          options={polishGrades}
+          options={polishOptions}
           placeholder="Select polish grade"
         />
 
@@ -109,7 +117,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           label="Symmetry"
           value={watch('symmetry') || 'Excellent'}
           onValueChange={(value) => setValue('symmetry', value)}
-          options={symmetryGrades}
+          options={symmetryOptions}
           placeholder="Select symmetry grade"
         />
       </div>

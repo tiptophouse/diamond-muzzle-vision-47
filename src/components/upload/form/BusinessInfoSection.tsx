@@ -4,7 +4,7 @@ import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'rea
 import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
 import { MobileFriendlySelect } from '@/components/ui/MobileFriendlySelect';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { statuses } from '@/components/inventory/form/diamondFormConstants';
+import { statusOptions } from '@/components/inventory/form/optionHelpers';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 
@@ -71,7 +71,7 @@ export function BusinessInfoSection({ register, setValue, watch, errors }: Busin
           label="Inventory Status"
           value={watch('status') || 'Available'}
           onValueChange={(value) => setValue('status', value)}
-          options={statuses}
+          options={statusOptions}
           placeholder="Select status"
         />
 

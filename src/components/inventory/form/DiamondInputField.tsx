@@ -12,7 +12,7 @@ interface DiamondInputFieldProps {
   step?: string;
   placeholder?: string;
   register: UseFormRegister<DiamondFormData>;
-  validation?: RegisterOptions;
+  validation?: RegisterOptions<DiamondFormData, keyof DiamondFormData>;
   errors: FieldErrors<DiamondFormData>;
   disabled?: boolean;
 }
