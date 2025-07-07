@@ -81,7 +81,6 @@ export function SingleStoneUploadForm() {
     if (giaData.rapnet) setValue('rapnet', Number(giaData.rapnet));
     if (giaData.picture) setValue('picture', giaData.picture);
     
-    // Handle certificate URL from uploaded certificate image
     if (giaData.certificate_url || giaData.certificateUrl) {
       setValue('certificateUrl', giaData.certificate_url || giaData.certificateUrl);
       console.log('Certificate image uploaded to:', giaData.certificate_url || giaData.certificateUrl);
@@ -161,7 +160,7 @@ export function SingleStoneUploadForm() {
   // Show success card after successful upload
   if (uploadSuccess) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center px-4">
+      <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50">
         <UploadSuccessCard
           title="Stone Uploaded Successfully"
           description="Your diamond has been added to your inventory. Ready to share or continue adding more stones."
@@ -182,33 +181,39 @@ export function SingleStoneUploadForm() {
 
   if (!user) {
     return (
-      <Card>
-        <CardContent className="pt-6 text-center">
-          <p className="text-muted-foreground">Please log in to add diamonds to your inventory.</p>
-        </CardContent>
-      </Card>
+      <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 text-center">
+            <p className="text-muted-foreground">Please log in to add diamonds to your inventory.</p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <>
-      <Card>
-        <CardHeader>
+    <div className="min-h-screen bg-gray-50">
+      <Card className="border-0 shadow-none bg-transparent">
+        <CardHeader className="pb-4 px-4">
           <div className="flex items-center justify-between">
-            <CardTitle>Add Single Diamond</CardTitle>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsScanning(true)}
-              className="flex items-center gap-2"
-            >
-              <Camera className="h-4 w-4" />
-              Scan GIA Certificate
-            </Button>
+            <div className="text-center flex-1">
+              <CardTitle className="text-2xl font-bold text-gray-900">Add Single Diamond</CardTitle>
+              <p className="text-sm text-gray-600 mt-1">Scan certificate or enter manually</p>
+            </div>
           </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsScanning(true)}
+            className="w-full h-14 mt-4 text-base font-semibold border-2 border-blue-200 text-blue-700 hover:bg-blue-50"
+          >
+            <Camera className="h-5 w-5 mr-3" />
+            Scan GIA Certificate
+          </Button>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+        
+        <CardContent className="p-0">
+          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-0">
             <DiamondDetailsSection
               register={register}
               setValue={setValue}
@@ -261,6 +266,6 @@ export function SingleStoneUploadForm() {
         onClose={() => setIsScanning(false)}
         onScanSuccess={handleGiaScanSuccess}
       />
-    </>
+    </div>
   );
 }
