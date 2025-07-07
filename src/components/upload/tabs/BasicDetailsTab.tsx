@@ -4,6 +4,7 @@ import { shapes, colors, clarities, cuts, fluorescences, polishGrades, symmetryG
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 
 interface BasicDetailsTabProps {
   register: UseFormRegister<DiamondFormData>;
@@ -14,6 +15,42 @@ interface BasicDetailsTabProps {
 }
 
 export function BasicDetailsTab({ register, setValue, watch, errors, showCutField }: BasicDetailsTabProps) {
+  // Grade mapping functions
+  const getClarityValue = (clarity: string) => {
+    const index = clarities.indexOf(clarity);
+    return index >= 0 ? index : 4; // Default to VS1
+  };
+  
+  const getClarityFromValue = (value: number) => {
+    return clarities[value] || 'VS1';
+  };
+  
+  const getCutValue = (cut: string) => {
+    const index = cuts.indexOf(cut);
+    return index >= 0 ? index : 0; // Default to Excellent
+  };
+  
+  const getCutFromValue = (value: number) => {
+    return cuts[value] || 'Excellent';
+  };
+  
+  const getPolishValue = (polish: string) => {
+    const index = polishGrades.indexOf(polish);
+    return index >= 0 ? index : 0; // Default to Excellent
+  };
+  
+  const getPolishFromValue = (value: number) => {
+    return polishGrades[value] || 'Excellent';
+  };
+  
+  const getSymmetryValue = (symmetry: string) => {
+    const index = symmetryGrades.indexOf(symmetry);
+    return index >= 0 ? index : 0; // Default to Excellent
+  };
+  
+  const getSymmetryFromValue = (value: number) => {
+    return symmetryGrades[value] || 'Excellent';
+  };
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -94,38 +131,40 @@ export function BasicDetailsTab({ register, setValue, watch, errors, showCutFiel
         </div>
 
         {/* Clarity */}
-        <div className="space-y-2">
-          <Label htmlFor="clarity" className="text-sm font-medium">Clarity Grade</Label>
-          <Select value={watch('clarity') || 'VS1'} onValueChange={(value) => setValue('clarity', value)}>
-            <SelectTrigger type="button">
-              <SelectValue placeholder="Select clarity" />
-            </SelectTrigger>
-            <SelectContent>
-              {clarities.map((clarity) => (
-                <SelectItem key={clarity} value={clarity}>
-                  {clarity}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="space-y-3">
+          <Label htmlFor="clarity" className="text-sm font-medium">
+            Clarity Grade: {watch('clarity') || 'VS1'}
+          </Label>
+          <Slider
+            value={[getClarityValue(watch('clarity') || 'VS1')]}
+            onValueChange={(value) => setValue('clarity', getClarityFromValue(value[0]))}
+            max={clarities.length - 1}
+            step={1}
+            className="w-full"
+          />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>FL (Best)</span>
+            <span>I3 (Lowest)</span>
+          </div>
         </div>
 
         {/* Cut - Only for Round diamonds */}
         {showCutField && (
-          <div className="space-y-2">
-            <Label htmlFor="cut" className="text-sm font-medium">Cut Grade</Label>
-            <Select value={watch('cut') || 'Excellent'} onValueChange={(value) => setValue('cut', value)}>
-              <SelectTrigger type="button">
-                <SelectValue placeholder="Select cut" />
-              </SelectTrigger>
-              <SelectContent>
-                {cuts.map((cut) => (
-                  <SelectItem key={cut} value={cut}>
-                    {cut}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="space-y-3">
+            <Label htmlFor="cut" className="text-sm font-medium">
+              Cut Grade: {watch('cut') || 'Excellent'}
+            </Label>
+            <Slider
+              value={[getCutValue(watch('cut') || 'Excellent')]}
+              onValueChange={(value) => setValue('cut', getCutFromValue(value[0]))}
+              max={cuts.length - 1}
+              step={1}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Excellent</span>
+              <span>Poor</span>
+            </div>
           </div>
         )}
 
@@ -147,37 +186,39 @@ export function BasicDetailsTab({ register, setValue, watch, errors, showCutFiel
         </div>
 
         {/* Polish */}
-        <div className="space-y-2">
-          <Label htmlFor="polish" className="text-sm font-medium">Polish</Label>
-          <Select value={watch('polish') || 'Excellent'} onValueChange={(value) => setValue('polish', value)}>
-            <SelectTrigger type="button">
-              <SelectValue placeholder="Select polish" />
-            </SelectTrigger>
-            <SelectContent>
-              {polishGrades.map((polish) => (
-                <SelectItem key={polish} value={polish}>
-                  {polish}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="space-y-3">
+          <Label htmlFor="polish" className="text-sm font-medium">
+            Polish: {watch('polish') || 'Excellent'}
+          </Label>
+          <Slider
+            value={[getPolishValue(watch('polish') || 'Excellent')]}
+            onValueChange={(value) => setValue('polish', getPolishFromValue(value[0]))}
+            max={polishGrades.length - 1}
+            step={1}
+            className="w-full"
+          />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>Excellent</span>
+            <span>Poor</span>
+          </div>
         </div>
 
         {/* Symmetry */}
-        <div className="space-y-2">
-          <Label htmlFor="symmetry" className="text-sm font-medium">Symmetry</Label>
-          <Select value={watch('symmetry') || 'Excellent'} onValueChange={(value) => setValue('symmetry', value)}>
-            <SelectTrigger type="button">
-              <SelectValue placeholder="Select symmetry" />
-            </SelectTrigger>
-            <SelectContent>
-              {symmetryGrades.map((symmetry) => (
-                <SelectItem key={symmetry} value={symmetry}>
-                  {symmetry}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="space-y-3">
+          <Label htmlFor="symmetry" className="text-sm font-medium">
+            Symmetry: {watch('symmetry') || 'Excellent'}
+          </Label>
+          <Slider
+            value={[getSymmetryValue(watch('symmetry') || 'Excellent')]}
+            onValueChange={(value) => setValue('symmetry', getSymmetryFromValue(value[0]))}
+            max={symmetryGrades.length - 1}
+            step={1}
+            className="w-full"
+          />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>Excellent</span>
+            <span>Poor</span>
+          </div>
         </div>
       </div>
     </div>
