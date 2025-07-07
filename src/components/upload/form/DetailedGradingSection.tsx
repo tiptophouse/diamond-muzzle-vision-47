@@ -33,10 +33,10 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
             Fluorescence
           </Label>
           <Select value={watch('fluorescence') || 'None'} onValueChange={(value) => setValue('fluorescence', value)}>
-            <SelectTrigger className="w-full" type="button">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select fluorescence" />
             </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
+            <SelectContent>
               {fluorescences.map((fluorescence) => (
                 <SelectItem key={fluorescence} value={fluorescence}>
                   {fluorescence}
@@ -51,10 +51,10 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
             Polish
           </Label>
           <Select value={watch('polish') || 'Excellent'} onValueChange={(value) => setValue('polish', value)}>
-            <SelectTrigger className="w-full" type="button">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select polish" />
             </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
+            <SelectContent>
               {polishGrades.map((polish) => (
                 <SelectItem key={polish} value={polish}>
                   {polish}
@@ -69,10 +69,10 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
             Symmetry
           </Label>
           <Select value={watch('symmetry') || 'Excellent'} onValueChange={(value) => setValue('symmetry', value)}>
-            <SelectTrigger className="w-full" type="button">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select symmetry" />
             </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
+            <SelectContent>
               {symmetryGrades.map((symmetry) => (
                 <SelectItem key={symmetry} value={symmetry}>
                   {symmetry}
@@ -87,10 +87,10 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
             Girdle
           </Label>
           <Select value={watch('gridle') || 'Medium'} onValueChange={(value) => setValue('gridle', value)}>
-            <SelectTrigger className="w-full" type="button">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select girdle" />
             </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
+            <SelectContent>
               {girdleTypes.map((girdle) => (
                 <SelectItem key={girdle} value={girdle}>
                   {girdle}
@@ -105,10 +105,10 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
             Culet
           </Label>
           <Select value={watch('culet') || 'None'} onValueChange={(value) => setValue('culet', value)}>
-            <SelectTrigger className="w-full" type="button">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select culet" />
             </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
+            <SelectContent>
               {culetGrades.map((culet) => (
                 <SelectItem key={culet} value={culet}>
                   {culet}

@@ -36,10 +36,10 @@ export function CertificateSection({ register, setValue, watch, errors }: Certif
             Grading Laboratory
           </Label>
           <Select value={watch('lab') || 'GIA'} onValueChange={(value) => setValue('lab', value)}>
-            <SelectTrigger className="w-full" type="button">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select laboratory" />
             </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
+            <SelectContent>
               {labOptions.map((lab) => (
                 <SelectItem key={lab} value={lab}>
                   {lab}
