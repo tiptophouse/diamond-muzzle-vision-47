@@ -26,13 +26,6 @@ export function SingleStoneUploadForm() {
         title: "✅ Success",
         description: "Diamond has been added to your inventory",
       });
-    },
-    onError: () => {
-      toast({
-        title: "❌ Upload Failed",
-        description: "Failed to add diamond to inventory. Please try again.",
-        variant: "destructive",
-      });
     }
   });
 
@@ -59,7 +52,6 @@ export function SingleStoneUploadForm() {
 
   const { validateFormData, formatFormData } = useFormValidation();
 
-  // Prevent body scroll when selects are open
   useEffect(() => {
     const handleTouchMove = (e: TouchEvent) => {
       const target = e.target as Element;
@@ -143,7 +135,15 @@ export function SingleStoneUploadForm() {
     const formattedData = formatFormData(data, showCutField);
     console.log('🔍 UPLOAD: Calling addDiamond with:', formattedData);
     
-    addDiamond(formattedData);
+    addDiamond(formattedData).then((success) => {
+      if (!success) {
+        toast({
+          title: "❌ Upload Failed",
+          description: "Failed to add diamond to inventory. Please try again.",
+          variant: "destructive",
+        });
+      }
+    });
   };
 
   const resetForm = () => {
