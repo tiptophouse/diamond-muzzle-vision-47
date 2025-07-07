@@ -9,7 +9,7 @@ import {
   girdleTypes, 
   culetGrades 
 } from '@/components/inventory/form/diamondFormConstants';
-import { MobileWheelPicker } from '@/components/ui/MobileWheelPicker';
+import { MobilePicker } from '@/components/ui/MobilePicker';
 
 interface DetailedGradingSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -26,8 +26,8 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
         <p className="text-sm text-muted-foreground">Professional grading details from certificate</p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <MobileWheelPicker
+      <div className="grid grid-cols-1 gap-6">
+        <MobilePicker
           id="fluorescence"
           label="Fluorescence"
           value={watch('fluorescence') || 'None'}
@@ -35,7 +35,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
           options={fluorescences}
         />
 
-        <MobileWheelPicker
+        <MobilePicker
           id="polish"
           label="Polish"
           value={watch('polish') || 'Excellent'}
@@ -43,7 +43,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
           options={polishGrades}
         />
 
-        <MobileWheelPicker
+        <MobilePicker
           id="symmetry"
           label="Symmetry"
           value={watch('symmetry') || 'Excellent'}
@@ -51,7 +51,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
           options={symmetryGrades}
         />
 
-        <MobileWheelPicker
+        <MobilePicker
           id="gridle"
           label="Girdle"
           value={watch('gridle') || 'Medium'}
@@ -59,7 +59,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
           options={girdleTypes}
         />
 
-        <MobileWheelPicker
+        <MobilePicker
           id="culet"
           label="Culet"
           value={watch('culet') || 'None'}

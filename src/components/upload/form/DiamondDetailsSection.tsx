@@ -5,7 +5,7 @@ import { DiamondInputField } from '@/components/inventory/form/DiamondInputField
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { shapes, colors, clarities, cuts, fluorescences, polishGrades, symmetryGrades } from '@/components/inventory/form/diamondFormConstants';
 import { MobileButtonSelector } from '@/components/ui/MobileButtonSelector';
-import { MobileWheelPicker } from '@/components/ui/MobileWheelPicker';
+import { MobilePicker } from '@/components/ui/MobilePicker';
 
 interface DiamondDetailsSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -25,7 +25,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
         <p className="text-sm text-muted-foreground">These fields can be auto-filled by scanning a GIA certificate</p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-6">
         <DiamondInputField
           id="stockNumber"
           label="Stock Number / Certificate Number"
@@ -87,7 +87,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           />
         )}
 
-        <MobileWheelPicker
+        <MobilePicker
           id="fluorescence"
           label="Fluorescence"
           value={watch('fluorescence') || 'None'}
@@ -95,7 +95,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           options={fluorescences}
         />
 
-        <MobileWheelPicker
+        <MobilePicker
           id="polish"
           label="Polish"
           value={watch('polish') || 'Excellent'}
@@ -103,7 +103,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           options={polishGrades}
         />
 
-        <MobileWheelPicker
+        <MobilePicker
           id="symmetry"
           label="Symmetry"
           value={watch('symmetry') || 'Excellent'}

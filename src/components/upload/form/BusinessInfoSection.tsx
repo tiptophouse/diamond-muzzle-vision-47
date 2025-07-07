@@ -6,7 +6,7 @@ import { DiamondFormData } from '@/components/inventory/form/types';
 import { statuses } from '@/components/inventory/form/diamondFormConstants';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { MobileButtonSelector } from '@/components/ui/MobileButtonSelector';
+import { MobilePicker } from '@/components/ui/MobilePicker';
 
 interface BusinessInfoSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -34,7 +34,7 @@ export function BusinessInfoSection({ register, setValue, watch, errors }: Busin
         <p className="text-sm text-muted-foreground">Pricing and inventory management details</p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-6">
         <DiamondInputField
           id="price"
           label="Total Price (USD) *"
@@ -66,22 +66,23 @@ export function BusinessInfoSection({ register, setValue, watch, errors }: Busin
           errors={errors}
         />
 
-        <MobileButtonSelector
+        <MobilePicker
           id="status"
           label="Inventory Status"
           value={watch('status') || 'Available'}
           onValueChange={(value) => setValue('status', value)}
           options={statuses}
-          columns={2}
         />
 
-        <div className="md:col-span-2 flex items-center space-x-2">
+        <div className="flex items-center space-x-3 p-4 bg-accent/10 rounded-lg">
           <Switch
             id="storeVisible"
             checked={watch('storeVisible') || false}
             onCheckedChange={(checked) => setValue('storeVisible', checked)}
           />
-          <Label htmlFor="storeVisible">Make visible in public store</Label>
+          <Label htmlFor="storeVisible" className="text-base font-medium">
+            Make visible in public store
+          </Label>
         </div>
       </div>
     </div>
