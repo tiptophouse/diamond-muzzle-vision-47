@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { DiamondFormData } from './form/types';
@@ -21,33 +20,29 @@ interface DiamondFormProps {
 export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: DiamondFormProps) {
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<DiamondFormData>({
     defaultValues: diamond ? {
-      stock: diamond.stockNumber || '',
+      stockNumber: diamond.stockNumber || '',
       shape: diamond.shape || 'Round',
-      weight: diamond.carat || 1,
+      carat: diamond.carat || 1,
       color: diamond.color || 'G',
       clarity: diamond.clarity || 'VS1',
       cut: diamond.cut || 'Excellent',
-      price_per_carat: diamond.price || 0,
+      price: diamond.price || 0,
+      status: diamond.status || 'Available',
       picture: diamond.imageUrl || '',
-      certificate_number: (diamond as any).certificateNumber || 0,
+      // Map additional fields from diamond object if they exist
+      certificateNumber: (diamond as any).certificateNumber || '',
       lab: (diamond as any).lab || 'GIA',
       fluorescence: (diamond as any).fluorescence || 'None',
       polish: (diamond as any).polish || 'Excellent',
       symmetry: (diamond as any).symmetry || 'Excellent',
       gridle: (diamond as any).gridle || 'Medium',
       culet: (diamond as any).culet || 'None',
-      certificate_comment: (diamond as any).certificateComment || '',
-      length: (diamond as any).length || 0,
-      width: (diamond as any).width || 0,
-      depth: (diamond as any).depth || 0,
-      ratio: (diamond as any).ratio || 0,
-      table: (diamond as any).table || 0,
-      depth_percentage: (diamond as any).depth_percentage || 0,
-      rapnet: (diamond as any).rapnet || 0,
+      storeVisible: (diamond as any).store_visible || false,
     } : {
-      stock: '',
-      weight: 1,
-      price_per_carat: 0,
+      stockNumber: '',
+      carat: 1,
+      price: 0,
+      status: 'Available',
       picture: '',
       shape: 'Round',
       color: 'G',
@@ -59,15 +54,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       lab: 'GIA',
       gridle: 'Medium',
       culet: 'None',
-      certificate_number: 0,
-      certificate_comment: '',
-      length: 0,
-      width: 0,
-      depth: 0,
-      ratio: 0,
-      table: 0,
-      depth_percentage: 0,
-      rapnet: 0,
+      storeVisible: false
     }
   });
 
@@ -75,29 +62,23 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
     if (diamond && diamond.id) {
       console.log('Resetting form with diamond data:', diamond);
       reset({
-        stock: diamond.stockNumber || '',
+        stockNumber: diamond.stockNumber || '',
         shape: diamond.shape || 'Round',
-        weight: diamond.carat || 1,
+        carat: diamond.carat || 1,
         color: diamond.color || 'G',
         clarity: diamond.clarity || 'VS1',
         cut: diamond.cut || 'Excellent',
-        price_per_carat: diamond.price || 0,
+        price: diamond.price || 0,
+        status: diamond.status || 'Available',
         picture: diamond.imageUrl || '',
-        certificate_number: (diamond as any).certificateNumber || 0,
+        certificateNumber: (diamond as any).certificateNumber || '',
         lab: (diamond as any).lab || 'GIA',
         fluorescence: (diamond as any).fluorescence || 'None',
         polish: (diamond as any).polish || 'Excellent',
         symmetry: (diamond as any).symmetry || 'Excellent',
         gridle: (diamond as any).gridle || 'Medium',
         culet: (diamond as any).culet || 'None',
-        certificate_comment: (diamond as any).certificateComment || '',
-        length: (diamond as any).length || 0,
-        width: (diamond as any).width || 0,
-        depth: (diamond as any).depth || 0,
-        ratio: (diamond as any).ratio || 0,
-        table: (diamond as any).table || 0,
-        depth_percentage: (diamond as any).depth_percentage || 0,
-        rapnet: (diamond as any).rapnet || 0,
+        storeVisible: (diamond as any).store_visible || false,
       });
     }
   }, [diamond?.id, reset]);
@@ -106,46 +87,51 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
     console.log('Form submitted with data:', data);
     
     // Validate required fields
-    if (!data.stock || data.stock.trim() === '') {
+    if (!data.stockNumber || data.stockNumber.trim() === '') {
       console.error('Stock number is required');
       return;
     }
     
-    if (!data.weight || data.weight <= 0) {
-      console.error('Valid weight is required');
+    if (!data.carat || data.carat <= 0) {
+      console.error('Valid carat weight is required');
       return;
     }
     
-    if (!data.price_per_carat || data.price_per_carat <= 0) {
-      console.error('Valid price per carat is required');
+    if (!data.price || data.price <= 0) {
+      console.error('Valid price is required');
       return;
     }
     
     const formattedData = {
       ...data,
-      stock: data.stock.trim(),
-      weight: Number(data.weight),
-      price_per_carat: Number(data.price_per_carat),
+      stockNumber: data.stockNumber.trim(),
+      carat: Number(data.carat),
+      price: Number(data.price),
       shape: data.shape || 'Round',
       color: data.color || 'G',
       clarity: data.clarity || 'VS1',
       cut: data.cut || 'Excellent',
+      status: data.status || 'Available',
       picture: data.picture?.trim() || '',
-      certificate_number: data.certificate_number || 0,
-      certificate_comment: data.certificate_comment?.trim() || '',
+      // Include all the new fields
+      certificateNumber: data.certificateNumber?.trim() || '',
+      certificateUrl: data.certificateUrl?.trim() || '',
+      certificateComment: data.certificateComment?.trim() || '',
       lab: data.lab || 'GIA',
-      length: data.length ? Number(data.length) : 0,
-      width: data.width ? Number(data.width) : 0,
-      depth: data.depth ? Number(data.depth) : 0,
-      ratio: data.ratio ? Number(data.ratio) : 0,
-      table: data.table ? Number(data.table) : 0,
-      depth_percentage: data.depth_percentage ? Number(data.depth_percentage) : 0,
+      length: data.length ? Number(data.length) : undefined,
+      width: data.width ? Number(data.width) : undefined,
+      depth: data.depth ? Number(data.depth) : undefined,
+      ratio: data.ratio ? Number(data.ratio) : undefined,
+      tablePercentage: data.tablePercentage ? Number(data.tablePercentage) : undefined,
+      depthPercentage: data.depthPercentage ? Number(data.depthPercentage) : undefined,
       fluorescence: data.fluorescence || 'None',
       polish: data.polish || 'Excellent',
       symmetry: data.symmetry || 'Excellent',
       gridle: data.gridle || 'Medium',
       culet: data.culet || 'None',
-      rapnet: data.rapnet ? Number(data.rapnet) : 0,
+      pricePerCarat: data.pricePerCarat ? Number(data.pricePerCarat) : undefined,
+      rapnet: data.rapnet ? Number(data.rapnet) : undefined,
+      storeVisible: data.storeVisible || false,
     };
     
     console.log('Formatted form data:', formattedData);

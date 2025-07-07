@@ -21,9 +21,8 @@ export function CertificateSection({ register, setValue, watch, errors }: Certif
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <DiamondInputField
-          id="certificate_number"
+          id="certificateNumber"
           label="Certificate Number"
-          type="number"
           placeholder="e.g., 2141438171"
           register={register}
           errors={errors}
@@ -39,7 +38,17 @@ export function CertificateSection({ register, setValue, watch, errors }: Certif
 
         <div className="md:col-span-2">
           <DiamondInputField
-            id="certificate_comment"
+            id="certificateUrl"
+            label="Certificate URL"
+            placeholder="Link to online certificate verification"
+            register={register}
+            errors={errors}
+          />
+        </div>
+
+        <div className="md:col-span-2">
+          <DiamondInputField
+            id="certificateComment"
             label="Certificate Comments"
             placeholder="Additional comments or inscriptions"
             register={register}

@@ -1,3 +1,4 @@
+
 import { Layout } from "@/components/layout/Layout";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -11,7 +12,6 @@ import { DiamondForm } from "@/components/inventory/DiamondForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useState } from "react";
 import { Diamond } from "@/components/inventory/InventoryTable";
-import { DiamondFormData } from "@/components/inventory/form/types";
 import { UploadSuccessCard } from "@/components/upload/UploadSuccessCard";
 
 export default function InventoryPage() {
@@ -46,40 +46,12 @@ export default function InventoryPage() {
   });
 
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingDiamond, setEditingDiamond] = useState<DiamondFormData | null>(null);
+  const [editingDiamond, setEditingDiamond] = useState<Diamond | null>(null);
   const [showAddSuccess, setShowAddSuccess] = useState(false);
-  const [isAddingDiamond, setIsAddingDiamond] = useState(false);
 
-  const handleEdit = (diamond: any) => {
-    const formData: DiamondFormData = {
-      stock: diamond.stockNumber || diamond.stock || '',
-      shape: diamond.shape || '',
-      weight: diamond.carat || diamond.weight || 0,
-      color: diamond.color || '',
-      clarity: diamond.clarity || '',
-      cut: diamond.cut || '',
-      polish: diamond.polish || 'Excellent',
-      symmetry: diamond.symmetry || 'Excellent',
-      fluorescence: diamond.fluorescence || 'None',
-      price_per_carat: diamond.price_per_carat || (diamond.price && diamond.carat ? diamond.price / diamond.carat : 0),
-      picture: diamond.picture || '',
-      certificate_number: parseInt(diamond.certificateNumber || diamond.certificate_number || '0') || 0,
-      certificate_comment: diamond.certificateComment || diamond.certificate_comment || '',
-      lab: diamond.lab || 'GIA',
-      length: diamond.length || 0,
-      width: diamond.width || 0,
-      depth: diamond.depth || 0,
-      ratio: diamond.ratio || 0,
-      table: diamond.table || 0,
-      depth_percentage: diamond.depth_percentage || 0,
-      gridle: diamond.gridle || 'Medium',
-      culet: diamond.culet || 'None',
-      rapnet: diamond.rapnet || 0,
-    };
-    
-    console.log('📝 INVENTORY: Opening edit form with data:', formData);
-    setEditingDiamond(formData);
-    setIsAddingDiamond(true);
+  const handleEdit = (diamond: Diamond) => {
+    console.log('📝 Edit diamond clicked:', diamond.stockNumber);
+    setEditingDiamond(diamond);
   };
 
   const handleDelete = async (diamondId: string) => {
@@ -101,30 +73,19 @@ export default function InventoryPage() {
     console.log('👁️ Store visibility toggle:', stockNumber, isVisible);
     const diamond = allDiamonds.find(d => d.stockNumber === stockNumber);
     if (diamond) {
-      const updateData: DiamondFormData = {
-        stock: diamond.stockNumber,
+      const updateData = {
+        stockNumber: diamond.stockNumber,
         shape: diamond.shape,
-        weight: diamond.carat,
+        carat: diamond.carat,
         color: diamond.color,
         clarity: diamond.clarity,
         cut: diamond.cut,
-        price_per_carat: diamond.price / diamond.carat,
-        picture: diamond.imageUrl || '',
-        certificate_number: parseInt(diamond.certificateNumber || '0') || 0,
-        certificate_comment: diamond.certificateComment || '',
-        lab: diamond.lab || 'GIA',
-        length: diamond.length || 0,
-        width: diamond.width || 0,
-        depth: diamond.depth || 0,
-        ratio: diamond.ratio || 0,
-        table: diamond.table || 0,
-        depth_percentage: diamond.depth_percentage || 0,
-        fluorescence: diamond.fluorescence || 'None',
-        polish: diamond.polish || 'Excellent',
-        symmetry: diamond.symmetry || 'Excellent',
-        gridle: diamond.gridle || 'Medium',
-        culet: diamond.culet || 'None',
-        rapnet: diamond.rapnet || 0,
+        price: diamond.price,
+        status: diamond.status,
+        storeVisible: isVisible,
+        certificateNumber: diamond.certificateNumber,
+        certificateUrl: diamond.certificateUrl,
+        lab: diamond.lab,
       };
       
       const success = await updateDiamond(diamond.id, updateData);
@@ -134,7 +95,7 @@ export default function InventoryPage() {
     }
   };
 
-  const handleEditSubmit = async (data: DiamondFormData) => {
+  const handleEditSubmit = async (data: any) => {
     console.log('💾 Saving edited diamond:', data);
     if (editingDiamond) {
       // Use the FastAPI diamond ID if available for the update
@@ -149,7 +110,7 @@ export default function InventoryPage() {
     }
   };
 
-  const handleAddSubmit = async (data: DiamondFormData) => {
+  const handleAddSubmit = async (data: any) => {
     console.log('➕ Adding new diamond:', data);
     const success = await addDiamond(data);
     if (success) {
@@ -224,7 +185,7 @@ export default function InventoryPage() {
         <Dialog open={!!editingDiamond} onOpenChange={() => setEditingDiamond(null)}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Diamond - #{editingDiamond?.stock}</DialogTitle>
+              <DialogTitle>Edit Diamond - #{editingDiamond?.stockNumber}</DialogTitle>
             </DialogHeader>
             {editingDiamond && (
               <DiamondForm
