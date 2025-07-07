@@ -1,6 +1,6 @@
 
-// FastAPI backend configuration - UPDATE THIS URL TO YOUR WORKING FASTAPI ENDPOINT
-export const API_BASE_URL = "https://api.mazalbot.com"; // ⚠️ This endpoint is currently returning 404 errors
+// FastAPI backend configuration - UPDATED FOR LOCAL TESTING
+export const API_BASE_URL = "http://localhost:8000"; // ✅ Your FastAPI backend
 
 let currentUserId: number | null = null;
 

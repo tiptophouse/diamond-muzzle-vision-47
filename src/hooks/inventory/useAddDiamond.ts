@@ -1,6 +1,7 @@
 
 import { useToast } from '@/hooks/use-toast';
 import { api, apiEndpoints } from '@/lib/api';
+import { API_BASE_URL } from '@/lib/api/config';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { generateDiamondId } from '@/utils/diamondUtils';
@@ -55,53 +56,52 @@ export function useAddDiamond(onSuccess?: () => void) {
         ? Number(data.pricePerCarat)
         : Math.round(Number(data.price) / Number(data.carat));
 
-      // Map form data to FastAPI format - using REAL data only
+      // Map form data to FastAPI format - EXACT SCHEMA MATCH
       const diamondDataPayload = {
-        // Required fields from form
+        // Required fields - exact schema match
         stock: data.stockNumber.trim(),
         shape: data.shape === 'Round' ? "round brilliant" : data.shape.toLowerCase(),
         weight: Number(data.carat),
         color: data.color,
         clarity: data.clarity,
         
-        // Certificate data - use actual values or null
+        // Certificate data - match schema exactly
         lab: data.lab || "GIA",
         certificate_number: data.certificateNumber && data.certificateNumber.trim() 
           ? parseInt(data.certificateNumber) || 0
           : 0,
         certificate_comment: data.certificateComment?.trim() || "",
-        certificate_url: data.certificateUrl?.trim() || "",
         
-        // Physical measurements - use actual values or sensible defaults based on carat
-        length: data.length && data.length > 0 ? Number(data.length) : Math.round((data.carat * 6.5) * 100) / 100,
-        width: data.width && data.width > 0 ? Number(data.width) : Math.round((data.carat * 6.5) * 100) / 100,
-        depth: data.depth && data.depth > 0 ? Number(data.depth) : Math.round((data.carat * 4.0) * 100) / 100,
-        ratio: data.ratio && data.ratio > 0 ? Number(data.ratio) : 1.0,
+        // Physical measurements - match schema field names
+        length: data.length && data.length > 0 ? Number(data.length) : 1,
+        width: data.width && data.width > 0 ? Number(data.width) : 1,
+        depth: data.depth && data.depth > 0 ? Number(data.depth) : 1,
+        ratio: data.ratio && data.ratio > 0 ? Number(data.ratio) : 1,
         
-        // Grading details
+        // Grading details - match schema exactly
         cut: data.cut?.toUpperCase() || "EXCELLENT",
         polish: data.polish?.toUpperCase() || "EXCELLENT", 
         symmetry: data.symmetry?.toUpperCase() || "EXCELLENT",
         fluorescence: data.fluorescence?.toUpperCase() || "NONE",
-        table: data.tablePercentage && data.tablePercentage > 0 ? Number(data.tablePercentage) : 60,
-        depth_percentage: data.depthPercentage && data.depthPercentage > 0 ? Number(data.depthPercentage) : 62,
+        table: data.tablePercentage && data.tablePercentage > 0 ? Number(data.tablePercentage) : 1,
+        depth_percentage: data.depthPercentage && data.depthPercentage > 0 ? Number(data.depthPercentage) : 1,
         gridle: data.gridle || "Medium",
         culet: data.culet?.toUpperCase() || "NONE",
         
-        // Business data
+        // Business data - match schema exactly
         price_per_carat: actualPricePerCarat,
         rapnet: data.rapnet && data.rapnet > 0 ? parseInt(data.rapnet.toString()) : 0,
         picture: data.picture?.trim() || "",
       };
 
-      console.log('💎 Sending REAL diamond data to FastAPI:', diamondDataPayload);
+      console.log('💎 Sending diamond data to FastAPI (exact schema match):', diamondDataPayload);
       
-      console.log('➕ ADD: Sending diamond data to FastAPI:', diamondDataPayload);
-      
-      // Try FastAPI first
+      // Try FastAPI with exact schema match
       try {
         const endpoint = apiEndpoints.addDiamond(user.id);
         console.log('➕ ADD: Using endpoint:', endpoint);
+        console.log('➕ ADD: Making POST request to:', `${API_BASE_URL}${endpoint}`);
+      
         
         const response = await api.post(endpoint, diamondDataPayload);
         
@@ -111,35 +111,35 @@ export function useAddDiamond(onSuccess?: () => void) {
 
         console.log('✅ ADD: FastAPI response:', response.data);
 
-        // Only show success message if API call actually succeeded
+        // Show success message only if API call succeeded
         if (response.data) {
           toast({
             title: "✅ Diamond Added Successfully",
-            description: "Your diamond has been added to inventory and is visible in dashboard, store, and inventory",
+            description: "Your diamond has been added to inventory via FastAPI backend",
           });
           
           if (onSuccess) onSuccess();
           return true;
         } else {
-          throw new Error("No data returned from API");
+          throw new Error("No data returned from FastAPI");
         }
         
       } catch (apiError) {
         console.error('❌ ADD: FastAPI add failed:', apiError);
         console.error('❌ ADD: Full API error details:', JSON.stringify(apiError, null, 2));
         
-        // Show specific error message to user
-        const errorMessage = apiError instanceof Error ? apiError.message : "Failed to add diamond via API";
+        // Show specific error message to user with API details
+        const errorMessage = apiError instanceof Error ? apiError.message : "Failed to add diamond via FastAPI";
         console.error('❌ ADD: Error message:', errorMessage);
         
-        // Show user-friendly error message about API connection
+        // Show detailed error message for debugging
         toast({
           variant: "destructive",
-          title: "⚠️ API Connection Issue",
-          description: "Unable to connect to the server. Your diamond will be saved locally until connection is restored.",
+          title: "❌ FastAPI Connection Failed",
+          description: `Unable to connect to FastAPI backend at ${API_BASE_URL}. Check if your server is running.`,
         });
         
-        // Fallback to localStorage with user notification
+        // Fallback to localStorage with clear messaging
         console.log('🔄 ADD: Falling back to localStorage...');
         const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
         

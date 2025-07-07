@@ -19,6 +19,7 @@ import { ImageUploadSection } from './form/ImageUploadSection';
 import { FormActions } from './form/FormActions';
 import { useFormValidation } from './form/useFormValidation';
 import { ApiStatusIndicator } from '@/components/ui/ApiStatusIndicator';
+import { ApiTestButton } from '@/components/ui/ApiTestButton';
 
 export function SingleStoneUploadForm() {
   const { toast } = useToast();
@@ -230,6 +231,7 @@ export function SingleStoneUploadForm() {
           </div>
         </CardHeader>
         <CardContent>
+          <ApiTestButton />
           <ApiStatusIndicator isConnected={apiConnected} className="mb-4" />
           
           <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
