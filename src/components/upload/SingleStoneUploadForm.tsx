@@ -55,149 +55,45 @@ export function SingleStoneUploadForm() {
   const { validateFormData, formatFormData } = useFormValidation();
 
   const handleGiaScanSuccess = (giaData: any) => {
-    console.log('🔍 GIA scan received data:', giaData);
+    console.log('GIA data received:', giaData);
     
-    // Enhanced mapping for GIA data to form fields
-    const mappingLog: string[] = [];
-
-    // Stock/Certificate mapping
-    if (giaData.stock || giaData.certificate_number) {
-      const stockValue = giaData.stock || giaData.certificate_number?.toString() || '';
-      setValue('stockNumber', stockValue);
-      mappingLog.push(`✅ Stock: ${stockValue}`);
-    }
-
-    if (giaData.certificate_number) {
-      setValue('certificateNumber', giaData.certificate_number.toString());
-      mappingLog.push(`✅ Cert Number: ${giaData.certificate_number}`);
-    }
-
-    // Basic diamond properties
-    if (giaData.shape) {
-      setValue('shape', giaData.shape);
-      mappingLog.push(`✅ Shape: ${giaData.shape}`);
-    }
-
-    if (giaData.weight) {
-      setValue('carat', Number(giaData.weight));
-      mappingLog.push(`✅ Weight: ${giaData.weight}`);
-    }
-
-    if (giaData.color) {
-      setValue('color', giaData.color);
-      mappingLog.push(`✅ Color: ${giaData.color}`);
-    }
-
-    if (giaData.clarity) {
-      setValue('clarity', giaData.clarity);
-      mappingLog.push(`✅ Clarity: ${giaData.clarity}`);
-    }
-
-    if (giaData.cut) {
-      setValue('cut', giaData.cut);
-      mappingLog.push(`✅ Cut: ${giaData.cut}`);
-    }
-
-    // Lab and certificate info
-    if (giaData.lab) {
-      setValue('lab', giaData.lab);
-      mappingLog.push(`✅ Lab: ${giaData.lab}`);
-    }
-
-    // Detailed grading
-    if (giaData.fluorescence) {
-      setValue('fluorescence', giaData.fluorescence);
-      mappingLog.push(`✅ Fluorescence: ${giaData.fluorescence}`);
-    }
-
-    if (giaData.polish) {
-      setValue('polish', giaData.polish);
-      mappingLog.push(`✅ Polish: ${giaData.polish}`);
-    }
-
-    if (giaData.symmetry) {
-      setValue('symmetry', giaData.symmetry);
-      mappingLog.push(`✅ Symmetry: ${giaData.symmetry}`);
-    }
-
-    if (giaData.gridle) {
-      setValue('gridle', giaData.gridle);
-      mappingLog.push(`✅ Girdle: ${giaData.gridle}`);
-    }
-
-    if (giaData.culet) {
-      setValue('culet', giaData.culet);
-      mappingLog.push(`✅ Culet: ${giaData.culet}`);
-    }
-
-    // Measurements
-    if (giaData.length) {
-      setValue('length', Number(giaData.length));
-      mappingLog.push(`✅ Length: ${giaData.length}`);
-    }
-
-    if (giaData.width) {
-      setValue('width', Number(giaData.width));
-      mappingLog.push(`✅ Width: ${giaData.width}`);
-    }
-
-    if (giaData.depth) {
-      setValue('depth', Number(giaData.depth));
-      mappingLog.push(`✅ Depth: ${giaData.depth}`);
-    }
-
-    if (giaData.ratio) {
-      setValue('ratio', Number(giaData.ratio));
-      mappingLog.push(`✅ Ratio: ${giaData.ratio}`);
-    }
-
-    // Percentages and additional measurements
-    if (giaData.table_percentage || giaData.table) {
-      const tableValue = giaData.table_percentage || giaData.table;
-      setValue('tablePercentage', Number(tableValue));
-      mappingLog.push(`✅ Table %: ${tableValue}`);
-    }
-
-    if (giaData.depth_percentage) {
-      setValue('depthPercentage', Number(giaData.depth_percentage));
-      mappingLog.push(`✅ Depth %: ${giaData.depth_percentage}`);
-    }
-
-    // Business data
-    if (giaData.price_per_carat) {
-      setValue('pricePerCarat', Number(giaData.price_per_carat));
-      mappingLog.push(`✅ Price/Carat: ${giaData.price_per_carat}`);
-    }
-
-    if (giaData.rapnet) {
-      setValue('rapnet', Number(giaData.rapnet));
-      mappingLog.push(`✅ RapNet: ${giaData.rapnet}`);
-    }
-
-    // Images and URLs
-    if (giaData.picture) {
-      setValue('picture', giaData.picture);
-      mappingLog.push(`✅ Picture: ${giaData.picture}`);
-    }
+    // Comprehensive mapping of all GIA data fields including certificate URL
+    if (giaData.stock) setValue('stockNumber', giaData.stock);
+    if (giaData.shape) setValue('shape', giaData.shape);
+    if (giaData.weight) setValue('carat', Number(giaData.weight));
+    if (giaData.color) setValue('color', giaData.color);
+    if (giaData.clarity) setValue('clarity', giaData.clarity);
+    if (giaData.cut) setValue('cut', giaData.cut);
+    if (giaData.certificate_number) setValue('certificateNumber', giaData.certificate_number.toString());
+    if (giaData.lab) setValue('lab', giaData.lab);
+    if (giaData.fluorescence) setValue('fluorescence', giaData.fluorescence);
+    if (giaData.polish) setValue('polish', giaData.polish);
+    if (giaData.symmetry) setValue('symmetry', giaData.symmetry);
+    if (giaData.gridle) setValue('gridle', giaData.gridle);
+    if (giaData.culet) setValue('culet', giaData.culet);
+    if (giaData.length) setValue('length', Number(giaData.length));
+    if (giaData.width) setValue('width', Number(giaData.width));
+    if (giaData.depth) setValue('depth', Number(giaData.depth));
+    if (giaData.ratio) setValue('ratio', Number(giaData.ratio));
+    if (giaData.table_percentage) setValue('tablePercentage', Number(giaData.table_percentage));
+    if (giaData.depth_percentage) setValue('depthPercentage', Number(giaData.depth_percentage));
+    if (giaData.price_per_carat) setValue('pricePerCarat', Number(giaData.price_per_carat));
+    if (giaData.rapnet) setValue('rapnet', Number(giaData.rapnet));
+    if (giaData.picture) setValue('picture', giaData.picture);
     
+    // Handle certificate URL from uploaded certificate image
     if (giaData.certificate_url || giaData.certificateUrl) {
-      const certUrl = giaData.certificate_url || giaData.certificateUrl;
-      setValue('certificateUrl', certUrl);
-      mappingLog.push(`✅ Certificate URL: ${certUrl}`);
+      setValue('certificateUrl', giaData.certificate_url || giaData.certificateUrl);
+      console.log('Certificate image uploaded to:', giaData.certificate_url || giaData.certificateUrl);
     }
     
-    if (giaData.certificate_comment) {
-      setValue('certificateComment', giaData.certificate_comment);
-      mappingLog.push(`✅ Certificate Comment: ${giaData.certificate_comment}`);
-    }
-    
-    console.log('🔍 GIA Data Mapping Summary:', mappingLog);
+    if (giaData.certificate_comment) setValue('certificateComment', giaData.certificate_comment);
     
     setIsScanning(false);
     
     toast({
       title: "✅ Certificate Scanned Successfully",
-      description: `Mapped ${mappingLog.length} fields from GIA certificate`,
+      description: "All diamond information auto-filled and certificate image uploaded",
     });
   };
 
@@ -265,7 +161,7 @@ export function SingleStoneUploadForm() {
   // Show success card after successful upload
   if (uploadSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50">
+      <div className="min-h-[60vh] flex items-center justify-center px-4">
         <UploadSuccessCard
           title="Stone Uploaded Successfully"
           description="Your diamond has been added to your inventory. Ready to share or continue adding more stones."
@@ -286,39 +182,33 @@ export function SingleStoneUploadForm() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground">Please log in to add diamonds to your inventory.</p>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardContent className="pt-6 text-center">
+          <p className="text-muted-foreground">Please log in to add diamonds to your inventory.</p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Card className="border-0 shadow-none bg-transparent">
-        <CardHeader className="pb-4 px-4">
+    <>
+      <Card>
+        <CardHeader>
           <div className="flex items-center justify-between">
-            <div className="text-center flex-1">
-              <CardTitle className="text-2xl font-bold text-gray-900">Add Single Diamond</CardTitle>
-              <p className="text-sm text-gray-600 mt-1">Scan certificate or enter manually</p>
-            </div>
+            <CardTitle>Add Single Diamond</CardTitle>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsScanning(true)}
+              className="flex items-center gap-2"
+            >
+              <Camera className="h-4 w-4" />
+              Scan GIA Certificate
+            </Button>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setIsScanning(true)}
-            className="w-full h-14 mt-4 text-base font-semibold border-2 border-blue-200 text-blue-700 hover:bg-blue-50"
-          >
-            <Camera className="h-5 w-5 mr-3" />
-            Scan GIA Certificate
-          </Button>
         </CardHeader>
-        
-        <CardContent className="p-0">
-          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-0">
+        <CardContent>
+          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
             <DiamondDetailsSection
               register={register}
               setValue={setValue}
@@ -371,6 +261,6 @@ export function SingleStoneUploadForm() {
         onClose={() => setIsScanning(false)}
         onScanSuccess={handleGiaScanSuccess}
       />
-    </div>
+    </>
   );
 }

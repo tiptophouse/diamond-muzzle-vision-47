@@ -1,15 +1,15 @@
 
 import React from 'react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'react-hook-form';
-import { MobileFriendlySelect } from '@/components/ui/MobileFriendlySelect';
+import { ModernSelectField } from '@/components/inventory/form/ModernSelectField';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { 
-  fluorescenceOptions, 
-  polishOptions, 
-  symmetryOptions, 
-  girdleOptions, 
-  culetOptions 
-} from '@/components/inventory/form/optionHelpers';
+  fluorescences, 
+  polishGrades, 
+  symmetryGrades, 
+  girdleTypes, 
+  culetGrades 
+} from '@/components/inventory/form/diamondFormConstants';
 
 interface DetailedGradingSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -20,56 +20,49 @@ interface DetailedGradingSectionProps {
 
 export function DetailedGradingSection({ register, setValue, watch, errors }: DetailedGradingSectionProps) {
   return (
-    <div className="space-y-6 p-4 border-t">
-      <div className="text-center space-y-2">
-        <h3 className="text-xl font-semibold text-gray-900">Detailed Grading</h3>
-        <p className="text-sm text-gray-600">Professional grading details from certificate</p>
-      </div>
+    <div className="space-y-4 border-t pt-6">
+      <h3 className="text-lg font-semibold text-gray-900">Detailed Grading</h3>
+      <p className="text-sm text-gray-600">Professional grading details from certificate</p>
       
-      <div className="space-y-6">
-        <MobileFriendlySelect
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <ModernSelectField
           id="fluorescence"
           label="Fluorescence"
           value={watch('fluorescence') || 'None'}
           onValueChange={(value) => setValue('fluorescence', value)}
-          options={fluorescenceOptions}
-          placeholder="Select fluorescence"
+          options={fluorescences}
         />
 
-        <MobileFriendlySelect
+        <ModernSelectField
           id="polish"
           label="Polish"
           value={watch('polish') || 'Excellent'}
           onValueChange={(value) => setValue('polish', value)}
-          options={polishOptions}
-          placeholder="Select polish grade"
+          options={polishGrades}
         />
 
-        <MobileFriendlySelect
+        <ModernSelectField
           id="symmetry"
           label="Symmetry"
           value={watch('symmetry') || 'Excellent'}
           onValueChange={(value) => setValue('symmetry', value)}
-          options={symmetryOptions}
-          placeholder="Select symmetry grade"
+          options={symmetryGrades}
         />
 
-        <MobileFriendlySelect
+        <ModernSelectField
           id="gridle"
           label="Girdle"
           value={watch('gridle') || 'Medium'}
           onValueChange={(value) => setValue('gridle', value)}
-          options={girdleOptions}
-          placeholder="Select girdle type"
+          options={girdleTypes}
         />
 
-        <MobileFriendlySelect
+        <ModernSelectField
           id="culet"
           label="Culet"
           value={watch('culet') || 'None'}
           onValueChange={(value) => setValue('culet', value)}
-          options={culetOptions}
-          placeholder="Select culet grade"
+          options={culetGrades}
         />
       </div>
     </div>

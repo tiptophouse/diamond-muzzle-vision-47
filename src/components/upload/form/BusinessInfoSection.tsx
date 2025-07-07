@@ -2,9 +2,9 @@
 import React from 'react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'react-hook-form';
 import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
-import { MobileFriendlySelect } from '@/components/ui/MobileFriendlySelect';
+import { DiamondSelectField } from '@/components/inventory/form/DiamondSelectField';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { statusOptions } from '@/components/inventory/form/optionHelpers';
+import { statuses } from '@/components/inventory/form/diamondFormConstants';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 
@@ -28,16 +28,14 @@ export function BusinessInfoSection({ register, setValue, watch, errors }: Busin
   }, [carat, price, setValue]);
 
   return (
-    <div className="space-y-6 p-4 border-t">
-      <div className="text-center space-y-2">
-        <h3 className="text-xl font-semibold text-gray-900">Business Information</h3>
-        <p className="text-sm text-gray-600">Pricing and inventory management</p>
-      </div>
+    <div className="space-y-4 border-t pt-6">
+      <h3 className="text-lg font-semibold text-gray-900">Business Information</h3>
+      <p className="text-sm text-gray-600">Pricing and inventory management details</p>
       
-      <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <DiamondInputField
           id="price"
-          label="Total Price (USD)"
+          label="Total Price (USD) *"
           type="number"
           placeholder="Enter total price"
           register={register}
@@ -66,30 +64,21 @@ export function BusinessInfoSection({ register, setValue, watch, errors }: Busin
           errors={errors}
         />
 
-        <MobileFriendlySelect
+        <DiamondSelectField
           id="status"
           label="Inventory Status"
           value={watch('status') || 'Available'}
           onValueChange={(value) => setValue('status', value)}
-          options={statusOptions}
-          placeholder="Select status"
+          options={statuses}
         />
 
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
-          <div className="flex-1">
-            <Label htmlFor="storeVisible" className="text-base font-medium text-gray-900">
-              Public Store Visibility
-            </Label>
-            <p className="text-sm text-gray-600 mt-1">
-              Make this diamond visible in your public store
-            </p>
-          </div>
+        <div className="md:col-span-2 flex items-center space-x-2">
           <Switch
             id="storeVisible"
             checked={watch('storeVisible') || false}
             onCheckedChange={(checked) => setValue('storeVisible', checked)}
-            className="ml-4"
           />
+          <Label htmlFor="storeVisible">Make visible in public store</Label>
         </div>
       </div>
     </div>

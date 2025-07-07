@@ -2,17 +2,9 @@
 import React from 'react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'react-hook-form';
 import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
-import { MobileFriendlySelect } from '@/components/ui/MobileFriendlySelect';
+import { ModernSelectField } from '@/components/inventory/form/ModernSelectField';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { 
-  shapeOptions, 
-  colorOptions, 
-  clarityOptions, 
-  cutOptions, 
-  fluorescenceOptions, 
-  polishOptions, 
-  symmetryOptions 
-} from '@/components/inventory/form/optionHelpers';
+import { shapes, colors, clarities, cuts, fluorescences, polishGrades, symmetryGrades } from '@/components/inventory/form/diamondFormConstants';
 
 interface DiamondDetailsSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -26,29 +18,26 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
   const showCutField = currentShape === 'Round';
 
   return (
-    <div className="space-y-6 p-4">
-      <div className="text-center space-y-2">
-        <h3 className="text-xl font-semibold text-gray-900">Diamond Details</h3>
-        <p className="text-sm text-gray-600">Tap to scan GIA certificate or fill manually</p>
-      </div>
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-gray-900">Diamond Details</h3>
+      <p className="text-sm text-gray-600">These fields can be auto-filled by scanning a GIA certificate</p>
       
-      <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <DiamondInputField
           id="stockNumber"
-          label="Stock / Certificate Number"
+          label="Stock Number / Certificate Number"
           placeholder="Enter stock or certificate number"
           register={register}
           validation={{ required: 'Stock number is required' }}
           errors={errors}
         />
 
-        <MobileFriendlySelect
+        <ModernSelectField
           id="shape"
           label="Shape"
           value={watch('shape') || 'Round'}
           onValueChange={(value) => setValue('shape', value)}
-          options={shapeOptions}
-          placeholder="Select diamond shape"
+          options={shapes}
         />
 
         <DiamondInputField
@@ -65,60 +54,54 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           errors={errors}
         />
 
-        <MobileFriendlySelect
+        <ModernSelectField
           id="color"
           label="Color Grade"
           value={watch('color') || 'G'}
           onValueChange={(value) => setValue('color', value)}
-          options={colorOptions}
-          placeholder="Select color grade"
+          options={colors}
         />
 
-        <MobileFriendlySelect
+        <ModernSelectField
           id="clarity"
           label="Clarity Grade"
           value={watch('clarity') || 'VS1'}
           onValueChange={(value) => setValue('clarity', value)}
-          options={clarityOptions}
-          placeholder="Select clarity grade"
+          options={clarities}
         />
 
         {showCutField && (
-          <MobileFriendlySelect
+          <ModernSelectField
             id="cut"
             label="Cut Grade"
             value={watch('cut') || 'Excellent'}
             onValueChange={(value) => setValue('cut', value)}
-            options={cutOptions}
-            placeholder="Select cut grade"
+            options={cuts}
           />
         )}
 
-        <MobileFriendlySelect
+        <ModernSelectField
           id="fluorescence"
           label="Fluorescence"
           value={watch('fluorescence') || 'None'}
           onValueChange={(value) => setValue('fluorescence', value)}
-          options={fluorescenceOptions}
-          placeholder="Select fluorescence"
+          options={fluorescences}
         />
 
-        <MobileFriendlySelect
+        <ModernSelectField
           id="polish"
           label="Polish"
           value={watch('polish') || 'Excellent'}
           onValueChange={(value) => setValue('polish', value)}
-          options={polishOptions}
-          placeholder="Select polish grade"
+          options={polishGrades}
         />
 
-        <MobileFriendlySelect
+        <ModernSelectField
           id="symmetry"
           label="Symmetry"
           value={watch('symmetry') || 'Excellent'}
           onValueChange={(value) => setValue('symmetry', value)}
-          options={symmetryOptions}
-          placeholder="Select symmetry grade"
+          options={symmetryGrades}
         />
       </div>
     </div>
