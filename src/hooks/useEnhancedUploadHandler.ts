@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { api, apiEndpoints } from '@/lib/api';
@@ -113,6 +114,27 @@ export function useEnhancedUploadHandler() {
             return isNaN(num) || num <= 0 ? 1 : Math.abs(num);
           };
 
+          // Helper function to safely handle certificate number
+          const processCertificateNumber = (certNum: any): number => {
+            if (certNum === null || certNum === undefined || certNum === '') {
+              return 0;
+            }
+            
+            // If it's already a number, use it
+            if (typeof certNum === 'number') {
+              return Math.floor(Math.abs(certNum)) || 0;
+            }
+            
+            // If it's a string, clean it and convert to number
+            if (typeof certNum === 'string') {
+              const cleanedCert = certNum.trim().replace(/\D/g, ''); // Remove non-digits
+              return parseInt(cleanedCert) || 0;
+            }
+            
+            // Fallback for any other type
+            return 0;
+          };
+
           // Map CSV data to FastAPI format - using REAL data only with proper enum validation
           const payload = {
             stock: diamondData.stock.trim(),
@@ -121,11 +143,9 @@ export function useEnhancedUploadHandler() {
             color: diamondData.color || "G",
             clarity: diamondData.clarity || "VS1",
             lab: diamondData.lab || "GIA",
-            certificate_number: diamondData.certificate_number && diamondData.certificate_number.trim() 
-              ? parseInt(diamondData.certificate_number) || 0
-              : 0,
-            certificate_comment: diamondData.certificate_comment?.trim() || "",
-            certificate_url: diamondData.certificate_url?.trim() || "",
+            certificate_number: processCertificateNumber(diamondData.certificate_number),
+            certificate_comment: diamondData.certificate_comment?.toString().trim() || "",
+            certificate_url: diamondData.certificate_url?.toString().trim() || "",
             // Physical measurements - use actual values or sensible defaults based on carat
             length: diamondData.length && Number(diamondData.length) > 0 
               ? Number(diamondData.length) 
@@ -147,7 +167,7 @@ export function useEnhancedUploadHandler() {
             culet: diamondData.culet?.toUpperCase() || "NONE",
             rapnet: diamondData.rapnet && Number(diamondData.rapnet) > 0 ? parseInt(diamondData.rapnet.toString()) : 0,
             price_per_carat: Number(diamondData.price_per_carat),
-            picture: diamondData.picture?.trim() || "",
+            picture: diamondData.picture?.toString().trim() || "",
           };
         
           const response = await api.post(apiEndpoints.addDiamond(user.id), payload);
