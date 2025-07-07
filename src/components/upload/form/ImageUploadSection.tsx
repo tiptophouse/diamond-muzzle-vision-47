@@ -96,53 +96,50 @@ export function ImageUploadSection({ setValue, watch }: ImageUploadSectionProps)
   };
 
   return (
-    <div className="space-y-4 border-t pt-6">
-      <h3 className="text-lg font-semibold text-gray-900">Diamond Image</h3>
-      <p className="text-sm text-gray-600">Upload a high-quality image of the diamond</p>
-      
+    <div className="space-y-6">      
       <div className="space-y-4">
         {imagePreview ? (
-          <div className="relative inline-block">
+          <div className="relative w-full max-w-sm mx-auto">
             <img
               src={imagePreview}
               alt="Diamond preview"
-              className="w-32 h-32 object-cover rounded-lg border border-gray-200"
+              className="w-full h-48 object-cover rounded-xl border border-border"
             />
             <Button
               type="button"
               variant="destructive"
               size="sm"
-              className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+              className="absolute top-2 right-2 h-8 w-8 rounded-full p-0"
               onClick={removeImage}
             >
-              <X className="h-3 w-3" />
+              <X className="h-4 w-4" />
             </Button>
           </div>
         ) : (
-          <div className="flex items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg">
-            <Image className="h-8 w-8 text-gray-400" />
+          <div className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-muted-foreground/25 rounded-xl bg-muted/30">
+            <Image className="h-12 w-12 text-muted-foreground mb-2" />
+            <p className="text-sm text-muted-foreground">No image selected</p>
           </div>
         )}
 
-        <div className="flex items-center space-x-4">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={uploading}
-            onClick={() => document.getElementById('image-upload')?.click()}
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            {uploading ? 'Uploading...' : 'Upload Image'}
-          </Button>
-          
-          <Input
-            id="image-upload"
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileUpload}
-          />
-        </div>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={uploading}
+          onClick={() => document.getElementById('image-upload')?.click()}
+          className="w-full h-12 text-base"
+        >
+          <Upload className="h-5 w-5 mr-2" />
+          {uploading ? 'Uploading...' : 'Upload Diamond Photo'}
+        </Button>
+        
+        <Input
+          id="image-upload"
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileUpload}
+        />
       </div>
     </div>
   );

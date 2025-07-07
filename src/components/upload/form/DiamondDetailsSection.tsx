@@ -18,11 +18,8 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
   const showCutField = currentShape === 'Round';
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">Diamond Details</h3>
-      <p className="text-sm text-gray-600">These fields can be auto-filled by scanning a GIA certificate</p>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-6">      
+      <div className="space-y-4">
         <DiamondInputField
           id="stockNumber"
           label="Stock Number / Certificate Number"
@@ -79,30 +76,6 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
             options={cuts}
           />
         )}
-
-        <ModernSelectField
-          id="fluorescence"
-          label="Fluorescence"
-          value={watch('fluorescence') || 'None'}
-          onValueChange={(value) => setValue('fluorescence', value)}
-          options={fluorescences}
-        />
-
-        <ModernSelectField
-          id="polish"
-          label="Polish"
-          value={watch('polish') || 'Excellent'}
-          onValueChange={(value) => setValue('polish', value)}
-          options={polishGrades}
-        />
-
-        <ModernSelectField
-          id="symmetry"
-          label="Symmetry"
-          value={watch('symmetry') || 'Excellent'}
-          onValueChange={(value) => setValue('symmetry', value)}
-          options={symmetryGrades}
-        />
       </div>
     </div>
   );

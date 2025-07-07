@@ -23,11 +23,8 @@ export function MeasurementsSection({ register, watch, errors }: MeasurementsSec
   }, [length, width]);
 
   return (
-    <div className="space-y-4 border-t pt-6">
-      <h3 className="text-lg font-semibold text-gray-900">Physical Measurements</h3>
-      <p className="text-sm text-gray-600">Precise measurements of the diamond</p>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="space-y-6">      
+      <div className="space-y-4">
         <DiamondInputField
           id="length"
           label="Length (mm)"

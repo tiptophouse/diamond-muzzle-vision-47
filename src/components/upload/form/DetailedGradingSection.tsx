@@ -20,11 +20,8 @@ interface DetailedGradingSectionProps {
 
 export function DetailedGradingSection({ register, setValue, watch, errors }: DetailedGradingSectionProps) {
   return (
-    <div className="space-y-4 border-t pt-6">
-      <h3 className="text-lg font-semibold text-gray-900">Detailed Grading</h3>
-      <p className="text-sm text-gray-600">Professional grading details from certificate</p>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="space-y-6">      
+      <div className="space-y-4">
         <ModernSelectField
           id="fluorescence"
           label="Fluorescence"

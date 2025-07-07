@@ -2,21 +2,14 @@
 import { useState } from "react";
 import { useForm } from 'react-hook-form';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useInventoryCrud } from "@/hooks/useInventoryCrud";
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
-import { Camera } from "lucide-react";
+import { Camera, ChevronRight } from "lucide-react";
 import { UploadSuccessCard } from "./UploadSuccessCard";
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { DiamondDetailsSection } from './form/DiamondDetailsSection';
-import { CertificateSection } from './form/CertificateSection';
-import { MeasurementsSection } from './form/MeasurementsSection';
-import { DetailedGradingSection } from './form/DetailedGradingSection';
-import { BusinessInfoSection } from './form/BusinessInfoSection';
-import { ImageUploadSection } from './form/ImageUploadSection';
-import { FormActions } from './form/FormActions';
+import { MobileFormDrawer } from './form/MobileFormDrawer';
 import { useFormValidation } from './form/useFormValidation';
 
 export function SingleStoneUploadForm() {
@@ -24,10 +17,15 @@ export function SingleStoneUploadForm() {
   const { user } = useTelegramAuth();
   const [isScanning, setIsScanning] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
   const { addDiamond, isLoading } = useInventoryCrud({
     onSuccess: () => {
       console.log('✅ Diamond added successfully, showing success card');
       setUploadSuccess(true);
+      toast({
+        title: "✅ Diamond Added Successfully",
+        description: "Your diamond has been added to your inventory",
+      });
     }
   });
 
@@ -182,79 +180,73 @@ export function SingleStoneUploadForm() {
 
   if (!user) {
     return (
-      <Card>
-        <CardContent className="pt-6 text-center">
-          <p className="text-muted-foreground">Please log in to add diamonds to your inventory.</p>
-        </CardContent>
-      </Card>
+      <div className="px-4 py-8 text-center">
+        <p className="text-lg text-muted-foreground">Please log in to add diamonds to your inventory.</p>
+      </div>
     );
   }
 
+  const formSections = [
+    { id: 'basic', title: 'Basic Info', subtitle: 'Stock, shape, carat, color, clarity' },
+    { id: 'certificate', title: 'Certificate', subtitle: 'GIA/Lab details' },
+    { id: 'measurements', title: 'Measurements', subtitle: 'Dimensions & proportions' },
+    { id: 'grading', title: 'Detailed Grading', subtitle: 'Polish, symmetry, fluorescence' },
+    { id: 'business', title: 'Pricing', subtitle: 'Price, status, visibility' },
+    { id: 'image', title: 'Photo', subtitle: 'Diamond image upload' },
+  ];
+
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Add Single Diamond</CardTitle>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsScanning(true)}
-              className="flex items-center gap-2"
-            >
-              <Camera className="h-4 w-4" />
-              Scan GIA Certificate
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-            <DiamondDetailsSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
+      {/* Mobile-first form sections list */}
+      <div className="space-y-3 px-4">
+        {/* Quick scan button - prominent mobile placement */}
+        <Button
+          type="button"
+          onClick={() => setIsScanning(true)}
+          className="w-full h-14 bg-primary text-primary-foreground rounded-xl flex items-center gap-3 text-lg font-medium"
+          size="lg"
+        >
+          <Camera className="h-6 w-6" />
+          Scan GIA Certificate
+        </Button>
 
-            <CertificateSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
+        {/* Form sections as mobile-friendly cards */}
+        {formSections.map((section) => (
+          <button
+            key={section.id}
+            onClick={() => setActiveSection(section.id)}
+            className="w-full p-4 bg-card border border-border rounded-xl flex items-center justify-between hover:bg-accent transition-colors"
+          >
+            <div className="text-left">
+              <h3 className="font-semibold text-base text-foreground">{section.title}</h3>
+              <p className="text-sm text-muted-foreground mt-1">{section.subtitle}</p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </button>
+        ))}
 
-            <MeasurementsSection
-              register={register}
-              watch={watch}
-              errors={errors}
-            />
+        {/* Submit button */}
+        <Button
+          onClick={handleSubmit(handleFormSubmit)}
+          disabled={isLoading}
+          className="w-full h-14 bg-secondary text-secondary-foreground rounded-xl text-lg font-medium mt-6"
+          size="lg"
+        >
+          {isLoading ? "Adding Diamond..." : "Add Diamond to Inventory"}
+        </Button>
+      </div>
 
-            <DetailedGradingSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
-
-            <BusinessInfoSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
-
-            <ImageUploadSection
-              setValue={setValue}
-              watch={watch}
-            />
-
-            <FormActions
-              onReset={resetForm}
-              isLoading={isLoading}
-            />
-          </form>
-        </CardContent>
-      </Card>
+      {/* Mobile drawer for form sections */}
+      <MobileFormDrawer
+        isOpen={!!activeSection}
+        onClose={() => setActiveSection(null)}
+        title={formSections.find(s => s.id === activeSection)?.title || ''}
+        sectionId={activeSection}
+        register={register}
+        setValue={setValue}
+        watch={watch}
+        errors={errors}
+      />
 
       <QRCodeScanner
         isOpen={isScanning}

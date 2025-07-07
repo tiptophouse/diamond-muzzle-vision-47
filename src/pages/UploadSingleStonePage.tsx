@@ -8,23 +8,31 @@ import { FileText, Plus } from "lucide-react";
 export default function UploadSingleStonePage() {
   return (
     <Layout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Upload Inventory</h1>
-          <p className="text-muted-foreground">
-            Upload your diamonds individually or in bulk using CSV
+      {/* Mobile-first header with larger text and touch targets */}
+      <div className="px-4 py-6 space-y-4">
+        <div className="text-center">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Upload Inventory</h1>
+          <p className="text-base md:text-lg text-muted-foreground mt-2">
+            Add diamonds to your inventory
           </p>
         </div>
         
+        {/* Mobile-optimized tabs with larger touch targets */}
         <Tabs defaultValue="single" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="single" className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
+          <TabsList className="grid w-full grid-cols-2 h-14 rounded-xl bg-muted p-1">
+            <TabsTrigger 
+              value="single" 
+              className="flex items-center gap-3 h-12 text-base font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              <Plus className="h-5 w-5" />
               Single Diamond
             </TabsTrigger>
-            <TabsTrigger value="bulk" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Bulk CSV Upload
+            <TabsTrigger 
+              value="bulk" 
+              className="flex items-center gap-3 h-12 text-base font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              <FileText className="h-5 w-5" />
+              Bulk Upload
             </TabsTrigger>
           </TabsList>
           

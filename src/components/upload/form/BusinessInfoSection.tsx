@@ -28,11 +28,8 @@ export function BusinessInfoSection({ register, setValue, watch, errors }: Busin
   }, [carat, price, setValue]);
 
   return (
-    <div className="space-y-4 border-t pt-6">
-      <h3 className="text-lg font-semibold text-gray-900">Business Information</h3>
-      <p className="text-sm text-gray-600">Pricing and inventory management details</p>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-6">      
+      <div className="space-y-4">
         <DiamondInputField
           id="price"
           label="Total Price (USD) *"
@@ -72,13 +69,13 @@ export function BusinessInfoSection({ register, setValue, watch, errors }: Busin
           options={statuses}
         />
 
-        <div className="md:col-span-2 flex items-center space-x-2">
+        <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+          <Label htmlFor="storeVisible" className="text-base font-medium">Make visible in public store</Label>
           <Switch
             id="storeVisible"
             checked={watch('storeVisible') || false}
             onCheckedChange={(checked) => setValue('storeVisible', checked)}
           />
-          <Label htmlFor="storeVisible">Make visible in public store</Label>
         </div>
       </div>
     </div>
