@@ -128,11 +128,18 @@ export function useAddDiamond(onSuccess?: () => void) {
         console.error('❌ ADD: FastAPI add failed:', apiError);
         console.error('❌ ADD: Full API error details:', JSON.stringify(apiError, null, 2));
         
-        // Show specific error message
+        // Show specific error message to user
         const errorMessage = apiError instanceof Error ? apiError.message : "Failed to add diamond via API";
         console.error('❌ ADD: Error message:', errorMessage);
         
-        // Fallback to localStorage
+        // Show user-friendly error message about API connection
+        toast({
+          variant: "destructive",
+          title: "⚠️ API Connection Issue",
+          description: "Unable to connect to the server. Your diamond will be saved locally until connection is restored.",
+        });
+        
+        // Fallback to localStorage with user notification
         console.log('🔄 ADD: Falling back to localStorage...');
         const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
         
@@ -159,8 +166,8 @@ export function useAddDiamond(onSuccess?: () => void) {
         localStorage.setItem('diamond_inventory', JSON.stringify(existingData));
         
         toast({
-          title: "✅ Diamond Added Successfully", 
-          description: "Your diamond has been saved locally and will sync when connection is restored",
+          title: "✅ Diamond Saved Locally", 
+          description: "Your diamond has been saved offline and will sync when the server connection is restored",
           variant: "default",
         });
         

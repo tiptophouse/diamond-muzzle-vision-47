@@ -1,6 +1,6 @@
 
-// Updated to point to your actual FastAPI backend
-export const API_BASE_URL = "https://api.mazalbot.com";
+// FastAPI backend configuration - UPDATE THIS URL TO YOUR WORKING FASTAPI ENDPOINT
+export const API_BASE_URL = "https://api.mazalbot.com"; // ⚠️ This endpoint is currently returning 404 errors
 
 let currentUserId: number | null = null;
 

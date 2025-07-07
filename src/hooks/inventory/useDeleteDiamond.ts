@@ -60,7 +60,14 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
       } catch (apiError) {
         console.error('❌ DELETE: FastAPI delete failed:', apiError);
         
-        // Fallback to localStorage
+        // Show user-friendly error message about API connection
+        toast({
+          variant: "destructive",
+          title: "⚠️ API Connection Issue",
+          description: "Unable to connect to server. Diamond will be removed locally until connection is restored.",
+        });
+        
+        // Fallback to localStorage with user notification
         console.log('🔄 DELETE: Falling back to localStorage...');
         const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
         const filteredData = existingData.filter((item: any) => item.id !== diamondId);
@@ -69,8 +76,8 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
           localStorage.setItem('diamond_inventory', JSON.stringify(filteredData));
           
           toast({
-            title: "✅ Diamond Deleted Successfully",
-            description: "Diamond has been removed locally and will sync when connection is restored",
+            title: "✅ Diamond Deleted Locally",
+            description: "Diamond has been removed offline and will sync when server connection is restored",
           });
           
           if (onSuccess) onSuccess();

@@ -18,12 +18,14 @@ import { BusinessInfoSection } from './form/BusinessInfoSection';
 import { ImageUploadSection } from './form/ImageUploadSection';
 import { FormActions } from './form/FormActions';
 import { useFormValidation } from './form/useFormValidation';
+import { ApiStatusIndicator } from '@/components/ui/ApiStatusIndicator';
 
 export function SingleStoneUploadForm() {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
   const [isScanning, setIsScanning] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [apiConnected, setApiConnected] = useState(true); // Track API connection status
   const { addDiamond, isLoading } = useInventoryCrud({
     onSuccess: () => {
       console.log('✅ Diamond added successfully, showing success card');
@@ -136,6 +138,7 @@ export function SingleStoneUploadForm() {
       
       if (!success) {
         console.log('❌ UPLOAD: Diamond creation failed');
+        setApiConnected(false); // Mark API as disconnected
         toast({
           title: "❌ Upload Failed",
           description: "Failed to add diamond to inventory. Please try again.",
@@ -143,9 +146,11 @@ export function SingleStoneUploadForm() {
         });
       } else {
         console.log('✅ UPLOAD: Diamond creation successful!');
+        setApiConnected(true); // Mark API as connected
       }
     }).catch(error => {
       console.error('❌ UPLOAD: Error in addDiamond promise:', error);
+      setApiConnected(false); // Mark API as disconnected
       toast({
         title: "❌ Upload Error",
         description: "An error occurred while uploading. Please try again.",
@@ -225,6 +230,8 @@ export function SingleStoneUploadForm() {
           </div>
         </CardHeader>
         <CardContent>
+          <ApiStatusIndicator isConnected={apiConnected} className="mb-4" />
+          
           <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
             <DiamondDetailsSection
               register={register}
