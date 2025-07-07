@@ -43,7 +43,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
             <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select shape" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
               {shapes.map((shape) => (
                 <SelectItem key={shape} value={shape}>
                   {shape}
@@ -75,7 +75,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
             <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select color" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
               {colors.map((color) => (
                 <SelectItem key={color} value={color}>
                   {color}
@@ -93,7 +93,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
             <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select clarity" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
               {clarities.map((clarity) => (
                 <SelectItem key={clarity} value={clarity}>
                   {clarity}
@@ -112,7 +112,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
               <SelectTrigger className="w-full" type="button">
                 <SelectValue placeholder="Select cut" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
                 {cuts.map((cut) => (
                   <SelectItem key={cut} value={cut}>
                     {cut}
@@ -131,7 +131,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
             <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select fluorescence" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
               {fluorescences.map((fluorescence) => (
                 <SelectItem key={fluorescence} value={fluorescence}>
                   {fluorescence}
@@ -149,7 +149,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
             <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select polish" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
               {polishGrades.map((polish) => (
                 <SelectItem key={polish} value={polish}>
                   {polish}
@@ -167,7 +167,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
             <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select symmetry" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
               {symmetryGrades.map((symmetry) => (
                 <SelectItem key={symmetry} value={symmetry}>
                   {symmetry}

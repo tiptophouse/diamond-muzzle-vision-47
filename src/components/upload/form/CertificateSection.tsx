@@ -39,7 +39,7 @@ export function CertificateSection({ register, setValue, watch, errors }: Certif
             <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select laboratory" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
               {labOptions.map((lab) => (
                 <SelectItem key={lab} value={lab}>
                   {lab}

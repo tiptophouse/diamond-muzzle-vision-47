@@ -36,7 +36,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
             <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select fluorescence" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
               {fluorescences.map((fluorescence) => (
                 <SelectItem key={fluorescence} value={fluorescence}>
                   {fluorescence}
@@ -54,7 +54,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
             <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select polish" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
               {polishGrades.map((polish) => (
                 <SelectItem key={polish} value={polish}>
                   {polish}
@@ -72,7 +72,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
             <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select symmetry" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
               {symmetryGrades.map((symmetry) => (
                 <SelectItem key={symmetry} value={symmetry}>
                   {symmetry}
@@ -90,7 +90,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
             <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select girdle" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
               {girdleTypes.map((girdle) => (
                 <SelectItem key={girdle} value={girdle}>
                   {girdle}
@@ -108,7 +108,7 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
             <SelectTrigger className="w-full" type="button">
               <SelectValue placeholder="Select culet" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
               {culetGrades.map((culet) => (
                 <SelectItem key={culet} value={culet}>
                   {culet}
