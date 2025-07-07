@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'react-hook-form';
+import { ModernSelectField } from '@/components/inventory/form/ModernSelectField';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { 
   fluorescences, 
@@ -9,8 +10,6 @@ import {
   girdleTypes, 
   culetGrades 
 } from '@/components/inventory/form/diamondFormConstants';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface DetailedGradingSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -21,102 +20,50 @@ interface DetailedGradingSectionProps {
 
 export function DetailedGradingSection({ register, setValue, watch, errors }: DetailedGradingSectionProps) {
   return (
-    <div className="space-y-6 border-t pt-6">
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold text-foreground">Detailed Grading</h3>
-        <p className="text-sm text-muted-foreground">Professional grading details from certificate</p>
-      </div>
+    <div className="space-y-4 border-t pt-6">
+      <h3 className="text-lg font-semibold text-gray-900">Detailed Grading</h3>
+      <p className="text-sm text-gray-600">Professional grading details from certificate</p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="fluorescence" className="text-sm font-medium text-foreground">
-            Fluorescence
-          </Label>
-          <Select value={watch('fluorescence') || 'None'} onValueChange={(value) => setValue('fluorescence', value)}>
-            <SelectTrigger className="w-full" type="button">
-              <SelectValue placeholder="Select fluorescence" />
-            </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
-              {fluorescences.map((fluorescence) => (
-                <SelectItem key={fluorescence} value={fluorescence}>
-                  {fluorescence}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <ModernSelectField
+          id="fluorescence"
+          label="Fluorescence"
+          value={watch('fluorescence') || 'None'}
+          onValueChange={(value) => setValue('fluorescence', value)}
+          options={fluorescences}
+        />
 
-        <div className="space-y-2">
-          <Label htmlFor="polish" className="text-sm font-medium text-foreground">
-            Polish
-          </Label>
-          <Select value={watch('polish') || 'Excellent'} onValueChange={(value) => setValue('polish', value)}>
-            <SelectTrigger className="w-full" type="button">
-              <SelectValue placeholder="Select polish" />
-            </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
-              {polishGrades.map((polish) => (
-                <SelectItem key={polish} value={polish}>
-                  {polish}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <ModernSelectField
+          id="polish"
+          label="Polish"
+          value={watch('polish') || 'Excellent'}
+          onValueChange={(value) => setValue('polish', value)}
+          options={polishGrades}
+        />
 
-        <div className="space-y-2">
-          <Label htmlFor="symmetry" className="text-sm font-medium text-foreground">
-            Symmetry
-          </Label>
-          <Select value={watch('symmetry') || 'Excellent'} onValueChange={(value) => setValue('symmetry', value)}>
-            <SelectTrigger className="w-full" type="button">
-              <SelectValue placeholder="Select symmetry" />
-            </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
-              {symmetryGrades.map((symmetry) => (
-                <SelectItem key={symmetry} value={symmetry}>
-                  {symmetry}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <ModernSelectField
+          id="symmetry"
+          label="Symmetry"
+          value={watch('symmetry') || 'Excellent'}
+          onValueChange={(value) => setValue('symmetry', value)}
+          options={symmetryGrades}
+        />
 
-        <div className="space-y-2">
-          <Label htmlFor="gridle" className="text-sm font-medium text-foreground">
-            Girdle
-          </Label>
-          <Select value={watch('gridle') || 'Medium'} onValueChange={(value) => setValue('gridle', value)}>
-            <SelectTrigger className="w-full" type="button">
-              <SelectValue placeholder="Select girdle" />
-            </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
-              {girdleTypes.map((girdle) => (
-                <SelectItem key={girdle} value={girdle}>
-                  {girdle}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <ModernSelectField
+          id="gridle"
+          label="Girdle"
+          value={watch('gridle') || 'Medium'}
+          onValueChange={(value) => setValue('gridle', value)}
+          options={girdleTypes}
+        />
 
-        <div className="space-y-2">
-          <Label htmlFor="culet" className="text-sm font-medium text-foreground">
-            Culet
-          </Label>
-          <Select value={watch('culet') || 'None'} onValueChange={(value) => setValue('culet', value)}>
-            <SelectTrigger className="w-full" type="button">
-              <SelectValue placeholder="Select culet" />
-            </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto" position="popper" sideOffset={4} align="start" avoidCollisions={true}>
-              {culetGrades.map((culet) => (
-                <SelectItem key={culet} value={culet}>
-                  {culet}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <ModernSelectField
+          id="culet"
+          label="Culet"
+          value={watch('culet') || 'None'}
+          onValueChange={(value) => setValue('culet', value)}
+          options={culetGrades}
+        />
       </div>
     </div>
   );

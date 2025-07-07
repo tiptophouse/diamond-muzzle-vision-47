@@ -4,10 +4,12 @@ import { api, apiEndpoints } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { generateDiamondId } from '@/utils/diamondUtils';
+import { useTelegramAlerts } from '@/hooks/useTelegramAlerts';
 
 export function useAddDiamond(onSuccess?: () => void) {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
+  const { sendInventoryAlert } = useTelegramAlerts();
 
   const addDiamond = async (data: DiamondFormData) => {
     if (!user?.id) {
@@ -113,6 +115,9 @@ export function useAddDiamond(onSuccess?: () => void) {
 
         // Only show success message if API call actually succeeded
         if (response.data) {
+          // Send Telegram alert
+          sendInventoryAlert('added', diamondDataPayload);
+          
           toast({
             title: "✅ Diamond Added Successfully",
             description: "Your diamond has been added to inventory and is visible in dashboard, store, and inventory",
