@@ -55,43 +55,21 @@ export function UploadForm() {
     <div className="max-w-xl mx-auto px-4 sm:px-0">
       <Card className="diamond-card mb-6">
         <CardContent className="pt-6">
-          <div className="space-y-4">
-            <FileUploadArea
-              selectedFile={selectedFile}
-              onFileChange={handleFileChange}
-              onReset={resetForm}
-            />
-
-            <ProcessingSteps progress={progress} uploading={uploading} />
-            <EnhancedUploadResult result={result} fileName={selectedFile?.name} />
-
-            {selectedFile && (
-              <div className="flex flex-col sm:flex-row justify-end gap-3">
-                <Button 
-                  variant="outline" 
-                  onClick={resetForm}
-                  disabled={uploading}
-                  size="lg"
-                  className="w-full sm:w-auto min-h-[48px] touch-manipulation"
-                >
-                  <RefreshCw className="h-5 w-5 mr-2" />
-                  Reset
-                </Button>
-                <Button 
-                  onClick={handleUploadClick}
-                  disabled={uploading || !!result}
-                  size="lg"
-                  className="w-full sm:w-auto min-h-[48px] touch-manipulation"
-                >
-                  <Upload className="h-5 w-5 mr-2" />
-                  {uploading ? "📱 Processing..." : "🚀 Process File"}
-                </Button>
+          <div className="space-y-6 text-center">
+            <div className="p-8">
+              <Upload className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Bulk Upload Coming Soon</h3>
+              <p className="text-muted-foreground mb-4">
+                We're currently fixing some issues with bulk upload functionality. 
+                This feature will be available again soon.
+              </p>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
+                <strong>Note:</strong> For now, please use the single stone upload feature available on other pages.
               </div>
-            )}
+            </div>
           </div>
         </CardContent>
       </Card>
-      <UploadInstructions userId={user?.id} />
     </div>
   );
 }
