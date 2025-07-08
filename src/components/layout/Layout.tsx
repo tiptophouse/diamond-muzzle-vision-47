@@ -17,8 +17,8 @@ export function Layout({
       
       {/* Sidebar - hidden on mobile, slide in when open */}
       <div className={`
-          fixed lg:static inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out
-          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          fixed lg:static inset-y-0 right-0 lg:left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out
+          ${sidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
         `} data-tutorial="sidebar">
         <Sidebar onClose={() => setSidebarOpen(false)} />
       </div>
