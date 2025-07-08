@@ -219,33 +219,35 @@ export function useIntelligentCsvProcessor() {
     console.log('🎯 FINAL TRANSFORMED ROW:', JSON.stringify(transformedRow, null, 2));
 
     // Build the final diamond data, using the correctly mapped field names
+    // Use nullish coalescing (??) to only apply defaults when values are null/undefined
     const result = {
-      stock: transformedRow.stock || `AUTO-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-      shape: transformedRow.shape || 'round brilliant',
-      weight: transformedRow.weight || 1.0,
-      color: transformedRow.color || 'G', 
-      clarity: transformedRow.clarity || 'VS1',
-      cut: transformedRow.cut || 'EXCELLENT',
-      // Enhanced price handling - prioritize price_per_carat, fallback to price
-      price_per_carat: transformedRow.price_per_carat || 
-                      (transformedRow.price && transformedRow.weight ? transformedRow.price / transformedRow.weight : null) ||
-                      5000,
-      lab: transformedRow.lab || 'GIA',
-      certificate_number: transformedRow.certificate_number || Math.floor(Math.random() * 1000000),
-      length: transformedRow.length || 6.5,
-      width: transformedRow.width || 6.5,
-      depth: transformedRow.depth || 4.0,
-      ratio: transformedRow.ratio || 1.0,
-      polish: transformedRow.polish || 'EXCELLENT',
-      symmetry: transformedRow.symmetry || 'EXCELLENT',
-      fluorescence: transformedRow.fluorescence || 'NONE',
-      table: transformedRow.table || 60,
-      depth_percentage: transformedRow.depth_percentage || 62,
-      gridle: transformedRow.girdle || 'Medium',
-      culet: transformedRow.culet || 'NONE',
-      certificate_comment: transformedRow.certificate_comment || 'No comments',
-      rapnet: transformedRow.rapnet || 0,
-      picture: transformedRow.picture || ''
+      stock: transformedRow.stock ?? `AUTO-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      shape: transformedRow.shape ?? 'round brilliant',
+      weight: transformedRow.weight ?? 1.0,
+      color: transformedRow.color ?? 'G', 
+      clarity: transformedRow.clarity ?? 'VS1',
+      cut: transformedRow.cut ?? 'EXCELLENT',
+      // Enhanced price handling - prioritize price_per_carat, fallback to calculated price, then default
+      price_per_carat: transformedRow.price_per_carat ?? 
+                      (transformedRow.price != null && transformedRow.weight != null && transformedRow.weight > 0 
+                        ? transformedRow.price / transformedRow.weight 
+                        : 5000),
+      lab: transformedRow.lab ?? 'GIA',
+      certificate_number: transformedRow.certificate_number ?? Math.floor(Math.random() * 1000000),
+      length: transformedRow.length ?? 6.5,
+      width: transformedRow.width ?? 6.5,
+      depth: transformedRow.depth ?? 4.0,
+      ratio: transformedRow.ratio ?? 1.0,
+      polish: transformedRow.polish ?? 'EXCELLENT',
+      symmetry: transformedRow.symmetry ?? 'EXCELLENT',
+      fluorescence: transformedRow.fluorescence ?? 'NONE',
+      table: transformedRow.table ?? 60,
+      depth_percentage: transformedRow.depth_percentage ?? 62,
+      gridle: transformedRow.girdle ?? 'Medium',
+      culet: transformedRow.culet ?? 'NONE',
+      certificate_comment: transformedRow.certificate_comment ?? 'No comments',
+      rapnet: transformedRow.rapnet ?? 0,
+      picture: transformedRow.picture ?? ''
     };
 
     console.log('✅ Final diamond data:', result);
