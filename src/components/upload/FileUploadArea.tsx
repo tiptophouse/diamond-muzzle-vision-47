@@ -49,7 +49,9 @@ export function FileUploadArea({ selectedFile, onFileChange, onReset }: FileUplo
           ref={fileInputRef}
           type="file"
           className="hidden"
-          accept=".csv,.xlsx"
+          accept=".csv,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          multiple={false}
+          capture={false}
           onChange={handleFileChange}
         />
       </div>

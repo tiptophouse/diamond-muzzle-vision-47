@@ -474,8 +474,11 @@ export function useIntelligentCsvProcessor() {
     // Check file type - support both CSV and XLSX for mobile users
     const fileName = file.name.toLowerCase();
     const isValidType = file.type === 'text/csv' || 
+                       file.type === 'application/csv' ||
+                       file.type === 'text/plain' ||
                        file.type === 'application/vnd.ms-excel' ||
                        file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+                       file.type === '' || // Some mobile browsers don't set MIME type correctly
                        fileName.endsWith('.csv') ||
                        fileName.endsWith('.xlsx');
     
