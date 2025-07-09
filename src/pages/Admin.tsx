@@ -3,14 +3,13 @@ import { Layout } from '@/components/layout/Layout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { AdminStatsGrid } from '@/components/admin/AdminStatsGrid';
 import { AdminUserManager } from '@/components/admin/AdminUserManager';
-import { AccurateAnalyticsDashboard } from '@/components/admin/AccurateAnalyticsDashboard';
 import { NotificationCenter } from '@/components/admin/NotificationCenter';
 import { NotificationSender } from '@/components/admin/NotificationSender';
 import { PaymentManagement } from '@/components/admin/PaymentManagement';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { Users, Settings, MessageSquare, CreditCard, BarChart3 } from 'lucide-react';
+import { Users, Settings, MessageSquare, CreditCard } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function Admin() {
@@ -117,16 +116,8 @@ export default function Admin() {
 
       {/* Main Admin Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-        <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 bg-white border border-gray-200 rounded-lg p-1">
-            <TabsTrigger 
-              value="analytics" 
-              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-            >
-              <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">Accurate Analytics</span>
-              <span className="sm:hidden">Analytics</span>
-            </TabsTrigger>
+        <Tabs defaultValue="users" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 bg-white border border-gray-200 rounded-lg p-1">
             <TabsTrigger 
               value="users" 
               className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
@@ -159,12 +150,6 @@ export default function Admin() {
           </TabsList>
           
           <div className="mt-6">
-            <TabsContent value="analytics" className="space-y-0">
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <AccurateAnalyticsDashboard />
-              </div>
-            </TabsContent>
-            
             <TabsContent value="users" className="space-y-0">
               <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                 <AdminUserManager />
