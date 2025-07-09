@@ -11,109 +11,31 @@ import { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { Users, Settings, MessageSquare, CreditCard } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { supabase } from '@/integrations/supabase/client';
 
 export default function Admin() {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
   const { toast } = useToast();
   const [notifications, setNotifications] = useState([]);
 
-  // Real bot usage stats
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    activeUsers: 0,
-    premiumUsers: 0,
-    totalRevenue: 0,
-    totalCosts: 0,
-    profit: 0
-  });
-  const [blockedUsersCount, setBlockedUsersCount] = useState(0);
-  const [averageEngagement, setAverageEngagement] = useState(0);
-  const [realTimeStats, setRealTimeStats] = useState({
-    todayLogins: 0,
-    weeklyLogins: 0,
-    monthlyLogins: 0
-  });
+  // Mock stats data
+  const stats = {
+    totalUsers: 1250,
+    activeUsers: 890,
+    premiumUsers: 156,
+    totalRevenue: 25600,
+    totalCosts: 8400,
+    profit: 17200
+  };
+
+  const blockedUsersCount = 23;
+  const averageEngagement = 74;
 
   useEffect(() => {
     console.log('🔍 Admin page mounted');
     console.log('🔍 User:', user);
     console.log('🔍 Is authenticated:', isAuthenticated);
     console.log('🔍 Is loading:', isLoading);
-    
-    // Load real bot usage statistics
-    loadBotUsageStats();
   }, [user, isAuthenticated, isLoading]);
-
-  const loadBotUsageStats = async () => {
-    try {
-      // Get actual user counts
-      const { data: totalUsersData } = await supabase
-        .from('user_profiles')
-        .select('*', { count: 'exact', head: true });
-
-      const { data: activeUsersData } = await supabase
-        .from('user_profiles')
-        .select('*', { count: 'exact', head: true })
-        .gte('last_login', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
-
-      const { data: premiumUsersData } = await supabase
-        .from('user_profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_premium', true);
-
-      const { data: blockedData } = await supabase
-        .from('blocked_users')
-        .select('*', { count: 'exact', head: true });
-
-      // Get login statistics
-      const { data: todayLoginsData } = await supabase
-        .from('user_logins')
-        .select('*', { count: 'exact', head: true })
-        .gte('login_timestamp', new Date().toISOString().split('T')[0]);
-
-      const { data: weeklyLoginsData } = await supabase
-        .from('user_logins')
-        .select('*', { count: 'exact', head: true })
-        .gte('login_timestamp', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
-
-      const { data: monthlyLoginsData } = await supabase
-        .from('user_logins')
-        .select('*', { count: 'exact', head: true })
-        .gte('login_timestamp', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
-
-      setStats({
-        totalUsers: totalUsersData?.length || 0,
-        activeUsers: activeUsersData?.length || 0,
-        premiumUsers: premiumUsersData?.length || 0,
-        totalRevenue: 0, // TODO: Calculate from subscriptions
-        totalCosts: 0,   // TODO: Calculate from cost_tracking
-        profit: 0
-      });
-
-      setBlockedUsersCount(blockedData?.length || 0);
-      setRealTimeStats({
-        todayLogins: todayLoginsData?.length || 0,
-        weeklyLogins: weeklyLoginsData?.length || 0,
-        monthlyLogins: monthlyLoginsData?.length || 0
-      });
-
-      console.log('📊 Real bot usage stats:', {
-        totalUsers: totalUsersData?.length || 0,
-        activeUsers: activeUsersData?.length || 0,
-        todayLogins: todayLoginsData?.length || 0,
-        weeklyLogins: weeklyLoginsData?.length || 0
-      });
-
-    } catch (error) {
-      console.error('❌ Error loading bot usage stats:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load real usage statistics",
-        variant: "destructive"
-      });
-    }
-  };
 
   const handleExportData = () => {
     console.log('Exporting data...');
@@ -183,23 +105,8 @@ export default function Admin() {
         </div>
       </div>
 
-      {/* Real Bot Usage Stats */}
+      {/* Stats Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h3 className="font-semibold text-blue-900 mb-2">📊 Real-Time Bot Usage</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div>
-              <span className="font-medium">Today's Logins:</span> {realTimeStats.todayLogins}
-            </div>
-            <div>
-              <span className="font-medium">This Week:</span> {realTimeStats.weeklyLogins}
-            </div>
-            <div>
-              <span className="font-medium">This Month:</span> {realTimeStats.monthlyLogins}
-            </div>
-          </div>
-        </div>
-        
         <AdminStatsGrid
           stats={stats}
           blockedUsersCount={blockedUsersCount}
