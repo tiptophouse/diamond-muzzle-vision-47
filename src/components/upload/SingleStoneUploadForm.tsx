@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useInventoryCrud } from "@/hooks/useInventoryCrud";
-import { InputValidator, formRateLimiter, showValidationErrors, sanitizeFormData } from '@/utils/inputValidation';
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
 import { Camera } from "lucide-react";
 import { UploadSuccessCard } from "./UploadSuccessCard";
@@ -105,7 +104,11 @@ export function SingleStoneUploadForm() {
   const showCutField = currentShape === 'Round';
 
   const handleFormSubmit = (data: DiamondFormData) => {
+    console.log('🔍 UPLOAD: Form submitted', { user: user?.id, data });
+    console.log('🔍 UPLOAD: Form submit button clicked - processing data...');
+    
     if (!user?.id) {
+      console.log('❌ UPLOAD: No user ID found');
       toast({
         title: "Authentication Error",
         description: "Please log in to add diamonds",
@@ -114,30 +117,9 @@ export function SingleStoneUploadForm() {
       return;
     }
 
-    // Rate limiting check
-    const rateLimitKey = `upload_${user.id}`;
-    if (!formRateLimiter.isAllowed(rateLimitKey)) {
-      const remainingTime = Math.ceil(formRateLimiter.getRemainingTime(rateLimitKey) / 1000);
-      toast({
-        title: "Rate Limit Exceeded",
-        description: `Please wait ${remainingTime} seconds before trying again`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Sanitize form data
-    const sanitizedData = sanitizeFormData(data);
-    
-    // Validate form data
-    const validation = InputValidator.validateDiamondForm(sanitizedData);
-    if (!validation.isValid) {
-      showValidationErrors(validation.errors);
-      return;
-    }
-
-    // Use existing validation for additional checks
-    if (!validateFormData(sanitizedData)) {
+    console.log('🔍 UPLOAD: User authenticated, validating form data...');
+    if (!validateFormData(data)) {
+      console.log('❌ UPLOAD: Form validation failed');
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields",
@@ -146,25 +128,30 @@ export function SingleStoneUploadForm() {
       return;
     }
 
-    const formattedData = formatFormData(sanitizedData, showCutField);
+    console.log('✅ UPLOAD: Form validation passed, formatting data...');
+    const formattedData = formatFormData(data, showCutField);
+    console.log('🔍 UPLOAD: Calling addDiamond with:', formattedData);
+    console.log('🔍 UPLOAD: About to make API call to FastAPI create diamond endpoint...');
     
     addDiamond(formattedData).then(success => {
+      console.log('🔍 UPLOAD: addDiamond result:', success);
+      console.log('🔍 UPLOAD: API call completed, success:', success);
+      
       if (!success) {
-        setApiConnected(false);
+        console.log('❌ UPLOAD: Diamond creation failed');
+        setApiConnected(false); // Mark API as disconnected
         toast({
           title: "❌ Upload Failed",
           description: "Failed to add diamond to inventory. Please try again.",
           variant: "destructive",
         });
       } else {
-        setApiConnected(true);
-        toast({
-          title: "✅ Diamond Added",
-          description: "Diamond successfully added to your inventory",
-        });
+        console.log('✅ UPLOAD: Diamond creation successful!');
+        setApiConnected(true); // Mark API as connected
       }
     }).catch(error => {
-      setApiConnected(false);
+      console.error('❌ UPLOAD: Error in addDiamond promise:', error);
+      setApiConnected(false); // Mark API as disconnected
       toast({
         title: "❌ Upload Error",
         description: "An error occurred while uploading. Please try again.",

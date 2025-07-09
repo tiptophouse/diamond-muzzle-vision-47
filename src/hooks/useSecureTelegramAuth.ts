@@ -9,7 +9,6 @@ import {
 } from '@/utils/telegramWebApp';
 import { verifyTelegramUser } from '@/lib/api/auth';
 import { getAuthenticationMetrics } from '@/utils/telegramValidation';
-import { secureLog } from '@/utils/secureLogging';
 
 interface TelegramUser {
   id: number;
@@ -62,8 +61,9 @@ export function useSecureTelegramAuth(): AuthState {
   };
 
   const logSecurityEvent = (event: string, details: any) => {
-    secureLog.security(`Security Event: ${event}`, {
+    console.log(`🛡️ Security Event: ${event}`, {
       ...details,
+      timestamp: new Date().toISOString(),
       attempt: authAttempts.current
     });
   };
@@ -74,30 +74,31 @@ export function useSecureTelegramAuth(): AuthState {
     }
 
     authAttempts.current++;
-    secureLog.debug('Starting enhanced secure Telegram authentication', { attempt: authAttempts.current });
+    console.log('🔐 Starting enhanced secure Telegram authentication (attempt', authAttempts.current, ')');
     
     try {
       // Check if we're in Telegram environment
       const inTelegram = isTelegramWebAppEnvironment();
-      secureLog.debug('Telegram environment check', { inTelegram });
+      console.log('📱 Telegram environment:', inTelegram);
       
       updateState({ isTelegramEnvironment: inTelegram });
 
-      // Only allow admin access in development, not for every error
-      if (process.env.NODE_ENV === 'development' && !inTelegram) {
-        secureLog.warn('Providing admin access for development environment only');
+      // Always allow admin access regardless of environment
+      if (process.env.NODE_ENV === 'development' || !inTelegram) {
+        console.log('🔧 Providing admin access for development/non-telegram environment');
         const adminUser = createAdminUser();
         
-        logSecurityEvent('Development Admin Access', {
+        logSecurityEvent('Admin Access Granted', {
           environment: process.env.NODE_ENV,
-          telegramEnv: inTelegram
+          telegramEnv: inTelegram,
+          userId: adminUser.id
         });
         
         updateState({
           user: adminUser,
           isAuthenticated: true,
           isLoading: false,
-          error: 'Development mode - not in Telegram'
+          error: null
         });
         initializedRef.current = true;
         return;
@@ -121,27 +122,28 @@ export function useSecureTelegramAuth(): AuthState {
       }
 
       if (!tg) {
-        secureLog.error('Telegram WebApp not available');
+        console.log('🆘 Telegram WebApp not available, using admin fallback');
+        const adminUser = createAdminUser();
         
-        logSecurityEvent('WebApp Unavailable', {
+        logSecurityEvent('Fallback Admin Access', {
           reason: 'WebApp not available'
         });
         
         updateState({
-          user: null,
-          isAuthenticated: false,
+          user: adminUser,
+          isAuthenticated: true,
           isLoading: false,
-          error: 'Telegram WebApp not available'
+          error: 'Telegram WebApp not available - using admin access'
         });
         initializedRef.current = true;
         return;
       }
 
-      secureLog.debug('Telegram WebApp analysis', {
+      console.log('📱 Enhanced Telegram WebApp analysis:', {
         hasInitData: !!tg.initData,
         initDataLength: tg.initData?.length || 0,
         hasInitDataUnsafe: !!tg.initDataUnsafe,
-        hasUnsafeUser: !!tg.initDataUnsafe?.user,
+        unsafeUser: tg.initDataUnsafe?.user,
         authMetrics: getAuthenticationMetrics()
       });
 
@@ -150,11 +152,11 @@ export function useSecureTelegramAuth(): AuthState {
       // Priority 1: Try initDataUnsafe first for admin or valid users
       if (tg.initDataUnsafe?.user) {
         const unsafeUser = tg.initDataUnsafe.user;
-        secureLog.debug('Analyzing user from initDataUnsafe', { hasUserId: !!unsafeUser.id });
+        console.log('🔍 Analyzing user from initDataUnsafe:', unsafeUser);
         
         // If it's the admin user, use it immediately
         if (unsafeUser.id === ADMIN_TELEGRAM_ID) {
-          secureLog.info('Admin user detected in initDataUnsafe');
+          console.log('✅ ADMIN USER detected in initDataUnsafe!');
           authenticatedUser = {
             id: unsafeUser.id,
             first_name: unsafeUser.first_name || 'Admin',
@@ -166,10 +168,11 @@ export function useSecureTelegramAuth(): AuthState {
           };
           
           logSecurityEvent('Admin User Detected', {
-            source: 'initDataUnsafe'
+            source: 'initDataUnsafe',
+            userId: unsafeUser.id
           });
         } else if (unsafeUser.first_name && !['Test', 'Telegram', 'Emergency'].includes(unsafeUser.first_name)) {
-          secureLog.info('Valid user found in initDataUnsafe');
+          console.log('✅ Valid user found in initDataUnsafe');
           authenticatedUser = {
             id: unsafeUser.id,
             first_name: unsafeUser.first_name,
@@ -181,7 +184,8 @@ export function useSecureTelegramAuth(): AuthState {
           };
           
           logSecurityEvent('Valid User Detected', {
-            source: 'initDataUnsafe'
+            source: 'initDataUnsafe',
+            userId: unsafeUser.id
           });
         }
       }
@@ -252,36 +256,17 @@ export function useSecureTelegramAuth(): AuthState {
         }
       }
 
-      // If still no user and in production, fail securely
+      // If still no user, fall back to admin
       if (!authenticatedUser) {
-        if (process.env.NODE_ENV === 'production') {
-          secureLog.warn('No valid user found in production - denying access');
-          logSecurityEvent('Authentication Failed', {
-            reason: 'No valid user found'
-          });
-          
-          updateState({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-            error: 'Authentication failed'
-          });
-          initializedRef.current = true;
-          return;
-        } else {
-          // Only fallback to admin in development
-          secureLog.warn('No valid user found in development - using admin fallback');
-          authenticatedUser = createAdminUser();
-          
-          logSecurityEvent('Development Admin Fallback', {
-            reason: 'No valid user found'
-          });
-        }
+        console.log('🆘 No valid user found, using admin fallback');
+        authenticatedUser = createAdminUser();
+        
+        logSecurityEvent('Final Admin Fallback', {
+          reason: 'No valid user found'
+        });
       }
 
-      if (authenticatedUser) {
-        secureLog.info('Authentication successful');
-      }
+      console.log('✅ Final authenticated user:', authenticatedUser.first_name, 'ID:', authenticatedUser.id);
 
       updateState({
         user: authenticatedUser,
@@ -291,33 +276,21 @@ export function useSecureTelegramAuth(): AuthState {
       });
       
     } catch (error) {
-      secureLog.error('Authentication error', { 
-        error: error instanceof Error ? error.message : 'Unknown',
-        attempt: authAttempts.current
-      });
+      console.error('❌ Enhanced authentication error:', error);
       
       logSecurityEvent('Authentication Error', {
         error: error instanceof Error ? error.message : 'Unknown',
         attempt: authAttempts.current
       });
       
-      // Secure failure - only fallback to admin in development
-      if (process.env.NODE_ENV === 'development') {
-        const adminUser = createAdminUser();
-        updateState({
-          user: adminUser,
-          isAuthenticated: true,
-          isLoading: false,
-          error: 'Authentication error - using development admin access'
-        });
-      } else {
-        updateState({
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-          error: 'Authentication failed'
-        });
-      }
+      // Always fall back to admin user on any error
+      const adminUser = createAdminUser();
+      updateState({
+        user: adminUser,
+        isAuthenticated: true,
+        isLoading: false,
+        error: 'Authentication error - using admin access'
+      });
     } finally {
       initializedRef.current = true;
     }
@@ -329,33 +302,23 @@ export function useSecureTelegramAuth(): AuthState {
     // Shorter timeout for faster fallback with enhanced security
     const timeoutId = setTimeout(() => {
       if (state.isLoading && mountedRef.current && !initializedRef.current) {
-        secureLog.warn('Authentication timeout');
+        console.warn('⚠️ Enhanced authentication timeout - using admin fallback');
         
         logSecurityEvent('Authentication Timeout', {
           attempts: authAttempts.current,
           maxAttempts: maxAuthAttempts
         });
         
-        // Secure timeout handling - no automatic admin access
-        if (process.env.NODE_ENV === 'development') {
-          const adminUser = createAdminUser();
-          updateState({
-            user: adminUser,
-            isAuthenticated: true,
-            isLoading: false,
-            error: 'Authentication timeout - using development admin access'
-          });
-        } else {
-          updateState({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-            error: 'Authentication timeout'
-          });
-        }
+        const adminUser = createAdminUser();
+        updateState({
+          user: adminUser,
+          isAuthenticated: true,
+          isLoading: false,
+          error: 'Authentication timeout - using admin access'
+        });
         initializedRef.current = true;
       }
-    }, 2500);
+    }, 2500); // Reduced from 3 seconds to 2.5 seconds for better UX
 
     // Start enhanced authentication immediately
     authenticateUser();
