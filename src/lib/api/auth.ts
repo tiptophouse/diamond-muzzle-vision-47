@@ -3,6 +3,7 @@ import { API_BASE_URL } from './config';
 import { apiEndpoints } from './endpoints';
 import { setCurrentUserId } from './config';
 import { getBackendAccessToken } from './secureConfig';
+import { secureLog, sanitizeUrl } from '@/utils/secureLogging';
 
 export interface TelegramVerificationResponse {
   success: boolean;
@@ -27,9 +28,10 @@ export function getVerificationResult(): TelegramVerificationResponse | null {
 // Enhanced verification with security logging
 export async function verifyTelegramUser(initData: string): Promise<TelegramVerificationResponse | null> {
   try {
-    console.log('🔐 API: Enhanced Telegram user verification starting');
-    console.log('🔐 API: Sending to:', `${API_BASE_URL}${apiEndpoints.verifyTelegram()}`);
-    console.log('🔐 API: InitData length:', initData.length);
+    secureLog.debug('API: Telegram user verification starting', { 
+      endpoint: sanitizeUrl(`${API_BASE_URL}${apiEndpoints.verifyTelegram()}`),
+      initDataLength: initData ? initData.length : 0
+    });
     
     // Pre-validation checks
     const urlParams = new URLSearchParams(initData);
@@ -37,7 +39,7 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     const hash = urlParams.get('hash');
     
     if (!authDate || !hash) {
-      console.warn('🔐 API: Missing required initData parameters');
+      secureLog.security('Missing required initData parameters');
       verificationResult = null;
       return null;
     }
@@ -48,7 +50,7 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     const age = now - authDateTime;
     
     if (age > 60000) { // 60 seconds
-      console.warn('🔐 API: InitData too old for verification:', age / 1000, 'seconds');
+      secureLog.security('InitData too old for verification', { ageSeconds: age / 1000 });
       verificationResult = null;
       return null;
     }
@@ -56,7 +58,7 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     // Get secure backend access token
     const backendToken = await getBackendAccessToken();
     if (!backendToken) {
-      console.error('🔐 API: Failed to retrieve secure backend access token');
+      secureLog.error('API: Failed to retrieve secure backend access token');
       verificationResult = null;
       return null;
     }
@@ -69,7 +71,7 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
       'X-Client-Version': '1.0.0'
     };
     
-    console.log('🔐 API: Using secure backend access token for verification');
+    secureLog.debug('API: Using secure backend access token for verification');
     
     const response = await fetch(`${API_BASE_URL}${apiEndpoints.verifyTelegram()}`, {
       method: 'POST',
@@ -82,17 +84,19 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
       }),
     });
 
-    console.log('🔐 API: Verification response status:', response.status);
+    secureLog.debug('API: Verification response', { status: response.status });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('🔐 API: Verification failed with status:', response.status, 'body:', errorText);
+      secureLog.error('API: Verification failed', { 
+        status: response.status,
+        responseLength: errorText?.length || 0
+      });
       
       // Log security event
-      console.warn('🚫 Security Event: Verification failed', {
+      secureLog.security('Verification failed', {
         status: response.status,
-        initDataAge: age / 1000,
-        timestamp: new Date().toISOString()
+        initDataAge: age / 1000
       });
       
       verificationResult = null;
@@ -100,13 +104,12 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     }
 
     const result: TelegramVerificationResponse = await response.json();
-    console.log('✅ API: Enhanced Telegram verification successful:', result);
+    secureLog.info('API: Telegram verification successful');
     
     // Log successful authentication
-    console.log('📊 Security Event: Verification successful', {
-      userId: result.user_id,
-      securityInfo: result.security_info,
-      timestamp: new Date().toISOString()
+    secureLog.security('Verification successful', {
+      hasUserId: !!result.user_id,
+      hasSecurityInfo: !!result.security_info
     });
     
     verificationResult = result;
@@ -116,12 +119,13 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
     
     return result;
   } catch (error) {
-    console.error('❌ API: Enhanced Telegram verification failed:', error);
+    secureLog.error('API: Telegram verification failed', { 
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     
     // Log security event for monitoring
-    console.warn('🚫 Security Event: Verification error', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
+    secureLog.security('Verification error', {
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
     
     verificationResult = null;
@@ -139,9 +143,9 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
   
   if (backendToken) {
     headers["Authorization"] = `Bearer ${backendToken}`;
-    console.log('🚀 API: Using secure backend access token for requests');
+    secureLog.debug('API: Using secure backend access token for requests');
   } else {
-    console.warn('⚠️ API: No secure backend access token available');
+    secureLog.warn('API: No secure backend access token available');
   }
   
   // Add enhanced auth headers if available from verification
@@ -149,7 +153,7 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
     const authToken = `telegram_verified_${verificationResult.user_id}_${Date.now()}`;
     headers["X-Telegram-Auth"] = authToken;
     headers["X-Security-Level"] = "enhanced";
-    console.log('🚀 API: Added enhanced telegram auth token to request');
+    secureLog.debug('API: Added enhanced telegram auth token to request');
   }
   
   return headers;
