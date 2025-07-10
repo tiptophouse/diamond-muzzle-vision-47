@@ -1,5 +1,5 @@
 
-import { TelegramOptimizedLayout } from "@/components/TelegramOptimizedLayout";
+import { Layout } from "@/components/layout/Layout";
 import { SingleStoneUploadForm } from "@/components/upload/SingleStoneUploadForm";
 import { UploadForm } from "@/components/upload/UploadForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,7 +7,7 @@ import { FileText, Plus } from "lucide-react";
 
 export default function UploadSingleStonePage() {
   return (
-    <TelegramOptimizedLayout>
+    <Layout>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Upload Inventory</h1>
@@ -37,6 +37,6 @@ export default function UploadSingleStonePage() {
           </TabsContent>
         </Tabs>
       </div>
-    </TelegramOptimizedLayout>
+    </Layout>
   );
 }

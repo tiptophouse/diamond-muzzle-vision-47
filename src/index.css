@@ -100,14 +100,6 @@
     -webkit-tap-highlight-color: transparent;
     height: 100vh;
     height: var(--tg-viewport-height, 100vh);
-    /* iPhone optimizations */
-    height: calc(var(--vh, 1vh) * 100);
-    
-    /* Safe area support for iPhone notches */
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
   }
 
   body {
@@ -122,23 +114,8 @@
     -webkit-overflow-scrolling: touch;
     height: 100vh;
     height: var(--tg-viewport-height, 100vh);
-    height: calc(var(--vh, 1vh) * 100);
-    background: var(--tg-bg-color, var(--gradient-surface));
-    color: var(--tg-text-color, hsl(var(--foreground)));
+    background: var(--gradient-surface);
     font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1, 'pnum' 1, 'tnum' 0, 'onum' 1, 'lnum' 0, 'dlig' 0;
-    
-    /* iPhone specific optimizations */
-    -webkit-text-size-adjust: 100%;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    
-    /* Prevent rubber band scrolling on iOS */
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow: hidden;
   }
 
   #root {
@@ -147,17 +124,6 @@
     overflow-x: hidden;
     min-height: 100vh;
     min-height: var(--tg-viewport-height, 100vh);
-    min-height: calc(var(--vh, 1vh) * 100);
-    
-    /* Enable scrolling for content */
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
   }
 
   .tg-viewport {
@@ -340,80 +306,6 @@
     .btn-touch {
       @apply min-h-[44px] min-w-[44px];
     }
-  }
-  
-  /* iPhone specific optimizations */
-  @supports (-webkit-touch-callout: none) {
-    /* iOS Safari specific styles */
-    body {
-      height: -webkit-fill-available;
-    }
-    
-    /* Fix input zoom on iPhone */
-    input[type="text"],
-    input[type="email"],
-    input[type="password"],
-    input[type="search"],
-    input[type="tel"],
-    input[type="url"],
-    textarea,
-    select {
-      font-size: 16px !important;
-      transform: scale(1);
-      -webkit-appearance: none;
-      border-radius: 0;
-    }
-    
-    /* Improve touch targets for iPhone */
-    button,
-    .btn,
-    [role="button"] {
-      min-height: 44px;
-      min-width: 44px;
-      touch-action: manipulation;
-    }
-  }
-  
-  /* Platform-specific optimizations */
-  .platform-ios {
-    /* iOS specific styles */
-    --border-radius: 12px;
-  }
-  
-  .platform-android {
-    /* Android specific styles */
-    --border-radius: 8px;
-  }
-  
-  .telegram-app {
-    /* Telegram app specific styles */
-    --primary: var(--tg-button-color, hsl(var(--primary)));
-    --primary-foreground: var(--tg-button-text-color, hsl(var(--primary-foreground)));
-    
-    /* Hide scrollbars in Telegram */
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  
-  .telegram-app::-webkit-scrollbar {
-    display: none;
-  }
-  
-  /* Telegram theme integration */
-  :root {
-    --tg-bg-color: var(--background);
-    --tg-text-color: var(--foreground);
-    --tg-hint-color: var(--muted-foreground);
-    --tg-link-color: var(--primary);
-    --tg-button-color: var(--primary);
-    --tg-button-text-color: var(--primary-foreground);
-    --tg-secondary-bg-color: var(--secondary);
-    --tg-header-bg-color: var(--background);
-    --tg-accent-text-color: var(--accent-foreground);
-    --tg-section-bg-color: var(--card);
-    --tg-section-header-text-color: var(--card-foreground);
-    --tg-subtitle-text-color: var(--muted-foreground);
-    --tg-destructive-text-color: var(--destructive);
   }
 
   /* Premium Components */

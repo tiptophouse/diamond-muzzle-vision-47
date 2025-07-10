@@ -23,7 +23,6 @@ import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { TelegramProvider } from '@/contexts/TelegramContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,37 +39,35 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <TelegramProvider>
-          <ThemeProvider>
-            <TelegramAuthProvider>
-              <TutorialProvider>
-                <AuthGuard>
-                  <AuthorizationGuard>
-                    <Router>
-                      <Routes>
-                        <Route path="/" element={<Index />} />
-                        <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/inventory" element={<Inventory />} />
-                        <Route path="/store" element={<StorePage />} />
-                        <Route path="/upload" element={<UploadSingleStonePage />} />
-                        <Route path="/chat" element={<ChatPage />} />
-                        <Route path="/insights" element={<InsightsPage />} />
-                        <Route path="/settings" element={<Settings />} />
-                        <Route path="/notifications" element={<NotificationsPage />} />
-                        <Route path="/admin" element={
-                          <AdminGuard>
-                            <Admin />
-                          </AdminGuard>
-                        } />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </Router>
-                  </AuthorizationGuard>
-                </AuthGuard>
-              </TutorialProvider>
-            </TelegramAuthProvider>
-          </ThemeProvider>
-        </TelegramProvider>
+        <ThemeProvider>
+          <TelegramAuthProvider>
+            <TutorialProvider>
+              <AuthGuard>
+                <AuthorizationGuard>
+                  <Router>
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/inventory" element={<Inventory />} />
+                      <Route path="/store" element={<StorePage />} />
+                      <Route path="/upload" element={<UploadSingleStonePage />} />
+                      <Route path="/chat" element={<ChatPage />} />
+                      <Route path="/insights" element={<InsightsPage />} />
+                      <Route path="/settings" element={<Settings />} />
+                      <Route path="/notifications" element={<NotificationsPage />} />
+                      <Route path="/admin" element={
+                        <AdminGuard>
+                          <Admin />
+                        </AdminGuard>
+                      } />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Router>
+                </AuthorizationGuard>
+              </AuthGuard>
+            </TutorialProvider>
+          </TelegramAuthProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );
