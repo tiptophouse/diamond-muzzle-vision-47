@@ -28,11 +28,12 @@ export function DiamondSelectField({
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent 
-          className="bg-background border shadow-lg z-50 max-h-64 overflow-y-auto"
+          className="bg-background border shadow-lg z-50 max-h-[40vh] overflow-y-auto"
           position="popper"
           sideOffset={4}
           align="start"
           avoidCollisions={true}
+          collisionPadding={16}
         >
           {options.map((option) => (
             <SelectItem 
