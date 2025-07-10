@@ -23,6 +23,7 @@ import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,6 +36,9 @@ const queryClient = new QueryClient({
 
 function App() {
   console.log('🚀 App component rendering');
+  
+  // Initialize Telegram WebApp
+  const { isInitialized, isTelegramEnv } = useTelegramWebApp();
   
   return (
     <ErrorBoundary>

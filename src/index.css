@@ -100,6 +100,9 @@
     -webkit-tap-highlight-color: transparent;
     height: 100vh;
     height: var(--tg-viewport-height, 100vh);
+    /* Support for iPhone safe areas */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    box-sizing: border-box;
   }
 
   body {
@@ -114,8 +117,15 @@
     -webkit-overflow-scrolling: touch;
     height: 100vh;
     height: var(--tg-viewport-height, 100vh);
-    background: var(--gradient-surface);
+    background: var(--tg-theme-bg-color, var(--gradient-surface));
+    color: var(--tg-theme-text-color, hsl(var(--foreground)));
     font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1, 'pnum' 1, 'tnum' 0, 'onum' 1, 'lnum' 0, 'dlig' 0;
+    /* Fix iOS Safari keyboard issues */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
   }
 
   #root {
@@ -281,7 +291,7 @@
     }
     
     .stat-value {
-      @apply text-lg;
+      @apply text-lg sm:text-xl;
     }
     
     .mobile-padding {
@@ -291,9 +301,26 @@
     .mobile-card {
       @apply p-3 text-sm;
     }
+    
+    /* Improve touch targets on mobile */
+    button, .btn, [role="button"] {
+      min-height: 44px;
+      min-width: 44px;
+      padding: 0.75rem 1rem;
+    }
+    
+    /* Better spacing for mobile */
+    .container {
+      @apply px-4;
+    }
+    
+    /* Responsive text scaling */
+    h1 { @apply text-xl sm:text-2xl; }
+    h2 { @apply text-lg sm:text-xl; }
+    h3 { @apply text-base sm:text-lg; }
   }
 
-  /* Telegram-specific optimizations */
+  /* Telegram MiniApp optimizations */
   @media screen and (max-width: 600px) {
     .container {
       @apply px-2;
@@ -304,7 +331,31 @@
     }
     
     .btn-touch {
-      @apply min-h-[44px] min-w-[44px];
+      @apply min-h-[44px] min-w-[44px] px-4 py-3;
+    }
+    
+    /* Hide scrollbars on mobile for cleaner look */
+    .mobile-scroll {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    
+    .mobile-scroll::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  /* iPhone specific fixes */
+  @supports (-webkit-touch-callout: none) {
+    body {
+      /* Fix iOS Safari 100vh issue */
+      height: -webkit-fill-available;
+    }
+    
+    .viewport-height {
+      height: 100vh;
+      height: -webkit-fill-available;
+      height: var(--tg-viewport-height, 100vh);
     }
   }
 
