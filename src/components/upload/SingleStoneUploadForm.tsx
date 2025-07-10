@@ -1,11 +1,10 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from 'react-hook-form';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 import { useInventoryCrud } from "@/hooks/useInventoryCrud";
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
 import { Camera } from "lucide-react";
@@ -25,7 +24,6 @@ import { ApiTestButton } from '@/components/ui/ApiTestButton';
 export function SingleStoneUploadForm() {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
-  const { setMainButton, hideMainButton, enableHapticFeedback, isTelegramEnv } = useTelegramWebApp();
   const [isScanning, setIsScanning] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [apiConnected, setApiConnected] = useState(true); // Track API connection status
@@ -183,23 +181,6 @@ export function SingleStoneUploadForm() {
     });
   };
 
-  // Set up Telegram MainButton for mobile users
-  useEffect(() => {
-    if (isTelegramEnv && !uploadSuccess && !isLoading) {
-      setMainButton('💎 Add Diamond', () => {
-        enableHapticFeedback();
-        const formData = watch();
-        handleFormSubmit(formData);
-      });
-    } else {
-      hideMainButton();
-    }
-
-    return () => {
-      hideMainButton();
-    };
-  }, [isTelegramEnv, uploadSuccess, isLoading, setMainButton, hideMainButton, enableHapticFeedback, watch]);
-
   // Show success card after successful upload
   if (uploadSuccess) {
     return (
@@ -234,29 +215,26 @@ export function SingleStoneUploadForm() {
 
   return (
     <>
-      <Card className="diamond-card">
-        <CardHeader className="pb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <CardTitle className="text-lg sm:text-xl">Add Single Diamond</CardTitle>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Add Single Diamond</CardTitle>
             <Button
               type="button"
               variant="outline"
               onClick={() => setIsScanning(true)}
-              className="flex items-center gap-2 btn-touch text-xs sm:text-sm"
+              className="flex items-center gap-2"
             >
-              <Camera className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Scan Diamond Certificate</span>
-              <span className="sm:hidden">Scan QR</span>
+              <Camera className="h-4 w-4" />
+              Scan Diamond Certificate
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="px-3 sm:px-6">
-          <div className="hidden sm:block">
-            <ApiTestButton />
-          </div>
+        <CardContent>
+          <ApiTestButton />
           <ApiStatusIndicator isConnected={apiConnected} className="mb-4" />
           
-          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4 sm:space-y-6">
+          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
             <DiamondDetailsSection
               register={register}
               setValue={setValue}
