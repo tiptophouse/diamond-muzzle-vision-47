@@ -17,7 +17,7 @@ interface MobileInventorySettingsProps {
 const statusOptions = ['Available', 'Reserved', 'Sold', 'On Hold'];
 
 export function MobileInventorySettings({ register, setValue, watch, errors }: MobileInventorySettingsProps) {
-  const storeVisible = watch('storeVisible');
+  const storeVisible = watch('storeVisible') ?? true; // Default to visible
 
   return (
     <div className="space-y-4">
@@ -68,9 +68,9 @@ export function MobileInventorySettings({ register, setValue, watch, errors }: M
         errors={errors}
       />
 
-      <div className="bg-primary/5 p-3 rounded-lg border border-primary/20">
-        <p className="text-xs text-muted-foreground">
-          💎 <strong>Store Tip:</strong> Make your diamond visible in the store to allow customers to view and inquire about it
+      <div className="bg-success/5 p-3 rounded-lg border border-success/20">
+        <p className="text-xs text-success/80">
+          ✨ <strong>Auto-Published:</strong> Your diamond will be visible in your store immediately after upload
         </p>
       </div>
     </div>

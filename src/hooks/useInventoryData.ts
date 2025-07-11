@@ -74,9 +74,25 @@ export function useInventoryData() {
           certificateUrl: item.certificate_url || item.certificateUrl || undefined,
         }));
 
-        console.log('📥 INVENTORY HOOK: Transformed diamonds:', transformedDiamonds.length);
-        setDiamonds(transformedDiamonds);
-        setAllDiamonds(transformedDiamonds);
+        // Sort by newest first (most recent uploads at top)
+        const sortedDiamonds = transformedDiamonds.sort((a, b) => {
+          // If both have IDs that are numbers, sort by ID descending (newest first)
+          if (typeof a.diamondId === 'number' && typeof b.diamondId === 'number') {
+            return b.diamondId - a.diamondId;
+          }
+          // If IDs are strings, try to extract timestamp or use string comparison
+          if (typeof a.id === 'string' && typeof b.id === 'string') {
+            const aTime = a.id.includes('-') ? parseInt(a.id.split('-').pop() || '0') : 0;
+            const bTime = b.id.includes('-') ? parseInt(b.id.split('-').pop() || '0') : 0;
+            if (aTime && bTime) return bTime - aTime;
+          }
+          // Default: newest stockNumber first alphabetically
+          return b.stockNumber.localeCompare(a.stockNumber);
+        });
+
+        console.log('📥 INVENTORY HOOK: Sorted', sortedDiamonds.length, 'diamonds (newest first)');
+        setDiamonds(sortedDiamonds);
+        setAllDiamonds(sortedDiamonds);
       } else {
         console.log('📥 INVENTORY HOOK: No diamonds found');
         setDiamonds([]);

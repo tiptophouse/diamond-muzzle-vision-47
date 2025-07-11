@@ -88,9 +88,19 @@ export function useStoreData() {
           })
           .filter(diamond => diamond.store_visible && diamond.status === 'Available'); // Only show store-visible and available diamonds
 
-        console.log('🏪 STORE: Processed', transformedDiamonds.length, 'store-visible diamonds from', result.data.length, 'total diamonds');
-        console.log('🏪 STORE: Found', transformedDiamonds.filter(d => d.gem360Url).length, 'diamonds with Gem360 URLs');
-        setDiamonds(transformedDiamonds);
+        // Sort store diamonds by newest first
+        const sortedDiamonds = transformedDiamonds.sort((a, b) => {
+          // Sort by diamond ID descending (newest first)
+          if (typeof a.id === 'number' && typeof b.id === 'number') {
+            return b.id - a.id;
+          }
+          // Fallback to string comparison
+          return b.stockNumber.localeCompare(a.stockNumber);
+        });
+
+        console.log('🏪 STORE: Processed', sortedDiamonds.length, 'store-visible diamonds from', result.data.length, 'total diamonds (newest first)');
+        console.log('🏪 STORE: Found', sortedDiamonds.filter(d => d.gem360Url).length, 'diamonds with Gem360 URLs');
+        setDiamonds(sortedDiamonds);
       } else {
         console.log('🏪 STORE: No diamonds found in response');
         setDiamonds([]);

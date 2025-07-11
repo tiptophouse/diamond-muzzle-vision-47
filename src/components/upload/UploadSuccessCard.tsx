@@ -11,8 +11,8 @@ interface UploadSuccessCardProps {
 }
 
 export function UploadSuccessCard({ 
-  title = "Uploaded Successfully",
-  description = "Your stone has been uploaded. Ready to share or continue.",
+  title = "Diamond Added Successfully! 🎉",
+  description = "Your diamond is now in your inventory and visible in your store for customers to view.",
   onContinue,
   onShare,
   showActions = true
