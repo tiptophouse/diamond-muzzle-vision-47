@@ -3,40 +3,117 @@ import { Layout } from '@/components/layout/Layout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { AdminStatsGrid } from '@/components/admin/AdminStatsGrid';
 import { AdminUserManager } from '@/components/admin/AdminUserManager';
-import { AccurateAnalyticsDashboard } from '@/components/admin/AccurateAnalyticsDashboard';
 import { NotificationCenter } from '@/components/admin/NotificationCenter';
 import { NotificationSender } from '@/components/admin/NotificationSender';
 import { PaymentManagement } from '@/components/admin/PaymentManagement';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { Users, Settings, MessageSquare, CreditCard, BarChart3 } from 'lucide-react';
+import { Users, Settings, MessageSquare, CreditCard } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Admin() {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
   const { toast } = useToast();
   const [notifications, setNotifications] = useState([]);
 
-  // Mock stats data
-  const stats = {
-    totalUsers: 1250,
-    activeUsers: 890,
-    premiumUsers: 156,
-    totalRevenue: 25600,
-    totalCosts: 8400,
-    profit: 17200
-  };
-
-  const blockedUsersCount = 23;
-  const averageEngagement = 74;
+  // Real bot usage stats
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    activeUsers: 0,
+    premiumUsers: 0,
+    totalRevenue: 0,
+    totalCosts: 0,
+    profit: 0
+  });
+  const [blockedUsersCount, setBlockedUsersCount] = useState(0);
+  const [averageEngagement, setAverageEngagement] = useState(0);
+  const [realTimeStats, setRealTimeStats] = useState({
+    todayLogins: 0,
+    weeklyLogins: 0,
+    monthlyLogins: 0
+  });
 
   useEffect(() => {
     console.log('🔍 Admin page mounted');
     console.log('🔍 User:', user);
     console.log('🔍 Is authenticated:', isAuthenticated);
     console.log('🔍 Is loading:', isLoading);
+    
+    // Load real bot usage statistics
+    loadBotUsageStats();
   }, [user, isAuthenticated, isLoading]);
+
+  const loadBotUsageStats = async () => {
+    try {
+      // Get actual user counts
+      const { data: totalUsersData } = await supabase
+        .from('user_profiles')
+        .select('*', { count: 'exact', head: true });
+
+      const { data: activeUsersData } = await supabase
+        .from('user_profiles')
+        .select('*', { count: 'exact', head: true })
+        .gte('last_login', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
+      const { data: premiumUsersData } = await supabase
+        .from('user_profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_premium', true);
+
+      const { data: blockedData } = await supabase
+        .from('blocked_users')
+        .select('*', { count: 'exact', head: true });
+
+      // Get login statistics
+      const { data: todayLoginsData } = await supabase
+        .from('user_logins')
+        .select('*', { count: 'exact', head: true })
+        .gte('login_timestamp', new Date().toISOString().split('T')[0]);
+
+      const { data: weeklyLoginsData } = await supabase
+        .from('user_logins')
+        .select('*', { count: 'exact', head: true })
+        .gte('login_timestamp', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
+      const { data: monthlyLoginsData } = await supabase
+        .from('user_logins')
+        .select('*', { count: 'exact', head: true })
+        .gte('login_timestamp', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
+
+      setStats({
+        totalUsers: totalUsersData?.length || 0,
+        activeUsers: activeUsersData?.length || 0,
+        premiumUsers: premiumUsersData?.length || 0,
+        totalRevenue: 0, // TODO: Calculate from subscriptions
+        totalCosts: 0,   // TODO: Calculate from cost_tracking
+        profit: 0
+      });
+
+      setBlockedUsersCount(blockedData?.length || 0);
+      setRealTimeStats({
+        todayLogins: todayLoginsData?.length || 0,
+        weeklyLogins: weeklyLoginsData?.length || 0,
+        monthlyLogins: monthlyLoginsData?.length || 0
+      });
+
+      console.log('📊 Real bot usage stats:', {
+        totalUsers: totalUsersData?.length || 0,
+        activeUsers: activeUsersData?.length || 0,
+        todayLogins: todayLoginsData?.length || 0,
+        weeklyLogins: weeklyLoginsData?.length || 0
+      });
+
+    } catch (error) {
+      console.error('❌ Error loading bot usage stats:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load real usage statistics",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleExportData = () => {
     console.log('Exporting data...');
@@ -106,8 +183,23 @@ export default function Admin() {
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* Real Bot Usage Stats */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h3 className="font-semibold text-blue-900 mb-2">📊 Real-Time Bot Usage</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div>
+              <span className="font-medium">Today's Logins:</span> {realTimeStats.todayLogins}
+            </div>
+            <div>
+              <span className="font-medium">This Week:</span> {realTimeStats.weeklyLogins}
+            </div>
+            <div>
+              <span className="font-medium">This Month:</span> {realTimeStats.monthlyLogins}
+            </div>
+          </div>
+        </div>
+        
         <AdminStatsGrid
           stats={stats}
           blockedUsersCount={blockedUsersCount}
@@ -117,16 +209,8 @@ export default function Admin() {
 
       {/* Main Admin Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-        <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 bg-white border border-gray-200 rounded-lg p-1">
-            <TabsTrigger 
-              value="analytics" 
-              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-            >
-              <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">Accurate Analytics</span>
-              <span className="sm:hidden">Analytics</span>
-            </TabsTrigger>
+        <Tabs defaultValue="users" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 bg-white border border-gray-200 rounded-lg p-1">
             <TabsTrigger 
               value="users" 
               className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
@@ -159,12 +243,6 @@ export default function Admin() {
           </TabsList>
           
           <div className="mt-6">
-            <TabsContent value="analytics" className="space-y-0">
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <AccurateAnalyticsDashboard />
-              </div>
-            </TabsContent>
-            
             <TabsContent value="users" className="space-y-0">
               <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                 <AdminUserManager />
