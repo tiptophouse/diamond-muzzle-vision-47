@@ -11,6 +11,11 @@ export interface TelegramWebApp {
     hide: () => void;
     onClick: (callback: () => void) => void;
   };
+  HapticFeedback?: {
+    impactOccurred: (style: 'light' | 'medium' | 'heavy') => void;
+    notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
+    selectionChanged: () => void;
+  };
   close?: () => void;
 }
 
