@@ -3,7 +3,7 @@ import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'rea
 import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { statuses } from '@/components/inventory/form/diamondFormConstants';
-import { MobilePicker } from '@/components/ui/MobilePicker';
+import { MobileButtonSelector } from '@/components/ui/MobileButtonSelector';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calculator } from 'lucide-react';
 
@@ -87,12 +87,13 @@ export function MobileBusinessInfo({ register, setValue, watch, errors }: Mobile
         errors={errors}
       />
 
-      <MobilePicker
+      <MobileButtonSelector
         id="status"
         label="Inventory Status"
         value={watch('status') || 'Available'}
         onValueChange={(value) => setValue('status', value)}
         options={statuses}
+        columns={2}
       />
     </div>
   );

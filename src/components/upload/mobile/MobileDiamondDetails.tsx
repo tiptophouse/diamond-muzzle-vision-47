@@ -4,7 +4,7 @@ import { DiamondInputField } from '@/components/inventory/form/DiamondInputField
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { shapes, colors, clarities, cuts, fluorescences, polishGrades, symmetryGrades } from '@/components/inventory/form/diamondFormConstants';
 import { MobileButtonSelector } from '@/components/ui/MobileButtonSelector';
-import { MobilePicker } from '@/components/ui/MobilePicker';
+
 
 interface MobileDiamondDetailsProps {
   register: UseFormRegister<DiamondFormData>;
@@ -80,28 +80,31 @@ export function MobileDiamondDetails({ register, setValue, watch, errors }: Mobi
         />
       )}
 
-      <MobilePicker
+      <MobileButtonSelector
         id="fluorescence"
         label="Fluorescence"
         value={watch('fluorescence') || 'None'}
         onValueChange={(value) => setValue('fluorescence', value)}
         options={fluorescences}
+        columns={2}
       />
 
-      <MobilePicker
+      <MobileButtonSelector
         id="polish"
         label="Polish"
         value={watch('polish') || 'Excellent'}
         onValueChange={(value) => setValue('polish', value)}
         options={polishGrades}
+        columns={2}
       />
 
-      <MobilePicker
+      <MobileButtonSelector
         id="symmetry"
         label="Symmetry"
         value={watch('symmetry') || 'Excellent'}
         onValueChange={(value) => setValue('symmetry', value)}
         options={symmetryGrades}
+        columns={2}
       />
     </div>
   );

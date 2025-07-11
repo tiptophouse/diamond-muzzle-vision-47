@@ -3,7 +3,7 @@ import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'rea
 import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { labOptions, girdleTypes, culetGrades } from '@/components/inventory/form/diamondFormConstants';
-import { MobilePicker } from '@/components/ui/MobilePicker';
+import { MobileButtonSelector } from '@/components/ui/MobileButtonSelector';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
@@ -25,12 +25,13 @@ export function MobileCertificateInfo({ register, setValue, watch, errors }: Mob
         errors={errors}
       />
 
-      <MobilePicker
+      <MobileButtonSelector
         id="lab"
         label="Certification Lab"
         value={watch('lab') || 'GIA'}
         onValueChange={(value) => setValue('lab', value)}
         options={labOptions}
+        columns={3}
       />
 
       <DiamondInputField
@@ -41,20 +42,22 @@ export function MobileCertificateInfo({ register, setValue, watch, errors }: Mob
         errors={errors}
       />
 
-      <MobilePicker
+      <MobileButtonSelector
         id="gridle"
         label="Girdle"
         value={watch('gridle') || 'Medium'}
         onValueChange={(value) => setValue('gridle', value)}
         options={girdleTypes}
+        columns={2}
       />
 
-      <MobilePicker
+      <MobileButtonSelector
         id="culet"
         label="Culet"
         value={watch('culet') || 'None'}
         onValueChange={(value) => setValue('culet', value)}
         options={culetGrades}
+        columns={2}
       />
 
       <div className="space-y-2">
