@@ -177,12 +177,14 @@ export function TelegramCertificateScanner() {
       (tg as any).HapticFeedback?.notificationOccurred?.('success');
     }
     
+    // Show prominent success message
     toast({
-      title: "✅ Diamond Added Successfully",
-      description: "Your diamond has been added to inventory",
+      title: "🎉 Diamond Added Successfully!",
+      description: "Your diamond is now in inventory and visible in your store for customers to view",
+      duration: 5000,
     });
     
-    // Reset form
+    // Reset form and go back to scanner
     setShowForm(false);
     setScannedData(null);
     form.reset();
