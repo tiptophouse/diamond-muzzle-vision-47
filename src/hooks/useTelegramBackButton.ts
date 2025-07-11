@@ -1,31 +1,28 @@
+
 import { useEffect } from 'react';
-import { getTelegramWebApp } from '@/utils/telegramWebApp';
+import { useNavigate } from 'react-router-dom';
 
-export function useTelegramBackButton(onBackClick?: () => boolean) {
+export function useTelegramBackButton(enabled: boolean = true) {
+  const navigate = useNavigate();
+
   useEffect(() => {
-    const tg = getTelegramWebApp();
-    if (!tg?.BackButton) return;
+    if (!enabled || typeof window === 'undefined' || !window.Telegram?.WebApp) {
+      return;
+    }
 
-    const handleBack = () => {
-      if (onBackClick) {
-        const shouldPreventDefault = onBackClick();
-        if (shouldPreventDefault) {
-          return;
-        }
-      }
-      // Default behavior - close the app or go back
-      if (tg.close) {
-        tg.close();
-      }
+    const tg = window.Telegram.WebApp;
+    
+    const handleBackClick = () => {
+      navigate(-1);
     };
 
-    tg.BackButton.show();
-    tg.BackButton.onClick(handleBack);
+    if (enabled) {
+      tg.BackButton.onClick(handleBackClick);
+      tg.BackButton.show();
+    }
 
     return () => {
-      if (tg.BackButton) {
-        tg.BackButton.hide();
-      }
+      tg.BackButton.hide();
     };
-  }, [onBackClick]);
+  }, [enabled, navigate]);
 }
