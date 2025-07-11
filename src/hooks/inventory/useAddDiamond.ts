@@ -127,8 +127,8 @@ export function useAddDiamond(onSuccess?: () => void) {
         // Show success message - API call succeeded
         if (response.data) {
           toast({
-            title: "🎉 Diamond Added Successfully!",
-            description: `"${data.stockNumber}" is now in your inventory and visible in store`,
+            title: "✅ Diamond Added Successfully!",
+            description: `Stone "${data.stockNumber}" has been added to your inventory via FastAPI backend`,
           });
           
           if (onSuccess) onSuccess();
@@ -195,8 +195,8 @@ export function useAddDiamond(onSuccess?: () => void) {
         localStorage.setItem('diamond_inventory', JSON.stringify(existingData));
         
         toast({
-          title: "💎 Stone Added (Offline Mode)", 
-          description: `"${data.stockNumber}" saved locally and visible in store`,
+          title: "⚠️ Stone Saved Locally", 
+          description: `Stone "${data.stockNumber}" saved offline. Backend error: ${errorMessage}`,
           variant: "default",
         });
         
@@ -211,8 +211,8 @@ export function useAddDiamond(onSuccess?: () => void) {
       
       toast({
         variant: "destructive",
-        title: "❌ Failed to Add Diamond",
-        description: `Could not add "${data.stockNumber}". ${errorMessage}`,
+        title: "❌ Upload Failed",
+        description: errorMessage,
       });
       
       return false;

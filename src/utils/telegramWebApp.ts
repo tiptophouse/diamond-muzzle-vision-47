@@ -11,20 +11,6 @@ export interface TelegramWebApp {
     hide: () => void;
     onClick: (callback: () => void) => void;
   };
-  MainButton?: {
-    text: string;
-    show: () => void;
-    hide: () => void;
-    onClick: (callback: () => void) => void;
-    setText: (text: string) => void;
-    showProgress: () => void;
-    hideProgress: () => void;
-  };
-  HapticFeedback?: {
-    impactOccurred: (style: 'light' | 'medium' | 'heavy') => void;
-    notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
-    selectionChanged: () => void;
-  };
   close?: () => void;
 }
 
