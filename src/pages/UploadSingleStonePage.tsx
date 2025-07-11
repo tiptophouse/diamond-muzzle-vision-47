@@ -1,38 +1,38 @@
 
 import { Layout } from "@/components/layout/Layout";
-import { SingleStoneUploadForm } from "@/components/upload/SingleStoneUploadForm";
+import { TelegramCertificateScanner } from "@/components/upload/TelegramCertificateScanner";
 import { UploadForm } from "@/components/upload/UploadForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, Plus } from "lucide-react";
+import { FileText, QrCode } from "lucide-react";
 
 export default function UploadSingleStonePage() {
   return (
     <Layout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Upload Inventory</h1>
-          <p className="text-muted-foreground">
-            Upload your diamonds individually or in bulk using CSV
+      <div className="space-y-4 px-4 pb-safe">
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl font-bold tracking-tight">Upload Inventory</h1>
+          <p className="text-sm text-muted-foreground">
+            Scan certificates or upload CSV files
           </p>
         </div>
         
-        <Tabs defaultValue="single" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="single" className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Single Diamond
+        <Tabs defaultValue="scan" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="scan" className="flex items-center gap-2 text-sm">
+              <QrCode className="h-4 w-4" />
+              Scan Certificate
             </TabsTrigger>
-            <TabsTrigger value="bulk" className="flex items-center gap-2">
+            <TabsTrigger value="bulk" className="flex items-center gap-2 text-sm">
               <FileText className="h-4 w-4" />
               Bulk CSV Upload
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="single" className="mt-6">
-            <SingleStoneUploadForm />
+          <TabsContent value="scan" className="mt-0">
+            <TelegramCertificateScanner />
           </TabsContent>
           
-          <TabsContent value="bulk" className="mt-6">
+          <TabsContent value="bulk" className="mt-0">
             <UploadForm />
           </TabsContent>
         </Tabs>
