@@ -71,40 +71,34 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
     if (onUpdate) onUpdate();
   };
 
-  const handleCardClick = (e: React.MouseEvent) => {
-    // Don't navigate if clicking on admin controls or action buttons
-    const target = e.target as HTMLElement;
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
     
-    console.log('🔍 Card clicked, target:', target.tagName, target.className);
-    console.log('🔍 Diamond stockNumber:', diamond.stockNumber);
-    console.log('🔍 Type of stockNumber:', typeof diamond.stockNumber);
+    const shareUrl = `https://miniapp.mazalbot.com/diamond/${diamond.stockNumber}`;
+    const shareTitle = `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond`;
+    const shareText = `Check out this beautiful ${diamond.shape} diamond! ${diamond.carat}ct, ${diamond.color} color, ${diamond.clarity} clarity. Price: $${diamond.price.toLocaleString()}`;
     
-    if (target.closest('button') || 
-        target.closest('.admin-controls') || 
-        target.closest('[role="button"]') ||
-        target.closest('a')) {
-      console.log('🔍 Click ignored - clicked on interactive element');
-      return;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch (error) {
+        // Fallback to clipboard
+        navigator.clipboard.writeText(shareUrl);
+        // You could add a toast here if you want
+      }
+    } else {
+      // Fallback to clipboard
+      navigator.clipboard.writeText(shareUrl);
+      // You could add a toast here if you want
     }
-    
-    console.log('🔍 Navigating to diamond detail page:', `/diamond/${diamond.stockNumber}`);
-    navigate(`/diamond/${diamond.stockNumber}`);
   };
 
   return (
-    <div 
-      className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 group relative cursor-pointer hover:border-primary/30"
-      onClick={handleCardClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          console.log('🔍 Keyboard navigation to diamond:', diamond.stockNumber);
-          navigate(`/diamond/${diamond.stockNumber}`);
-        }
-      }}
-    >
+    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 group relative">
       {/* Admin Controls - Only show for verified admin in Telegram environment */}
       {isAdmin && (
         <>
@@ -155,45 +149,28 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
           </>
         )}
         
-        {/* Action Icons - only show for non-admin users and when not showing 3D viewer */}
-        {!isAdmin && !hasGem360View && (
-          <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
-              size="icon"
-              variant="secondary"
-              className={`w-8 h-8 rounded-full bg-white/90 hover:bg-white ${isLiked ? 'text-red-500' : 'text-gray-600'}`}
-              onClick={() => setIsLiked(!isLiked)}
-            >
-              <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
-            </Button>
-            <Button
-              size="icon"
-              variant="secondary"
-              className="w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-600"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-            <Button
-              size="icon"
-              variant="secondary"
-              className="w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-600"
-            >
-              <Share className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
+        {/* Share Button - Always visible */}
+        <div className="absolute top-3 right-3 opacity-100 transition-opacity">
+          <Button
+            size="icon"
+            variant="secondary"
+            className="w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-600 shadow-sm"
+            onClick={handleShare}
+            title="Share this diamond"
+          >
+            <Share className="h-4 w-4" />
+          </Button>
+        </div>
 
-        {/* GIA Badge - only show when not showing 3D viewer */}
-        {!hasGem360View && (
-          <div className="absolute bottom-3 left-3">
-            <div className="bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
-              <div className="w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs font-bold">G</span>
-              </div>
-              <span className="text-xs font-medium text-gray-900">GIA</span>
+        {/* GIA Badge */}
+        <div className="absolute bottom-3 left-3">
+          <div className="bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
+            <div className="w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
+              <span className="text-white text-xs font-bold">G</span>
             </div>
+            <span className="text-xs font-medium text-gray-900">GIA</span>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Content */}
