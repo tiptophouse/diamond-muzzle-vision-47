@@ -57,36 +57,137 @@ export function TelegramLayout({ children }: TelegramLayoutProps) {
       const telegramApp = window.Telegram.WebApp;
       setTg(telegramApp);
 
-      // Initialize Telegram WebApp
-      telegramApp.ready();
-      telegramApp.expand();
+      // Initialize Telegram WebApp with all features
+      try {
+        telegramApp.ready();
+        telegramApp.expand();
+        
+        // Configure header color based on route
+        const headerColors = {
+          '/dashboard': '#1f2937',
+          '/inventory': '#059669', 
+          '/store': '#7c3aed',
+          '/chat': '#0ea5e9',
+          '/insights': '#dc2626',
+          '/notifications': '#f59e0b',
+          '/settings': '#6b7280',
+          '/admin': '#ef4444'
+        };
+        
+        const currentColor = headerColors[location.pathname as keyof typeof headerColors] || '#1f2937';
+        if ((telegramApp as any).setHeaderColor) {
+          (telegramApp as any).setHeaderColor(currentColor);
+        }
 
-      // Apply Telegram theme
-      if (telegramApp.themeParams) {
-        const root = document.documentElement;
-        root.style.setProperty('--tg-theme-bg-color', telegramApp.themeParams.bg_color || '#ffffff');
-        root.style.setProperty('--tg-theme-text-color', telegramApp.themeParams.text_color || '#000000');
-        root.style.setProperty('--tg-theme-hint-color', telegramApp.themeParams.hint_color || '#999999');
-        root.style.setProperty('--tg-theme-link-color', telegramApp.themeParams.link_color || '#2481cc');
-        root.style.setProperty('--tg-theme-button-color', telegramApp.themeParams.button_color || '#2481cc');
-        root.style.setProperty('--tg-theme-button-text-color', telegramApp.themeParams.button_text_color || '#ffffff');
+        // Apply comprehensive Telegram theme integration
+        if (telegramApp.themeParams) {
+          const root = document.documentElement;
+          const params = telegramApp.themeParams;
+          
+          // Map Telegram colors to CSS variables
+          root.style.setProperty('--tg-theme-bg-color', params.bg_color || '#ffffff');
+          root.style.setProperty('--tg-theme-text-color', params.text_color || '#000000');
+          root.style.setProperty('--tg-theme-hint-color', params.hint_color || '#999999');
+          root.style.setProperty('--tg-theme-link-color', params.link_color || '#2481cc');
+          root.style.setProperty('--tg-theme-button-color', params.button_color || '#2481cc');
+          root.style.setProperty('--tg-theme-button-text-color', params.button_text_color || '#ffffff');
+          
+          // Apply to document body for full theming
+          if (params.bg_color) {
+            document.body.style.backgroundColor = params.bg_color;
+          }
+        }
+
+        // Enhanced viewport handling with safe areas
+        const handleViewportChanged = (data?: any) => {
+          const height = (telegramApp as any).viewportHeight || window.innerHeight;
+          const stableHeight = (telegramApp as any).viewportStableHeight || height;
+          
+          document.documentElement.style.setProperty('--tg-viewport-height', `${height}px`);
+          document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableHeight}px`);
+          
+          // Handle safe area insets if available
+          if ((telegramApp as any).safeAreaInset) {
+            const insets = (telegramApp as any).safeAreaInset;
+            document.documentElement.style.setProperty('--tg-safe-area-inset-top', `${insets.top || 0}px`);
+            document.documentElement.style.setProperty('--tg-safe-area-inset-bottom', `${insets.bottom || 0}px`);
+            document.documentElement.style.setProperty('--tg-safe-area-inset-left', `${insets.left || 0}px`);
+            document.documentElement.style.setProperty('--tg-safe-area-inset-right', `${insets.right || 0}px`);
+          }
+          
+          console.log('📱 Viewport changed:', { height, stableHeight, isStable: data?.isStateStable });
+        };
+
+        // Enhanced event handling
+        const handleThemeChanged = () => {
+          console.log('🎨 Theme changed, reapplying colors');
+          if (telegramApp.themeParams) {
+            const params = telegramApp.themeParams;
+            const root = document.documentElement;
+            
+            root.style.setProperty('--tg-theme-bg-color', params.bg_color || '#ffffff');
+            root.style.setProperty('--tg-theme-text-color', params.text_color || '#000000');
+            
+            if (params.bg_color) {
+              document.body.style.backgroundColor = params.bg_color;
+            }
+          }
+        };
+
+        const handleSafeAreaChanged = () => {
+          console.log('📱 Safe area changed');
+          if ((telegramApp as any).safeAreaInset) {
+            const insets = (telegramApp as any).safeAreaInset;
+            document.documentElement.style.setProperty('--tg-safe-area-inset-top', `${insets.top || 0}px`);
+            document.documentElement.style.setProperty('--tg-safe-area-inset-bottom', `${insets.bottom || 0}px`);
+          }
+        };
+
+        // Register event listeners
+        handleViewportChanged();
+        (telegramApp as any).onEvent?.('viewportChanged', handleViewportChanged);
+        (telegramApp as any).onEvent?.('themeChanged', handleThemeChanged);
+        (telegramApp as any).onEvent?.('safeAreaChanged', handleSafeAreaChanged);
+
+        // Configure MainButton based on current route
+        const configureMainButton = () => {
+          const button = (telegramApp as any).MainButton;
+          if (button) {
+            switch (location.pathname) {
+              case '/inventory':
+                button.setText('Add Diamond');
+                button.color = '#059669';
+                button.show();
+                button.onClick(() => navigate('/upload'));
+                break;
+              case '/store':
+                button.hide(); // Controlled by individual diamond cards
+                break;
+              case '/settings':
+                button.setText('Save Settings');
+                button.color = '#3b82f6';
+                button.show();
+                break;
+              default:
+                button.hide();
+            }
+          }
+        };
+
+        configureMainButton();
+
+        return () => {
+          // Cleanup event listeners
+          (telegramApp as any).offEvent?.('viewportChanged', handleViewportChanged);
+          (telegramApp as any).offEvent?.('themeChanged', handleThemeChanged);
+          (telegramApp as any).offEvent?.('safeAreaChanged', handleSafeAreaChanged);
+          (telegramApp as any).MainButton?.hide();
+        };
+      } catch (error) {
+        console.warn('⚠️ Telegram WebApp setup error:', error);
       }
-
-      // Handle viewport changes
-      const handleViewportChanged = () => {
-        const height = (telegramApp as any).viewportHeight || window.innerHeight;
-        document.documentElement.style.setProperty('--tg-viewport-height', `${height}px`);
-      };
-
-      handleViewportChanged();
-      // Use any type for event handlers as they're not in the interface
-      (telegramApp as any).onEvent?.('viewportChanged', handleViewportChanged);
-
-      return () => {
-        (telegramApp as any).offEvent?.('viewportChanged', handleViewportChanged);
-      };
     }
-  }, []);
+  }, [location.pathname, navigate]);
 
   const handleTabClick = (path: string) => {
     // Add haptic feedback

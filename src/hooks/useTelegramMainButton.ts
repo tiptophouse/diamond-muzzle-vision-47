@@ -20,47 +20,62 @@ export function useTelegramMainButton({
   
   const setupMainButton = useCallback(() => {
     if (typeof window === 'undefined' || !(window as any).Telegram?.WebApp?.MainButton) {
+      console.warn('Telegram WebApp MainButton not available');
       return;
     }
 
     const mainButton = (window as any).Telegram.WebApp.MainButton;
 
-    // Set button properties
-    mainButton.setText(text);
-    
-    if (color) {
-      mainButton.color = color;
-    }
-    
-    if (textColor) {
-      mainButton.textColor = textColor;
-    }
-
-    // Set visibility and state
-    if (isVisible) {
-      mainButton.show();
+    try {
+      // Set button properties
+      mainButton.setText(text);
       
-      if (isEnabled) {
-        mainButton.enable();
-      } else {
-        mainButton.disable();
+      if (color) {
+        mainButton.color = color;
       }
-    } else {
-      mainButton.hide();
-    }
+      
+      if (textColor) {
+        mainButton.textColor = textColor;
+      }
 
-    // Set click handler
-    if (onClick) {
-      mainButton.onClick(onClick);
-    }
+      // Clear any existing click handlers
+      if (mainButton.offClick) {
+        mainButton.offClick();
+      }
 
-    // Cleanup function
-    return () => {
-      mainButton.hide();
+      // Set click handler before showing/enabling
       if (onClick) {
-        mainButton.offClick(onClick);
+        mainButton.onClick(onClick);
       }
-    };
+
+      // Set visibility and state
+      if (isVisible) {
+        if (isEnabled) {
+          mainButton.enable();
+        } else {
+          mainButton.disable();
+        }
+        mainButton.show();
+      } else {
+        mainButton.hide();
+      }
+
+      console.log('MainButton configured:', { text, isVisible, isEnabled, color });
+
+      // Cleanup function
+      return () => {
+        try {
+          mainButton.hide();
+          if (mainButton.offClick) {
+            mainButton.offClick();
+          }
+        } catch (cleanupError) {
+          console.warn('MainButton cleanup error:', cleanupError);
+        }
+      };
+    } catch (error) {
+      console.error('Error setting up MainButton:', error);
+    }
   }, [text, isVisible, isEnabled, color, textColor, onClick]);
 
   useEffect(() => {
