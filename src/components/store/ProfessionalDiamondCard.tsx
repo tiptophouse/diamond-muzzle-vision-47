@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Heart, Eye, Share, Edit, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,7 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
   const [imageError, setImageError] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const { user, isTelegramEnvironment } = useTelegramAuth();
+  const navigate = useNavigate();
   
   // Only show admin controls if:
   // 1. User is authenticated through Telegram
@@ -69,8 +71,19 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
     if (onUpdate) onUpdate();
   };
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on admin controls or action buttons
+    if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('.admin-controls')) {
+      return;
+    }
+    navigate(`/diamond/${diamond.stockNumber}`);
+  };
+
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 group relative">
+    <div 
+      className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 group relative cursor-pointer"
+      onClick={handleCardClick}
+    >
       {/* Admin Controls - Only show for verified admin in Telegram environment */}
       {isAdmin && (
         <>
@@ -82,11 +95,13 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
           </div>
           
           {/* Admin Controls Component */}
-          <AdminStoreControls 
-            diamond={diamond}
-            onUpdate={onUpdate || (() => {})}
-            onDelete={handleDelete}
-          />
+          <div className="admin-controls">
+            <AdminStoreControls 
+              diamond={diamond}
+              onUpdate={onUpdate || (() => {})}
+              onDelete={handleDelete}
+            />
+          </div>
         </>
       )}
 

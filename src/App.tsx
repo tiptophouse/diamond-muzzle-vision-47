@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Dashboard from "./pages/Dashboard";
 import Inventory from "./pages/InventoryPage";
 import StorePage from "./pages/StorePage";
+import DiamondDetailPage from "./pages/DiamondDetailPage";
 import Settings from "./pages/SettingsPage";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -50,6 +51,7 @@ function App() {
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/inventory" element={<Inventory />} />
                       <Route path="/store" element={<StorePage />} />
+                      <Route path="/diamond/:stockNumber" element={<DiamondDetailPage />} />
                       <Route path="/upload" element={<UploadSingleStonePage />} />
                       <Route path="/chat" element={<ChatPage />} />
                       <Route path="/insights" element={<InsightsPage />} />

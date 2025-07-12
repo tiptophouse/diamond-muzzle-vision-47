@@ -52,7 +52,7 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
         baseUrl = 'https://miniapp.mazalbot.com';
       }
       
-      const storeUrl = `${baseUrl}/store?stock=${stoneData.stockNumber}`;
+      const storeUrl = `${baseUrl}/diamond/${stoneData.stockNumber}`;
       console.log('🔗 Generated store URL:', storeUrl);
       
       const response = await fetch('https://uhhljqgxhdhbbhpohxll.supabase.co/functions/v1/send-telegram-message', {

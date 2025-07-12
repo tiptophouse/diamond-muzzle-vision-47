@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
 import { StoreHeader } from "@/components/store/StoreHeader";
@@ -27,11 +26,6 @@ export default function StorePage() {
     ? filteredDiamonds.filter(diamond => diamond.stockNumber === stockNumber)
     : filteredDiamonds;
 
-  // Get the specific diamond for meta tags
-  const specificDiamond = stockNumber && finalFilteredDiamonds.length > 0 
-    ? finalFilteredDiamonds[0] 
-    : null;
-
   // Auto-scroll to diamond if found via stock parameter
   useEffect(() => {
     if (stockNumber && finalFilteredDiamonds.length > 0) {
@@ -45,69 +39,13 @@ export default function StorePage() {
     }
   }, [stockNumber, finalFilteredDiamonds]);
 
-  // Generate dynamic meta tags for specific diamond
-  const getMetaTags = () => {
-    if (specificDiamond) {
-      const title = `${specificDiamond.carat}ct ${specificDiamond.shape} ${specificDiamond.color} ${specificDiamond.clarity} Diamond`;
-      const description = `${specificDiamond.cut} cut diamond. Stock: ${specificDiamond.stockNumber}. Price: $${specificDiamond.price.toLocaleString()}`;
-      const imageUrl = specificDiamond.imageUrl || `https://miniapp.mazalbot.com/placeholder-diamond.jpg`;
-      const url = `https://miniapp.mazalbot.com/store?stock=${specificDiamond.stockNumber}`;
-
-      return {
-        title,
-        description,
-        imageUrl,
-        url
-      };
-    }
-
-    return {
-      title: "Mazalbot Diamond Store",
-      description: "Premium diamond collection - Find your perfect diamond",
-      imageUrl: "https://miniapp.mazalbot.com/placeholder-store.jpg",
-      url: "https://miniapp.mazalbot.com/store"
-    };
-  };
-
-  const metaTags = getMetaTags();
-
   const handleImageUploaded = (imageUrl: string) => {
     console.log('Image uploaded to store:', imageUrl);
     setShowUpload(false);
   };
 
   return (
-    <>
-      {/* Dynamic Meta Tags for Link Previews */}
-      <Helmet>
-        <title>{metaTags.title}</title>
-        <meta name="description" content={metaTags.description} />
-        
-        {/* Open Graph / Facebook */}
-        <meta property="og:type" content="product" />
-        <meta property="og:title" content={metaTags.title} />
-        <meta property="og:description" content={metaTags.description} />
-        <meta property="og:image" content={metaTags.imageUrl} />
-        <meta property="og:url" content={metaTags.url} />
-        <meta property="og:site_name" content="Mazalbot Diamond Store" />
-        
-        {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={metaTags.title} />
-        <meta name="twitter:description" content={metaTags.description} />
-        <meta name="twitter:image" content={metaTags.imageUrl} />
-        
-        {/* Additional SEO */}
-        {specificDiamond && (
-          <>
-            <meta name="keywords" content={`diamond, ${specificDiamond.shape}, ${specificDiamond.color}, ${specificDiamond.clarity}, ${specificDiamond.cut}, jewelry`} />
-            <meta property="product:price:amount" content={specificDiamond.price.toString()} />
-            <meta property="product:price:currency" content="USD" />
-          </>
-        )}
-      </Helmet>
-
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
       {/* Back to Main Menu Button */}
       <div className="flex items-center pt-4 pb-2 pl-2 sm:pl-0">
         <Button
@@ -171,8 +109,7 @@ export default function StorePage() {
 
       {/* Floating Share Button */}
       <FloatingShareButton />
-      </div>
-    </>
+    </div>
   );
 }
 
