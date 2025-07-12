@@ -74,10 +74,16 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
   const handleCardClick = (e: React.MouseEvent) => {
     // Don't navigate if clicking on admin controls or action buttons
     const target = e.target as HTMLElement;
+    
+    console.log('🔍 Card clicked, target:', target.tagName, target.className);
+    console.log('🔍 Diamond stockNumber:', diamond.stockNumber);
+    console.log('🔍 Type of stockNumber:', typeof diamond.stockNumber);
+    
     if (target.closest('button') || 
         target.closest('.admin-controls') || 
         target.closest('[role="button"]') ||
         target.closest('a')) {
+      console.log('🔍 Click ignored - clicked on interactive element');
       return;
     }
     
@@ -94,6 +100,7 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
+          console.log('🔍 Keyboard navigation to diamond:', diamond.stockNumber);
           navigate(`/diamond/${diamond.stockNumber}`);
         }
       }}

@@ -67,10 +67,12 @@ export function useStoreData() {
             }
 
             console.log('🔍 STORE: Processing diamond', item.stock_number, 'gem360 URL:', gem360Url);
+            console.log('🔍 STORE: Raw item data:', item);
+            console.log('🔍 STORE: item.stock_number type:', typeof item.stock_number, 'value:', item.stock_number);
 
             return {
               id: item.id || `${item.stock_number}-${Date.now()}`,
-              stockNumber: item.stock_number,
+              stockNumber: String(item.stock_number || item.stockNumber || 'UNKNOWN'),
               shape: item.shape,
               carat: Number(item.weight || item.carat) || 0,
               color: item.color,
