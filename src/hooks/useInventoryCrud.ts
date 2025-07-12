@@ -35,11 +35,67 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     restoreDiamondToState 
   });
 
+  const sendTelegramNotification = async (stoneData: DiamondFormData) => {
+    if (!user?.id) {
+      console.log('❌ No user ID for Telegram notification');
+      return;
+    }
+    
+    try {
+      console.log('📱 Sending Telegram notification for stone:', stoneData.stockNumber);
+      const storeUrl = `${window.location.origin}/store?stock=${stoneData.stockNumber}`;
+      
+      const response = await fetch('https://uhhljqgxhdhbbhpohxll.supabase.co/functions/v1/send-telegram-message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGxqcWd4aGRoYmJocG9oeGxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0ODY1NTMsImV4cCI6MjA2MzA2MjU1M30._CGnKnTyltp1lIUmmOVI1nC4jRew2WkAU-bSf22HCDE`,
+        },
+        body: JSON.stringify({
+          telegramId: user.id,
+          stoneData: {
+            stockNumber: stoneData.stockNumber,
+            shape: stoneData.shape,
+            carat: stoneData.carat,
+            color: stoneData.color,
+            clarity: stoneData.clarity,
+            cut: stoneData.cut,
+            polish: stoneData.polish,
+            symmetry: stoneData.symmetry,
+            fluorescence: stoneData.fluorescence,
+            pricePerCarat: stoneData.pricePerCarat,
+            lab: stoneData.lab,
+            certificateNumber: stoneData.certificateNumber
+          },
+          storeUrl
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Telegram notification sent successfully:', result);
+        toast({
+          title: "📱 Telegram Sent",
+          description: "Stone summary sent to your Telegram!",
+        });
+      } else {
+        const error = await response.text();
+        console.error('❌ Failed to send Telegram notification:', error);
+      }
+    } catch (error) {
+      console.error('❌ Error sending Telegram notification:', error);
+    }
+  };
+
   const addDiamond = async (data: DiamondFormData) => {
     console.log('➕ CRUD: Starting add diamond operation');
     setIsLoading(true);
     try {
       const result = await addDiamondFn(data);
+      if (result) {
+        // Send Telegram notification on successful upload
+        await sendTelegramNotification(data);
+      }
       return result;
     } catch (error) {
       console.error('❌ CRUD: Add diamond failed:', error);
