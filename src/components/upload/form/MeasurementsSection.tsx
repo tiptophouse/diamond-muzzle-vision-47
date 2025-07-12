@@ -23,89 +23,95 @@ export function MeasurementsSection({ register, watch, errors }: MeasurementsSec
   }, [length, width]);
 
   return (
-    <div className="space-y-6 border-t pt-6">
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold text-foreground">Physical Measurements</h3>
-        <p className="text-sm text-muted-foreground">Precise measurements of the diamond</p>
+    <div className="space-y-6 pt-8 pb-safe">
+      <div className="space-y-2 px-4">
+        <h3 className="text-xl font-semibold text-foreground">Measurements</h3>
+        <p className="text-sm text-muted-foreground">Precise diamond measurements</p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <DiamondInputField
-          id="length"
-          label="Length (mm)"
-          type="number"
-          step="0.01"
-          placeholder="e.g., 6.52"
-          register={register}
-          validation={{ 
-            min: { value: 0.01, message: 'Length must be greater than 0' }
-          }}
-          errors={errors}
-        />
+      <div className="space-y-4 px-4">
+        <div className="grid grid-cols-2 gap-4">
+          <DiamondInputField
+            id="length"
+            label="Length (mm)"
+            type="number"
+            step="0.01"
+            placeholder="6.52"
+            register={register}
+            validation={{ 
+              min: { value: 0.01, message: 'Length must be greater than 0' }
+            }}
+            errors={errors}
+          />
 
-        <DiamondInputField
-          id="width"
-          label="Width (mm)"
-          type="number"
-          step="0.01"
-          placeholder="e.g., 6.48"
-          register={register}
-          validation={{ 
-            min: { value: 0.01, message: 'Width must be greater than 0' }
-          }}
-          errors={errors}
-        />
+          <DiamondInputField
+            id="width"
+            label="Width (mm)"
+            type="number"
+            step="0.01"
+            placeholder="6.48"
+            register={register}
+            validation={{ 
+              min: { value: 0.01, message: 'Width must be greater than 0' }
+            }}
+            errors={errors}
+          />
+        </div>
 
-        <DiamondInputField
-          id="depth"
-          label="Depth (mm)"
-          type="number"
-          step="0.01"
-          placeholder="e.g., 4.07"
-          register={register}
-          validation={{ 
-            min: { value: 0.01, message: 'Depth must be greater than 0' }
-          }}
-          errors={errors}
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <DiamondInputField
+            id="depth"
+            label="Depth (mm)"
+            type="number"
+            step="0.01"
+            placeholder="4.07"
+            register={register}
+            validation={{ 
+              min: { value: 0.01, message: 'Depth must be greater than 0' }
+            }}
+            errors={errors}
+          />
 
-        <DiamondInputField
-          id="ratio"
-          label="Length/Width Ratio"
-          type="number"
-          step="0.01"
-          placeholder="Auto-calculated or manual"
-          register={register}
-          errors={errors}
-        />
+          <DiamondInputField
+            id="ratio"
+            label="L/W Ratio"
+            type="number"
+            step="0.01"
+            placeholder="1.01"
+            register={register}
+            errors={errors}
+          />
+        </div>
 
-        <DiamondInputField
-          id="tablePercentage"
-          label="Table %"
-          type="number"
-          step="0.1"
-          placeholder="e.g., 57.0"
-          register={register}
-          validation={{ 
-            min: { value: 1, message: 'Table % must be between 1-100' },
-            max: { value: 100, message: 'Table % must be between 1-100' }
-          }}
-          errors={errors}
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <DiamondInputField
+            id="tablePercentage"
+            label="Table %"
+            type="number"
+            step="0.1"
+            placeholder="57.0"
+            register={register}
+            validation={{ 
+              min: { value: 1, message: 'Table % must be between 1-100' },
+              max: { value: 100, message: 'Table % must be between 1-100' }
+            }}
+            errors={errors}
+          />
 
-        <DiamondInputField
-          id="depthPercentage"
-          label="Depth %"
-          type="number"
-          step="0.1"
-          placeholder="e.g., 62.8"
-          register={register}
-          validation={{ 
-            min: { value: 1, message: 'Depth % must be between 1-100' },
-            max: { value: 100, message: 'Depth % must be between 1-100' }
-          }}
-          errors={errors}
-        />
+          <DiamondInputField
+            id="depthPercentage"
+            label="Depth %"
+            type="number"
+            step="0.1"
+            placeholder="62.8"
+            register={register}
+            validation={{ 
+              min: { value: 1, message: 'Depth % must be between 1-100' },
+              max: { value: 100, message: 'Depth % must be between 1-100' }
+            }}
+            errors={errors}
+          />
+        </div>
       </div>
     </div>
   );

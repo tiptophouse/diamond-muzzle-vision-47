@@ -4,8 +4,8 @@ import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'rea
 import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { shapes, colors, clarities, cuts, fluorescences, polishGrades, symmetryGrades } from '@/components/inventory/form/diamondFormConstants';
-import { MobileButtonSelector } from '@/components/ui/MobileButtonSelector';
-import { MobilePicker } from '@/components/ui/MobilePicker';
+import { NativeMobileSelector } from '@/components/ui/NativeMobileSelector';
+import { NativeWheelPicker } from '@/components/ui/NativeWheelPicker';
 
 interface DiamondDetailsSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -19,13 +19,13 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
   const showCutField = currentShape === 'Round';
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold text-foreground">Diamond Details</h3>
-        <p className="text-sm text-muted-foreground">These fields can be auto-filled by scanning a GIA certificate</p>
+    <div className="space-y-6 pb-safe">
+      <div className="space-y-2 px-4">
+        <h3 className="text-xl font-semibold text-foreground">Diamond Details</h3>
+        <p className="text-sm text-muted-foreground">Fill in the diamond information</p>
       </div>
       
-      <div className="grid grid-cols-1 gap-6">
+      <div className="space-y-6 px-4">
         <DiamondInputField
           id="stockNumber"
           label="Stock Number / Certificate Number"
@@ -35,7 +35,8 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           errors={errors}
         />
 
-        <MobileButtonSelector
+        {/* Shape - Always first */}
+        <NativeMobileSelector
           id="shape"
           label="Shape"
           value={watch('shape') || 'Round'}
@@ -44,9 +45,10 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           columns={3}
         />
 
+        {/* Weight */}
         <DiamondInputField
           id="carat"
-          label="Carat Weight"
+          label="Weight (Carat)"
           type="number"
           step="0.01"
           placeholder="Enter carat weight"
@@ -58,28 +60,31 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           errors={errors}
         />
 
-        <MobileButtonSelector
+        {/* Color */}
+        <NativeMobileSelector
           id="color"
-          label="Color Grade"
+          label="Color"
           value={watch('color') || 'G'}
           onValueChange={(value) => setValue('color', value)}
           options={colors}
           columns={4}
         />
 
-        <MobileButtonSelector
+        {/* Clarity */}
+        <NativeMobileSelector
           id="clarity"
-          label="Clarity Grade"
+          label="Clarity"
           value={watch('clarity') || 'VS1'}
           onValueChange={(value) => setValue('clarity', value)}
           options={clarities}
           columns={3}
         />
 
+        {/* Cut - Only for Round diamonds */}
         {showCutField && (
-          <MobileButtonSelector
+          <NativeMobileSelector
             id="cut"
-            label="Cut Grade"
+            label="Cut"
             value={watch('cut') || 'Excellent'}
             onValueChange={(value) => setValue('cut', value)}
             options={cuts}
@@ -87,15 +92,8 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           />
         )}
 
-        <MobilePicker
-          id="fluorescence"
-          label="Fluorescence"
-          value={watch('fluorescence') || 'None'}
-          onValueChange={(value) => setValue('fluorescence', value)}
-          options={fluorescences}
-        />
-
-        <MobilePicker
+        {/* Polish - For all shapes */}
+        <NativeWheelPicker
           id="polish"
           label="Polish"
           value={watch('polish') || 'Excellent'}
@@ -103,12 +101,22 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
           options={polishGrades}
         />
 
-        <MobilePicker
+        {/* Symmetry - For all shapes */}
+        <NativeWheelPicker
           id="symmetry"
           label="Symmetry"
           value={watch('symmetry') || 'Excellent'}
           onValueChange={(value) => setValue('symmetry', value)}
           options={symmetryGrades}
+        />
+
+        {/* Fluorescence - For all shapes */}
+        <NativeWheelPicker
+          id="fluorescence"
+          label="Fluorescence"
+          value={watch('fluorescence') || 'None'}
+          onValueChange={(value) => setValue('fluorescence', value)}
+          options={fluorescences}
         />
       </div>
     </div>

@@ -286,48 +286,64 @@ export function SingleStoneUploadForm({
         <ApiTestButton />
         <ApiStatusIndicator isConnected={apiConnected} className="mb-4" />
         
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-          <DiamondDetailsSection
-            register={register}
-            setValue={setValue}
-            watch={watch}
-            errors={errors}
-          />
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col min-h-screen">
+          {/* Main form content - scrollable */}
+          <div className="flex-1 overflow-y-auto smooth-scroll">
+            <DiamondDetailsSection
+              register={register}
+              setValue={setValue}
+              watch={watch}
+              errors={errors}
+            />
 
-          <CertificateSection
-            register={register}
-            setValue={setValue}
-            watch={watch}
-            errors={errors}
-          />
+            <div className="border-t border-border/20 mt-8">
+              <MeasurementsSection
+                register={register}
+                watch={watch}
+                errors={errors}
+              />
+            </div>
 
-          <MeasurementsSection
-            register={register}
-            watch={watch}
-            errors={errors}
-          />
+            <div className="border-t border-border/20 mt-8 pt-8 px-4 space-y-6">
+              <div className="space-y-2">
+                <h3 className="text-xl font-semibold text-foreground">Certificate</h3>
+              </div>
+              <CertificateSection
+                register={register}
+                setValue={setValue}
+                watch={watch}
+                errors={errors}
+              />
+            </div>
 
-          <DetailedGradingSection
-            register={register}
-            setValue={setValue}
-            watch={watch}
-            errors={errors}
-          />
+            <div className="border-t border-border/20 mt-8 pt-8 px-4 space-y-6">
+              <div className="space-y-2">
+                <h3 className="text-xl font-semibold text-foreground">Business Info</h3>
+              </div>
+              <BusinessInfoSection
+                register={register}
+                setValue={setValue}
+                watch={watch}
+                errors={errors}
+              />
+            </div>
 
-          <BusinessInfoSection
-            register={register}
-            setValue={setValue}
-            watch={watch}
-            errors={errors}
-          />
+            <div className="border-t border-border/20 mt-8 pt-8 px-4 space-y-6">
+              <div className="space-y-2">
+                <h3 className="text-xl font-semibold text-foreground">Images</h3>
+              </div>
+              <ImageUploadSection
+                setValue={setValue}
+                watch={watch}
+              />
+            </div>
 
-          <ImageUploadSection
-            setValue={setValue}
-            watch={watch}
-          />
+            {/* Bottom padding for safe area */}
+            <div className="h-24"></div>
+          </div>
 
-          {/* TMA-style sticky bottom action */}
-          <div className="sticky bottom-0 bg-background/95 backdrop-blur p-4 -mx-4 border-t border-border">
+          {/* Sticky bottom actions */}
+          <div className="sticky bottom-0 bg-background border-t border-border/20 safe-area-inset-bottom">
             <FormActions
               onReset={resetForm}
               isLoading={isLoading}
