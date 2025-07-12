@@ -74,9 +74,29 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
     
-    const shareUrl = `https://miniapp.mazalbot.com/diamond/${diamond.stockNumber}`;
+    // Build URL with diamond parameters
+    const params = new URLSearchParams({
+      carat: diamond.carat.toString(),
+      color: diamond.color,
+      clarity: diamond.clarity,
+      cut: diamond.cut,
+      shape: diamond.shape,
+      stock: diamond.stockNumber,
+      price: diamond.price.toString(),
+    });
+
+    // Add optional parameters if they exist
+    if (diamond.fluorescence) params.set('fluorescence', diamond.fluorescence);
+    if (diamond.imageUrl) params.set('imageUrl', diamond.imageUrl);
+    if (diamond.certificateUrl) params.set('certificateUrl', diamond.certificateUrl);
+    if (diamond.lab) params.set('lab', diamond.lab);
+    if (diamond.certificateNumber) params.set('certificateNumber', diamond.certificateNumber);
+    
+    const shareUrl = `https://miniapp.mazalbot.com/store?${params.toString()}`;
     const shareTitle = `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond`;
     const shareText = `Check out this beautiful ${diamond.shape} diamond! ${diamond.carat}ct, ${diamond.color} color, ${diamond.clarity} clarity. Price: $${diamond.price.toLocaleString()}`;
+    
+    console.log('🔗 Share URL:', shareUrl);
     
     if (navigator.share) {
       try {
@@ -88,12 +108,10 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
       } catch (error) {
         // Fallback to clipboard
         navigator.clipboard.writeText(shareUrl);
-        // You could add a toast here if you want
       }
     } else {
       // Fallback to clipboard
       navigator.clipboard.writeText(shareUrl);
-      // You could add a toast here if you want
     }
   };
 
