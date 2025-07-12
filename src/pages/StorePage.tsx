@@ -21,10 +21,42 @@ export default function StorePage() {
 
   const navigate = useNavigate();
 
-  // Filter to specific diamond if stock number is provided
-  const finalFilteredDiamonds = stockNumber 
-    ? filteredDiamonds.filter(diamond => diamond.stockNumber === stockNumber)
-    : filteredDiamonds;
+  // Filter to specific diamond if URL parameters are provided
+  const finalFilteredDiamonds = (() => {
+    if (stockNumber) {
+      const stockMatch = filteredDiamonds.filter(diamond => 
+        diamond.stockNumber === stockNumber
+      );
+      if (stockMatch.length > 0) {
+        console.log('🔍 Found diamond by stock number:', stockNumber, stockMatch);
+        return stockMatch;
+      }
+    }
+    
+    // If no stock match or no stock parameter, check other URL parameters for filtering
+    const carat = searchParams.get('carat');
+    const color = searchParams.get('color');
+    const clarity = searchParams.get('clarity');
+    const shape = searchParams.get('shape');
+    
+    if (carat || color || clarity || shape) {
+      const paramMatch = filteredDiamonds.filter(diamond => {
+        const matches = [];
+        if (carat) matches.push(Math.abs(diamond.carat - parseFloat(carat)) < 0.01);
+        if (color) matches.push(diamond.color === color);
+        if (clarity) matches.push(diamond.clarity === clarity);
+        if (shape) matches.push(diamond.shape === shape);
+        return matches.every(match => match);
+      });
+      
+      if (paramMatch.length > 0) {
+        console.log('🔍 Found diamond by parameters:', { carat, color, clarity, shape }, paramMatch);
+        return paramMatch;
+      }
+    }
+    
+    return filteredDiamonds;
+  })();
 
   // Auto-scroll to diamond if found via stock parameter
   useEffect(() => {
