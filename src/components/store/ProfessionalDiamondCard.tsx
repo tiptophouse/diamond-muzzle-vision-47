@@ -149,8 +149,8 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
           </>
         )}
         
-        {/* Share Button - Always visible */}
-        <div className="absolute top-3 right-3 opacity-100 transition-opacity">
+        {/* Share Button - Always visible in bottom-right */}
+        <div className="absolute bottom-3 right-3 opacity-100 transition-opacity">
           <Button
             size="icon"
             variant="secondary"
