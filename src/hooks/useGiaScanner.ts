@@ -183,8 +183,30 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
       setError(null);
       setIsLoading(true);
 
+      // Check if camera access is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera access is not supported on this device/browser');
+      }
+
+      // Request camera permission first
+      console.log('📱 Requesting camera permission...');
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: { ideal: 'environment' }, // Prefer back camera
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      });
+      
+      // Stop the stream immediately - we just wanted to check permissions
+      stream.getTracks().forEach(track => track.stop());
+      
+      console.log('✅ Camera permission granted');
+
       const videoInputDevices = await navigator.mediaDevices.enumerateDevices();
       const cameras = videoInputDevices.filter(device => device.kind === 'videoinput');
+      
+      console.log('📱 Available cameras:', cameras.length);
       
       if (cameras.length === 0) {
         throw new Error('No camera devices found');
@@ -192,10 +214,12 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
 
       const backCamera = cameras.find(device => 
         device.label.toLowerCase().includes('back') || 
-        device.label.toLowerCase().includes('rear')
+        device.label.toLowerCase().includes('rear') ||
+        device.label.toLowerCase().includes('environment')
       );
       const selectedDeviceId = backCamera ? backCamera.deviceId : cameras[0].deviceId;
 
+      console.log('📱 Selected camera:', backCamera ? 'Back camera' : 'Default camera');
       setIsLoading(false);
 
       readerRef.current.decodeFromVideoDevice(
@@ -226,8 +250,28 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
       );
     } catch (err) {
       setIsLoading(false);
-      setError('Failed to start camera. Please ensure camera permissions are granted.');
-      console.error('Camera start error:', err);
+      console.error('📱 Camera start error:', err);
+      
+      // Provide more specific error messages for mobile users
+      let errorMessage = 'Failed to start camera.';
+      if (err instanceof Error) {
+        if (err.message.includes('Permission denied') || err.message.includes('NotAllowedError')) {
+          errorMessage = '📱 Camera permission denied. Please allow camera access and try again.';
+        } else if (err.message.includes('NotFoundError') || err.message.includes('No camera')) {
+          errorMessage = '📱 No camera found. Please ensure your device has a camera.';
+        } else if (err.message.includes('NotSupportedError')) {
+          errorMessage = '📱 Camera not supported on this browser. Try using Chrome or Safari.';
+        } else if (err.message.includes('NotReadableError')) {
+          errorMessage = '📱 Camera is busy or unavailable. Close other camera apps and try again.';
+        }
+      }
+      
+      setError(errorMessage);
+      toast({
+        variant: "destructive",
+        title: "Camera Error",
+        description: errorMessage,
+      });
     }
   }, [handleQRScan, captureFrame, processWithOCR, toast]);
   

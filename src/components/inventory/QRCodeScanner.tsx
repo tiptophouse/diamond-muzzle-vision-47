@@ -76,17 +76,34 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
           <div className="flex gap-2">
             {!isScanning ? (
               <>
-                <Button onClick={startScanning} className="flex-1" disabled={isFetchingGIA}>
+                <Button 
+                  onClick={startScanning} 
+                  className="flex-1 touch-target" 
+                  disabled={isFetchingGIA}
+                  style={{ minHeight: '48px', fontSize: '16px' }}
+                >
                   <Camera className="h-4 w-4 mr-2" />
                   Start Scanning
                 </Button>
-                <Button onClick={triggerFileUpload} variant="outline" className="flex-1" disabled={isFetchingGIA}>
+                <Button 
+                  onClick={triggerFileUpload} 
+                  variant="outline" 
+                  className="flex-1 touch-target" 
+                  disabled={isFetchingGIA}
+                  style={{ minHeight: '48px', fontSize: '16px' }}
+                >
                   <Upload className="h-4 w-4 mr-2" />
                   Upload Image
                 </Button>
               </>
             ) : (
-              <Button onClick={stopScanning} variant="outline" className="flex-1" disabled={isFetchingGIA}>
+              <Button 
+                onClick={stopScanning} 
+                variant="outline" 
+                className="flex-1 touch-target" 
+                disabled={isFetchingGIA}
+                style={{ minHeight: '48px', fontSize: '16px' }}
+              >
                 Stop Scanning
               </Button>
             )}
