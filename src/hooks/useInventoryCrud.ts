@@ -44,12 +44,12 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     try {
       console.log('📱 Sending Telegram notification for stone:', stoneData.stockNumber);
       
-      // Use production URL - get from window.location but ensure it's not a preview URL
+      // Use production URL - miniapp.mazalbot.com
       let baseUrl = window.location.origin;
       
-      // If it's a lovable.dev preview URL, replace with the published URL
-      if (baseUrl.includes('lovable.dev')) {
-        baseUrl = 'https://bc6a5b8a-3262-41f9-a127-aae26f8063fe.lovableproject.com';
+      // If it's a development/preview URL, replace with the production URL
+      if (baseUrl.includes('lovable.dev') || baseUrl.includes('lovableproject.com')) {
+        baseUrl = 'https://miniapp.mazalbot.com';
       }
       
       const storeUrl = `${baseUrl}/store?stock=${stoneData.stockNumber}`;
