@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { SingleStoneUploadForm } from "@/components/upload/SingleStoneUploadForm";
 import { UploadForm } from "@/components/upload/UploadForm";
@@ -14,39 +14,39 @@ export default function UploadSingleStonePage() {
   const [isScanning, setIsScanning] = useState(false);
   const [hasScannedCertificate, setHasScannedCertificate] = useState(false);
   const [scannedData, setScannedData] = useState<any>(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const { toast } = useToast();
 
   const handleScanSuccess = (giaData: any) => {
     setScannedData(giaData);
     setHasScannedCertificate(true);
+    setShowSuccessMessage(true);
     setIsScanning(false);
+    
+    // Auto-hide success message after 2 seconds
+    setTimeout(() => {
+      setShowSuccessMessage(false);
+    }, 2000);
+    
     toast({
       title: "✅ Certificate Scanned",
       description: "Now you can add your diamond details",
+      duration: 1500, // Auto-hide after 1.5 seconds
     });
   };
 
   const handleStartOver = () => {
     setHasScannedCertificate(false);
     setScannedData(null);
+    setShowSuccessMessage(false);
   };
 
   return (
     <Layout>
       <div className="min-h-screen bg-background">
-        {/* TMA-style header with safe area */}
-        <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
-          <div className="px-4 py-3 safe-area-top">
-            <h1 className="text-lg font-semibold text-foreground">Upload Inventory</h1>
-            <p className="text-sm text-muted-foreground">
-              {hasScannedCertificate ? "Complete your diamond details" : "Scan certificate or upload in bulk"}
-            </p>
-          </div>
-        </div>
-
-        <div className="px-4 pb-safe">
+        <div className="px-4 pb-safe pt-4">
           {!hasScannedCertificate ? (
-            <div className="space-y-4 pt-4">
+            <div className="space-y-4">
               {/* Scan Certificate Card - Primary Action */}
               <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
                 <CardHeader className="pb-3">
@@ -91,23 +91,25 @@ export default function UploadSingleStonePage() {
             </div>
           ) : (
             // Show form after successful scan
-            <div className="pt-4">
-              <div className="mb-4 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/50 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm font-medium text-green-700 dark:text-green-400">Certificate scanned successfully</span>
+            <div>
+              {showSuccessMessage && (
+                <div className="mb-4 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/50 rounded-lg animate-fade-in">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-sm font-medium text-green-700 dark:text-green-400">Certificate scanned successfully</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleStartOver}
+                      className="text-xs text-muted-foreground hover:text-foreground active:scale-95 transition-all"
+                    >
+                      Start Over
+                    </Button>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleStartOver}
-                    className="text-xs text-muted-foreground hover:text-foreground active:scale-95 transition-all"
-                  >
-                    Start Over
-                  </Button>
                 </div>
-              </div>
+              )}
               <SingleStoneUploadForm 
                 initialData={scannedData}
                 showScanButton={false}
