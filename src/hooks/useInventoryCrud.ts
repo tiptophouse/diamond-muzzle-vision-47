@@ -52,8 +52,28 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
         baseUrl = 'https://miniapp.mazalbot.com';
       }
       
-      const storeUrl = `${baseUrl}/diamond/${stoneData.stockNumber}`;
-      console.log('🔗 Generated store URL:', storeUrl);
+      // Build URL with diamond parameters (like the share function)
+      const params = new URLSearchParams({
+        carat: stoneData.carat.toString(),
+        color: stoneData.color,
+        clarity: stoneData.clarity,
+        cut: stoneData.cut,
+        shape: stoneData.shape,
+        stock: stoneData.stockNumber,
+        price: (stoneData.pricePerCarat * stoneData.carat).toString(),
+      });
+
+      // Add optional parameters if they exist
+      if (stoneData.fluorescence) params.set('fluorescence', stoneData.fluorescence);
+      if (stoneData.picture) params.set('imageUrl', stoneData.picture);
+      if (stoneData.certificateUrl) params.set('certificateUrl', stoneData.certificateUrl);
+      if (stoneData.lab) params.set('lab', stoneData.lab);
+      if (stoneData.certificateNumber) params.set('certificateNumber', stoneData.certificateNumber);
+      if (stoneData.polish) params.set('polish', stoneData.polish);
+      if (stoneData.symmetry) params.set('symmetry', stoneData.symmetry);
+      
+      const storeUrl = `${baseUrl}/store?${params.toString()}`;
+      console.log('🔗 Generated store URL with parameters:', storeUrl);
       
       const response = await fetch('https://uhhljqgxhdhbbhpohxll.supabase.co/functions/v1/send-telegram-message', {
         method: 'POST',
