@@ -73,16 +73,30 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
 
   const handleCardClick = (e: React.MouseEvent) => {
     // Don't navigate if clicking on admin controls or action buttons
-    if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('.admin-controls')) {
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || 
+        target.closest('.admin-controls') || 
+        target.closest('[role="button"]') ||
+        target.closest('a')) {
       return;
     }
+    
+    console.log('🔍 Navigating to diamond detail page:', `/diamond/${diamond.stockNumber}`);
     navigate(`/diamond/${diamond.stockNumber}`);
   };
 
   return (
     <div 
-      className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 group relative cursor-pointer"
+      className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 group relative cursor-pointer hover:border-primary/30"
       onClick={handleCardClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          navigate(`/diamond/${diamond.stockNumber}`);
+        }
+      }}
     >
       {/* Admin Controls - Only show for verified admin in Telegram environment */}
       {isAdmin && (

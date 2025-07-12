@@ -15,10 +15,17 @@ export default function DiamondDetailPage() {
   const { diamonds, loading } = useStoreData();
   const { toast } = useToast();
 
+  console.log('🔍 DiamondDetailPage - stockNumber from URL:', stockNumber);
+  console.log('🔍 DiamondDetailPage - available diamonds:', diamonds?.length);
+
   const diamond = diamonds?.find(d => d.stockNumber === stockNumber);
+
+  console.log('🔍 DiamondDetailPage - found diamond:', diamond ? 'YES' : 'NO');
+  console.log('🔍 DiamondDetailPage - diamond data:', diamond);
 
   useEffect(() => {
     if (!loading && !diamond && stockNumber) {
+      console.log('❌ Diamond not found, redirecting to store');
       // Diamond not found, redirect to store
       navigate('/store');
     }
