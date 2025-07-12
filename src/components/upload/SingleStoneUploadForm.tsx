@@ -150,6 +150,8 @@ export function SingleStoneUploadForm({
 
   const handleFormSubmit = (data: DiamondFormData) => {
     console.log('🔍 UPLOAD: Form submitted', { user: user?.id, data });
+    console.log('🔍 UPLOAD: Shape captured:', data.shape);
+    console.log('🔍 UPLOAD: Table % captured:', data.tablePercentage);
     console.log('🔍 UPLOAD: Form submit button clicked - processing data...');
     
     if (!user?.id) {
