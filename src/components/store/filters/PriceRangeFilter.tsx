@@ -29,8 +29,9 @@ export function PriceRangeFilter({
             <label className="text-xs font-medium text-slate-600 mb-2 block">Min Price</label>
             <Input
               type="number"
+              inputMode="numeric"
               placeholder="$1,000"
-              className="h-10 text-sm border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+              className="h-12 touch-target text-base border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
               value={priceRange[0] || ''}
               onChange={(e) => {
                 const value = e.target.value ? parseFloat(e.target.value) : minPrice;
@@ -42,8 +43,9 @@ export function PriceRangeFilter({
             <label className="text-xs font-medium text-slate-600 mb-2 block">Max Price</label>
             <Input
               type="number"
+              inputMode="numeric"
               placeholder="$100,000"
-              className="h-10 text-sm border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+              className="h-12 touch-target text-base border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
               value={priceRange[1] || ''}
               onChange={(e) => {
                 const value = e.target.value ? parseFloat(e.target.value) : maxPrice;

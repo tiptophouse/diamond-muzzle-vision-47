@@ -29,8 +29,9 @@ export function CaratRangeFilter({
             <label className="text-xs font-medium text-slate-600 mb-2 block">Min Carat</label>
             <Input
               type="number"
+              inputMode="decimal"
               placeholder="0.50"
-              className="h-10 text-sm border-slate-200 focus:border-purple-500 focus:ring-purple-500/20"
+              className="h-12 touch-target text-base border-slate-200 focus:border-purple-500 focus:ring-purple-500/20"
               step="0.01"
               value={caratRange[0] || ''}
               onChange={(e) => {
@@ -43,8 +44,9 @@ export function CaratRangeFilter({
             <label className="text-xs font-medium text-slate-600 mb-2 block">Max Carat</label>
             <Input
               type="number"
+              inputMode="decimal"
               placeholder="5.00"
-              className="h-10 text-sm border-slate-200 focus:border-purple-500 focus:ring-purple-500/20"
+              className="h-12 touch-target text-base border-slate-200 focus:border-purple-500 focus:ring-purple-500/20"
               step="0.01"
               value={caratRange[1] || ''}
               onChange={(e) => {

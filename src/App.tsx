@@ -24,6 +24,7 @@ import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { TelegramLayout } from '@/components/layout/TelegramLayout';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,27 +44,29 @@ function App() {
         <ThemeProvider>
           <TelegramAuthProvider>
             <TutorialProvider>
-              <AuthGuard>
+                <AuthGuard>
                 <AuthorizationGuard>
                   <Router>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/inventory" element={<Inventory />} />
-                      <Route path="/store" element={<StorePage />} />
-                      <Route path="/diamond/:stockNumber" element={<DiamondDetailPage />} />
-                      <Route path="/upload" element={<UploadSingleStonePage />} />
-                      <Route path="/chat" element={<ChatPage />} />
-                      <Route path="/insights" element={<InsightsPage />} />
-                      <Route path="/settings" element={<Settings />} />
-                      <Route path="/notifications" element={<NotificationsPage />} />
-                      <Route path="/admin" element={
-                        <AdminGuard>
-                          <Admin />
-                        </AdminGuard>
-                      } />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
+                    <TelegramLayout>
+                      <Routes>
+                        <Route path="/" element={<Dashboard />} />
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/inventory" element={<Inventory />} />
+                        <Route path="/store" element={<StorePage />} />
+                        <Route path="/diamond/:stockNumber" element={<DiamondDetailPage />} />
+                        <Route path="/upload" element={<UploadSingleStonePage />} />
+                        <Route path="/chat" element={<ChatPage />} />
+                        <Route path="/insights" element={<InsightsPage />} />
+                        <Route path="/settings" element={<Settings />} />
+                        <Route path="/notifications" element={<NotificationsPage />} />
+                        <Route path="/admin" element={
+                          <AdminGuard>
+                            <Admin />
+                          </AdminGuard>
+                        } />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </TelegramLayout>
                   </Router>
                 </AuthorizationGuard>
               </AuthGuard>
