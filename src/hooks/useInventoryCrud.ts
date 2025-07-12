@@ -43,7 +43,17 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     
     try {
       console.log('📱 Sending Telegram notification for stone:', stoneData.stockNumber);
-      const storeUrl = `${window.location.origin}/store?stock=${stoneData.stockNumber}`;
+      
+      // Use production URL - get from window.location but ensure it's not a preview URL
+      let baseUrl = window.location.origin;
+      
+      // If it's a lovable.dev preview URL, replace with the published URL
+      if (baseUrl.includes('lovable.dev')) {
+        baseUrl = 'https://bc6a5b8a-3262-41f9-a127-aae26f8063fe.lovableproject.com';
+      }
+      
+      const storeUrl = `${baseUrl}/store?stock=${stoneData.stockNumber}`;
+      console.log('🔗 Generated store URL:', storeUrl);
       
       const response = await fetch('https://uhhljqgxhdhbbhpohxll.supabase.co/functions/v1/send-telegram-message', {
         method: 'POST',

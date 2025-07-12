@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
 import { StoreHeader } from "@/components/store/StoreHeader";
@@ -16,8 +16,28 @@ export default function StorePage() {
   const { diamonds, loading, error, refetch } = useStoreData();
   const { filters, filteredDiamonds, updateFilter, clearFilters } = useStoreFilters(diamonds || []);
   const [showUpload, setShowUpload] = useState(false);
+  const [searchParams] = useSearchParams();
+  const stockNumber = searchParams.get('stock');
 
   const navigate = useNavigate();
+
+  // Filter to specific diamond if stock number is provided
+  const finalFilteredDiamonds = stockNumber 
+    ? filteredDiamonds.filter(diamond => diamond.stockNumber === stockNumber)
+    : filteredDiamonds;
+
+  // Auto-scroll to diamond if found via stock parameter
+  useEffect(() => {
+    if (stockNumber && finalFilteredDiamonds.length > 0) {
+      // Small delay to ensure the component is rendered
+      setTimeout(() => {
+        const element = document.getElementById(`diamond-${stockNumber}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
+    }
+  }, [stockNumber, finalFilteredDiamonds]);
 
   const handleImageUploaded = (imageUrl: string) => {
     console.log('Image uploaded to store:', imageUrl);
@@ -44,7 +64,7 @@ export default function StorePage() {
         {/* Header with Upload Button */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <StoreHeader 
-            totalDiamonds={filteredDiamonds.length}
+            totalDiamonds={finalFilteredDiamonds.length}
             onOpenFilters={() => {}}
           />
           
@@ -80,7 +100,7 @@ export default function StorePage() {
 
         {/* Store Grid */}
         <StoreGrid
-          diamonds={filteredDiamonds}
+          diamonds={finalFilteredDiamonds}
           loading={loading}
           error={error}
           onUpdate={refetch}
