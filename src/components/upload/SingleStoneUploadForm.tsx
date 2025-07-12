@@ -21,7 +21,15 @@ import { useFormValidation } from './form/useFormValidation';
 import { ApiStatusIndicator } from '@/components/ui/ApiStatusIndicator';
 import { ApiTestButton } from '@/components/ui/ApiTestButton';
 
-export function SingleStoneUploadForm() {
+interface SingleStoneUploadFormProps {
+  initialData?: any;
+  showScanButton?: boolean;
+}
+
+export function SingleStoneUploadForm({ 
+  initialData, 
+  showScanButton = true 
+}: SingleStoneUploadFormProps = {}) {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
   const [isScanning, setIsScanning] = useState(false);
@@ -34,8 +42,9 @@ export function SingleStoneUploadForm() {
     }
   });
 
-  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<DiamondFormData>({
-    defaultValues: {
+  // Auto-populate form with scanned data
+  const getDefaultValues = () => {
+    const defaults = {
       stockNumber: '',
       carat: 1,
       price: 0,
@@ -52,7 +61,43 @@ export function SingleStoneUploadForm() {
       gridle: 'Medium',
       culet: 'None',
       storeVisible: true
+    };
+
+    if (initialData) {
+      return {
+        ...defaults,
+        stockNumber: initialData.stock || defaults.stockNumber,
+        shape: initialData.shape || defaults.shape,
+        carat: Number(initialData.weight) || defaults.carat,
+        color: initialData.color || defaults.color,
+        clarity: initialData.clarity || defaults.clarity,
+        cut: initialData.cut || defaults.cut,
+        certificateNumber: initialData.certificate_number?.toString() || '',
+        lab: initialData.lab || defaults.lab,
+        fluorescence: initialData.fluorescence || defaults.fluorescence,
+        polish: initialData.polish || defaults.polish,
+        symmetry: initialData.symmetry || defaults.symmetry,
+        gridle: initialData.gridle || defaults.gridle,
+        culet: initialData.culet || defaults.culet,
+        length: Number(initialData.length) || undefined,
+        width: Number(initialData.width) || undefined,
+        depth: Number(initialData.depth) || undefined,
+        ratio: Number(initialData.ratio) || undefined,
+        tablePercentage: Number(initialData.table_percentage) || undefined,
+        depthPercentage: Number(initialData.depth_percentage) || undefined,
+        pricePerCarat: Number(initialData.price_per_carat) || undefined,
+        rapnet: Number(initialData.rapnet) || undefined,
+        picture: initialData.picture || defaults.picture,
+        certificateUrl: initialData.certificate_url || initialData.certificateUrl || '',
+        certificateComment: initialData.certificate_comment || ''
+      };
     }
+
+    return defaults;
+  };
+
+  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<DiamondFormData>({
+    defaultValues: getDefaultValues()
   });
 
   const { validateFormData, formatFormData } = useFormValidation();
@@ -215,78 +260,87 @@ export function SingleStoneUploadForm() {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Add Single Diamond</CardTitle>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsScanning(true)}
-              className="flex items-center gap-2"
-            >
-              <Camera className="h-4 w-4" />
-              Scan Diamond Certificate
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <ApiTestButton />
-          <ApiStatusIndicator isConnected={apiConnected} className="mb-4" />
-          
-          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-            <DiamondDetailsSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
+      {/* iPhone/TMA optimized form */}
+      <div className="space-y-4">
+        {showScanButton && (
+          <Card className="border-primary/20">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Add Single Diamond</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsScanning(true)}
+                className="w-full h-12 text-base active:scale-95 transition-transform"
+              >
+                <Camera className="h-5 w-5 mr-2" />
+                Scan Diamond Certificate
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
-            <CertificateSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
+        <ApiTestButton />
+        <ApiStatusIndicator isConnected={apiConnected} className="mb-4" />
+        
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+          <DiamondDetailsSection
+            register={register}
+            setValue={setValue}
+            watch={watch}
+            errors={errors}
+          />
 
-            <MeasurementsSection
-              register={register}
-              watch={watch}
-              errors={errors}
-            />
+          <CertificateSection
+            register={register}
+            setValue={setValue}
+            watch={watch}
+            errors={errors}
+          />
 
-            <DetailedGradingSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
+          <MeasurementsSection
+            register={register}
+            watch={watch}
+            errors={errors}
+          />
 
-            <BusinessInfoSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
+          <DetailedGradingSection
+            register={register}
+            setValue={setValue}
+            watch={watch}
+            errors={errors}
+          />
 
-            <ImageUploadSection
-              setValue={setValue}
-              watch={watch}
-            />
+          <BusinessInfoSection
+            register={register}
+            setValue={setValue}
+            watch={watch}
+            errors={errors}
+          />
 
+          <ImageUploadSection
+            setValue={setValue}
+            watch={watch}
+          />
+
+          {/* TMA-style sticky bottom action */}
+          <div className="sticky bottom-0 bg-background/95 backdrop-blur p-4 -mx-4 border-t border-border">
             <FormActions
               onReset={resetForm}
               isLoading={isLoading}
             />
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+        </form>
+      </div>
 
-      <QRCodeScanner
-        isOpen={isScanning}
-        onClose={() => setIsScanning(false)}
-        onScanSuccess={handleGiaScanSuccess}
-      />
+      {showScanButton && (
+        <QRCodeScanner
+          isOpen={isScanning}
+          onClose={() => setIsScanning(false)}
+          onScanSuccess={handleGiaScanSuccess}
+        />
+      )}
     </>
   );
 }
