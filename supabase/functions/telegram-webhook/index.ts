@@ -8,6 +8,11 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const backendUrl = Deno.env.get('BACKEND_URL');
 const backendAccessToken = Deno.env.get('BACKEND_ACCESS_TOKEN');
 const b2bGroupId = Deno.env.get('B2B_GROUP_ID');
+const telegramWebhookSecret = Deno.env.get('TELEGRAM_WEBHOOK_SECRET');
+const allowedTelegramIPs = [
+  '149.154.160.0/20',
+  '91.108.4.0/22'
+]; // Telegram's official IP ranges
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -50,6 +55,16 @@ interface DiamondRequest {
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Security: Verify request authenticity
+  const securityCheck = await verifyTelegramRequest(req);
+  if (!securityCheck.valid) {
+    console.error('❌ Security check failed:', securityCheck.reason);
+    return new Response('Unauthorized', { 
+      status: 401, 
+      headers: corsHeaders 
+    });
   }
 
   try {
@@ -315,4 +330,74 @@ async function createGroupNotification(notification: any) {
   } catch (error) {
     console.error('❌ Error in createGroupNotification:', error);
   }
+}
+
+async function verifyTelegramRequest(req: Request): Promise<{valid: boolean, reason?: string}> {
+  try {
+    // 1. Check if webhook secret is configured
+    if (!telegramWebhookSecret) {
+      console.warn('⚠️ TELEGRAM_WEBHOOK_SECRET not configured - using basic validation');
+      return { valid: true }; // Allow for backward compatibility
+    }
+
+    // 2. Verify secret token header
+    const secretToken = req.headers.get('X-Telegram-Bot-Api-Secret-Token');
+    if (secretToken !== telegramWebhookSecret) {
+      return { 
+        valid: false, 
+        reason: 'Invalid or missing secret token' 
+      };
+    }
+
+    // 3. Verify request comes from Telegram's IP ranges (optional additional security)
+    const forwardedFor = req.headers.get('X-Forwarded-For');
+    const realIP = req.headers.get('X-Real-IP');
+    const clientIP = forwardedFor?.split(',')[0] || realIP;
+    
+    if (clientIP) {
+      const isFromTelegram = allowedTelegramIPs.some(range => {
+        return isIPInRange(clientIP, range);
+      });
+      
+      if (!isFromTelegram) {
+        console.warn(`⚠️ Request from non-Telegram IP: ${clientIP}`);
+        // Note: We don't block here as IP ranges might change
+      }
+    }
+
+    // 4. Rate limiting - basic check
+    const userAgent = req.headers.get('User-Agent');
+    if (!userAgent || !userAgent.includes('TelegramBot')) {
+      return { 
+        valid: false, 
+        reason: 'Invalid User-Agent' 
+      };
+    }
+
+    return { valid: true };
+
+  } catch (error) {
+    console.error('❌ Error in security check:', error);
+    return { 
+      valid: false, 
+      reason: 'Security verification failed' 
+    };
+  }
+}
+
+function isIPInRange(ip: string, range: string): boolean {
+  try {
+    const [rangeIP, prefixLength] = range.split('/');
+    const ipNum = ipToNumber(ip);
+    const rangeNum = ipToNumber(rangeIP);
+    const mask = (0xFFFFFFFF << (32 - parseInt(prefixLength))) >>> 0;
+    
+    return (ipNum & mask) === (rangeNum & mask);
+  } catch {
+    return false;
+  }
+}
+
+function ipToNumber(ip: string): number {
+  return ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet), 0) >>> 0;
 }
