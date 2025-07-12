@@ -74,6 +74,13 @@ serve(async (req) => {
 
     console.log('📱 Processing message from B2B group:', message.text);
 
+    // Check for payment confirmation message
+    if (message.text.includes('✅ Payment for post in group confirmed')) {
+      console.log('💎 Payment confirmation detected, generating diamond post');
+      await generateDiamondPostFromPayment(message);
+      return new Response('OK', { status: 200, headers: corsHeaders });
+    }
+
     // Parse diamond request from message
     const diamondRequest = parseDiamondRequest(message.text);
     
@@ -249,6 +256,42 @@ async function findMatchingDiamonds(request: DiamondRequest) {
   } catch (error) {
     console.error('❌ Error in findMatchingDiamonds:', error);
     return [];
+  }
+}
+
+async function generateDiamondPostFromPayment(message: any) {
+  try {
+    console.log('💎 Generating diamond post for payment confirmation');
+    
+    // Call the generate-diamond-post function
+    const response = await supabase.functions.invoke('generate-diamond-post', {
+      body: {
+        telegram_id: message.from.id,
+        chat_id: message.chat.id.toString(),
+        platform: 'telegram'
+      }
+    });
+
+    if (response.error) {
+      console.error('❌ Error generating diamond post:', response.error);
+    } else {
+      console.log('✅ Diamond post generated successfully');
+      
+      // Create a notification with the generated post
+      await createGroupNotification({
+        telegram_id: message.from.id,
+        message_type: 'diamond_post_generated',
+        message_content: '💎 Your diamond post has been generated!',
+        metadata: {
+          generated_post: response.data,
+          original_message: message.text,
+          chat_id: message.chat.id,
+          timestamp: new Date().toISOString()
+        }
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error in generateDiamondPostFromPayment:', error);
   }
 }
 
