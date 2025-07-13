@@ -21,37 +21,10 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   };
   
   try {
-    // First, try to get data directly from Supabase database
-    console.log('🔍 INVENTORY SERVICE: Attempting Supabase database connection...');
-    
-    const { supabase } = await import('@/integrations/supabase/client');
-    
-    // Query the inventory table directly
-    const { data: supabaseData, error: supabaseError } = await supabase
-      .from('inventory')
-      .select('*')
-      .eq('user_id', userId)
-      .is('deleted_at', null);
-    
-    if (supabaseData && !supabaseError && supabaseData.length > 0) {
-      console.log('✅ INVENTORY SERVICE: Successfully fetched', supabaseData.length, 'diamonds from Supabase database');
-      
-      return {
-        data: supabaseData,
-        debugInfo: {
-          ...debugInfo,
-          step: 'SUCCESS: Supabase database data fetched',
-          totalDiamonds: supabaseData.length,
-          dataSource: 'supabase'
-        }
-      };
-    }
-    
-    console.log('🔄 INVENTORY SERVICE: Supabase returned no data, trying FastAPI fallback...');
-    
-    // Fallback to FastAPI if Supabase has no data
+    // First, try to get data from FastAPI backend using get_all_stones
+    console.log('🔍 INVENTORY SERVICE: Attempting FastAPI connection...');
     const endpoint = apiEndpoints.getAllStones(userId);
-    console.log('🔍 INVENTORY SERVICE: Using FastAPI endpoint:', endpoint);
+    console.log('🔍 INVENTORY SERVICE: Using endpoint:', endpoint);
     
     const result = await api.get(endpoint);
     
