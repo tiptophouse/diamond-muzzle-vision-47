@@ -30,30 +30,16 @@ export function processDiamondDataForDashboard(diamonds: DiamondData[], currentU
   inventoryByShape: InventoryData[];
   salesByCategory: InventoryData[];
 } {
-  console.log('📊 ANALYTICS: Processing dashboard data');
-  console.log('📊 ANALYTICS: Input diamonds count:', diamonds.length);
-  console.log('📊 ANALYTICS: Current user ID:', currentUserId, 'type:', typeof currentUserId);
-  console.log('📊 ANALYTICS: Sample diamonds:', diamonds.slice(0, 3));
+  console.log('📊 ANALYTICS: Processing dashboard data for', diamonds.length, 'diamonds');
   
-  // Filter diamonds for current user if user ID is provided
+  // Filter diamonds for current user efficiently
   const userDiamonds = currentUserId 
-    ? diamonds.filter(diamond => {
-        const hasOwners = diamond.owners?.includes(currentUserId);
-        const hasOwnerId = diamond.owner_id === currentUserId;
-        console.log('📊 ANALYTICS: Checking diamond:', diamond.id, {
-          owners: diamond.owners,
-          owner_id: diamond.owner_id,
-          currentUserId,
-          hasOwners,
-          hasOwnerId,
-          included: hasOwners || hasOwnerId
-        });
-        return hasOwners || hasOwnerId;
-      })
+    ? diamonds.filter(diamond => 
+        diamond.owners?.includes(currentUserId) || diamond.owner_id === currentUserId
+      )
     : diamonds;
   
-  console.log('📊 ANALYTICS: Filtered diamonds count:', userDiamonds.length);
-  console.log('📊 ANALYTICS: User diamonds sample:', userDiamonds.slice(0, 2));
+  console.log('📊 ANALYTICS: Processing', userDiamonds.length, 'user diamonds');
   
   // Calculate basic stats
   const totalDiamonds = userDiamonds.length;
@@ -121,37 +107,21 @@ export function processDiamondDataForDashboard(diamonds: DiamondData[], currentU
 }
 
 export function convertDiamondsToInventoryFormat(diamonds: DiamondData[], currentUserId?: number) {
-  console.log('🔄 CONVERT: Starting conversion to inventory format');
-  console.log('🔄 CONVERT: Input diamonds count:', diamonds.length);
-  console.log('🔄 CONVERT: Current user ID:', currentUserId, 'type:', typeof currentUserId);
-  console.log('🔄 CONVERT: Sample input diamonds:', diamonds.slice(0, 3));
+  console.log('🔄 CONVERT: Converting', diamonds.length, 'diamonds to inventory format');
   
-  // Filter diamonds for current user if user ID is provided
+  // Filter diamonds efficiently
   const userDiamonds = currentUserId 
-    ? diamonds.filter(diamond => {
-        const hasOwners = diamond.owners?.includes(currentUserId);
-        const hasOwnerId = diamond.owner_id === currentUserId;
-        console.log('🔄 CONVERT: Filtering diamond:', diamond.id, {
-          owners: diamond.owners,
-          owner_id: diamond.owner_id,
-          currentUserId,
-          hasOwners,
-          hasOwnerId,
-          included: hasOwners || hasOwnerId
-        });
-        return hasOwners || hasOwnerId;
-      })
+    ? diamonds.filter(diamond => 
+        diamond.owners?.includes(currentUserId) || diamond.owner_id === currentUserId
+      )
     : diamonds;
-  
-  console.log('🔄 CONVERT: Filtered diamonds count:', userDiamonds.length);
-  console.log('🔄 CONVERT: Sample filtered diamonds:', userDiamonds.slice(0, 2));
   
   const converted = userDiamonds.map(diamond => {
     const weight = diamond.weight || diamond.carat || 0;
     const pricePerCarat = diamond.price_per_carat || 0;
     const totalPrice = Math.round(pricePerCarat * weight);
     
-    const result = {
+    return {
       id: diamond.id?.toString() || '',
       stockNumber: diamond.stock || `D${diamond.id || Math.floor(Math.random() * 10000)}`,
       shape: diamond.shape || 'Unknown',
@@ -162,15 +132,8 @@ export function convertDiamondsToInventoryFormat(diamonds: DiamondData[], curren
       price: totalPrice,
       status: diamond.status || 'Available',
     };
-    
-    console.log('🔄 CONVERT: Converted diamond:', {
-      original: diamond,
-      converted: result
-    });
-    
-    return result;
   });
   
-  console.log('🔄 CONVERT: Conversion complete, result count:', converted.length);
+  console.log('🔄 CONVERT: Converted', converted.length, 'diamonds successfully');
   return converted;
 }

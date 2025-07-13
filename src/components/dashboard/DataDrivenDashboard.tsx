@@ -11,7 +11,7 @@ import { Gem, Users, TrendingUp, Star, Plus, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { useNavigate } from 'react-router-dom';
 
@@ -38,21 +38,10 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
     return unsubscribe;
   }, [subscribeToInventoryChanges, fetchData]);
 
-  // Process the data only if we have diamonds
-  const { stats, inventoryByShape, salesByCategory } = allDiamonds.length > 0 
-    ? processDiamondDataForDashboard(
-        allDiamonds.map(d => ({
-          id: parseInt(d.id || '0'),
-          shape: d.shape,
-          color: d.color,
-          clarity: d.clarity,
-          weight: d.carat,
-          price_per_carat: d.price / d.carat,
-          owners: [user?.id || 0],
-        })),
-        user?.id
-      )
-    : { 
+  // Memoize expensive calculations to prevent re-computation on every render
+  const processedData = useMemo(() => {
+    if (allDiamonds.length === 0) {
+      return { 
         stats: { 
           totalDiamonds: 0, 
           matchedPairs: 0, 
@@ -60,16 +49,49 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
           activeSubscriptions: 0 
         }, 
         inventoryByShape: [], 
-        salesByCategory: [] 
+        salesByCategory: [],
+        totalValue: 0,
+        availableDiamonds: 0,
+        storeVisibleDiamonds: 0,
+        avgPricePerCarat: 0
       };
+    }
 
-  // Calculate actual metrics from real data
-  const totalValue = allDiamonds.reduce((sum, diamond) => sum + diamond.price, 0);
-  const availableDiamonds = allDiamonds.filter(d => d.status === 'Available').length;
-  const storeVisibleDiamonds = allDiamonds.filter(d => d.store_visible).length;
-  const avgPricePerCarat = allDiamonds.length > 0 
-    ? Math.round(totalValue / allDiamonds.reduce((sum, d) => sum + d.carat, 0))
-    : 0;
+    console.log('🔄 Dashboard: Recalculating processed data for', allDiamonds.length, 'diamonds');
+    
+    const { stats, inventoryByShape, salesByCategory } = processDiamondDataForDashboard(
+      allDiamonds.map(d => ({
+        id: parseInt(d.id || '0'),
+        shape: d.shape,
+        color: d.color,
+        clarity: d.clarity,
+        weight: d.carat,
+        price_per_carat: d.price / d.carat,
+        owners: [user?.id || 0],
+      })),
+      user?.id
+    );
+
+    // Calculate actual metrics from real data
+    const totalValue = allDiamonds.reduce((sum, diamond) => sum + diamond.price, 0);
+    const availableDiamonds = allDiamonds.filter(d => d.status === 'Available').length;
+    const storeVisibleDiamonds = allDiamonds.filter(d => d.store_visible).length;
+    const avgPricePerCarat = allDiamonds.length > 0 
+      ? Math.round(totalValue / allDiamonds.reduce((sum, d) => sum + d.carat, 0))
+      : 0;
+
+    return {
+      stats,
+      inventoryByShape,
+      salesByCategory,
+      totalValue,
+      availableDiamonds,
+      storeVisibleDiamonds,
+      avgPricePerCarat
+    };
+  }, [allDiamonds, user?.id]);
+
+  const { stats, inventoryByShape, salesByCategory, totalValue, availableDiamonds, storeVisibleDiamonds, avgPricePerCarat } = processedData;
 
   // Show empty state when no diamonds
   if (!loading && allDiamonds.length === 0) {
@@ -172,13 +194,13 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
               </div>
               <div className="p-4">
                 <InventoryChart
-                  data={inventoryByShape.length > 0 ? inventoryByShape : [
+                  data={inventoryByShape.length > 0 ? inventoryByShape : useMemo(() => [
                     { name: 'Round', value: allDiamonds.filter(d => d.shape === 'Round').length },
                     { name: 'Princess', value: allDiamonds.filter(d => d.shape === 'Princess').length },
                     { name: 'Emerald', value: allDiamonds.filter(d => d.shape === 'Emerald').length },
                     { name: 'Oval', value: allDiamonds.filter(d => d.shape === 'Oval').length },
                     { name: 'Other', value: allDiamonds.filter(d => !['Round', 'Princess', 'Emerald', 'Oval'].includes(d.shape)).length }
-                  ].filter(item => item.value > 0)}
+                  ].filter(item => item.value > 0), [allDiamonds])}
                   title=""
                   loading={loading}
                 />
