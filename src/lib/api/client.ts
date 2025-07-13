@@ -8,21 +8,34 @@ interface ApiResponse<T> {
   error?: string;
 }
 
-// Enhanced backend connectivity test
+// Fast connectivity cache to avoid repeated tests
+let connectivityCache: { isConnected: boolean; lastChecked: number } | null = null;
+const CONNECTIVITY_CACHE_DURATION = 30000; // 30 seconds
+
+// Fast backend connectivity test with timeout
 async function testBackendConnectivity(): Promise<boolean> {
+  // Check cache first
+  if (connectivityCache && (Date.now() - connectivityCache.lastChecked < CONNECTIVITY_CACHE_DURATION)) {
+    console.log('🔍 API: Using cached connectivity status:', connectivityCache.isConnected);
+    return connectivityCache.isConnected;
+  }
+
   try {
     console.log('🔍 API: Testing FastAPI backend connectivity to:', API_BASE_URL);
-    console.log('🔍 API: Expected to connect to your real diamond database with 500+ records');
     
     const backendToken = await getBackendAccessToken();
     if (!backendToken) {
       console.error('❌ API: No secure backend access token available for connectivity test');
+      connectivityCache = { isConnected: false, lastChecked: Date.now() };
       return false;
     }
     
-    // Try the root endpoint first
+    // Fast connectivity test with 2 second timeout
     const testUrl = `${API_BASE_URL}/`;
-    console.log('🔍 API: Testing root endpoint:', testUrl);
+    console.log('🔍 API: Testing root endpoint with 2s timeout:', testUrl);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
     
     const response = await fetch(testUrl, {
       method: 'GET',
@@ -31,20 +44,27 @@ async function testBackendConnectivity(): Promise<boolean> {
         'Accept': 'application/json',
         'Authorization': `Bearer ${backendToken}`,
       },
+      signal: controller.signal,
     });
     
-    console.log('🔍 API: Root endpoint response status:', response.status);
+    clearTimeout(timeoutId);
     
-    if (response.ok || response.status === 404) {
-      console.log('✅ API: FastAPI backend is reachable - your 500 diamonds should be accessible');
-      return true;
+    const isConnected = response.ok || response.status === 404;
+    console.log('🔍 API: Fast connectivity test result:', isConnected);
+    
+    // Cache the result
+    connectivityCache = { isConnected, lastChecked: Date.now() };
+    
+    if (isConnected) {
+      console.log('✅ API: FastAPI backend is reachable - your diamonds should be accessible');
+    } else {
+      console.log('❌ API: FastAPI backend not reachable - status:', response.status);
     }
     
-    console.log('❌ API: FastAPI backend not reachable - this is why you see mock data (5 diamonds)');
-    console.log('❌ API: Status:', response.status, 'Check if your backend server is running');
-    return false;
+    return isConnected;
   } catch (error) {
-    console.error('❌ API: FastAPI backend connectivity test failed - this causes fallback to 5 mock diamonds:', error);
+    console.error('❌ API: Fast connectivity test failed:', error);
+    connectivityCache = { isConnected: false, lastChecked: Date.now() };
     return false;
   }
 }
@@ -99,7 +119,16 @@ export async function fetchApi<T>(
       headers: Object.keys(headers),
     });
     
-    const response = await fetch(url, fetchOptions);
+    // Add timeout to main request too
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for main request
+    
+    const response = await fetch(url, {
+      ...fetchOptions,
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
 
     console.log('📡 API: FastAPI Response status:', response.status);
     console.log('📡 API: Response headers:', Object.fromEntries(response.headers.entries()));
