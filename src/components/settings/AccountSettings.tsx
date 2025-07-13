@@ -225,8 +225,8 @@ export function AccountSettings() {
             label="Language"
             value={profile.language}
             onValueChange={(value) => setProfile(prev => ({ ...prev, language: value }))}
-            options={['en', 'es', 'fr', 'de', 'it', 'pt']}
-            columns={3}
+            options={['English', 'Hebrew']}
+            columns={2}
           />
           
           <NativeMobileSelector
