@@ -201,8 +201,8 @@ export function AccountSettings() {
         }))} options={['UTC', 'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'Europe/London', 'Europe/Paris', 'Asia/Tokyo']} columns={2} />
         </div>
 
-        <div className="flex justify-end pt-4">
-          <Button onClick={handleSave} disabled={isLoading || isLoadingProfile} className="bg-primary hover:bg-primary/90 px-[80px] mx-[40px]">
+        <div className="flex justify-center pt-4">
+          <Button onClick={handleSave} disabled={isLoading || isLoadingProfile} className="bg-primary hover:bg-primary/90 px-[80px]">
             <Save className="h-4 w-4 mr-2" />
             {isLoading ? 'Saving...' : 'Save Changes'}
           </Button>
