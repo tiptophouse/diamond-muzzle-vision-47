@@ -11,32 +11,29 @@ const CLARITIES = ['FL', 'IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'I1',
 
 export function ClarityFilter({ selectedClarities, onClarityToggle }: ClarityFilterProps) {
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-amber-600" />
-        <h3 className="font-semibold text-slate-900">Clarity Grade</h3>
+    <div className="space-y-3 bg-card p-3 rounded-lg border">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-foreground">Clarity</h3>
+        {selectedClarities.length > 0 && (
+          <span className="text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
+            {selectedClarities.length}
+          </span>
+        )}
       </div>
       
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-2 gap-1">
         {CLARITIES.map((clarity) => (
-          <Button
+          <button
             key={clarity}
-            type="button"
-            variant={selectedClarities.includes(clarity) ? "default" : "outline"}
-            size="sm"
-            className={`px-3 h-10 text-xs font-medium transition-all ${
-              selectedClarities.includes(clarity) 
-                ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white border-0 shadow-lg scale-105" 
-                : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"
+            onClick={() => onClarityToggle(clarity)}
+            className={`px-2 py-1.5 text-xs font-medium rounded border transition-all ${
+              selectedClarities.includes(clarity)
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground"
             }`}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onClarityToggle(clarity);
-            }}
           >
             {clarity}
-          </Button>
+          </button>
         ))}
       </div>
     </div>

@@ -77,40 +77,48 @@ export function PremiumStoreFilters({
         onShapeToggle={(shape) => toggleFilter('shapes', shape)}
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 lg:gap-4">
-        <PriceRangeFilter
-          priceRange={filters.priceRange}
-          minPrice={minPrice}
-          maxPrice={maxPrice}
-          onPriceRangeChange={(range) => onUpdateFilter('priceRange', range)}
-        />
+      <div className="space-y-4">
+        {/* Range Filters */}
+        <div className="grid grid-cols-1 gap-4">
+          <PriceRangeFilter
+            priceRange={filters.priceRange}
+            minPrice={minPrice}
+            maxPrice={maxPrice}
+            onPriceRangeChange={(range) => onUpdateFilter('priceRange', range)}
+          />
 
-        <CaratRangeFilter
-          caratRange={filters.caratRange}
-          minCarat={minCarat}
-          maxCarat={maxCarat}
-          onCaratRangeChange={(range) => onUpdateFilter('caratRange', range)}
-        />
+          <CaratRangeFilter
+            caratRange={filters.caratRange}
+            minCarat={minCarat}
+            maxCarat={maxCarat}
+            onCaratRangeChange={(range) => onUpdateFilter('caratRange', range)}
+          />
+        </div>
+        
+        {/* Selection Filters */}
+        <div className="grid grid-cols-2 gap-4">
+          <ColorFilter
+            selectedColors={filters.colors}
+            onColorToggle={(color) => toggleFilter('colors', color)}
+          />
 
-        <ColorFilter
-          selectedColors={filters.colors}
-          onColorToggle={(color) => toggleFilter('colors', color)}
-        />
+          <ClarityFilter
+            selectedClarities={filters.clarities}
+            onClarityToggle={(clarity) => toggleFilter('clarities', clarity)}
+          />
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <CutFilter
+            selectedCuts={filters.cuts}
+            onCutToggle={(cut) => toggleFilter('cuts', cut)}
+          />
 
-        <ClarityFilter
-          selectedClarities={filters.clarities}
-          onClarityToggle={(clarity) => toggleFilter('clarities', clarity)}
-        />
-
-        <CutFilter
-          selectedCuts={filters.cuts}
-          onCutToggle={(cut) => toggleFilter('cuts', cut)}
-        />
-
-        <FluorescenceFilter
-          selectedFluorescence={filters.fluorescence}
-          onFluorescenceToggle={(fluorescence) => toggleFilter('fluorescence', fluorescence)}
-        />
+          <FluorescenceFilter
+            selectedFluorescence={filters.fluorescence}
+            onFluorescenceToggle={(fluorescence) => toggleFilter('fluorescence', fluorescence)}
+          />
+        </div>
       </div>
     </div>
   );

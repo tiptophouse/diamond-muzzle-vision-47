@@ -16,25 +16,29 @@ const cutGrades = [
 
 export function CutFilter({ selectedCuts, onCutToggle }: CutFilterProps) {
   return (
-    <div className="space-y-3">
-      <FilterSectionHeader label="Cut Grade" count={selectedCuts.length} />
+    <div className="space-y-3 bg-card p-3 rounded-lg border">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-foreground">Cut</h3>
+        {selectedCuts.length > 0 && (
+          <span className="text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
+            {selectedCuts.length}
+          </span>
+        )}
+      </div>
       
-      <div className="space-y-2 max-h-48 overflow-y-auto">
+      <div className="space-y-1">
         {cutGrades.map((cut) => (
-          <div key={cut} className="flex items-center space-x-3">
-            <Checkbox
-              id={`cut-${cut}`}
-              checked={selectedCuts.includes(cut)}
-              onCheckedChange={() => onCutToggle(cut)}
-              className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-            />
-            <label
-              htmlFor={`cut-${cut}`}
-              className="text-sm font-medium text-slate-700 cursor-pointer hover:text-slate-900 transition-colors"
-            >
-              {cut}
-            </label>
-          </div>
+          <button
+            key={cut}
+            onClick={() => onCutToggle(cut)}
+            className={`w-full px-2 py-1.5 text-xs font-medium rounded border transition-all text-left ${
+              selectedCuts.includes(cut)
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            {cut}
+          </button>
         ))}
       </div>
     </div>

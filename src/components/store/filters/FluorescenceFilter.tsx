@@ -16,33 +16,29 @@ const fluorescenceGrades = [
 
 export function FluorescenceFilter({ selectedFluorescence, onFluorescenceToggle }: FluorescenceFilterProps) {
   return (
-    <div className="space-y-3">
-      <FilterSectionHeader label="Fluorescence" count={selectedFluorescence.length} />
+    <div className="space-y-3 bg-card p-3 rounded-lg border">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-foreground">Fluorescence</h3>
+        {selectedFluorescence.length > 0 && (
+          <span className="text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
+            {selectedFluorescence.length}
+          </span>
+        )}
+      </div>
       
-      <div className="space-y-2 max-h-48 overflow-y-auto">
+      <div className="space-y-1">
         {fluorescenceGrades.map((fluorescence) => (
-          <div key={fluorescence} className="flex items-center space-x-3">
-            <Checkbox
-              id={`fluorescence-${fluorescence}`}
-              checked={selectedFluorescence.includes(fluorescence)}
-              onCheckedChange={(checked) => {
-                if (checked !== 'indeterminate') {
-                  onFluorescenceToggle(fluorescence);
-                }
-              }}
-              className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-            />
-            <label
-              htmlFor={`fluorescence-${fluorescence}`}
-              className="text-sm font-medium text-slate-700 cursor-pointer hover:text-slate-900 transition-colors"
-              onClick={(e) => {
-                e.preventDefault();
-                onFluorescenceToggle(fluorescence);
-              }}
-            >
-              {fluorescence}
-            </label>
-          </div>
+          <button
+            key={fluorescence}
+            onClick={() => onFluorescenceToggle(fluorescence)}
+            className={`w-full px-2 py-1.5 text-xs font-medium rounded border transition-all text-left ${
+              selectedFluorescence.includes(fluorescence)
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            {fluorescence}
+          </button>
         ))}
       </div>
     </div>
