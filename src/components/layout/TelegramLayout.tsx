@@ -219,7 +219,7 @@ export function TelegramLayout({
 
       {/* Main content area */}
       <main className="flex-1 overflow-auto smooth-scroll bg-background">
-        <div className="min-h-full p-4 pb-safe py-[50px]">
+        <div className="min-h-full p-4 pb-safe py-[47px]">
           {children}
         </div>
       </main>
