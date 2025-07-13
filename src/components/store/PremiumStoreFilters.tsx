@@ -66,7 +66,7 @@ export function PremiumStoreFilters({
   };
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-3 lg:p-4">
       <FilterHeader 
         activeFiltersCount={activeFiltersCount}
         onClearFilters={onClearFilters}
@@ -77,7 +77,7 @@ export function PremiumStoreFilters({
         onShapeToggle={(shape) => toggleFilter('shapes', shape)}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-6 gap-8">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 lg:gap-4">
         <PriceRangeFilter
           priceRange={filters.priceRange}
           minPrice={minPrice}
