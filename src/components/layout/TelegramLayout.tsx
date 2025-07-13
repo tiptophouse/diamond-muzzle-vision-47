@@ -215,20 +215,7 @@ export function TelegramLayout({
   const availableSecondaryTabs = secondaryTabs.filter(tab => !tab.adminOnly || isAdmin);
   return <div className="flex flex-col h-screen max-h-screen tg-viewport">
       {/* Header with safe area */}
-      <header className="flex items-center justify-between p-4 pt-safe bg-background/95 backdrop-blur-sm border-b border-border/50 shrink-0">
-        
-        
-        {user && <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground hidden sm:block">
-              {user.first_name}
-            </span>
-            {user.photo_url ? <img src={user.photo_url} alt={user.first_name} className="w-8 h-8 rounded-full" /> : <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-primary font-medium text-sm">
-                  {user.first_name?.[0]}
-                </span>
-              </div>}
-          </div>}
-      </header>
+      
 
       {/* Main content area */}
       <main className="flex-1 overflow-auto smooth-scroll bg-background">
