@@ -202,7 +202,7 @@ export function AccountSettings() {
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button onClick={handleSave} disabled={isLoading || isLoadingProfile} className="bg-primary hover:bg-primary/90 mx-[50px] px-0">
+          <Button onClick={handleSave} disabled={isLoading || isLoadingProfile} className="bg-primary hover:bg-primary/90 px-[80px] mx-[38px]">
             <Save className="h-4 w-4 mr-2" />
             {isLoading ? 'Saving...' : 'Save Changes'}
           </Button>
