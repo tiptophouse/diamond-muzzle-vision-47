@@ -6,7 +6,7 @@ import { DiamondFormData } from '@/components/inventory/form/types';
 import { statuses } from '@/components/inventory/form/diamondFormConstants';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { NativeMobileSelector } from '@/components/ui/NativeMobileSelector';
+import { MobilePicker } from '@/components/ui/MobilePicker';
 
 interface BusinessInfoSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -66,13 +66,12 @@ export function BusinessInfoSection({ register, setValue, watch, errors }: Busin
           errors={errors}
         />
 
-        <NativeMobileSelector
+        <MobilePicker
           id="status"
           label="Inventory Status"
           value={watch('status') || 'Available'}
           onValueChange={(value) => setValue('status', value)}
           options={statuses}
-          columns={2}
         />
 
         <div className="flex items-center space-x-3 p-4 bg-accent/10 rounded-lg">

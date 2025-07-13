@@ -9,7 +9,7 @@ import {
   girdleTypes, 
   culetGrades 
 } from '@/components/inventory/form/diamondFormConstants';
-import { NativeMobileSelector } from '@/components/ui/NativeMobileSelector';
+import { MobilePicker } from '@/components/ui/MobilePicker';
 
 interface DetailedGradingSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -27,49 +27,44 @@ export function DetailedGradingSection({ register, setValue, watch, errors }: De
       </div>
       
       <div className="grid grid-cols-1 gap-6">
-        <NativeMobileSelector
+        <MobilePicker
           id="fluorescence"
           label="Fluorescence"
           value={watch('fluorescence') || 'None'}
           onValueChange={(value) => setValue('fluorescence', value)}
           options={fluorescences}
-          columns={3}
         />
 
-        <NativeMobileSelector
+        <MobilePicker
           id="polish"
           label="Polish"
           value={watch('polish') || 'Excellent'}
           onValueChange={(value) => setValue('polish', value)}
           options={polishGrades}
-          columns={3}
         />
 
-        <NativeMobileSelector
+        <MobilePicker
           id="symmetry"
           label="Symmetry"
           value={watch('symmetry') || 'Excellent'}
           onValueChange={(value) => setValue('symmetry', value)}
           options={symmetryGrades}
-          columns={3}
         />
 
-        <NativeMobileSelector
+        <MobilePicker
           id="gridle"
           label="Girdle"
           value={watch('gridle') || 'Medium'}
           onValueChange={(value) => setValue('gridle', value)}
           options={girdleTypes}
-          columns={2}
         />
 
-        <NativeMobileSelector
+        <MobilePicker
           id="culet"
           label="Culet"
           value={watch('culet') || 'None'}
           onValueChange={(value) => setValue('culet', value)}
           options={culetGrades}
-          columns={3}
         />
       </div>
     </div>

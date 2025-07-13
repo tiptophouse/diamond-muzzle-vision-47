@@ -1,5 +1,5 @@
 
-import { useState, useMemo, useCallback } from "react";
+import { useState } from "react";
 import { useForm } from 'react-hook-form';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,8 +42,8 @@ export function SingleStoneUploadForm({
     }
   });
 
-  // Memoize default values to prevent unnecessary re-calculations
-  const defaultValues = useMemo(() => {
+  // Auto-populate form with scanned data
+  const getDefaultValues = () => {
     const defaults = {
       stockNumber: '',
       carat: 1,
@@ -94,15 +94,15 @@ export function SingleStoneUploadForm({
     }
 
     return defaults;
-  }, [initialData]);
+  };
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<DiamondFormData>({
-    defaultValues
+    defaultValues: getDefaultValues()
   });
 
   const { validateFormData, formatFormData } = useFormValidation();
 
-  const handleGiaScanSuccess = useCallback((giaData: any) => {
+  const handleGiaScanSuccess = (giaData: any) => {
     console.log('GIA data received:', giaData);
     
     // Comprehensive mapping of all GIA data fields including certificate URL
@@ -143,12 +143,12 @@ export function SingleStoneUploadForm({
       title: "✅ Certificate Scanned Successfully",
       description: "All diamond information auto-filled and certificate image uploaded",
     });
-  }, [setValue, toast]);
+  };
 
   const currentShape = watch('shape');
   const showCutField = currentShape === 'Round';
 
-  const handleFormSubmit = useCallback((data: DiamondFormData) => {
+  const handleFormSubmit = (data: DiamondFormData) => {
     console.log('🔍 UPLOAD: Form submitted', { user: user?.id, data });
     console.log('🔍 UPLOAD: Shape captured:', data.shape);
     console.log('🔍 UPLOAD: Table % captured:', data.tablePercentage);
@@ -186,7 +186,7 @@ export function SingleStoneUploadForm({
       
       if (!success) {
         console.log('❌ UPLOAD: Diamond creation failed');
-        setApiConnected(false);
+        setApiConnected(false); // Mark API as disconnected
         toast({
           title: "❌ Upload Failed",
           description: "Failed to add diamond to inventory. Please try again.",
@@ -194,22 +194,39 @@ export function SingleStoneUploadForm({
         });
       } else {
         console.log('✅ UPLOAD: Diamond creation successful!');
-        setApiConnected(true);
+        setApiConnected(true); // Mark API as connected
       }
     }).catch(error => {
       console.error('❌ UPLOAD: Error in addDiamond promise:', error);
-      setApiConnected(false);
+      setApiConnected(false); // Mark API as disconnected
       toast({
         title: "❌ Upload Error",
         description: "An error occurred while uploading. Please try again.",
         variant: "destructive",
       });
     });
-  }, [user?.id, validateFormData, formatFormData, showCutField, addDiamond, toast, setApiConnected]);
+  };
 
-  const resetForm = useCallback(() => {
-    reset(defaultValues);
-  }, [reset, defaultValues]);
+  const resetForm = () => {
+    reset({
+      stockNumber: '',
+      carat: 1,
+      price: 0,
+      status: 'Available',
+      picture: '',
+      shape: 'Round',
+      color: 'G',
+      clarity: 'VS1',
+      cut: 'Excellent',
+      fluorescence: 'None',
+      polish: 'Excellent',
+      symmetry: 'Excellent',
+      lab: 'GIA',
+      gridle: 'Medium',
+      culet: 'None',
+      storeVisible: true
+    });
+  };
 
   // Show success card after successful upload
   if (uploadSuccess) {
