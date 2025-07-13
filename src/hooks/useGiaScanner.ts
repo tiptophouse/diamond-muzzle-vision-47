@@ -59,14 +59,13 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
   const processWithOCR = useCallback(async (imageData: string) => {
     try {
       setIsFetchingGIA(true);
-      console.log('📷 Starting image OCR processing...');
       toast({
         title: "Processing Certificate",
         description: "Extracting diamond data with AI...",
       });
 
       const { data, error } = await supabase.functions.invoke('extract-gia-data', {
-        body: { imageData, useOCR: true }
+        body: { imageData }
       });
 
       if (error) {
