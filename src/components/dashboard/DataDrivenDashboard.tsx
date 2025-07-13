@@ -4,6 +4,7 @@ import { processDiamondDataForDashboard } from '@/services/diamondAnalytics';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { InventoryChart } from '@/components/dashboard/InventoryChart';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { RealTimeUserCount } from '@/components/dashboard/RealTimeUserCount';
 import { WelcomeBanner } from '@/components/tutorial/WelcomeBanner';
 import { Layout } from '@/components/layout/Layout';
 import { Gem, Users, TrendingUp, Star, Plus, Upload } from 'lucide-react';
@@ -159,6 +160,9 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
               trend={-2}
             />
           </div>
+
+          {/* Real-time User Count */}
+          <RealTimeUserCount />
 
           {/* Charts Section */}
           <div className="space-y-4">
