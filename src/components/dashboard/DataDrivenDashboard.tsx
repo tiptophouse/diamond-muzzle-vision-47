@@ -74,71 +74,40 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
   if (!loading && allDiamonds.length === 0) {
     return (
       <Layout>
-        <div className="space-y-6 p-2 sm:p-4">
-          <WelcomeBanner />
+        <div className="min-h-screen bg-background">
           <DashboardHeader emergencyMode={false} />
           
-          <div className="premium-card text-center py-16 animate-scale-in">
-            <div className="space-y-6">
-              <div className="relative">
-                <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
-                  <Gem className="h-12 w-12 text-white" />
-                </div>
-                <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
-                  <span className="text-white text-xs font-bold">✨</span>
-                </div>
-              </div>
+          <div className="p-4 flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
+            <div className="w-16 h-16 bg-[#0088cc] rounded-full flex items-center justify-center">
+              <Gem className="h-8 w-8 text-white" />
+            </div>
+            
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold text-foreground">Welcome to Diamond Inventory</h2>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                Get started by uploading your diamond inventory or adding individual stones
+              </p>
+            </div>
+            
+            <div className="space-y-3 w-full max-w-xs">
+              <Button 
+                onClick={() => navigate('/upload')} 
+                className="w-full bg-[#0088cc] hover:bg-[#0088cc]/90"
+                size="lg"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload CSV File
+              </Button>
               
-              <div className="space-y-3">
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 bg-clip-text text-transparent animate-gradient-shift">
-                  Welcome to Diamond Muzzle
-                </h1>
-                <p className="text-xl text-muted-foreground font-medium">
-                  Your premium diamond inventory management platform
-                </p>
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse-subtle"></div>
-                  <span>System Ready • Secure • Fast</span>
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 space-y-4">
-                <p className="text-foreground font-medium">
-                  Get started by adding diamonds to your inventory:
-                </p>
-                
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button 
-                    onClick={() => navigate('/upload')} 
-                    className="flex items-center gap-2 premium-button"
-                    size="lg"
-                  >
-                    <Upload className="h-5 w-5" />
-                    Upload CSV File
-                  </Button>
-                  
-                  <Button 
-                    onClick={() => navigate('/upload')} 
-                    variant="outline"
-                    className="flex items-center gap-2"
-                    size="lg"
-                  >
-                    <Plus className="h-5 w-5" />
-                    Add Single Diamond
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <div className="w-1 h-1 rounded-full bg-blue-500"></div>
-                  <span><strong>Smart Import:</strong> Upload CSV files with automatic mapping</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-1 h-1 rounded-full bg-purple-500"></div>
-                  <span><strong>Real-time Analytics:</strong> Dashboard updates instantly</span>
-                </div>
-              </div>
+              <Button 
+                onClick={() => navigate('/upload')} 
+                variant="outline"
+                className="w-full"
+                size="lg"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Single Diamond
+              </Button>
             </div>
           </div>
         </div>
@@ -148,104 +117,137 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
 
   return (
     <Layout>
-      <div className="space-y-6 p-2 sm:p-4">
-        <WelcomeBanner />
+      <div className="min-h-screen bg-background">
         <DashboardHeader emergencyMode={false} />
         
-        {/* Real Stats Grid */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            title="Total Diamonds"
-            value={allDiamonds.length}
-            icon={Gem}
-            loading={loading}
-            description={`$${totalValue.toLocaleString()} total value`}
-          />
-          <StatCard
-            title="Available"
-            value={availableDiamonds}
-            icon={Users}
-            loading={loading}
-            description={`${((availableDiamonds / allDiamonds.length) * 100).toFixed(1)}% of inventory`}
-          />
-          <StatCard
-            title="Store Visible"
-            value={storeVisibleDiamonds}
-            icon={TrendingUp}
-            loading={loading}
-            description={`${((storeVisibleDiamonds / allDiamonds.length) * 100).toFixed(1)}% visible`}
-          />
-          <StatCard
-            title="Avg Price/Ct"
-            value={avgPricePerCarat}
-            prefix="$"
-            icon={Star}
-            loading={loading}
-            description="Per carat average"
-          />
-        </div>
+        {/* Primary Stats - 2x2 Grid for Mobile */}
+        <div className="p-4 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <StatCard
+              title="Inventory"
+              value={allDiamonds.length}
+              icon={Gem}
+              loading={loading}
+              description="Total stones"
+              trend={12}
+            />
+            <StatCard
+              title="Value"
+              value={Math.round(totalValue / 1000)}
+              prefix="$"
+              suffix="K"
+              icon={Star}
+              loading={loading}
+              description="Portfolio"
+              trend={8}
+            />
+            <StatCard
+              title="Available"
+              value={availableDiamonds}
+              icon={Users}
+              loading={loading}
+              description="Ready to sell"
+              trend={5}
+            />
+            <StatCard
+              title="Price/Ct"
+              value={Math.round(avgPricePerCarat / 100) * 100}
+              prefix="$"
+              icon={TrendingUp}
+              loading={loading}
+              description="Average"
+              trend={-2}
+            />
+          </div>
 
-        {/* Charts with Real Data */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <InventoryChart
-            data={inventoryByShape.length > 0 ? inventoryByShape : [
-              { name: 'Round', value: allDiamonds.filter(d => d.shape === 'Round').length },
-              { name: 'Princess', value: allDiamonds.filter(d => d.shape === 'Princess').length },
-              { name: 'Emerald', value: allDiamonds.filter(d => d.shape === 'Emerald').length },
-              { name: 'Oval', value: allDiamonds.filter(d => d.shape === 'Oval').length },
-              { name: 'Other', value: allDiamonds.filter(d => !['Round', 'Princess', 'Emerald', 'Oval'].includes(d.shape)).length }
-            ].filter(item => item.value > 0)}
-            title="Inventory by Shape"
-            loading={loading}
-          />
-          <InventoryChart
-            data={salesByCategory.length > 0 ? salesByCategory : [
-              { name: 'D-F', value: allDiamonds.filter(d => ['D', 'E', 'F'].includes(d.color)).length },
-              { name: 'G-H', value: allDiamonds.filter(d => ['G', 'H'].includes(d.color)).length },
-              { name: 'I-J', value: allDiamonds.filter(d => ['I', 'J'].includes(d.color)).length },
-              { name: 'K+', value: allDiamonds.filter(d => !['D', 'E', 'F', 'G', 'H', 'I', 'J'].includes(d.color)).length }
-            ].filter(item => item.value > 0)}
-            title="Distribution by Color Grade"
-            loading={loading}
-          />
-        </div>
-
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Manage your inventory efficiently</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-4">
-              <Button onClick={() => navigate('/inventory')} variant="outline">
-                <Gem className="h-4 w-4 mr-2" />
-                View All Inventory
-              </Button>
-              <Button onClick={() => navigate('/upload')} variant="outline">
-                <Upload className="h-4 w-4 mr-2" />
-                Upload More Diamonds
-              </Button>
-              <Button onClick={() => navigate('/store')} variant="outline">
-                <Star className="h-4 w-4 mr-2" />
-                View Store
-              </Button>
+          {/* Charts Section */}
+          <div className="space-y-4">
+            <div className="bg-card rounded-lg border border-border">
+              <div className="p-4 border-b border-border">
+                <h3 className="text-sm font-medium text-foreground">Inventory Overview</h3>
+              </div>
+              <div className="p-4">
+                <InventoryChart
+                  data={inventoryByShape.length > 0 ? inventoryByShape : [
+                    { name: 'Round', value: allDiamonds.filter(d => d.shape === 'Round').length },
+                    { name: 'Princess', value: allDiamonds.filter(d => d.shape === 'Princess').length },
+                    { name: 'Emerald', value: allDiamonds.filter(d => d.shape === 'Emerald').length },
+                    { name: 'Oval', value: allDiamonds.filter(d => d.shape === 'Oval').length },
+                    { name: 'Other', value: allDiamonds.filter(d => !['Round', 'Princess', 'Emerald', 'Oval'].includes(d.shape)).length }
+                  ].filter(item => item.value > 0)}
+                  title=""
+                  loading={loading}
+                />
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Data Source Info */}
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-sm text-blue-800">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span>
-                Showing data from {allDiamonds.length > 5 ? 'your uploaded inventory' : 'sample diamonds'}
-                {allDiamonds.length <= 5 && ' - Upload your CSV file to see real data'}
+          {/* Quick Actions - Telegram List Style */}
+          <div className="bg-card rounded-lg border border-border">
+            <div className="p-4 border-b border-border">
+              <h3 className="text-sm font-medium text-foreground">Quick Actions</h3>
+            </div>
+            <div className="divide-y divide-border">
+              <button 
+                onClick={() => navigate('/inventory')}
+                className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-[#0088cc]/10 rounded-full flex items-center justify-center">
+                    <Gem className="h-4 w-4 text-[#0088cc]" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-foreground">View Inventory</p>
+                    <p className="text-xs text-muted-foreground">Manage all diamonds</p>
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground">→</div>
+              </button>
+              
+              <button 
+                onClick={() => navigate('/upload')}
+                className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-[#0088cc]/10 rounded-full flex items-center justify-center">
+                    <Upload className="h-4 w-4 text-[#0088cc]" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-foreground">Upload Data</p>
+                    <p className="text-xs text-muted-foreground">Add new diamonds</p>
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground">→</div>
+              </button>
+              
+              <button 
+                onClick={() => navigate('/store')}
+                className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-[#0088cc]/10 rounded-full flex items-center justify-center">
+                    <Star className="h-4 w-4 text-[#0088cc]" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-foreground">Store View</p>
+                    <p className="text-xs text-muted-foreground">Public catalog</p>
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground">→</div>
+              </button>
+            </div>
+          </div>
+
+          {/* Status Indicator */}
+          <div className="bg-[#0088cc]/5 border border-[#0088cc]/20 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-xs text-[#0088cc]">
+              <div className="w-1.5 h-1.5 bg-[#0088cc] rounded-full animate-pulse"></div>
+              <span className="font-medium">
+                Live data • {allDiamonds.length} diamonds • Updated now
               </span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </Layout>
   );

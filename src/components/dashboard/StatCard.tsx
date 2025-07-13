@@ -67,33 +67,33 @@ export function StatCard({
     : "";
   
   return (
-    <Card className={cn("diamond-card", className)}>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-gray-500">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-diamond-500" />
-      </CardHeader>
-      <CardContent>
+    <Card className={cn("border-0 bg-card shadow-sm rounded-lg", className)}>
+      <CardContent className="p-3">
+        <div className="flex items-center justify-between mb-2">
+          <Icon className="h-4 w-4 text-[#0088cc]" />
+          {trend !== undefined && (
+            <span className={cn("text-xs font-medium", trendClassName)}>
+              {trendSign}{Math.abs(trend)}%
+            </span>
+          )}
+        </div>
+        
         {loading ? (
-          <div className="h-9 w-24 bg-gray-200 animate-pulse rounded" />
+          <div className="h-7 w-16 bg-muted animate-pulse rounded" />
         ) : (
-          <div className="stat-value animate-counter">
+          <div className="text-2xl font-bold text-foreground mb-1">
             {prefix}
             {displayValue.toLocaleString()}
             {suffix}
           </div>
         )}
         
-        {(description || trend !== undefined) && (
-          <p className="text-xs text-muted-foreground mt-2">
-            {description}
-            
-            {trend !== undefined && (
-              <span className={cn("ml-1", trendClassName)}>
-                {trendSign}{trend}% {trendLabel}
-              </span>
-            )}
-          </p>
-        )}
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-foreground">{title}</p>
+          {description && (
+            <p className="text-xs text-muted-foreground">{description}</p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
