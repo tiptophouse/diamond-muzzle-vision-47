@@ -64,8 +64,8 @@ export function useGiaScanner({ onScanSuccess, isOpen }: UseGiaScannerProps) {
         description: "Extracting diamond data with AI...",
       });
 
-      const { data, error } = await supabase.functions.invoke('extract-gia-data', {
-        body: { imageData }
+      const { data, error } = await supabase.functions.invoke('fetch-gia-data', {
+        body: { imageData, useOCR: true }
       });
 
       if (error) {
