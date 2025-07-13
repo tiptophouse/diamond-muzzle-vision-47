@@ -11,36 +11,22 @@ export function Layout({
   children
 }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  return (
-    <div className="min-h-screen w-full overflow-x-hidden flex bg-background">
+  return <div className="min-h-screen w-full overflow-x-hidden flex bg-background">
       {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden" 
-          onClick={() => setSidebarOpen(false)} 
-        />
-      )}
+      {sidebarOpen && <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
       
       {/* Sidebar - hidden on mobile, slide in when open */}
       <div className={`
           fixed lg:static inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        `} 
-        data-tutorial="sidebar"
-      >
+        `} data-tutorial="sidebar">
         <Sidebar onClose={() => setSidebarOpen(false)} />
       </div>
       
       <div className="flex-1 w-full min-w-0 flex flex-col bg-background lg:ml-0">
         {/* Mobile header with menu button */}
-        <div className="lg:hidden flex items-center justify-between h-16 px-4 border-b border-border/20 bg-card/50 backdrop-blur-md">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setSidebarOpen(true)} 
-            className="p-2 rounded-xl hover:bg-accent/50 transition-colors"
-          >
+        <div className="lg:hidden flex items-center justify-between h-16 px-4 border-b border-border/20 bg-card/50 backdrop-blur-md my-[40px]">
+          <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)} className="p-2 rounded-xl hover:bg-accent/50 transition-colors">
             <Menu className="h-5 w-5" />
           </Button>
           
@@ -72,6 +58,5 @@ export function Layout({
 
       {/* Tutorial Modal */}
       <TutorialModal />
-    </div>
-  );
+    </div>;
 }
