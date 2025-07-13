@@ -25,6 +25,9 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
   const { user } = useTelegramAuth();
   const { subscribeToInventoryChanges } = useInventoryDataSync();
   const navigate = useNavigate();
+  
+  // Simple admin check
+  const isAdmin = user?.id === 2138564172 || user?.username === 'admin';
 
   console.log('🔍 DataDrivenDashboard: Processing data for user:', user?.id, 'Diamonds:', allDiamonds.length);
 
@@ -161,8 +164,8 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
             />
           </div>
 
-          {/* Real-time User Count */}
-          <RealTimeUserCount />
+          {/* Real-time User Count - Admin Only */}
+          {isAdmin && <RealTimeUserCount />}
 
           {/* Charts Section */}
           <div className="space-y-4">
