@@ -4,7 +4,7 @@ import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'rea
 import { DiamondInputField } from '@/components/inventory/form/DiamondInputField';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { labOptions } from '@/components/inventory/form/diamondFormConstants';
-import { NativeMobileSelector } from '@/components/ui/NativeMobileSelector';
+import { MobilePicker } from '@/components/ui/MobilePicker';
 
 interface CertificateSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -30,13 +30,13 @@ export function CertificateSection({ register, setValue, watch, errors }: Certif
           errors={errors}
         />
 
-        <NativeMobileSelector
+        <MobilePicker
           id="lab"
           label="Grading Laboratory"
           value={watch('lab') || 'GIA'}
           onValueChange={(value) => setValue('lab', value)}
           options={labOptions}
-          columns={2}
+          placeholder="Select laboratory"
         />
 
         <div className="md:col-span-2">
