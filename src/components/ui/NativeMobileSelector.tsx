@@ -38,18 +38,15 @@ export function NativeMobileSelector({
             type="button"
             onClick={() => onValueChange(option)}
             className={cn(
-              "min-h-[48px] px-3 py-3 text-sm font-medium rounded-xl border-2 transition-all duration-200",
+              "min-h-[48px] px-4 py-3 text-base font-medium rounded-xl border-2 transition-all duration-200",
               "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
               "active:scale-95 touch-manipulation",
-              "flex items-center justify-center text-center",
-              "overflow-hidden text-ellipsis whitespace-nowrap",
-              "leading-tight",
               value === option
                 ? "bg-primary text-primary-foreground border-primary shadow-lg transform scale-105"
                 : "bg-card text-foreground border-border hover:border-primary/50 hover:bg-accent/50"
             )}
           >
-            <span className="truncate w-full">{option}</span>
+            {option}
           </button>
         ))}
       </div>
