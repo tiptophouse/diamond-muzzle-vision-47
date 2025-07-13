@@ -5,24 +5,25 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { NativeMobileSelector } from '@/components/ui/NativeMobileSelector';
+import { NativeWheelPicker } from '@/components/ui/NativeWheelPicker';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Mail, Phone, Globe, Save } from 'lucide-react';
 
-// Common Telegram languages
-const telegramLanguages = [
-  'English', 'Arabic', 'Chinese', 'Dutch', 'French', 'German', 'Hebrew', 'Italian', 
-  'Japanese', 'Korean', 'Portuguese', 'Russian', 'Spanish', 'Turkish', 'Ukrainian'
-];
+// Language options (English and Hebrew only)
+const languages = ['English', 'Hebrew'];
 
-// Common timezones
+// Relevant timezones for diamond industry
 const timezones = [
-  'UTC', 'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
-  'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Rome', 'Europe/Madrid',
-  'Asia/Tokyo', 'Asia/Shanghai', 'Asia/Seoul', 'Asia/Dubai', 'Asia/Mumbai',
-  'Australia/Sydney', 'Australia/Melbourne', 'Pacific/Auckland'
+  'UTC',
+  'America/New_York', 
+  'Europe/London',
+  'Asia/Jerusalem',
+  'Europe/Brussels',
+  'Asia/Mumbai',
+  'Asia/Hong_Kong',
+  'Asia/Bangkok'
 ];
 
 export function AccountSettings() {
@@ -37,23 +38,13 @@ export function AccountSettings() {
     bio: '',
     company: '',
     website: '',
-    language: user?.language_code ? getLanguageFromCode(user.language_code) : 'English',
+    language: user?.language_code === 'he' ? 'Hebrew' : 'English',
     timezone: 'UTC'
   });
 
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
-  // Helper function to get language name from Telegram language code
-  function getLanguageFromCode(code: string): string {
-    const languageMap: Record<string, string> = {
-      'en': 'English', 'ar': 'Arabic', 'zh': 'Chinese', 'nl': 'Dutch',
-      'fr': 'French', 'de': 'German', 'he': 'Hebrew', 'it': 'Italian',
-      'ja': 'Japanese', 'ko': 'Korean', 'pt': 'Portuguese', 'ru': 'Russian',
-      'es': 'Spanish', 'tr': 'Turkish', 'uk': 'Ukrainian'
-    };
-    return languageMap[code] || 'English';
-  }
 
   // Load user profile from Supabase
   useEffect(() => {
@@ -245,22 +236,20 @@ export function AccountSettings() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <NativeMobileSelector
+          <NativeWheelPicker
             id="language"
             label="Language"
             value={profile.language}
             onValueChange={(value) => setProfile(prev => ({ ...prev, language: value }))}
-            options={telegramLanguages}
-            columns={2}
+            options={languages}
           />
           
-          <NativeMobileSelector
+          <NativeWheelPicker
             id="timezone"
             label="Timezone"
             value={profile.timezone}
             onValueChange={(value) => setProfile(prev => ({ ...prev, timezone: value }))}
             options={timezones}
-            columns={2}
           />
         </div>
 
