@@ -251,13 +251,7 @@ export function TelegramLayout({
           const isActive = isActiveTab(tab.path);
           if (isActive) return null; // Don't show if currently active
 
-          return <button key={tab.path} onClick={() => handleTabClick(tab.path)} className="
-                    w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg 
-                    flex items-center justify-center touch-target
-                    hover:scale-110 active:scale-95 transition-all duration-200
-                  " aria-label={tab.label}>
-                  <Icon className="w-6 h-6" />
-                </button>;
+          return;
         })}
           </div>
         </div>}
