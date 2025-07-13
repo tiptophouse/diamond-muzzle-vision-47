@@ -43,6 +43,14 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
   const handleChange = (name: string, value: string) => {
     const newFilters = { ...filters, [name]: value };
     setFilters(newFilters);
+    
+    // Apply filters immediately
+    const processedFilters = Object.keys(newFilters).reduce((acc, key) => {
+      acc[key] = newFilters[key] === "all" ? "" : newFilters[key];
+      return acc;
+    }, {} as Record<string, string>);
+    
+    onFilterChange(processedFilters);
   };
 
   const applyFilters = () => {
@@ -146,8 +154,16 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
             className="bg-diamond-50 text-diamond-700 border-diamond-200"
             onClick={(e) => {
               e.preventDefault();
-              handleChange('caratMin', '');
-              handleChange('caratMax', '');
+              const newFilters = { ...filters, caratMin: '', caratMax: '' };
+              setFilters(newFilters);
+              
+              // Apply filters immediately
+              const processedFilters = Object.keys(newFilters).reduce((acc, key) => {
+                acc[key] = newFilters[key] === "all" ? "" : newFilters[key];
+                return acc;
+              }, {} as Record<string, string>);
+              
+              onFilterChange(processedFilters);
             }}
           >
             Carat: {filters.caratMin || '0'} - {filters.caratMax || '∞'}
