@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useIntelligentCsvProcessor } from "@/hooks/useIntelligentCsvProcessor";
 import { useEnhancedUploadHandler } from "@/hooks/useEnhancedUploadHandler";
+import { useNavigate } from "react-router-dom";
 import { FileUploadArea } from "./FileUploadArea";
 import { UploadProgress } from "./UploadProgress";
 import { ProcessingSteps } from "./ProcessingSteps";
@@ -17,6 +18,7 @@ export function UploadForm() {
   const { user, isAuthenticated } = useTelegramAuth();
   const { validateFile } = useIntelligentCsvProcessor();
   const { uploading, progress, result, handleUpload, resetState } = useEnhancedUploadHandler();
+  const navigate = useNavigate();
 
   const handleFileChange = (file: File | null) => {
     if (!validateFile(file)) {
@@ -119,6 +121,7 @@ export function UploadForm() {
                 variant="outline" 
                 size="sm"
                 className="w-full sm:w-auto"
+                onClick={() => navigate('/upload?action=scan')}
               >
                 Add Single Diamond
               </Button>

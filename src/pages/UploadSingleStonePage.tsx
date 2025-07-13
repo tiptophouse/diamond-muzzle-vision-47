@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { SingleStoneUploadForm } from "@/components/upload/SingleStoneUploadForm";
 import { UploadForm } from "@/components/upload/UploadForm";
@@ -8,14 +9,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
 import { FileText, Camera, Scan } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export default function UploadSingleStonePage() {
+  const [searchParams] = useSearchParams();
   const [isScanning, setIsScanning] = useState(false);
   const [hasScannedCertificate, setHasScannedCertificate] = useState(false);
   const [scannedData, setScannedData] = useState<any>(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const { toast } = useToast();
+
+  // Check if we should start scanning immediately
+  useEffect(() => {
+    if (searchParams.get('action') === 'scan') {
+      setIsScanning(true);
+    }
+  }, [searchParams]);
 
   const handleScanSuccess = (giaData: any) => {
     setScannedData(giaData);
