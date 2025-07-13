@@ -107,6 +107,10 @@ export function useNotifications() {
         return `🔍 נמצאו ${matchCount} התאמות לבקשת חיפוש`;
       case 'customer_inquiry':
         return '👤 פנייה חדשה מלקוח';
+      case 'buyer_interest':
+        return '💎 קונה מעוניין ביהלום שלך';
+      case 'wishlist_added':
+        return '⭐ יהלום נוסף לרשימת המועדפים';
       case 'price_alert':
         return '💰 התראת מחיר';
       case 'system':

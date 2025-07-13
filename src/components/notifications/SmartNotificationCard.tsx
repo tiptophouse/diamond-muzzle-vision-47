@@ -35,6 +35,9 @@ export function SmartNotificationCard({
         return <Diamond className="h-5 w-5 text-blue-600" />;
       case 'customer_inquiry':
         return <Users className="h-5 w-5 text-green-600" />;
+      case 'buyer_interest':
+      case 'wishlist_added':
+        return <Diamond className="h-5 w-5 text-pink-600" />;
       case 'price_alert':
         return <TrendingUp className="h-5 w-5 text-orange-600" />;
       default:
@@ -48,6 +51,9 @@ export function SmartNotificationCard({
         return 'bg-blue-50 border-blue-200';
       case 'customer_inquiry':
         return 'bg-green-50 border-green-200';
+      case 'buyer_interest':
+      case 'wishlist_added':
+        return 'bg-pink-50 border-pink-200';
       case 'price_alert':
         return 'bg-orange-50 border-orange-200';
       default:

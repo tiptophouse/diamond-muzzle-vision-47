@@ -14,8 +14,11 @@ const NotificationsPage = () => {
   const unreadCount = notifications.filter(n => !n.read).length;
   const groupNotifications = notifications.filter(n => n.type === 'group_diamond_request');
   const diamondMatches = notifications.filter(n => n.type === 'diamond_match');
+  const buyerInterests = notifications.filter(n => 
+    n.type === 'buyer_interest' || n.type === 'wishlist_added'
+  );
   const otherNotifications = notifications.filter(n => 
-    n.type !== 'group_diamond_request' && n.type !== 'diamond_match'
+    !['group_diamond_request', 'diamond_match', 'buyer_interest', 'wishlist_added'].includes(n.type)
   );
 
   if (isLoading) {
@@ -96,12 +99,12 @@ const NotificationsPage = () => {
             <div className="text-2xl font-bold text-purple-600 mt-1">{diamondMatches.length}</div>
           </div>
 
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
             <div className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-orange-600" />
-              <span className="font-medium text-orange-900">סה"כ התראות</span>
+              <Bell className="h-5 w-5 text-pink-600" />
+              <span className="font-medium text-pink-900">קונים מעוניינים</span>
             </div>
-            <div className="text-2xl font-bold text-orange-600 mt-1">{notifications.length}</div>
+            <div className="text-2xl font-bold text-pink-600 mt-1">{buyerInterests.length}</div>
           </div>
         </div>
 
@@ -117,6 +120,26 @@ const NotificationsPage = () => {
               <div className="space-y-4">
                 {groupNotifications.map((notification) => (
                   <GroupNotificationCard
+                    key={notification.id}
+                    notification={notification}
+                    onMarkAsRead={markAsRead}
+                    onContactCustomer={handleContactCustomer}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Buyer Interest Notifications */}
+          {buyerInterests.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Bell className="h-5 w-5 text-pink-600" />
+                קונים מעוניינים
+              </h2>
+              <div className="space-y-4">
+                {buyerInterests.map((notification) => (
+                  <SmartNotificationCard
                     key={notification.id}
                     notification={notification}
                     onMarkAsRead={markAsRead}
