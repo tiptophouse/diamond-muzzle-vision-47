@@ -5,11 +5,25 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { NativeMobileSelector } from '@/components/ui/NativeMobileSelector';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Mail, Phone, Globe, Save } from 'lucide-react';
+
+// Common Telegram languages
+const telegramLanguages = [
+  'English', 'Arabic', 'Chinese', 'Dutch', 'French', 'German', 'Hebrew', 'Italian', 
+  'Japanese', 'Korean', 'Portuguese', 'Russian', 'Spanish', 'Turkish', 'Ukrainian'
+];
+
+// Common timezones
+const timezones = [
+  'UTC', 'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+  'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Rome', 'Europe/Madrid',
+  'Asia/Tokyo', 'Asia/Shanghai', 'Asia/Seoul', 'Asia/Dubai', 'Asia/Mumbai',
+  'Australia/Sydney', 'Australia/Melbourne', 'Pacific/Auckland'
+];
 
 export function AccountSettings() {
   const { user } = useTelegramAuth();
@@ -23,12 +37,23 @@ export function AccountSettings() {
     bio: '',
     company: '',
     website: '',
-    language: 'en',
+    language: user?.language_code ? getLanguageFromCode(user.language_code) : 'English',
     timezone: 'UTC'
   });
 
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+
+  // Helper function to get language name from Telegram language code
+  function getLanguageFromCode(code: string): string {
+    const languageMap: Record<string, string> = {
+      'en': 'English', 'ar': 'Arabic', 'zh': 'Chinese', 'nl': 'Dutch',
+      'fr': 'French', 'de': 'German', 'he': 'Hebrew', 'it': 'Italian',
+      'ja': 'Japanese', 'ko': 'Korean', 'pt': 'Portuguese', 'ru': 'Russian',
+      'es': 'Spanish', 'tr': 'Turkish', 'uk': 'Ukrainian'
+    };
+    return languageMap[code] || 'English';
+  }
 
   // Load user profile from Supabase
   useEffect(() => {
@@ -220,40 +245,23 @@ export function AccountSettings() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="language">Language</Label>
-            <Select value={profile.language} onValueChange={(value) => setProfile(prev => ({ ...prev, language: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select language" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="es">Spanish</SelectItem>
-                <SelectItem value="fr">French</SelectItem>
-                <SelectItem value="de">German</SelectItem>
-                <SelectItem value="it">Italian</SelectItem>
-                <SelectItem value="pt">Portuguese</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="timezone">Timezone</Label>
-            <Select value={profile.timezone} onValueChange={(value) => setProfile(prev => ({ ...prev, timezone: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select timezone" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="UTC">UTC</SelectItem>
-                <SelectItem value="America/New_York">Eastern Time</SelectItem>
-                <SelectItem value="America/Chicago">Central Time</SelectItem>
-                <SelectItem value="America/Denver">Mountain Time</SelectItem>
-                <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
-                <SelectItem value="Europe/London">London</SelectItem>
-                <SelectItem value="Europe/Paris">Paris</SelectItem>
-                <SelectItem value="Asia/Tokyo">Tokyo</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <NativeMobileSelector
+            id="language"
+            label="Language"
+            value={profile.language}
+            onValueChange={(value) => setProfile(prev => ({ ...prev, language: value }))}
+            options={telegramLanguages}
+            columns={2}
+          />
+          
+          <NativeMobileSelector
+            id="timezone"
+            label="Timezone"
+            value={profile.timezone}
+            onValueChange={(value) => setProfile(prev => ({ ...prev, timezone: value }))}
+            options={timezones}
+            columns={2}
+          />
         </div>
 
         <div className="flex justify-end pt-4">
