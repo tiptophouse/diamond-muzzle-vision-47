@@ -2,14 +2,9 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Filter, X } from "lucide-react";
+
+import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
+import { Filter, X, ChevronDown } from "lucide-react";
 import { useState } from "react";
 
 interface InventoryFiltersProps {
@@ -25,6 +20,8 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
     caratMin: "",
     caratMax: "",
   });
+  
+  const { selectionChanged, impactOccurred } = useTelegramHapticFeedback();
 
   const shapes = [
     "Round", "Princess", "Cushion", "Emerald", 
@@ -90,9 +87,10 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
         <Button 
           variant="outline" 
           type="button"
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 bg-white border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200"
           onClick={(e) => {
             e.preventDefault();
+            impactOccurred('light');
             setIsOpen(!isOpen);
           }}
         >
@@ -109,6 +107,7 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
             className="bg-diamond-50 text-diamond-700 border-diamond-200"
             onClick={(e) => {
               e.preventDefault();
+              selectionChanged();
               handleChange('shape', 'all');
             }}
           >
@@ -124,6 +123,7 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
             className="bg-diamond-50 text-diamond-700 border-diamond-200"
             onClick={(e) => {
               e.preventDefault();
+              selectionChanged();
               handleChange('color', 'all');
             }}
           >
@@ -139,6 +139,7 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
             className="bg-diamond-50 text-diamond-700 border-diamond-200"
             onClick={(e) => {
               e.preventDefault();
+              selectionChanged();
               handleChange('clarity', 'all');
             }}
           >
@@ -154,6 +155,7 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
             className="bg-diamond-50 text-diamond-700 border-diamond-200"
             onClick={(e) => {
               e.preventDefault();
+              selectionChanged();
               const newFilters = { ...filters, caratMin: '', caratMax: '' };
               setFilters(newFilters);
               
@@ -178,7 +180,8 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
             type="button"
             size="sm"
             onClick={(e) => {
-              e.preventDefault();  
+              e.preventDefault();
+              impactOccurred('medium');
               clearFilters();
             }}
           >
@@ -189,65 +192,74 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
       
       {isOpen && (
         <div className="grid gap-4 p-4 mb-4 border rounded-lg bg-white">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
               <Label htmlFor="shape">Shape</Label>
-              <Select
-                value={filters.shape}
-                onValueChange={(value) => handleChange('shape', value)}
-              >
-                <SelectTrigger id="shape">
-                  <SelectValue placeholder="Any shape" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Any shape</SelectItem>
+              <div className="relative">
+                <select
+                  id="shape"
+                  value={filters.shape}
+                  onChange={(e) => {
+                    selectionChanged();
+                    handleChange('shape', e.target.value);
+                  }}
+                  className="w-full h-10 px-3 py-2 text-sm border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 appearance-none cursor-pointer"
+                >
+                  <option value="all">Any shape</option>
                   {shapes.map((shape) => (
-                    <SelectItem key={shape} value={shape}>
+                    <option key={shape} value={shape}>
                       {shape}
-                    </SelectItem>
+                    </option>
                   ))}
-                </SelectContent>
-              </Select>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50 pointer-events-none" />
+              </div>
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="color">Color</Label>
-              <Select
-                value={filters.color}
-                onValueChange={(value) => handleChange('color', value)}
-              >
-                <SelectTrigger id="color">
-                  <SelectValue placeholder="Any color" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Any color</SelectItem>
+              <div className="relative">
+                <select
+                  id="color"
+                  value={filters.color}
+                  onChange={(e) => {
+                    selectionChanged();
+                    handleChange('color', e.target.value);
+                  }}
+                  className="w-full h-10 px-3 py-2 text-sm border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 appearance-none cursor-pointer"
+                >
+                  <option value="all">Any color</option>
                   {colors.map((color) => (
-                    <SelectItem key={color} value={color}>
+                    <option key={color} value={color}>
                       {color}
-                    </SelectItem>
+                    </option>
                   ))}
-                </SelectContent>
-              </Select>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50 pointer-events-none" />
+              </div>
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="clarity">Clarity</Label>
-              <Select
-                value={filters.clarity}
-                onValueChange={(value) => handleChange('clarity', value)}
-              >
-                <SelectTrigger id="clarity">
-                  <SelectValue placeholder="Any clarity" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Any clarity</SelectItem>
+              <div className="relative">
+                <select
+                  id="clarity"
+                  value={filters.clarity}
+                  onChange={(e) => {
+                    selectionChanged();
+                    handleChange('clarity', e.target.value);
+                  }}
+                  className="w-full h-10 px-3 py-2 text-sm border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 appearance-none cursor-pointer"
+                >
+                  <option value="all">Any clarity</option>
                   {clarities.map((clarity) => (
-                    <SelectItem key={clarity} value={clarity}>
+                    <option key={clarity} value={clarity}>
                       {clarity}
-                    </SelectItem>
+                    </option>
                   ))}
-                </SelectContent>
-              </Select>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50 pointer-events-none" />
+              </div>
             </div>
           </div>
           
