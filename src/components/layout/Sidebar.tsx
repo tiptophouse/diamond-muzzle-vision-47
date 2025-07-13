@@ -58,48 +58,77 @@ const Sidebar = ({
     // Close sidebar on mobile when navigation item is clicked
     onClose?.();
   };
-  return <aside className="w-64 premium-card border-r border-border/50 flex flex-col h-full">
+  return (
+    <aside className="w-64 bg-card/50 backdrop-blur-md border-r border-border/20 flex flex-col h-full">
       {/* Header with close button for mobile */}
-      <div className="p-4 border-b border-border/50 flex items-center justify-between">
+      <div className="p-4 border-b border-border/20 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#0088cc] to-[#229ED9] flex items-center justify-center shadow-sm">
             <span className="text-white font-bold text-sm">💎</span>
           </div>
-          <div>
-            <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Diamond mazal</h1>
-            <p className="text-xs text-muted-foreground">Premium Platform</p>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg font-semibold text-foreground tracking-tight truncate">
+              Diamond Mazal
+            </h1>
+            <p className="text-xs text-muted-foreground truncate">Premium Platform</p>
           </div>
         </div>
-        {onClose && <Button variant="ghost" size="sm" onClick={onClose} className="lg:hidden p-1">
+        {onClose && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onClose} 
+            className="lg:hidden p-1 hover:bg-accent/50"
+          >
             <X className="h-4 w-4" />
-          </Button>}
+          </Button>
+        )}
       </div>
       
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {navigation.map((item, index) => <NavLink key={item.name} to={item.href} onClick={handleNavClick} style={{
-        animationDelay: `${index * 0.05}s`
-      }} className={({
-        isActive
-      }) => cn('flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 w-full group hover:scale-105 hover:shadow-md animate-fade-in-up', isActive ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-primary border border-primary/20 shadow-md' : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground')}>
-            <item.icon className="h-4 w-4 flex-shrink-0 group-hover:scale-110 transition-transform duration-300" />
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-hide">
+        {navigation.map((item, index) => (
+          <NavLink 
+            key={item.name} 
+            to={item.href} 
+            onClick={handleNavClick}
+            className={({ isActive }) => cn(
+              'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 w-full group',
+              isActive 
+                ? 'bg-[#0088cc]/10 text-[#0088cc] border border-[#0088cc]/20 shadow-sm' 
+                : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'
+            )}
+          >
+            <item.icon className="h-4 w-4 flex-shrink-0 transition-transform duration-200 group-hover:scale-110" />
             <span className="truncate">{item.name}</span>
-          </NavLink>)}
+          </NavLink>
+        ))}
         
-        {isAdmin && <div className="pt-3 border-t border-border/50 mt-3">
-            <div className="px-3 py-2 text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-cyan-500 animate-pulse-subtle"></div>
+        {isAdmin && (
+          <div className="pt-3 border-t border-border/20 mt-3">
+            <div className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-[#0088cc] animate-pulse"></div>
               Admin Panel
             </div>
-            {adminNavigation.map((item, index) => <NavLink key={item.name} to={item.href} onClick={handleNavClick} style={{
-          animationDelay: `${(navigation.length + index) * 0.05}s`
-        }} className={({
-          isActive
-        }) => cn('flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 w-full group hover:scale-105 hover:shadow-md animate-fade-in-up', isActive ? 'bg-gradient-to-r from-purple-500/10 to-cyan-500/10 text-purple-700 border border-purple-200 shadow-md' : 'text-muted-foreground hover:bg-gradient-to-r hover:from-purple-50 hover:to-cyan-50 hover:text-purple-700')}>
-                <item.icon className="h-4 w-4 flex-shrink-0 group-hover:scale-110 transition-transform duration-300" />
+            {adminNavigation.map((item) => (
+              <NavLink 
+                key={item.name} 
+                to={item.href} 
+                onClick={handleNavClick}
+                className={({ isActive }) => cn(
+                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 w-full group',
+                  isActive 
+                    ? 'bg-[#0088cc]/10 text-[#0088cc] border border-[#0088cc]/20 shadow-sm' 
+                    : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'
+                )}
+              >
+                <item.icon className="h-4 w-4 flex-shrink-0 transition-transform duration-200 group-hover:scale-110" />
                 <span className="truncate">{item.name}</span>
-              </NavLink>)}
-          </div>}
+              </NavLink>
+            ))}
+          </div>
+        )}
       </nav>
-    </aside>;
+    </aside>
+  );
 };
 export default Sidebar;
