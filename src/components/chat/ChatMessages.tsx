@@ -46,19 +46,22 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div className="flex-1 overflow-y-auto">
       {messages.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-full text-center">
-          <div className="text-6xl mb-4">💎</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <div className="flex flex-col items-center justify-center h-full text-center p-8">
+          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+            <span className="text-2xl">💎</span>
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">
             Welcome to Diamond Assistant
           </h3>
-          <p className="text-gray-500 max-w-sm">
-            Ask me anything about diamonds, inventory management, pricing, or market insights.
+          <p className="text-muted-foreground text-sm max-w-sm leading-relaxed">
+            Ask me anything about diamonds, inventory management, pricing, or market insights. 
+            Try one of the quick questions below to get started.
           </p>
         </div>
       ) : (
-        <>
+        <div className="p-4 space-y-6">
           {messages.map((message) => (
             <ChatMessage
               key={message.id}
@@ -68,15 +71,19 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
           ))}
           {isLoading && (
             <div className="flex gap-3">
-              <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse" />
-              <div className="flex flex-col space-y-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-16 w-64" />
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-sm">🤖</span>
+              </div>
+              <div className="flex flex-col space-y-2 flex-1">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                  <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                </div>
               </div>
             </div>
           )}
-          <div ref={messagesEndRef} />
-        </>
+        </div>
       )}
     </div>
   );

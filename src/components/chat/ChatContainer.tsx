@@ -19,28 +19,31 @@ export function ChatContainer() {
   }));
 
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto">
+    <div className="h-screen flex flex-col max-w-4xl mx-auto bg-background">
       <ChatHeader 
         title="Diamond Assistant" 
-        subtitle="Your AI-powered diamond expert"
+        subtitle="AI-powered diamond expert"
         onNewChat={clearMessages} 
       />
       
-      <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex-1 flex flex-col min-h-0 relative">
         <ChatMessages 
           messages={transformedMessages} 
           isLoading={isLoading} 
           currentUserId={user?.id?.toString()}
         />
         
-        {messages.length === 0 && (
-          <div className="px-4 pb-4">
-            <ChatQuickPrompts onPromptClick={sendMessage} />
+        {/* Fixed bottom section for input and quick prompts */}
+        <div className="border-t border-border bg-background">
+          {/* Always visible quick prompts */}
+          <div className="px-4 pt-3">
+            <ChatQuickPrompts onPromptClick={sendMessage} compact={true} />
           </div>
-        )}
-        
-        <div className="px-4 pb-4">
-          <ChatInput onSendMessage={sendMessage} disabled={isLoading} />
+          
+          {/* Input at the bottom */}
+          <div className="px-4 pb-4 pt-2">
+            <ChatInput onSendMessage={sendMessage} disabled={isLoading} />
+          </div>
         </div>
       </div>
     </div>

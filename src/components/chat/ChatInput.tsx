@@ -28,26 +28,26 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled })
   };
 
   return (
-    <div className="border-t bg-white p-4">
-      <form onSubmit={handleSubmit} className="flex gap-2 items-end">
+    <form onSubmit={handleSubmit} className="flex gap-3 items-end">
+      <div className="flex-1 relative">
         <Textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder="Type a message..."
+          placeholder="Message Diamond Assistant..."
           disabled={disabled}
-          className="flex-1 min-h-[40px] max-h-[120px] resize-none"
+          className="min-h-[44px] max-h-[120px] resize-none pr-12 rounded-2xl border-muted-foreground/20 focus:border-primary bg-background"
           rows={1}
         />
         <Button
           type="submit"
           size="sm"
           disabled={!message.trim() || disabled}
-          className="h-10 w-10 p-0 rounded-full"
+          className="absolute right-2 bottom-2 h-8 w-8 p-0 rounded-full bg-primary hover:bg-primary/90"
         >
-          <Send size={16} />
+          <Send size={14} />
         </Button>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 };
