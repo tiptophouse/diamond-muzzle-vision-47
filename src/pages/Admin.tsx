@@ -47,15 +47,15 @@ export default function Admin() {
 
   const loadBotUsageStats = async () => {
     try {
-      // Get total users count from user_logins (all Start clicks)
+      // Get actual user counts
       const { data: totalUsersData } = await supabase
-        .from('user_logins')
-        .select('telegram_id', { count: 'exact', head: true });
+        .from('user_profiles')
+        .select('*', { count: 'exact', head: true });
 
       const { data: activeUsersData } = await supabase
-        .from('user_logins')
-        .select('telegram_id', { count: 'exact', head: true })
-        .gte('login_timestamp', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+        .from('user_profiles')
+        .select('*', { count: 'exact', head: true })
+        .gte('last_login', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
       const { data: premiumUsersData } = await supabase
         .from('user_profiles')
