@@ -3,8 +3,9 @@ import React from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { SmartNotificationCard } from '@/components/notifications/SmartNotificationCard';
 import { GroupNotificationCard } from '@/components/notifications/GroupNotificationCard';
+import { BusinessNotificationCard } from '@/components/notifications/BusinessNotificationCard';
 import { useNotifications } from '@/hooks/useNotifications';
-import { Bell, BellRing, RefreshCw, Users, Diamond } from 'lucide-react';
+import { Bell, BellRing, RefreshCw, Users, Diamond, Heart, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -12,13 +13,13 @@ const NotificationsPage = () => {
   const { notifications, isLoading, markAsRead, contactCustomer, refetch } = useNotifications();
   
   const unreadCount = notifications.filter(n => !n.read).length;
+  const businessNotifications = notifications.filter(n => 
+    ['buyer_interest', 'pair_match', 'group_demand', 'price_opportunity'].includes(n.type)
+  );
   const groupNotifications = notifications.filter(n => n.type === 'group_diamond_request');
   const diamondMatches = notifications.filter(n => n.type === 'diamond_match');
-  const buyerInterests = notifications.filter(n => 
-    n.type === 'buyer_interest' || n.type === 'wishlist_added'
-  );
   const otherNotifications = notifications.filter(n => 
-    !['group_diamond_request', 'diamond_match', 'buyer_interest', 'wishlist_added'].includes(n.type)
+    !['buyer_interest', 'pair_match', 'group_demand', 'price_opportunity', 'group_diamond_request', 'diamond_match'].includes(n.type)
   );
 
   if (isLoading) {
@@ -39,6 +40,8 @@ const NotificationsPage = () => {
       window.open(`https://t.me/${customerInfo.telegram_username}`, '_blank');
     } else if (customerInfo.telegram_id) {
       window.open(`tg://user?id=${customerInfo.telegram_id}`, '_blank');
+    } else if (customerInfo.phone) {
+      window.open(`tel:${customerInfo.phone}`, '_blank');
     }
   };
 
@@ -60,9 +63,9 @@ const NotificationsPage = () => {
               )}
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">התראות חכמות</h1>
+              <h1 className="text-3xl font-bold text-gray-900">התראות עסקיות חכמות</h1>
               <p className="text-gray-600">
-                קבל התראות כשמישהו מחפש יהלומים בקבוצות טלגרם או דומים למלאי שלך
+                קבל התראות על קונים מעוניינים, זוגות יהלומים וביקוש בקבוצות
               </p>
             </div>
           </div>
@@ -74,7 +77,7 @@ const NotificationsPage = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-center gap-2">
               <BellRing className="h-5 w-5 text-blue-600" />
@@ -83,43 +86,59 @@ const NotificationsPage = () => {
             <div className="text-2xl font-bold text-blue-600 mt-1">{unreadCount}</div>
           </div>
           
+          <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
+            <div className="flex items-center gap-2">
+              <Heart className="h-5 w-5 text-pink-600" />
+              <span className="font-medium text-pink-900">קונים מעוניינים</span>
+            </div>
+            <div className="text-2xl font-bold text-pink-600 mt-1">
+              {businessNotifications.filter(n => n.type === 'buyer_interest').length}
+            </div>
+          </div>
+          
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-green-600" />
-              <span className="font-medium text-green-900">בקשות מקבוצות</span>
+              <span className="font-medium text-green-900">ביקוש בקבוצות</span>
             </div>
-            <div className="text-2xl font-bold text-green-600 mt-1">{groupNotifications.length}</div>
+            <div className="text-2xl font-bold text-green-600 mt-1">
+              {businessNotifications.filter(n => n.type === 'group_demand').length + groupNotifications.length}
+            </div>
           </div>
           
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
             <div className="flex items-center gap-2">
               <Diamond className="h-5 w-5 text-purple-600" />
-              <span className="font-medium text-purple-900">התאמות יהלומים</span>
+              <span className="font-medium text-purple-900">זוגות יהלומים</span>
             </div>
-            <div className="text-2xl font-bold text-purple-600 mt-1">{diamondMatches.length}</div>
+            <div className="text-2xl font-bold text-purple-600 mt-1">
+              {businessNotifications.filter(n => n.type === 'pair_match').length}
+            </div>
           </div>
 
-          <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
             <div className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-pink-600" />
-              <span className="font-medium text-pink-900">קונים מעוניינים</span>
+              <TrendingUp className="h-5 w-5 text-orange-600" />
+              <span className="font-medium text-orange-900">הזדמנות מחיר</span>
             </div>
-            <div className="text-2xl font-bold text-pink-600 mt-1">{buyerInterests.length}</div>
+            <div className="text-2xl font-bold text-orange-600 mt-1">
+              {businessNotifications.filter(n => n.type === 'price_opportunity').length}
+            </div>
           </div>
         </div>
 
         {/* Notifications List */}
         <div className="space-y-6">
-          {/* Group Notifications */}
-          {groupNotifications.length > 0 && (
+          {/* Business Notifications */}
+          {businessNotifications.length > 0 && (
             <div>
               <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Users className="h-5 w-5 text-green-600" />
-                בקשות מקבוצות B2B
+                <Diamond className="h-5 w-5 text-blue-600" />
+                התראות עסקיות
               </h2>
               <div className="space-y-4">
-                {groupNotifications.map((notification) => (
-                  <GroupNotificationCard
+                {businessNotifications.map((notification) => (
+                  <BusinessNotificationCard
                     key={notification.id}
                     notification={notification}
                     onMarkAsRead={markAsRead}
@@ -130,16 +149,16 @@ const NotificationsPage = () => {
             </div>
           )}
 
-          {/* Buyer Interest Notifications */}
-          {buyerInterests.length > 0 && (
+          {/* Group Notifications */}
+          {groupNotifications.length > 0 && (
             <div>
               <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Bell className="h-5 w-5 text-pink-600" />
-                קונים מעוניינים
+                <Users className="h-5 w-5 text-green-600" />
+                בקשות מקבוצות B2B
               </h2>
               <div className="space-y-4">
-                {buyerInterests.map((notification) => (
-                  <SmartNotificationCard
+                {groupNotifications.map((notification) => (
+                  <GroupNotificationCard
                     key={notification.id}
                     notification={notification}
                     onMarkAsRead={markAsRead}
@@ -176,7 +195,7 @@ const NotificationsPage = () => {
               <Bell className="h-16 w-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-xl font-medium text-gray-900 mb-2">אין התראות עדיין</h3>
               <p className="text-gray-600 max-w-md mx-auto">
-                כשמישהו יחפש יהלומים בקבוצות טלגרם או דומים למלאי שלך, תקבל התראה כאן. 
+                כשיהיו קונים מעוניינים, זוגות יהלומים או ביקוש בקבוצות, תקבל התראות כאן.
                 המערכת פועלת באופן אוטומטי ובזמן אמת.
               </p>
             </div>
@@ -185,23 +204,23 @@ const NotificationsPage = () => {
 
         {/* Info Box */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="font-semibold text-blue-900 mb-2">איך זה עובד?</h3>
+          <h3 className="font-semibold text-blue-900 mb-2">התראות עסקיות חכמות</h3>
           <ul className="space-y-2 text-blue-800">
             <li className="flex items-start gap-2">
-              <span className="font-bold">•</span>
-              <span>הבוט מנטר את קבוצות הטלגרם B2B שלך ומזהה בקשות יהלומים</span>
+              <Heart className="h-4 w-4 mt-1 text-pink-600" />
+              <span><strong>קונים מעוניינים:</strong> קבל התראות כשלקוחות מחפשים יהלומים דומים לשלך</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="font-bold">•</span>
-              <span>המערכת מנתחת כל הודעה ומחפשת התאמות במלאי שלך</span>
+              <Diamond className="h-4 w-4 mt-1 text-purple-600" />
+              <span><strong>זוגות יהלומים:</strong> גלה הזדמנויות ליצור זוגות עם סוחרים אחרים</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="font-bold">•</span>
-              <span>אתה מקבל התראה מיידית עם פרטי הבקשה וההתאמות שנמצאו</span>
+              <Users className="h-4 w-4 mt-1 text-green-600" />
+              <span><strong>ביקוש בקבוצות:</strong> המערכת מנתחת ביקוש בקבוצות הטלגרם</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="font-bold">•</span>
-              <span>ניתן ליצור קשר ישיר עם המבקש דרך טלגרם</span>
+              <TrendingUp className="h-4 w-4 mt-1 text-orange-600" />
+              <span><strong>הזדמנויות מחיר:</strong> התראות על שינויי מחירים רלוונטיים למלאי שלך</span>
             </li>
           </ul>
         </div>

@@ -68,33 +68,83 @@ export function useNotifications() {
         created_at: notification.sent_at,
       }));
 
-      setNotifications(transformedNotifications);
+      // Add some sample business notifications for demo
+      const sampleNotifications = [
+        {
+          id: 'buyer-interest-1',
+          title: '💎 קונה מעוניין ביהלום שלך',
+          message: 'לקוח מחפש יהלום דומה ל-RD001 - 1.2ct F VS1. הוא מוכן לשלם עד $8,500.',
+          type: 'buyer_interest',
+          read: false,
+          data: {
+            diamond_stock: 'RD001',
+            buyer_info: { name: 'David Cohen', phone: '+972-50-123-4567' },
+            max_budget: 8500,
+            requirements: { shape: 'Round', carat_min: 1.0, carat_max: 1.5, color: 'F', clarity: 'VS1' }
+          },
+          created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+          id: 'pair-match-1',
+          title: '💍 נמצא זוג מושלם ליהלום שלך',
+          message: 'יהלום PR002 שלך יכול להיות חלק מזוג עגילים מושלם עם יהלום דומה מהמלאי של יעקב לוי.',
+          type: 'pair_match',
+          read: false,
+          data: {
+            your_diamond: 'PR002',
+            partner_diamond: 'PR003',
+            partner_dealer: 'יעקב לוי',
+            match_score: 96,
+            pair_value_increase: '15-20%'
+          },
+          created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+          id: 'group-demand-1',
+          title: '🔥 ביקוש גבוה בקבוצות',
+          message: 'זוהה ביקוש גבוה לצורת Oval 0.8-1.2ct בקבוצות הטלגרם. יש לך 3 יהלומים מתאימים.',
+          type: 'group_demand',
+          read: false,
+          data: {
+            demand_type: 'Oval',
+            carat_range: '0.8-1.2',
+            matching_diamonds: ['OV001', 'OV002', 'OV003'],
+            groups_count: 5,
+            estimated_interest: 'גבוה'
+          },
+          created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+          id: 'price-opportunity-1',
+          title: '📈 הזדמנות מחיר',
+          message: 'המחיר של יהלומי H VS2 עלה ב-8% השבוע. יש לך 2 יהלומים בקטגוריה הזו.',
+          type: 'price_opportunity',
+          read: true,
+          data: {
+            category: 'H VS2',
+            price_change: '+8%',
+            your_diamonds: ['RD005', 'CU001'],
+            market_trend: 'עולה'
+          },
+          created_at: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+        }
+      ];
 
-      // Show toast for new diamond match notifications
-      const newDiamondMatches = transformedNotifications.filter(
-        n => n.type === 'diamond_match' && !n.read
-      );
+      setNotifications([...sampleNotifications, ...transformedNotifications]);
+
+      // Show toast for new notifications
+      const newNotifications = [...sampleNotifications, ...transformedNotifications].filter(n => !n.read);
       
-      if (newDiamondMatches.length > 0) {
+      if (newNotifications.length > 0) {
         toast({
-          title: "🔔 התראת התאמת יהלומים חדשה!",
-          description: `נמצאו ${newDiamondMatches.length} התאמות חדשות לבקשות חיפוש`,
+          title: "🔔 התראות חדשות!",
+          description: `יש לך ${newNotifications.length} התראות חדשות על הזדמנות עסקיות`,
         });
       }
 
     } catch (error) {
       console.warn('Notifications fetch failed, using fallback:', error);
-      
-      setNotifications([
-        {
-          id: 'welcome-1',
-          title: 'ברוכים הבאים ל-Diamond Muzzle!',
-          message: 'המערכת מוכנה לשלוח לך התראות על יהלומים דומים למלאי שלך',
-          type: 'info',
-          read: false,
-          created_at: new Date().toISOString(),
-        }
-      ]);
+      setNotifications([]);
     } finally {
       setIsLoading(false);
     }
@@ -102,17 +152,21 @@ export function useNotifications() {
 
   const getNotificationTitle = (type: string, metadata?: any): string => {
     switch (type) {
+      case 'buyer_interest':
+        return '💎 קונה מעוניין ביהלום שלך';
+      case 'pair_match':
+        return '💍 נמצא זוג מושלם';
+      case 'group_demand':
+        return '🔥 ביקוש גבוה בקבוצות';
+      case 'price_opportunity':
+        return '📈 הזדמנות מחיר';
       case 'diamond_match':
         const matchCount = metadata?.match_count || 1;
         return `🔍 נמצאו ${matchCount} התאמות לבקשת חיפוש`;
       case 'customer_inquiry':
         return '👤 פנייה חדשה מלקוח';
-      case 'buyer_interest':
-        return '💎 קונה מעוניין ביהלום שלך';
       case 'wishlist_added':
         return '⭐ יהלום נוסף לרשימת המועדפים';
-      case 'price_alert':
-        return '💰 התראת מחיר';
       case 'system':
         return '⚙️ הודעת מערכת';
       default:
@@ -196,12 +250,10 @@ export function useNotifications() {
           setNotifications(prev => [newNotification, ...prev]);
 
           // Show real-time toast
-          if (payload.new.message_type === 'diamond_match') {
-            toast({
-              title: "🔔 התראת התאמה חדשה!",
-              description: "נמצאה התאמה לבקשת חיפוש יהלום",
-            });
-          }
+          toast({
+            title: "🔔 התראה חדשה!",
+            description: "קיבלת התראה חדשה על הזדמנות עסקית",
+          });
         }
       )
       .subscribe();
