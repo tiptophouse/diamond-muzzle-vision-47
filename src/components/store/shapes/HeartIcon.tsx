@@ -6,29 +6,29 @@ interface IconProps {
 export function HeartIcon({ className = "h-6 w-6" }: IconProps) {
   return (
     <svg 
-      className={`${className} transition-all duration-300 hover:scale-110 hover:text-pink-500`} 
+      className={`${className} transition-all duration-300 hover:scale-110`} 
       viewBox="0 0 32 32" 
       fill="none" 
       xmlns="http://www.w3.org/2000/svg"
     >
-      <defs>
-        <linearGradient id="heartGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="currentColor" stopOpacity="0.9"/>
-          <stop offset="50%" stopColor="currentColor" stopOpacity="0.7"/>
-          <stop offset="100%" stopColor="currentColor" stopOpacity="0.9"/>
-        </linearGradient>
-        <filter id="heartShadow">
-          <feDropShadow dx="0" dy="2" stdDeviation="1.5" floodOpacity="0.3"/>
-        </filter>
-      </defs>
       <path 
-        d="M23.1 7.3a6.29 6.29 0 0 0-8.9 0l-1.2 1.2-1.2-1.2a6.3 6.3 0 0 0-8.9 8.9L16 29.4l13.1-13.2a6.3 6.3 0 0 0 0-8.9z" 
-        fill="url(#heartGradient)"
-        filter="url(#heartShadow)"
-        className="animate-pulse"
-        style={{ animationDuration: '2s' }}
+        d="M23.1 8.3a5.29 5.29 0 0 0-7.9 0l-1.2 1.2-1.2-1.2a5.3 5.3 0 0 0-7.9 7.9L16 27.4l11.1-11.2a5.3 5.3 0 0 0 0-7.9z" 
+        fill="hsl(210 40% 96%)"
+        stroke="hsl(214 31% 91%)"
+        strokeWidth="1"
       />
-      <path d="M16 8.5v20.9" stroke="currentColor" strokeWidth="0.4" opacity="0.6"/>
+      <path 
+        d="M16 9.5v17.9" 
+        stroke="hsl(200 100% 42%)" 
+        strokeWidth="0.5" 
+        opacity="0.6"
+      />
+      <path 
+        d="M12 12c2-1 4-1 6 0" 
+        stroke="hsl(200 100% 42%)" 
+        strokeWidth="0.3" 
+        opacity="0.4"
+      />
     </svg>
   );
 }
