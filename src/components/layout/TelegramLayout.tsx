@@ -216,7 +216,7 @@ export function TelegramLayout({
   return <div className="flex flex-col h-screen max-h-screen w-full tg-viewport overflow-hidden">
       {/* Main content area */}
       <main className="flex-1 overflow-auto smooth-scroll bg-background w-full">
-        <div className="min-h-full p-3 sm:p-4 pb-safe py-4">
+        <div className="min-h-full p-3 sm:p-4 pb-safe py-4 my-[40px]">
           <div className="w-full max-w-none overflow-x-hidden">
             {children}
           </div>
