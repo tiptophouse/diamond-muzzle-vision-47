@@ -60,24 +60,44 @@ export function ModernDiamondCard({ diamond, index, onUpdate }: ModernDiamondCar
     });
   };
 
-  const handleShare = (e: React.MouseEvent) => {
+  const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
     impactOccurred('light');
     
     const shareUrl = `${window.location.origin}/store?stockNumber=${diamond.stockNumber}&carat=${diamond.carat}&color=${diamond.color}&clarity=${diamond.clarity}&shape=${diamond.shape}`;
+    const shareText = `Check out this ${diamond.carat} ct ${diamond.shape} diamond - ${diamond.color} color, ${diamond.clarity} clarity. Price: $${diamond.price?.toLocaleString() || 'N/A'}`;
     
-    if (navigator.share) {
-      navigator.share({
-        title: `${diamond.carat} ct ${diamond.shape} Diamond`,
-        text: `Check out this ${diamond.carat} ct ${diamond.shape} diamond - ${diamond.color} color, ${diamond.clarity} clarity`,
-        url: shareUrl,
-      });
-    } else {
-      navigator.clipboard.writeText(shareUrl);
-      toast({
-        title: "Link copied!",
-        description: "Diamond link has been copied to your clipboard.",
-      });
+    try {
+      // Try native share first
+      if (navigator.share) {
+        await navigator.share({
+          title: `${diamond.carat} ct ${diamond.shape} Diamond`,
+          text: shareText,
+          url: shareUrl,
+        });
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+        toast({
+          title: "Link copied!",
+          description: "Diamond link has been copied to your clipboard.",
+        });
+      }
+    } catch (error) {
+      // If share was cancelled or failed, copy to clipboard
+      try {
+        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+        toast({
+          title: "Link copied!",
+          description: "Diamond link has been copied to your clipboard.",
+        });
+      } catch (clipboardError) {
+        toast({
+          title: "Share failed",
+          description: "Unable to share or copy link.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
