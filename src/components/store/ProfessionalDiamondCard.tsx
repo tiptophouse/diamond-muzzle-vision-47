@@ -61,10 +61,10 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
   console.log('🔍 Final gem360Url:', gem360Url);
   console.log('🔍 hasGem360View:', hasGem360View);
 
-  // Priority: show actual diamond image from CSV, then fallback
+  // Use actual diamond image from CSV data, no fallback mockup image
   const diamondImageUrl = diamond.imageUrl && !diamond.imageUrl.includes('gem360')
     ? diamond.imageUrl 
-    : `https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop&crop=center`;
+    : null;
 
   const handleDelete = () => {
     // Trigger refetch of data
@@ -148,9 +148,9 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
             isInline={true}
           />
         ) : (
-          // Show regular image
+          // Show regular image or diamond placeholder
           <>
-            {!imageError ? (
+            {diamondImageUrl && !imageError ? (
               <img
                 src={diamondImageUrl}
                 alt={`${diamond.shape} Diamond`}
@@ -160,7 +160,9 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
                 <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-200 to-purple-200 rounded-full"></div>
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-200 to-purple-200 rounded-full flex items-center justify-center">
+                    <span className="text-2xl">💎</span>
+                  </div>
                 </div>
               </div>
             )}
