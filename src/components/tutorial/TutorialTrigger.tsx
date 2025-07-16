@@ -23,10 +23,10 @@ export function TutorialTrigger() {
   return (
     <div className="flex items-center gap-2">
       <Button
-        variant="outline"
+        variant="ghost"
         size="sm"
         onClick={toggleLanguage}
-        className="flex items-center gap-2 text-gray-600 border-gray-200 hover:bg-gray-50"
+        className="flex items-center gap-2"
         title={currentLanguage === 'en' ? 'Switch to Hebrew' : 'Switch to English'}
       >
         <Globe className="h-4 w-4" />
@@ -37,7 +37,7 @@ export function TutorialTrigger() {
         variant="outline"
         size="sm"
         onClick={handleClick}
-        className="flex items-center gap-2 text-blue-600 border-blue-200 hover:bg-blue-50"
+        className="flex items-center gap-2"
       >
         {hasSeenTutorial ? (
           <>
