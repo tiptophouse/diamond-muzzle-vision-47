@@ -3,7 +3,11 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
-import { SimpleDiamondViewer } from "@/components/store/SimpleDiamondViewer";
+import { StoreHeader } from "@/components/store/StoreHeader";
+import { PremiumStoreFilters } from "@/components/store/PremiumStoreFilters";
+import { StoreGrid } from "@/components/store/StoreGrid";
+import { ImageUpload } from "@/components/store/ImageUpload";
+import { FloatingShareButton } from "@/components/store/FloatingShareButton";
 import { MobilePullToRefresh } from "@/components/mobile/MobilePullToRefresh";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { Button } from "@/components/ui/button";
@@ -89,71 +93,82 @@ export default function StorePage() {
     toast.success('Image uploaded successfully!');
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="text-red-500 mb-2">Error loading diamonds</div>
-          <button onClick={() => refetch()} className="text-orange-500">Try again</button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!finalFilteredDiamonds.length) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="text-slate-500 mb-4">No diamonds available</div>
+  return (
+    <MobilePullToRefresh onRefresh={handleRefresh} enabled={!loading}>
+      <div className="min-h-screen" style={{ background: 'var(--gradient-surface)' }}>
+        {/* Back to Main Menu Button */}
+        <div className="flex items-center pt-safe pb-2 pl-2 sm:pl-0">
           <Button
             variant="ghost"
+            size="sm"
+            className="flex items-center gap-2 px-3 py-2 text-slate-700 touch-target min-h-[44px]"
             onClick={() => {
               selectionChanged();
               navigate('/dashboard');
             }}
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Menu
+            <ArrowLeft className="h-5 w-5" />
+            <span className="hidden sm:inline">Back to Menu</span>
+            <span className="sm:hidden">Back</span>
           </Button>
         </div>
-      </div>
-    );
-  }
 
-  // Show only the first diamond in a simplified view
-  const currentDiamond = finalFilteredDiamonds[0];
+        <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-6 pb-safe">
+          {/* Header with Upload Button */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <StoreHeader 
+              totalDiamonds={finalFilteredDiamonds.length}
+              onOpenFilters={() => {}}
+            />
+            
+            <Dialog open={showUpload} onOpenChange={setShowUpload}>
+              <DialogTrigger asChild>
+                <Button 
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 touch-target min-h-[44px] premium-button"
+                  style={{ background: 'var(--gradient-primary)' }}
+                >
+                  <Upload className="h-4 w-4" />
+                  <span className="hidden sm:inline">Upload Photo</span>
+                  <span className="sm:hidden">Upload</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="w-[95vw] max-w-md mx-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                    <Image className="h-5 w-5" />
+                    Upload Image to Store
+                  </DialogTitle>
+                </DialogHeader>
+                <ImageUpload onImageUploaded={handleImageUploaded} />
+              </DialogContent>
+            </Dialog>
+          </div>
 
-  return (
-    <div className="min-h-screen bg-slate-50 overflow-hidden">
-      {/* Back Button */}
-      <div className="absolute top-4 left-4 z-10">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="flex items-center gap-2"
-          onClick={() => {
-            selectionChanged();
-            navigate('/dashboard');
-          }}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
-      </div>
+          {/* Premium Fixed Filters */}
+          <div className="sticky top-0 z-30 premium-card backdrop-blur-xl border border-border/50 rounded-2xl" style={{ boxShadow: 'var(--shadow-premium)' }}>
+            <PremiumStoreFilters
+              filters={filters}
+              onUpdateFilter={updateFilter}
+              onClearFilters={clearFilters}
+              diamonds={diamonds || []}
+            />
+          </div>
 
-      {/* Simple Diamond Viewer - Centered */}
-      <div className="flex items-center justify-center min-h-screen p-4">
-        <SimpleDiamondViewer diamond={currentDiamond} />
+          {/* Store Grid */}
+          <StoreGrid
+            diamonds={finalFilteredDiamonds}
+            loading={loading}
+            error={error}
+            onUpdate={refetch}
+          />
+        </div>
+
+        {/* Floating Share Button - Repositioned to avoid bottom nav */}
+        <div className="fixed bottom-24 right-4 z-40">
+          <FloatingShareButton />
+        </div>
       </div>
-    </div>
+    </MobilePullToRefresh>
   );
 }
 
