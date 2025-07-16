@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useTutorial } from "@/contexts/TutorialContext";
 
 interface SecureShareButtonProps {
   stockNumber: string;
@@ -27,6 +28,7 @@ export function SecureShareButton({
 }: SecureShareButtonProps) {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const { toast } = useToast();
+  const { handleRequiredClick, createShareableLink } = useTutorial();
 
   const getSecureUrl = () => {
     return `https://miniapp.mazalbot.com/secure-diamond/${stockNumber}`;
@@ -106,6 +108,12 @@ This premium diamond is available for immediate viewing. The secure link provide
   ];
 
   const handleNativeShare = async () => {
+    // Handle tutorial interaction
+    handleRequiredClick();
+    
+    // Create shareable link for tutorial
+    const shareableLink = createShareableLink(stockNumber);
+    
     if (navigator.share) {
       try {
         await navigator.share({
@@ -113,7 +121,7 @@ This premium diamond is available for immediate viewing. The secure link provide
             ? `${diamond.carat}ct ${diamond.shape} Diamond`
             : `Premium Diamond #${stockNumber}`,
           text: getDiamondDescription(),
-          url: getSecureUrl(),
+          url: shareableLink,
         });
       } catch (error) {
         setShowShareDialog(true);
@@ -127,6 +135,7 @@ This premium diamond is available for immediate viewing. The secure link provide
     <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
       <DialogTrigger asChild>
         <Button
+          data-tutorial="share-diamond"
           variant={variant}
           size={size}
           onClick={handleNativeShare}

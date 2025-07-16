@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { useTutorial } from '@/contexts/TutorialContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { X, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Sparkles, Globe } from 'lucide-react';
 
 export function TutorialModal() {
   const { 
@@ -11,6 +11,8 @@ export function TutorialModal() {
     currentStep, 
     totalSteps, 
     currentStepData, 
+    currentLanguage,
+    setLanguage,
     nextStep, 
     prevStep, 
     skipTutorial 
@@ -47,15 +49,24 @@ export function TutorialModal() {
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5" />
               <span className="font-semibold text-sm">
-                Step {currentStep + 1} of {totalSteps}
+                {currentLanguage === 'he' ? 'שלב' : 'Step'} {currentStep + 1} {currentLanguage === 'he' ? 'מתוך' : 'of'} {totalSteps}
               </span>
             </div>
-            <button
-              onClick={skipTutorial}
-              className="text-white/80 hover:text-white transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setLanguage(currentLanguage === 'en' ? 'he' : 'en')}
+                className="text-white/80 hover:text-white transition-colors p-1 rounded"
+                title={currentLanguage === 'en' ? 'Switch to Hebrew' : 'Switch to English'}
+              >
+                <Globe className="h-4 w-4" />
+              </button>
+              <button
+                onClick={skipTutorial}
+                className="text-white/80 hover:text-white transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
           <Progress 
             value={progressPercentage} 
@@ -65,12 +76,12 @@ export function TutorialModal() {
 
         {/* Content */}
         <div className="p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-3">
-            {currentStepData.title}
+          <h2 className="text-xl font-bold text-gray-900 mb-3" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+            {currentStepData.title[currentLanguage]}
           </h2>
           
-          <div className="text-gray-600 mb-6 leading-relaxed">
-            {currentStepData.content}
+          <div className="text-gray-600 mb-6 leading-relaxed" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+            {currentStepData.content[currentLanguage]}
           </div>
 
           {/* Welcome step special illustration */}
@@ -124,33 +135,39 @@ export function TutorialModal() {
 
         {/* Footer */}
         <div className="px-6 py-4 bg-gray-50 flex items-center justify-between">
-          <Button
-            variant="outline"
-            onClick={prevStep}
-            disabled={isFirstStep}
-            className="flex items-center gap-2"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Previous
-          </Button>
+            <Button
+              variant="outline"
+              onClick={prevStep}
+              disabled={isFirstStep}
+              className="flex items-center gap-2"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              {currentLanguage === 'he' ? 'קודם' : 'Previous'}
+            </Button>
 
-          <div className="flex gap-3">
-            <Button
-              variant="ghost"
-              onClick={skipTutorial}
-              className="text-gray-600"
-            >
-              {isLastStep ? 'Close' : 'Skip Tour'}
-            </Button>
-            
-            <Button
-              onClick={nextStep}
-              className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
-            >
-              {isLastStep ? 'Finish' : 'Next'}
-              {!isLastStep && <ChevronRight className="h-4 w-4" />}
-            </Button>
-          </div>
+            <div className="flex gap-3">
+              <Button
+                variant="ghost"
+                onClick={skipTutorial}
+                className="text-gray-600"
+              >
+                {isLastStep 
+                  ? (currentLanguage === 'he' ? 'סגור' : 'Close')
+                  : (currentLanguage === 'he' ? 'דלג על הסיור' : 'Skip Tour')
+                }
+              </Button>
+              
+              <Button
+                onClick={nextStep}
+                className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+              >
+                {isLastStep 
+                  ? (currentLanguage === 'he' ? 'סיום' : 'Finish')
+                  : (currentLanguage === 'he' ? 'הבא' : 'Next')
+                }
+                {!isLastStep && <ChevronRight className="h-4 w-4" />}
+              </Button>
+            </div>
         </div>
       </div>
     </div>

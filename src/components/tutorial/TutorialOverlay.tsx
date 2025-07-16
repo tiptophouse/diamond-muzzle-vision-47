@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useTutorial } from '@/contexts/TutorialContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { X, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Sparkles, Globe } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 interface ElementPosition {
@@ -18,6 +18,10 @@ export function TutorialOverlay() {
     currentStep, 
     totalSteps, 
     currentStepData, 
+    currentLanguage,
+    setLanguage,
+    waitingForClick,
+    handleRequiredClick,
     nextStep, 
     prevStep, 
     skipTutorial 
@@ -34,7 +38,10 @@ export function TutorialOverlay() {
 
     // Navigate to correct page based on step
     const targetRoute = getRouteForStep(currentStepData.section);
-    if (location.pathname !== targetRoute) {
+    if (currentStepData.navigationTarget && location.pathname !== currentStepData.navigationTarget) {
+      navigate(currentStepData.navigationTarget);
+      return;
+    } else if (!currentStepData.navigationTarget && location.pathname !== targetRoute) {
       navigate(targetRoute);
       return;
     }
@@ -174,15 +181,24 @@ export function TutorialOverlay() {
               <div className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5" />
                 <span className="font-semibold text-sm">
-                  Step {currentStep + 1} of {totalSteps}
+                  {currentLanguage === 'he' ? 'שלב' : 'Step'} {currentStep + 1} {currentLanguage === 'he' ? 'מתוך' : 'of'} {totalSteps}
                 </span>
               </div>
-              <button
-                onClick={skipTutorial}
-                className="text-white/80 hover:text-white transition-colors p-1 hover:bg-white/20 rounded"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setLanguage(currentLanguage === 'en' ? 'he' : 'en')}
+                  className="text-white/80 hover:text-white transition-colors p-1 hover:bg-white/20 rounded"
+                  title={currentLanguage === 'en' ? 'Switch to Hebrew' : 'Switch to English'}
+                >
+                  <Globe className="h-3 w-3" />
+                </button>
+                <button
+                  onClick={skipTutorial}
+                  className="text-white/80 hover:text-white transition-colors p-1 hover:bg-white/20 rounded"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
             <Progress 
               value={progressPercentage} 
@@ -192,12 +208,12 @@ export function TutorialOverlay() {
 
           {/* Content */}
           <div className="p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-3">
-              {currentStepData.title}
+            <h2 className="text-lg font-bold text-gray-900 mb-3" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+              {currentStepData.title[currentLanguage]}
             </h2>
             
-            <div className="text-gray-600 mb-6 leading-relaxed text-sm">
-              {currentStepData.content}
+            <div className="text-gray-600 mb-6 leading-relaxed text-sm" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+              {currentStepData.content[currentLanguage]}
             </div>
 
             {/* Step-specific illustrations */}
@@ -221,7 +237,7 @@ export function TutorialOverlay() {
               size="sm"
             >
               <ChevronLeft className="h-4 w-4" />
-              Previous
+              {currentLanguage === 'he' ? 'קודם' : 'Previous'}
             </Button>
 
             <div className="flex gap-2">
@@ -231,16 +247,25 @@ export function TutorialOverlay() {
                 className="text-gray-600 text-sm"
                 size="sm"
               >
-                {isLastStep ? 'Close' : 'Skip'}
+                {isLastStep 
+                  ? (currentLanguage === 'he' ? 'סגור' : 'Close')
+                  : (currentLanguage === 'he' ? 'דלג' : 'Skip')
+                }
               </Button>
               
               <Button
-                onClick={nextStep}
+                onClick={waitingForClick ? handleRequiredClick : nextStep}
+                disabled={waitingForClick && !currentStepData?.requireClick}
                 className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 text-sm"
                 size="sm"
               >
-                {isLastStep ? 'Finish' : 'Next'}
-                {!isLastStep && <ChevronRight className="h-4 w-4" />}
+                {waitingForClick 
+                  ? (currentLanguage === 'he' ? 'מחכה ללחיצה...' : 'Waiting for click...')
+                  : isLastStep 
+                    ? (currentLanguage === 'he' ? 'סיום' : 'Finish')
+                    : (currentLanguage === 'he' ? 'הבא' : 'Next')
+                }
+                {!isLastStep && !waitingForClick && <ChevronRight className="h-4 w-4" />}
               </Button>
             </div>
           </div>
