@@ -71,8 +71,8 @@ export function useStoreData() {
             console.log('🔍 STORE: item.stock_number type:', typeof item.stock_number, 'value:', item.stock_number);
 
             return {
-              id: item.id || `${item.stock_number}-${Date.now()}`,
-              stockNumber: String(item.stock_number || item.stockNumber || 'UNKNOWN'),
+              id: item.id || `${item.stock || item.stock_number}-${Date.now()}`,
+              stockNumber: String(item.stock || item.stock_number || item.stockNumber || 'UNKNOWN'),
               shape: item.shape,
               carat: Number(item.weight || item.carat) || 0,
               color: item.color,
@@ -82,7 +82,7 @@ export function useStoreData() {
               status: item.status || 'Available',
               imageUrl: item.picture || item.imageUrl || undefined,
               store_visible: item.store_visible !== false, // Default to true for store display
-              certificateNumber: item.certificate_number || undefined,
+              certificateNumber: item.certificate_number || item.certificate || undefined,
               lab: item.lab || undefined,
               gem360Url: gem360Url || undefined,
               certificateUrl: item.certificate_url || item.certificateUrl || undefined
