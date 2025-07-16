@@ -35,26 +35,23 @@ export function TutorialModalWithNavigation() {
 
     // Smart navigation based on step
     switch (step.id) {
-      case 'inventory-header':
+      case 'welcome':
+        nextStep();
+        break;
+      case 'gia-scan':
+        navigate('/upload-single-stone?action=scan');
+        skipTutorial(); // End tutorial when going to scan
+        return;
+      case 'inventory-management':
         navigate('/inventory');
+        nextStep();
         break;
-      case 'add-diamond-btn':
-        navigate('/upload-single-stone');
-        break;
-      case 'upload-csv':
-        navigate('/upload');
-        break;
-      case 'store-view':
+      case 'store-sharing':
         navigate('/store');
         skipTutorial(); // End tutorial when navigating to store
         return;
       default:
         nextStep();
-    }
-    
-    // Continue tutorial after navigation
-    if (step.id !== 'store-view') {
-      setTimeout(() => nextStep(), 500);
     }
   };
 

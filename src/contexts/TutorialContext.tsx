@@ -34,72 +34,33 @@ const tutorialSteps: TutorialStep[] = [
   {
     id: 'welcome',
     title: 'ברוכים הבאים לדיאמונד מזל! 💎',
-    content: 'פלטפורמת ניהול מלאי יהלומים המקיפה שלכם. בואו נעשה סיור אינטראקטיבי קצר כדי להתחיל!',
+    content: 'פלטפורמת ניהול מלאי יהלומים המקיפה שלכם. המערכת שלנו עוזרת לכם לנהל את המלאי, לשתף יהלומים עם לקוחות ולמכור בקלות.',
     section: 'welcome',
     order: 1,
-    actions: { primary: 'התחל סיור', secondary: 'דלג' }
+    actions: { primary: 'התחל', secondary: 'דלג' }
   },
   {
-    id: 'sidebar',
-    title: 'תפריט ניווט',
-    content: 'תפריט הצד הזה הוא הניווט הראשי שלכם. לחצו על חלקים שונים כדי לחקור לוח בקרה, מלאי, חנות, העלאה ועוד.',
-    targetElement: '[data-tutorial="sidebar"]',
-    section: 'navigation',
+    id: 'gia-scan',
+    title: 'סריקת תעודת GIA',
+    content: 'התחילו בקלות! סרקו את תעודת ה-GIA של היהלום שלכם והמערכת תמלא אוטומטית את כל הפרטים. זוהי הדרך הכי מהירה להתחיל.',
+    section: 'upload',
     order: 2,
-    actions: { primary: 'הבא', secondary: 'דלג' }
+    actions: { primary: 'סרוק תעודה', secondary: 'דלג' }
   },
   {
-    id: 'inventory-header',
+    id: 'inventory-management',
     title: 'ניהול מלאי יהלומים',
-    content: 'זה הכותרת של מלאי היהלומים שלכם. לחצו על "הוסף יהלום" כדי להוסיף אבנים בודדות לאוסף שלכם.',
-    targetElement: '[data-tutorial="inventory-header"]',
+    content: 'במלאי תוכלו לראות את כל היהלומים שלכם, לערוך פרטים, לחפש ולסנן. כאן גם תוכלו להחליט אילו יהלומים יופיעו בחנות הציבורית.',
     section: 'inventory',
     order: 3,
-    actions: { primary: 'עבור למלאי', secondary: 'הבא' }
+    actions: { primary: 'עבור למלאי', secondary: 'דלג' }
   },
   {
-    id: 'add-diamond-btn',
-    title: 'הוסף יהלום חדש',
-    content: 'לחצו על הכפתור הזה כדי להוסיף יהלום חדש למלאי שלכם. תוכלו להזין את כל הפרטים באופן ידני או לסרוק תעודת GIA.',
-    targetElement: '[data-tutorial="add-diamond"]',
-    section: 'inventory',
-    order: 4,
-    actions: { primary: 'עבור להוספה', secondary: 'הבא' }
-  },
-  {
-    id: 'inventory-search',
-    title: 'חיפוש וסינון',
-    content: 'השתמשו בשורת החיפוש הזאת כדי למצוא במהירות יהלומים לפי מספר מלאי, צורה, צבע או כל מאפיין אחר.',
-    targetElement: '[data-tutorial="inventory-search"]',
-    section: 'inventory',
-    order: 5,
-    actions: { primary: 'הבא', secondary: 'דלג' }
-  },
-  {
-    id: 'inventory-table',
-    title: 'טבלת מלאי יהלומים',
-    content: 'כאן המלאי המלא של היהלומים שלכם. ערכו, מחקו או שנו נראות בחנות לכל יהלום. לחצו על כל יהלום כדי לראות מידע מפורט.',
-    targetElement: '[data-tutorial="inventory-table"]',
-    section: 'inventory',
-    order: 6,
-    actions: { primary: 'הבא', secondary: 'דלג' }
-  },
-  {
-    id: 'upload-csv',
-    title: 'העלאת CSV בכמויות',
-    content: 'העלו יהלומים רבים בבת אחת באמצעות קובצי CSV. המערכת החכמה שלנו ממפה באופן אוטומטי את העמודות שלכם לתכונות יהלומים.',
-    targetElement: '[data-tutorial="upload-area"]',
-    section: 'upload',
-    order: 7,
-    actions: { primary: 'עבור להעלאה', secondary: 'הבא' }
-  },
-  {
-    id: 'store-view',
-    title: 'חנות ציבורית',
-    content: 'זאת החנות הציבורית היפה שלכם שבה לקוחות יכולים לגלוש ולסנן את היהלומים שלכם. רק יהלומים המסומנים כ"נראים בחנות" מופיעים כאן.',
-    targetElement: '[data-tutorial="store-grid"]',
+    id: 'store-sharing',
+    title: 'חנות ציבורית ושיתוף',
+    content: 'החנות הציבורית מאפשרת ללקוחות לגלוש ולחפש יהלומים. תוכלו לשתף קישורים ישירים ליהלומים ספציפיים או לכל החנות.',
     section: 'store',
-    order: 8,
+    order: 4,
     actions: { primary: 'עבור לחנות', secondary: 'סיום' }
   }
 ];
