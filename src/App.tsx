@@ -25,6 +25,7 @@ import { AdminGuard } from '@/components/admin/AdminGuard';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { TelegramLayout } from '@/components/layout/TelegramLayout';
+import { useUploadReminderNotification } from '@/hooks/useUploadReminderNotification';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,6 +38,7 @@ const queryClient = new QueryClient({
 
 function App() {
   console.log('🚀 App component rendering');
+  useUploadReminderNotification();
   
   return (
     <ErrorBoundary>
