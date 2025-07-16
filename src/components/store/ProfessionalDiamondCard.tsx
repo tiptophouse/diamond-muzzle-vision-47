@@ -61,8 +61,10 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
   console.log('🔍 Final gem360Url:', gem360Url);
   console.log('🔍 hasGem360View:', hasGem360View);
 
-  // Use actual diamond image from CSV data, no fallback mockup image
-  const diamondImageUrl = diamond.imageUrl && !diamond.imageUrl.includes('gem360')
+  // Use actual diamond image from CSV data, excluding gem360 URLs
+  const diamondImageUrl = diamond.imageUrl && 
+    !diamond.imageUrl.includes('gem360') && 
+    !diamond.imageUrl.includes('diamondview.aspx')
     ? diamond.imageUrl 
     : null;
 
@@ -205,24 +207,81 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
           ${diamond.price.toLocaleString()}
         </div>
 
-        {/* Quick Details - Horizontal Layout */}
-        <div className="grid grid-cols-4 gap-2 text-xs">
-          <div className="text-center">
-            <div className="text-gray-500">Carat</div>
-            <div className="font-medium">{diamond.carat}</div>
+        {/* Enhanced Details Grid */}
+        <div className="space-y-3">
+          {/* Primary 4C's */}
+          <div className="grid grid-cols-4 gap-2 text-xs">
+            <div className="text-center">
+              <div className="text-gray-500">Carat</div>
+              <div className="font-medium">{diamond.carat}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-gray-500">Color</div>
+              <div className="font-medium">{diamond.color}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-gray-500">Clarity</div>
+              <div className="font-medium">{diamond.clarity}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-gray-500">Cut</div>
+              <div className="font-medium text-xs">{diamond.cut}</div>
+            </div>
           </div>
-          <div className="text-center">
-            <div className="text-gray-500">Color</div>
-            <div className="font-medium">{diamond.color}</div>
+
+          {/* Additional Details */}
+          <div className="grid grid-cols-2 gap-3 text-xs bg-gray-50 p-3 rounded">
+            {diamond.fluorescence && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Fluorescence:</span>
+                <span className="font-medium">{diamond.fluorescence}</span>
+              </div>
+            )}
+            {diamond.polish && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Polish:</span>
+                <span className="font-medium">{diamond.polish}</span>
+              </div>
+            )}
+            {diamond.symmetry && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Symmetry:</span>
+                <span className="font-medium">{diamond.symmetry}</span>
+              </div>
+            )}
+            {diamond.tablePercentage && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Table:</span>
+                <span className="font-medium">{diamond.tablePercentage}%</span>
+              </div>
+            )}
+            {diamond.depthPercentage && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Depth:</span>
+                <span className="font-medium">{diamond.depthPercentage}%</span>
+              </div>
+            )}
+            {diamond.certificateNumber && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Certificate:</span>
+                <span className="font-medium">{diamond.certificateNumber}</span>
+              </div>
+            )}
           </div>
-          <div className="text-center">
-            <div className="text-gray-500">Clarity</div>
-            <div className="font-medium">{diamond.clarity}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-gray-500">Cut</div>
-            <div className="font-medium text-xs">{diamond.cut.slice(0, 4)}</div>
-          </div>
+
+          {/* Measurements */}
+          {(diamond.length || diamond.width || diamond.depth) && (
+            <div className="text-xs bg-blue-50 p-2 rounded">
+              <div className="text-gray-500 mb-1">Measurements:</div>
+              <div className="font-medium">
+                {diamond.length && diamond.width && diamond.depth
+                  ? `${diamond.length} × ${diamond.width} × ${diamond.depth} mm`
+                  : diamond.length && diamond.width
+                  ? `${diamond.length} × ${diamond.width} mm`
+                  : 'Available on request'}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Stock Number */}
