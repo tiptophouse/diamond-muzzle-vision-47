@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TutorialModalWithNavigation } from "@/components/tutorial/TutorialModalWithNavigation";
+import { useFirstUploadNotification } from "@/hooks/useFirstUploadNotification";
+
 interface LayoutProps {
   children: React.ReactNode;
 }
@@ -11,6 +13,7 @@ export function Layout({
   children
 }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  useFirstUploadNotification(); // Add the first upload notification hook
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden flex bg-background">
