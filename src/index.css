@@ -3,6 +3,38 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Telegram Mini App viewport handling */
+:root {
+  --tg-viewport-height: 100vh;
+  --tg-stable-height: 100vh;
+}
+
+/* Safe area support for mobile devices */
+.h-safe-area-inset-bottom {
+  height: env(safe-area-inset-bottom, 0px);
+}
+
+/* Prevent text overflow in buttons */
+.btn-text-fit {
+  @apply text-ellipsis overflow-hidden whitespace-nowrap;
+}
+
+/* Responsive font sizes that prevent text cutoff */
+.text-responsive {
+  font-size: clamp(0.75rem, 2.5vw, 1rem);
+}
+
+/* Telegram Mini App specific styles */
+.tg-viewport {
+  height: var(--tg-viewport-height);
+  max-height: var(--tg-viewport-height);
+}
+
+.tg-stable-viewport {
+  height: var(--tg-stable-height);
+  max-height: var(--tg-stable-height);
+}
+
 /* Telegram Mini App safe areas for iPhone */
 @supports (padding: max(0px)) {
   .safe-area-top {

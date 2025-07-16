@@ -4,7 +4,7 @@ import { ChatContainer } from '@/components/chat/ChatContainer';
 
 const ChatPage = () => {
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="w-full bg-background overflow-hidden">
       <ChatContainer />
     </div>
   );

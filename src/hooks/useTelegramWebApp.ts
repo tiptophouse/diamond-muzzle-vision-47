@@ -97,6 +97,26 @@ export function useTelegramWebApp() {
       tg.setHeaderColor('#ffffff');
       tg.setBackgroundColor('#f8fafc');
       
+      // Handle viewport changes for better responsiveness
+      const handleViewportChange = () => {
+        // Update CSS custom properties for responsive design
+        if (tg.viewportHeight) {
+          document.documentElement.style.setProperty('--tg-viewport-height', `${tg.viewportHeight}px`);
+        }
+        if (tg.viewportStableHeight) {
+          document.documentElement.style.setProperty('--tg-stable-height', `${tg.viewportStableHeight}px`);
+        }
+        
+        // Force re-render of components that depend on viewport
+        setWebApp({ ...tg });
+      };
+      
+      // Listen for viewport changes
+      tg.onEvent('viewportChanged', handleViewportChange);
+      
+      // Set initial viewport
+      handleViewportChange();
+      
       setWebApp(tg);
       setUser(tg.initDataUnsafe?.user || null);
       setIsReady(true);
@@ -107,12 +127,21 @@ export function useTelegramWebApp() {
       console.log('🚀 Telegram WebApp initialized:', {
         version: tg.version,
         platform: tg.platform,
+        viewportHeight: tg.viewportHeight,
+        viewportStableHeight: tg.viewportStableHeight,
         user: tg.initDataUnsafe?.user,
         themeParams: tg.themeParams
       });
+      
+      // Cleanup function
+      return () => {
+        tg.offEvent('viewportChanged', handleViewportChange);
+      };
     } else {
-      // Fallback for development
+      // Fallback for development - set reasonable defaults
       console.log('📱 Running outside Telegram, using mock data');
+      document.documentElement.style.setProperty('--tg-viewport-height', '100vh');
+      document.documentElement.style.setProperty('--tg-stable-height', '100vh');
       setIsReady(true);
     }
   }, []);
