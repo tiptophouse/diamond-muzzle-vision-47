@@ -63,14 +63,14 @@ const tutorialSteps: TutorialStep[] = [
       he: 'בואו נעלה את היהלום הראשון שלכם' 
     },
     content: { 
-      en: 'First, we\'ll navigate to the upload page. This is where you can add individual diamonds to your inventory.',
-      he: 'קודם כל, נעבור לעמוד ההעלאה. כאן תוכלו להוסיף יהלומים בודדים למלאי שלכם.'
+      en: 'Great! Now we\'ll take you to the upload page where you can add individual diamonds to your inventory.',
+      he: 'מעולה! עכשיו ניקח אתכם לעמוד ההעלאה שם תוכלו להוסיף יהלומים בודדים למלאי שלכם.'
     },
     section: 'upload',
     order: 2,
-    navigationTarget: '/upload-single-stone',
+    navigationTarget: '/upload',
     actions: { 
-      primary: { en: 'Go to Upload', he: 'עבור להעלאה' }, 
+      primary: { en: 'Take Me There', he: 'קח אותי לשם' }, 
       secondary: { en: 'Skip', he: 'דלג' } 
     }
   },

@@ -36,12 +36,19 @@ export function TutorialOverlay() {
   useEffect(() => {
     if (!isActive || !currentStepData) return;
 
-    // Navigate to correct page based on step
+    // Auto-navigate to target page when step has navigationTarget
+    if (currentStepData.navigationTarget) {
+      const timer = setTimeout(() => {
+        if (location.pathname !== currentStepData.navigationTarget) {
+          navigate(currentStepData.navigationTarget);
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+
+    // Navigate to correct page based on step section
     const targetRoute = getRouteForStep(currentStepData.section);
-    if (currentStepData.navigationTarget && location.pathname !== currentStepData.navigationTarget) {
-      navigate(currentStepData.navigationTarget);
-      return;
-    } else if (!currentStepData.navigationTarget && location.pathname !== targetRoute) {
+    if (location.pathname !== targetRoute) {
       navigate(targetRoute);
       return;
     }
@@ -288,9 +295,11 @@ export function TutorialOverlay() {
               >
                 {waitingForClick 
                   ? (currentLanguage === 'he' ? 'מחכה ללחיצה...' : 'Waiting for click...')
-                  : isLastStep 
-                    ? (currentLanguage === 'he' ? 'סיום' : 'Finish')
-                    : (currentLanguage === 'he' ? 'הבא' : 'Next')
+                  : currentStepData?.navigationTarget
+                    ? (currentLanguage === 'he' ? 'קח אותי לשם' : 'Take Me There')
+                    : isLastStep 
+                      ? (currentLanguage === 'he' ? 'סיום' : 'Finish')
+                      : (currentLanguage === 'he' ? 'הבא' : 'Next')
                 }
                 {!isLastStep && !waitingForClick && <ChevronRight className="h-4 w-4" />}
               </Button>
