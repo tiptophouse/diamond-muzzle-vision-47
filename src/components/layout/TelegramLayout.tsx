@@ -215,7 +215,7 @@ export function TelegramLayout({
   const availableSecondaryTabs = secondaryTabs.filter(tab => !tab.adminOnly || isAdmin);
   return <div className="flex flex-col h-screen max-h-screen w-full tg-viewport overflow-hidden">
       {/* Main content area */}
-      <main className="flex-1 overflow-auto smooth-scroll bg-background w-full py-[30px]">
+      <main className="flex-1 overflow-auto smooth-scroll bg-background w-full py-[40px]">
         <div className="min-h-full p-3 sm:p-4 pb-safe py-4 my-[40px]">
           <div className="w-full max-w-none overflow-x-hidden">
             {children}
