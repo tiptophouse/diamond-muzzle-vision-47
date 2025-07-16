@@ -3,7 +3,7 @@ import { Header } from "./Header";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { TutorialModal } from "@/components/tutorial/TutorialModal";
+import { TutorialModalWithNavigation } from "@/components/tutorial/TutorialModalWithNavigation";
 interface LayoutProps {
   children: React.ReactNode;
 }
@@ -71,7 +71,7 @@ export function Layout({
       </div>
 
       {/* Tutorial Modal */}
-      <TutorialModal />
+      <TutorialModalWithNavigation />
     </div>
   );
 }

@@ -33,74 +33,74 @@ const TutorialContext = createContext<TutorialContextType | undefined>(undefined
 const tutorialSteps: TutorialStep[] = [
   {
     id: 'welcome',
-    title: 'Welcome to Diamond Mazal! 💎',
-    content: 'Your comprehensive diamond inventory management platform. Let\'s take a quick interactive tour to get you started!',
+    title: 'ברוכים הבאים לדיאמונד מזל! 💎',
+    content: 'פלטפורמת ניהול מלאי יהלומים המקיפה שלכם. בואו נעשה סיור אינטראקטיבי קצר כדי להתחיל!',
     section: 'welcome',
     order: 1,
-    actions: { primary: 'Start Tour', secondary: 'Skip' }
+    actions: { primary: 'התחל סיור', secondary: 'דלג' }
   },
   {
     id: 'sidebar',
-    title: 'Navigation Sidebar',
-    content: 'This sidebar is your main navigation. Click on different sections to explore Dashboard, Inventory, Store, Upload, and more.',
+    title: 'תפריט ניווט',
+    content: 'תפריט הצד הזה הוא הניווט הראשי שלכם. לחצו על חלקים שונים כדי לחקור לוח בקרה, מלאי, חנות, העלאה ועוד.',
     targetElement: '[data-tutorial="sidebar"]',
     section: 'navigation',
     order: 2,
-    actions: { primary: 'Next', secondary: 'Skip' }
+    actions: { primary: 'הבא', secondary: 'דלג' }
   },
   {
     id: 'inventory-header',
-    title: 'Inventory Management',
-    content: 'This is your inventory header. Click "Add Diamond" to add individual stones to your collection.',
+    title: 'ניהול מלאי יהלומים',
+    content: 'זה הכותרת של מלאי היהלומים שלכם. לחצו על "הוסף יהלום" כדי להוסיף אבנים בודדות לאוסף שלכם.',
     targetElement: '[data-tutorial="inventory-header"]',
     section: 'inventory',
     order: 3,
-    actions: { primary: 'Next', secondary: 'Skip' }
+    actions: { primary: 'עבור למלאי', secondary: 'הבא' }
   },
   {
     id: 'add-diamond-btn',
-    title: 'Add New Diamond',
-    content: 'Click this button to add a new diamond to your inventory. You can input all details manually or scan a GIA certificate.',
+    title: 'הוסף יהלום חדש',
+    content: 'לחצו על הכפתור הזה כדי להוסיף יהלום חדש למלאי שלכם. תוכלו להזין את כל הפרטים באופן ידני או לסרוק תעודת GIA.',
     targetElement: '[data-tutorial="add-diamond"]',
     section: 'inventory',
     order: 4,
-    actions: { primary: 'Next', secondary: 'Skip' }
+    actions: { primary: 'עבור להוספה', secondary: 'הבא' }
   },
   {
     id: 'inventory-search',
-    title: 'Search & Filter',
-    content: 'Use this search bar to quickly find diamonds by stock number, shape, color, or any other property.',
+    title: 'חיפוש וסינון',
+    content: 'השתמשו בשורת החיפוש הזאת כדי למצוא במהירות יהלומים לפי מספר מלאי, צורה, צבע או כל מאפיין אחר.',
     targetElement: '[data-tutorial="inventory-search"]',
     section: 'inventory',
     order: 5,
-    actions: { primary: 'Next', secondary: 'Skip' }
+    actions: { primary: 'הבא', secondary: 'דלג' }
   },
   {
     id: 'inventory-table',
-    title: 'Diamond Inventory Table',
-    content: 'Here\'s your complete diamond inventory. Edit, delete, or toggle store visibility for each diamond. Click on any diamond to see detailed information.',
+    title: 'טבלת מלאי יהלומים',
+    content: 'כאן המלאי המלא של היהלומים שלכם. ערכו, מחקו או שנו נראות בחנות לכל יהלום. לחצו על כל יהלום כדי לראות מידע מפורט.',
     targetElement: '[data-tutorial="inventory-table"]',
     section: 'inventory',
     order: 6,
-    actions: { primary: 'Next', secondary: 'Skip' }
+    actions: { primary: 'הבא', secondary: 'דלג' }
   },
   {
     id: 'upload-csv',
-    title: 'Bulk Upload CSV',
-    content: 'Upload multiple diamonds at once using CSV files. Our intelligent system automatically maps your columns to diamond properties.',
+    title: 'העלאת CSV בכמויות',
+    content: 'העלו יהלומים רבים בבת אחת באמצעות קובצי CSV. המערכת החכמה שלנו ממפה באופן אוטומטי את העמודות שלכם לתכונות יהלומים.',
     targetElement: '[data-tutorial="upload-area"]',
     section: 'upload',
     order: 7,
-    actions: { primary: 'Next', secondary: 'Skip' }
+    actions: { primary: 'עבור להעלאה', secondary: 'הבא' }
   },
   {
     id: 'store-view',
-    title: 'Public Store',
-    content: 'This is your beautiful public storefront where customers can browse and filter your diamonds. Only diamonds marked as "store visible" appear here.',
+    title: 'חנות ציבורית',
+    content: 'זאת החנות הציבורית היפה שלכם שבה לקוחות יכולים לגלוש ולסנן את היהלומים שלכם. רק יהלומים המסומנים כ"נראים בחנות" מופיעים כאן.',
     targetElement: '[data-tutorial="store-grid"]',
     section: 'store',
     order: 8,
-    actions: { primary: 'Finish Tour', secondary: 'Skip' }
+    actions: { primary: 'עבור לחנות', secondary: 'סיום' }
   }
 ];
 

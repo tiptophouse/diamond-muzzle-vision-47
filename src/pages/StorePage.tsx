@@ -95,7 +95,7 @@ export default function StorePage() {
 
   return (
     <MobilePullToRefresh onRefresh={handleRefresh} enabled={!loading}>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      <div className="min-h-screen" style={{ background: 'var(--gradient-surface)' }}>
         {/* Back to Main Menu Button */}
         <div className="flex items-center pt-safe pb-2 pl-2 sm:pl-0">
           <Button
@@ -123,7 +123,10 @@ export default function StorePage() {
             
             <Dialog open={showUpload} onOpenChange={setShowUpload}>
               <DialogTrigger asChild>
-                <Button className="w-full sm:w-auto flex items-center justify-center gap-2 touch-target min-h-[44px] bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                <Button 
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 touch-target min-h-[44px] premium-button"
+                  style={{ background: 'var(--gradient-primary)' }}
+                >
                   <Upload className="h-4 w-4" />
                   <span className="hidden sm:inline">Upload Photo</span>
                   <span className="sm:hidden">Upload</span>
@@ -142,7 +145,7 @@ export default function StorePage() {
           </div>
 
           {/* Premium Fixed Filters */}
-          <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-xl border border-slate-200/50 rounded-2xl shadow-xl shadow-slate-900/5">
+          <div className="sticky top-0 z-30 premium-card backdrop-blur-xl border border-border/50 rounded-2xl" style={{ boxShadow: 'var(--shadow-premium)' }}>
             <PremiumStoreFilters
               filters={filters}
               onUpdateFilter={updateFilter}
