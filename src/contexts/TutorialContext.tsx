@@ -233,26 +233,11 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
   const [sharedDiamondId, setSharedDiamondId] = useState<string | null>(null);
 
-  // Detect language from Telegram user data
+  // Set Hebrew as the only language
   useEffect(() => {
-    if (user?.language_code) {
-      const detectedLang = user.language_code.startsWith('he') ? 'he' : 'en';
-      setCurrentLanguage(detectedLang);
-      
-      // Save language preference
-      localStorage.setItem('tutorial-language', detectedLang);
-    } else {
-      // Check saved preference, default to Hebrew if none saved
-      const savedLang = localStorage.getItem('tutorial-language') as 'en' | 'he' | null;
-      if (savedLang) {
-        setCurrentLanguage(savedLang);
-      } else {
-        // Default to Hebrew and save it
-        setCurrentLanguage('he');
-        localStorage.setItem('tutorial-language', 'he');
-      }
-    }
-  }, [user]);
+    setCurrentLanguage('he');
+    localStorage.setItem('tutorial-language', 'he');
+  }, []);
 
   useEffect(() => {
     const seen = localStorage.getItem(`tutorial-completed-${currentLanguage}`);
