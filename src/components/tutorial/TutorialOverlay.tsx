@@ -137,18 +137,45 @@ export function TutorialOverlay() {
   return (
     <div ref={overlayRef} className="fixed inset-0 z-50 pointer-events-none">
       {/* Dark overlay with spotlight */}
-      <div className="absolute inset-0 bg-black/70 transition-all duration-300">
+      <div className="absolute inset-0 bg-black/80 transition-all duration-300">
         {elementPosition && (
-          <div
-            className="absolute bg-transparent border-4 border-blue-500 rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] animate-pulse"
-            style={{
-              top: elementPosition.top - 8,
-              left: elementPosition.left - 8,
-              width: elementPosition.width + 16,
-              height: elementPosition.height + 16,
-              boxShadow: `0 0 0 8px rgba(59, 130, 246, 0.5), 0 0 0 9999px rgba(0, 0, 0, 0.7)`
-            }}
-          />
+          <>
+            {/* Main highlight with super strong emphasis */}
+            <div
+              className="absolute bg-transparent border-4 border-red-500 rounded-lg animate-pulse"
+              style={{
+                top: elementPosition.top - 12,
+                left: elementPosition.left - 12,
+                width: elementPosition.width + 24,
+                height: elementPosition.height + 24,
+                boxShadow: `0 0 0 8px rgba(239, 68, 68, 0.6), 0 0 0 9999px rgba(0, 0, 0, 0.8), 0 0 60px rgba(239, 68, 68, 0.8)`
+              }}
+            />
+            {/* Animated arrow pointing to element */}
+            <div
+              className="absolute pointer-events-none animate-bounce"
+              style={{
+                top: elementPosition.top - 50,
+                left: elementPosition.left + elementPosition.width / 2 - 15,
+                fontSize: '30px',
+                zIndex: 9999
+              }}
+            >
+              👇
+            </div>
+            {/* "CLICK HERE" text */}
+            <div
+              className="absolute pointer-events-none bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-lg animate-pulse"
+              style={{
+                top: elementPosition.top - 80,
+                left: elementPosition.left + elementPosition.width / 2 - 60,
+                zIndex: 9999,
+                textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
+              }}
+            >
+              CLICK HERE!
+            </div>
+          </>
         )}
       </div>
 
