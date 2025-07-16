@@ -63,14 +63,14 @@ const tutorialSteps: TutorialStep[] = [
       he: 'בואו נעלה את היהלום הראשון שלכם' 
     },
     content: { 
-      en: 'Great! Now we\'ll take you to the upload page where you can add individual diamonds to your inventory.',
-      he: 'מעולה! עכשיו ניקח אתכם לעמוד ההעלאה שם תוכלו להוסיף יהלומים בודדים למלאי שלכם.'
+      en: 'Great! Now we\'ll take you directly to scan your diamond certificate. The QR scanner will open automatically.',
+      he: 'מעולה! עכשיו ניקח אתכם ישירות לסריקת תעודת היהלום שלכם. סורק הQR ייפתח אוטומטית.'
     },
     section: 'upload',
     order: 2,
-    navigationTarget: '/upload',
+    navigationTarget: '/upload-single-stone?action=scan',
     actions: { 
-      primary: { en: 'Take Me There', he: 'קח אותי לשם' }, 
+      primary: { en: 'Scan Certificate', he: 'סרוק תעודה' }, 
       secondary: { en: 'Skip', he: 'דלג' } 
     }
   },
