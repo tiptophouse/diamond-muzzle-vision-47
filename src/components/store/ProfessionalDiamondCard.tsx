@@ -32,7 +32,7 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
   console.log('📱 Telegram Environment:', isTelegramEnvironment);
   console.log('👑 Is Admin:', isAdmin);
 
-  // Enhanced Gem360 URL detection - check all possible sources
+  // Enhanced 3D URL detection - check for both gem360 and diamondview.aspx URLs
   const getGem360Url = () => {
     // Priority order: dedicated gem360Url field, then certificateUrl, then imageUrl
     const sources = [
@@ -42,8 +42,8 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
     ];
 
     for (const url of sources) {
-      if (url && url.includes('gem360')) {
-        console.log('🔍 Found Gem360 URL in source:', url);
+      if (url && (url.includes('gem360') || url.includes('diamondview.aspx'))) {
+        console.log('🔍 Found 3D viewer URL in source:', url);
         return url;
       }
     }
@@ -61,9 +61,10 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
   console.log('🔍 Final gem360Url:', gem360Url);
   console.log('🔍 hasGem360View:', hasGem360View);
 
-  // Use actual diamond image from CSV data, excluding only gem360 URLs (for 3D viewer)
+  // Use actual diamond image from CSV data, excluding 3D viewer URLs
   const diamondImageUrl = diamond.imageUrl && 
-    !diamond.imageUrl.includes('gem360')
+    !diamond.imageUrl.includes('gem360') &&
+    !diamond.imageUrl.includes('diamondview.aspx')
     ? diamond.imageUrl 
     : null;
 
