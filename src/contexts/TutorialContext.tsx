@@ -228,7 +228,7 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
   const [isActive, setIsActive] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [hasSeenTutorial, setHasSeenTutorial] = useState(false);
-  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'he'>('en');
+  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'he'>('he'); // Default to Hebrew
   const [waitingForClick, setWaitingForClick] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
   const [sharedDiamondId, setSharedDiamondId] = useState<string | null>(null);
@@ -242,10 +242,14 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
       // Save language preference
       localStorage.setItem('tutorial-language', detectedLang);
     } else {
-      // Check saved preference
+      // Check saved preference, default to Hebrew if none saved
       const savedLang = localStorage.getItem('tutorial-language') as 'en' | 'he' | null;
       if (savedLang) {
         setCurrentLanguage(savedLang);
+      } else {
+        // Default to Hebrew and save it
+        setCurrentLanguage('he');
+        localStorage.setItem('tutorial-language', 'he');
       }
     }
   }, [user]);
