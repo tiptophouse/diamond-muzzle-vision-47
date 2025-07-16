@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { useTutorial } from '@/contexts/TutorialContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { X, ChevronLeft, ChevronRight, Sparkles, Globe, Scan } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Sparkles, Globe, Scan, Package, Store, MessageSquare, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function TutorialModal() {
@@ -23,6 +23,88 @@ export function TutorialModal() {
   const handleUploadCertificate = () => {
     navigate('/upload-single-stone?action=scan');
     skipTutorial();
+  };
+
+  const handleContextualAction = () => {
+    switch (currentStepData?.section) {
+      case 'welcome':
+        nextStep();
+        break;
+      case 'upload':
+        handleUploadCertificate();
+        break;
+      case 'inventory':
+        navigate('/inventory');
+        skipTutorial();
+        break;
+      case 'store':
+        navigate('/store');
+        skipTutorial();
+        break;
+      case 'dashboard':
+        navigate('/dashboard');
+        skipTutorial();
+        break;
+      case 'chat':
+        navigate('/chat');
+        skipTutorial();
+        break;
+      default:
+        nextStep();
+    }
+  };
+
+  const getContextualButton = () => {
+    if (!currentStepData) return null;
+
+    const buttonConfigs = {
+      welcome: {
+        label: { he: 'התחל סיור', en: 'Start Tour' },
+        icon: Sparkles,
+        variant: 'default' as const
+      },
+      upload: {
+        label: { he: 'סרוק תעודה עכשיו', en: 'Scan Certificate Now' },
+        icon: Scan,
+        variant: 'default' as const
+      },
+      inventory: {
+        label: { he: 'עבור למלאי', en: 'Go to Inventory' },
+        icon: Package,
+        variant: 'default' as const
+      },
+      store: {
+        label: { he: 'עבור לחנות', en: 'Go to Store' },
+        icon: Store,
+        variant: 'default' as const
+      },
+      dashboard: {
+        label: { he: 'עבור לדשבורד', en: 'Go to Dashboard' },
+        icon: BarChart3,
+        variant: 'default' as const
+      },
+      chat: {
+        label: { he: 'עבור לצ׳אט', en: 'Go to Chat' },
+        icon: MessageSquare,
+        variant: 'default' as const
+      }
+    };
+
+    const config = buttonConfigs[currentStepData.section as keyof typeof buttonConfigs];
+    if (!config) return null;
+
+    const IconComponent = config.icon;
+
+    return (
+      <Button
+        onClick={handleContextualAction}
+        variant={config.variant}
+        className="flex items-center gap-2 px-6"
+      >
+        <IconComponent className="h-4 w-4" />
+        {config.label[currentLanguage]}
+      </Button>
+    );
   };
 
   useEffect(() => {
@@ -142,16 +224,12 @@ export function TutorialModal() {
 
         {/* Footer */}
         <div className="px-6 py-4 bg-gray-50 flex flex-col gap-3">
-          {/* Upload Certificate button - always visible */}
-          <div className="flex justify-center">
-            <Button
-              onClick={handleUploadCertificate}
-              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white flex items-center gap-2 px-6"
-            >
-              <Scan className="h-4 w-4" />
-              {currentLanguage === 'he' ? 'סרוק תעודה עכשיו' : 'Scan Certificate Now'}
-            </Button>
-          </div>
+          {/* Contextual action button */}
+          {getContextualButton() && (
+            <div className="flex justify-center">
+              {getContextualButton()}
+            </div>
+          )}
           
           {/* Navigation buttons */}
           <div className="flex items-center justify-between">
