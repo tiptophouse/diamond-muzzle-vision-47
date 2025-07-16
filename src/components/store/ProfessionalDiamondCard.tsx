@@ -61,10 +61,9 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
   console.log('🔍 Final gem360Url:', gem360Url);
   console.log('🔍 hasGem360View:', hasGem360View);
 
-  // Use actual diamond image from CSV data, excluding gem360 URLs
+  // Use actual diamond image from CSV data, excluding only gem360 URLs (for 3D viewer)
   const diamondImageUrl = diamond.imageUrl && 
-    !diamond.imageUrl.includes('gem360') && 
-    !diamond.imageUrl.includes('diamondview.aspx')
+    !diamond.imageUrl.includes('gem360')
     ? diamond.imageUrl 
     : null;
 
