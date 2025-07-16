@@ -3,9 +3,11 @@ import React, { useEffect } from 'react';
 import { useTutorial } from '@/contexts/TutorialContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { X, ChevronLeft, ChevronRight, Sparkles, Globe } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Sparkles, Globe, Scan } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export function TutorialModal() {
+  const navigate = useNavigate();
   const { 
     isActive, 
     currentStep, 
@@ -17,6 +19,11 @@ export function TutorialModal() {
     prevStep, 
     skipTutorial 
   } = useTutorial();
+
+  const handleUploadCertificate = () => {
+    navigate('/upload-single-stone?action=scan');
+    skipTutorial();
+  };
 
   useEffect(() => {
     if (isActive) {
@@ -134,7 +141,20 @@ export function TutorialModal() {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-gray-50 flex items-center justify-between">
+        <div className="px-6 py-4 bg-gray-50 flex flex-col gap-3">
+          {/* Upload Certificate button - always visible */}
+          <div className="flex justify-center">
+            <Button
+              onClick={handleUploadCertificate}
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white flex items-center gap-2 px-6"
+            >
+              <Scan className="h-4 w-4" />
+              {currentLanguage === 'he' ? 'סרוק תעודה עכשיו' : 'Scan Certificate Now'}
+            </Button>
+          </div>
+          
+          {/* Navigation buttons */}
+          <div className="flex items-center justify-between">
             <Button
               variant="outline"
               onClick={prevStep}
@@ -168,6 +188,7 @@ export function TutorialModal() {
                 {!isLastStep && <ChevronRight className="h-4 w-4" />}
               </Button>
             </div>
+          </div>
         </div>
       </div>
     </div>
