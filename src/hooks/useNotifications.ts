@@ -68,72 +68,10 @@ export function useNotifications() {
         created_at: notification.sent_at,
       }));
 
-      // Add some sample business notifications for demo
-      const sampleNotifications = [
-        {
-          id: 'buyer-interest-1',
-          title: '💎 קונה מעוניין ביהלום שלך',
-          message: 'לקוח מחפש יהלום דומה ל-RD001 - 1.2ct F VS1. הוא מוכן לשלם עד $8,500.',
-          type: 'buyer_interest',
-          read: false,
-          data: {
-            diamond_stock: 'RD001',
-            buyer_info: { name: 'David Cohen', phone: '+972-50-123-4567' },
-            max_budget: 8500,
-            requirements: { shape: 'Round', carat_min: 1.0, carat_max: 1.5, color: 'F', clarity: 'VS1' }
-          },
-          created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-          id: 'pair-match-1',
-          title: '💍 נמצא זוג מושלם ליהלום שלך',
-          message: 'יהלום PR002 שלך יכול להיות חלק מזוג עגילים מושלם עם יהלום דומה מהמלאי של יעקב לוי.',
-          type: 'pair_match',
-          read: false,
-          data: {
-            your_diamond: 'PR002',
-            partner_diamond: 'PR003',
-            partner_dealer: 'יעקב לוי',
-            match_score: 96,
-            pair_value_increase: '15-20%'
-          },
-          created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-          id: 'group-demand-1',
-          title: '🔥 ביקוש גבוה בקבוצות',
-          message: 'זוהה ביקוש גבוה לצורת Oval 0.8-1.2ct בקבוצות הטלגרם. יש לך 3 יהלומים מתאימים.',
-          type: 'group_demand',
-          read: false,
-          data: {
-            demand_type: 'Oval',
-            carat_range: '0.8-1.2',
-            matching_diamonds: ['OV001', 'OV002', 'OV003'],
-            groups_count: 5,
-            estimated_interest: 'גבוה'
-          },
-          created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-          id: 'price-opportunity-1',
-          title: '📈 הזדמנות מחיר',
-          message: 'המחיר של יהלומי H VS2 עלה ב-8% השבוע. יש לך 2 יהלומים בקטגוריה הזו.',
-          type: 'price_opportunity',
-          read: true,
-          data: {
-            category: 'H VS2',
-            price_change: '+8%',
-            your_diamonds: ['RD005', 'CU001'],
-            market_trend: 'עולה'
-          },
-          created_at: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-        }
-      ];
-
-      setNotifications([...sampleNotifications, ...transformedNotifications]);
+      setNotifications(transformedNotifications);
 
       // Show toast for new notifications
-      const newNotifications = [...sampleNotifications, ...transformedNotifications].filter(n => !n.read);
+      const newNotifications = transformedNotifications.filter(n => !n.read);
       
       if (newNotifications.length > 0) {
         toast({
