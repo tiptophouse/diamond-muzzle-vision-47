@@ -1,5 +1,5 @@
 
-import { ModernDiamondCard } from "./ModernDiamondCard";
+import { ProfessionalDiamondCard } from "./ProfessionalDiamondCard";
 import { DiamondCardSkeleton } from "./DiamondCardSkeleton";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { AlertCircle } from "lucide-react";
@@ -50,11 +50,10 @@ export function StoreGrid({ diamonds, loading, error, onUpdate }: StoreGridProps
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
-      {diamonds.map((diamond, index) => (
-        <ModernDiamondCard 
+      {diamonds.map((diamond) => (
+        <ProfessionalDiamondCard 
           key={diamond.id} 
           diamond={diamond}
-          index={index}
           onUpdate={onUpdate}
         />
       ))}

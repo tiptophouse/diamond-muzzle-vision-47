@@ -6,7 +6,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap rounded-xl text-sm font-semibold ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-95 text-center overflow-hidden text-ellipsis min-w-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-95",
   {
     variants: {
       variant: {
@@ -22,10 +22,10 @@ const buttonVariants = cva(
         premium: "premium-button",
       },
       size: {
-        default: "h-12 px-4 sm:px-6 py-3 text-sm sm:text-base font-semibold min-w-[80px]",
-        sm: "h-9 rounded-lg px-3 sm:px-4 text-xs sm:text-sm min-w-[60px]",
-        lg: "h-14 rounded-xl px-6 sm:px-8 text-base sm:text-lg font-bold min-w-[100px]",
-        icon: "h-10 w-10 rounded-lg shrink-0",
+        default: "h-12 px-6 py-3 text-base font-semibold",
+        sm: "h-9 rounded-lg px-4 text-sm",
+        lg: "h-14 rounded-xl px-8 text-lg font-bold",
+        icon: "h-10 w-10 rounded-lg",
       },
     },
     defaultVariants: {

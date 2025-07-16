@@ -3,38 +3,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Telegram Mini App viewport handling */
-:root {
-  --tg-viewport-height: 100vh;
-  --tg-stable-height: 100vh;
-}
-
-/* Safe area support for mobile devices */
-.h-safe-area-inset-bottom {
-  height: env(safe-area-inset-bottom, 0px);
-}
-
-/* Prevent text overflow in buttons */
-.btn-text-fit {
-  @apply text-ellipsis overflow-hidden whitespace-nowrap;
-}
-
-/* Responsive font sizes that prevent text cutoff */
-.text-responsive {
-  font-size: clamp(0.75rem, 2.5vw, 1rem);
-}
-
-/* Telegram Mini App specific styles */
-.tg-viewport {
-  height: var(--tg-viewport-height);
-  max-height: var(--tg-viewport-height);
-}
-
-.tg-stable-viewport {
-  height: var(--tg-stable-height);
-  max-height: var(--tg-stable-height);
-}
-
 /* Telegram Mini App safe areas for iPhone */
 @supports (padding: max(0px)) {
   .safe-area-top {
@@ -62,29 +30,20 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 214 85% 52%; /* Modern Blue */
+    --primary: 200 100% 42%; /* Telegram Blue #0088cc */
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 214 85% 95%; /* Light Modern Blue */
-    --accent-foreground: 214 85% 20%;
+    --accent: 200 100% 95%; /* Light Telegram Blue */
+    --accent-foreground: 200 100% 20%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 214 85% 52%; /* Modern Blue */
+    --ring: 200 100% 42%; /* Telegram Blue */
     --radius: 0.75rem;
-    
-    /* E-commerce Theme Colors */
-    --store-bg: 248 250 252; /* slate-50 */
-    --store-card: 255 255 255; /* white */
-    --store-border: 226 232 240; /* slate-200 */
-    --store-muted: 241 245 249; /* slate-100 */
-    --store-accent: 59 130 246; /* blue-500 */
-    --store-success: 34 197 94; /* green-500 */
-    --store-warning: 245 158 11; /* amber-500 */
 
     /* Telegram WebApp Integration Variables */
     --tg-viewport-height: 100vh;

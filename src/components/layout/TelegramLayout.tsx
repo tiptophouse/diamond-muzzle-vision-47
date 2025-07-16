@@ -213,28 +213,29 @@ export function TelegramLayout({
   };
   const availableTabs = tabs.filter(tab => !tab.adminOnly || isAdmin);
   const availableSecondaryTabs = secondaryTabs.filter(tab => !tab.adminOnly || isAdmin);
-  return <div className="flex flex-col h-screen max-h-screen w-full tg-viewport overflow-hidden">
+  return <div className="flex flex-col h-screen max-h-screen tg-viewport">
+      {/* Header with safe area */}
+      
+
       {/* Main content area */}
-      <main className="flex-1 overflow-auto smooth-scroll bg-background w-full py-[40px]">
-        <div className="min-h-full p-3 sm:p-4 pb-safe py-4 my-[40px]">
-          <div className="w-full max-w-none overflow-x-hidden">
-            {children}
-          </div>
+      <main className="flex-1 overflow-auto smooth-scroll bg-background">
+        <div className="min-h-full p-4 pb-safe py-[55px]">
+          {children}
         </div>
       </main>
 
       {/* Bottom tab navigation */}
-      <nav className="flex items-center justify-center bg-background/95 backdrop-blur-sm border-t border-border/50 pb-safe shrink-0 w-full">
-        <div className="flex items-center justify-around w-full max-w-lg px-2">
+      <nav className="flex items-center justify-center bg-background/95 backdrop-blur-sm border-t border-border/50 pb-safe shrink-0">
+        <div className="flex items-center justify-around w-full max-w-md px-2">
           {availableTabs.map(tab => {
           const Icon = tab.icon;
           const isActive = isActiveTab(tab.path);
           return <button key={tab.path} onClick={() => handleTabClick(tab.path)} className={`
-                  flex flex-col items-center gap-1 p-2 sm:p-3 rounded-xl touch-target transition-all duration-200 min-w-[60px] sm:min-w-[80px]
+                  flex flex-col items-center gap-1 p-3 rounded-xl touch-target transition-all duration-200
                   ${isActive ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}
                 `} aria-label={tab.label}>
-                <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${isActive ? 'scale-110' : ''} transition-transform duration-200`} />
-                <span className={`text-[10px] sm:text-xs font-medium leading-tight ${isActive ? 'text-primary' : ''}`}>
+                <Icon className={`w-6 h-6 ${isActive ? 'scale-110' : ''} transition-transform duration-200`} />
+                <span className={`text-xs font-medium ${isActive ? 'text-primary' : ''}`}>
                   {tab.label}
                 </span>
               </button>;
