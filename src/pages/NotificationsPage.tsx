@@ -49,9 +49,9 @@ const NotificationsPage = () => {
     <Layout>
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="relative flex-shrink-0">
               <Bell className="h-8 w-8 text-blue-600" />
               {unreadCount > 0 && (
                 <Badge 
@@ -62,15 +62,17 @@ const NotificationsPage = () => {
                 </Badge>
               )}
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">התראות עסקיות חכמות</h1>
-              <p className="text-gray-600">
+            <div className="min-w-0 flex-1" dir="rtl">
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
+                התראות עסקיות חכמות
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600 mt-1 leading-snug">
                 קבל התראות על קונים מעוניינים, זוגות יהלומים וביקוש בקבוצות
               </p>
             </div>
           </div>
           
-          <Button onClick={refetch} variant="outline" size="sm">
+          <Button onClick={refetch} variant="outline" size="sm" className="flex-shrink-0">
             <RefreshCw className="h-4 w-4 mr-2" />
             רענן
           </Button>
