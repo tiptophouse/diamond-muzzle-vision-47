@@ -39,7 +39,7 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Camera className="h-5 w-5" />
-              סריקת תעודת יהלום
+              Scan Diamond Certificate
             </CardTitle>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-4 w-4" />
@@ -63,7 +63,7 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 rounded-lg">
                 <Loader2 className="h-8 w-8 animate-spin text-white mb-2" />
                 <p className="text-white text-sm text-center">
-                  {isFetchingGIA ? 'מעבד נתוני תעודה...' : 'מפעיל מצלמה...'}
+                  {isFetchingGIA ? 'Processing certificate data...' : 'Starting camera...'}
                 </p>
               </div>
             )}
@@ -83,7 +83,7 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
                   style={{ minHeight: '48px', fontSize: '16px' }}
                 >
                   <Camera className="h-4 w-4 mr-2" />
-                  התחל סריקה
+                  Start Scanning
                 </Button>
                 <Button 
                   onClick={triggerFileUpload} 
@@ -93,7 +93,7 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
                   style={{ minHeight: '48px', fontSize: '16px' }}
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  העלה תמונה
+                  Upload Image
                 </Button>
               </>
             ) : (
@@ -104,7 +104,7 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
                 disabled={isFetchingGIA}
                 style={{ minHeight: '48px', fontSize: '16px' }}
               >
-                הפסק סריקה
+                Stop Scanning
               </Button>
             )}
           </div>
@@ -117,8 +117,8 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
             className="hidden"
           />
           
-          <p className="text-sm text-gray-600 text-center" dir="rtl">
-            סרקו קוד QR של GIA או העלו תמונה של תעודת GIA. המערכת תחלץ אוטומטית נתוני יהלום באמצעות OCR במידת הצורך.
+          <p className="text-sm text-gray-600 text-center">
+            Scan a GIA QR code or upload an image of a GIA certificate. The system will automatically extract diamond data using OCR if needed.
           </p>
         </CardContent>
       </Card>

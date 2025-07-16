@@ -327,12 +327,10 @@ export function SingleStoneUploadForm({
 
           {/* Sticky bottom actions */}
           <div className="sticky bottom-0 bg-background border-t border-border/20 safe-area-inset-bottom">
-            <div data-tutorial="submit-diamond">
-              <FormActions
-                onReset={resetForm}
-                isLoading={isLoading}
-              />
-            </div>
+            <FormActions
+              onReset={resetForm}
+              isLoading={isLoading}
+            />
           </div>
         </form>
       </div>

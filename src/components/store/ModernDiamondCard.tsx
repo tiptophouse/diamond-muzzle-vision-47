@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
-import { SecureShareButton } from "./SecureShareButton";
 import { toast } from "@/hooks/use-toast";
 
 interface ModernDiamondCardProps {
@@ -143,19 +142,14 @@ export function ModernDiamondCard({ diamond, index, onUpdate }: ModernDiamondCar
             >
               <Heart className={`h-4 w-4 ${isLiked ? 'text-red-500 fill-red-500' : 'text-gray-600'}`} />
             </Button>
-            <SecureShareButton
-              stockNumber={diamond.stockNumber}
-              diamond={{
-                carat: diamond.carat,
-                shape: diamond.shape,
-                color: diamond.color,
-                clarity: diamond.clarity,
-                price: diamond.price || 0
-              }}
-              variant="outline"
-              size="sm"
+            <Button 
+              size="sm" 
+              variant="secondary" 
               className="bg-white/90 hover:bg-white border-0 shadow-lg"
-            />
+              onClick={handleShare}
+            >
+              <Share2 className="h-4 w-4 text-gray-600" />
+            </Button>
           </div>
         </div>
         

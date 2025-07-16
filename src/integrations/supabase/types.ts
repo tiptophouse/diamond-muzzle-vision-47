@@ -370,57 +370,6 @@ export type Database = {
           },
         ]
       }
-      diamond_share_analytics: {
-        Row: {
-          created_at: string | null
-          device_type: string | null
-          diamond_stock_number: string
-          id: string
-          owner_telegram_id: number
-          referrer: string | null
-          returned_visitor: boolean | null
-          session_id: string | null
-          time_spent_seconds: number | null
-          view_timestamp: string
-          viewed_other_diamonds: boolean | null
-          viewer_ip_address: unknown | null
-          viewer_telegram_id: number | null
-          viewer_user_agent: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          device_type?: string | null
-          diamond_stock_number: string
-          id?: string
-          owner_telegram_id: number
-          referrer?: string | null
-          returned_visitor?: boolean | null
-          session_id?: string | null
-          time_spent_seconds?: number | null
-          view_timestamp?: string
-          viewed_other_diamonds?: boolean | null
-          viewer_ip_address?: unknown | null
-          viewer_telegram_id?: number | null
-          viewer_user_agent?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          device_type?: string | null
-          diamond_stock_number?: string
-          id?: string
-          owner_telegram_id?: number
-          referrer?: string | null
-          returned_visitor?: boolean | null
-          session_id?: string | null
-          time_spent_seconds?: number | null
-          view_timestamp?: string
-          viewed_other_diamonds?: boolean | null
-          viewer_ip_address?: unknown | null
-          viewer_telegram_id?: number | null
-          viewer_user_agent?: string | null
-        }
-        Relationships: []
-      }
       diamonds: {
         Row: {
           carat: number
