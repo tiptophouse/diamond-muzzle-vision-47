@@ -50,7 +50,7 @@ export function SingleStoneUploadForm({
       price: 0,
       status: 'Available',
       picture: '',
-      shape: 'Round',
+      shape: 'Round Brilliant',
       color: 'G',
       clarity: 'VS1',
       cut: 'Excellent',
@@ -146,7 +146,7 @@ export function SingleStoneUploadForm({
   }, [setValue, toast]);
 
   const currentShape = watch('shape');
-  const showCutField = currentShape === 'Round';
+  const showCutField = currentShape === 'Round Brilliant';
 
   const handleFormSubmit = useCallback((data: DiamondFormData) => {
     console.log('🔍 UPLOAD: Form submitted', { user: user?.id, data });

@@ -173,11 +173,11 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
               <div className="p-4">
                 <InventoryChart
                   data={inventoryByShape.length > 0 ? inventoryByShape : [
-                    { name: 'Round', value: allDiamonds.filter(d => d.shape === 'Round').length },
+                    { name: 'Round Brilliant', value: allDiamonds.filter(d => d.shape === 'Round Brilliant').length },
                     { name: 'Princess', value: allDiamonds.filter(d => d.shape === 'Princess').length },
                     { name: 'Emerald', value: allDiamonds.filter(d => d.shape === 'Emerald').length },
                     { name: 'Oval', value: allDiamonds.filter(d => d.shape === 'Oval').length },
-                    { name: 'Other', value: allDiamonds.filter(d => !['Round', 'Princess', 'Emerald', 'Oval'].includes(d.shape)).length }
+                    { name: 'Other', value: allDiamonds.filter(d => !['Round Brilliant', 'Princess', 'Emerald', 'Oval'].includes(d.shape)).length }
                   ].filter(item => item.value > 0)}
                   title=""
                   loading={loading}

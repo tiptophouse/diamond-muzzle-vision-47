@@ -1,6 +1,6 @@
 
 export const shapes = [
-  'Round',
+  'Round Brilliant',
   'Princess',
   'Emerald',
   'Asscher',

@@ -16,7 +16,7 @@ interface DiamondDetailsSectionProps {
 
 export function DiamondDetailsSection({ register, setValue, watch, errors }: DiamondDetailsSectionProps) {
   const currentShape = watch('shape');
-  const showCutField = currentShape === 'Round';
+  const showCutField = currentShape === 'Round Brilliant';
 
   return (
     <div className="space-y-6 pb-safe">
@@ -39,7 +39,7 @@ export function DiamondDetailsSection({ register, setValue, watch, errors }: Dia
         <NativeMobileSelector
           id="shape"
           label="Shape"
-          value={watch('shape') || 'Round'}
+          value={watch('shape') || 'Round Brilliant'}
           onValueChange={(value) => setValue('shape', value)}
           options={shapes}
           columns={3}

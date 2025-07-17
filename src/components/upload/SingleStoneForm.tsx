@@ -25,7 +25,7 @@ export function SingleStoneForm({ initialData, onSubmit, isLoading = false }: Si
       price: 0,
       status: 'Available',
       picture: '',
-      shape: 'Round',
+      shape: 'Round Brilliant',
       color: 'G',
       clarity: 'VS1',
       cut: 'Excellent',
@@ -54,7 +54,7 @@ export function SingleStoneForm({ initialData, onSubmit, isLoading = false }: Si
   }, [initialData, setValue]);
 
   const currentShape = watch('shape');
-  const showCutField = currentShape === 'Round';
+  const showCutField = currentShape === 'Round Brilliant';
 
   const handleFormSubmit = (data: DiamondFormData) => {
     console.log('Form submitted with data:', data);
@@ -75,7 +75,7 @@ export function SingleStoneForm({ initialData, onSubmit, isLoading = false }: Si
       price: 0,
       status: 'Available',
       picture: '',
-      shape: 'Round',
+      shape: 'Round Brilliant',
       color: 'G',
       clarity: 'VS1',
       cut: 'Excellent',

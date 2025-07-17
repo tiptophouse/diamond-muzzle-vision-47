@@ -74,7 +74,7 @@ export function useAddDiamond(onSuccess?: () => void) {
       const diamondDataPayload = {
         // Required fields - exact schema match
         stock: data.stockNumber.trim(),
-        shape: data.shape === 'Round' ? "round brilliant" : data.shape.toLowerCase(),
+        shape: data.shape === 'Round Brilliant' ? "round brilliant" : data.shape.toLowerCase(),
         weight: Number(data.carat),
         color: data.color,
         clarity: data.clarity,

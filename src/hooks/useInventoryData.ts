@@ -15,11 +15,11 @@ export function useInventoryData() {
 
   // Map API shape formats to display formats
   const normalizeShape = (apiShape: string): string => {
-    if (!apiShape) return 'Round';
+    if (!apiShape) return 'Round Brilliant';
     
     const shapeMap: Record<string, string> = {
-      'round brilliant': 'Round',
-      'round': 'Round',
+      'round brilliant': 'Round Brilliant',
+      'round': 'Round Brilliant',
       'princess': 'Princess',
       'cushion': 'Cushion',
       'emerald': 'Emerald',

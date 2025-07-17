@@ -21,7 +21,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<DiamondFormData>({
     defaultValues: diamond ? {
       stockNumber: diamond.stockNumber || '',
-      shape: diamond.shape || 'Round',
+      shape: diamond.shape || 'Round Brilliant',
       carat: diamond.carat || 1,
       color: diamond.color || 'G',
       clarity: diamond.clarity || 'VS1',
@@ -44,7 +44,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       price: 0,
       status: 'Available',
       picture: '',
-      shape: 'Round',
+      shape: 'Round Brilliant',
       color: 'G',
       clarity: 'VS1',
       cut: 'Excellent',
@@ -63,7 +63,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       console.log('Resetting form with diamond data:', diamond);
       reset({
         stockNumber: diamond.stockNumber || '',
-        shape: diamond.shape || 'Round',
+        shape: diamond.shape || 'Round Brilliant',
         carat: diamond.carat || 1,
         color: diamond.color || 'G',
         clarity: diamond.clarity || 'VS1',
@@ -107,7 +107,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       stockNumber: data.stockNumber.trim(),
       carat: Number(data.carat),
       price: Number(data.price),
-      shape: data.shape || 'Round',
+      shape: data.shape || 'Round Brilliant',
       color: data.color || 'G',
       clarity: data.clarity || 'VS1',
       cut: data.cut || 'Excellent',
@@ -139,7 +139,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
   };
 
   const currentShape = watch('shape');
-  const showCutField = currentShape === 'Round';
+  const showCutField = currentShape === 'Round Brilliant';
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
