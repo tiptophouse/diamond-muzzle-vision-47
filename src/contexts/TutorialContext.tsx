@@ -57,20 +57,20 @@ const tutorialSteps: TutorialStep[] = [
     }
   },
   {
-    id: 'navigate-to-upload',
+    id: 'gia-scanning-info',
     title: { 
-      en: 'Let\'s Upload Your First Diamond', 
-      he: 'בואו נעלה את היהלום הראשון שלכם' 
+      en: 'GIA Certificate Scanning', 
+      he: 'סריקת תעודת GIA' 
     },
     content: { 
-      en: 'Great! Now we\'ll take you to the upload page where you can add individual diamonds to your inventory.',
-      he: 'מעולה! עכשיו ניקח אתכם לעמוד ההעלאה שם תוכלו להוסיף יהלומים בודדים למלאי שלכם.'
+      en: 'The fastest way to add diamonds is by scanning GIA certificates. This automatically fills in all the diamond details for you!',
+      he: 'הדרך הכי מהירה להוסיף יהלומים היא על ידי סריקת תעודות GIA. זה ממלא אוטומטית את כל פרטי היהלום בשבילכם!'
     },
     section: 'upload',
     order: 2,
     navigationTarget: '/upload',
     actions: { 
-      primary: { en: 'Take Me There', he: 'קח אותי לשם' }, 
+      primary: { en: 'Go to Upload Page', he: 'עבור לעמוד העלאה' }, 
       secondary: { en: 'Skip', he: 'דלג' } 
     }
   },
@@ -133,18 +133,18 @@ const tutorialSteps: TutorialStep[] = [
   {
     id: 'view-in-inventory',
     title: { 
-      en: 'See Your Diamond in Inventory', 
-      he: 'ראו את היהלום שלכם במלאי' 
+      en: 'Manage Your Inventory', 
+      he: 'נהלו את המלאי שלכם' 
     },
     content: { 
-      en: 'Perfect! Your diamond has been added. Let\'s go to the inventory page to see it and manage your diamonds.',
-      he: 'מושלם! היהלום שלכם נוסף. בואו נעבור לעמוד המלאי כדי לראות אותו ולנהל את היהלומים שלכם.'
+      en: 'Perfect! Your diamond has been added. Let\'s go to the inventory page to see all your diamonds and manage them effectively.',
+      he: 'מושלם! היהלום שלכם נוסף. בואו נעבור לעמוד המלאי כדי לראות את כל היהלומים שלכם ולנהל אותם ביעילות.'
     },
     section: 'inventory',
     order: 6,
     navigationTarget: '/inventory',
     actions: { 
-      primary: { en: 'View Inventory', he: 'צפה במלאי' }, 
+      primary: { en: 'Go to Inventory', he: 'עבור למלאי' }, 
       secondary: { en: 'Skip', he: 'דלג' } 
     }
   },
@@ -170,18 +170,36 @@ const tutorialSteps: TutorialStep[] = [
   {
     id: 'visit-store',
     title: { 
-      en: 'Visit Your Public Store', 
-      he: 'בקרו בחנות הציבורית שלכם' 
+      en: 'Your Beautiful Store', 
+      he: 'החנות היפה שלכם' 
     },
     content: { 
-      en: 'Excellent! Now let\'s visit your public store to see how customers will view your diamond.',
-      he: 'מעולה! עכשיו בואו נבקר בחנות הציבורית שלכם כדי לראות איך לקוחות יראו את היהלום שלכם.'
+      en: 'Excellent! Now let\'s visit your public store to see how customers will view and search for your diamonds.',
+      he: 'מעולה! עכשיו בואו נבקר בחנות הציבורית שלכם כדי לראות איך לקוחות יראו ויחפשו את היהלומים שלכם.'
     },
     section: 'store',
     order: 8,
     navigationTarget: '/store',
     actions: { 
       primary: { en: 'Visit Store', he: 'בקר בחנות' }, 
+      secondary: { en: 'Skip', he: 'דלג' } 
+    }
+  },
+  {
+    id: 'view-dashboard',
+    title: { 
+      en: 'Analytics Dashboard', 
+      he: 'לוח בקרה ואנליטיקה' 
+    },
+    content: { 
+      en: 'Finally, let\'s check your dashboard to see analytics about your inventory, sales, and customer interactions.',
+      he: 'לבסוף, בואו נבדוק את לוח הבקרה שלכם כדי לראות אנליטיקה על המלאי, המכירות והאינטראקציות עם לקוחות.'
+    },
+    section: 'dashboard',
+    order: 9,
+    navigationTarget: '/dashboard',
+    actions: { 
+      primary: { en: 'View Dashboard', he: 'צפה בלוח בקרה' }, 
       secondary: { en: 'Skip', he: 'דלג' } 
     }
   },
@@ -197,7 +215,7 @@ const tutorialSteps: TutorialStep[] = [
     },
     targetElement: '[data-tutorial="share-diamond"]',
     section: 'store',
-    order: 9,
+    order: 10,
     requireClick: true,
     actions: { 
       primary: { en: 'Waiting for share...', he: 'מחכה לשיתוף...' }, 
@@ -215,7 +233,7 @@ const tutorialSteps: TutorialStep[] = [
       he: 'ברכות! העליתם בהצלחה יהלום, הפכתם אותו לגלוי בחנות שלכם, ולמדתם איך לשתף אותו. החברים שלכם יכולים עכשיו לחפש יהלומים דומים ותקבלו התראות כשהם מתקשרים עם המלאי שלכם!'
     },
     section: 'complete',
-    order: 10,
+    order: 11,
     actions: { 
       primary: { en: 'Finish', he: 'סיום' }, 
       secondary: { en: 'Restart', he: 'התחל מחדש' } 
@@ -228,26 +246,28 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
   const [isActive, setIsActive] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [hasSeenTutorial, setHasSeenTutorial] = useState(false);
-  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'he'>('en');
+  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'he'>('he'); // Default to Hebrew
   const [waitingForClick, setWaitingForClick] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
   const [sharedDiamondId, setSharedDiamondId] = useState<string | null>(null);
 
-  // Detect language from Telegram user data
+  // Detect language from Telegram user data, default to Hebrew
   useEffect(() => {
-    if (user?.language_code) {
-      const detectedLang = user.language_code.startsWith('he') ? 'he' : 'en';
+    // Check saved preference first
+    const savedLang = localStorage.getItem('tutorial-language') as 'en' | 'he' | null;
+    
+    if (savedLang) {
+      setCurrentLanguage(savedLang);
+    } else if (user?.language_code) {
+      // Only switch to English if explicitly Hebrew is not detected and user has English
+      const detectedLang = user.language_code.startsWith('he') ? 'he' : 
+                           user.language_code.startsWith('en') ? 'en' : 'he'; // Default to Hebrew
       setCurrentLanguage(detectedLang);
       
       // Save language preference
       localStorage.setItem('tutorial-language', detectedLang);
-    } else {
-      // Check saved preference
-      const savedLang = localStorage.getItem('tutorial-language') as 'en' | 'he' | null;
-      if (savedLang) {
-        setCurrentLanguage(savedLang);
-      }
     }
+    // If no saved preference and no user data, stays with Hebrew default
   }, [user]);
 
   useEffect(() => {

@@ -1,9 +1,11 @@
 
 import React, { useEffect } from 'react';
 import { useTutorial } from '@/contexts/TutorialContext';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { X, ChevronLeft, ChevronRight, Sparkles, Globe } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Sparkles, Globe, ArrowLeft, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export function TutorialModal() {
   const { 
@@ -17,18 +19,59 @@ export function TutorialModal() {
     prevStep, 
     skipTutorial 
   } = useTutorial();
+  
+  const { hapticFeedback, mainButton, backButton } = useTelegramWebApp();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (isActive) {
       document.body.style.overflow = 'hidden';
+      
+      // Setup Telegram main button for primary action
+      if (currentStepData?.actions?.primary && currentStepData.navigationTarget) {
+        const buttonText = currentStepData.actions.primary[currentLanguage];
+        mainButton.show(buttonText, () => {
+          hapticFeedback.impact('medium');
+          handleNavigationAction();
+        }, '#007AFF');
+      } else {
+        mainButton.hide();
+      }
+      
+      // Setup back button
+      if (currentStep > 0) {
+        backButton.show(() => {
+          hapticFeedback.impact('light');
+          prevStep();
+        });
+      } else {
+        backButton.hide();
+      }
     } else {
       document.body.style.overflow = 'unset';
+      mainButton.hide();
+      backButton.hide();
     }
     
     return () => {
       document.body.style.overflow = 'unset';
+      mainButton.hide();
+      backButton.hide();
     };
-  }, [isActive]);
+  }, [isActive, currentStepData, currentLanguage, currentStep]);
+
+  const handleNavigationAction = () => {
+    if (currentStepData?.navigationTarget) {
+      hapticFeedback.notification('success');
+      navigate(currentStepData.navigationTarget);
+      // Continue tutorial after navigation
+      setTimeout(() => {
+        nextStep();
+      }, 500);
+    } else {
+      nextStep();
+    }
+  };
 
   if (!isActive || !currentStepData) return null;
 
@@ -37,14 +80,17 @@ export function TutorialModal() {
   const isLastStep = currentStep === totalSteps - 1;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ height: 'var(--tg-viewport-height, 100vh)' }}>
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={skipTutorial} />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => {
+        hapticFeedback.impact('light');
+        skipTutorial();
+      }} />
       
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden animate-scale-in">
+      <div className="relative bg-background dark:bg-background rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden animate-scale-in border border-border">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4 text-white">
+        <div className="bg-gradient-to-r from-primary to-primary/80 px-6 py-4 text-primary-foreground">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5" />
@@ -54,15 +100,21 @@ export function TutorialModal() {
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setLanguage(currentLanguage === 'en' ? 'he' : 'en')}
-                className="text-white/80 hover:text-white transition-colors p-1 rounded"
+                onClick={() => {
+                  hapticFeedback.selection();
+                  setLanguage(currentLanguage === 'en' ? 'he' : 'en');
+                }}
+                className="text-primary-foreground/80 hover:text-primary-foreground transition-colors p-1 rounded"
                 title={currentLanguage === 'en' ? 'Switch to Hebrew' : 'Switch to English'}
               >
                 <Globe className="h-4 w-4" />
               </button>
               <button
-                onClick={skipTutorial}
-                className="text-white/80 hover:text-white transition-colors"
+                onClick={() => {
+                  hapticFeedback.impact('light');
+                  skipTutorial();
+                }}
+                className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -70,19 +122,37 @@ export function TutorialModal() {
           </div>
           <Progress 
             value={progressPercentage} 
-            className="h-2 bg-white/20"
+            className="h-2 bg-primary-foreground/20"
           />
         </div>
 
         {/* Content */}
         <div className="p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-3" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+          <h2 className="text-xl font-bold text-foreground mb-3" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
             {currentStepData.title[currentLanguage]}
           </h2>
           
-          <div className="text-gray-600 mb-6 leading-relaxed" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+          <div className="text-muted-foreground mb-6 leading-relaxed" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
             {currentStepData.content[currentLanguage]}
           </div>
+
+          {/* Navigation Button for specific steps */}
+          {currentStepData.navigationTarget && (
+            <div className="mb-6">
+              <Button
+                onClick={() => {
+                  hapticFeedback.impact('medium');
+                  handleNavigationAction();
+                }}
+                className="w-full h-12 text-lg font-medium bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm active:scale-95 transition-all"
+                dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}
+              >
+                <ExternalLink className={`h-5 w-5 ${currentLanguage === 'he' ? 'ml-2' : 'mr-2'}`} />
+                {currentStepData.actions?.primary?.[currentLanguage] || 
+                 (currentLanguage === 'he' ? 'קח אותי לשם' : 'Take Me There')}
+              </Button>
+            </div>
+          )}
 
           {/* Welcome step special illustration */}
           {currentStepData.id === 'welcome' && (
@@ -134,22 +204,37 @@ export function TutorialModal() {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-gray-50 flex items-center justify-between">
+        <div className="px-6 py-4 bg-muted/50 flex items-center justify-between" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
             <Button
               variant="outline"
-              onClick={prevStep}
+              onClick={() => {
+                hapticFeedback.impact('light');
+                prevStep();
+              }}
               disabled={isFirstStep}
-              className="flex items-center gap-2"
+              className={`flex items-center gap-2 ${currentLanguage === 'he' ? 'flex-row-reverse' : ''}`}
             >
-              <ChevronLeft className="h-4 w-4" />
-              {currentLanguage === 'he' ? 'קודם' : 'Previous'}
+              {currentLanguage === 'he' ? (
+                <>
+                  <span>קודם</span>
+                  <ChevronRight className="h-4 w-4" />
+                </>
+              ) : (
+                <>
+                  <ChevronLeft className="h-4 w-4" />
+                  <span>Previous</span>
+                </>
+              )}
             </Button>
 
             <div className="flex gap-3">
               <Button
                 variant="ghost"
-                onClick={skipTutorial}
-                className="text-gray-600"
+                onClick={() => {
+                  hapticFeedback.impact('light');
+                  skipTutorial();
+                }}
+                className="text-muted-foreground"
               >
                 {isLastStep 
                   ? (currentLanguage === 'he' ? 'סגור' : 'Close')
@@ -157,16 +242,34 @@ export function TutorialModal() {
                 }
               </Button>
               
-              <Button
-                onClick={nextStep}
-                className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
-              >
-                {isLastStep 
-                  ? (currentLanguage === 'he' ? 'סיום' : 'Finish')
-                  : (currentLanguage === 'he' ? 'הבא' : 'Next')
-                }
-                {!isLastStep && <ChevronRight className="h-4 w-4" />}
-              </Button>
+              {/* Only show next button if no navigation action is required */}
+              {!currentStepData.navigationTarget && (
+                <Button
+                  onClick={() => {
+                    hapticFeedback.impact('medium');
+                    nextStep();
+                  }}
+                  className={`bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2 ${currentLanguage === 'he' ? 'flex-row-reverse' : ''}`}
+                >
+                  {currentLanguage === 'he' ? (
+                    <>
+                      {isLastStep ? (
+                        <span>סיום</span>
+                      ) : (
+                        <>
+                          <ChevronLeft className="h-4 w-4" />
+                          <span>הבא</span>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <span>{isLastStep ? 'Finish' : 'Next'}</span>
+                      {!isLastStep && <ChevronRight className="h-4 w-4" />}
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
         </div>
       </div>
