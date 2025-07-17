@@ -37,9 +37,9 @@ export function ShapeSelector({ selectedShapes, onShapeToggle }: ShapeSelectorPr
           <button
             key={name}
             onClick={() => onShapeToggle(name)}
-            className={`group relative flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border-2 transition-all duration-300 min-h-[80px] sm:min-h-[90px] hover:shadow-lg hover:scale-105 ${
+            className={`group relative flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-lg border-2 transition-all duration-300 min-h-[70px] sm:min-h-[75px] hover:shadow-md hover:scale-102 ${
               isSelected
-                ? "border-primary bg-primary/10 text-primary shadow-lg scale-105"
+                ? "border-primary bg-primary/10 text-primary shadow-md scale-102"
                 : "border-border/40 bg-card/50 hover:border-border/60 hover:bg-card/80"
             }`}
           >
@@ -48,9 +48,9 @@ export function ShapeSelector({ selectedShapes, onShapeToggle }: ShapeSelectorPr
               isSelected ? "opacity-20" : "group-hover:opacity-10"
             } bg-gradient-to-br from-primary/20 via-primary/10 to-transparent`} />
             
-            {/* Icon container with proper sizing */}
-            <div className="relative z-10 mb-1.5 sm:mb-2">
-              <Icon className="h-6 w-6 sm:h-7 sm:w-7 transition-all duration-300" />
+            {/* Icon container with slightly smaller sizing */}
+            <div className="relative z-10 mb-1 sm:mb-1.5">
+              <Icon className="h-5 w-5 sm:h-6 sm:w-6 transition-all duration-300" />
             </div>
             
             {/* Text with proper truncation handling */}

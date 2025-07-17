@@ -21,15 +21,15 @@ export function ClarityFilter({ selectedClarities, onClarityToggle }: ClarityFil
         )}
       </div>
       
-      <div className="grid grid-cols-2 gap-1">
+      <div className="grid grid-cols-2 gap-2">
         {CLARITIES.map((clarity) => (
           <button
             key={clarity}
             onClick={() => onClarityToggle(clarity)}
-            className={`px-2 py-1.5 text-xs font-medium rounded border transition-all ${
+            className={`px-3 py-2.5 text-sm font-medium rounded-lg border-2 transition-all min-h-[44px] touch-target ${
               selectedClarities.includes(clarity)
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground"
+                ? "bg-primary text-primary-foreground border-primary shadow-md scale-105"
+                : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground hover:border-primary/40"
             }`}
           >
             {clarity}

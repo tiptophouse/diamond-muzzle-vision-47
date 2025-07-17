@@ -26,15 +26,15 @@ export function CutFilter({ selectedCuts, onCutToggle }: CutFilterProps) {
         )}
       </div>
       
-      <div className="space-y-1">
+      <div className="space-y-2">
         {cutGrades.map((cut) => (
           <button
             key={cut}
             onClick={() => onCutToggle(cut)}
-            className={`w-full px-2 py-1.5 text-xs font-medium rounded border transition-all text-left ${
+            className={`w-full px-3 py-2.5 text-sm font-medium rounded-lg border-2 transition-all text-left min-h-[44px] touch-target ${
               selectedCuts.includes(cut)
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground"
+                ? "bg-primary text-primary-foreground border-primary shadow-md scale-105"
+                : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground hover:border-primary/40"
             }`}
           >
             {cut}

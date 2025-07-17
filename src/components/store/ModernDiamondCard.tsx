@@ -235,7 +235,8 @@ export function ModernDiamondCard({ diamond, index, onUpdate }: ModernDiamondCar
             size="sm"
             className="px-3 bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300"
           >
-            <Eye className="h-4 w-4" />
+            <Eye className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">Details</span>
           </Button>
         </div>
       </CardContent>

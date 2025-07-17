@@ -26,15 +26,15 @@ export function FluorescenceFilter({ selectedFluorescence, onFluorescenceToggle 
         )}
       </div>
       
-      <div className="space-y-1">
+      <div className="space-y-2">
         {fluorescenceGrades.map((fluorescence) => (
           <button
             key={fluorescence}
             onClick={() => onFluorescenceToggle(fluorescence)}
-            className={`w-full px-2 py-1.5 text-xs font-medium rounded border transition-all text-left ${
+            className={`w-full px-3 py-2.5 text-sm font-medium rounded-lg border-2 transition-all text-left min-h-[44px] touch-target ${
               selectedFluorescence.includes(fluorescence)
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground"
+                ? "bg-primary text-primary-foreground border-primary shadow-md scale-105"
+                : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground hover:border-primary/40"
             }`}
           >
             {fluorescence}

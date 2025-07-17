@@ -10,7 +10,7 @@ interface FilterHeaderProps {
 
 export function FilterHeader({ activeFiltersCount, onClearFilters }: FilterHeaderProps) {
   return (
-    <div className="flex items-center justify-between mb-6">
+    <div className="space-y-4 mb-6">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
           <Filter className="h-5 w-5 text-white" />
@@ -21,10 +21,11 @@ export function FilterHeader({ activeFiltersCount, onClearFilters }: FilterHeade
         </div>
       </div>
       
+      {/* Clear All button placed below header as per Helen's feedback */}
       {activeFiltersCount > 0 && (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between">
           <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-            {activeFiltersCount} active
+            {activeFiltersCount} active filters
           </Badge>
           <Button
             variant="ghost"

@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
 import { StoreHeader } from "@/components/store/StoreHeader";
-import { PremiumStoreFilters } from "@/components/store/PremiumStoreFilters";
+import { CollapsibleFilters } from "@/components/store/CollapsibleFilters";
 import { StoreGrid } from "@/components/store/StoreGrid";
 import { ImageUpload } from "@/components/store/ImageUpload";
 import { FloatingShareButton } from "@/components/store/FloatingShareButton";
@@ -96,22 +96,7 @@ export default function StorePage() {
   return (
     <MobilePullToRefresh onRefresh={handleRefresh} enabled={!loading}>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
-        {/* Back to Main Menu Button */}
-        <div className="flex items-center pt-safe pb-2 pl-2 sm:pl-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex items-center gap-2 px-3 py-2 text-slate-700 touch-target min-h-[44px]"
-            onClick={() => {
-              selectionChanged();
-              navigate('/dashboard');
-            }}
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span className="hidden sm:inline">Back to Menu</span>
-            <span className="sm:hidden">Back</span>
-          </Button>
-        </div>
+        {/* Removed Back button as per Helen's feedback */}
 
         <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-6 pb-safe">
           {/* Header with Upload Button */}
@@ -141,9 +126,9 @@ export default function StorePage() {
             </Dialog>
           </div>
 
-          {/* Premium Fixed Filters */}
-          <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-xl border border-slate-200/50 rounded-2xl shadow-xl shadow-slate-900/5">
-            <PremiumStoreFilters
+          {/* Collapsible Filters - Filters behind button as per Helen's feedback */}
+          <div className="sticky top-0 z-30">
+            <CollapsibleFilters
               filters={filters}
               onUpdateFilter={updateFilter}
               onClearFilters={clearFilters}
