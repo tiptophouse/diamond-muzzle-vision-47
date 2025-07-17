@@ -27,18 +27,6 @@ export interface Diamond {
   lab?: string;
   gem360Url?: string;
   certificateUrl?: string;
-  polish?: string;
-  symmetry?: string;
-  tablePercentage?: number;
-  depthPercentage?: number;
-  length?: number;
-  width?: number;
-  depth?: number;
-  ratio?: number;
-  culet?: string;
-  girdle?: string;
-  rapnet?: number;
-  pricePerCarat?: number;
 }
 
 interface InventoryTableProps {

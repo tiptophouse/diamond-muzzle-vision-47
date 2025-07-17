@@ -70,31 +70,19 @@ export function useNotifications() {
 
       setNotifications(transformedNotifications);
 
-      // Show toast for new diamond match notifications
-      const newDiamondMatches = transformedNotifications.filter(
-        n => n.type === 'diamond_match' && !n.read
-      );
+      // Show toast for new notifications
+      const newNotifications = transformedNotifications.filter(n => !n.read);
       
-      if (newDiamondMatches.length > 0) {
+      if (newNotifications.length > 0) {
         toast({
-          title: "🔔 התראת התאמת יהלומים חדשה!",
-          description: `נמצאו ${newDiamondMatches.length} התאמות חדשות לבקשות חיפוש`,
+          title: "🔔 התראות חדשות!",
+          description: `יש לך ${newNotifications.length} התראות חדשות על הזדמנות עסקיות`,
         });
       }
 
     } catch (error) {
       console.warn('Notifications fetch failed, using fallback:', error);
-      
-      setNotifications([
-        {
-          id: 'welcome-1',
-          title: 'ברוכים הבאים ל-Diamond Muzzle!',
-          message: 'המערכת מוכנה לשלוח לך התראות על יהלומים דומים למלאי שלך',
-          type: 'info',
-          read: false,
-          created_at: new Date().toISOString(),
-        }
-      ]);
+      setNotifications([]);
     } finally {
       setIsLoading(false);
     }
@@ -102,17 +90,21 @@ export function useNotifications() {
 
   const getNotificationTitle = (type: string, metadata?: any): string => {
     switch (type) {
+      case 'buyer_interest':
+        return '💎 קונה מעוניין ביהלום שלך';
+      case 'pair_match':
+        return '💍 נמצא זוג מושלם';
+      case 'group_demand':
+        return '🔥 ביקוש גבוה בקבוצות';
+      case 'price_opportunity':
+        return '📈 הזדמנות מחיר';
       case 'diamond_match':
         const matchCount = metadata?.match_count || 1;
         return `🔍 נמצאו ${matchCount} התאמות לבקשת חיפוש`;
       case 'customer_inquiry':
         return '👤 פנייה חדשה מלקוח';
-      case 'buyer_interest':
-        return '💎 קונה מעוניין ביהלום שלך';
       case 'wishlist_added':
         return '⭐ יהלום נוסף לרשימת המועדפים';
-      case 'price_alert':
-        return '💰 התראת מחיר';
       case 'system':
         return '⚙️ הודעת מערכת';
       default:
@@ -196,12 +188,10 @@ export function useNotifications() {
           setNotifications(prev => [newNotification, ...prev]);
 
           // Show real-time toast
-          if (payload.new.message_type === 'diamond_match') {
-            toast({
-              title: "🔔 התראת התאמה חדשה!",
-              description: "נמצאה התאמה לבקשת חיפוש יהלום",
-            });
-          }
+          toast({
+            title: "🔔 התראה חדשה!",
+            description: "קיבלת התראה חדשה על הזדמנות עסקית",
+          });
         }
       )
       .subscribe();

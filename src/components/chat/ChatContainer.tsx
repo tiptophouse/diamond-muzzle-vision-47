@@ -5,9 +5,11 @@ import { ChatMessages } from './ChatMessages';
 import { ChatInput } from './ChatInput';
 import { ChatQuickPrompts } from './ChatQuickPrompts';
 import { useOpenAIChat } from '@/hooks/useOpenAIChat';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 
 export function ChatContainer() {
   const { messages, sendMessage, isLoading, clearMessages, user } = useOpenAIChat();
+  const { webApp } = useTelegramWebApp();
 
   // Transform ChatMessage to Message format expected by ChatMessages component
   const transformedMessages = messages.map(msg => ({
@@ -18,13 +20,13 @@ export function ChatContainer() {
     created_at: msg.timestamp,
   }));
 
+  // Use Telegram viewport height or fallback to screen height
+  const viewportHeight = webApp?.viewportStableHeight || (typeof window !== 'undefined' ? window.innerHeight : 600);
+  
   return (
     <div 
-      className="flex flex-col max-w-4xl mx-auto bg-background"
-      style={{ 
-        height: 'var(--tg-viewport-height, 100vh)',
-        maxHeight: 'var(--tg-viewport-height, 100vh)'
-      }}
+      className="flex flex-col w-full mx-auto bg-background"
+      style={{ height: `${viewportHeight}px` }}
     >
       <ChatHeader 
         title="Diamond Assistant" 
@@ -33,7 +35,7 @@ export function ChatContainer() {
       />
       
       <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden">
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 min-h-0">
           <ChatMessages 
             messages={transformedMessages} 
             isLoading={isLoading} 
@@ -41,17 +43,20 @@ export function ChatContainer() {
           />
         </div>
         
-        {/* Fixed bottom section for input and quick prompts */}
-        <div className="border-t border-border bg-background shrink-0">
-          {/* Always visible quick prompts */}
-          <div className="px-4 pt-3">
+        {/* Fixed bottom section - always visible, no scrolling needed */}
+        <div className="shrink-0 border-t border-border bg-background/95 backdrop-blur-sm">
+          {/* Quick prompts - compact on mobile */}
+          <div className="px-3 sm:px-4 pt-2 sm:pt-3">
             <ChatQuickPrompts onPromptClick={sendMessage} compact={true} />
           </div>
           
-          {/* Input at the bottom */}
-          <div className="px-4 pb-4 pt-2" style={{ paddingBottom: 'max(16px, var(--tg-safe-area-inset-bottom, 16px))' }}>
+          {/* Input area - always accessible */}
+          <div className="px-3 sm:px-4 pb-3 sm:pb-4 pt-1 sm:pt-2">
             <ChatInput onSendMessage={sendMessage} disabled={isLoading} />
           </div>
+          
+          {/* Safe area for iOS devices */}
+          <div className="h-safe-area-inset-bottom" />
         </div>
       </div>
     </div>

@@ -32,7 +32,7 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
   console.log('📱 Telegram Environment:', isTelegramEnvironment);
   console.log('👑 Is Admin:', isAdmin);
 
-  // Enhanced 3D URL detection - check for both gem360 and diamondview.aspx URLs
+  // Enhanced Gem360 URL detection - check all possible sources
   const getGem360Url = () => {
     // Priority order: dedicated gem360Url field, then certificateUrl, then imageUrl
     const sources = [
@@ -42,8 +42,8 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
     ];
 
     for (const url of sources) {
-      if (url && (url.includes('gem360') || url.includes('diamondview.aspx'))) {
-        console.log('🔍 Found 3D viewer URL in source:', url);
+      if (url && url.includes('gem360')) {
+        console.log('🔍 Found Gem360 URL in source:', url);
         return url;
       }
     }
@@ -61,12 +61,10 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
   console.log('🔍 Final gem360Url:', gem360Url);
   console.log('🔍 hasGem360View:', hasGem360View);
 
-  // Use actual diamond image from CSV data, excluding 3D viewer URLs
-  const diamondImageUrl = diamond.imageUrl && 
-    !diamond.imageUrl.includes('gem360') &&
-    !diamond.imageUrl.includes('diamondview.aspx')
+  // Priority: show actual diamond image from CSV, then fallback
+  const diamondImageUrl = diamond.imageUrl && !diamond.imageUrl.includes('gem360')
     ? diamond.imageUrl 
-    : null;
+    : `https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop&crop=center`;
 
   const handleDelete = () => {
     // Trigger refetch of data
@@ -150,9 +148,9 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
             isInline={true}
           />
         ) : (
-          // Show regular image or diamond placeholder
+          // Show regular image
           <>
-            {diamondImageUrl && !imageError ? (
+            {!imageError ? (
               <img
                 src={diamondImageUrl}
                 alt={`${diamond.shape} Diamond`}
@@ -162,9 +160,7 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
                 <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-200 to-purple-200 rounded-full flex items-center justify-center">
-                    <span className="text-2xl">💎</span>
-                  </div>
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-200 to-purple-200 rounded-full"></div>
                 </div>
               </div>
             )}
@@ -207,81 +203,24 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
           ${diamond.price.toLocaleString()}
         </div>
 
-        {/* Enhanced Details Grid */}
-        <div className="space-y-3">
-          {/* Primary 4C's */}
-          <div className="grid grid-cols-4 gap-2 text-xs">
-            <div className="text-center">
-              <div className="text-gray-500">Carat</div>
-              <div className="font-medium">{diamond.carat}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-gray-500">Color</div>
-              <div className="font-medium">{diamond.color}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-gray-500">Clarity</div>
-              <div className="font-medium">{diamond.clarity}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-gray-500">Cut</div>
-              <div className="font-medium text-xs">{diamond.cut}</div>
-            </div>
+        {/* Quick Details - Horizontal Layout */}
+        <div className="grid grid-cols-4 gap-2 text-xs">
+          <div className="text-center">
+            <div className="text-gray-500">Carat</div>
+            <div className="font-medium">{diamond.carat}</div>
           </div>
-
-          {/* Additional Details */}
-          <div className="grid grid-cols-2 gap-3 text-xs bg-gray-50 p-3 rounded">
-            {diamond.fluorescence && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">Fluorescence:</span>
-                <span className="font-medium">{diamond.fluorescence}</span>
-              </div>
-            )}
-            {diamond.polish && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">Polish:</span>
-                <span className="font-medium">{diamond.polish}</span>
-              </div>
-            )}
-            {diamond.symmetry && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">Symmetry:</span>
-                <span className="font-medium">{diamond.symmetry}</span>
-              </div>
-            )}
-            {diamond.tablePercentage && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">Table:</span>
-                <span className="font-medium">{diamond.tablePercentage}%</span>
-              </div>
-            )}
-            {diamond.depthPercentage && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">Depth:</span>
-                <span className="font-medium">{diamond.depthPercentage}%</span>
-              </div>
-            )}
-            {diamond.certificateNumber && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">Certificate:</span>
-                <span className="font-medium">{diamond.certificateNumber}</span>
-              </div>
-            )}
+          <div className="text-center">
+            <div className="text-gray-500">Color</div>
+            <div className="font-medium">{diamond.color}</div>
           </div>
-
-          {/* Measurements */}
-          {(diamond.length || diamond.width || diamond.depth) && (
-            <div className="text-xs bg-blue-50 p-2 rounded">
-              <div className="text-gray-500 mb-1">Measurements:</div>
-              <div className="font-medium">
-                {diamond.length && diamond.width && diamond.depth
-                  ? `${diamond.length} × ${diamond.width} × ${diamond.depth} mm`
-                  : diamond.length && diamond.width
-                  ? `${diamond.length} × ${diamond.width} mm`
-                  : 'Available on request'}
-              </div>
-            </div>
-          )}
+          <div className="text-center">
+            <div className="text-gray-500">Clarity</div>
+            <div className="font-medium">{diamond.clarity}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-gray-500">Cut</div>
+            <div className="font-medium text-xs">{diamond.cut.slice(0, 4)}</div>
+          </div>
         </div>
 
         {/* Stock Number */}

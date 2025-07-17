@@ -114,9 +114,9 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       status: data.status || 'Available',
       picture: data.picture?.trim() || '',
       // Include all the new fields
-      certificateNumber: String(data.certificateNumber || '').trim() || '',
-      certificateUrl: String(data.certificateUrl || '').trim() || '',
-      certificateComment: String(data.certificateComment || '').trim() || '',
+      certificateNumber: data.certificateNumber?.trim() || '',
+      certificateUrl: data.certificateUrl?.trim() || '',
+      certificateComment: data.certificateComment?.trim() || '',
       lab: data.lab || 'GIA',
       length: data.length ? Number(data.length) : undefined,
       width: data.width ? Number(data.width) : undefined,

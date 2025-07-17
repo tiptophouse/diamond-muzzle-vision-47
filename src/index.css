@@ -3,6 +3,38 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Telegram Mini App viewport handling */
+:root {
+  --tg-viewport-height: 100vh;
+  --tg-stable-height: 100vh;
+}
+
+/* Safe area support for mobile devices */
+.h-safe-area-inset-bottom {
+  height: env(safe-area-inset-bottom, 0px);
+}
+
+/* Prevent text overflow in buttons */
+.btn-text-fit {
+  @apply text-ellipsis overflow-hidden whitespace-nowrap;
+}
+
+/* Responsive font sizes that prevent text cutoff */
+.text-responsive {
+  font-size: clamp(0.75rem, 2.5vw, 1rem);
+}
+
+/* Telegram Mini App specific styles */
+.tg-viewport {
+  height: var(--tg-viewport-height);
+  max-height: var(--tg-viewport-height);
+}
+
+.tg-stable-viewport {
+  height: var(--tg-stable-height);
+  max-height: var(--tg-stable-height);
+}
+
 /* Telegram Mini App safe areas for iPhone */
 @supports (padding: max(0px)) {
   .safe-area-top {
@@ -30,20 +62,29 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 200 100% 42%; /* Telegram Blue #0088cc */
+    --primary: 214 85% 52%; /* Modern Blue */
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 200 100% 95%; /* Light Telegram Blue */
-    --accent-foreground: 200 100% 20%;
+    --accent: 214 85% 95%; /* Light Modern Blue */
+    --accent-foreground: 214 85% 20%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 200 100% 42%; /* Telegram Blue */
+    --ring: 214 85% 52%; /* Modern Blue */
     --radius: 0.75rem;
+    
+    /* E-commerce Theme Colors */
+    --store-bg: 248 250 252; /* slate-50 */
+    --store-card: 255 255 255; /* white */
+    --store-border: 226 232 240; /* slate-200 */
+    --store-muted: 241 245 249; /* slate-100 */
+    --store-accent: 59 130 246; /* blue-500 */
+    --store-success: 34 197 94; /* green-500 */
+    --store-warning: 245 158 11; /* amber-500 */
 
     /* Telegram WebApp Integration Variables */
     --tg-viewport-height: 100vh;
@@ -61,20 +102,18 @@
     --tg-theme-button-color: hsl(var(--primary));
     --tg-theme-button-text-color: hsl(var(--primary-foreground));
     
-    /* Bright Premium Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(196 100% 50%) 0%, hsl(250 100% 60%) 50%, hsl(310 100% 60%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(45 100% 60%) 0%, hsl(30 100% 65%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(280 100% 75%) 0%, hsl(320 100% 75%) 100%);
-    --gradient-surface: linear-gradient(135deg, hsl(196 100% 95%) 0%, hsl(250 80% 98%) 100%);
-    --gradient-diamond: linear-gradient(135deg, hsl(45 100% 85%) 0%, hsl(196 100% 85%) 50%, hsl(280 100% 85%) 100%);
+    /* Premium Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(250 84% 65%) 0%, hsl(280 84% 65%) 50%, hsl(310 84% 65%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(210 40% 96.1%) 0%, hsl(250 40% 96.1%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(250 95% 92%) 0%, hsl(280 95% 92%) 100%);
+    --gradient-surface: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(250 20% 98%) 100%);
     
-    /* Bright Premium Shadows */
+    /* Premium Shadows */
     --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(196 100% 50% / 0.1), 0 2px 4px -2px hsl(250 100% 60% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(196 100% 50% / 0.15), 0 4px 6px -4px hsl(250 100% 60% / 0.1);
-    --shadow-xl: 0 20px 25px -5px hsl(196 100% 50% / 0.2), 0 8px 10px -6px hsl(250 100% 60% / 0.15);
-    --shadow-premium: 0 25px 50px -12px hsl(196 100% 50% / 0.25);
-    --shadow-diamond: 0 0 30px hsl(45 100% 60% / 0.4), 0 0 60px hsl(196 100% 50% / 0.3);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.1), 0 4px 6px -4px hsl(0 0% 0% / 0.1);
+    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.1), 0 8px 10px -6px hsl(0 0% 0% / 0.1);
+    --shadow-premium: 0 25px 50px -12px hsl(250 84% 65% / 0.15);
     
     /* Premium Colors */
     --success: 142 76% 36%;
@@ -438,23 +477,6 @@
   .touch-target {
     min-height: 44px;
     min-width: 44px;
-  }
-
-  /* Tutorial highlighting */
-  .tutorial-highlight {
-    @apply relative z-10;
-    box-shadow: 0 0 0 4px hsl(var(--primary)), 0 0 20px hsl(var(--primary) / 0.3);
-    border-radius: 8px;
-    animation: tutorial-pulse 2s ease-in-out infinite;
-  }
-
-  @keyframes tutorial-pulse {
-    0%, 100% { 
-      box-shadow: 0 0 0 4px hsl(var(--primary)), 0 0 20px hsl(var(--primary) / 0.3);
-    }
-    50% { 
-      box-shadow: 0 0 0 8px hsl(var(--primary) / 0.5), 0 0 30px hsl(var(--primary) / 0.5);
-    }
   }
 }
 

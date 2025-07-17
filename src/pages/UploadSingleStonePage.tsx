@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
 import { FileText, Camera, Scan } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTutorialInteraction } from "@/hooks/useTutorialInteraction";
 
 export default function UploadSingleStonePage() {
   const [searchParams] = useSearchParams();
@@ -18,6 +19,10 @@ export default function UploadSingleStonePage() {
   const [scannedData, setScannedData] = useState<any>(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const { toast } = useToast();
+
+  // Tutorial interactions
+  useTutorialInteraction('[data-tutorial="diamond-form"]');
+  useTutorialInteraction('[data-tutorial="submit-diamond"]');
 
   // Check if we should start scanning immediately
   useEffect(() => {
