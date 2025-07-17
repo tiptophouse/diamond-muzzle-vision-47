@@ -316,7 +316,8 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
 export function useTutorial() {
   const context = useContext(TutorialContext);
   if (context === undefined) {
-    throw new Error('useTutorial must be used within a TutorialProvider');
+    // Return null instead of throwing error to make it optional
+    return null;
   }
   return context;
 }

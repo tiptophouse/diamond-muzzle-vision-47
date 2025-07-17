@@ -28,7 +28,7 @@ export function SecureShareButton({
 }: SecureShareButtonProps) {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const { toast } = useToast();
-  const { handleRequiredClick, createShareableLink } = useTutorial();
+  const tutorial = useTutorial();
 
   const getSecureUrl = () => {
     return `https://miniapp.mazalbot.com/secure-diamond/${stockNumber}`;
@@ -108,11 +108,15 @@ This premium diamond is available for immediate viewing. The secure link provide
   ];
 
   const handleNativeShare = async () => {
-    // Handle tutorial interaction
-    handleRequiredClick();
+    // Handle tutorial interaction if available
+    if (tutorial?.handleRequiredClick) {
+      tutorial.handleRequiredClick();
+    }
     
-    // Create shareable link for tutorial
-    const shareableLink = createShareableLink(stockNumber);
+    // Create shareable link for tutorial or use secure URL
+    const shareableLink = tutorial?.createShareableLink 
+      ? tutorial.createShareableLink(stockNumber)
+      : getSecureUrl();
     
     if (navigator.share) {
       try {
