@@ -101,11 +101,11 @@ const Index = () => {
     return <Navigate to="/admin" replace />;
   }
 
-  // For regular users, redirect to dashboard
+  // For regular users, redirect to upload page for GIA certificate scanning
   if (isAuthenticated && user) {
-    console.log('✅ Regular user detected - redirecting to dashboard');
+    console.log('✅ Regular user detected - redirecting to upload page');
     redirectHandledRef.current = true;
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/upload" replace />;
   }
 
   // Fallback for unauthenticated users

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useTutorial } from '@/contexts/TutorialContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { X, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Sparkles, Globe } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 interface ElementPosition {
@@ -18,6 +18,10 @@ export function TutorialOverlay() {
     currentStep, 
     totalSteps, 
     currentStepData, 
+    currentLanguage,
+    setLanguage,
+    waitingForClick,
+    handleRequiredClick,
     nextStep, 
     prevStep, 
     skipTutorial 
@@ -32,7 +36,17 @@ export function TutorialOverlay() {
   useEffect(() => {
     if (!isActive || !currentStepData) return;
 
-    // Navigate to correct page based on step
+    // Auto-navigate to target page when step has navigationTarget
+    if (currentStepData.navigationTarget) {
+      const timer = setTimeout(() => {
+        if (location.pathname !== currentStepData.navigationTarget) {
+          navigate(currentStepData.navigationTarget);
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+
+    // Navigate to correct page based on step section
     const targetRoute = getRouteForStep(currentStepData.section);
     if (location.pathname !== targetRoute) {
       navigate(targetRoute);
@@ -130,18 +144,45 @@ export function TutorialOverlay() {
   return (
     <div ref={overlayRef} className="fixed inset-0 z-50 pointer-events-none">
       {/* Dark overlay with spotlight */}
-      <div className="absolute inset-0 bg-black/70 transition-all duration-300">
+      <div className="absolute inset-0 bg-black/80 transition-all duration-300">
         {elementPosition && (
-          <div
-            className="absolute bg-transparent border-4 border-blue-500 rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] animate-pulse"
-            style={{
-              top: elementPosition.top - 8,
-              left: elementPosition.left - 8,
-              width: elementPosition.width + 16,
-              height: elementPosition.height + 16,
-              boxShadow: `0 0 0 8px rgba(59, 130, 246, 0.5), 0 0 0 9999px rgba(0, 0, 0, 0.7)`
-            }}
-          />
+          <>
+            {/* Main highlight with super strong emphasis */}
+            <div
+              className="absolute bg-transparent border-4 border-red-500 rounded-lg animate-pulse"
+              style={{
+                top: elementPosition.top - 12,
+                left: elementPosition.left - 12,
+                width: elementPosition.width + 24,
+                height: elementPosition.height + 24,
+                boxShadow: `0 0 0 8px rgba(239, 68, 68, 0.6), 0 0 0 9999px rgba(0, 0, 0, 0.8), 0 0 60px rgba(239, 68, 68, 0.8)`
+              }}
+            />
+            {/* Animated arrow pointing to element */}
+            <div
+              className="absolute pointer-events-none animate-bounce"
+              style={{
+                top: elementPosition.top - 50,
+                left: elementPosition.left + elementPosition.width / 2 - 15,
+                fontSize: '30px',
+                zIndex: 9999
+              }}
+            >
+              👇
+            </div>
+            {/* "CLICK HERE" text */}
+            <div
+              className="absolute pointer-events-none bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-lg animate-pulse"
+              style={{
+                top: elementPosition.top - 80,
+                left: elementPosition.left + elementPosition.width / 2 - 60,
+                zIndex: 9999,
+                textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
+              }}
+            >
+              CLICK HERE!
+            </div>
+          </>
         )}
       </div>
 
@@ -174,15 +215,24 @@ export function TutorialOverlay() {
               <div className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5" />
                 <span className="font-semibold text-sm">
-                  Step {currentStep + 1} of {totalSteps}
+                  {currentLanguage === 'he' ? 'שלב' : 'Step'} {currentStep + 1} {currentLanguage === 'he' ? 'מתוך' : 'of'} {totalSteps}
                 </span>
               </div>
-              <button
-                onClick={skipTutorial}
-                className="text-white/80 hover:text-white transition-colors p-1 hover:bg-white/20 rounded"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setLanguage(currentLanguage === 'en' ? 'he' : 'en')}
+                  className="text-white/80 hover:text-white transition-colors p-1 hover:bg-white/20 rounded"
+                  title={currentLanguage === 'en' ? 'Switch to Hebrew' : 'Switch to English'}
+                >
+                  <Globe className="h-3 w-3" />
+                </button>
+                <button
+                  onClick={skipTutorial}
+                  className="text-white/80 hover:text-white transition-colors p-1 hover:bg-white/20 rounded"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
             <Progress 
               value={progressPercentage} 
@@ -192,12 +242,12 @@ export function TutorialOverlay() {
 
           {/* Content */}
           <div className="p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-3">
-              {currentStepData.title}
+            <h2 className="text-lg font-bold text-gray-900 mb-3" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+              {currentStepData.title[currentLanguage]}
             </h2>
             
-            <div className="text-gray-600 mb-6 leading-relaxed text-sm">
-              {currentStepData.content}
+            <div className="text-gray-600 mb-6 leading-relaxed text-sm" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+              {currentStepData.content[currentLanguage]}
             </div>
 
             {/* Step-specific illustrations */}
@@ -221,7 +271,7 @@ export function TutorialOverlay() {
               size="sm"
             >
               <ChevronLeft className="h-4 w-4" />
-              Previous
+              {currentLanguage === 'he' ? 'קודם' : 'Previous'}
             </Button>
 
             <div className="flex gap-2">
@@ -231,16 +281,27 @@ export function TutorialOverlay() {
                 className="text-gray-600 text-sm"
                 size="sm"
               >
-                {isLastStep ? 'Close' : 'Skip'}
+                {isLastStep 
+                  ? (currentLanguage === 'he' ? 'סגור' : 'Close')
+                  : (currentLanguage === 'he' ? 'דלג' : 'Skip')
+                }
               </Button>
               
               <Button
-                onClick={nextStep}
+                onClick={waitingForClick ? handleRequiredClick : nextStep}
+                disabled={waitingForClick && !currentStepData?.requireClick}
                 className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 text-sm"
                 size="sm"
               >
-                {isLastStep ? 'Finish' : 'Next'}
-                {!isLastStep && <ChevronRight className="h-4 w-4" />}
+                {waitingForClick 
+                  ? (currentLanguage === 'he' ? 'מחכה ללחיצה...' : 'Waiting for click...')
+                  : currentStepData?.navigationTarget
+                    ? (currentLanguage === 'he' ? 'קח אותי לשם' : 'Take Me There')
+                    : isLastStep 
+                      ? (currentLanguage === 'he' ? 'סיום' : 'Finish')
+                      : (currentLanguage === 'he' ? 'הבא' : 'Next')
+                }
+                {!isLastStep && !waitingForClick && <ChevronRight className="h-4 w-4" />}
               </Button>
             </div>
           </div>

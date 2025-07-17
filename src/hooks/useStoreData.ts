@@ -4,10 +4,12 @@ import { Diamond } from "@/components/inventory/InventoryTable";
 import { fetchInventoryData } from "@/services/inventoryDataService";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useInventoryDataSync } from "./inventory/useInventoryDataSync";
+import { useTelegramStorage } from "./useTelegramStorage";
 
 export function useStoreData() {
   const { user, isLoading: authLoading } = useTelegramAuth();
   const { subscribeToInventoryChanges } = useInventoryDataSync();
+  const { saveDiamonds, getDiamonds, storageType, isCloudStorageReady } = useTelegramStorage();
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -88,20 +90,73 @@ export function useStoreData() {
               certificateUrl: item.certificate_url || item.certificateUrl || undefined
             };
           })
-          .filter(diamond => diamond.store_visible && diamond.status === 'Available'); // Only show store-visible and available diamonds
+          .filter(diamond => diamond.store_visible && diamond.status === 'Available') // Only show store-visible and available diamonds
+          .sort((a, b) => {
+            // Prioritize diamonds with images first
+            const aHasImage = !!a.imageUrl;
+            const bHasImage = !!b.imageUrl;
+            
+            if (aHasImage && !bHasImage) return -1;
+            if (!aHasImage && bHasImage) return 1;
+            
+            // Then sort by price (highest first)
+            return (b.price || 0) - (a.price || 0);
+          });
 
         console.log('🏪 STORE: Processed', transformedDiamonds.length, 'store-visible diamonds from', result.data.length, 'total diamonds');
         console.log('🏪 STORE: Found', transformedDiamonds.filter(d => d.gem360Url).length, 'diamonds with Gem360 URLs');
+        console.log('🏪 STORE: Found', transformedDiamonds.filter(d => d.imageUrl).length, 'diamonds with images (prioritized first)');
+        
+        // Save to Telegram storage for offline access
+        await saveDiamonds(transformedDiamonds);
+        console.log(`📱 Saved diamonds to ${storageType} storage`);
+        
         setDiamonds(transformedDiamonds);
       } else {
         console.log('🏪 STORE: No diamonds found in response');
-        setDiamonds([]);
+        // Try to load from local storage if no network data
+        const storedDiamonds = getDiamonds();
+        if (storedDiamonds.length > 0) {
+          console.log('📱 Loading', storedDiamonds.length, 'diamonds from', storageType, 'storage');
+          // Apply same sorting to stored diamonds
+          const sortedStoredDiamonds = storedDiamonds.sort((a, b) => {
+            const aHasImage = !!a.imageUrl;
+            const bHasImage = !!b.imageUrl;
+            
+            if (aHasImage && !bHasImage) return -1;
+            if (!aHasImage && bHasImage) return 1;
+            
+            return (b.price || 0) - (a.price || 0);
+          });
+          setDiamonds(sortedStoredDiamonds);
+        } else {
+          setDiamonds([]);
+        }
       }
     } catch (err) {
       console.error('🏪 STORE: Unexpected error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load store diamonds';
-      setError(errorMessage);
-      setDiamonds([]);
+      
+      // Try to load from local storage on error
+      const storedDiamonds = getDiamonds();
+      if (storedDiamonds.length > 0) {
+        console.log('📱 Fallback: Loading', storedDiamonds.length, 'diamonds from', storageType, 'storage');
+        // Apply same sorting to stored diamonds
+        const sortedStoredDiamonds = storedDiamonds.sort((a, b) => {
+          const aHasImage = !!a.imageUrl;
+          const bHasImage = !!b.imageUrl;
+          
+          if (aHasImage && !bHasImage) return -1;
+          if (!aHasImage && bHasImage) return 1;
+          
+          return (b.price || 0) - (a.price || 0);
+        });
+        setDiamonds(sortedStoredDiamonds);
+        setError(`${errorMessage} (showing cached data)`);
+      } else {
+        setError(errorMessage);
+        setDiamonds([]);
+      }
     } finally {
       setLoading(false);
     }
