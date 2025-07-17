@@ -105,40 +105,9 @@ export function SingleStoneUploadForm({
   const handleGiaScanSuccess = useCallback((giaData: any) => {
     console.log('GIA data received:', giaData);
     
-    // Shape normalization mapping from AI output to form values
-    const normalizeShape = (shape: string): string => {
-      if (!shape) return 'Round Brilliant';
-      const upperShape = shape.toUpperCase();
-      switch (upperShape) {
-        case 'ROUND':
-        case 'ROUND BRILLIANT':
-          return 'Round Brilliant';
-        case 'PRINCESS':
-          return 'Princess';
-        case 'EMERALD':
-          return 'Emerald';
-        case 'ASSCHER':
-          return 'Asscher';
-        case 'OVAL':
-          return 'Oval';
-        case 'RADIANT':
-          return 'Radiant';
-        case 'PEAR':
-          return 'Pear';
-        case 'HEART':
-          return 'Heart';
-        case 'MARQUISE':
-          return 'Marquise';
-        case 'CUSHION':
-          return 'Cushion';
-        default:
-          return 'Round Brilliant';
-      }
-    };
-    
     // Comprehensive mapping of all GIA data fields including certificate URL
     if (giaData.stock) setValue('stockNumber', giaData.stock);
-    if (giaData.shape) setValue('shape', normalizeShape(giaData.shape));
+    if (giaData.shape) setValue('shape', giaData.shape);
     if (giaData.weight) setValue('carat', Number(giaData.weight));
     if (giaData.color) setValue('color', giaData.color);
     if (giaData.clarity) setValue('clarity', giaData.clarity);
