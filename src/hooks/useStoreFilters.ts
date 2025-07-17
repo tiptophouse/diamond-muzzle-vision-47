@@ -1,7 +1,6 @@
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { Diamond } from "@/components/inventory/InventoryTable";
-import { useTelegramStorage } from "./useTelegramStorage";
 
 interface StoreFilters {
   shapes: string[];
@@ -14,7 +13,6 @@ interface StoreFilters {
 }
 
 export function useStoreFilters(diamonds: Diamond[]) {
-  const { saveUserPreferences, getUserPreferences, addToSearchHistory } = useTelegramStorage();
   const getInitialRanges = () => {
     if (diamonds.length === 0) {
       return {
