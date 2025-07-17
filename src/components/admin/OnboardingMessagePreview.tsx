@@ -17,12 +17,15 @@ interface OnboardingMessagePreviewProps {
     last_name?: string;
     username?: string;
   }>;
+  adminTelegramId?: number;
 }
 
-export function OnboardingMessagePreview({ sessionUsers }: OnboardingMessagePreviewProps) {
+export function OnboardingMessagePreview({ sessionUsers, adminTelegramId = 2138564172 }: OnboardingMessagePreviewProps) {
   const { toast } = useToast();
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isImproving, setIsImproving] = useState(false);
+  const [allRecipients, setAllRecipients] = useState([...sessionUsers]);
   const [messageTemplate, setMessageTemplate] = useState(`🎉 ברוכים הבאים למערכת ניהול היהלומים החדשנית!
 
 👋 שלום {firstName}!
@@ -42,7 +45,65 @@ export function OnboardingMessagePreview({ sessionUsers }: OnboardingMessagePrev
 בהצלחה!
 צוות ניהול היהלומים`);
 
-  const [messageTitle, setMessageTitle] = useState('הדרכת שימוש במערכת - התחל עכשיו!');
+  const [messageTitle, setMessageTitle] = useState('🚀 הדרכה מיוחדת למערכת ניהול היהלומים - התחל עכשיו!');
+
+  // Add admin to recipients if not already included
+  React.useEffect(() => {
+    const adminUser = {
+      telegram_id: adminTelegramId,
+      first_name: 'Admin',
+      last_name: '',
+      username: 'admin'
+    };
+    
+    const hasAdmin = sessionUsers.some(user => user.telegram_id === adminTelegramId);
+    if (!hasAdmin) {
+      setAllRecipients([adminUser, ...sessionUsers]);
+    } else {
+      setAllRecipients(sessionUsers);
+    }
+  }, [sessionUsers, adminTelegramId]);
+
+  const generateTutorialUrl = (telegramId: number) => {
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/?tutorial=start&lang=he&onboarding=true&user_id=${telegramId}&step=dashboard`;
+  };
+
+  const improveMessageWithAI = async () => {
+    setIsImproving(true);
+    try {
+      const sampleUser = allRecipients[0] || { telegram_id: adminTelegramId, first_name: 'משתמש' };
+      const firstName = sampleUser.first_name || 'משתמש';
+      const tutorialUrl = generateTutorialUrl(sampleUser.telegram_id);
+
+      const response = await supabase.functions.invoke('improve-message', {
+        body: {
+          userFirstName: firstName,
+          baseMessage: messageTemplate,
+          tutorialUrl: tutorialUrl
+        }
+      });
+
+      if (response.error) throw response.error;
+
+      const { improvedMessage } = response.data;
+      setMessageTemplate(improvedMessage);
+      
+      toast({
+        title: 'הודעה שופרה בהצלחה!',
+        description: 'הודעה נוצרה מחדש באמצעות בינה מלאכותית',
+      });
+    } catch (error) {
+      console.error('Error improving message:', error);
+      toast({
+        title: 'שגיאה בשיפור ההודעה',
+        description: 'לא ניתן לשפר את ההודעה כרגע',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsImproving(false);
+    }
+  };
 
   const generatePreviewMessage = (user: any) => {
     const tutorialUrl = generateTutorialUrl(user.telegram_id);
@@ -59,7 +120,7 @@ export function OnboardingMessagePreview({ sessionUsers }: OnboardingMessagePrev
   const handleSendToAll = async () => {
     setIsSending(true);
     try {
-      const notifications = sessionUsers.map(user => {
+      const notifications = allRecipients.map(user => {
         const preview = generatePreviewMessage(user);
         return {
           telegram_id: user.telegram_id,
@@ -73,7 +134,8 @@ export function OnboardingMessagePreview({ sessionUsers }: OnboardingMessagePrev
               first_name: user.first_name,
               last_name: user.last_name,
               username: user.username
-            }
+            },
+            is_admin: user.telegram_id === adminTelegramId
           }
         };
       });
@@ -86,7 +148,7 @@ export function OnboardingMessagePreview({ sessionUsers }: OnboardingMessagePrev
 
       toast({
         title: 'הודעות נשלחו בהצלחה!',
-        description: `נשלחו ${sessionUsers.length} הודעות הדרכה למשתמשים`,
+        description: `נשלחו ${allRecipients.length} הודעות הדרכה (כולל למנהל)`,
       });
 
       setIsPreviewMode(false);
@@ -102,10 +164,10 @@ export function OnboardingMessagePreview({ sessionUsers }: OnboardingMessagePrev
     }
   };
 
-  const previewUser = sessionUsers[0] || { 
-    telegram_id: 123456789, 
-    first_name: 'דוגמה', 
-    username: 'example_user' 
+  const previewUser = allRecipients[0] || { 
+    telegram_id: adminTelegramId, 
+    first_name: 'Admin', 
+    username: 'admin_user' 
   };
   
   const previewMessage = generatePreviewMessage(previewUser);
@@ -116,7 +178,7 @@ export function OnboardingMessagePreview({ sessionUsers }: OnboardingMessagePrev
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            הדרכת משתמשים חדשים ({sessionUsers.length} משתמשים)
+            הדרכת משתמשים חדשים ({allRecipients.length} משתמשים + מנהל)
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -149,6 +211,15 @@ export function OnboardingMessagePreview({ sessionUsers }: OnboardingMessagePrev
 
           <div className="flex gap-2">
             <Button
+              onClick={improveMessageWithAI}
+              disabled={isImproving}
+              variant="secondary"
+              className="flex items-center gap-2"
+            >
+              {isImproving ? '🤖 משפר...' : '🤖 שפר עם AI'}
+            </Button>
+            
+            <Button
               onClick={() => setIsPreviewMode(!isPreviewMode)}
               variant="outline"
               className="flex items-center gap-2"
@@ -163,7 +234,7 @@ export function OnboardingMessagePreview({ sessionUsers }: OnboardingMessagePrev
               className="flex items-center gap-2"
             >
               <Send className="h-4 w-4" />
-              {isSending ? 'שולח...' : `שלח ל-${sessionUsers.length} משתמשים`}
+              {isSending ? 'שולח...' : `שלח ל-${allRecipients.length} משתמשים`}
             </Button>
           </div>
         </CardContent>
@@ -194,24 +265,26 @@ export function OnboardingMessagePreview({ sessionUsers }: OnboardingMessagePrev
         </Card>
       )}
 
-      {sessionUsers.length > 0 && (
+      {allRecipients.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>רשימת משתמשים שיקבלו את ההודעה</CardTitle>
+            <CardTitle>רשימת משתמשים שיקבלו את ההודעה (כולל מנהל)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="max-h-40 overflow-y-auto">
               <div className="grid gap-2">
-                {sessionUsers.slice(0, 10).map((user, index) => (
+                {allRecipients.slice(0, 10).map((user, index) => (
                   <div key={user.telegram_id} className="flex items-center gap-2 text-sm">
-                    <Badge variant="outline">{index + 1}</Badge>
+                    <Badge variant={user.telegram_id === adminTelegramId ? "default" : "outline"}>
+                      {user.telegram_id === adminTelegramId ? 'מנהל' : index + 1}
+                    </Badge>
                     <span>{user.first_name || user.username || user.telegram_id}</span>
                     <span className="text-muted-foreground">({user.telegram_id})</span>
                   </div>
                 ))}
-                {sessionUsers.length > 10 && (
+                {allRecipients.length > 10 && (
                   <div className="text-sm text-muted-foreground">
-                    ...ועוד {sessionUsers.length - 10} משתמשים
+                    ...ועוד {allRecipients.length - 10} משתמשים
                   </div>
                 )}
               </div>

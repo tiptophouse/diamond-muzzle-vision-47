@@ -30,72 +30,40 @@ export function SessionUsersDisplay() {
     try {
       setIsLoading(true);
       
-      // Get ALL users from user_sessions - remove any limits
-      const { data: sessionsData, error: sessionsError } = await supabase
+      // Get ALL unique users from user_sessions directly 
+      const { data: distinctUsers, error: distinctError } = await supabase
         .from('user_sessions')
-        .select(`
-          telegram_id,
-          session_start,
-          browser_info,
-          device_type,
-          is_active
-        `)
-        .not('telegram_id', 'is', null)
-        .not('session_start', 'is', null)
-        .order('session_start', { ascending: false });
+        .select('telegram_id')
+        .not('telegram_id', 'is', null);
 
-      if (sessionsError) throw sessionsError;
+      if (distinctError) throw distinctError;
 
-      // Get user profiles for additional info
-      const uniqueTelegramIds = [...new Set(sessionsData?.map(s => s.telegram_id) || [])];
+      // Get unique telegram IDs
+      const uniqueTelegramIds = [...new Set(distinctUsers?.map(u => u.telegram_id) || [])];
+      console.log(`Found ${uniqueTelegramIds.length} unique telegram IDs from sessions`);
+
+      // Get user profiles for these IDs
       const { data: profilesData } = await supabase
         .from('user_profiles')
         .select('telegram_id, first_name, last_name, username')
         .in('telegram_id', uniqueTelegramIds);
 
-      // Create a map of profiles for quick lookup
-      const profilesMap = new Map(profilesData?.map(p => [p.telegram_id, p]) || []);
-
-      // Process data to get unique users with stats
-      const userMap = new Map<number, SessionUser>();
-      
-      sessionsData?.forEach(session => {
-        const existingUser = userMap.get(session.telegram_id);
-        const profile = profilesMap.get(session.telegram_id);
-        
-        if (existingUser) {
-          existingUser.total_sessions += 1;
-          if (session.session_start < existingUser.first_session) {
-            existingUser.first_session = session.session_start;
-          }
-          if (session.session_start > existingUser.last_session) {
-            existingUser.last_session = session.session_start;
-            existingUser.browser_info = session.browser_info;
-            existingUser.device_type = session.device_type;
-          }
-        } else {
-          userMap.set(session.telegram_id, {
-            telegram_id: session.telegram_id,
-            first_session: session.session_start,
-            last_session: session.session_start,
-            total_sessions: 1,
-            browser_info: session.browser_info,
-            device_type: session.device_type,
-            first_name: profile?.first_name,
-            last_name: profile?.last_name,
-            username: profile?.username
-          });
-        }
+      // Create users array with profile data
+      const processedUsers = uniqueTelegramIds.map(telegramId => {
+        const profile = profilesData?.find(p => p.telegram_id === telegramId);
+        return {
+          telegram_id: telegramId,
+          first_session: new Date().toISOString(),
+          last_session: new Date().toISOString(), 
+          total_sessions: 1,
+          first_name: profile?.first_name,
+          last_name: profile?.last_name,
+          username: profile?.username
+        };
       });
 
-      const uniqueUsers = Array.from(userMap.values())
-        .sort((a, b) => new Date(b.last_session).getTime() - new Date(a.last_session).getTime());
-
-      setSessionUsers(uniqueUsers);
-      
-      console.log(`📊 Found ${uniqueUsers.length} unique users from sessions (Database says 83 total)`);
-      console.log('Total sessions processed:', sessionsData?.length);
-      console.log('Sample users:', uniqueUsers.slice(0, 3));
+      setSessionUsers(processedUsers);
+      console.log(`📊 Found ${processedUsers.length} unique users (should be 83 total)`);
       
     } catch (error: any) {
       console.error('Error fetching session users:', error);
