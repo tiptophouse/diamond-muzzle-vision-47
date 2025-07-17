@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Diamond } from "./InventoryTable";
 import { Edit, Trash, ImageIcon } from "lucide-react";
 import { StoreVisibilityToggle } from "./StoreVisibilityToggle";
+import { GeneratePostButton } from "./GeneratePostButton";
 
 interface InventoryTableRowProps {
   diamond: Diamond & { store_visible?: boolean };
@@ -76,7 +77,9 @@ export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle }: 
         </Badge>
       </TableCell>
       <TableCell>
-        <div className="flex gap-1">
+        <div className="flex gap-1 flex-wrap">
+          <GeneratePostButton diamond={diamond} />
+          
           {onStoreToggle && (
             <StoreVisibilityToggle 
               stockNumber={diamond.stockNumber}
