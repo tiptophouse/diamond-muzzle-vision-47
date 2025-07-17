@@ -44,7 +44,7 @@ export function TutorialModal() {
 
   const handleStartCertificateScan = () => {
     hapticFeedback.impact('medium');
-    navigate('/upload-single-stone');
+    navigate('/upload');
     skipTutorial();
   };
 
