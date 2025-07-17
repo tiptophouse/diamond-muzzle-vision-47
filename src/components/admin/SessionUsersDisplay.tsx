@@ -30,7 +30,7 @@ export function SessionUsersDisplay() {
     try {
       setIsLoading(true);
       
-      // Get unique users from user_sessions with aggregated data
+      // Get ALL users from user_sessions - remove any limits
       const { data: sessionsData, error: sessionsError } = await supabase
         .from('user_sessions')
         .select(`
@@ -40,6 +40,8 @@ export function SessionUsersDisplay() {
           device_type,
           is_active
         `)
+        .not('telegram_id', 'is', null)
+        .not('session_start', 'is', null)
         .order('session_start', { ascending: false });
 
       if (sessionsError) throw sessionsError;
@@ -91,7 +93,9 @@ export function SessionUsersDisplay() {
 
       setSessionUsers(uniqueUsers);
       
-      console.log(`📊 Found ${uniqueUsers.length} unique users from sessions`);
+      console.log(`📊 Found ${uniqueUsers.length} unique users from sessions (Database says 83 total)`);
+      console.log('Total sessions processed:', sessionsData?.length);
+      console.log('Sample users:', uniqueUsers.slice(0, 3));
       
     } catch (error: any) {
       console.error('Error fetching session users:', error);
