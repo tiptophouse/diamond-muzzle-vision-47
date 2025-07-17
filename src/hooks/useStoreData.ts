@@ -4,10 +4,12 @@ import { Diamond } from "@/components/inventory/InventoryTable";
 import { fetchInventoryData } from "@/services/inventoryDataService";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useInventoryDataSync } from "./inventory/useInventoryDataSync";
+import { useTelegramStorage } from "./useTelegramStorage";
 
 export function useStoreData() {
   const { user, isLoading: authLoading } = useTelegramAuth();
   const { subscribeToInventoryChanges } = useInventoryDataSync();
+  const { saveDiamonds, getDiamonds, storageType, isCloudStorageReady } = useTelegramStorage();
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,16 +94,37 @@ export function useStoreData() {
 
         console.log('🏪 STORE: Processed', transformedDiamonds.length, 'store-visible diamonds from', result.data.length, 'total diamonds');
         console.log('🏪 STORE: Found', transformedDiamonds.filter(d => d.gem360Url).length, 'diamonds with Gem360 URLs');
+        
+        // Save to Telegram storage for offline access
+        await saveDiamonds(transformedDiamonds);
+        console.log(`📱 Saved diamonds to ${storageType} storage`);
+        
         setDiamonds(transformedDiamonds);
       } else {
         console.log('🏪 STORE: No diamonds found in response');
-        setDiamonds([]);
+        // Try to load from local storage if no network data
+        const storedDiamonds = getDiamonds();
+        if (storedDiamonds.length > 0) {
+          console.log('📱 Loading', storedDiamonds.length, 'diamonds from', storageType, 'storage');
+          setDiamonds(storedDiamonds);
+        } else {
+          setDiamonds([]);
+        }
       }
     } catch (err) {
       console.error('🏪 STORE: Unexpected error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load store diamonds';
-      setError(errorMessage);
-      setDiamonds([]);
+      
+      // Try to load from local storage on error
+      const storedDiamonds = getDiamonds();
+      if (storedDiamonds.length > 0) {
+        console.log('📱 Fallback: Loading', storedDiamonds.length, 'diamonds from', storageType, 'storage');
+        setDiamonds(storedDiamonds);
+        setError(`${errorMessage} (showing cached data)`);
+      } else {
+        setError(errorMessage);
+        setDiamonds([]);
+      }
     } finally {
       setLoading(false);
     }

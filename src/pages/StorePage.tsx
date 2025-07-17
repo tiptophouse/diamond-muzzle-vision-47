@@ -12,13 +12,15 @@ import { MobilePullToRefresh } from "@/components/mobile/MobilePullToRefresh";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Upload, Image, ArrowLeft } from "lucide-react";
+import { Upload, Image, ArrowLeft, Database } from "lucide-react";
 import { toast } from 'sonner';
+import { TelegramStorageInfo } from "@/components/store/TelegramStorageInfo";
 
 export default function StorePage() {
   const { diamonds, loading, error, refetch } = useStoreData();
   const { filters, filteredDiamonds, updateFilter, clearFilters } = useStoreFilters(diamonds || []);
   const [showUpload, setShowUpload] = useState(false);
+  const [showStorageInfo, setShowStorageInfo] = useState(false);
   const [searchParams] = useSearchParams();
   const stockNumber = searchParams.get('stock');
   const { selectionChanged } = useTelegramHapticFeedback();
@@ -121,24 +123,44 @@ export default function StorePage() {
               onOpenFilters={() => {}}
             />
             
-            <Dialog open={showUpload} onOpenChange={setShowUpload}>
-              <DialogTrigger asChild>
-                <Button className="w-full sm:w-auto flex items-center justify-center gap-2 touch-target min-h-[44px] bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                  <Upload className="h-4 w-4" />
-                  <span className="hidden sm:inline">Upload Photo</span>
-                  <span className="sm:hidden">Upload</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="w-[95vw] max-w-md mx-auto">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                    <Image className="h-5 w-5" />
-                    Upload Image to Store
-                  </DialogTitle>
-                </DialogHeader>
-                <ImageUpload onImageUploaded={handleImageUploaded} />
-              </DialogContent>
-            </Dialog>
+            <div className="flex gap-2">
+              <Dialog open={showUpload} onOpenChange={setShowUpload}>
+                <DialogTrigger asChild>
+                  <Button className="flex items-center justify-center gap-2 touch-target min-h-[44px] bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                    <Upload className="h-4 w-4" />
+                    <span className="hidden sm:inline">Upload Photo</span>
+                    <span className="sm:hidden">Upload</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="w-[95vw] max-w-md mx-auto">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                      <Image className="h-5 w-5" />
+                      Upload Image to Store
+                    </DialogTitle>
+                  </DialogHeader>
+                  <ImageUpload onImageUploaded={handleImageUploaded} />
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={showStorageInfo} onOpenChange={setShowStorageInfo}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="flex items-center justify-center gap-2 touch-target min-h-[44px]">
+                    <Database className="h-4 w-4" />
+                    <span className="hidden sm:inline">Storage</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="w-[95vw] max-w-md mx-auto">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                      <Database className="h-5 w-5" />
+                      Telegram Storage Status
+                    </DialogTitle>
+                  </DialogHeader>
+                  <TelegramStorageInfo />
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
 
           {/* Premium Fixed Filters */}
