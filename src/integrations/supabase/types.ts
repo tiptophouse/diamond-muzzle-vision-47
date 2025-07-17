@@ -799,6 +799,51 @@ export type Database = {
           },
         ]
       }
+      tutorial_analytics: {
+        Row: {
+          created_at: string
+          first_upload_completed_at: string | null
+          id: string
+          language_used: string | null
+          source: string | null
+          steps_completed: string[] | null
+          telegram_id: number
+          total_steps_viewed: number | null
+          tutorial_completed_at: string | null
+          tutorial_skipped_at: string | null
+          tutorial_started_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          first_upload_completed_at?: string | null
+          id?: string
+          language_used?: string | null
+          source?: string | null
+          steps_completed?: string[] | null
+          telegram_id: number
+          total_steps_viewed?: number | null
+          tutorial_completed_at?: string | null
+          tutorial_skipped_at?: string | null
+          tutorial_started_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          first_upload_completed_at?: string | null
+          id?: string
+          language_used?: string | null
+          source?: string | null
+          steps_completed?: string[] | null
+          telegram_id?: number
+          total_steps_viewed?: number | null
+          tutorial_completed_at?: string | null
+          tutorial_skipped_at?: string | null
+          tutorial_started_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_activity_log: {
         Row: {
           activity_data: Json | null

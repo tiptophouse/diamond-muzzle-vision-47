@@ -6,6 +6,7 @@ import { AdminUserManager } from '@/components/admin/AdminUserManager';
 import { NotificationCenter } from '@/components/admin/NotificationCenter';
 import { NotificationSender } from '@/components/admin/NotificationSender';
 import { PaymentManagement } from '@/components/admin/PaymentManagement';
+import { SessionUsersDisplay } from '@/components/admin/SessionUsersDisplay';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
@@ -210,7 +211,7 @@ export default function Admin() {
       {/* Main Admin Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-white border border-gray-200 rounded-lg p-1">
+          <TabsList className="grid w-full grid-cols-5 bg-white border border-gray-200 rounded-lg p-1">
             <TabsTrigger 
               value="users" 
               className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
@@ -218,6 +219,14 @@ export default function Admin() {
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">User Management</span>
               <span className="sm:hidden">Users</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="sessions" 
+              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            >
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Session Users</span>
+              <span className="sm:hidden">Sessions</span>
             </TabsTrigger>
             <TabsTrigger 
               value="payments" 
@@ -246,6 +255,12 @@ export default function Admin() {
             <TabsContent value="users" className="space-y-0">
               <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                 <AdminUserManager />
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="sessions" className="space-y-0">
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <SessionUsersDisplay />
               </div>
             </TabsContent>
             
