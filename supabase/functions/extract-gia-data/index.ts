@@ -44,7 +44,7 @@ serve(async (req) => {
             content: `You are a GIA certificate data extraction specialist. Extract ALL diamond information from the certificate image and return it as a JSON object with these exact fields:
             {
               "stock": "string",
-              "shape": "string (ROUND, PRINCESS, EMERALD, ASSCHER, OVAL, RADIANT, PEAR, HEART, MARQUISE, CUSHION)",
+              "shape": "string (Round Brilliant, Princess, Emerald, Asscher, Oval, Radiant, Pear, Heart, Marquise, Cushion)",
               "weight": number,
               "color": "string (D, E, F, G, H, I, J, K, L, M)",
               "clarity": "string (FL, IF, VVS1, VVS2, VS1, VS2, SI1, SI2, SI3, I1, I2, I3)",
