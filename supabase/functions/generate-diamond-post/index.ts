@@ -30,13 +30,14 @@ serve(async (req) => {
     }
 
     // Generate post content using OpenAI
-    const generatedContent = await generatePostContent(diamond, platform, openAIApiKey);
+    const result = await generatePostContent(diamond, platform, openAIApiKey);
     
-    console.log('✅ Generated post content:', generatedContent);
+    console.log('✅ Generated post content:', result.content);
 
     return new Response(
       JSON.stringify({ 
-        content: generatedContent,
+        content: result.content,
+        imageUrl: result.imageUrl,
         diamond_data: diamond,
         platform: platform
       }),
@@ -57,7 +58,7 @@ serve(async (req) => {
   }
 });
 
-async function generatePostContent(diamond: any, platform: string, apiKey: string): Promise<string> {
+async function generatePostContent(diamond: any, platform: string, apiKey: string): Promise<{ content: string; imageUrl?: string }> {
   console.log('🤖 Calling OpenAI to generate post content...');
   
   const prompt = createPostPrompt(diamond, platform);
@@ -96,12 +97,23 @@ async function generatePostContent(diamond: any, platform: string, apiKey: strin
     }
 
     const data = await response.json();
-    return data.choices[0].message.content;
+    const content = data.choices[0].message.content;
+    
+    // Use existing diamond image from database if available
+    const imageUrl = diamond.picture || null;
+    if (imageUrl) {
+      console.log('📸 Using existing diamond image from database');
+    }
+    
+    return { content, imageUrl };
     
   } catch (error) {
     console.error('❌ OpenAI API call failed:', error);
     // Fallback to simple post generation
-    return generateFallbackPost(diamond, platform);
+    return { 
+      content: generateFallbackPost(diamond, platform),
+      imageUrl: diamond.picture || null
+    };
   }
 }
 
