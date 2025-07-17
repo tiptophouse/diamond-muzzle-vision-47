@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Diamond } from "./InventoryTable";
 import { Edit, Trash, ImageIcon } from "lucide-react";
+import { GeneratePostButton } from "./GeneratePostButton";
 
 interface InventoryMobileCardProps {
   diamond: Diamond;
@@ -95,32 +96,38 @@ export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobi
           </div>
         </div>
 
-        {(onEdit || onDelete) && (
-          <div className="flex gap-2 pt-3 border-t border-slate-200 dark:border-slate-700 w-full">
-            {onEdit && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onEdit(diamond)}
-                className="flex-1 h-9 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
-            )}
-            {onDelete && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onDelete(diamond.id)}
-                className="flex-1 h-9 text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
-              >
-                <Trash className="h-4 w-4 mr-2" />
-                Delete
-              </Button>
-            )}
-          </div>
-        )}
+        <div className="flex flex-col gap-2 pt-3 border-t border-slate-200 dark:border-slate-700 w-full">
+          {/* Generate Post Button - Always visible */}
+          <GeneratePostButton diamond={diamond} />
+          
+          {/* Edit and Delete buttons */}
+          {(onEdit || onDelete) && (
+            <div className="flex gap-2 w-full">
+              {onEdit && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onEdit(diamond)}
+                  className="flex-1 h-9 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onDelete(diamond.id)}
+                  className="flex-1 h-9 text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+                >
+                  <Trash className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
