@@ -2,12 +2,16 @@
 import React, { useEffect } from 'react';
 import { useTutorial } from '@/contexts/TutorialContext';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
+import { useTelegramMainButton } from '@/hooks/useTelegramMainButton';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { X, ChevronLeft, ChevronRight, Sparkles, Globe, ArrowLeft, ExternalLink } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Sparkles, Globe, ArrowLeft, ExternalLink, Camera } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function TutorialModal() {
+  const tutorial = useTutorial();
+  if (!tutorial) return null;
+  
   const { 
     isActive, 
     currentStep, 
@@ -18,10 +22,45 @@ export function TutorialModal() {
     nextStep, 
     prevStep, 
     skipTutorial 
-  } = useTutorial();
+  } = tutorial;
   
-  const { hapticFeedback, mainButton, backButton } = useTelegramWebApp();
+  const { hapticFeedback } = useTelegramWebApp();
   const navigate = useNavigate();
+
+  const handleNext = () => {
+    hapticFeedback.impact('medium');
+    nextStep();
+  };
+
+  const handlePrev = () => {
+    hapticFeedback.impact('light');
+    prevStep();
+  };
+
+  const handleSkip = () => {
+    hapticFeedback.impact('light');
+    skipTutorial();
+  };
+
+  const handleStartCertificateScan = () => {
+    hapticFeedback.impact('medium');
+    navigate('/upload-single-stone');
+    skipTutorial();
+  };
+
+  // Use Telegram MainButton for primary actions
+  const mainButtonText = currentStepData?.requireClick 
+    ? (currentLanguage === 'he' ? 'מחכה ללחיצה...' : 'Waiting for click...')
+    : (currentStep === totalSteps - 1 
+      ? (currentLanguage === 'he' ? 'סיום' : 'Finish')
+      : (currentLanguage === 'he' ? 'הבא' : 'Next'));
+
+  useTelegramMainButton({
+    text: mainButtonText,
+    isVisible: isActive && !currentStepData?.requireClick,
+    isEnabled: !currentStepData?.requireClick,
+    onClick: handleNext
+  });
 
   useEffect(() => {
     if (isActive) {
@@ -40,20 +79,6 @@ export function TutorialModal() {
     };
   }, [isActive, currentStepData]);
 
-  const handleNext = () => {
-    hapticFeedback.impact('medium');
-    nextStep();
-  };
-
-  const handlePrev = () => {
-    hapticFeedback.impact('light');
-    prevStep();
-  };
-
-  const handleSkip = () => {
-    hapticFeedback.impact('light');
-    skipTutorial();
-  };
 
   if (!isActive || !currentStepData) return null;
 
@@ -124,6 +149,29 @@ export function TutorialModal() {
             </div>
           )}
 
+          {/* Special "Start Certificate Scan" button for tutorial */}
+          {currentStepData.id === 'welcome' && (
+            <div className="mb-6 space-y-3">
+              <Button
+                onClick={handleStartCertificateScan}
+                size="lg"
+                className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-3"
+                dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}
+              >
+                <Camera className="h-6 w-6" />
+                <span>
+                  {currentLanguage === 'he' ? 'התחל סריקת תעודה' : 'Start Certificate Scan'}
+                </span>
+              </Button>
+              <div className="text-xs text-center text-muted-foreground" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+                {currentLanguage === 'he' 
+                  ? 'לחץ כאן כדי לעבור ישירות לסריקת תעודת GIA' 
+                  : 'Click here to go directly to GIA certificate scanning'
+                }
+              </div>
+            </div>
+          )}
+
           {/* Welcome step special illustration */}
           {currentStepData.id === 'welcome' && (
             <div className="text-center mb-6">
@@ -174,8 +222,36 @@ export function TutorialModal() {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-muted/30 flex items-center justify-between" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
-            {/* Back button */}
+        <div className="px-6 py-6 bg-muted/30 flex flex-col gap-4" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+          {/* Main action buttons - Much larger for mobile */}
+          {!currentStepData.requireClick && (
+            <Button
+              onClick={handleNext}
+              size="lg"
+              className={`w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center gap-3 ${currentLanguage === 'he' ? 'flex-row-reverse' : ''}`}
+            >
+              {currentLanguage === 'he' ? (
+                <>
+                  {isLastStep ? (
+                    <span>סיום המדריך</span>
+                  ) : (
+                    <>
+                      <ChevronLeft className="h-5 w-5" />
+                      <span>המשך</span>
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <span>{isLastStep ? 'Complete Tutorial' : 'Continue'}</span>
+                  {!isLastStep && <ChevronRight className="h-5 w-5" />}
+                </>
+              )}
+            </Button>
+          )}
+
+          {/* Secondary navigation */}
+          <div className="flex items-center justify-between">
             <Button
               variant="outline"
               onClick={handlePrev}
@@ -195,41 +271,14 @@ export function TutorialModal() {
               )}
             </Button>
 
-            <div className="flex gap-3">
-              <Button
-                variant="ghost"
-                onClick={handleSkip}
-                className="text-muted-foreground"
-              >
-                {currentLanguage === 'he' ? 'דלג' : 'Skip'}
-              </Button>
-              
-              {/* Simple next button for non-click steps */}
-              {!currentStepData.requireClick && (
-                <Button
-                  onClick={handleNext}
-                  className={`bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2 text-lg px-6 ${currentLanguage === 'he' ? 'flex-row-reverse' : ''}`}
-                >
-                  {currentLanguage === 'he' ? (
-                    <>
-                      {isLastStep ? (
-                        <span>סיום</span>
-                      ) : (
-                        <>
-                          <ChevronLeft className="h-4 w-4" />
-                          <span>הבא</span>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <span>{isLastStep ? 'Finish' : 'Next'}</span>
-                      {!isLastStep && <ChevronRight className="h-4 w-4" />}
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
+            <Button
+              variant="ghost"
+              onClick={handleSkip}
+              className="text-muted-foreground"
+            >
+              {currentLanguage === 'he' ? 'דלג על המדריך' : 'Skip Tutorial'}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
