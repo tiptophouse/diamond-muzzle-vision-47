@@ -90,22 +90,10 @@ export function useStoreData() {
               certificateUrl: item.certificate_url || item.certificateUrl || undefined
             };
           })
-          .filter(diamond => diamond.store_visible && diamond.status === 'Available') // Only show store-visible and available diamonds
-          .sort((a, b) => {
-            // Prioritize diamonds with images first
-            const aHasImage = !!a.imageUrl;
-            const bHasImage = !!b.imageUrl;
-            
-            if (aHasImage && !bHasImage) return -1;
-            if (!aHasImage && bHasImage) return 1;
-            
-            // Then sort by price (highest first)
-            return (b.price || 0) - (a.price || 0);
-          });
+          .filter(diamond => diamond.store_visible && diamond.status === 'Available'); // Only show store-visible and available diamonds
 
         console.log('🏪 STORE: Processed', transformedDiamonds.length, 'store-visible diamonds from', result.data.length, 'total diamonds');
         console.log('🏪 STORE: Found', transformedDiamonds.filter(d => d.gem360Url).length, 'diamonds with Gem360 URLs');
-        console.log('🏪 STORE: Found', transformedDiamonds.filter(d => d.imageUrl).length, 'diamonds with images (prioritized first)');
         
         // Save to Telegram storage for offline access
         await saveDiamonds(transformedDiamonds);
@@ -118,17 +106,7 @@ export function useStoreData() {
         const storedDiamonds = getDiamonds();
         if (storedDiamonds.length > 0) {
           console.log('📱 Loading', storedDiamonds.length, 'diamonds from', storageType, 'storage');
-          // Apply same sorting to stored diamonds
-          const sortedStoredDiamonds = storedDiamonds.sort((a, b) => {
-            const aHasImage = !!a.imageUrl;
-            const bHasImage = !!b.imageUrl;
-            
-            if (aHasImage && !bHasImage) return -1;
-            if (!aHasImage && bHasImage) return 1;
-            
-            return (b.price || 0) - (a.price || 0);
-          });
-          setDiamonds(sortedStoredDiamonds);
+          setDiamonds(storedDiamonds);
         } else {
           setDiamonds([]);
         }
@@ -141,17 +119,7 @@ export function useStoreData() {
       const storedDiamonds = getDiamonds();
       if (storedDiamonds.length > 0) {
         console.log('📱 Fallback: Loading', storedDiamonds.length, 'diamonds from', storageType, 'storage');
-        // Apply same sorting to stored diamonds
-        const sortedStoredDiamonds = storedDiamonds.sort((a, b) => {
-          const aHasImage = !!a.imageUrl;
-          const bHasImage = !!b.imageUrl;
-          
-          if (aHasImage && !bHasImage) return -1;
-          if (!aHasImage && bHasImage) return 1;
-          
-          return (b.price || 0) - (a.price || 0);
-        });
-        setDiamonds(sortedStoredDiamonds);
+        setDiamonds(storedDiamonds);
         setError(`${errorMessage} (showing cached data)`);
       } else {
         setError(errorMessage);
