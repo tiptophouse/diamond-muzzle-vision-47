@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { MessageCircle, Heart, Share2, Eye, Star, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,7 @@ export function ModernDiamondCard({ diamond, index, onUpdate }: ModernDiamondCar
   const [isLiked, setIsLiked] = useState(false);
   const { user } = useTelegramAuth();
   const { impactOccurred } = useTelegramHapticFeedback();
+  const navigate = useNavigate();
 
   const handleContactOwner = () => {
     impactOccurred('medium');
@@ -104,8 +106,12 @@ export function ModernDiamondCard({ diamond, index, onUpdate }: ModernDiamondCar
 
   const handleViewDetails = () => {
     impactOccurred('light');
-    // Navigate to diamond details page - you can customize this route
-    window.open(`/diamond/${diamond.stockNumber}`, '_blank');
+    // Navigate to diamond details page within the app
+    navigate(`/diamond/${diamond.stockNumber}`);
+    toast({
+      title: "Opening Diamond Details",
+      description: `Viewing details for diamond #${diamond.stockNumber}`,
+    });
   };
 
   return (
