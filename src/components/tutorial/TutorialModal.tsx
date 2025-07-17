@@ -5,7 +5,7 @@ import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { useTelegramMainButton } from '@/hooks/useTelegramMainButton';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { X, ChevronLeft, ChevronRight, Sparkles, Globe, ArrowLeft, ExternalLink, Camera } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Sparkles, Globe, Camera, Package, Store, ShoppingBag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function TutorialModal() {
@@ -42,9 +42,14 @@ export function TutorialModal() {
     skipTutorial();
   };
 
-  const handleStartCertificateScan = () => {
+  const handleNavigateToPage = (path: string) => {
     hapticFeedback.impact('medium');
-    navigate('/upload');
+    navigate(path);
+    nextStep();
+  };
+
+  const handleFinishTutorial = () => {
+    hapticFeedback.impact('medium');
     skipTutorial();
   };
 
@@ -92,30 +97,30 @@ export function TutorialModal() {
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleSkip} />
       
       {/* Modal */}
-      <div className="relative bg-background rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-scale-in border border-border">
+      <div className="relative bg-background rounded-3xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden animate-scale-in border border-border">
         {/* Header */}
-        <div className="bg-gradient-to-r from-primary to-primary/80 px-6 py-4 text-primary-foreground">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5" />
-              <span className="font-semibold text-sm">
+        <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-blue-600 px-6 py-5 text-white relative">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Sparkles className="h-6 w-6" />
+              <span className="font-bold text-base">
                 {currentLanguage === 'he' ? 'שלב' : 'Step'} {currentStep + 1} {currentLanguage === 'he' ? 'מתוך' : 'of'} {totalSteps}
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => {
                   hapticFeedback.selection();
                   setLanguage(currentLanguage === 'en' ? 'he' : 'en');
                 }}
-                className="text-primary-foreground/80 hover:text-primary-foreground transition-colors p-1 rounded"
+                className="text-white/80 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
                 title={currentLanguage === 'en' ? 'עברית' : 'English'}
               >
-                <Globe className="h-4 w-4" />
+                <Globe className="h-5 w-5" />
               </button>
               <button
                 onClick={handleSkip}
-                className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+                className="text-white/80 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -123,127 +128,125 @@ export function TutorialModal() {
           </div>
           <Progress 
             value={progressPercentage} 
-            className="h-2 bg-primary-foreground/20"
+            className="h-2 bg-white/20"
           />
+          <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 w-6 h-6 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-600 rotate-45 border-r border-b border-background"></div>
         </div>
 
         {/* Content */}
-        <div className="p-6">
-          <h2 className="text-2xl font-bold text-foreground mb-4" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+        <div className="p-6 pt-8">
+          <h2 className="text-2xl font-bold text-foreground mb-4 text-center" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
             {currentStepData.title[currentLanguage]}
           </h2>
           
-          <div className="text-lg text-foreground mb-6 leading-relaxed" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+          <div className="text-base text-muted-foreground mb-6 leading-relaxed text-center" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
             {currentStepData.content[currentLanguage]}
           </div>
 
-          {/* Large visual indicator for required clicks */}
-          {currentStepData.requireClick && (
-            <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-lg text-center">
-              <div className="text-primary font-bold text-lg mb-2" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
-                {currentLanguage === 'he' ? '👆 לחצו כאן למעלה' : '👆 Click Above'}
-              </div>
-              <div className="text-sm text-muted-foreground" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
-                {currentLanguage === 'he' ? 'אני אחכה עד שתלחצו' : 'I will wait for you to click'}
-              </div>
-            </div>
-          )}
-
-          {/* Special "Start Certificate Scan" button for tutorial */}
-          {currentStepData.id === 'welcome' && (
-            <div className="mb-6 space-y-3">
+          {/* Step-specific action buttons and visuals */}
+          {currentStepData.id === 'lets-upload' && (
+            <div className="mb-6 text-center">
+              <div className="text-6xl mb-4">📄</div>
               <Button
-                onClick={handleStartCertificateScan}
+                onClick={() => handleNavigateToPage('/upload')}
                 size="lg"
-                className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-3"
-                dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}
+                className="w-full h-14 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-3 rounded-xl"
               >
                 <Camera className="h-6 w-6" />
                 <span>
-                  {currentLanguage === 'he' ? 'התחל סריקת תעודה' : 'Start Certificate Scan'}
+                  {currentLanguage === 'he' ? 'סרק תעודה עכשיו' : 'Scan Certificate Now'}
                 </span>
               </Button>
-              <div className="text-xs text-center text-muted-foreground" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
-                {currentLanguage === 'he' 
-                  ? 'לחץ כאן כדי לעבור ישירות לסריקת תעודת GIA' 
-                  : 'Click here to go directly to GIA certificate scanning'
-                }
-              </div>
             </div>
           )}
 
-          {/* Welcome step special illustration */}
+          {currentStepData.id === 'see-inventory' && (
+            <div className="mb-6 text-center">
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl mb-4">
+                <div className="text-sm text-gray-600 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> Add Diamond</span>
+                    <span className="flex items-center gap-2"><Package className="h-4 w-4" /> Search & Filter</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center gap-2">✏️ Edit Details</span>
+                    <span className="flex items-center gap-2">👁️ Store Visibility</span>
+                  </div>
+                </div>
+              </div>
+              <Button
+                onClick={() => handleNavigateToPage('/inventory')}
+                size="lg"
+                className="w-full h-14 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-3 rounded-xl"
+              >
+                <Package className="h-6 w-6" />
+                <span>
+                  {currentLanguage === 'he' ? 'עבור למלאי' : 'Go to Inventory'}
+                </span>
+              </Button>
+            </div>
+          )}
+
+          {currentStepData.id === 'visit-store' && (
+            <div className="mb-6 text-center">
+              <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-xl mb-4">
+                <div className="text-4xl mb-2">🏪</div>
+                <div className="text-sm text-gray-600">
+                  {currentLanguage === 'he' ? 'חזית חנות יפה עבור הלקוחות שלכם' : 'Beautiful public storefront for your customers'}
+                </div>
+              </div>
+              <Button
+                onClick={() => handleNavigateToPage('/store')}
+                size="lg"
+                className="w-full h-14 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-3 rounded-xl"
+              >
+                <Store className="h-6 w-6" />
+                <span>
+                  {currentLanguage === 'he' ? 'עבור לחנות' : 'Go to Store'}
+                </span>
+              </Button>
+            </div>
+          )}
+
           {currentStepData.id === 'welcome' && (
             <div className="text-center mb-6">
-              <div className="text-6xl mb-3">💎</div>
-              <div className="text-sm text-gray-500">
-                Professional Diamond Inventory Management
+              <div className="text-8xl mb-4">💎</div>
+              <div className="text-sm text-muted-foreground mb-4">
+                {currentLanguage === 'he' ? 'מערכת ניהול מלאי יהלומים מקצועית' : 'Professional Diamond Inventory Management'}
               </div>
             </div>
           )}
 
-          {/* Section-specific illustrations */}
-          {currentStepData.section === 'dashboard' && (
-            <div className="grid grid-cols-2 gap-3 mb-6 text-xs">
-              <div className="bg-blue-50 p-3 rounded-lg text-center">
-                <div className="text-2xl mb-1">📊</div>
-                <div>Analytics</div>
-              </div>
-              <div className="bg-purple-50 p-3 rounded-lg text-center">
-                <div className="text-2xl mb-1">💰</div>
-                <div>Revenue</div>
-              </div>
-            </div>
-          )}
-
-          {currentStepData.section === 'inventory' && (
-            <div className="bg-gray-50 p-4 rounded-lg mb-6">
-              <div className="text-sm text-gray-600">
-                <div className="flex justify-between items-center mb-2">
-                  <span>✨ Add Diamond</span>
-                  <span>🔍 Search & Filter</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>✏️ Edit Details</span>
-                  <span>👁️ Store Visibility</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {currentStepData.section === 'store' && (
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg mb-6 text-center">
-              <div className="text-2xl mb-2">🏪</div>
-              <div className="text-sm text-gray-600">
-                Beautiful public storefront for your customers
-              </div>
+          {currentStepData.id === 'tutorial-complete' && (
+            <div className="text-center mb-6">
+              <div className="text-8xl mb-4">🎉</div>
             </div>
           )}
         </div>
 
         {/* Footer */}
         <div className="px-6 py-6 bg-muted/30 flex flex-col gap-4" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
-          {/* Main action buttons - Much larger for mobile */}
-          {!currentStepData.requireClick && (
+          {/* Main action buttons for non-navigation steps */}
+          {!currentStepData.navigationTarget && !currentStepData.requireClick && (
             <Button
-              onClick={handleNext}
+              onClick={isLastStep ? handleFinishTutorial : handleNext}
               size="lg"
-              className={`w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center gap-3 ${currentLanguage === 'he' ? 'flex-row-reverse' : ''}`}
+              className={`w-full h-14 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-3 rounded-xl ${currentLanguage === 'he' ? 'flex-row-reverse' : ''}`}
             >
               {currentLanguage === 'he' ? (
                 <>
                   {isLastStep ? (
-                    <span>סיום המדריך</span>
+                    <span>סיום</span>
                   ) : (
                     <>
                       <ChevronLeft className="h-5 w-5" />
-                      <span>המשך</span>
+                      <span>הבא</span>
                     </>
                   )}
                 </>
               ) : (
                 <>
-                  <span>{isLastStep ? 'Complete Tutorial' : 'Continue'}</span>
+                  <span>{isLastStep ? 'Finish' : 'Next'}</span>
                   {!isLastStep && <ChevronRight className="h-5 w-5" />}
                 </>
               )}
@@ -276,7 +279,7 @@ export function TutorialModal() {
               onClick={handleSkip}
               className="text-muted-foreground"
             >
-              {currentLanguage === 'he' ? 'דלג על המדריך' : 'Skip Tutorial'}
+              {currentLanguage === 'he' ? 'דלג על הסיור' : 'Skip Tour'}
             </Button>
           </div>
         </div>
