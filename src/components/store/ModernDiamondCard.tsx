@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { MessageCircle, Heart, Share2, Eye, Star, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -120,14 +121,12 @@ export function ModernDiamondCard({ diamond, index, onUpdate }: ModernDiamondCar
             onError={() => setImageError(true)}
           />
         ) : (
-          <div className="flex items-center justify-center h-full bg-gradient-to-br from-blue-50 to-indigo-100">
-            <div className="relative">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
-                <Star className="h-8 w-8 text-white" />
+          <div className="flex items-center justify-center h-full bg-gradient-to-br from-slate-100 to-slate-200">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-slate-300 to-slate-400 rounded-full flex items-center justify-center mx-auto mb-2">
+                <span className="text-2xl font-bold text-white">💎</span>
               </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-full flex items-center justify-center shadow-md">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
-              </div>
+              <p className="text-xs text-slate-500 font-medium">No Image</p>
             </div>
           </div>
         )}
@@ -172,12 +171,14 @@ export function ModernDiamondCard({ diamond, index, onUpdate }: ModernDiamondCar
           </Badge>
         </div>
 
-        {/* Premium Badge */}
-        <div className="absolute top-3 right-3">
-          <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-lg px-2 py-1 text-xs">
-            Premium
-          </Badge>
-        </div>
+        {/* Premium Badge - Only show for diamonds with images */}
+        {diamond.imageUrl && !imageError && (
+          <div className="absolute top-3 right-3">
+            <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-lg px-2 py-1 text-xs">
+              Premium
+            </Badge>
+          </div>
+        )}
       </div>
 
       <CardContent className="p-4 space-y-3">
