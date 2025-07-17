@@ -50,7 +50,7 @@ export function SingleStoneUploadForm({
       price: 0,
       status: 'Available',
       picture: '',
-      shape: 'Round Brilliant',
+      shape: 'Round',
       color: 'G',
       clarity: 'VS1',
       cut: 'Excellent',
@@ -146,7 +146,7 @@ export function SingleStoneUploadForm({
   }, [setValue, toast]);
 
   const currentShape = watch('shape');
-  const showCutField = currentShape === 'Round Brilliant';
+  const showCutField = currentShape === 'Round';
 
   const handleFormSubmit = useCallback((data: DiamondFormData) => {
     console.log('🔍 UPLOAD: Form submitted', { user: user?.id, data });
@@ -327,12 +327,10 @@ export function SingleStoneUploadForm({
 
           {/* Sticky bottom actions */}
           <div className="sticky bottom-0 bg-background border-t border-border/20 safe-area-inset-bottom">
-            <div data-tutorial="submit-diamond">
-              <FormActions
-                onReset={resetForm}
-                isLoading={isLoading}
-              />
-            </div>
+            <FormActions
+              onReset={resetForm}
+              isLoading={isLoading}
+            />
           </div>
         </form>
       </div>

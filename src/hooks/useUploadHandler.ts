@@ -95,7 +95,7 @@ export function useUploadHandler() {
         const newData = csvData.map((item, index) => ({
           id: `upload-${Date.now()}-${index}`,
           stockNumber: item['Stock Number'] || item['stock_number'] || `STK-${Date.now()}-${index}`,
-          shape: item['Shape'] || item['shape'] || 'Round Brilliant',
+          shape: item['Shape'] || item['shape'] || 'Round',
           carat: parseFloat(item['Carat'] || item['carat'] || item['Weight'] || '1.0'),
           color: item['Color'] || item['color'] || 'G',
           clarity: item['Clarity'] || item['clarity'] || 'VS1',

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { MessageCircle, Heart, Share2, Eye, Star, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
-import { SecureShareButton } from "./SecureShareButton";
 import { toast } from "@/hooks/use-toast";
 
 interface ModernDiamondCardProps {
@@ -21,9 +19,6 @@ export function ModernDiamondCard({ diamond, index, onUpdate }: ModernDiamondCar
   const [isLiked, setIsLiked] = useState(false);
   const { user } = useTelegramAuth();
   const { impactOccurred } = useTelegramHapticFeedback();
-
-  // Log image URL for debugging
-  console.log(`🖼️ CARD: Diamond ${diamond.stockNumber} imageUrl:`, diamond.imageUrl);
 
   const handleContactOwner = () => {
     impactOccurred('medium');
@@ -106,18 +101,8 @@ export function ModernDiamondCard({ diamond, index, onUpdate }: ModernDiamondCar
     }
   };
 
-  const handleImageError = () => {
-    console.error(`🖼️ CARD: Image failed to load for diamond ${diamond.stockNumber}:`, diamond.imageUrl);
-    setImageError(true);
-  };
-
-  const handleImageLoad = () => {
-    console.log(`✅ CARD: Image loaded successfully for diamond ${diamond.stockNumber}:`, diamond.imageUrl);
-  };
-
   return (
     <Card 
-      id={`diamond-${diamond.stockNumber}`}
       className="group relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-0 shadow-sm bg-white"
       style={{ 
         animationDelay: `${index * 50}ms`,
@@ -131,20 +116,17 @@ export function ModernDiamondCard({ diamond, index, onUpdate }: ModernDiamondCar
             src={diamond.imageUrl}
             alt={`${diamond.carat} ct ${diamond.shape} Diamond`}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            onError={handleImageError}
-            onLoad={handleImageLoad}
-            loading="lazy"
+            onError={() => setImageError(true)}
           />
         ) : (
           <div className="flex items-center justify-center h-full bg-gradient-to-br from-blue-50 to-indigo-100">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg mx-auto mb-2">
+            <div className="relative">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
                 <Star className="h-8 w-8 text-white" />
               </div>
-              <p className="text-xs text-slate-500 font-medium">No Image</p>
-              {diamond.imageUrl && (
-                <p className="text-xs text-red-500 mt-1">Failed to load</p>
-              )}
+              <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-full flex items-center justify-center shadow-md">
+                <div className="w-2 h-2 bg-white rounded-full"></div>
+              </div>
             </div>
           </div>
         )}
@@ -160,19 +142,14 @@ export function ModernDiamondCard({ diamond, index, onUpdate }: ModernDiamondCar
             >
               <Heart className={`h-4 w-4 ${isLiked ? 'text-red-500 fill-red-500' : 'text-gray-600'}`} />
             </Button>
-            <SecureShareButton
-              stockNumber={diamond.stockNumber}
-              diamond={{
-                carat: diamond.carat,
-                shape: diamond.shape,
-                color: diamond.color,
-                clarity: diamond.clarity,
-                price: diamond.price || 0
-              }}
-              variant="outline"
-              size="sm"
+            <Button 
+              size="sm" 
+              variant="secondary" 
               className="bg-white/90 hover:bg-white border-0 shadow-lg"
-            />
+              onClick={handleShare}
+            >
+              <Share2 className="h-4 w-4 text-gray-600" />
+            </Button>
           </div>
         </div>
         
@@ -189,23 +166,12 @@ export function ModernDiamondCard({ diamond, index, onUpdate }: ModernDiamondCar
           </Badge>
         </div>
 
-        {/* Image Badge - Show when diamond has real image */}
-        {diamond.imageUrl && !imageError && (
-          <div className="absolute top-3 right-3">
-            <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 shadow-lg px-2 py-1 text-xs">
-              ✓ Image
-            </Badge>
-          </div>
-        )}
-
-        {/* Premium Badge - Only show when no image */}
-        {(!diamond.imageUrl || imageError) && (
-          <div className="absolute top-3 right-3">
-            <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-lg px-2 py-1 text-xs">
-              Premium
-            </Badge>
-          </div>
-        )}
+        {/* Premium Badge */}
+        <div className="absolute top-3 right-3">
+          <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-lg px-2 py-1 text-xs">
+            Premium
+          </Badge>
+        </div>
       </div>
 
       <CardContent className="p-4 space-y-3">

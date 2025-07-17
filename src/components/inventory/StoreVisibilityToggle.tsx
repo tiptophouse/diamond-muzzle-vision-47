@@ -4,7 +4,6 @@ import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useTutorial } from "@/contexts/TutorialContext";
 
 interface StoreVisibilityToggleProps {
   stockNumber: string;
@@ -15,14 +14,9 @@ interface StoreVisibilityToggleProps {
 export function StoreVisibilityToggle({ stockNumber, isVisible, onToggle }: StoreVisibilityToggleProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { handleRequiredClick } = useTutorial();
 
   const handleToggle = async () => {
     setLoading(true);
-    
-    // Handle tutorial interaction
-    handleRequiredClick();
-    
     try {
       const { error } = await supabase
         .from('inventory')
@@ -51,7 +45,6 @@ export function StoreVisibilityToggle({ stockNumber, isVisible, onToggle }: Stor
 
   return (
     <Button
-      data-tutorial="store-visibility"
       variant="ghost"
       size="sm"
       onClick={handleToggle}

@@ -1,41 +1,11 @@
 
 import { api, apiEndpoints, getCurrentUserId } from "@/lib/api";
 import { fetchMockInventoryData } from "./mockInventoryService";
-import { supabase } from "@/integrations/supabase/client";
 
 export interface FetchInventoryResult {
   data?: any[];
   error?: string;
   debugInfo: any;
-}
-
-// Direct Supabase fallback function
-async function fetchFromSupabase(userId: number): Promise<any[]> {
-  console.log('🔄 INVENTORY SERVICE: Fetching directly from Supabase for user:', userId);
-  
-  const { data, error } = await supabase
-    .from('inventory')
-    .select('*')
-    .eq('user_id', userId)
-    .is('deleted_at', null);
-  
-  if (error) {
-    console.error('❌ INVENTORY SERVICE: Supabase error:', error);
-    throw error;
-  }
-  
-  console.log('✅ INVENTORY SERVICE: Supabase returned', data?.length || 0, 'diamonds');
-  if (data && data.length > 0) {
-    console.log('📊 INVENTORY SERVICE: Sample Supabase diamond:', data[0]);
-    // Log certificate_url specifically
-    const withCertUrls = data.filter(d => d.certificate_url);
-    console.log('🔗 INVENTORY SERVICE: Diamonds with certificate URLs:', withCertUrls.length);
-    if (withCertUrls.length > 0) {
-      console.log('🔗 INVENTORY SERVICE: Sample certificate URL:', withCertUrls[0].certificate_url);
-    }
-  }
-  
-  return data || [];
 }
 
 export async function fetchInventoryData(): Promise<FetchInventoryResult> {
@@ -100,27 +70,8 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       console.log('❌ INVENTORY SERVICE: FastAPI returned error:', result.error);
     }
     
-    // If FastAPI fails, try Supabase directly
-    console.log('🔄 INVENTORY SERVICE: FastAPI failed, trying Supabase...');
-    try {
-      const supabaseData = await fetchFromSupabase(userId);
-      if (supabaseData.length > 0) {
-        return {
-          data: supabaseData,
-          debugInfo: {
-            ...debugInfo,
-            step: 'SUCCESS: Supabase data fetched',
-            totalDiamonds: supabaseData.length,
-            dataSource: 'supabase'
-          }
-        };
-      }
-    } catch (supabaseError) {
-      console.error('❌ INVENTORY SERVICE: Supabase failed:', supabaseError);
-    }
-    
-    // If Supabase fails, try localStorage
-    console.log('🔄 INVENTORY SERVICE: Supabase failed, checking localStorage...');
+    // If FastAPI fails, try localStorage
+    console.log('🔄 INVENTORY SERVICE: FastAPI failed, checking localStorage...');
     const localData = localStorage.getItem('diamond_inventory');
     
     if (localData) {

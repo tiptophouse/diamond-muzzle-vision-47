@@ -28,7 +28,7 @@ export const useFormValidation = () => {
       stockNumber: data.stockNumber.trim(),
       carat: Number(data.carat),
       price: Number(data.price),
-      shape: data.shape || 'Round Brilliant',
+      shape: data.shape || 'Round',
       color: data.color || 'G',
       clarity: data.clarity || 'VS1',
       cut: showCutField ? (data.cut || 'Excellent') : 'N/A',

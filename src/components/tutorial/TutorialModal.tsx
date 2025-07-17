@@ -1,11 +1,9 @@
 
 import React, { useEffect } from 'react';
 import { useTutorial } from '@/contexts/TutorialContext';
-import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { X, ChevronLeft, ChevronRight, Sparkles, Globe, ArrowLeft, ExternalLink } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { X, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 
 export function TutorialModal() {
   const { 
@@ -13,24 +11,14 @@ export function TutorialModal() {
     currentStep, 
     totalSteps, 
     currentStepData, 
-    currentLanguage,
-    setLanguage,
     nextStep, 
     prevStep, 
     skipTutorial 
   } = useTutorial();
-  
-  const { hapticFeedback, mainButton, backButton } = useTelegramWebApp();
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (isActive) {
       document.body.style.overflow = 'hidden';
-      
-      // Simple haptic feedback for interactions
-      if (currentStepData?.requireClick) {
-        hapticFeedback.impact('light');
-      }
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -38,22 +26,7 @@ export function TutorialModal() {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isActive, currentStepData]);
-
-  const handleNext = () => {
-    hapticFeedback.impact('medium');
-    nextStep();
-  };
-
-  const handlePrev = () => {
-    hapticFeedback.impact('light');
-    prevStep();
-  };
-
-  const handleSkip = () => {
-    hapticFeedback.impact('light');
-    skipTutorial();
-  };
+  }, [isActive]);
 
   if (!isActive || !currentStepData) return null;
 
@@ -62,67 +35,43 @@ export function TutorialModal() {
   const isLastStep = currentStep === totalSteps - 1;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ height: 'var(--tg-viewport-height, 100vh)' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleSkip} />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={skipTutorial} />
       
       {/* Modal */}
-      <div className="relative bg-background rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-scale-in border border-border">
+      <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden animate-scale-in">
         {/* Header */}
-        <div className="bg-gradient-to-r from-primary to-primary/80 px-6 py-4 text-primary-foreground">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4 text-white">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5" />
               <span className="font-semibold text-sm">
-                {currentLanguage === 'he' ? 'שלב' : 'Step'} {currentStep + 1} {currentLanguage === 'he' ? 'מתוך' : 'of'} {totalSteps}
+                Step {currentStep + 1} of {totalSteps}
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  hapticFeedback.selection();
-                  setLanguage(currentLanguage === 'en' ? 'he' : 'en');
-                }}
-                className="text-primary-foreground/80 hover:text-primary-foreground transition-colors p-1 rounded"
-                title={currentLanguage === 'en' ? 'עברית' : 'English'}
-              >
-                <Globe className="h-4 w-4" />
-              </button>
-              <button
-                onClick={handleSkip}
-                className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+            <button
+              onClick={skipTutorial}
+              className="text-white/80 hover:text-white transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
           <Progress 
             value={progressPercentage} 
-            className="h-2 bg-primary-foreground/20"
+            className="h-2 bg-white/20"
           />
         </div>
 
         {/* Content */}
         <div className="p-6">
-          <h2 className="text-2xl font-bold text-foreground mb-4" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
-            {currentStepData.title[currentLanguage]}
+          <h2 className="text-xl font-bold text-gray-900 mb-3">
+            {currentStepData.title}
           </h2>
           
-          <div className="text-lg text-foreground mb-6 leading-relaxed" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
-            {currentStepData.content[currentLanguage]}
+          <div className="text-gray-600 mb-6 leading-relaxed">
+            {currentStepData.content}
           </div>
-
-          {/* Large visual indicator for required clicks */}
-          {currentStepData.requireClick && (
-            <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-lg text-center">
-              <div className="text-primary font-bold text-lg mb-2" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
-                {currentLanguage === 'he' ? '👆 לחצו כאן למעלה' : '👆 Click Above'}
-              </div>
-              <div className="text-sm text-muted-foreground" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
-                {currentLanguage === 'he' ? 'אני אחכה עד שתלחצו' : 'I will wait for you to click'}
-              </div>
-            </div>
-          )}
 
           {/* Welcome step special illustration */}
           {currentStepData.id === 'welcome' && (
@@ -174,62 +123,34 @@ export function TutorialModal() {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-muted/30 flex items-center justify-between" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
-            {/* Back button */}
-            <Button
-              variant="outline"
-              onClick={handlePrev}
-              disabled={isFirstStep}
-              className={`flex items-center gap-2 ${currentLanguage === 'he' ? 'flex-row-reverse' : ''}`}
-            >
-              {currentLanguage === 'he' ? (
-                <>
-                  <span>קודם</span>
-                  <ChevronRight className="h-4 w-4" />
-                </>
-              ) : (
-                <>
-                  <ChevronLeft className="h-4 w-4" />
-                  <span>Previous</span>
-                </>
-              )}
-            </Button>
+        <div className="px-6 py-4 bg-gray-50 flex items-center justify-between">
+          <Button
+            variant="outline"
+            onClick={prevStep}
+            disabled={isFirstStep}
+            className="flex items-center gap-2"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
 
-            <div className="flex gap-3">
-              <Button
-                variant="ghost"
-                onClick={handleSkip}
-                className="text-muted-foreground"
-              >
-                {currentLanguage === 'he' ? 'דלג' : 'Skip'}
-              </Button>
-              
-              {/* Simple next button for non-click steps */}
-              {!currentStepData.requireClick && (
-                <Button
-                  onClick={handleNext}
-                  className={`bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2 text-lg px-6 ${currentLanguage === 'he' ? 'flex-row-reverse' : ''}`}
-                >
-                  {currentLanguage === 'he' ? (
-                    <>
-                      {isLastStep ? (
-                        <span>סיום</span>
-                      ) : (
-                        <>
-                          <ChevronLeft className="h-4 w-4" />
-                          <span>הבא</span>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <span>{isLastStep ? 'Finish' : 'Next'}</span>
-                      {!isLastStep && <ChevronRight className="h-4 w-4" />}
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
+          <div className="flex gap-3">
+            <Button
+              variant="ghost"
+              onClick={skipTutorial}
+              className="text-gray-600"
+            >
+              {isLastStep ? 'Close' : 'Skip Tour'}
+            </Button>
+            
+            <Button
+              onClick={nextStep}
+              className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+            >
+              {isLastStep ? 'Finish' : 'Next'}
+              {!isLastStep && <ChevronRight className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

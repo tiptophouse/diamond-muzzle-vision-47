@@ -130,7 +130,7 @@ export function useEnhancedUploadHandler() {
           // Format diamond for batch API
           const formattedDiamond = {
             stock: diamondData.stock.trim(),
-            shape: diamondData.shape === 'Round Brilliant' ? "round brilliant" : (diamondData.shape?.toLowerCase() || "round brilliant"),
+            shape: diamondData.shape === 'Round' ? "round brilliant" : (diamondData.shape?.toLowerCase() || "round brilliant"),
             weight: Number(diamondData.weight),
             color: diamondData.color || "G",
             clarity: diamondData.clarity || "VS1",
