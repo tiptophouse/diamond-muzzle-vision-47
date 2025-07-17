@@ -68,9 +68,16 @@ export function useStoreData() {
               gem360Url = item.certificateUrl;
             }
 
-            console.log('🔍 STORE: Processing diamond', item.stock_number, 'gem360 URL:', gem360Url);
-            console.log('🔍 STORE: Raw item data:', item);
-            console.log('🔍 STORE: item.stock_number type:', typeof item.stock_number, 'value:', item.stock_number);
+            const imageUrl = item.picture || item.imageUrl || undefined;
+            
+            console.log('🔍 STORE: Processing diamond', item.stock_number, {
+              hasImage: !!imageUrl,
+              imageUrl: imageUrl,
+              gem360Url: gem360Url,
+              stockNumber: item.stock_number,
+              shape: item.shape,
+              carat: item.weight || item.carat
+            });
 
             return {
               id: item.id || `${item.stock_number}-${Date.now()}`,
@@ -82,7 +89,7 @@ export function useStoreData() {
               cut: item.cut || 'Excellent',
               price: Number(item.price_per_carat ? item.price_per_carat * (item.weight || item.carat) : item.price) || 0,
               status: item.status || 'Available',
-              imageUrl: item.picture || item.imageUrl || undefined,
+              imageUrl: imageUrl,
               store_visible: item.store_visible !== false, // Default to true for store display
               certificateNumber: item.certificate_number || undefined,
               lab: item.lab || undefined,
@@ -90,10 +97,22 @@ export function useStoreData() {
               certificateUrl: item.certificate_url || item.certificateUrl || undefined
             };
           })
-          .filter(diamond => diamond.store_visible && diamond.status === 'Available'); // Only show store-visible and available diamonds
+          .filter(diamond => diamond.store_visible && diamond.status === 'Available') // Only show store-visible and available diamonds
+          .sort((a, b) => {
+            // Prioritize diamonds with images first
+            const aHasImage = !!a.imageUrl;
+            const bHasImage = !!b.imageUrl;
+            
+            if (aHasImage && !bHasImage) return -1;
+            if (!aHasImage && bHasImage) return 1;
+            
+            // If both have images or both don't have images, sort by carat (descending)
+            return b.carat - a.carat;
+          });
 
         console.log('🏪 STORE: Processed', transformedDiamonds.length, 'store-visible diamonds from', result.data.length, 'total diamonds');
         console.log('🏪 STORE: Found', transformedDiamonds.filter(d => d.gem360Url).length, 'diamonds with Gem360 URLs');
+        console.log('📸 STORE: Found', transformedDiamonds.filter(d => d.imageUrl).length, 'diamonds with image URLs (prioritized first)');
         
         // Save to Telegram storage for offline access
         await saveDiamonds(transformedDiamonds);
