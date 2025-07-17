@@ -124,8 +124,8 @@ export function StoreFilters({ filters, onUpdateFilter, onClearFilters, diamonds
 
   return (
     <div className="bg-white rounded-xl shadow-md p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      {/* Header - Moved Clear All button below as per Helen's feedback */}
+      <div className="space-y-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
             <Filter className="h-5 w-5 text-white" />
@@ -136,16 +136,17 @@ export function StoreFilters({ filters, onUpdateFilter, onClearFilters, diamonds
           </div>
         </div>
         
+        {/* Clear All button placed below header */}
         {activeFiltersCount > 0 && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between">
             <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-              {activeFiltersCount} active
+              {activeFiltersCount} active filter{activeFiltersCount !== 1 ? 's' : ''}
             </Badge>
             <Button
               variant="ghost"
               size="sm"
               onClick={onClearFilters}
-              className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 h-8"
             >
               <RotateCcw className="h-4 w-4 mr-2" />
               Clear All

@@ -12,7 +12,7 @@ import { MobilePullToRefresh } from "@/components/mobile/MobilePullToRefresh";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Upload, Image, ArrowLeft } from "lucide-react";
+import { Upload, Image, Filter } from "lucide-react";
 import { toast } from 'sonner';
 
 export default function StorePage() {
@@ -96,47 +96,71 @@ export default function StorePage() {
   return (
     <MobilePullToRefresh onRefresh={handleRefresh} enabled={!loading}>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
-        {/* Removed Back button as per Helen's feedback */}
-
         <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-6 pb-safe">
-          {/* Header with Upload Button */}
+          {/* Header with Upload Button and Filters */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <StoreHeader 
               totalDiamonds={finalFilteredDiamonds.length}
               onOpenFilters={() => {}}
             />
             
-            <Dialog open={showUpload} onOpenChange={setShowUpload}>
-              <DialogTrigger asChild>
-                <Button className="w-full sm:w-auto flex items-center justify-center gap-2 touch-target min-h-[44px] bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                  <Upload className="h-4 w-4" />
-                  <span className="hidden sm:inline">Upload Photo</span>
-                  <span className="sm:hidden">Upload</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="w-[95vw] max-w-md mx-auto">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                    <Image className="h-5 w-5" />
-                    Upload Image to Store
-                  </DialogTitle>
-                </DialogHeader>
-                <ImageUpload onImageUploaded={handleImageUploaded} />
-              </DialogContent>
-            </Dialog>
+            <div className="flex gap-2 w-full sm:w-auto">
+              {/* Filters Button - placed prominently */}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 touch-target min-h-[44px] border-blue-200 text-blue-600 hover:bg-blue-50"
+                  >
+                    <Filter className="h-4 w-4" />
+                    <span>Filters</span>
+                    {(filters.shapes?.length || 0) + (filters.colors?.length || 0) + (filters.clarities?.length || 0) > 0 && (
+                      <span className="bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        {(filters.shapes?.length || 0) + (filters.colors?.length || 0) + (filters.clarities?.length || 0)}
+                      </span>
+                    )}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="w-[95vw] max-w-2xl max-h-[85vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                      <Filter className="h-5 w-5" />
+                      Refine Your Search
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="mt-4">
+                    <CollapsibleFilters
+                      filters={filters}
+                      onUpdateFilter={updateFilter}
+                      onClearFilters={clearFilters}
+                      diamonds={diamonds || []}
+                    />
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={showUpload} onOpenChange={setShowUpload}>
+                <DialogTrigger asChild>
+                  <Button className="flex-1 sm:flex-none flex items-center justify-center gap-2 touch-target min-h-[44px] bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                    <Upload className="h-4 w-4" />
+                    <span className="hidden sm:inline">Upload Photo</span>
+                    <span className="sm:hidden">Upload</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="w-[95vw] max-w-md mx-auto">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                      <Image className="h-5 w-5" />
+                      Upload Image to Store
+                    </DialogTitle>
+                  </DialogHeader>
+                  <ImageUpload onImageUploaded={handleImageUploaded} />
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
 
-          {/* Collapsible Filters - Filters behind button as per Helen's feedback */}
-          <div className="sticky top-0 z-30">
-            <CollapsibleFilters
-              filters={filters}
-              onUpdateFilter={updateFilter}
-              onClearFilters={clearFilters}
-              diamonds={diamonds || []}
-            />
-          </div>
-
-          {/* Store Grid */}
+          {/* Store Grid - Users see product cards first */}
           <StoreGrid
             diamonds={finalFilteredDiamonds}
             loading={loading}
