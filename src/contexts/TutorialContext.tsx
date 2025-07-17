@@ -46,66 +46,84 @@ const tutorialSteps: TutorialStep[] = [
       he: 'ברוכים הבאים לדיאמונד מזל! 💎' 
     },
     content: { 
-      en: 'Your comprehensive diamond inventory management platform. Let\'s take an interactive tour to get you started with uploading your first diamond!',
-      he: 'פלטפורמת ניהול מלאי היהלומים המקיפה שלכם. בואו נעשה סיור אינטראקטיבי כדי להתחיל עם העלאת היהלום הראשון שלכם!'
+      en: 'I will guide you step by step to upload your first diamond. Just follow my instructions exactly.',
+      he: 'אני אדריך אתכם צעד אחר צעד להעלות את היהלום הראשון שלכם. פשוט עקבו אחר ההוראות שלי בדיוק.'
     },
     section: 'welcome',
     order: 1,
     actions: { 
-      primary: { en: 'Start Tour', he: 'התחל סיור' }, 
-      secondary: { en: 'Skip', he: 'דלג' } 
-    }
-  },
-  {
-    id: 'gia-scanning-info',
-    title: { 
-      en: 'GIA Certificate Scanning', 
-      he: 'סריקת תעודת GIA' 
-    },
-    content: { 
-      en: 'The fastest way to add diamonds is by scanning GIA certificates. This automatically fills in all the diamond details for you!',
-      he: 'הדרך הכי מהירה להוסיף יהלומים היא על ידי סריקת תעודות GIA. זה ממלא אוטומטית את כל פרטי היהלום בשבילכם!'
-    },
-    section: 'upload',
-    order: 2,
-    navigationTarget: '/upload',
-    actions: { 
-      primary: { en: 'Go to Upload Page', he: 'עבור לעמוד העלאה' }, 
+      primary: { en: 'Start Now', he: 'התחל עכשיו' }, 
       secondary: { en: 'Skip', he: 'דלג' } 
     }
   },
   {
     id: 'click-upload-button',
     title: { 
-      en: 'Click "Upload Single Diamond"', 
-      he: 'לחצו על "העלאת יהלום בודד"' 
+      en: 'Step 1: Click the Blue Button', 
+      he: 'שלב 1: לחצו על הכפתור הכחול' 
     },
     content: { 
-      en: 'Now click on the "Upload Single Diamond" button to start adding your first diamond. We\'ll wait for you to click it!',
-      he: 'עכשיו לחצו על כפתור "העלאת יהלום בודד" כדי להתחיל להוסיף את היהלום הראשון שלכם. נחכה שתלחצו עליו!'
+      en: 'Look for the big blue button that says "Upload Single Diamond" and click on it. I will wait until you click it.',
+      he: 'חפשו את הכפתור הכחול הגדול שכתוב עליו "העלאת יהלום בודד" ולחצו עליו. אני אחכה עד שתלחצו עליו.'
     },
     targetElement: '[data-tutorial="upload-single-diamond"]',
     section: 'upload',
-    order: 3,
+    order: 2,
     requireClick: true,
     actions: { 
-      primary: { en: 'Waiting for click...', he: 'מחכה ללחיצה...' }, 
+      primary: { en: 'Waiting for you to click...', he: 'מחכה שתלחצו...' }, 
       secondary: { en: 'Skip', he: 'דלג' } 
     }
   },
   {
-    id: 'fill-diamond-form',
+    id: 'click-scan-certificate',
     title: { 
-      en: 'Fill Diamond Information', 
-      he: 'מלאו מידע על היהלום' 
+      en: 'Step 2: Click "Start Certificate Scan"', 
+      he: 'שלב 2: לחצו על "התחל סריקת תעודה"' 
     },
     content: { 
-      en: 'Great! Now fill in your diamond details. You can scan a GIA certificate or enter details manually. Try adding a stock number, weight, and basic grading information.',
-      he: 'מעולה! עכשיו מלאו את פרטי היהלום שלכם. תוכלו לסרוק תעודת GIA או להזין פרטים ידנית. נסו להוסיף מספר מלאי, משקל ומידע דירוג בסיסי.'
+      en: 'Perfect! Now look for the button that says "Start Certificate Scan" and click it. This will open your camera to scan the GIA certificate.',
+      he: 'מושלם! עכשיו חפשו את הכפתור שכתוב עליו "התחל סריקת תעודה" ולחצו עליו. זה יפתח את המצלמה לסרוק את תעודת ה-GIA.'
+    },
+    targetElement: 'button:has-text("Start Certificate Scan")',
+    section: 'upload-single-stone',
+    order: 3,
+    requireClick: true,
+    actions: { 
+      primary: { en: 'Waiting for you to click scan...', he: 'מחכה שתלחצו על סריקה...' }, 
+      secondary: { en: 'Skip', he: 'דלג' } 
+    }
+  },
+  {
+    id: 'scan-certificate',
+    title: { 
+      en: 'Step 3: Scan Your GIA Certificate', 
+      he: 'שלב 3: סרקו את תעודת ה-GIA שלכם' 
+    },
+    content: { 
+      en: 'Point your camera at the GIA certificate. Make sure the barcode or QR code is clearly visible. The app will read it automatically.',
+      he: 'כוונו את המצלמה אל תעודת ה-GIA. וודאו שהברקוד או קוד ה-QR נראה בבירור. האפליקציה תקרא אותו אוטומטית.'
+    },
+    section: 'scanning',
+    order: 4,
+    actions: { 
+      primary: { en: 'Continue after scanning', he: 'המשיכו אחרי הסריקה' }, 
+      secondary: { en: 'Skip', he: 'דלג' } 
+    }
+  },
+  {
+    id: 'fill-remaining-details',
+    title: { 
+      en: 'Step 4: Fill Missing Information', 
+      he: 'שלב 4: מלאו את המידע החסר' 
+    },
+    content: { 
+      en: 'Good! The scan filled in most details. Now fill in any missing information like stock number and price. Type carefully.',
+      he: 'טוב! הסריקה מילאה את רוב הפרטים. עכשיו מלאו כל מידע חסר כמו מספר מלאי ומחיר. הקלידו בזהירות.'
     },
     targetElement: '[data-tutorial="diamond-form"]',
     section: 'upload-single-stone',
-    order: 4,
+    order: 5,
     actions: { 
       primary: { en: 'Continue', he: 'המשך' }, 
       secondary: { en: 'Skip', he: 'דלג' } 
@@ -114,129 +132,37 @@ const tutorialSteps: TutorialStep[] = [
   {
     id: 'submit-diamond',
     title: { 
-      en: 'Submit Your Diamond', 
-      he: 'שלחו את היהלום שלכם' 
+      en: 'Step 5: Save Your Diamond', 
+      he: 'שלב 5: שמרו את היהלום שלכם' 
     },
     content: { 
-      en: 'Once you\'ve filled in the details, click "Add Diamond" to save it to your inventory. We\'ll then see it in your dashboard!',
-      he: 'לאחר שמילאתם את הפרטים, לחצו על "הוסף יהלום" כדי לשמור אותו במלאי שלכם. אחר כך נראה אותו בלוח הבקרה!'
+      en: 'Almost done! Now click the "Add Diamond" button at the bottom to save your diamond. I will wait for you to click it.',
+      he: 'כמעט סיימנו! עכשיו לחצו על כפתור "הוסף יהלום" בתחתית כדי לשמור את היהלום שלכם. אני אחכה שתלחצו עליו.'
     },
     targetElement: '[data-tutorial="submit-diamond"]',
     section: 'upload-single-stone',
-    order: 5,
-    requireClick: true,
-    actions: { 
-      primary: { en: 'Waiting for submit...', he: 'מחכה לשליחה...' }, 
-      secondary: { en: 'Skip', he: 'דלג' } 
-    }
-  },
-  {
-    id: 'view-in-inventory',
-    title: { 
-      en: 'Manage Your Inventory', 
-      he: 'נהלו את המלאי שלכם' 
-    },
-    content: { 
-      en: 'Perfect! Your diamond has been added. Let\'s go to the inventory page to see all your diamonds and manage them effectively.',
-      he: 'מושלם! היהלום שלכם נוסף. בואו נעבור לעמוד המלאי כדי לראות את כל היהלומים שלכם ולנהל אותם ביעילות.'
-    },
-    section: 'inventory',
     order: 6,
-    navigationTarget: '/inventory',
-    actions: { 
-      primary: { en: 'Go to Inventory', he: 'עבור למלאי' }, 
-      secondary: { en: 'Skip', he: 'דלג' } 
-    }
-  },
-  {
-    id: 'toggle-store-visibility',
-    title: { 
-      en: 'Make Diamond Visible in Store', 
-      he: 'הפוך את היהלום לגלוי בחנות' 
-    },
-    content: { 
-      en: 'Now toggle the store visibility for your diamond so customers can see it. Look for the eye icon and click it!',
-      he: 'עכשיו החליפו את הנראות בחנות עבור היהלום שלכם כדי שלקוחות יוכלו לראות אותו. חפשו את סמל העין ולחצו עליו!'
-    },
-    targetElement: '[data-tutorial="store-visibility"]',
-    section: 'inventory',
-    order: 7,
     requireClick: true,
     actions: { 
-      primary: { en: 'Waiting for toggle...', he: 'מחכה להחלפה...' }, 
-      secondary: { en: 'Skip', he: 'דלג' } 
-    }
-  },
-  {
-    id: 'visit-store',
-    title: { 
-      en: 'Your Beautiful Store', 
-      he: 'החנות היפה שלכם' 
-    },
-    content: { 
-      en: 'Excellent! Now let\'s visit your public store to see how customers will view and search for your diamonds.',
-      he: 'מעולה! עכשיו בואו נבקר בחנות הציבורית שלכם כדי לראות איך לקוחות יראו ויחפשו את היהלומים שלכם.'
-    },
-    section: 'store',
-    order: 8,
-    navigationTarget: '/store',
-    actions: { 
-      primary: { en: 'Visit Store', he: 'בקר בחנות' }, 
-      secondary: { en: 'Skip', he: 'דלג' } 
-    }
-  },
-  {
-    id: 'view-dashboard',
-    title: { 
-      en: 'Analytics Dashboard', 
-      he: 'לוח בקרה ואנליטיקה' 
-    },
-    content: { 
-      en: 'Finally, let\'s check your dashboard to see analytics about your inventory, sales, and customer interactions.',
-      he: 'לבסוף, בואו נבדוק את לוח הבקרה שלכם כדי לראות אנליטיקה על המלאי, המכירות והאינטראקציות עם לקוחות.'
-    },
-    section: 'dashboard',
-    order: 9,
-    navigationTarget: '/dashboard',
-    actions: { 
-      primary: { en: 'View Dashboard', he: 'צפה בלוח בקרה' }, 
-      secondary: { en: 'Skip', he: 'דלג' } 
-    }
-  },
-  {
-    id: 'share-with-friends',
-    title: { 
-      en: 'Share Diamond with Friends', 
-      he: 'שתפו יהלום עם חברים' 
-    },
-    content: { 
-      en: 'Now let\'s test the sharing feature! Click the share button on your diamond to generate a secure link that you can send to friends for testing.',
-      he: 'עכשיו בואו נבדוק את תכונת השיתוף! לחצו על כפתור השיתוף ביהלום שלכם כדי ליצור קישור מאובטח שתוכלו לשלוח לחברים לבדיקה.'
-    },
-    targetElement: '[data-tutorial="share-diamond"]',
-    section: 'store',
-    order: 10,
-    requireClick: true,
-    actions: { 
-      primary: { en: 'Waiting for share...', he: 'מחכה לשיתוף...' }, 
+      primary: { en: 'Waiting for you to save...', he: 'מחכה שתשמרו...' }, 
       secondary: { en: 'Skip', he: 'דלג' } 
     }
   },
   {
     id: 'tutorial-complete',
     title: { 
-      en: 'Tutorial Complete! 🎉', 
-      he: 'המדריך הושלם! 🎉' 
+      en: 'Congratulations! 🎉', 
+      he: 'ברכות! 🎉' 
     },
     content: { 
-      en: 'Congratulations! You\'ve successfully uploaded a diamond, made it visible in your store, and learned how to share it. Your friends can now search for similar diamonds and you\'ll get notifications when they interact with your inventory!',
-      he: 'ברכות! העליתם בהצלחה יהלום, הפכתם אותו לגלוי בחנות שלכם, ולמדתם איך לשתף אותו. החברים שלכם יכולים עכשיו לחפש יהלומים דומים ותקבלו התראות כשהם מתקשרים עם המלאי שלכם!'
+      en: 'Perfect! You successfully uploaded your first diamond. You can now add more diamonds the same way. The tutorial is complete!',
+      he: 'מושלם! העליתם בהצלחה את היהלום הראשון שלכם. עכשיו תוכלו להוסיף עוד יהלומים באותה דרך. המדריך הושלם!'
     },
     section: 'complete',
-    order: 11,
+    order: 7,
     actions: { 
       primary: { en: 'Finish', he: 'סיום' }, 
-      secondary: { en: 'Restart', he: 'התחל מחדש' } 
+      secondary: { en: 'Show me more features', he: 'הראה לי עוד תכונות' } 
     }
   }
 ];

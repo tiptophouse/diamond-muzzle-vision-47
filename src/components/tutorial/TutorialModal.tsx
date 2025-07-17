@@ -27,50 +27,32 @@ export function TutorialModal() {
     if (isActive) {
       document.body.style.overflow = 'hidden';
       
-      // Setup Telegram main button for primary action
-      if (currentStepData?.actions?.primary && currentStepData.navigationTarget) {
-        const buttonText = currentStepData.actions.primary[currentLanguage];
-        mainButton.show(buttonText, () => {
-          hapticFeedback.impact('medium');
-          handleNavigationAction();
-        }, '#007AFF');
-      } else {
-        mainButton.hide();
-      }
-      
-      // Setup back button
-      if (currentStep > 0) {
-        backButton.show(() => {
-          hapticFeedback.impact('light');
-          prevStep();
-        });
-      } else {
-        backButton.hide();
+      // Simple haptic feedback for interactions
+      if (currentStepData?.requireClick) {
+        hapticFeedback.impact('light');
       }
     } else {
       document.body.style.overflow = 'unset';
-      mainButton.hide();
-      backButton.hide();
     }
     
     return () => {
       document.body.style.overflow = 'unset';
-      mainButton.hide();
-      backButton.hide();
     };
-  }, [isActive, currentStepData, currentLanguage, currentStep]);
+  }, [isActive, currentStepData]);
 
-  const handleNavigationAction = () => {
-    if (currentStepData?.navigationTarget) {
-      hapticFeedback.notification('success');
-      navigate(currentStepData.navigationTarget);
-      // Continue tutorial after navigation
-      setTimeout(() => {
-        nextStep();
-      }, 500);
-    } else {
-      nextStep();
-    }
+  const handleNext = () => {
+    hapticFeedback.impact('medium');
+    nextStep();
+  };
+
+  const handlePrev = () => {
+    hapticFeedback.impact('light');
+    prevStep();
+  };
+
+  const handleSkip = () => {
+    hapticFeedback.impact('light');
+    skipTutorial();
   };
 
   if (!isActive || !currentStepData) return null;
@@ -82,13 +64,10 @@ export function TutorialModal() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ height: 'var(--tg-viewport-height, 100vh)' }}>
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => {
-        hapticFeedback.impact('light');
-        skipTutorial();
-      }} />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleSkip} />
       
       {/* Modal */}
-      <div className="relative bg-background dark:bg-background rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden animate-scale-in border border-border">
+      <div className="relative bg-background rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-scale-in border border-border">
         {/* Header */}
         <div className="bg-gradient-to-r from-primary to-primary/80 px-6 py-4 text-primary-foreground">
           <div className="flex items-center justify-between mb-3">
@@ -105,15 +84,12 @@ export function TutorialModal() {
                   setLanguage(currentLanguage === 'en' ? 'he' : 'en');
                 }}
                 className="text-primary-foreground/80 hover:text-primary-foreground transition-colors p-1 rounded"
-                title={currentLanguage === 'en' ? 'Switch to Hebrew' : 'Switch to English'}
+                title={currentLanguage === 'en' ? 'עברית' : 'English'}
               >
                 <Globe className="h-4 w-4" />
               </button>
               <button
-                onClick={() => {
-                  hapticFeedback.impact('light');
-                  skipTutorial();
-                }}
+                onClick={handleSkip}
                 className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
               >
                 <X className="h-5 w-5" />
@@ -128,29 +104,23 @@ export function TutorialModal() {
 
         {/* Content */}
         <div className="p-6">
-          <h2 className="text-xl font-bold text-foreground mb-3" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+          <h2 className="text-2xl font-bold text-foreground mb-4" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
             {currentStepData.title[currentLanguage]}
           </h2>
           
-          <div className="text-muted-foreground mb-6 leading-relaxed" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+          <div className="text-lg text-foreground mb-6 leading-relaxed" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
             {currentStepData.content[currentLanguage]}
           </div>
 
-          {/* Navigation Button for specific steps */}
-          {currentStepData.navigationTarget && (
-            <div className="mb-6">
-              <Button
-                onClick={() => {
-                  hapticFeedback.impact('medium');
-                  handleNavigationAction();
-                }}
-                className="w-full h-12 text-lg font-medium bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm active:scale-95 transition-all"
-                dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}
-              >
-                <ExternalLink className={`h-5 w-5 ${currentLanguage === 'he' ? 'ml-2' : 'mr-2'}`} />
-                {currentStepData.actions?.primary?.[currentLanguage] || 
-                 (currentLanguage === 'he' ? 'קח אותי לשם' : 'Take Me There')}
-              </Button>
+          {/* Large visual indicator for required clicks */}
+          {currentStepData.requireClick && (
+            <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-lg text-center">
+              <div className="text-primary font-bold text-lg mb-2" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+                {currentLanguage === 'he' ? '👆 לחצו כאן למעלה' : '👆 Click Above'}
+              </div>
+              <div className="text-sm text-muted-foreground" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+                {currentLanguage === 'he' ? 'אני אחכה עד שתלחצו' : 'I will wait for you to click'}
+              </div>
             </div>
           )}
 
@@ -204,13 +174,11 @@ export function TutorialModal() {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-muted/50 flex items-center justify-between" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+        <div className="px-6 py-4 bg-muted/30 flex items-center justify-between" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+            {/* Back button */}
             <Button
               variant="outline"
-              onClick={() => {
-                hapticFeedback.impact('light');
-                prevStep();
-              }}
+              onClick={handlePrev}
               disabled={isFirstStep}
               className={`flex items-center gap-2 ${currentLanguage === 'he' ? 'flex-row-reverse' : ''}`}
             >
@@ -230,26 +198,17 @@ export function TutorialModal() {
             <div className="flex gap-3">
               <Button
                 variant="ghost"
-                onClick={() => {
-                  hapticFeedback.impact('light');
-                  skipTutorial();
-                }}
+                onClick={handleSkip}
                 className="text-muted-foreground"
               >
-                {isLastStep 
-                  ? (currentLanguage === 'he' ? 'סגור' : 'Close')
-                  : (currentLanguage === 'he' ? 'דלג על הסיור' : 'Skip Tour')
-                }
+                {currentLanguage === 'he' ? 'דלג' : 'Skip'}
               </Button>
               
-              {/* Only show next button if no navigation action is required */}
-              {!currentStepData.navigationTarget && (
+              {/* Simple next button for non-click steps */}
+              {!currentStepData.requireClick && (
                 <Button
-                  onClick={() => {
-                    hapticFeedback.impact('medium');
-                    nextStep();
-                  }}
-                  className={`bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2 ${currentLanguage === 'he' ? 'flex-row-reverse' : ''}`}
+                  onClick={handleNext}
+                  className={`bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2 text-lg px-6 ${currentLanguage === 'he' ? 'flex-row-reverse' : ''}`}
                 >
                   {currentLanguage === 'he' ? (
                     <>
