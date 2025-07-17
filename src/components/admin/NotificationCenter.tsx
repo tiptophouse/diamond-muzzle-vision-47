@@ -8,6 +8,7 @@ import { Bell, MessageSquare, Users, Send, TrendingUp } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
+import { ZeroDiamondUsersNotifier } from './ZeroDiamondUsersNotifier';
 
 interface NotificationData {
   id: string;
@@ -114,6 +115,9 @@ export function NotificationCenter({ notifications, onRefresh }: NotificationCen
 
   return (
     <div className="space-y-6">
+      {/* Zero Diamond Users Notifier */}
+      <ZeroDiamondUsersNotifier />
+      
       {/* Broadcast Message */}
       <Card>
         <CardHeader>

@@ -64,9 +64,9 @@ export function OnboardingMessagePreview({ sessionUsers, adminTelegramId = 21385
     }
   }, [sessionUsers, adminTelegramId]);
 
+  // Generate Telegram mini-app deep link for tutorial
   const generateTutorialUrl = (telegramId: number) => {
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/?tutorial=start&lang=he&onboarding=true&user_id=${telegramId}&step=dashboard`;
+    return `https://t.me/DiamondMazalVisionBot/diamond?startapp=tutorial_${telegramId}`;
   };
 
   const improveMessageWithAI = async () => {
