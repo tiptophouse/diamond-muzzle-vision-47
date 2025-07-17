@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Users, Calendar, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { OnboardingMessagePreview } from './OnboardingMessagePreview';
 
 interface SessionUser {
   telegram_id: number;
@@ -11,6 +12,9 @@ interface SessionUser {
   total_sessions: number;
   browser_info?: string;
   device_type?: string;
+  first_name?: string;
+  last_name?: string;
+  username?: string;
 }
 
 export function SessionUsersDisplay() {
@@ -27,7 +31,7 @@ export function SessionUsersDisplay() {
       setIsLoading(true);
       
       // Get unique users from user_sessions with aggregated data
-      const { data, error } = await supabase
+      const { data: sessionsData, error: sessionsError } = await supabase
         .from('user_sessions')
         .select(`
           telegram_id,
@@ -38,13 +42,24 @@ export function SessionUsersDisplay() {
         `)
         .order('session_start', { ascending: false });
 
-      if (error) throw error;
+      if (sessionsError) throw sessionsError;
+
+      // Get user profiles for additional info
+      const uniqueTelegramIds = [...new Set(sessionsData?.map(s => s.telegram_id) || [])];
+      const { data: profilesData } = await supabase
+        .from('user_profiles')
+        .select('telegram_id, first_name, last_name, username')
+        .in('telegram_id', uniqueTelegramIds);
+
+      // Create a map of profiles for quick lookup
+      const profilesMap = new Map(profilesData?.map(p => [p.telegram_id, p]) || []);
 
       // Process data to get unique users with stats
       const userMap = new Map<number, SessionUser>();
       
-      data?.forEach(session => {
+      sessionsData?.forEach(session => {
         const existingUser = userMap.get(session.telegram_id);
+        const profile = profilesMap.get(session.telegram_id);
         
         if (existingUser) {
           existingUser.total_sessions += 1;
@@ -63,7 +78,10 @@ export function SessionUsersDisplay() {
             last_session: session.session_start,
             total_sessions: 1,
             browser_info: session.browser_info,
-            device_type: session.device_type
+            device_type: session.device_type,
+            first_name: profile?.first_name,
+            last_name: profile?.last_name,
+            username: profile?.username
           });
         }
       });
@@ -123,57 +141,61 @@ export function SessionUsersDisplay() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5 text-blue-600" />
-          Session Users ({sessionUsers.length} unique users)
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          All unique users who have created sessions in the app
-        </p>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3 max-h-96 overflow-y-auto">
-          {sessionUsers.map((user) => (
-            <div
-              key={user.telegram_id}
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
-            >
-              <div className="flex items-center gap-3">
-                <div className="text-2xl">
-                  {getDeviceIcon(user.device_type)}
-                </div>
-                <div>
-                  <div className="font-medium text-gray-900">
-                    User {user.telegram_id}
+    <div className="space-y-6">
+      <OnboardingMessagePreview sessionUsers={sessionUsers} />
+      
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-blue-600" />
+            Session Users ({sessionUsers.length} unique users)
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            All unique users who have created sessions in the app
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {sessionUsers.map((user) => (
+              <div
+                key={user.telegram_id}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="text-2xl">
+                    {getDeviceIcon(user.device_type)}
                   </div>
-                  <div className="text-sm text-gray-500">
-                    {user.total_sessions} session{user.total_sessions !== 1 ? 's' : ''}
+                  <div>
+                    <div className="font-medium text-gray-900">
+                      {user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : user.username || `User ${user.telegram_id}`}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {user.total_sessions} session{user.total_sessions !== 1 ? 's' : ''} • ID: {user.telegram_id}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="text-right text-sm">
+                  <div className="flex items-center gap-1 text-gray-600 mb-1">
+                    <Calendar className="h-3 w-3" />
+                    <span>First: {formatDate(user.first_session)}</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-gray-600">
+                    <Clock className="h-3 w-3" />
+                    <span>Last: {formatDate(user.last_session)}</span>
                   </div>
                 </div>
               </div>
-              
-              <div className="text-right text-sm">
-                <div className="flex items-center gap-1 text-gray-600 mb-1">
-                  <Calendar className="h-3 w-3" />
-                  <span>First: {formatDate(user.first_session)}</span>
-                </div>
-                <div className="flex items-center gap-1 text-gray-600">
-                  <Clock className="h-3 w-3" />
-                  <span>Last: {formatDate(user.last_session)}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        
-        {sessionUsers.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            No session users found
+            ))}
           </div>
-        )}
-      </CardContent>
-    </Card>
+          
+          {sessionUsers.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              No session users found
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
