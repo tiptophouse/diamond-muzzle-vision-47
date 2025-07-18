@@ -22,12 +22,12 @@ export function ClarityFilter({ selectedClarities, onClarityToggle }: ClarityFil
       </div>
       
       {/* Enlarged clarity selectors with better spacing */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-3">
         {CLARITIES.map((clarity) => (
           <button
             key={clarity}
             onClick={() => onClarityToggle(clarity)}
-            className={`px-5 py-4 text-lg font-semibold rounded-xl border-2 transition-all min-h-[60px] touch-target shadow-sm ${
+            className={`px-4 py-3.5 text-base font-semibold rounded-xl border-2 transition-all min-h-[52px] touch-target shadow-sm ${
               selectedClarities.includes(clarity)
                 ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white border-blue-500 shadow-lg scale-105 transform"
                 : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground hover:border-blue-400 hover:scale-105"

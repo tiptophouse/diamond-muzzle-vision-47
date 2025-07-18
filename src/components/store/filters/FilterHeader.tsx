@@ -23,15 +23,15 @@ export function FilterHeader({ activeFiltersCount, onClearFilters }: FilterHeade
       
       {/* Clear All button placed below header as per Helen's feedback */}
       {activeFiltersCount > 0 && (
-        <div className="flex flex-col gap-2">
-          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 self-start">
+        <div className="flex items-center justify-between">
+          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
             {activeFiltersCount} active filters
           </Badge>
           <Button
             variant="ghost"
             size="sm"
             onClick={onClearFilters}
-            className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 self-start"
+            className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
           >
             <RotateCcw className="h-4 w-4 mr-2" />
             Clear All
