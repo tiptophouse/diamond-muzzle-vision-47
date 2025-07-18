@@ -18,13 +18,13 @@ export function ColorFilter({ selectedColors, onColorToggle }: ColorFilterProps)
         )}
       </div>
       
-      {/* Enlarged color selectors - 4 columns instead of 5 for bigger buttons */}
-      <div className="grid grid-cols-4 gap-3">
+      {/* Enlarged color selectors - 3 columns for bigger, more accessible buttons */}
+      <div className="grid grid-cols-3 gap-4">
         {COLORS.map((color) => (
           <button
             key={color}
             onClick={() => onColorToggle(color)}
-            className={`px-4 py-3.5 text-base font-semibold rounded-xl border-2 transition-all min-h-[52px] touch-target shadow-sm ${
+            className={`px-5 py-4 text-lg font-semibold rounded-xl border-2 transition-all min-h-[60px] touch-target shadow-sm ${
               selectedColors.includes(color)
                 ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white border-blue-500 shadow-lg scale-105 transform"
                 : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground hover:border-blue-400 hover:scale-105"

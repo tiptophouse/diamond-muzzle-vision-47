@@ -27,12 +27,12 @@ export function CutFilter({ selectedCuts, onCutToggle }: CutFilterProps) {
       </div>
       
       {/* Enlarged cut selectors */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {cutGrades.map((cut) => (
           <button
             key={cut}
             onClick={() => onCutToggle(cut)}
-            className={`w-full px-4 py-3.5 text-base font-semibold rounded-xl border-2 transition-all text-left min-h-[52px] touch-target shadow-sm ${
+            className={`w-full px-5 py-4 text-lg font-semibold rounded-xl border-2 transition-all text-left min-h-[60px] touch-target shadow-sm ${
               selectedCuts.includes(cut)
                 ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white border-blue-500 shadow-lg scale-105 transform"
                 : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground hover:border-blue-400 hover:scale-105"
