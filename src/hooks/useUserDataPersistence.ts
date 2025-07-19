@@ -9,7 +9,7 @@ export function useUserDataPersistence(user: TelegramUser | null, isTelegramEnvi
   useEffect(() => {
     if (!user || persistenceCompleteRef.current) return;
 
-    console.log('💾 Starting background user data persistence...');
+    console.log('💾 Starting background user data persistence for user:', user);
     
     // Set current user ID immediately (non-blocking)
     setCurrentUserId(user.id);
@@ -33,5 +33,5 @@ export function useUserDataPersistence(user: TelegramUser | null, isTelegramEnvi
     }, 500);
 
     persistenceCompleteRef.current = true;
-  }, [user, isTelegramEnvironment]);
+  }, [user?.id, isTelegramEnvironment]);
 }

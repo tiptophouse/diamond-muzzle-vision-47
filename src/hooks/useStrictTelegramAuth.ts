@@ -180,7 +180,8 @@ export function useStrictTelegramAuth(): AuthState {
             username: verificationResult.user_data?.username,
             language_code: verificationResult.user_data?.language_code || 'en',
             is_premium: verificationResult.user_data?.is_premium,
-            photo_url: verificationResult.user_data?.photo_url
+            photo_url: verificationResult.user_data?.photo_url,
+            phone_number: verificationResult.user_data?.phone_number
           };
           console.log('✅ Backend verification successful');
         }
@@ -199,7 +200,8 @@ export function useStrictTelegramAuth(): AuthState {
             username: unsafeUser.username,
             language_code: unsafeUser.language_code || 'en',
             is_premium: unsafeUser.is_premium,
-            photo_url: unsafeUser.photo_url
+            photo_url: unsafeUser.photo_url,
+            phone_number: (unsafeUser as any).phone_number
           };
           console.log('✅ Client-side authentication successful');
         }

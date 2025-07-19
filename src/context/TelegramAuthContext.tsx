@@ -28,6 +28,12 @@ const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(u
 export function TelegramAuthProvider({ children }: { children: ReactNode }) {
   const authState = useStrictTelegramAuth();
   
+  console.log('🔍 TelegramAuthProvider - Auth state:', { 
+    user: authState.user, 
+    isAuthenticated: authState.isAuthenticated,
+    isTelegramEnvironment: authState.isTelegramEnvironment 
+  });
+  
   // Automatically persist user data when authenticated
   useUserDataPersistence(authState.user, authState.isTelegramEnvironment);
 
