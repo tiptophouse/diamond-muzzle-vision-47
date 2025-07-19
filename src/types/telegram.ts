@@ -7,6 +7,7 @@ export interface TelegramUser {
   language_code?: string;
   is_premium?: boolean;
   photo_url?: string;
+  phone_number?: string;
 }
 
 export interface TelegramInitData {

@@ -10,6 +10,7 @@ export interface ExtractedUserData {
   photo_url?: string;
   is_premium?: boolean;
   language_code?: string;
+  phone_number?: string;
 }
 
 export function extractTelegramUserData(telegramUser: TelegramUser): ExtractedUserData {
@@ -20,7 +21,8 @@ export function extractTelegramUserData(telegramUser: TelegramUser): ExtractedUs
     username: telegramUser.username || undefined,
     photo_url: telegramUser.photo_url || undefined,
     is_premium: telegramUser.is_premium || false,
-    language_code: telegramUser.language_code || 'en'
+    language_code: telegramUser.language_code || 'en',
+    phone_number: telegramUser.phone_number || undefined
   };
 }
 
@@ -35,6 +37,7 @@ export async function upsertUserProfile(userData: ExtractedUserData): Promise<vo
         first_name: userData.first_name,
         last_name: userData.last_name,
         username: userData.username,
+        phone_number: userData.phone_number,
         photo_url: userData.photo_url,
         is_premium: userData.is_premium,
         language_code: userData.language_code,

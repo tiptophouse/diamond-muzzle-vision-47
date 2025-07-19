@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useStrictTelegramAuth } from '@/hooks/useStrictTelegramAuth';
+import { useUserDataPersistence } from '@/hooks/useUserDataPersistence';
 
 interface TelegramUser {
   id: number;
@@ -10,6 +11,7 @@ interface TelegramUser {
   language_code?: string;
   is_premium?: boolean;
   photo_url?: string;
+  phone_number?: string;
 }
 
 interface TelegramAuthContextType {
@@ -25,6 +27,9 @@ const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(u
 
 export function TelegramAuthProvider({ children }: { children: ReactNode }) {
   const authState = useStrictTelegramAuth();
+  
+  // Automatically persist user data when authenticated
+  useUserDataPersistence(authState.user, authState.isTelegramEnvironment);
 
   return (
     <TelegramAuthContext.Provider value={authState}>
