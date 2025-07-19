@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -22,11 +21,6 @@ interface StoneData {
   certificateNumber?: string;
 }
 
-interface UploadReminderData {
-  firstName: string;
-  uploadUrl: string;
-}
-
 function generateStoneSummary(stone: StoneData): string {
   const priceInfo = stone.pricePerCarat ? `\n💰 Price: $${stone.pricePerCarat}/ct` : '';
   const cutInfo = stone.cut ? `\n✂️ Cut: ${stone.cut}` : '';
@@ -46,31 +40,6 @@ function generateStoneSummary(stone: StoneData): string {
 🌟 Fluorescence: ${stone.fluorescence}${priceInfo}${certInfo}${labInfo}`;
 }
 
-function generateUploadReminderMessage(data: UploadReminderData): string {
-  return `🔍 **Upload Your Diamond Certificate!**
-
-שלום ${data.firstName}! 👋
-
-📋 **Ready to add your diamonds to the system?**
-
-✨ **Quick Certificate Scan:**
-• Simply photograph your GIA certificate
-• Our AI will extract all diamond details automatically
-• Your inventory will be ready in seconds!
-
-💎 **Why upload now?**
-• Get discovered by potential buyers
-• Professional diamond showcase
-• Secure certificate storage
-• Real-time market exposure
-
-🚀 **Start uploading:** [Upload Certificate](${data.uploadUrl})
-
-Need help? Reply to this message and we'll guide you through the process.
-
-**Happy Diamond Trading!** 💎`;
-}
-
 serve(async (req) => {
   console.log('🚀 Telegram message function invoked');
   
@@ -79,13 +48,13 @@ serve(async (req) => {
   }
 
   try {
-    const { telegramId, messageType, stoneData, uploadReminderData, storeUrl } = await req.json();
-    console.log('📥 Request data:', { telegramId, messageType, hasStoneData: !!stoneData, hasUploadData: !!uploadReminderData });
+    const { telegramId, stoneData, storeUrl } = await req.json();
+    console.log('📥 Request data:', { telegramId, stoneData: !!stoneData, storeUrl });
     
-    if (!telegramId) {
-      console.error('❌ Missing required telegramId');
+    if (!telegramId || !stoneData) {
+      console.error('❌ Missing required fields');
       return new Response(
-        JSON.stringify({ error: 'Missing required telegramId' }),
+        JSON.stringify({ error: 'Missing required fields' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -99,22 +68,9 @@ serve(async (req) => {
       );
     }
 
-    let message = '';
-    
-    // Generate message based on type
-    if (messageType === 'upload_reminder' && uploadReminderData) {
-      message = generateUploadReminderMessage(uploadReminderData);
-    } else if (messageType === 'stone_upload' && stoneData) {
-      const summary = generateStoneSummary(stoneData);
-      const storeLink = storeUrl ? `\n\n🔗 [View in Store](${storeUrl})` : '';
-      message = `${summary}${storeLink}`;
-    } else {
-      console.error('❌ Invalid message type or missing data');
-      return new Response(
-        JSON.stringify({ error: 'Invalid message type or missing required data' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const summary = generateStoneSummary(stoneData);
+    const storeLink = storeUrl ? `\n\n🔗 [View in Store](${storeUrl})` : '';
+    const message = `${summary}${storeLink}`;
 
     console.log('📤 Sending message to Telegram...');
     const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
