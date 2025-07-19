@@ -20,6 +20,7 @@ import Index from "./pages/Index";
 import EngagementDashboard from '@/components/engagement/EngagementDashboard';
 import SmartNotificationSystem from '@/components/engagement/SmartNotificationSystem';
 import DeepLinkReports from '@/components/engagement/DeepLinkReports';
+import { ProfitOptimizerDashboard } from '@/components/dashboard/ProfitOptimizerDashboard';
 import { TelegramAuthProvider } from '@/context/TelegramAuthContext';
 import { TutorialProvider } from '@/contexts/TutorialContext';
 import { AuthGuard } from '@/components/auth/AuthGuard';
@@ -70,9 +71,10 @@ function App() {
                         <Route path="/insights" element={<InsightsPage />} />
                          <Route path="/settings" element={<Settings />} />
                          <Route path="/notifications" element={<NotificationsPage />} />
-                         <Route path="/engagement" element={<EngagementDashboard />} />
-                         <Route path="/engagement/notifications" element={<SmartNotificationSystem />} />
-                         <Route path="/engagement/reports" element={<DeepLinkReports />} />
+        <Route path="/engagement" element={<EngagementDashboard />} />
+        <Route path="/engagement/notifications" element={<SmartNotificationSystem />} />
+        <Route path="/engagement/reports" element={<DeepLinkReports />} />
+        <Route path="/profit-optimizer" element={<ProfitOptimizerDashboard />} />
                         <Route path="/admin" element={
                           <AdminGuard>
                             <Admin />
