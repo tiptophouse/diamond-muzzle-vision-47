@@ -214,12 +214,8 @@ export function TelegramLayout({
   };
   // For store page, only show store tab for security (prevent navigation to protected areas)
   const isPublicStoreAccess = location.pathname === '/store' && !user;
-  const availableTabs = isPublicStoreAccess 
-    ? tabs.filter(tab => tab.path === '/store') 
-    : tabs.filter(tab => !tab.adminOnly || isAdmin);
-  const availableSecondaryTabs = isPublicStoreAccess 
-    ? [] 
-    : secondaryTabs.filter(tab => !tab.adminOnly || isAdmin);
+  const availableTabs = isPublicStoreAccess ? tabs.filter(tab => tab.path === '/store') : tabs.filter(tab => !tab.adminOnly || isAdmin);
+  const availableSecondaryTabs = isPublicStoreAccess ? [] : secondaryTabs.filter(tab => !tab.adminOnly || isAdmin);
   return <div className="flex flex-col h-screen max-h-screen w-full tg-viewport overflow-hidden">
       {/* Main content area */}
       <main className="flex-1 overflow-auto smooth-scroll bg-background w-full py-[40px]">
@@ -232,7 +228,7 @@ export function TelegramLayout({
 
       {/* Bottom tab navigation */}
       <nav className="flex items-center justify-center bg-background/95 backdrop-blur-sm border-t border-border/50 pb-safe shrink-0 w-full">
-        <div className="flex items-center justify-around w-full max-w-lg px-2">
+        <div className="flex items-center justify-around w-full max-w-lg px-2 py-[2px]">
           {availableTabs.map(tab => {
           const Icon = tab.icon;
           const isActive = isActiveTab(tab.path);
