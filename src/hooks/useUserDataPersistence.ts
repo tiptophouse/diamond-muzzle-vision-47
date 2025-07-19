@@ -7,7 +7,7 @@ export function useUserDataPersistence(user: TelegramUser | null, isTelegramEnvi
   const persistenceCompleteRef = useRef(false);
 
   useEffect(() => {
-    if (!user || persistenceCompleteRef.current) return;
+    if (!user) return;
 
     console.log('💾 Starting background user data persistence for user:', user);
     
@@ -19,9 +19,10 @@ export function useUserDataPersistence(user: TelegramUser | null, isTelegramEnvi
       try {
         const { extractTelegramUserData, upsertUserProfile, initializeUserAnalytics } = await import('@/utils/telegramUserData');
         const extractedData = extractTelegramUserData(user);
+        console.log('📊 Extracted user data:', extractedData);
         await upsertUserProfile(extractedData);
         await initializeUserAnalytics(user.id);
-        console.log('✅ Background: User data saved successfully');
+        console.log('✅ Background: User data saved successfully for:', extractedData.first_name, extractedData.last_name);
       } catch (error) {
         console.warn('⚠️ Background: Failed to save user data, but continuing...', error);
       }
@@ -31,7 +32,5 @@ export function useUserDataPersistence(user: TelegramUser | null, isTelegramEnvi
     setTimeout(() => {
       saveUserToDatabase();
     }, 500);
-
-    persistenceCompleteRef.current = true;
   }, [user?.id, isTelegramEnvironment]);
 }
