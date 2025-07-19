@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { useTutorial } from '@/contexts/TutorialContext';
 import { Button } from '@/components/ui/button';
@@ -65,7 +66,9 @@ export function TutorialOverlay() {
       } else {
         // No specific target, show tooltip in center
         setElementPosition(null);
-        setTooltipPosition({ top: window.innerHeight / 2, left: window.innerWidth / 2, placement: 'center' });
+        const centerTop = window.innerHeight / 2;
+        const centerLeft = window.innerWidth / 2;
+        setTooltipPosition({ top: centerTop, left: centerLeft, placement: 'center' });
       }
     }, 500);
 
@@ -99,10 +102,11 @@ export function TutorialOverlay() {
     
     setElementPosition(position);
     
-    // Calculate tooltip position
-    const tooltipWidth = 350;
+    // Calculate tooltip position - Mobile responsive
+    const isMobile = window.innerWidth < 768;
+    const tooltipWidth = isMobile ? Math.min(320, window.innerWidth - 32) : 350;
     const tooltipHeight = 200;
-    const spacing = 20;
+    const spacing = isMobile ? 16 : 20;
     
     let tooltipTop = position.top + position.height + spacing;
     let tooltipLeft = position.left + (position.width / 2) - (tooltipWidth / 2);
@@ -114,10 +118,14 @@ export function TutorialOverlay() {
       placement = 'top';
     }
     
-    if (tooltipLeft < 20) {
-      tooltipLeft = 20;
-    } else if (tooltipLeft + tooltipWidth > window.innerWidth - 20) {
-      tooltipLeft = window.innerWidth - tooltipWidth - 20;
+    // Ensure tooltip stays within screen bounds
+    const minLeft = isMobile ? 16 : 20;
+    const maxLeft = window.innerWidth - tooltipWidth - (isMobile ? 16 : 20);
+    
+    if (tooltipLeft < minLeft) {
+      tooltipLeft = minLeft;
+    } else if (tooltipLeft > maxLeft) {
+      tooltipLeft = maxLeft;
     }
     
     setTooltipPosition({ top: tooltipTop, left: tooltipLeft, placement });
@@ -140,6 +148,7 @@ export function TutorialOverlay() {
   const progressPercentage = ((currentStep + 1) / totalSteps) * 100;
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === totalSteps - 1;
+  const isMobile = window.innerWidth < 768;
 
   return (
     <div ref={overlayRef} className="fixed inset-0 z-50 pointer-events-none">
@@ -147,35 +156,36 @@ export function TutorialOverlay() {
       <div className="absolute inset-0 bg-black/80 transition-all duration-300">
         {elementPosition && (
           <>
-            {/* Main highlight with super strong emphasis */}
+            {/* Main highlight with enhanced mobile visibility */}
             <div
               className="absolute bg-transparent border-4 border-red-500 rounded-lg animate-pulse"
               style={{
-                top: elementPosition.top - 12,
-                left: elementPosition.left - 12,
-                width: elementPosition.width + 24,
-                height: elementPosition.height + 24,
-                boxShadow: `0 0 0 8px rgba(239, 68, 68, 0.6), 0 0 0 9999px rgba(0, 0, 0, 0.8), 0 0 60px rgba(239, 68, 68, 0.8)`
+                top: elementPosition.top - (isMobile ? 8 : 12),
+                left: elementPosition.left - (isMobile ? 8 : 12),
+                width: elementPosition.width + (isMobile ? 16 : 24),
+                height: elementPosition.height + (isMobile ? 16 : 24),
+                boxShadow: `0 0 0 ${isMobile ? 6 : 8}px rgba(239, 68, 68, 0.6), 0 0 0 9999px rgba(0, 0, 0, 0.8), 0 0 ${isMobile ? 40 : 60}px rgba(239, 68, 68, 0.8)`
               }}
             />
             {/* Animated arrow pointing to element */}
             <div
               className="absolute pointer-events-none animate-bounce"
               style={{
-                top: elementPosition.top - 50,
-                left: elementPosition.left + elementPosition.width / 2 - 15,
-                fontSize: '30px',
+                top: elementPosition.top - (isMobile ? 35 : 50),
+                left: elementPosition.left + elementPosition.width / 2 - (isMobile ? 12 : 15),
+                fontSize: isMobile ? '24px' : '30px',
                 zIndex: 9999
               }}
             >
               👇
             </div>
-            {/* "CLICK HERE" text */}
+            {/* "CLICK HERE" text - Mobile optimized */}
             <div
-              className="absolute pointer-events-none bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-lg animate-pulse"
+              className="absolute pointer-events-none bg-red-600 text-white px-3 py-1.5 rounded-lg font-bold animate-pulse"
               style={{
-                top: elementPosition.top - 80,
-                left: elementPosition.left + elementPosition.width / 2 - 60,
+                top: elementPosition.top - (isMobile ? 60 : 80),
+                left: elementPosition.left + elementPosition.width / 2 - (isMobile ? 45 : 60),
+                fontSize: isMobile ? '14px' : '18px',
                 zIndex: 9999,
                 textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
               }}
@@ -186,16 +196,20 @@ export function TutorialOverlay() {
         )}
       </div>
 
-      {/* Tooltip */}
+      {/* Tooltip - Mobile responsive */}
       <div
         className="absolute pointer-events-auto animate-fade-in"
         style={{
           top: tooltipPosition.top,
           left: tooltipPosition.left,
-          width: tooltipPosition.placement === 'center' ? '90%' : '350px',
-          maxWidth: tooltipPosition.placement === 'center' ? '500px' : '350px',
+          width: tooltipPosition.placement === 'center' 
+            ? (isMobile ? '90%' : '90%')
+            : (isMobile ? Math.min(320, window.innerWidth - 32) : 350),
+          maxWidth: tooltipPosition.placement === 'center' 
+            ? (isMobile ? '400px' : '500px') 
+            : (isMobile ? '320px' : '350px'),
           marginLeft: tooltipPosition.placement === 'center' ? '-45%' : '0',
-          marginTop: tooltipPosition.placement === 'center' ? '-150px' : '0'
+          marginTop: tooltipPosition.placement === 'center' ? (isMobile ? '-120px' : '-150px') : '0'
         }}
       >
         {/* Arrow pointing to element */}
@@ -207,53 +221,53 @@ export function TutorialOverlay() {
           }`} />
         )}
 
-        {/* Tooltip content */}
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
+        {/* Tooltip content - Mobile optimized */}
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4 text-white">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5" />
-                <span className="font-semibold text-sm">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-4 sm:px-6 py-3 sm:py-4 text-white">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="font-semibold text-xs sm:text-sm">
                   {currentLanguage === 'he' ? 'שלב' : 'Step'} {currentStep + 1} {currentLanguage === 'he' ? 'מתוך' : 'of'} {totalSteps}
                 </span>
               </div>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setLanguage(currentLanguage === 'en' ? 'he' : 'en')}
-                  className="text-white/80 hover:text-white transition-colors p-1 hover:bg-white/20 rounded"
+                  className="text-white/80 hover:text-white transition-colors p-1 hover:bg-white/20 rounded active:scale-95"
                   title={currentLanguage === 'en' ? 'Switch to Hebrew' : 'Switch to English'}
                 >
-                  <Globe className="h-3 w-3" />
+                  <Globe className="h-3 w-3 sm:h-4 sm:w-4" />
                 </button>
                 <button
                   onClick={skipTutorial}
-                  className="text-white/80 hover:text-white transition-colors p-1 hover:bg-white/20 rounded"
+                  className="text-white/80 hover:text-white transition-colors p-1 hover:bg-white/20 rounded active:scale-95"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-3 w-3 sm:h-4 sm:w-4" />
                 </button>
               </div>
             </div>
             <Progress 
               value={progressPercentage} 
-              className="h-2 bg-white/20"
+              className="h-1.5 sm:h-2 bg-white/20"
             />
           </div>
 
           {/* Content */}
-          <div className="p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-3" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+          <div className="p-4 sm:p-6">
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-2 sm:mb-3 leading-tight" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
               {currentStepData.title[currentLanguage]}
             </h2>
             
-            <div className="text-gray-600 mb-6 leading-relaxed text-sm" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+            <div className="text-gray-600 mb-4 sm:mb-6 leading-relaxed text-xs sm:text-sm" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
               {currentStepData.content[currentLanguage]}
             </div>
 
             {/* Step-specific illustrations */}
             {currentStepData.section === 'welcome' && (
-              <div className="text-center mb-6">
-                <div className="text-4xl mb-2">💎</div>
+              <div className="text-center mb-4 sm:mb-6">
+                <div className="text-3xl sm:text-4xl mb-2">💎</div>
                 <div className="text-xs text-gray-500">
                   Professional Diamond Management
                 </div>
@@ -261,36 +275,36 @@ export function TutorialOverlay() {
             )}
           </div>
 
-          {/* Footer */}
-          <div className="px-6 py-4 bg-gray-50 flex items-center justify-between">
+          {/* Footer - Mobile optimized */}
+          <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 flex items-center justify-between gap-2">
             <Button
               variant="outline"
               onClick={prevStep}
               disabled={isFirstStep}
-              className="flex items-center gap-2 text-sm"
+              className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 h-auto active:scale-95 transition-all"
               size="sm"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
               {currentLanguage === 'he' ? 'קודם' : 'Previous'}
             </Button>
 
-            <div className="flex gap-2">
+            <div className="flex gap-1.5 sm:gap-2">
               <Button
                 variant="ghost"
                 onClick={skipTutorial}
-                className="text-gray-600 text-sm"
+                className="text-gray-600 text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 h-auto active:scale-95 transition-all"
                 size="sm"
               >
                 {isLastStep 
                   ? (currentLanguage === 'he' ? 'סגור' : 'Close')
-                  : (currentLanguage === 'he' ? 'דלג' : 'Skip')
+                  : (currentLanguage === 'he' ? 'דلג' : 'Skip')
                 }
               </Button>
               
               <Button
                 onClick={waitingForClick ? handleRequiredClick : nextStep}
                 disabled={waitingForClick && !currentStepData?.requireClick}
-                className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 text-sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 h-auto active:scale-95 transition-all"
                 size="sm"
               >
                 {waitingForClick 
@@ -299,9 +313,9 @@ export function TutorialOverlay() {
                     ? (currentLanguage === 'he' ? 'קח אותי לשם' : 'Take Me There')
                     : isLastStep 
                       ? (currentLanguage === 'he' ? 'סיום' : 'Finish')
-                      : (currentLanguage === 'he' ? 'הבא' : 'Next')
+                      : (currentLanguage === 'he' ? 'הبא' : 'Next')
                 }
-                {!isLastStep && !waitingForClick && <ChevronRight className="h-4 w-4" />}
+                {!isLastStep && !waitingForClick && <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />}
               </Button>
             </div>
           </div>

@@ -1,4 +1,3 @@
-
 import {
   BrowserRouter as Router,
   Route,
@@ -26,6 +25,7 @@ import { AdminGuard } from '@/components/admin/AdminGuard';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { TelegramLayout } from '@/components/layout/TelegramLayout';
+import { useUserEngagementMonitor } from '@/hooks/useUserEngagementMonitor';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,6 +39,9 @@ const queryClient = new QueryClient({
 function App() {
   console.log('🚀 App component rendering');
   
+  // Add engagement monitoring
+  useUserEngagementMonitor();
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>

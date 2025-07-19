@@ -219,28 +219,44 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
   const [isActive, setIsActive] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [hasSeenTutorial, setHasSeenTutorial] = useState(false);
-  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'he'>('he'); // Default to Hebrew
+  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'he'>('he');
   const [waitingForClick, setWaitingForClick] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
   const [sharedDiamondId, setSharedDiamondId] = useState<string | null>(null);
 
+  // Check for URL parameters to auto-start tutorial
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tutorialParam = urlParams.get('tutorial');
+    const onboardingParam = urlParams.get('onboarding');
+    const userIdParam = urlParams.get('user_id');
+    
+    if (tutorialParam === 'start' || onboardingParam === 'true') {
+      console.log('🎓 Auto-starting tutorial from URL parameters');
+      
+      // Clear URL parameters but keep the tutorial running
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+      
+      // Start tutorial
+      setTimeout(() => {
+        startTutorial();
+      }, 1000);
+    }
+  }, []);
+
   // Detect language from Telegram user data, default to Hebrew
   useEffect(() => {
-    // Check saved preference first
     const savedLang = localStorage.getItem('tutorial-language') as 'en' | 'he' | null;
     
     if (savedLang) {
       setCurrentLanguage(savedLang);
     } else if (user?.language_code) {
-      // Only switch to English if explicitly Hebrew is not detected and user has English
       const detectedLang = user.language_code.startsWith('he') ? 'he' : 
-                           user.language_code.startsWith('en') ? 'en' : 'he'; // Default to Hebrew
+                           user.language_code.startsWith('en') ? 'en' : 'he';
       setCurrentLanguage(detectedLang);
-      
-      // Save language preference
       localStorage.setItem('tutorial-language', detectedLang);
     }
-    // If no saved preference and no user data, stays with Hebrew default
   }, [user]);
 
   useEffect(() => {
@@ -250,13 +266,14 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
     setHasSeenTutorial(!!seen);
     setCompletedSteps(steps ? JSON.parse(steps) : []);
     
-    // Auto-start tutorial for new users
-    if (!seen && !isActive && user) {
+    // Only auto-start tutorial for new users if not already started by URL
+    if (!seen && !isActive && user && !window.location.search.includes('tutorial')) {
       setTimeout(() => setIsActive(true), 1000);
     }
   }, [isActive, currentLanguage, user]);
 
   const startTutorial = () => {
+    console.log('🎓 Starting tutorial...');
     setCurrentStep(0);
     setIsActive(true);
     setWaitingForClick(false);
@@ -289,6 +306,7 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
   };
 
   const skipTutorial = () => {
+    console.log('🎓 Tutorial completed/skipped');
     setIsActive(false);
     setCurrentStep(0);
     setWaitingForClick(false);
@@ -363,7 +381,6 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
 export function useTutorial() {
   const context = useContext(TutorialContext);
   if (context === undefined) {
-    // Return null instead of throwing error to make it optional
     return null;
   }
   return context;

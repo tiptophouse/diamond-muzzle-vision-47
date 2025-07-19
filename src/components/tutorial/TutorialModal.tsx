@@ -71,7 +71,6 @@ export function TutorialModal() {
     if (isActive) {
       document.body.style.overflow = 'hidden';
       
-      // Simple haptic feedback for interactions
       if (currentStepData?.requireClick) {
         hapticFeedback.impact('light');
       }
@@ -84,7 +83,6 @@ export function TutorialModal() {
     };
   }, [isActive, currentStepData]);
 
-
   if (!isActive || !currentStepData) return null;
 
   const progressPercentage = ((currentStep + 1) / totalSteps) * 100;
@@ -92,67 +90,67 @@ export function TutorialModal() {
   const isLastStep = currentStep === totalSteps - 1;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ height: 'var(--tg-viewport-height, 100vh)' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4" style={{ height: 'var(--tg-viewport-height, 100vh)' }}>
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleSkip} />
       
-      {/* Modal */}
-      <div className="relative bg-background rounded-3xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden animate-scale-in border border-border">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-blue-600 px-6 py-5 text-white relative">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <Sparkles className="h-6 w-6" />
-              <span className="font-bold text-base">
+      {/* Modal - Mobile First Design */}
+      <div className="relative bg-background rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-sm sm:max-w-md mx-auto overflow-hidden animate-scale-in border border-border max-h-[90vh] flex flex-col">
+        {/* Header - Compact on mobile */}
+        <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-blue-600 px-4 sm:px-6 py-3 sm:py-5 text-white relative flex-shrink-0">
+          <div className="flex items-center justify-between mb-2 sm:mb-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Sparkles className="h-4 w-4 sm:h-6 sm:w-6" />
+              <span className="font-bold text-sm sm:text-base">
                 {currentLanguage === 'he' ? 'שלב' : 'Step'} {currentStep + 1} {currentLanguage === 'he' ? 'מתוך' : 'of'} {totalSteps}
               </span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={() => {
                   hapticFeedback.selection();
                   setLanguage(currentLanguage === 'en' ? 'he' : 'en');
                 }}
-                className="text-white/80 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
+                className="text-white/80 hover:text-white transition-colors p-1.5 sm:p-2 rounded-full hover:bg-white/10 active:scale-95"
                 title={currentLanguage === 'en' ? 'עברית' : 'English'}
               >
-                <Globe className="h-5 w-5" />
+                <Globe className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
               <button
                 onClick={handleSkip}
-                className="text-white/80 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
+                className="text-white/80 hover:text-white transition-colors p-1.5 sm:p-2 rounded-full hover:bg-white/10 active:scale-95"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
             </div>
           </div>
           <Progress 
             value={progressPercentage} 
-            className="h-2 bg-white/20"
+            className="h-1.5 sm:h-2 bg-white/20"
           />
-          <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 w-6 h-6 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-600 rotate-45 border-r border-b border-background"></div>
+          <div className="absolute -bottom-2 sm:-bottom-3 left-1/2 transform -translate-x-1/2 w-4 h-4 sm:w-6 sm:h-6 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-600 rotate-45 border-r border-b border-background"></div>
         </div>
 
-        {/* Content */}
-        <div className="p-6 pt-8">
-          <h2 className="text-2xl font-bold text-foreground mb-4 text-center" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+        {/* Content - Scrollable on mobile */}
+        <div className="p-4 sm:p-6 pt-6 sm:pt-8 flex-1 overflow-y-auto">
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-3 sm:mb-4 text-center leading-tight" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
             {currentStepData.title[currentLanguage]}
           </h2>
           
-          <div className="text-base text-muted-foreground mb-6 leading-relaxed text-center" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+          <div className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6 leading-relaxed text-center" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
             {currentStepData.content[currentLanguage]}
           </div>
 
           {/* Step-specific action buttons and visuals */}
           {currentStepData.id === 'lets-upload' && (
-            <div className="mb-6 text-center">
-              <div className="text-6xl mb-4">📄</div>
+            <div className="mb-4 sm:mb-6 text-center">
+              <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">📄</div>
               <Button
                 onClick={() => handleNavigateToPage('/upload')}
                 size="lg"
-                className="w-full h-14 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-3 rounded-xl"
+                className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all"
               >
-                <Camera className="h-6 w-6" />
+                <Camera className="h-5 w-5 sm:h-6 sm:w-6" />
                 <span>
                   {currentLanguage === 'he' ? 'סרק תעודה עכשיו' : 'Scan Certificate Now'}
                 </span>
@@ -161,25 +159,25 @@ export function TutorialModal() {
           )}
 
           {currentStepData.id === 'see-inventory' && (
-            <div className="mb-6 text-center">
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl mb-4">
-                <div className="text-sm text-gray-600 space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> Add Diamond</span>
-                    <span className="flex items-center gap-2"><Package className="h-4 w-4" /> Search & Filter</span>
+            <div className="mb-4 sm:mb-6 text-center">
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-4 rounded-xl mb-3 sm:mb-4">
+                <div className="text-xs sm:text-sm text-gray-600 space-y-1.5 sm:space-y-2">
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="flex items-center gap-1.5 sm:gap-2"><Sparkles className="h-3 w-3 sm:h-4 sm:w-4" /> Add Diamond</span>
+                    <span className="flex items-center gap-1.5 sm:gap-2"><Package className="h-3 w-3 sm:h-4 sm:w-4" /> Search & Filter</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="flex items-center gap-2">✏️ Edit Details</span>
-                    <span className="flex items-center gap-2">👁️ Store Visibility</span>
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="flex items-center gap-1.5 sm:gap-2">✏️ Edit Details</span>
+                    <span className="flex items-center gap-1.5 sm:gap-2">👁️ Store Visibility</span>
                   </div>
                 </div>
               </div>
               <Button
                 onClick={() => handleNavigateToPage('/inventory')}
                 size="lg"
-                className="w-full h-14 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-3 rounded-xl"
+                className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all"
               >
-                <Package className="h-6 w-6" />
+                <Package className="h-5 w-5 sm:h-6 sm:w-6" />
                 <span>
                   {currentLanguage === 'he' ? 'עבור למלאי' : 'Go to Inventory'}
                 </span>
@@ -188,19 +186,19 @@ export function TutorialModal() {
           )}
 
           {currentStepData.id === 'visit-store' && (
-            <div className="mb-6 text-center">
-              <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-xl mb-4">
-                <div className="text-4xl mb-2">🏪</div>
-                <div className="text-sm text-gray-600">
+            <div className="mb-4 sm:mb-6 text-center">
+              <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-4 sm:p-6 rounded-xl mb-3 sm:mb-4">
+                <div className="text-3xl sm:text-4xl mb-2">🏪</div>
+                <div className="text-xs sm:text-sm text-gray-600">
                   {currentLanguage === 'he' ? 'חזית חנות יפה עבור הלקוחות שלכם' : 'Beautiful public storefront for your customers'}
                 </div>
               </div>
               <Button
                 onClick={() => handleNavigateToPage('/store')}
                 size="lg"
-                className="w-full h-14 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-3 rounded-xl"
+                className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all"
               >
-                <Store className="h-6 w-6" />
+                <Store className="h-5 w-5 sm:h-6 sm:w-6" />
                 <span>
                   {currentLanguage === 'he' ? 'עבור לחנות' : 'Go to Store'}
                 </span>
@@ -209,29 +207,29 @@ export function TutorialModal() {
           )}
 
           {currentStepData.id === 'welcome' && (
-            <div className="text-center mb-6">
-              <div className="text-8xl mb-4">💎</div>
-              <div className="text-sm text-muted-foreground mb-4">
+            <div className="text-center mb-4 sm:mb-6">
+              <div className="text-6xl sm:text-8xl mb-3 sm:mb-4">💎</div>
+              <div className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
                 {currentLanguage === 'he' ? 'מערכת ניהול מלאי יהלומים מקצועית' : 'Professional Diamond Inventory Management'}
               </div>
             </div>
           )}
 
           {currentStepData.id === 'tutorial-complete' && (
-            <div className="text-center mb-6">
-              <div className="text-8xl mb-4">🎉</div>
+            <div className="text-center mb-4 sm:mb-6">
+              <div className="text-6xl sm:text-8xl mb-3 sm:mb-4">🎉</div>
             </div>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-6 bg-muted/30 flex flex-col gap-4" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
+        {/* Footer - Mobile optimized */}
+        <div className="px-4 sm:px-6 py-4 sm:py-6 bg-muted/30 flex flex-col gap-3 sm:gap-4 flex-shrink-0" dir={currentLanguage === 'he' ? 'rtl' : 'ltr'}>
           {/* Main action buttons for non-navigation steps */}
           {!currentStepData.navigationTarget && !currentStepData.requireClick && (
             <Button
               onClick={isLastStep ? handleFinishTutorial : handleNext}
               size="lg"
-              className={`w-full h-14 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-3 rounded-xl ${currentLanguage === 'he' ? 'flex-row-reverse' : ''}`}
+              className={`w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all ${currentLanguage === 'he' ? 'flex-row-reverse' : ''}`}
             >
               {currentLanguage === 'he' ? (
                 <>
@@ -239,15 +237,15 @@ export function TutorialModal() {
                     <span>סיום</span>
                   ) : (
                     <>
-                      <ChevronLeft className="h-5 w-5" />
-                      <span>הבא</span>
+                      <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                      <span>הبא</span>
                     </>
                   )}
                 </>
               ) : (
                 <>
                   <span>{isLastStep ? 'Finish' : 'Next'}</span>
-                  {!isLastStep && <ChevronRight className="h-5 w-5" />}
+                  {!isLastStep && <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />}
                 </>
               )}
             </Button>
@@ -259,16 +257,16 @@ export function TutorialModal() {
               variant="outline"
               onClick={handlePrev}
               disabled={isFirstStep}
-              className={`flex items-center gap-2 ${currentLanguage === 'he' ? 'flex-row-reverse' : ''}`}
+              className={`flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base px-3 sm:px-4 py-2 active:scale-95 transition-all ${currentLanguage === 'he' ? 'flex-row-reverse' : ''}`}
             >
               {currentLanguage === 'he' ? (
                 <>
                   <span>קודם</span>
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
                 </>
               ) : (
                 <>
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span>Previous</span>
                 </>
               )}
@@ -277,9 +275,9 @@ export function TutorialModal() {
             <Button
               variant="ghost"
               onClick={handleSkip}
-              className="text-muted-foreground"
+              className="text-muted-foreground text-sm sm:text-base px-3 sm:px-4 py-2 active:scale-95 transition-all"
             >
-              {currentLanguage === 'he' ? 'דלג על הסיור' : 'Skip Tour'}
+              {currentLanguage === 'he' ? 'דلג על הסיור' : 'Skip Tour'}
             </Button>
           </div>
         </div>
