@@ -18,12 +18,12 @@ const NotificationsPage = () => {
   
   const unreadCount = notifications.filter(n => !n.read).length;
   const businessNotifications = notifications.filter(n => 
-    ['buyer_interest', 'pair_match', 'group_demand', 'price_opportunity'].includes(n.type)
+    ['buyer_interest', 'interested_buyers', 'pair_match', 'diamond_pairs', 'group_demand', 'price_opportunity', 'price_opportunities'].includes(n.type)
   );
   const groupNotifications = notifications.filter(n => n.type === 'group_diamond_request');
   const diamondMatches = notifications.filter(n => n.type === 'diamond_match');
   const otherNotifications = notifications.filter(n => 
-    !['buyer_interest', 'pair_match', 'group_demand', 'price_opportunity', 'group_diamond_request', 'diamond_match'].includes(n.type)
+    !['buyer_interest', 'interested_buyers', 'pair_match', 'diamond_pairs', 'group_demand', 'price_opportunity', 'price_opportunities', 'group_diamond_request', 'diamond_match'].includes(n.type)
   );
 
   if (isLoading) {
@@ -98,7 +98,7 @@ const NotificationsPage = () => {
               <span className="font-medium text-pink-900">קונים מעוניינים</span>
             </div>
             <div className="text-2xl font-bold text-pink-600 mt-1">
-              {businessNotifications.filter(n => n.type === 'buyer_interest').length}
+              {businessNotifications.filter(n => n.type === 'buyer_interest' || n.type === 'interested_buyers').length}
             </div>
           </div>
           
@@ -118,7 +118,7 @@ const NotificationsPage = () => {
               <span className="font-medium text-purple-900">זוגות יהלומים</span>
             </div>
             <div className="text-2xl font-bold text-purple-600 mt-1">
-              {businessNotifications.filter(n => n.type === 'pair_match').length}
+              {businessNotifications.filter(n => n.type === 'pair_match' || n.type === 'diamond_pairs').length}
             </div>
           </div>
 
@@ -128,7 +128,7 @@ const NotificationsPage = () => {
               <span className="font-medium text-orange-900">הזדמנות מחיר</span>
             </div>
             <div className="text-2xl font-bold text-orange-600 mt-1">
-              {businessNotifications.filter(n => n.type === 'price_opportunity').length}
+              {businessNotifications.filter(n => n.type === 'price_opportunity' || n.type === 'price_opportunities').length}
             </div>
           </div>
         </div>
