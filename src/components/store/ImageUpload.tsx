@@ -1,8 +1,11 @@
 
 import { useState, useRef } from "react";
-import { Upload, Image, X } from "lucide-react";
+import { Upload, Image, X, Link } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -13,6 +16,8 @@ interface ImageUploadProps {
 export function ImageUpload({ onImageUploaded }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
+  const [isValidatingUrl, setIsValidatingUrl] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -91,8 +96,64 @@ export function ImageUpload({ onImageUploaded }: ImageUploadProps) {
     fileInputRef.current?.click();
   };
 
+  const validateImageUrl = async (url: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new globalThis.Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = url;
+    });
+  };
+
+  const handleUrlUpload = async () => {
+    if (!imageUrl.trim()) {
+      toast({
+        title: "Please enter an image URL",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsValidatingUrl(true);
+
+    try {
+      const isValid = await validateImageUrl(imageUrl);
+      
+      if (!isValid) {
+        toast({
+          title: "Invalid image URL",
+          description: "Please enter a valid image URL",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setUploadedImage(imageUrl);
+      
+      toast({
+        title: "Image URL added successfully",
+        description: "Your image has been added to the store",
+      });
+
+      if (onImageUploaded) {
+        onImageUploaded(imageUrl);
+      }
+
+    } catch (error) {
+      console.error('Error validating image URL:', error);
+      toast({
+        title: "Failed to validate image",
+        description: "Please check the URL and try again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsValidatingUrl(false);
+    }
+  };
+
   const handleRemoveImage = () => {
     setUploadedImage(null);
+    setImageUrl("");
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -110,23 +171,78 @@ export function ImageUpload({ onImageUploaded }: ImageUploadProps) {
         />
 
         {!uploadedImage ? (
-          <div className="text-center">
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 sm:p-8 hover:border-gray-400 transition-colors">
-              <Image className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-              <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">Upload a photo to the store</p>
-              <Button
-                onClick={handleUploadClick}
-                disabled={isUploading}
-                className="w-full sm:w-auto flex items-center gap-2"
-              >
+          <Tabs defaultValue="url" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="url" className="flex items-center gap-2">
+                <Link className="h-4 w-4" />
+                URL
+              </TabsTrigger>
+              <TabsTrigger value="upload" className="flex items-center gap-2">
                 <Upload className="h-4 w-4" />
-                {isUploading ? 'Uploading...' : 'Choose Image'}
+                Upload
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="url" className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="imageUrl">Image URL</Label>
+                <Input
+                  id="imageUrl"
+                  type="url"
+                  placeholder="https://example.com/image.jpg"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              
+              {imageUrl && (
+                <div className="border rounded-lg p-3">
+                  <img
+                    src={imageUrl}
+                    alt="Preview"
+                    className="w-full max-w-xs mx-auto rounded"
+                    onError={() => {
+                      toast({
+                        title: "Invalid image URL",
+                        description: "Could not load image from this URL",
+                        variant: "destructive",
+                      });
+                    }}
+                  />
+                </div>
+              )}
+              
+              <Button
+                onClick={handleUrlUpload}
+                disabled={isValidatingUrl || !imageUrl.trim()}
+                className="w-full flex items-center gap-2 min-h-[44px]"
+              >
+                <Link className="h-4 w-4" />
+                {isValidatingUrl ? 'Validating...' : 'Add Image URL'}
               </Button>
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              Supports JPG, PNG, WebP up to 5MB
-            </p>
-          </div>
+            </TabsContent>
+            
+            <TabsContent value="upload">
+              <div className="text-center">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 sm:p-8 hover:border-gray-400 transition-colors">
+                  <Image className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                  <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">Upload a photo to the store</p>
+                  <Button
+                    onClick={handleUploadClick}
+                    disabled={isUploading}
+                    className="w-full sm:w-auto flex items-center gap-2 min-h-[44px]"
+                  >
+                    <Upload className="h-4 w-4" />
+                    {isUploading ? 'Uploading...' : 'Choose Image'}
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Supports JPG, PNG, WebP up to 5MB
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
         ) : (
           <div className="text-center">
             <div className="relative inline-block">
@@ -144,14 +260,16 @@ export function ImageUpload({ onImageUploaded }: ImageUploadProps) {
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            <p className="text-sm text-green-600 mt-2">Image uploaded successfully!</p>
+            <p className="text-sm text-green-600 mt-2">Image added successfully!</p>
             <Button
               variant="outline"
-              onClick={handleUploadClick}
-              disabled={isUploading}
-              className="mt-2 w-full sm:w-auto"
+              onClick={() => {
+                setUploadedImage(null);
+                setImageUrl("");
+              }}
+              className="mt-2 w-full sm:w-auto min-h-[44px]"
             >
-              Upload Another
+              Add Another
             </Button>
           </div>
         )}
