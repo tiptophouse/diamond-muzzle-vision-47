@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { Upload, Link, Image, Check, X, RefreshCw } from "lucide-react";
+import { Upload, Check, X, RefreshCw, Camera, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { api, apiEndpoints } from "@/lib/api";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 
 interface AdminImageUploadProps {
   diamond: Diamond;
@@ -18,10 +19,10 @@ export function AdminImageUpload({ diamond, onUpdate }: AdminImageUploadProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState(diamond.imageUrl || '');
   const [isUploading, setIsUploading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState(diamond.imageUrl || '');
   const [isValidImage, setIsValidImage] = useState(false);
   const { toast } = useToast();
   const { user } = useTelegramAuth();
+  const { impactOccurred, selectionChanged, notificationOccurred } = useTelegramHapticFeedback();
 
   const validateImage = async (url: string) => {
     if (!url) {
@@ -33,16 +34,16 @@ export function AdminImageUpload({ diamond, onUpdate }: AdminImageUploadProps) {
       const img = document.createElement('img');
       img.onload = () => {
         setIsValidImage(true);
-        setPreviewUrl(url);
+        selectionChanged(); // Haptic feedback for validation success
       };
       img.onerror = () => {
         setIsValidImage(false);
-        setPreviewUrl('');
+        impactOccurred('light'); // Haptic feedback for validation failure
       };
       img.src = url;
     } catch (error) {
       setIsValidImage(false);
-      setPreviewUrl('');
+      impactOccurred('light');
     }
   };
 
@@ -53,15 +54,19 @@ export function AdminImageUpload({ diamond, onUpdate }: AdminImageUploadProps) {
 
   const handleUpload = async () => {
     if (!imageUrl || !isValidImage) {
+      impactOccurred('heavy');
+      notificationOccurred('error');
       toast({
-        title: "Invalid Image",
+        title: "❌ Invalid Image",
         description: "Please enter a valid image URL",
         variant: "destructive",
       });
       return;
     }
 
+    impactOccurred('medium');
     setIsUploading(true);
+    
     try {
       const updateData = {
         picture: imageUrl
@@ -74,17 +79,19 @@ export function AdminImageUpload({ diamond, onUpdate }: AdminImageUploadProps) {
         throw new Error(result.error);
       }
 
+      notificationOccurred('success');
       toast({
-        title: "Image Updated",
-        description: `Image successfully uploaded for diamond #${diamond.stockNumber}`,
+        title: "✅ Image Updated",
+        description: `Successfully uploaded image for #${diamond.stockNumber}`,
       });
       
       setIsOpen(false);
       onUpdate();
     } catch (error) {
       console.error('Error uploading image:', error);
+      notificationOccurred('error');
       toast({
-        title: "Upload Failed",
+        title: "❌ Upload Failed",
         description: error instanceof Error ? error.message : "Failed to upload image",
         variant: "destructive",
       });
@@ -94,7 +101,9 @@ export function AdminImageUpload({ diamond, onUpdate }: AdminImageUploadProps) {
   };
 
   const handleRemoveImage = async () => {
+    impactOccurred('medium');
     setIsUploading(true);
+    
     try {
       const updateData = {
         picture: null
@@ -107,20 +116,21 @@ export function AdminImageUpload({ diamond, onUpdate }: AdminImageUploadProps) {
         throw new Error(result.error);
       }
 
+      notificationOccurred('success');
       toast({
-        title: "Image Removed",
-        description: `Image removed from diamond #${diamond.stockNumber}`,
+        title: "🗑️ Image Removed",
+        description: `Removed image from #${diamond.stockNumber}`,
       });
       
       setImageUrl('');
-      setPreviewUrl('');
       setIsValidImage(false);
       setIsOpen(false);
       onUpdate();
     } catch (error) {
       console.error('Error removing image:', error);
+      notificationOccurred('error');
       toast({
-        title: "Remove Failed",
+        title: "❌ Remove Failed",
         description: error instanceof Error ? error.message : "Failed to remove image",
         variant: "destructive",
       });
@@ -129,130 +139,143 @@ export function AdminImageUpload({ diamond, onUpdate }: AdminImageUploadProps) {
     }
   };
 
+  const handleOpenSheet = () => {
+    impactOccurred('light');
+    setIsOpen(true);
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <SheetTrigger asChild>
         <Button
           variant="outline"
           size="sm"
-          className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-sm"
+          onClick={handleOpenSheet}
+          className="h-10 w-10 p-0 bg-white/95 hover:bg-white shadow-md border-2 border-blue-200 hover:border-blue-400 transition-all duration-200"
         >
-          <Upload className="h-4 w-4" />
+          <Camera className="h-5 w-5 text-blue-600" />
         </Button>
-      </DialogTrigger>
+      </SheetTrigger>
       
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Image className="h-5 w-5" />
-            Upload Image for Diamond #{diamond.stockNumber}
-          </DialogTitle>
-        </DialogHeader>
+      <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl">
+        <SheetHeader className="pb-6">
+          <SheetTitle className="flex items-center gap-3 text-lg">
+            <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl">
+              <Camera className="h-5 w-5 text-white" />
+            </div>
+            Upload Image
+            <span className="text-sm text-slate-500 font-mono">#{diamond.stockNumber}</span>
+          </SheetTitle>
+        </SheetHeader>
         
-        <div className="space-y-6">
-          {/* Current Image */}
+        <div className="space-y-6 pb-6">
+          {/* Current Image Section */}
           {diamond.imageUrl && (
-            <div className="space-y-2">
-              <Label>Current Image</Label>
-              <div className="relative">
+            <div className="space-y-3">
+              <Label className="text-base font-medium text-slate-700">Current Image</Label>
+              <div className="relative rounded-2xl overflow-hidden">
                 <img
                   src={diamond.imageUrl}
                   alt={`Diamond ${diamond.stockNumber}`}
-                  className="w-full h-48 object-cover rounded-lg border"
+                  className="w-full h-40 object-cover"
                 />
                 <Button
                   variant="destructive"
                   size="sm"
                   onClick={handleRemoveImage}
                   disabled={isUploading}
-                  className="absolute top-2 right-2"
+                  className="absolute top-3 right-3 h-10 w-10 p-0 rounded-full shadow-lg"
                 >
-                  <X className="h-4 w-4" />
-                  Remove
+                  <X className="h-5 w-5" />
                 </Button>
               </div>
             </div>
           )}
 
-          {/* URL Input */}
-          <div className="space-y-2">
-            <Label htmlFor="imageUrl" className="flex items-center gap-2">
-              <Link className="h-4 w-4" />
-              Image URL
+          {/* URL Input Section - Telegram-friendly */}
+          <div className="space-y-3">
+            <Label htmlFor="imageUrl" className="text-base font-medium text-slate-700">
+              📸 Paste Image URL
             </Label>
-            <div className="flex gap-2">
+            <div className="relative">
               <Input
                 id="imageUrl"
                 value={imageUrl}
                 onChange={(e) => handleUrlChange(e.target.value)}
-                placeholder="https://example.com/diamond-image.jpg"
-                className="flex-1"
+                placeholder="https://example.com/image.jpg"
+                className="h-14 text-base px-4 pr-12 rounded-xl border-2 border-slate-200 focus:border-blue-400"
               />
-              <div className="flex items-center">
+              <div className="absolute right-4 top-1/2 -translate-y-1/2">
                 {imageUrl && (
                   isValidImage ? (
-                    <Check className="h-5 w-5 text-green-500" />
+                    <Check className="h-6 w-6 text-green-500" />
                   ) : (
-                    <X className="h-5 w-5 text-red-500" />
+                    <X className="h-6 w-6 text-red-500" />
                   )
                 )}
               </div>
             </div>
           </div>
 
-          {/* Image Preview */}
-          {previewUrl && isValidImage && (
-            <div className="space-y-2">
-              <Label>Preview</Label>
-              <div className="relative">
+          {/* Preview Section - Mobile optimized */}
+          {imageUrl && isValidImage && (
+            <div className="space-y-3">
+              <Label className="text-base font-medium text-slate-700">Preview</Label>
+              <div className="relative rounded-2xl overflow-hidden border-2 border-green-300">
                 <img
-                  src={previewUrl}
+                  src={imageUrl}
                   alt="Preview"
-                  className="w-full h-48 object-cover rounded-lg border border-green-200"
+                  className="w-full h-40 object-cover"
                 />
-                <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-xs">
-                  ✓ Valid Image
+                <div className="absolute top-3 left-3 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                  ✓ Valid
                 </div>
               </div>
             </div>
           )}
 
-          {/* Common Image Hosting Tips */}
-          <div className="bg-blue-50 p-4 rounded-lg space-y-2">
-            <h4 className="font-medium text-blue-900">💡 Image Upload Tips</h4>
-            <ul className="text-sm text-blue-800 space-y-1">
-              <li>• Use high-quality images (recommended: 800x600px or larger)</li>
-              <li>• Supported formats: JPG, PNG, WebP</li>
-              <li>• Use reliable hosting services like Imgur, Cloudinary, or AWS S3</li>
-              <li>• Ensure the URL ends with the image extension (.jpg, .png, etc.)</li>
-            </ul>
+          {/* Mobile-optimized tips */}
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-2xl border border-blue-200">
+            <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+              💡 Quick Tips
+            </h4>
+            <div className="text-sm text-blue-800 space-y-1">
+              <p>• Use Imgur.com for free image hosting</p>
+              <p>• Make sure URL ends with .jpg, .png, or .webp</p>
+              <p>• High quality images look better</p>
+            </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isUploading}>
+          {/* Telegram-style action buttons */}
+          <div className="flex gap-3 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsOpen(false)} 
+              disabled={isUploading}
+              className="flex-1 h-12 text-base rounded-xl border-2"
+            >
               Cancel
             </Button>
             <Button 
               onClick={handleUpload} 
               disabled={isUploading || !imageUrl || !isValidImage}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              className="flex-1 h-12 text-base rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
             >
               {isUploading ? (
                 <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
                   Uploading...
                 </>
               ) : (
                 <>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Image
+                  <Upload className="h-5 w-5 mr-2" />
+                  Upload
                 </>
               )}
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
