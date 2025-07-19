@@ -66,59 +66,56 @@ export function PremiumStoreFilters({
   };
 
   return (
-    <div className="p-3 lg:p-4">
+    <div className="p-4 space-y-5">
       <FilterHeader 
         activeFiltersCount={activeFiltersCount}
         onClearFilters={onClearFilters}
       />
 
+      {/* Shape Filter - Most important, placed first */}
       <ShapeFilter
         selectedShapes={filters.shapes}
         onShapeToggle={(shape) => toggleFilter('shapes', shape)}
       />
 
+      {/* Range Filters - Single column for better mobile experience */}
       <div className="space-y-4">
-        {/* Range Filters */}
-        <div className="grid grid-cols-1 gap-4">
-          <PriceRangeFilter
-            priceRange={filters.priceRange}
-            minPrice={minPrice}
-            maxPrice={maxPrice}
-            onPriceRangeChange={(range) => onUpdateFilter('priceRange', range)}
-          />
+        <PriceRangeFilter
+          priceRange={filters.priceRange}
+          minPrice={minPrice}
+          maxPrice={maxPrice}
+          onPriceRangeChange={(range) => onUpdateFilter('priceRange', range)}
+        />
 
-          <CaratRangeFilter
-            caratRange={filters.caratRange}
-            minCarat={minCarat}
-            maxCarat={maxCarat}
-            onCaratRangeChange={(range) => onUpdateFilter('caratRange', range)}
-          />
-        </div>
+        <CaratRangeFilter
+          caratRange={filters.caratRange}
+          minCarat={minCarat}
+          maxCarat={maxCarat}
+          onCaratRangeChange={(range) => onUpdateFilter('caratRange', range)}
+        />
+      </div>
+      
+      {/* Selection Filters - Single column for easier touch interaction */}
+      <div className="space-y-4">
+        <ColorFilter
+          selectedColors={filters.colors}
+          onColorToggle={(color) => toggleFilter('colors', color)}
+        />
+
+        <ClarityFilter
+          selectedClarities={filters.clarities}
+          onClarityToggle={(clarity) => toggleFilter('clarities', clarity)}
+        />
         
-        {/* Selection Filters */}
-        <div className="grid grid-cols-2 gap-4">
-          <ColorFilter
-            selectedColors={filters.colors}
-            onColorToggle={(color) => toggleFilter('colors', color)}
-          />
+        <CutFilter
+          selectedCuts={filters.cuts}
+          onCutToggle={(cut) => toggleFilter('cuts', cut)}
+        />
 
-          <ClarityFilter
-            selectedClarities={filters.clarities}
-            onClarityToggle={(clarity) => toggleFilter('clarities', clarity)}
-          />
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <CutFilter
-            selectedCuts={filters.cuts}
-            onCutToggle={(cut) => toggleFilter('cuts', cut)}
-          />
-
-          <FluorescenceFilter
-            selectedFluorescence={filters.fluorescence}
-            onFluorescenceToggle={(fluorescence) => toggleFilter('fluorescence', fluorescence)}
-          />
-        </div>
+        <FluorescenceFilter
+          selectedFluorescence={filters.fluorescence}
+          onFluorescenceToggle={(fluorescence) => toggleFilter('fluorescence', fluorescence)}
+        />
       </div>
     </div>
   );

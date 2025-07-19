@@ -37,39 +37,45 @@ export function CollapsibleFilters({
     (filters.priceRange[0] > 0 || filters.priceRange[1] < 100000 ? 1 : 0);
 
   return (
-    <div className="bg-white/95 backdrop-blur-xl border border-slate-200/50 rounded-2xl shadow-xl shadow-slate-900/5">
-      {/* Filter Toggle Button */}
-      <div className="p-4 border-b border-slate-200/50">
+    <div className="bg-background rounded-xl border shadow-sm">
+      {/* Filter Toggle Button - Telegram style */}
+      <div className="p-4">
         <Button
           variant="ghost"
           onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-          className="w-full flex items-center justify-between text-slate-800 hover:bg-slate-50/50"
+          className="w-full flex items-center justify-between text-foreground hover:bg-muted/50 min-h-[48px] touch-target rounded-xl"
         >
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <Filter className="h-4 w-4 text-white" />
+            <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center">
+              <Filter className="h-5 w-5 text-primary-foreground" />
             </div>
             <div className="text-left">
-              <span className="font-semibold">Filters</span>
+              <span className="font-semibold text-base">💎 Filter Diamonds</span>
               {activeFiltersCount > 0 && (
-                <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                  {activeFiltersCount} active
-                </span>
+                <div className="flex items-center gap-1 mt-1">
+                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">
+                    {activeFiltersCount} active
+                  </span>
+                </div>
               )}
             </div>
           </div>
-          {isFiltersOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          <div className="text-muted-foreground">
+            {isFiltersOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+          </div>
         </Button>
       </div>
 
       {/* Collapsible Filter Content */}
       {isFiltersOpen && (
-        <PremiumStoreFilters
-          filters={filters}
-          onUpdateFilter={onUpdateFilter}
-          onClearFilters={onClearFilters}
-          diamonds={diamonds}
-        />
+        <div className="border-t">
+          <PremiumStoreFilters
+            filters={filters}
+            onUpdateFilter={onUpdateFilter}
+            onClearFilters={onClearFilters}
+            diamonds={diamonds}
+          />
+        </div>
       )}
     </div>
   );
