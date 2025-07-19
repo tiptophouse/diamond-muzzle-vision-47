@@ -1,4 +1,3 @@
-
 import { Layout } from '@/components/layout/Layout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { AdminStatsGrid } from '@/components/admin/AdminStatsGrid';
@@ -7,10 +6,11 @@ import { NotificationCenter } from '@/components/admin/NotificationCenter';
 import { NotificationSender } from '@/components/admin/NotificationSender';
 import { PaymentManagement } from '@/components/admin/PaymentManagement';
 import { SessionUsersDisplay } from '@/components/admin/SessionUsersDisplay';
+import { VisitorStatsCard } from '@/components/admin/VisitorStatsCard';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { Users, Settings, MessageSquare, CreditCard } from 'lucide-react';
+import { Users, Settings, MessageSquare, CreditCard, Eye } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -184,8 +184,12 @@ export default function Admin() {
         </div>
       </div>
 
-      {/* Real Bot Usage Stats */}
+      {/* Enhanced Analytics Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="mb-6">
+          <VisitorStatsCard />
+        </div>
+        
         <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <h3 className="font-semibold text-blue-900 mb-2">📊 Real-Time Bot Usage</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
@@ -211,22 +215,27 @@ export default function Admin() {
       {/* Main Admin Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 bg-white border border-gray-200 rounded-lg p-1">
+          <TabsList className="grid w-full grid-cols-6 bg-white border border-gray-200 rounded-lg p-1">
+            <TabsTrigger 
+              value="analytics" 
+              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            >
+              <Eye className="h-4 w-4" />
+              <span className="hidden sm:inline">Analytics</span>
+            </TabsTrigger>
             <TabsTrigger 
               value="users" 
               className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
             >
               <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">User Management</span>
-              <span className="sm:hidden">Users</span>
+              <span className="hidden sm:inline">Users</span>
             </TabsTrigger>
             <TabsTrigger 
               value="sessions" 
               className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
             >
               <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Session Users</span>
-              <span className="sm:hidden">Sessions</span>
+              <span className="hidden sm:inline">Sessions</span>
             </TabsTrigger>
             <TabsTrigger 
               value="payments" 
@@ -252,6 +261,13 @@ export default function Admin() {
           </TabsList>
           
           <div className="mt-6">
+            <TabsContent value="analytics" className="space-y-6">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold mb-4">Detailed Analytics</h3>
+                <VisitorStatsCard />
+              </div>
+            </TabsContent>
+            
             <TabsContent value="users" className="space-y-0">
               <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                 <AdminUserManager />
@@ -276,7 +292,7 @@ export default function Admin() {
                   <NotificationSender onSendNotification={(notification) => console.log('Sent notification:', notification)} />
                 </div>
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <NotificationCenter notifications={notifications} onRefresh={handleRefreshNotifications} />
+                  <NotificationCenter notifications={notifications} onRefresh={() => console.log('Refreshing notifications')} />
                 </div>
               </div>
             </TabsContent>
