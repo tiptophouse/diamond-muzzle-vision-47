@@ -90,14 +90,17 @@ export function useNotifications() {
 
   const getNotificationTitle = (type: string, metadata?: any): string => {
     switch (type) {
+      case 'interested_buyers':
       case 'buyer_interest':
-        return '💎 קונה מעוניין ביהלום שלך';
+        return '💎 קונים מעוניינים';
+      case 'diamond_pairs':
       case 'pair_match':
-        return '💍 נמצא זוג מושלם';
+        return '💍 זוגות יהלומים';
       case 'group_demand':
-        return '🔥 ביקוש גבוה בקבוצות';
+        return '👥 ביקוש בקבוצות';
+      case 'price_opportunities':
       case 'price_opportunity':
-        return '📈 הזדמנות מחיר';
+        return '💰 הזדמנויות מחיר';
       case 'diamond_match':
         const matchCount = metadata?.match_count || 1;
         return `🔍 נמצאו ${matchCount} התאמות לבקשת חיפוש`;
