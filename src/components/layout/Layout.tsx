@@ -1,7 +1,7 @@
 
 import { ReactNode } from 'react';
 import { Header } from './Header';
-import Sidebar from './Sidebar';
+import { Sidebar } from './Sidebar';
 import { useEnhancedUserTracking } from '@/hooks/useEnhancedUserTracking';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 

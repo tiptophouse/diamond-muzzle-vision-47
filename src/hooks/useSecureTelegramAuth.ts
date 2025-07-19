@@ -9,7 +9,6 @@ import {
 } from '@/utils/telegramWebApp';
 import { verifyTelegramUser } from '@/lib/api/auth';
 import { getAuthenticationMetrics } from '@/utils/telegramValidation';
-import { supabase } from '@/integrations/supabase/client';
 
 interface TelegramUser {
   id: number;
@@ -59,67 +58,6 @@ export function useSecureTelegramAuth(): AuthState {
       username: "admin",
       language_code: "en"
     };
-  };
-
-  const saveUserToDatabase = async (user: TelegramUser) => {
-    try {
-      // Check if user already exists
-      const { data: existingUser } = await supabase
-        .from('user_profiles')
-        .select('id')
-        .eq('telegram_id', user.id)
-        .single();
-
-      if (!existingUser) {
-        // Create new user profile
-        const { error: insertError } = await supabase
-          .from('user_profiles')
-          .insert({
-            telegram_id: user.id,
-            first_name: user.first_name,
-            last_name: user.last_name,
-            username: user.username,
-            language_code: user.language_code,
-            is_premium: user.is_premium || false,
-            photo_url: user.photo_url,
-            status: 'active',
-            subscription_plan: 'free'
-          });
-
-        if (insertError) {
-          console.error('Error creating user profile:', insertError);
-        } else {
-          console.log('✅ New user profile created for:', user.first_name);
-        }
-      }
-
-      // Update last login
-      await supabase
-        .from('user_profiles')
-        .update({ 
-          last_login: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('telegram_id', user.id);
-
-      // Track user login
-      await supabase
-        .from('user_logins')
-        .insert({
-          telegram_id: user.id,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          username: user.username,
-          language_code: user.language_code,
-          is_premium: user.is_premium || false,
-          photo_url: user.photo_url,
-          user_agent: navigator.userAgent,
-          login_timestamp: new Date().toISOString()
-        });
-
-    } catch (error) {
-      console.error('Error saving user to database:', error);
-    }
   };
 
   const logSecurityEvent = (event: string, details: any) => {
@@ -329,9 +267,6 @@ export function useSecureTelegramAuth(): AuthState {
       }
 
       console.log('✅ Final authenticated user:', authenticatedUser.first_name, 'ID:', authenticatedUser.id);
-
-      // Save user to database
-      await saveUserToDatabase(authenticatedUser);
 
       updateState({
         user: authenticatedUser,
