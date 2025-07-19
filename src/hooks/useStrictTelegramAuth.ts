@@ -48,14 +48,16 @@ export function useStrictTelegramAuth(): AuthState {
       return false;
     }
 
-    // Check for platform info
-    if (!tg.platform || tg.platform === 'unknown') {
+    // Check for platform info (optional check)
+    const platform = (tg as any).platform;
+    if (platform && platform === 'unknown') {
       console.log('❌ Platform unknown - likely not genuine Telegram');
       return false;
     }
 
-    // Check for version
-    if (!tg.version || tg.version === '1.0') {
+    // Check for version (optional check)
+    const version = (tg as any).version;
+    if (version && version === '1.0') {
       console.log('❌ Invalid version - likely not genuine Telegram');
       return false;
     }
