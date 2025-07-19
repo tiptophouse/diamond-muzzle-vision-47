@@ -6,12 +6,16 @@ import { GroupNotificationCard } from '@/components/notifications/GroupNotificat
 import { BusinessNotificationCard } from '@/components/notifications/BusinessNotificationCard';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useTelegramNotificationBridge } from '@/hooks/useTelegramNotificationBridge';
-import { Bell, BellRing, RefreshCw, Users, Diamond, Heart, TrendingUp } from 'lucide-react';
+import { useDiamondSearch } from '@/hooks/useDiamondSearch';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { Bell, BellRing, RefreshCw, Users, Diamond, Heart, TrendingUp, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 const NotificationsPage = () => {
   const { notifications, isLoading, markAsRead, contactCustomer, refetch } = useNotifications();
+  const { simulateSearchFromBot, isLoading: isSearching } = useDiamondSearch();
+  const { user } = useTelegramAuth();
   
   // Initialize Telegram notification bridge
   useTelegramNotificationBridge();
@@ -49,6 +53,22 @@ const NotificationsPage = () => {
     }
   };
 
+  const handleTestDiamondSearch = async () => {
+    if (!user?.id) return;
+    
+    // Simulate a search for round diamonds
+    await simulateSearchFromBot({
+      shape: 'round',
+      color: 'G',
+      clarity: 'VVS2',
+      weight_min: 1.0,
+      weight_max: 2.0
+    }, 987654321, "Test Buyer");
+    
+    // Refresh notifications after search
+    setTimeout(() => refetch(), 1000);
+  };
+
   return (
     <Layout>
       <div className="max-w-4xl mx-auto p-6 space-y-6">
@@ -76,10 +96,23 @@ const NotificationsPage = () => {
             </div>
           </div>
           
-          <Button onClick={refetch} variant="outline" size="sm" className="flex-shrink-0">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            רענן
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleTestDiamondSearch} 
+              variant="outline" 
+              size="sm" 
+              className="flex-shrink-0"
+              disabled={isSearching}
+            >
+              <Search className="h-4 w-4 mr-2" />
+              {isSearching ? 'מחפש...' : 'בדיקת חיפוש'}
+            </Button>
+            
+            <Button onClick={refetch} variant="outline" size="sm" className="flex-shrink-0">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              רענן
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}
