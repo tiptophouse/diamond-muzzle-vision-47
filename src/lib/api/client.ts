@@ -30,8 +30,8 @@ async function testBackendConnectivity(): Promise<boolean> {
       return false;
     }
     
-    // Fast connectivity test with 2 second timeout
-    const testUrl = `${API_BASE_URL}/`;
+    // Fast connectivity test with 2 second timeout using the health check endpoint
+    const testUrl = `${API_BASE_URL}/api/v1/alive`;
     console.log('🔍 API: Testing root endpoint with 2s timeout:', testUrl);
     
     const controller = new AbortController();
