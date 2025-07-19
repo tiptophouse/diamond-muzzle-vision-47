@@ -13,6 +13,7 @@ import { api, apiEndpoints } from "@/lib/api";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { getAdminTelegramId } from "@/lib/api/secureConfig";
 import { useEffect } from "react";
+import { AdminImageUpload } from "./AdminImageUpload";
 
 interface AdminStoreControlsProps {
   diamond: Diamond;
@@ -162,6 +163,7 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
   return (
     <>
       <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+        <AdminImageUpload diamond={diamond} onUpdate={onUpdate} />
         <Button
           variant="ghost"
           size="sm"
