@@ -13,8 +13,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useState } from "react";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { UploadSuccessCard } from "@/components/upload/UploadSuccessCard";
-import { InventoryAnalyticsDashboard } from "@/components/inventory/InventoryAnalyticsDashboard";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function InventoryPage() {
   const {
@@ -147,54 +145,41 @@ export default function InventoryPage() {
           }}
         />
         
-        <Tabs defaultValue="inventory" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="inventory">Inventory Management</TabsTrigger>
-            <TabsTrigger value="analytics">Performance Analytics</TabsTrigger>
-          </TabsList>
+        <div className="flex flex-col lg:flex-row gap-6">
+          <aside className="lg:w-80">
+        <div className="space-y-6">
+          <InventorySearch
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onSubmit={handleSearch}
+            allDiamonds={allDiamonds}
+            data-tutorial="inventory-search"
+          />
+          <InventoryFilters
+            onFilterChange={setFilters}
+          />
+        </div>
+          </aside>
           
-          <TabsContent value="inventory" className="mt-6">
-            <div className="flex flex-col lg:flex-row gap-6">
-              <aside className="lg:w-80">
-                <div className="space-y-6">
-                  <InventorySearch
-                    searchQuery={searchQuery}
-                    onSearchChange={setSearchQuery}
-                    onSubmit={handleSearch}
-                    allDiamonds={allDiamonds}
-                    data-tutorial="inventory-search"
-                  />
-                  <InventoryFilters
-                    onFilterChange={setFilters}
-                  />
-                </div>
-              </aside>
+          <main className="flex-1">
+            <div className="space-y-4">
+              <InventoryTable
+                data={filteredDiamonds}
+                loading={loading}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onStoreToggle={handleStoreToggle}
+                data-tutorial="inventory-table"
+              />
               
-              <main className="flex-1">
-                <div className="space-y-4">
-                  <InventoryTable
-                    data={filteredDiamonds}
-                    loading={loading}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onStoreToggle={handleStoreToggle}
-                    data-tutorial="inventory-table"
-                  />
-                  
-                  <InventoryPagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={setCurrentPage}
-                  />
-                </div>
-              </main>
+              <InventoryPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
             </div>
-          </TabsContent>
-          
-          <TabsContent value="analytics" className="mt-6">
-            <InventoryAnalyticsDashboard diamonds={allDiamonds} />
-          </TabsContent>
-        </Tabs>
+          </main>
+        </div>
 
         {/* Edit Diamond Modal */}
         <Dialog open={!!editingDiamond} onOpenChange={() => setEditingDiamond(null)}>
