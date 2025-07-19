@@ -69,4 +69,16 @@ export interface TelegramWebApp {
     notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
     selectionChanged: () => void;
   };
+  Accelerometer?: {
+    start: (config?: { refresh_rate?: number }) => void;
+    stop: () => void;
+    isStarted: boolean;
+  };
+  DeviceOrientation?: {
+    start: (config?: { refresh_rate?: number }) => void;
+    stop: () => void;
+    isStarted: boolean;
+  };
+  lockOrientation?: (orientation: 'portrait' | 'landscape') => void;
+  unlockOrientation?: () => void;
 }
