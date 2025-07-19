@@ -63,9 +63,10 @@ export function TelegramLayout({
   // Simple admin check - you can enhance this based on your needs
   const isAdmin = user?.id === 2138564172 || user?.username === 'admin';
 
-  // Enable back button for non-main routes
+  // Disable back button for store page when accessed publicly (security)
+  const isStoreRoute = location.pathname === '/store';
   const isMainRoute = tabs.some(tab => tab.path === location.pathname);
-  useTelegramBackButton(!isMainRoute);
+  useTelegramBackButton(!isMainRoute && !isStoreRoute);
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
       const telegramApp = window.Telegram.WebApp;
@@ -211,8 +212,14 @@ export function TelegramLayout({
     }
     return location.pathname.startsWith(path);
   };
-  const availableTabs = tabs.filter(tab => !tab.adminOnly || isAdmin);
-  const availableSecondaryTabs = secondaryTabs.filter(tab => !tab.adminOnly || isAdmin);
+  // For store page, only show store tab for security (prevent navigation to protected areas)
+  const isPublicStoreAccess = location.pathname === '/store' && !user;
+  const availableTabs = isPublicStoreAccess 
+    ? tabs.filter(tab => tab.path === '/store') 
+    : tabs.filter(tab => !tab.adminOnly || isAdmin);
+  const availableSecondaryTabs = isPublicStoreAccess 
+    ? [] 
+    : secondaryTabs.filter(tab => !tab.adminOnly || isAdmin);
   return <div className="flex flex-col h-screen max-h-screen w-full tg-viewport overflow-hidden">
       {/* Main content area */}
       <main className="flex-1 overflow-auto smooth-scroll bg-background w-full py-[40px]">
