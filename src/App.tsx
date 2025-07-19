@@ -36,17 +36,20 @@ const queryClient = new QueryClient({
   },
 });
 
+function EngagementMonitor() {
+  useUserEngagementMonitor();
+  return null;
+}
+
 function App() {
   console.log('🚀 App component rendering');
-  
-  // Add engagement monitoring
-  useUserEngagementMonitor();
 
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <TelegramAuthProvider>
+            <EngagementMonitor />
             <TutorialProvider>
                 <AuthGuard>
                 <AuthorizationGuard>
