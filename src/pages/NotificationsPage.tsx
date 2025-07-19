@@ -5,12 +5,16 @@ import { SmartNotificationCard } from '@/components/notifications/SmartNotificat
 import { GroupNotificationCard } from '@/components/notifications/GroupNotificationCard';
 import { BusinessNotificationCard } from '@/components/notifications/BusinessNotificationCard';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useTelegramNotificationBridge } from '@/hooks/useTelegramNotificationBridge';
 import { Bell, BellRing, RefreshCw, Users, Diamond, Heart, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 const NotificationsPage = () => {
   const { notifications, isLoading, markAsRead, contactCustomer, refetch } = useNotifications();
+  
+  // Initialize Telegram notification bridge
+  useTelegramNotificationBridge();
   
   const unreadCount = notifications.filter(n => !n.read).length;
   const businessNotifications = notifications.filter(n => 
