@@ -22,6 +22,45 @@ export function VisitorStatsCard() {
 
   useEffect(() => {
     fetchVisitorStats();
+    
+    // Set up real-time subscription for new users
+    const userProfilesChannel = supabase
+      .channel('user-profiles-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'user_profiles'
+        },
+        () => {
+          console.log('New user registered - refreshing stats');
+          fetchVisitorStats();
+        }
+      )
+      .subscribe();
+
+    // Set up real-time subscription for page visits
+    const pageVisitsChannel = supabase
+      .channel('page-visits-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'page_visits'
+        },
+        () => {
+          console.log('New page visit - refreshing stats');
+          fetchVisitorStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(userProfilesChannel);
+      supabase.removeChannel(pageVisitsChannel);
+    };
   }, []);
 
   const fetchVisitorStats = async () => {
