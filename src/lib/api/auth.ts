@@ -24,40 +24,41 @@ export function getVerificationResult(): TelegramVerificationResponse | null {
   return verificationResult;
 }
 
-// Enhanced verification with security logging
+// Strict Telegram verification - no fallbacks
 export async function verifyTelegramUser(initData: string): Promise<TelegramVerificationResponse | null> {
   try {
-    console.log('🔐 API: Enhanced Telegram user verification starting');
-    console.log('🔐 API: Sending to:', `${API_BASE_URL}${apiEndpoints.verifyTelegram()}`);
-    console.log('🔐 API: InitData length:', initData.length);
+    console.log('🔐 API: Strict Telegram verification starting');
     
-    // Pre-validation checks
+    if (!initData || initData.length === 0) {
+      console.error('🔐 API: No initData provided');
+      return null;
+    }
+    
+    // Strict validation checks
     const urlParams = new URLSearchParams(initData);
     const authDate = urlParams.get('auth_date');
     const hash = urlParams.get('hash');
+    const userParam = urlParams.get('user');
     
-    if (!authDate || !hash) {
-      console.warn('🔐 API: Missing required initData parameters');
-      verificationResult = null;
+    if (!authDate || !hash || !userParam) {
+      console.error('🔐 API: Missing required initData parameters');
       return null;
     }
 
-    // Check timestamp before sending to backend
+    // Strict timestamp validation (5 minutes max)
     const authDateTime = parseInt(authDate) * 1000;
     const now = Date.now();
-    const age = now - authDateTime;
+    const maxAge = 5 * 60 * 1000; // 5 minutes (stricter than before)
     
-    if (age > 60000) { // 60 seconds
-      console.warn('🔐 API: InitData too old for verification:', age / 1000, 'seconds');
-      verificationResult = null;
+    if (now - authDateTime > maxAge) {
+      console.error('🔐 API: InitData too old for strict validation:', (now - authDateTime) / 1000, 'seconds');
       return null;
     }
     
     // Get secure backend access token
     const backendToken = await getBackendAccessToken();
     if (!backendToken) {
-      console.error('🔐 API: Failed to retrieve secure backend access token');
-      verificationResult = null;
+      console.error('🔐 API: No backend access token available');
       return null;
     }
     
@@ -66,10 +67,11 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
       'Accept': 'application/json',
       'Authorization': `Bearer ${backendToken}`,
       'X-Timestamp': now.toString(),
-      'X-Client-Version': '1.0.0'
+      'X-Client-Version': '2.0.0',
+      'X-Security-Level': 'strict'
     };
     
-    console.log('🔐 API: Using secure backend access token for verification');
+    console.log('🔐 API: Sending strict verification request');
     
     const response = await fetch(`${API_BASE_URL}${apiEndpoints.verifyTelegram()}`, {
       method: 'POST',
@@ -78,88 +80,63 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
       body: JSON.stringify({
         init_data: initData,
         client_timestamp: now,
-        security_level: 'enhanced'
+        security_level: 'strict',
+        validation_mode: 'production'
       }),
     });
 
-    console.log('🔐 API: Verification response status:', response.status);
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('🔐 API: Verification failed with status:', response.status, 'body:', errorText);
-      
-      // Log security event
-      console.warn('🚫 Security Event: Verification failed', {
-        status: response.status,
-        initDataAge: age / 1000,
-        timestamp: new Date().toISOString()
-      });
-      
-      verificationResult = null;
+      console.error('🔐 API: Strict verification failed:', response.status, errorText);
       return null;
     }
 
     const result: TelegramVerificationResponse = await response.json();
-    console.log('✅ API: Enhanced Telegram verification successful:', result);
     
-    // Log successful authentication
-    console.log('📊 Security Event: Verification successful', {
-      userId: result.user_id,
-      securityInfo: result.security_info,
-      timestamp: new Date().toISOString()
-    });
+    if (!result.success) {
+      console.error('🔐 API: Backend rejected verification:', result.message);
+      return null;
+    }
+    
+    console.log('✅ API: Strict Telegram verification successful');
     
     verificationResult = result;
-    if (result.success && result.user_id) {
+    if (result.user_id) {
       setCurrentUserId(result.user_id);
     }
     
     return result;
   } catch (error) {
-    console.error('❌ API: Enhanced Telegram verification failed:', error);
-    
-    // Log security event for monitoring
-    console.warn('🚫 Security Event: Verification error', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
-    });
-    
-    verificationResult = null;
+    console.error('❌ API: Strict verification error:', error);
     return null;
   }
 }
 
 export async function getAuthHeaders(): Promise<Record<string, string>> {
-  // Get secure backend access token
   const backendToken = await getBackendAccessToken();
   
   const headers: Record<string, string> = {
-    "X-Client-Timestamp": Date.now().toString()
+    "X-Client-Timestamp": Date.now().toString(),
+    "X-Security-Level": "strict"
   };
   
   if (backendToken) {
     headers["Authorization"] = `Bearer ${backendToken}`;
-    console.log('🚀 API: Using secure backend access token for requests');
-  } else {
-    console.warn('⚠️ API: No secure backend access token available');
   }
   
-  // Add enhanced auth headers if available from verification
   if (verificationResult && verificationResult.success) {
     const authToken = `telegram_verified_${verificationResult.user_id}_${Date.now()}`;
     headers["X-Telegram-Auth"] = authToken;
-    headers["X-Security-Level"] = "enhanced";
-    console.log('🚀 API: Added enhanced telegram auth token to request');
   }
   
   return headers;
 }
 
-// Security monitoring
 export function getSecurityMetrics() {
   return {
     lastVerification: verificationResult ? new Date().toISOString() : null,
     verificationStatus: verificationResult?.success || false,
-    securityInfo: verificationResult?.security_info || null
+    securityInfo: verificationResult?.security_info || null,
+    securityLevel: 'strict'
   };
 }
