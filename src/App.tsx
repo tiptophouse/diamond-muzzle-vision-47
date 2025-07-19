@@ -49,9 +49,9 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <TelegramAuthProvider>
-            <EngagementMonitor />
             <TutorialProvider>
-                <AuthGuard>
+              <EngagementMonitor />
+              <AuthGuard>
                 <AuthorizationGuard>
                   <Router>
                     <TelegramLayout>
