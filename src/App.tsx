@@ -49,10 +49,10 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <TelegramAuthProvider>
-            <EngagementMonitor />
             <TutorialProvider>
                 <AuthGuard>
                 <AuthorizationGuard>
+                  <EngagementMonitor />
                   <Router>
                     <TelegramLayout>
                       <Routes>
