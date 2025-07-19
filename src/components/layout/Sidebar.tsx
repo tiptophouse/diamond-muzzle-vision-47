@@ -59,18 +59,18 @@ const Sidebar = ({
     onClose?.();
   };
   return (
-    <aside className="w-64 bg-card/50 backdrop-blur-md border-r border-border/20 flex flex-col h-full">
+    <aside className="w-64 bg-card/60 backdrop-blur-xl border-r border-border/30 flex flex-col h-full shadow-lg">
       {/* Header with close button for mobile */}
-      <div className="p-4 border-b border-border/20 flex items-center justify-between">
+      <div className="p-4 border-b border-border/30 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#0088cc] to-[#229ED9] flex items-center justify-center shadow-sm">
-            <span className="text-white font-bold text-sm">💎</span>
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg">
+            <span className="text-white font-bold text-lg">💎</span>
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="text-lg font-semibold text-foreground tracking-tight truncate">
+            <h1 className="text-xl font-bold text-foreground tracking-tight truncate bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
               Diamond Mazal
             </h1>
-            <p className="text-xs text-muted-foreground truncate">Premium Platform</p>
+            <p className="text-xs text-muted-foreground truncate font-medium">Premium Platform</p>
           </div>
         </div>
         {onClose && (
@@ -85,28 +85,30 @@ const Sidebar = ({
         )}
       </div>
       
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-hide">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto scrollbar-hide">
         {navigation.map((item, index) => (
           <NavLink 
             key={item.name} 
             to={item.href} 
             onClick={handleNavClick}
             className={({ isActive }) => cn(
-              'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 w-full group',
+              'flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 w-full group relative overflow-hidden',
               isActive 
-                ? 'bg-[#0088cc]/10 text-[#0088cc] border border-[#0088cc]/20 shadow-sm' 
-                : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'
+                ? 'bg-gradient-to-r from-primary/10 to-primary/5 text-primary border border-primary/20 shadow-md' 
+                : 'text-muted-foreground hover:bg-accent/80 hover:text-accent-foreground hover:shadow-md'
             )}
           >
-            <item.icon className="h-4 w-4 flex-shrink-0 transition-transform duration-200 group-hover:scale-110" />
-            <span className="truncate">{item.name}</span>
+            <item.icon className="h-5 w-5 flex-shrink-0 transition-all duration-300 group-hover:scale-110 z-10" />
+            <span className="truncate z-10">{item.name}</span>
+            {/* Hover effect overlay */}
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </NavLink>
         ))}
         
         {isAdmin && (
-          <div className="pt-3 border-t border-border/20 mt-3">
-            <div className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-[#0088cc] animate-pulse"></div>
+          <div className="pt-4 border-t border-border/30 mt-4">
+            <div className="px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
               Admin Panel
             </div>
             {adminNavigation.map((item) => (
@@ -115,14 +117,16 @@ const Sidebar = ({
                 to={item.href} 
                 onClick={handleNavClick}
                 className={({ isActive }) => cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 w-full group',
+                  'flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 w-full group relative overflow-hidden',
                   isActive 
-                    ? 'bg-[#0088cc]/10 text-[#0088cc] border border-[#0088cc]/20 shadow-sm' 
-                    : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'
+                    ? 'bg-gradient-to-r from-primary/15 to-primary/10 text-primary border border-primary/25 shadow-md' 
+                    : 'text-muted-foreground hover:bg-accent/80 hover:text-accent-foreground hover:shadow-md'
                 )}
               >
-                <item.icon className="h-4 w-4 flex-shrink-0 transition-transform duration-200 group-hover:scale-110" />
-                <span className="truncate">{item.name}</span>
+                <item.icon className="h-5 w-5 flex-shrink-0 transition-all duration-300 group-hover:scale-110 z-10" />
+                <span className="truncate z-10">{item.name}</span>
+                {/* Hover effect overlay */}
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/8 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </NavLink>
             ))}
           </div>

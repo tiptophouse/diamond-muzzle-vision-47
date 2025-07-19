@@ -54,24 +54,26 @@ const Index = () => {
   // Show loading state while auth is initializing
   if (isLoading || loadingConfig) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-cyan-50">
-        <div className="text-center space-y-8 p-8 max-w-md premium-card animate-scale-in">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--gradient-surface)' }}>
+        <div className="text-center space-y-8 p-8 max-w-md glass-card animate-fade-in">
           <div className="relative">
-            <div className="animate-spin rounded-full h-20 w-20 border-4 border-gradient-to-r from-blue-500 to-purple-600 border-t-transparent mx-auto"></div>
+            <div className="animate-spin rounded-full h-24 w-24 border-4 border-primary/20 border-t-primary mx-auto"></div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-lg">💎</span>
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-premium">
+                <span className="text-white font-bold text-2xl">💎</span>
               </div>
             </div>
           </div>
-          <div className="space-y-3">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Diamond Muzzle</h1>
-            <p className="text-lg text-muted-foreground font-medium">
+          <div className="space-y-4">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary-glow to-primary-dark bg-clip-text text-transparent">
+              Diamond Mazal
+            </h1>
+            <p className="text-lg text-muted-foreground font-medium leading-relaxed">
               {loadingConfig ? 'Loading configuration...' : 'Initializing your premium experience...'}
             </p>
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse-subtle"></div>
-              <span>Secure • Fast • Reliable</span>
+            <div className="flex items-center justify-center gap-3 text-sm text-muted-foreground">
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+              <span className="font-medium">Secure • Fast • Reliable</span>
             </div>
           </div>
           
@@ -110,22 +112,22 @@ const Index = () => {
 
   // Fallback for unauthenticated users
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="text-center space-y-6 p-8 max-w-md">
-        <div className="space-y-4">
-          <div className="bg-blue-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto">
-            <span className="text-3xl">💎</span>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--gradient-surface)' }}>
+      <div className="text-center space-y-8 p-8 max-w-md glass-card">
+        <div className="space-y-6">
+          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center mx-auto shadow-premium">
+            <span className="text-4xl">💎</span>
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Diamond Muzzle
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-primary-glow to-primary-dark bg-clip-text text-transparent">
+            Diamond Mazal
           </h1>
-          <p className="text-xl text-gray-600">Loading your personalized experience...</p>
+          <p className="text-xl text-muted-foreground font-medium">Loading your personalized experience...</p>
         </div>
         
         {/* Emergency manual refresh button */}
         <button
           onClick={() => window.location.reload()}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+          className="premium-button"
         >
           Manual Refresh
         </button>

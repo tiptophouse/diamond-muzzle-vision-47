@@ -6,18 +6,18 @@ export function Header() {
   const { user } = useTelegramAuth();
 
   return (
-    <header className="bg-card/50 backdrop-blur-md border-b border-border/20 px-4 sm:px-6 py-3 sm:py-4">
+    <header className="bg-card/60 backdrop-blur-xl border-b border-border/30 px-4 sm:px-6 py-4 shadow-sm">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-[#0088cc] to-[#229ED9] flex items-center justify-center shadow-lg flex-shrink-0">
-              <span className="text-white font-bold text-sm sm:text-lg">💎</span>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg flex-shrink-0 hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <span className="text-white font-bold text-lg sm:text-xl">💎</span>
             </div>
             <div className="flex flex-col min-w-0">
-              <h1 className="text-lg sm:text-xl font-semibold text-foreground tracking-tight truncate">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight truncate bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
                 Diamond Mazal
               </h1>
-              <p className="text-xs text-muted-foreground hidden sm:block">Premium Diamond Platform</p>
+              <p className="text-xs text-muted-foreground hidden sm:block font-medium">Premium Diamond Platform</p>
             </div>
           </div>
         </div>
@@ -26,12 +26,12 @@ export function Header() {
           <TutorialTrigger />
           
           {user && (
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-3 sm:gap-4">
               <div className="hidden md:block text-sm text-muted-foreground">
-                Welcome, <span className="font-medium text-foreground">{user.first_name}</span>
+                Welcome, <span className="font-semibold text-foreground">{user.first_name}</span>
               </div>
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-[#0088cc] to-[#229ED9] rounded-xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                <span className="text-xs sm:text-sm font-semibold text-white">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary to-primary-dark rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-primary/20">
+                <span className="text-sm sm:text-base font-bold text-white">
                   {user.first_name?.charAt(0)}
                 </span>
               </div>

@@ -56,25 +56,40 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Modern Diamond-Themed Color System */
+    --background: 240 10% 98%;
+    --foreground: 240 10% 8%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 240 10% 8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 214 85% 52%; /* Modern Blue */
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 214 85% 95%; /* Light Modern Blue */
-    --accent-foreground: 214 85% 20%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 214 85% 52%; /* Modern Blue */
+    --popover-foreground: 240 10% 8%;
+    
+    /* Premium Diamond Blue Palette */
+    --primary: 220 85% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 220 100% 70%;
+    --primary-dark: 220 85% 45%;
+    
+    /* Elegant Secondary Colors */
+    --secondary: 240 8% 96%;
+    --secondary-foreground: 240 10% 15%;
+    --muted: 240 8% 95%;
+    --muted-foreground: 240 5% 50%;
+    --accent: 220 90% 96%;
+    --accent-foreground: 220 85% 25%;
+    
+    /* Status Colors */
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 140 85% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 45 100% 55%;
+    --warning-foreground: 45 100% 10%;
+    
+    /* UI Elements */
+    --border: 240 15% 90%;
+    --input: 240 15% 94%;
+    --ring: 220 85% 55%;
     --radius: 0.75rem;
     
     /* E-commerce Theme Colors */
@@ -102,18 +117,21 @@
     --tg-theme-button-color: hsl(var(--primary));
     --tg-theme-button-text-color: hsl(var(--primary-foreground));
     
-    /* Premium Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(250 84% 65%) 0%, hsl(280 84% 65%) 50%, hsl(310 84% 65%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(210 40% 96.1%) 0%, hsl(250 40% 96.1%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(250 95% 92%) 0%, hsl(280 95% 92%) 100%);
-    --gradient-surface: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(250 20% 98%) 100%);
+    /* Diamond Premium Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(220 85% 55%) 0%, hsl(240 85% 65%) 50%, hsl(260 85% 60%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(240 8% 96%) 0%, hsl(220 15% 98%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(220 90% 96%) 0%, hsl(240 90% 98%) 100%);
+    --gradient-surface: linear-gradient(135deg, hsl(240 20% 99%) 0%, hsl(220 30% 98%) 100%);
+    --gradient-diamond: linear-gradient(135deg, hsl(220 85% 55%) 0%, hsl(240 100% 70%) 25%, hsl(260 85% 60%) 50%, hsl(280 90% 65%) 75%, hsl(300 85% 60%) 100%);
     
-    /* Premium Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.1), 0 4px 6px -4px hsl(0 0% 0% / 0.1);
-    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.1), 0 8px 10px -6px hsl(0 0% 0% / 0.1);
-    --shadow-premium: 0 25px 50px -12px hsl(250 84% 65% / 0.15);
+    /* Diamond Premium Shadows */
+    --shadow-sm: 0 1px 3px 0 hsl(220 85% 55% / 0.08);
+    --shadow-md: 0 4px 12px -2px hsl(220 85% 55% / 0.12), 0 2px 6px -2px hsl(220 85% 55% / 0.08);
+    --shadow-lg: 0 10px 25px -5px hsl(220 85% 55% / 0.15), 0 4px 12px -4px hsl(220 85% 55% / 0.1);
+    --shadow-xl: 0 20px 40px -8px hsl(220 85% 55% / 0.18), 0 8px 16px -6px hsl(220 85% 55% / 0.12);
+    --shadow-premium: 0 25px 50px -12px hsl(220 85% 55% / 0.25), 0 0 0 1px hsl(220 85% 55% / 0.05);
+    --shadow-glow: 0 0 30px hsl(220 100% 70% / 0.3);
+    --shadow-diamond: 0 8px 32px hsl(220 85% 55% / 0.2), 0 0 0 1px hsl(220 85% 55% / 0.1);
     
     /* Premium Colors */
     --success: 142 76% 36%;
@@ -143,25 +161,37 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 250 84% 65%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 250 84% 65%;
+    /* Dark Mode Diamond Theme */
+    --background: 240 15% 6%;
+    --foreground: 240 8% 95%;
+    --card: 240 12% 8%;
+    --card-foreground: 240 8% 95%;
+    --popover: 240 12% 8%;
+    --popover-foreground: 240 8% 95%;
+    
+    /* Premium Dark Colors */
+    --primary: 220 85% 65%;
+    --primary-foreground: 240 15% 6%;
+    --primary-glow: 220 100% 75%;
+    --primary-dark: 220 85% 55%;
+    
+    --secondary: 240 8% 12%;
+    --secondary-foreground: 240 8% 85%;
+    --muted: 240 8% 10%;
+    --muted-foreground: 240 5% 60%;
+    --accent: 240 12% 15%;
+    --accent-foreground: 220 85% 70%;
+    
+    --destructive: 0 85% 65%;
+    --destructive-foreground: 240 15% 6%;
+    --success: 140 85% 55%;
+    --success-foreground: 240 15% 6%;
+    --warning: 45 100% 65%;
+    --warning-foreground: 240 15% 6%;
+    
+    --border: 240 12% 15%;
+    --input: 240 12% 12%;
+    --ring: 220 85% 65%;
   }
 
   * {
@@ -185,13 +215,17 @@
     min-width: 0;
     margin: 0;
     padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', system-ui, sans-serif;
     overscroll-behavior: none;
     -webkit-overflow-scrolling: touch;
     height: 100vh;
     height: var(--tg-viewport-height, 100vh);
     background: var(--gradient-surface);
     font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1, 'pnum' 1, 'tnum' 0, 'onum' 1, 'lnum' 0, 'dlig' 0;
+    letter-spacing: -0.01em;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   #root {
@@ -313,20 +347,29 @@
 }
 
 @layer components {
+  /* Modern Diamond Cards */
   .diamond-card {
-    @apply relative overflow-hidden rounded-xl border border-border/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl;
+    @apply relative overflow-hidden rounded-2xl border border-border/30 transition-all duration-500 ease-out;
     background: var(--gradient-surface);
     box-shadow: var(--shadow-md);
+    backdrop-filter: blur(12px);
   }
   
   .diamond-card:hover {
+    transform: translateY(-4px) scale(1.02);
     box-shadow: var(--shadow-premium);
+    border-color: hsl(var(--primary) / 0.3);
   }
   
   .diamond-card::before {
     content: '';
-    @apply absolute -top-8 -right-8 w-16 h-16 rounded-full opacity-30 blur-xl;
-    background: var(--gradient-primary);
+    @apply absolute -top-12 -right-12 w-24 h-24 rounded-full opacity-20 blur-2xl transition-all duration-500;
+    background: var(--gradient-diamond);
+  }
+  
+  .diamond-card:hover::before {
+    @apply opacity-30 blur-xl;
+    transform: scale(1.2);
   }
   
   .data-grid {
@@ -384,17 +427,19 @@
     }
   }
 
-  /* Premium Components */
+  /* Premium Diamond Components */
   .premium-button {
-    @apply relative overflow-hidden font-semibold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl;
+    @apply relative overflow-hidden font-semibold py-4 px-8 rounded-2xl transition-all duration-500 ease-out;
     background: var(--gradient-primary);
     color: white;
-    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid hsl(var(--primary) / 0.2);
   }
 
   .premium-button:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px) scale(1.02);
     box-shadow: var(--shadow-premium);
+    filter: brightness(1.05);
   }
 
   .premium-button::before {
@@ -404,21 +449,42 @@
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-    transition: left 0.5s ease;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.6s ease;
   }
 
   .premium-button:hover::before {
     left: 100%;
   }
+
+  .premium-button:active {
+    transform: translateY(-1px) scale(1.01);
+    transition: transform 0.1s ease;
+  }
   
   .premium-card {
-    @apply relative overflow-hidden rounded-2xl border border-border/50 transition-all duration-300;
+    @apply relative overflow-hidden rounded-2xl border border-border/30 transition-all duration-500 ease-out;
     background: var(--gradient-surface);
     box-shadow: var(--shadow-lg);
+    backdrop-filter: blur(12px);
   }
   
   .premium-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-premium);
+    border-color: hsl(var(--primary) / 0.3);
+  }
+
+  /* Glass Morphism Effect */
+  .glass-card {
+    @apply relative overflow-hidden rounded-2xl border border-white/20 transition-all duration-500;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(16px);
+    box-shadow: var(--shadow-diamond);
+  }
+
+  .glass-card:hover {
+    background: rgba(255, 255, 255, 0.15);
     transform: translateY(-2px);
     box-shadow: var(--shadow-premium);
   }
