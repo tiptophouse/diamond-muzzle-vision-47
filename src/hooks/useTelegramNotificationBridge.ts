@@ -10,6 +10,10 @@ export function useTelegramNotificationBridge() {
   useEffect(() => {
     if (!webApp || !user) return;
 
+    console.log('🔧 Telegram bridge initialized for user:', user.id);
+    console.log('🔧 WebApp init data:', webApp.initData);
+    console.log('🔧 WebApp start param:', (webApp as any).initDataUnsafe?.start_param);
+
     // Listen for data sent from your chatbot to the mini app
     const handleDataReceived = async (data: string) => {
       try {
@@ -40,8 +44,8 @@ export function useTelegramNotificationBridge() {
 
         // Show toast notification
         toast({
-          title: "New Notification",
-          description: notificationData.message || "You have a new notification from your chatbot",
+          title: "התראה חדשה",
+          description: notificationData.message || "התקבלה התראה חדשה מהצ'אטבוט",
         });
 
         console.log('✅ Notification saved successfully');
@@ -51,38 +55,44 @@ export function useTelegramNotificationBridge() {
       }
     };
 
-    // Set up event listener for data from chatbot
-    webApp.onEvent('main_button_pressed', () => {
-      // Handle main button if needed
-    });
-
-    // Listen for custom events or data
-    webApp.onEvent('web_app_data_received', () => {
-      // Check if there's data in the WebApp
-      if ((webApp as any).initDataUnsafe?.start_param) {
-        handleDataReceived((webApp as any).initDataUnsafe.start_param);
+    // Check for start parameter on initial load
+    const checkStartParam = () => {
+      const startParam = (webApp as any).initDataUnsafe?.start_param;
+      if (startParam) {
+        console.log('🚀 Found start param:', startParam);
+        handleDataReceived(startParam);
       }
-    });
 
-    // Alternative: Check for data on window focus (in case chatbot sets data)
-    const handleWindowFocus = () => {
-      if (webApp.initData && webApp.initData.includes('notification_data')) {
-        try {
-          const urlParams = new URLSearchParams(webApp.initData);
-          const notificationData = urlParams.get('notification_data');
-          if (notificationData) {
-            handleDataReceived(notificationData);
-          }
-        } catch (error) {
-          console.error('Error parsing URL data:', error);
-        }
+      // Also check URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const notificationData = urlParams.get('notification_data');
+      if (notificationData) {
+        console.log('🔗 Found URL notification data:', notificationData);
+        handleDataReceived(decodeURIComponent(notificationData));
       }
     };
 
-    window.addEventListener('focus', handleWindowFocus);
+    // Check immediately
+    checkStartParam();
+
+    // Set up event listeners
+    webApp.onEvent('main_button_pressed', () => {
+      console.log('🔘 Main button pressed');
+    });
+
+    webApp.onEvent('web_app_data_received', () => {
+      console.log('📡 WebApp data received event');
+      checkStartParam();
+    });
+
+    // Listen for viewport changes (might indicate new data)
+    webApp.onEvent('viewport_changed', () => {
+      console.log('📱 Viewport changed, checking for new data');
+      checkStartParam();
+    });
 
     return () => {
-      window.removeEventListener('focus', handleWindowFocus);
+      // Cleanup if needed
     };
   }, [webApp, user, toast]);
 
