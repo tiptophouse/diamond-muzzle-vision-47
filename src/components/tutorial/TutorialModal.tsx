@@ -144,20 +144,7 @@ export function TutorialModal() {
           {/* Step-specific action buttons and visuals */}
           {currentStepData.id === 'lets-upload' && (
             <div className="mb-4 sm:mb-6 text-center">
-              <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">📱</div>
-              <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-4 rounded-xl mb-4">
-                <p className="text-sm text-gray-600 mb-3">
-                  {currentLanguage === 'he' ? 'פשוט לחץ על הכפתור למטה ואז על "העלה תמונה"' : 'Simply tap the button below, then tap "Upload Image"'}
-                </p>
-                <div className="bg-white p-3 rounded-lg border border-gray-200">
-                  <div className="flex items-center justify-center gap-2 text-blue-600">
-                    <span>📸</span>
-                    <span className="font-semibold">
-                      {currentLanguage === 'he' ? 'העלה תמונה' : 'Upload Image'}
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">📄</div>
               <Button
                 onClick={() => handleNavigateToPage('/upload')}
                 size="lg"
@@ -165,7 +152,7 @@ export function TutorialModal() {
               >
                 <Camera className="h-5 w-5 sm:h-6 sm:w-6" />
                 <span>
-                  {currentLanguage === 'he' ? 'עבור להעלאה' : 'Go to Upload'}
+                  {currentLanguage === 'he' ? 'סרק תעודה עכשיו' : 'Scan Certificate Now'}
                 </span>
               </Button>
             </div>

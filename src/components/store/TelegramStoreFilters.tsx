@@ -231,7 +231,7 @@ export function TelegramStoreFilters({
                   min={minCarat}
                   max={maxCarat}
                   step={0.1}
-                  formatValue={(val) => `${val.toFixed(2)} ct`}
+                  formatValue={(val) => `${val.toFixed(1)} ct`}
                   onChange={(value) => onUpdateFilter('caratRange', value)}
                 />
 

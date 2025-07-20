@@ -44,7 +44,7 @@ export function QueriedDiamondsSection({ requestDetails, originalMessage }: Quer
             <div className="text-center p-2 bg-white rounded border">
               <p className="text-xs text-gray-600">Carat Range</p>
               <p className="font-medium text-sm">
-                {requestDetails.carat_min?.toFixed(2)}-{requestDetails.carat_max?.toFixed(2)}
+                {requestDetails.carat_min?.toFixed(1)}-{requestDetails.carat_max?.toFixed(1)}
               </p>
             </div>
           )}

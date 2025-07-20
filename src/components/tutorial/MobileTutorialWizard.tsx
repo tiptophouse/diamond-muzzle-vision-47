@@ -4,7 +4,7 @@ import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
-import { X, Globe, Upload, Package, Store, Sparkles } from 'lucide-react';
+import { X, Globe, Camera, Package, Store, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { TutorialStepComponent } from './TutorialStep';
 import { QRCodeScanner } from '@/components/inventory/QRCodeScanner';
@@ -29,31 +29,27 @@ const tutorialSteps: TutorialStep[] = [
     color: 'from-blue-500 to-purple-600'
   },
   {
-    id: 'add-diamond',
-    title: { en: 'Add Your First Diamond', he: 'הוסף את היהלום הראשון שלך' },
-    description: { en: 'Let\'s start by adding your first diamond to the system', he: 'בואו נתחיל בהוספת היהלום הראשון שלך למערכת' },
-    action: { en: 'Upload Single Diamond', he: 'העלה יהלום יחיד' },
-    icon: <Upload className="h-8 w-8" />,
+    id: 'scan-certificate',
+    title: { en: 'Scan Your Certificate', he: 'סרוק תעודה' },
+    description: { en: 'Use your phone camera to scan GIA certificates and extract diamond details automatically', he: 'השתמש במצלמת הטלפון לסרוק תעודות GIA ולחלץ פרטי יהלומים אוטומטית' },
+    action: { en: 'Scan Certificate Now', he: 'סרוק תעודה עכשיו' },
+    icon: <Camera className="h-8 w-8" />,
     color: 'from-green-500 to-emerald-600',
     interactive: true
   },
   {
-    id: 'view-dashboard',
-    title: { en: 'View Your Dashboard', he: 'צפה בלוח הבקרה שלך' },
-    description: { en: 'See how your uploaded diamond appears in your dashboard with analytics and insights', he: 'ראה כיצד היהלום שהעלית מופיע בלוח הבקרה שלך עם אנליטיקה ותובנות' },
-    action: { en: 'View Dashboard', he: 'צפה בלוח הבקרה' },
+    id: 'manage-inventory',
+    title: { en: 'Manage Your Inventory', he: 'נהל את המלאי שלך' },
+    description: { en: 'View, edit, and organize your diamond collection with powerful search and filter tools', he: 'צפה, ערוך וארגן את אוסף היהלומים שלך עם כלי חיפוש וסינון חזקים' },
     icon: <Package className="h-8 w-8" />,
-    color: 'from-orange-500 to-red-600',
-    interactive: true
+    color: 'from-orange-500 to-red-600'
   },
   {
-    id: 'view-store',
-    title: { en: 'Check Your Store', he: 'בדוק את החנות שלך' },
-    description: { en: 'See how your diamond looks in your public store that customers will see', he: 'ראה כיצד היהלום שלך נראה בחנות הציבורית שלקוחות יראו' },
-    action: { en: 'View Store', he: 'צפה בחנות' },
+    id: 'public-store',
+    title: { en: 'Share Your Store', he: 'שתף את החנות שלך' },
+    description: { en: 'Create a beautiful public storefront to showcase your diamonds to customers', he: 'צור חזית חנות יפה להצגת היהלומים שלך ללקוחות' },
     icon: <Store className="h-8 w-8" />,
-    color: 'from-pink-500 to-violet-600',
-    interactive: true
+    color: 'from-pink-500 to-violet-600'
   }
 ];
 
@@ -130,17 +126,9 @@ export function MobileTutorialWizard({ isOpen, onClose, language, onLanguageChan
   };
 
   const handleStepAction = () => {
-    hapticFeedback.impact('medium');
-    
-    if (currentStepData.id === 'add-diamond') {
-      onClose();
-      navigate('/upload-single-stone');
-    } else if (currentStepData.id === 'view-dashboard') {
-      onClose();
-      navigate('/dashboard');
-    } else if (currentStepData.id === 'view-store') {
-      onClose();
-      navigate('/store');
+    if (currentStepData.id === 'scan-certificate') {
+      hapticFeedback.impact('medium');
+      setIsScanning(true);
     }
   };
 
