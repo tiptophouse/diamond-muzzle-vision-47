@@ -24,12 +24,14 @@ import { ApiTestButton } from '@/components/ui/ApiTestButton';
 interface SingleStoneUploadFormProps {
   initialData?: any;
   showScanButton?: boolean;
+  onSuccess?: () => void;
 }
 
 export function SingleStoneUploadForm({ 
   initialData, 
-  showScanButton = true 
-}: SingleStoneUploadFormProps = {}) {
+  showScanButton = true, 
+  onSuccess 
+}: SingleStoneUploadFormProps) {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
   const [isScanning, setIsScanning] = useState(false);
@@ -195,6 +197,20 @@ export function SingleStoneUploadForm({
       } else {
         console.log('✅ UPLOAD: Diamond creation successful!');
         setApiConnected(true);
+        setUploadSuccess(true);
+        toast({
+          title: "Diamond Added Successfully",
+          description: "Your diamond has been added to your inventory.",
+        });
+        
+        // Call success callback if provided
+        onSuccess?.();
+        
+        // Reset form after 3 seconds
+        setTimeout(() => {
+          resetForm();
+          setUploadSuccess(false);
+        }, 3000);
       }
     }).catch(error => {
       console.error('❌ UPLOAD: Error in addDiamond promise:', error);

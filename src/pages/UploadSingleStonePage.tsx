@@ -4,13 +4,15 @@ import { useSearchParams } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { SingleStoneUploadForm } from "@/components/upload/SingleStoneUploadForm";
 import { UploadForm } from "@/components/upload/UploadForm";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UploadWizard } from "@/components/upload/UploadWizard";
+import { MobileTutorialWizard } from "@/components/tutorial/MobileTutorialWizard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
-import { FileText, Camera, Scan } from "lucide-react";
+import { FileText, Camera, Scan, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTutorialInteraction } from "@/hooks/useTutorialInteraction";
+import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 
 export default function UploadSingleStonePage() {
   const [searchParams] = useSearchParams();
@@ -18,20 +20,38 @@ export default function UploadSingleStonePage() {
   const [hasScannedCertificate, setHasScannedCertificate] = useState(false);
   const [scannedData, setScannedData] = useState<any>(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [language, setLanguage] = useState<'en' | 'he'>('en');
+  
   const { toast } = useToast();
+  const { platform, hapticFeedback } = useTelegramWebApp();
 
   // Tutorial interactions
   useTutorialInteraction('[data-tutorial="diamond-form"]');
   useTutorialInteraction('[data-tutorial="submit-diamond"]');
 
-  // Check if we should start scanning immediately
+  // Check if we should start scanning immediately or show tutorial/wizard
   useEffect(() => {
-    if (searchParams.get('action') === 'scan') {
-      setIsScanning(true);
+    const action = searchParams.get('action');
+    const tutorial = searchParams.get('tutorial');
+    
+    if (action === 'scan') {
+      // Check if it's a mobile platform (iPhone/Android in Telegram)
+      if (platform === 'ios' || platform === 'android' || window.innerWidth < 768) {
+        setShowWizard(true);
+      } else {
+        setIsScanning(true);
+      }
     }
-  }, [searchParams]);
+    
+    if (tutorial === 'true') {
+      setShowTutorial(true);
+    }
+  }, [searchParams, platform]);
 
   const handleScanSuccess = (giaData: any) => {
+    hapticFeedback.notification('success');
     setScannedData(giaData);
     setHasScannedCertificate(true);
     setShowSuccessMessage(true);
@@ -50,15 +70,77 @@ export default function UploadSingleStonePage() {
   };
 
   const handleStartOver = () => {
+    hapticFeedback.impact('light');
     setHasScannedCertificate(false);
     setScannedData(null);
     setShowSuccessMessage(false);
   };
 
+  const handleWizardComplete = () => {
+    setShowWizard(false);
+    toast({
+      title: language === 'he' ? 'העלאה הושלמה!' : 'Upload Complete!',
+      description: language === 'he' 
+        ? 'היהלום שלך נוסף בהצלחה למלאי'
+        : 'Your diamond has been successfully added to inventory'
+    });
+  };
+
+  // Show tutorial on mobile if requested
+  if (showTutorial) {
+    return (
+      <MobileTutorialWizard
+        isOpen={showTutorial}
+        onClose={() => setShowTutorial(false)}
+        language={language}
+        onLanguageChange={setLanguage}
+      />
+    );
+  }
+
+  // Show wizard on mobile platforms for better UX
+  if (showWizard) {
+    return (
+      <UploadWizard
+        language={language}
+        onLanguageChange={setLanguage}
+        onComplete={handleWizardComplete}
+      />
+    );
+  }
+
   return (
     <Layout>
       <div className="min-h-screen bg-background">
         <div className="px-4 pb-safe pt-4">
+          {/* Mobile Enhancement Suggestion */}
+          {(platform === 'ios' || platform === 'android' || window.innerWidth < 768) && !hasScannedCertificate && (
+            <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 mb-4">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-full">
+                    <Sparkles className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-blue-800">
+                      Enhanced Mobile Experience Available
+                    </p>
+                    <p className="text-xs text-blue-600">
+                      Try our step-by-step wizard for the best mobile experience
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => setShowWizard(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Try Wizard
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {!hasScannedCertificate ? (
             <div className="space-y-4">
               {/* Scan Certificate Card - Primary Action */}
@@ -76,7 +158,10 @@ export default function UploadSingleStonePage() {
                 </CardHeader>
                 <CardContent>
                   <Button
-                    onClick={() => setIsScanning(true)}
+                    onClick={() => {
+                      hapticFeedback.impact('medium');
+                      setIsScanning(true);
+                    }}
                     className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm active:scale-95 transition-all"
                   >
                     <Camera className="h-5 w-5 mr-2" />
@@ -135,7 +220,10 @@ export default function UploadSingleStonePage() {
         {/* QR Scanner Modal */}
         <QRCodeScanner
           isOpen={isScanning}
-          onClose={() => setIsScanning(false)}
+          onClose={() => {
+            hapticFeedback.impact('light');
+            setIsScanning(false);
+          }}
           onScanSuccess={handleScanSuccess}
         />
       </div>
