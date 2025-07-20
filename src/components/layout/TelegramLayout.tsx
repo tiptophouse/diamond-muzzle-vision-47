@@ -4,6 +4,7 @@ import { Home, Package, Store, MessageCircle, TrendingUp, Bell, Settings, Shield
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { TelegramWebApp } from '@/types/telegram';
+import { FloatingFirstUploadCTA } from '@/components/upload/FloatingFirstUploadCTA';
 interface TelegramLayoutProps {
   children: React.ReactNode;
 }
@@ -225,6 +226,9 @@ export function TelegramLayout({
           </div>
         </div>
       </main>
+
+      {/* Floating First Upload CTA */}
+      <FloatingFirstUploadCTA />
 
       {/* Bottom tab navigation */}
       <nav className="flex items-center justify-center bg-background/95 backdrop-blur-sm border-t border-border/50 pb-safe shrink-0 w-full">

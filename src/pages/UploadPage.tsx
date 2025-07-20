@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Upload, FileText } from "lucide-react";
-import { FloatingFirstUploadCTA } from "@/components/upload/FloatingFirstUploadCTA";
+
 
 export default function UploadPage() {
 
@@ -65,8 +65,6 @@ export default function UploadPage() {
           </CardContent>
         </Card>
       </div>
-      
-      <FloatingFirstUploadCTA />
     </Layout>
   );
 }
