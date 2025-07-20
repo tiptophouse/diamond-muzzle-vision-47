@@ -5,6 +5,9 @@ import { InsightsHeader } from "@/components/insights/InsightsHeader";
 import { ShapeDistributionChart } from "@/components/insights/ShapeDistributionChart";
 import { ShapeAnalysisCard } from "@/components/insights/ShapeAnalysisCard";
 import { QuickStatsGrid } from "@/components/insights/QuickStatsGrid";
+import { MarketDemandCard } from "@/components/insights/MarketDemandCard";
+import { GroupInsightsCard } from "@/components/insights/GroupInsightsCard";
+import { PersonalInsightsCard } from "@/components/insights/PersonalInsightsCard";
 import { useInsightsData } from "@/hooks/useInsightsData";
 
 export default function InsightsPage() {
@@ -12,6 +15,9 @@ export default function InsightsPage() {
     loading,
     marketTrends,
     totalDiamonds,
+    demandInsights,
+    groupInsights,
+    personalInsights,
     fetchRealInsights,
     isAuthenticated
   } = useInsightsData();
@@ -63,6 +69,12 @@ export default function InsightsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ShapeDistributionChart marketTrends={marketTrends} />
           <ShapeAnalysisCard marketTrends={marketTrends} />
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <MarketDemandCard demandInsights={demandInsights} />
+          <GroupInsightsCard groupInsights={groupInsights} />
+          <PersonalInsightsCard personalInsights={personalInsights} />
         </div>
         
         {totalDiamonds > 0 && (

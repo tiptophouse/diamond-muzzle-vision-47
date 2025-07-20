@@ -6,6 +6,7 @@ interface MarketTrend {
   category: string;
   count: number;
   percentage: number;
+  change?: number;
 }
 
 interface ShapeDistributionChartProps {
@@ -22,12 +23,25 @@ export function ShapeDistributionChart({ marketTrends }: ShapeDistributionChartP
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={350}>
           <BarChart data={marketTrends}>
-            <XAxis dataKey="category" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="count" fill="#8b5cf6" />
+            <XAxis 
+              dataKey="category" 
+              tick={{ fontSize: 12 }}
+              angle={-45}
+              textAnchor="end"
+              height={60}
+            />
+            <YAxis tick={{ fontSize: 12 }} />
+            <Tooltip 
+              formatter={(value, name) => [value, name === 'count' ? 'Diamonds' : name]}
+              labelFormatter={(label) => `Shape: ${label}`}
+            />
+            <Bar 
+              dataKey="count" 
+              fill="hsl(var(--primary))" 
+              radius={[4, 4, 0, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

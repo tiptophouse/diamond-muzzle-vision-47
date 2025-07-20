@@ -6,6 +6,7 @@ interface MarketTrend {
   category: string;
   count: number;
   percentage: number;
+  change?: number;
 }
 
 interface ShapeAnalysisCardProps {
@@ -34,9 +35,19 @@ export function ShapeAnalysisCard({ marketTrends }: ShapeAnalysisCardProps) {
               <span className="text-sm text-muted-foreground">
                 {trend.count} diamonds
               </span>
-              <Badge className="bg-diamond-100 text-diamond-800">
-                {trend.percentage}%
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge className="bg-primary/10 text-primary border-primary/20">
+                  {trend.percentage}%
+                </Badge>
+                {trend.change !== undefined && (
+                  <Badge 
+                    variant="outline"
+                    className={trend.change >= 0 ? 'text-success border-success/20' : 'text-destructive border-destructive/20'}
+                  >
+                    {trend.change >= 0 ? '+' : ''}{trend.change}%
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
         ))}
