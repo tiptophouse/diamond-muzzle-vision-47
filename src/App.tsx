@@ -31,6 +31,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { TelegramLayout } from '@/components/layout/TelegramLayout';
 import { useUserEngagementMonitor } from '@/hooks/useUserEngagementMonitor';
+import { useTelegramDeepLink } from '@/hooks/useTelegramDeepLink';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,6 +47,11 @@ function EngagementMonitor() {
   return null;
 }
 
+function DeepLinkHandler() {
+  useTelegramDeepLink();
+  return null;
+}
+
 function App() {
   console.log('🚀 App component rendering');
 
@@ -58,6 +64,7 @@ function App() {
                 <AuthGuard>
                 <AuthorizationGuard>
                   <EngagementMonitor />
+                  <DeepLinkHandler />
                   <Router>
                     <TelegramLayout>
                       <Routes>
@@ -68,6 +75,7 @@ function App() {
           <Route path="/diamond/:stockNumber" element={<DiamondDetailPage />} />
           <Route path="/secure-diamond/:stockNumber" element={<SecureDiamondPage />} />
                         <Route path="/upload" element={<UploadSingleStonePage />} />
+                        <Route path="/upload-single-stone" element={<UploadSingleStonePage />} />
                         <Route path="/standardize-csv" element={<StandardizeCsvPage />} />
                         <Route path="/chat" element={<ChatPage />} />
                         <Route path="/insights" element={<InsightsPage />} />

@@ -38,9 +38,7 @@ serve(async (req) => {
           inline_keyboard: [[
             {
               text: "📤 Upload Your Diamonds",
-              web_app: {
-                url: "https://uhhljqgxhdhbbhpohxll.lovableapp.com/upload-single-stone"
-              }
+              url: "https://t.me/MazalBotBot/app?startapp=upload-single-stone"
             }
           ]]
         };
@@ -81,9 +79,7 @@ serve(async (req) => {
           inline_keyboard: [[
             {
               text: "📤 Upload Your Diamonds",
-              web_app: {
-                url: "https://uhhljqgxhdhbbhpohxll.lovableapp.com/upload-single-stone"
-              }
+              url: "https://t.me/MazalBotBot/app?startapp=upload-single-stone"
             }
           ]]
         };
