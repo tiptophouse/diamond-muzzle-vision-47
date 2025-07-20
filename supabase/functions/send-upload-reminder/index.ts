@@ -40,7 +40,9 @@ serve(async (req) => {
           inline_keyboard: [[
             {
               text: "📤 Upload Your Diamonds",
-              url: "https://miniapp.mazalbot.com/upload-single-stone"
+              web_app: {
+                url: "https://miniapp.mazalbot.com/upload-single-stone"
+              }
             }
           ]]
         };
@@ -81,7 +83,9 @@ serve(async (req) => {
           inline_keyboard: [[
             {
               text: "📤 Upload Your Diamonds",
-              url: "https://miniapp.mazalbot.com/upload-single-stone"
+              web_app: {
+                url: "https://miniapp.mazalbot.com/upload-single-stone"
+              }
             }
           ]]
         };
