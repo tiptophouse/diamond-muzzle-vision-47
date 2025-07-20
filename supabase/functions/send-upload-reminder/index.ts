@@ -35,19 +35,12 @@ serve(async (req) => {
       users.map(async (user) => {
         const message = generateUploadReminderMessage(user.first_name);
         
-        // Create both web_app button and fallback URL button for compatibility
+        // Create deep link button for Telegram mini app
         const keyboard = {
           inline_keyboard: [[
             {
               text: "📤 Upload Your Diamonds",
-              web_app: {
-                url: "https://uhhljqgxhdhbbhpohxll.lovableapp.com/upload-single-stone"
-              }
-            }
-          ], [
-            {
-              text: "🌐 Open in Browser (Fallback)",
-              url: "https://uhhljqgxhdhbbhpohxll.lovableapp.com/upload-single-stone"
+              url: "https://t.me/DiamondTradingBot/upload"
             }
           ]]
         };
