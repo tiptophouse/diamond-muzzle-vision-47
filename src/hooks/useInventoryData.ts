@@ -60,7 +60,7 @@ export function useInventoryData() {
           diamondId: item.id || item.diamond_id, // FastAPI diamond ID
           stockNumber: item.stock || item.stock_number || item.stockNumber || '',
           shape: normalizeShape(item.shape),
-          carat: Number(item.weight || item.carat) || 0,
+          carat: parseFloat((item.weight || item.carat || 0).toString()) || 0,
           color: (item.color || 'D').toUpperCase(),
           clarity: (item.clarity || 'FL').toUpperCase(),
           cut: item.cut || 'Excellent',
