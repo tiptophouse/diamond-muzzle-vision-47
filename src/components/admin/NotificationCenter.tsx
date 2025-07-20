@@ -9,7 +9,6 @@ import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { ZeroDiamondUsersNotifier } from './ZeroDiamondUsersNotifier';
-import { TestUploadReminder } from './TestUploadReminder';
 
 interface NotificationData {
   id: string;
@@ -116,9 +115,6 @@ export function NotificationCenter({ notifications, onRefresh }: NotificationCen
 
   return (
     <div className="space-y-6">
-      {/* Test Upload Reminder */}
-      <TestUploadReminder />
-      
       {/* Zero Diamond Users Notifier */}
       <ZeroDiamondUsersNotifier />
       
