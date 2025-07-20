@@ -23,7 +23,7 @@ import SmartNotificationSystem from '@/components/engagement/SmartNotificationSy
 import DeepLinkReports from '@/components/engagement/DeepLinkReports';
 import { ProfitOptimizerDashboard } from '@/components/dashboard/ProfitOptimizerDashboard';
 import { TelegramAuthProvider } from '@/context/TelegramAuthContext';
-import { LiveTutorialProvider } from '@/contexts/LiveTutorialContext';
+import { SimpleTutorialProvider } from '@/contexts/SimpleTutorialContext';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
 import { AdminGuard } from '@/components/admin/AdminGuard';
@@ -54,7 +54,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <TelegramAuthProvider>
-            <LiveTutorialProvider>
+            <SimpleTutorialProvider>
                 <AuthGuard>
                 <AuthorizationGuard>
                   <EngagementMonitor />
@@ -89,7 +89,7 @@ function App() {
                   </Router>
                 </AuthorizationGuard>
               </AuthGuard>
-            </LiveTutorialProvider>
+            </SimpleTutorialProvider>
           </TelegramAuthProvider>
         </ThemeProvider>
       </QueryClientProvider>

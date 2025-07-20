@@ -34,8 +34,8 @@ export function CaratRangeFilter({
             className="w-full"
           />
           <div className="flex justify-between text-xs text-muted-foreground mt-1">
-            <span>{caratRange[0].toFixed(1)} ct</span>
-            <span>{caratRange[1].toFixed(1)} ct</span>
+            <span>{caratRange[0].toFixed(2)} ct</span>
+            <span>{caratRange[1].toFixed(2)} ct</span>
           </div>
         </div>
       </div>
