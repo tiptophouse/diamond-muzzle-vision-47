@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
@@ -12,7 +11,6 @@ import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
 import { FileText, Camera, Scan, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
-
 export default function UploadSingleStonePage() {
   const [searchParams] = useSearchParams();
   const [isScanning, setIsScanning] = useState(false);
@@ -21,15 +19,18 @@ export default function UploadSingleStonePage() {
   const [showWizard, setShowWizard] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [language, setLanguage] = useState<'en' | 'he'>('en');
-  
-  const { toast } = useToast();
-  const { platform, hapticFeedback } = useTelegramWebApp();
+  const {
+    toast
+  } = useToast();
+  const {
+    platform,
+    hapticFeedback
+  } = useTelegramWebApp();
 
   // Check URL parameters for actions
   useEffect(() => {
     const action = searchParams.get('action');
     const tutorial = searchParams.get('tutorial');
-    
     if (action === 'scan') {
       // Check if it's a mobile platform (iPhone/Android in Telegram)
       if (platform === 'ios' || platform === 'android' || window.innerWidth < 768) {
@@ -38,104 +39,53 @@ export default function UploadSingleStonePage() {
         setIsScanning(true);
       }
     }
-    
     if (tutorial === 'true') {
       setShowTutorial(true);
     }
   }, [searchParams, platform]);
-
   const handleScanSuccess = (giaData: any) => {
     hapticFeedback.notification('success');
     setScannedData(giaData);
     setHasScannedCertificate(true);
     setIsScanning(false);
-    
     toast({
       title: "✅ Certificate Scanned",
       description: "Diamond data extracted successfully",
-      duration: 2000,
+      duration: 2000
     });
   };
-
   const handleStartOver = () => {
     hapticFeedback.impact('light');
     setHasScannedCertificate(false);
     setScannedData(null);
   };
-
   const handleWizardComplete = () => {
     setShowWizard(false);
     toast({
       title: language === 'he' ? 'העלאה הושלמה!' : 'Upload Complete!',
-      description: language === 'he' 
-        ? 'היהלום שלך נוסף בהצלחה למלאי'
-        : 'Your diamond has been successfully added to inventory'
+      description: language === 'he' ? 'היהלום שלך נוסף בהצלחה למלאי' : 'Your diamond has been successfully added to inventory'
     });
   };
 
   // Show tutorial on mobile if requested
   if (showTutorial) {
-    return (
-      <MobileTutorialWizard
-        isOpen={showTutorial}
-        onClose={() => setShowTutorial(false)}
-        language={language}
-        onLanguageChange={setLanguage}
-      />
-    );
+    return <MobileTutorialWizard isOpen={showTutorial} onClose={() => setShowTutorial(false)} language={language} onLanguageChange={setLanguage} />;
   }
 
   // Show wizard on mobile platforms for better UX
   if (showWizard) {
-    return (
-      <UploadWizard
-        language={language}
-        onLanguageChange={setLanguage}
-        onComplete={handleWizardComplete}
-      />
-    );
+    return <UploadWizard language={language} onLanguageChange={setLanguage} onComplete={handleWizardComplete} />;
   }
-
   const isMobile = platform === 'ios' || platform === 'android' || window.innerWidth < 768;
-
-  return (
-    <Layout>
+  return <Layout>
       <div className="min-h-screen bg-background">
         <div className="px-4 pb-safe pt-4">
           {/* Mobile Enhancement Suggestion */}
-          {isMobile && !hasScannedCertificate && (
-            <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 mb-4">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-full">
-                    <Sparkles className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-blue-800">
-                      Enhanced Mobile Experience Available
-                    </p>
-                    <p className="text-xs text-blue-600">
-                      Try our step-by-step wizard for the best mobile experience
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      hapticFeedback.impact('medium');
-                      setShowWizard(true);
-                    }}
-                    className="bg-blue-600 hover:bg-blue-700 text-white h-10"
-                    style={{ minHeight: '40px' }}
-                  >
-                    Try Wizard
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {isMobile && !hasScannedCertificate && <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 mb-4">
+              
+            </Card>}
 
-          {!hasScannedCertificate ? (
-            <div className="space-y-4">
+          {!hasScannedCertificate ? <div className="space-y-4">
               {/* Scan Certificate Card - Primary Action */}
               <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
                 <CardHeader className="pb-3">
@@ -150,14 +100,12 @@ export default function UploadSingleStonePage() {
                   </p>
                 </CardHeader>
                 <CardContent>
-                  <Button
-                    onClick={() => {
-                      hapticFeedback.impact('medium');
-                      setIsScanning(true);
-                    }}
-                    className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm active:scale-95 transition-all"
-                    style={{ minHeight: '48px' }}
-                  >
+                  <Button onClick={() => {
+                hapticFeedback.impact('medium');
+                setIsScanning(true);
+              }} className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm active:scale-95 transition-all" style={{
+                minHeight: '48px'
+              }}>
                     <Camera className="h-5 w-5 mr-2" />
                     Start Certificate Scan
                   </Button>
@@ -181,10 +129,9 @@ export default function UploadSingleStonePage() {
                   <UploadForm />
                 </CardContent>
               </Card>
-            </div>
-          ) : (
-            // Show form after successful scan
-            <div>
+            </div> :
+        // Show form after successful scan
+        <div>
               <div className="mb-4 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/50 rounded-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -193,35 +140,22 @@ export default function UploadSingleStonePage() {
                       Certificate scanned successfully
                     </span>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleStartOver}
-                    className="text-xs text-muted-foreground hover:text-foreground active:scale-95 transition-all h-8"
-                    style={{ minHeight: '32px' }}
-                  >
+                  <Button variant="ghost" size="sm" onClick={handleStartOver} className="text-xs text-muted-foreground hover:text-foreground active:scale-95 transition-all h-8" style={{
+                minHeight: '32px'
+              }}>
                     Start Over
                   </Button>
                 </div>
               </div>
-              <SingleStoneUploadForm 
-                initialData={scannedData}
-                showScanButton={false}
-              />
-            </div>
-          )}
+              <SingleStoneUploadForm initialData={scannedData} showScanButton={false} />
+            </div>}
         </div>
 
         {/* QR Scanner Modal */}
-        <QRCodeScanner
-          isOpen={isScanning}
-          onClose={() => {
-            hapticFeedback.impact('light');
-            setIsScanning(false);
-          }}
-          onScanSuccess={handleScanSuccess}
-        />
+        <QRCodeScanner isOpen={isScanning} onClose={() => {
+        hapticFeedback.impact('light');
+        setIsScanning(false);
+      }} onScanSuccess={handleScanSuccess} />
       </div>
-    </Layout>
-  );
+    </Layout>;
 }
