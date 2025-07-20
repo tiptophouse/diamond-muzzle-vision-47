@@ -38,7 +38,9 @@ serve(async (req) => {
           inline_keyboard: [[
             {
               text: "📤 Upload Your Diamonds",
-              url: "https://uhhljqgxhdhbbhpohxll.lovableapp.com/upload-single-stone"
+              web_app: {
+                url: "https://uhhljqgxhdhbbhpohxll.lovableapp.com/upload-single-stone"
+              }
             }
           ]]
         };
@@ -79,7 +81,9 @@ serve(async (req) => {
           inline_keyboard: [[
             {
               text: "📤 Upload Your Diamonds",
-              url: "https://uhhljqgxhdhbbhpohxll.lovableapp.com/upload-single-stone"
+              web_app: {
+                url: "https://uhhljqgxhdhbbhpohxll.lovableapp.com/upload-single-stone"
+              }
             }
           ]]
         };
