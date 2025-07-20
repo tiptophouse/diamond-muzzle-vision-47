@@ -5,6 +5,7 @@ import { AdminStatsGrid } from '@/components/admin/AdminStatsGrid';
 import { AdminUserManager } from '@/components/admin/AdminUserManager';
 import { NotificationCenter } from '@/components/admin/NotificationCenter';
 import { NotificationSender } from '@/components/admin/NotificationSender';
+import { UploadReminderNotifier } from '@/components/admin/UploadReminderNotifier';
 import { PaymentManagement } from '@/components/admin/PaymentManagement';
 import { SessionUsersDisplay } from '@/components/admin/SessionUsersDisplay';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
@@ -271,12 +272,17 @@ export default function Admin() {
             </TabsContent>
 
             <TabsContent value="notifications" className="space-y-0">
-              <div className="grid gap-6 lg:grid-cols-2">
+              <div className="grid gap-6">
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <NotificationSender onSendNotification={(notification) => console.log('Sent notification:', notification)} />
+                  <UploadReminderNotifier />
                 </div>
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <NotificationCenter notifications={notifications} onRefresh={handleRefreshNotifications} />
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <NotificationSender onSendNotification={(notification) => console.log('Sent notification:', notification)} />
+                  </div>
+                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <NotificationCenter notifications={notifications} onRefresh={handleRefreshNotifications} />
+                  </div>
                 </div>
               </div>
             </TabsContent>
