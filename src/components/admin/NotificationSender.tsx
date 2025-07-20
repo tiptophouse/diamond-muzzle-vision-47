@@ -113,8 +113,11 @@ export function NotificationSender({ onSendNotification }: NotificationSenderPro
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="type">Notification Type</Label>
-            <Select value={notification.type} onValueChange={(value) => setNotification(prev => ({ ...prev, type: value }))}>
-              <SelectTrigger>
+            <Select 
+              value={notification.type} 
+              onValueChange={(value) => setNotification(prev => ({ ...prev, type: value }))}
+            >
+              <SelectTrigger id="type">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
               <SelectContent>
@@ -148,8 +151,11 @@ export function NotificationSender({ onSendNotification }: NotificationSenderPro
 
           <div className="space-y-2">
             <Label htmlFor="target">Send To</Label>
-            <Select value={notification.target} onValueChange={(value) => setNotification(prev => ({ ...prev, target: value }))}>
-              <SelectTrigger>
+            <Select 
+              value={notification.target} 
+              onValueChange={(value) => setNotification(prev => ({ ...prev, target: value }))}
+            >
+              <SelectTrigger id="target">
                 <SelectValue placeholder="Select target" />
               </SelectTrigger>
               <SelectContent>
