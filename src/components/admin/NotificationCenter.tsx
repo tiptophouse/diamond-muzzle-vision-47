@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { ZeroDiamondUsersNotifier } from './ZeroDiamondUsersNotifier';
 import { TestNotificationSender } from './TestNotificationSender';
+import { SelectiveNotificationSender } from './SelectiveNotificationSender';
 
 interface NotificationData {
   id: string;
@@ -118,6 +119,9 @@ export function NotificationCenter({ notifications, onRefresh }: NotificationCen
     <div className="space-y-6">
       {/* Test Notification Sender */}
       <TestNotificationSender />
+      
+      {/* Selective User Notification */}
+      <SelectiveNotificationSender />
       
       {/* Zero Diamond Users Notifier */}
       <ZeroDiamondUsersNotifier />
