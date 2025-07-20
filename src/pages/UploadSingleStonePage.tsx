@@ -11,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
 import { FileText, Camera, Scan, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useTutorialInteraction } from "@/hooks/useTutorialInteraction";
 import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 
 export default function UploadSingleStonePage() {
@@ -19,7 +18,6 @@ export default function UploadSingleStonePage() {
   const [isScanning, setIsScanning] = useState(false);
   const [hasScannedCertificate, setHasScannedCertificate] = useState(false);
   const [scannedData, setScannedData] = useState<any>(null);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [language, setLanguage] = useState<'en' | 'he'>('en');
@@ -27,11 +25,7 @@ export default function UploadSingleStonePage() {
   const { toast } = useToast();
   const { platform, hapticFeedback } = useTelegramWebApp();
 
-  // Tutorial interactions
-  useTutorialInteraction('[data-tutorial="diamond-form"]');
-  useTutorialInteraction('[data-tutorial="submit-diamond"]');
-
-  // Check if we should start scanning immediately or show tutorial/wizard
+  // Check URL parameters for actions
   useEffect(() => {
     const action = searchParams.get('action');
     const tutorial = searchParams.get('tutorial');
@@ -54,18 +48,12 @@ export default function UploadSingleStonePage() {
     hapticFeedback.notification('success');
     setScannedData(giaData);
     setHasScannedCertificate(true);
-    setShowSuccessMessage(true);
     setIsScanning(false);
-    
-    // Auto-hide success message after 2 seconds
-    setTimeout(() => {
-      setShowSuccessMessage(false);
-    }, 2000);
     
     toast({
       title: "✅ Certificate Scanned",
-      description: "Now you can add your diamond details",
-      duration: 1500, // Auto-hide after 1.5 seconds
+      description: "Diamond data extracted successfully",
+      duration: 2000,
     });
   };
 
@@ -73,7 +61,6 @@ export default function UploadSingleStonePage() {
     hapticFeedback.impact('light');
     setHasScannedCertificate(false);
     setScannedData(null);
-    setShowSuccessMessage(false);
   };
 
   const handleWizardComplete = () => {
@@ -109,12 +96,14 @@ export default function UploadSingleStonePage() {
     );
   }
 
+  const isMobile = platform === 'ios' || platform === 'android' || window.innerWidth < 768;
+
   return (
     <Layout>
       <div className="min-h-screen bg-background">
         <div className="px-4 pb-safe pt-4">
           {/* Mobile Enhancement Suggestion */}
-          {(platform === 'ios' || platform === 'android' || window.innerWidth < 768) && !hasScannedCertificate && (
+          {isMobile && !hasScannedCertificate && (
             <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 mb-4">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
@@ -131,8 +120,12 @@ export default function UploadSingleStonePage() {
                   </div>
                   <Button
                     size="sm"
-                    onClick={() => setShowWizard(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={() => {
+                      hapticFeedback.impact('medium');
+                      setShowWizard(true);
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white h-10"
+                    style={{ minHeight: '40px' }}
                   >
                     Try Wizard
                   </Button>
@@ -163,6 +156,7 @@ export default function UploadSingleStonePage() {
                       setIsScanning(true);
                     }}
                     className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm active:scale-95 transition-all"
+                    style={{ minHeight: '48px' }}
                   >
                     <Camera className="h-5 w-5 mr-2" />
                     Start Certificate Scan
@@ -191,24 +185,25 @@ export default function UploadSingleStonePage() {
           ) : (
             // Show form after successful scan
             <div>
-              {showSuccessMessage && (
-                <div className="mb-4 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/50 rounded-lg animate-fade-in">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-sm font-medium text-green-700 dark:text-green-400">Certificate scanned successfully</span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleStartOver}
-                      className="text-xs text-muted-foreground hover:text-foreground active:scale-95 transition-all"
-                    >
-                      Start Over
-                    </Button>
+              <div className="mb-4 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-green-700 dark:text-green-400">
+                      Certificate scanned successfully
+                    </span>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleStartOver}
+                    className="text-xs text-muted-foreground hover:text-foreground active:scale-95 transition-all h-8"
+                    style={{ minHeight: '32px' }}
+                  >
+                    Start Over
+                  </Button>
                 </div>
-              )}
+              </div>
               <SingleStoneUploadForm 
                 initialData={scannedData}
                 showScanButton={false}

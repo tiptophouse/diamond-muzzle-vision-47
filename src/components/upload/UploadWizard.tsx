@@ -1,11 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
-import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
-import { Camera, Upload, FileText, CheckCircle, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
+import { Camera, FileText, CheckCircle, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { QRCodeScanner } from '@/components/inventory/QRCodeScanner';
 import { SingleStoneUploadForm } from './SingleStoneUploadForm';
@@ -16,8 +15,6 @@ interface WizardStep {
   title: { en: string; he: string };
   description: { en: string; he: string };
   icon: React.ReactNode;
-  component?: React.ReactNode;
-  completed?: boolean;
 }
 
 interface UploadWizardProps {
@@ -32,12 +29,11 @@ export function UploadWizard({
   onComplete 
 }: UploadWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [completedSteps, setCompletedSteps] = useState<string[]>([]);
   const [scannedData, setScannedData] = useState<any>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   
-  const { hapticFeedback, mainButton, backButton, showAlert } = useTelegramWebApp();
+  const { hapticFeedback, mainButton, backButton } = useTelegramWebApp();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -73,26 +69,19 @@ export function UploadWizard({
 
   // Handle Telegram main button
   useEffect(() => {
-    const isLastStep = currentStep === wizardSteps.length - 1;
-    
-    if (currentStep === 0) {
-      mainButton.hide(); // Hide for method selection
-    } else if (currentStep === 1 && !scannedData) {
-      mainButton.hide(); // Hide during scanning
-    } else if (currentStep === 2) {
-      mainButton.hide(); // Hide during form filling
-    } else if (isLastStep) {
+    if (currentStep === 0 || currentStep === 2) {
+      mainButton.hide(); // Hide for method selection and form filling
+    } else if (currentStep === 3) {
       const buttonText = language === 'he' ? 'סיום' : 'Finish';
       mainButton.show(buttonText, handleFinish, '#28a745');
     } else {
-      const buttonText = language === 'he' ? 'הבא' : 'Next';
-      mainButton.show(buttonText, handleNext, '#007AFF');
+      mainButton.hide();
     }
 
     return () => {
       mainButton.hide();
     };
-  }, [currentStep, scannedData, language]);
+  }, [currentStep, language]);
 
   // Handle Telegram back button
   useEffect(() => {
@@ -106,13 +95,6 @@ export function UploadWizard({
       backButton.hide();
     };
   }, [currentStep, isScanning]);
-
-  const handleNext = () => {
-    hapticFeedback.impact('medium');
-    if (currentStep < wizardSteps.length - 1) {
-      setCurrentStep(prev => prev + 1);
-    }
-  };
 
   const handlePrevious = () => {
     hapticFeedback.impact('light');
@@ -136,15 +118,12 @@ export function UploadWizard({
     } else {
       setCurrentStep(2);
     }
-    
-    markStepCompleted('method-selection');
   };
 
   const handleScanSuccess = (giaData: any) => {
     hapticFeedback.notification('success');
     setScannedData(giaData);
     setIsScanning(false);
-    markStepCompleted('certificate-scan');
     
     toast({
       title: language === 'he' ? 'סריקה הצליחה!' : 'Scan Successful!',
@@ -161,12 +140,12 @@ export function UploadWizard({
   const handleScanClose = () => {
     setIsScanning(false);
     hapticFeedback.impact('light');
+    setCurrentStep(0); // Go back to method selection
   };
 
   const handleUploadSuccess = () => {
     hapticFeedback.notification('success');
     setUploadSuccess(true);
-    markStepCompleted('diamond-details');
     setCurrentStep(3);
     
     toast({
@@ -175,12 +154,6 @@ export function UploadWizard({
         ? 'היהלום שלך נוסף למלאי'
         : 'Your diamond has been added to inventory'
     });
-  };
-
-  const markStepCompleted = (stepId: string) => {
-    if (!completedSteps.includes(stepId)) {
-      setCompletedSteps(prev => [...prev, stepId]);
-    }
   };
 
   const renderStepContent = () => {
@@ -207,6 +180,7 @@ export function UploadWizard({
                 onClick={() => handleMethodSelect('scan')}
                 size="lg"
                 className="w-full h-16 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0 shadow-lg active:scale-95 transition-all"
+                style={{ minHeight: '64px' }}
               >
                 <div className="flex items-center gap-4">
                   <Camera className="h-8 w-8" />
@@ -226,6 +200,7 @@ export function UploadWizard({
                 variant="outline"
                 size="lg"
                 className="w-full h-16 border-2 active:scale-95 transition-all"
+                style={{ minHeight: '64px' }}
               >
                 <div className="flex items-center gap-4">
                   <FileText className="h-8 w-8" />
@@ -246,44 +221,19 @@ export function UploadWizard({
       case 1: // Certificate Scan
         return (
           <div className="space-y-6">
-            {!scannedData ? (
-              <div className="text-center space-y-4">
-                <div className="text-4xl">📱</div>
-                <div>
-                  <h3 className="text-xl font-bold text-foreground mb-2">
-                    {language === 'he' ? 'מוכן לסרוק?' : 'Ready to Scan?'}
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    {language === 'he' 
-                      ? 'הנח את התעודה במרכז המסך והמתן לסריקה'
-                      : 'Place the certificate in the center and wait for scanning'}
-                  </p>
-                </div>
-
-                <Button
-                  onClick={() => setIsScanning(true)}
-                  size="lg"
-                  className="w-full h-14 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
-                >
-                  <Camera className="h-6 w-6 mr-3" />
-                  {language === 'he' ? 'התחל סריקה' : 'Start Scanning'}
-                </Button>
+            <div className="text-center space-y-4">
+              <div className="text-4xl">📱</div>
+              <div>
+                <h3 className="text-xl font-bold text-foreground mb-2">
+                  {language === 'he' ? 'מוכן לסרוק?' : 'Ready to Scan?'}
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  {language === 'he' 
+                    ? 'הנח את התעודה במרכז המסך והמתן לסריקה'
+                    : 'Place the certificate in the center and wait for scanning'}
+                </p>
               </div>
-            ) : (
-              <div className="text-center space-y-4">
-                <div className="text-4xl">✅</div>
-                <div>
-                  <h3 className="text-xl font-bold text-green-600 mb-2">
-                    {language === 'he' ? 'סריקה הושלמה!' : 'Scan Complete!'}
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    {language === 'he' 
-                      ? 'פרטי התעודה נקלטו בהצלחה'
-                      : 'Certificate details captured successfully'}
-                  </p>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
         );
 
@@ -329,6 +279,7 @@ export function UploadWizard({
                 onClick={() => navigate('/inventory')}
                 size="lg"
                 className="w-full h-12"
+                style={{ minHeight: '48px' }}
               >
                 {language === 'he' ? 'עבור למלאי' : 'Go to Inventory'}
               </Button>
@@ -338,11 +289,11 @@ export function UploadWizard({
                   setCurrentStep(0);
                   setScannedData(null);
                   setUploadSuccess(false);
-                  setCompletedSteps([]);
                 }}
                 variant="outline"
                 size="lg"
                 className="w-full h-12"
+                style={{ minHeight: '48px' }}
               >
                 {language === 'he' ? 'הוסף יהלום נוסף' : 'Add Another Diamond'}
               </Button>
@@ -355,80 +306,84 @@ export function UploadWizard({
     }
   };
 
-  return (
-    <>
-      <div className="min-h-screen bg-background" style={{ height: 'var(--tg-viewport-height, 100vh)' }}>
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 text-white">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-lg">
-                {currentStepData.icon}
-              </div>
-              <div>
-                <div className="font-semibold">
-                  {currentStepData.title[language]}
-                </div>
-                <div className="text-sm opacity-90">
-                  {language === 'he' ? 'שלב' : 'Step'} {currentStep + 1} {language === 'he' ? 'מתוך' : 'of'} {wizardSteps.length}
-                </div>
-              </div>
-            </div>
-
-            {onLanguageChange && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onLanguageChange(language === 'en' ? 'he' : 'en')}
-                className="text-white hover:bg-white/20 text-xs px-3 py-1"
-              >
-                {language === 'en' ? 'עב' : 'EN'}
-              </Button>
-            )}
-          </div>
-
-          <Progress 
-            value={progressPercentage} 
-            className="h-2 bg-white/20"
-          />
-        </div>
-
-        {/* Content */}
-        <div className="p-6" dir={language === 'he' ? 'rtl' : 'ltr'}>
-          <Card className="border-0 shadow-none bg-transparent">
-            <CardContent className="p-0">
-              {renderStepContent()}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Progress Indicators */}
-        <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 flex space-x-2">
-          {wizardSteps.map((step, index) => (
-            <div
-              key={step.id}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                completedSteps.includes(step.id)
-                  ? 'bg-green-500'
-                  : index === currentStep
-                  ? 'bg-blue-500 scale-125'
-                  : index < currentStep
-                  ? 'bg-blue-300'
-                  : 'bg-gray-300'
-              }`}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* QR Code Scanner Modal */}
-      {isScanning && (
+  // Show scanner with proper z-index when scanning
+  if (isScanning) {
+    return (
+      <div className="fixed inset-0 z-[60]">
         <QRCodeScanner
-          isOpen={isScanning}
+          isOpen={true}
           onScanSuccess={handleScanSuccess}
           onClose={handleScanClose}
         />
-      )}
-    </>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background" style={{ height: 'var(--tg-viewport-height, 100vh)' }}>
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 text-white">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white/20 rounded-lg">
+              {currentStepData.icon}
+            </div>
+            <div>
+              <div className="font-semibold">
+                {currentStepData.title[language]}
+              </div>
+              <div className="text-sm opacity-90">
+                {language === 'he' ? 'שלב' : 'Step'} {currentStep + 1} {language === 'he' ? 'מתוך' : 'of'} {wizardSteps.length}
+              </div>
+            </div>
+          </div>
+
+          {onLanguageChange && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                hapticFeedback.selection();
+                onLanguageChange(language === 'en' ? 'he' : 'en');
+              }}
+              className="text-white hover:bg-white/20 text-xs px-3 py-1 h-8"
+              style={{ minHeight: '32px' }}
+            >
+              {language === 'en' ? 'עב' : 'EN'}
+            </Button>
+          )}
+        </div>
+
+        <Progress 
+          value={progressPercentage} 
+          className="h-2 bg-white/20"
+        />
+      </div>
+
+      {/* Content */}
+      <div className="p-6" dir={language === 'he' ? 'rtl' : 'ltr'}>
+        <Card className="border-0 shadow-none bg-transparent">
+          <CardContent className="p-0">
+            {renderStepContent()}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Progress Indicators */}
+      <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 flex space-x-2">
+        {wizardSteps.map((_, index) => (
+          <div
+            key={index}
+            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+              index === currentStep
+                ? 'bg-blue-500 scale-125'
+                : index < currentStep
+                ? 'bg-green-500'
+                : 'bg-gray-300'
+            }`}
+          />
+        ))}
+      </div>
+    </div>
   );
 }

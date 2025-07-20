@@ -33,7 +33,7 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[70] bg-black/90 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -41,7 +41,13 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
               <Camera className="h-5 w-5" />
               Scan Diamond Certificate
             </CardTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onClose}
+              className="h-10"
+              style={{ minHeight: '40px' }}
+            >
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -78,9 +84,9 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
               <>
                 <Button 
                   onClick={startScanning} 
-                  className="flex-1 touch-target" 
+                  className="flex-1 h-12" 
                   disabled={isFetchingGIA}
-                  style={{ minHeight: '48px', fontSize: '16px' }}
+                  style={{ minHeight: '48px' }}
                 >
                   <Camera className="h-4 w-4 mr-2" />
                   Start Scanning
@@ -88,9 +94,9 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
                 <Button 
                   onClick={triggerFileUpload} 
                   variant="outline" 
-                  className="flex-1 touch-target" 
+                  className="flex-1 h-12" 
                   disabled={isFetchingGIA}
-                  style={{ minHeight: '48px', fontSize: '16px' }}
+                  style={{ minHeight: '48px' }}
                 >
                   <Upload className="h-4 w-4 mr-2" />
                   Upload Image
@@ -100,9 +106,9 @@ export function QRCodeScanner({ onScanSuccess, onClose, isOpen }: QRCodeScannerP
               <Button 
                 onClick={stopScanning} 
                 variant="outline" 
-                className="flex-1 touch-target" 
+                className="flex-1 h-12" 
                 disabled={isFetchingGIA}
-                style={{ minHeight: '48px', fontSize: '16px' }}
+                style={{ minHeight: '48px' }}
               >
                 Stop Scanning
               </Button>
