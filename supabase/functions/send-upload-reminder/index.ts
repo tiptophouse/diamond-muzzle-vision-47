@@ -34,6 +34,8 @@ serve(async (req) => {
     const results = await Promise.allSettled(
       users.map(async (user) => {
         const message = generateUploadReminderMessage(user.first_name);
+        
+        // Create both web_app button and fallback URL button for compatibility
         const keyboard = {
           inline_keyboard: [[
             {
@@ -41,6 +43,11 @@ serve(async (req) => {
               web_app: {
                 url: "https://uhhljqgxhdhbbhpohxll.lovableapp.com/upload-single-stone"
               }
+            }
+          ], [
+            {
+              text: "🌐 Open in Browser (Fallback)",
+              url: "https://uhhljqgxhdhbbhpohxll.lovableapp.com/upload-single-stone"
             }
           ]]
         };
