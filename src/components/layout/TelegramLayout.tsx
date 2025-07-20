@@ -4,6 +4,8 @@ import { Home, Package, Store, MessageCircle, TrendingUp, Bell, Settings, Shield
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { TelegramWebApp } from '@/types/telegram';
+import { LiveTutorialModal } from '@/components/tutorial/LiveTutorialModal';
+import { TutorialFloatingButton } from '@/components/tutorial/TutorialFloatingButton';
 interface TelegramLayoutProps {
   children: React.ReactNode;
 }
@@ -217,6 +219,9 @@ export function TelegramLayout({
   const availableTabs = isPublicStoreAccess ? tabs.filter(tab => tab.path === '/store') : tabs.filter(tab => !tab.adminOnly || isAdmin);
   const availableSecondaryTabs = isPublicStoreAccess ? [] : secondaryTabs.filter(tab => !tab.adminOnly || isAdmin);
   return <div className="flex flex-col h-screen max-h-screen w-full tg-viewport overflow-hidden">
+      {/* Live Tutorial Modal */}
+      <LiveTutorialModal />
+      
       {/* Main content area */}
       <main className="flex-1 overflow-auto smooth-scroll bg-background w-full py-[40px]">
         <div className="min-h-full p-3 sm:p-4 pb-safe py-4 my-[40px]">
@@ -245,8 +250,11 @@ export function TelegramLayout({
         </div>
       </nav>
 
+      {/* Tutorial Floating Button */}
+      <TutorialFloatingButton />
+
       {/* Secondary actions floating button (for non-main tabs) */}
-      {availableSecondaryTabs.length > 0 && <div className="fixed bottom-20 right-4 z-50">
+      {availableSecondaryTabs.length > 0 && <div className="fixed bottom-20 right-4 z-40">
           <div className="flex flex-col gap-2">
             {availableSecondaryTabs.map(tab => {
           const Icon = tab.icon;
