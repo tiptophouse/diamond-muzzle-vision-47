@@ -5,10 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Upload, FileText } from "lucide-react";
-import { useTutorialInteraction } from "@/hooks/useTutorialInteraction";
+import { FloatingFirstUploadCTA } from "@/components/upload/FloatingFirstUploadCTA";
 
 export default function UploadPage() {
-  useTutorialInteraction('[data-tutorial="upload-single-diamond"]');
 
   return (
     <Layout>
@@ -66,6 +65,8 @@ export default function UploadPage() {
           </CardContent>
         </Card>
       </div>
+      
+      <FloatingFirstUploadCTA />
     </Layout>
   );
 }
