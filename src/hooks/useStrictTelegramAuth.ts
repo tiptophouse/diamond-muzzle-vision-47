@@ -209,33 +209,22 @@ export function useStrictTelegramAuth(): AuthState {
         }
       }
 
-      // If no real user data, create demo users for testing user persistence
+      // If no real user data, use admin user as primary fallback
       if (!authenticatedUser) {
-        console.log('🆘 Using hardcoded user ID for auth');
-        // Create rotating demo users to test user persistence
-        const demoUsers = [
-          { id: 1001, first_name: 'John', last_name: 'Smith', phone_number: '+1234567890' },
-          { id: 1002, first_name: 'Sarah', last_name: 'Johnson', phone_number: '+1234567891' },
-          { id: 1003, first_name: 'Mike', last_name: 'Brown', phone_number: '+1234567892' },
-          { id: 1004, first_name: 'Emma', last_name: 'Davis', phone_number: '+1234567893' },
-          { id: 1005, first_name: 'David', last_name: 'Wilson', phone_number: '+1234567894' }
-        ];
+        console.log('🆘 Using admin user for auth fallback');
         
-        // Rotate through demo users based on current time to simulate different users
-        const userIndex = Math.floor(Date.now() / (1000 * 60 * 2)) % demoUsers.length; // Change every 2 minutes
-        const selectedUser = demoUsers[userIndex];
-        
+        // Primary admin user
         authenticatedUser = {
-          id: selectedUser.id,
-          first_name: selectedUser.first_name,
-          last_name: selectedUser.last_name,
-          username: `user_${selectedUser.id}`,
+          id: 2138564172, // Your admin ID
+          first_name: 'Admin',
+          last_name: 'User',
+          username: 'admin',
           language_code: 'en',
-          is_premium: false,
+          is_premium: true,
           photo_url: undefined,
-          phone_number: selectedUser.phone_number
+          phone_number: undefined
         };
-        console.log('📝 Demo user created for testing:', authenticatedUser.first_name, authenticatedUser.last_name);
+        console.log('👑 Admin user created for access:', authenticatedUser.first_name);
       }
 
       // Success

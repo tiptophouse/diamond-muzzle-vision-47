@@ -97,7 +97,6 @@ export function AdminGuard({ children }: AdminGuardProps) {
           </p>
           <div className="text-sm text-gray-500 mb-8 bg-gray-50 p-4 rounded">
             <p><strong>Your ID:</strong> {user.id}</p>
-            <p><strong>Required Admin ID:</strong> {adminTelegramId}</p>
             <p><strong>Environment:</strong> {isTelegramEnvironment ? 'Telegram' : 'Browser'}</p>
           </div>
           
