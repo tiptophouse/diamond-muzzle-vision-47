@@ -144,40 +144,28 @@ export function TutorialModal() {
           {/* Step-specific action buttons and visuals */}
           {currentStepData.id === 'lets-upload' && (
             <div className="mb-4 sm:mb-6 text-center">
-              <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">📄</div>
+              <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">📱</div>
+              <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-4 rounded-xl mb-4">
+                <p className="text-sm text-gray-600 mb-3">
+                  {currentLanguage === 'he' ? 'פשוט לחץ על הכפתור למטה ואז על "העלה תמונה"' : 'Simply tap the button below, then tap "Upload Image"'}
+                </p>
+                <div className="bg-white p-3 rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-center gap-2 text-blue-600">
+                    <span>📸</span>
+                    <span className="font-semibold">
+                      {currentLanguage === 'he' ? 'העלה תמונה' : 'Upload Image'}
+                    </span>
+                  </div>
+                </div>
+              </div>
               <Button
-                onClick={() => {
-                  // Open upload form in popup style instead of navigating
-                  const uploadPopup = document.createElement('div');
-                  uploadPopup.innerHTML = `
-                    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                      <div class="bg-background rounded-2xl shadow-2xl w-full max-w-md mx-auto overflow-hidden">
-                        <div class="bg-gradient-to-r from-blue-500 to-purple-500 px-6 py-4 text-white">
-                          <h3 class="text-lg font-bold">${currentLanguage === 'he' ? 'העלה יהלום חדש' : 'Upload New Diamond'}</h3>
-                        </div>
-                        <div class="p-6 text-center">
-                          <div class="text-6xl mb-4">📱</div>
-                          <p class="text-muted-foreground mb-6">${currentLanguage === 'he' ? 'פשוט לחץ על העלה תמונה ותתחיל' : 'Simply click Upload Image to get started'}</p>
-                          <button onclick="window.location.href='/upload'; this.closest('.fixed').remove()" class="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 mb-3">
-                            <span>📸</span>
-                            <span>${currentLanguage === 'he' ? 'העלה תמונה' : 'Upload Image'}</span>
-                          </button>
-                          <button onclick="this.closest('.fixed').remove()" class="text-muted-foreground text-sm">
-                            ${currentLanguage === 'he' ? 'סגור' : 'Close'}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  `;
-                  document.body.appendChild(uploadPopup);
-                  nextStep();
-                }}
+                onClick={() => handleNavigateToPage('/upload')}
                 size="lg"
                 className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all"
               >
                 <Camera className="h-5 w-5 sm:h-6 sm:w-6" />
                 <span>
-                  {currentLanguage === 'he' ? 'הראה לי איך להעלות' : 'Show Me How to Upload'}
+                  {currentLanguage === 'he' ? 'עבור להעלאה' : 'Go to Upload'}
                 </span>
               </Button>
             </div>

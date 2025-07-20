@@ -23,16 +23,6 @@ export function Header() {
         </div>
         
         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-          {/* Quick Upload CTA */}
-          <button 
-            onClick={() => window.location.href = '/upload'}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-3 sm:px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl flex items-center gap-2"
-          >
-            <span className="text-base">📸</span>
-            <span className="hidden sm:inline">Quick Upload</span>
-            <span className="sm:hidden">Upload</span>
-          </button>
-          
           <TutorialTrigger />
           
           {user && (
