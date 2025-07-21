@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TelegramLayout } from "@/components/layout/TelegramLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Upload, CheckCircle, AlertCircle, ArrowRight } from "lucide-react";
 import { useEnhancedUploadHandler } from "@/hooks/useEnhancedUploadHandler";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
+import { useTelegramMainButton } from "@/hooks/useTelegramMainButton";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -14,12 +16,38 @@ export default function CsvBulkUploadPage() {
   const [dragActive, setDragActive] = useState(false);
   const { uploading, progress, result, handleUpload, resetState } = useEnhancedUploadHandler();
   const { user, isAuthenticated } = useTelegramAuth();
+  const { impactOccurred, notificationOccurred, selectionChanged } = useTelegramHapticFeedback();
+
+  const openFilePicker = () => {
+    impactOccurred('light');
+    document.getElementById('file-input')?.click();
+  };
+
+  const startUpload = () => {
+    if (selectedFile) {
+      impactOccurred('medium');
+      handleUpload(selectedFile);
+    }
+  };
+
+  // Telegram Main Button for upload action
+  useTelegramMainButton({
+    text: selectedFile && !uploading && !result ? "העלה יהלומים" : "בחר קובץ CSV",
+    isVisible: !!selectedFile && !uploading && !result,
+    isEnabled: !!selectedFile && !uploading,
+    onClick: selectedFile ? startUpload : openFilePicker,
+  });
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && (file.type === "text/csv" || file.name.endsWith('.csv'))) {
       setSelectedFile(file);
       resetState();
+      notificationOccurred('success');
+      impactOccurred('medium');
+    } else if (file) {
+      notificationOccurred('error');
+      impactOccurred('heavy');
     }
   };
 
@@ -31,12 +59,18 @@ export default function CsvBulkUploadPage() {
     if (file && (file.type === "text/csv" || file.name.endsWith('.csv'))) {
       setSelectedFile(file);
       resetState();
+      notificationOccurred('success');
+      impactOccurred('medium');
+    } else if (file) {
+      notificationOccurred('error');
+      impactOccurred('heavy');
     }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(true);
+    selectionChanged();
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
@@ -44,15 +78,11 @@ export default function CsvBulkUploadPage() {
     setDragActive(false);
   };
 
-  const startUpload = () => {
-    if (selectedFile) {
-      handleUpload(selectedFile);
-    }
-  };
 
   const resetForm = () => {
     setSelectedFile(null);
     resetState();
+    impactOccurred('light');
   };
 
   if (!isAuthenticated) {
@@ -114,7 +144,7 @@ export default function CsvBulkUploadPage() {
                   onDrop={handleDrop}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
-                  onClick={() => document.getElementById('file-input')?.click()}
+                  onClick={openFilePicker}
                 >
                   <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
                     <FileText className="h-8 w-8 text-primary" />
@@ -150,6 +180,7 @@ export default function CsvBulkUploadPage() {
                       size="sm"
                       onClick={resetForm}
                       disabled={uploading}
+                      className="touch-manipulation"
                     >
                       החלף
                     </Button>
@@ -171,9 +202,10 @@ export default function CsvBulkUploadPage() {
                       </div>
                     </div>
                   ) : (
+                    // Mobile-optimized upload button - hidden on mobile since Telegram Main Button is used
                     <Button
                       onClick={startUpload}
-                      className="w-full"
+                      className="w-full touch-manipulation min-h-[44px] hidden md:flex"
                       size="lg"
                     >
                       <Upload className="h-4 w-4 mr-2" />
@@ -244,13 +276,16 @@ export default function CsvBulkUploadPage() {
                 <Button
                   onClick={resetForm}
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 touch-manipulation min-h-[44px]"
                 >
                   העלה קובץ נוסף
                 </Button>
                 <Button
-                  onClick={() => window.location.href = '/inventory'}
-                  className="flex-1"
+                  onClick={() => {
+                    impactOccurred('light');
+                    window.location.href = '/inventory';
+                  }}
+                  className="flex-1 touch-manipulation min-h-[44px]"
                 >
                   צפה במלאי
                 </Button>

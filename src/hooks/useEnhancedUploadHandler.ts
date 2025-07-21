@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { api, apiEndpoints } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useTelegramHapticFeedback } from './useTelegramHapticFeedback';
 import { useInventoryDataSync } from './inventory/useInventoryDataSync';
 import { useIntelligentCsvProcessor } from './useIntelligentCsvProcessor';
 import { useOpenAICsvEnhancer } from './useOpenAICsvEnhancer';
@@ -23,6 +24,7 @@ export function useEnhancedUploadHandler() {
   const [result, setResult] = useState<UploadResult | null>(null);
   const { toast } = useToast();
   const { user } = useTelegramAuth();
+  const { notificationOccurred } = useTelegramHapticFeedback();
   const { triggerInventoryChange } = useInventoryDataSync();
   const { processIntelligentCsv } = useIntelligentCsvProcessor();
   const { enhanceDataWithOpenAI } = useOpenAICsvEnhancer();
@@ -227,13 +229,15 @@ export function useEnhancedUploadHandler() {
         }, 2000);
       }
       
-      // Show immediate toast message
+      // Show immediate toast message with haptic feedback
       if (successCount > 0) {
+        notificationOccurred('success');
         toast({
           title: "🎉 Upload Complete!",
           description: `${successCount} diamonds uploaded successfully${errors.length > 0 ? `, ${errors.length} failed` : ''}`,
         });
       } else {
+        notificationOccurred('error');
         toast({
           title: "❌ Upload Failed",
           description: `All ${enhancedData.length} diamonds failed. Check detailed errors below.`,
@@ -265,6 +269,7 @@ export function useEnhancedUploadHandler() {
       
       setResult(errorResult);
       
+      notificationOccurred('error');
       toast({
         title: "❌ Upload Failed",
         description: errorMessage.length > 50 ? errorMessage.substring(0, 50) + "..." : errorMessage,
