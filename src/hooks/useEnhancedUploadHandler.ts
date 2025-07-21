@@ -183,7 +183,13 @@ export function useEnhancedUploadHandler() {
       if (validDiamonds.length > 0) {
         try {
           console.log(`📤 Uploading ${validDiamonds.length} diamonds in batch...`);
+          console.log('📤 Using exact curl format - diamonds array in payload');
           const batchPayload = { diamonds: validDiamonds };
+          
+          console.log('📤 API endpoint:', apiEndpoints.addDiamondsBatch(user.id));
+          console.log('📤 Sample payload structure:', {
+            diamonds: validDiamonds.slice(0, 1) // Show first diamond only
+          });
           
           const response = await api.post(apiEndpoints.addDiamondsBatch(user.id), batchPayload);
           
