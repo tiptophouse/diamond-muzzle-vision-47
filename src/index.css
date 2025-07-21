@@ -566,6 +566,34 @@
     0% { transform: translateX(-100%) skewX(-12deg); }
     100% { transform: translateX(200%) skewX(-12deg); }
   }
+
+  /* iOS-style entrance animations */
+  @keyframes slide-up {
+    from { 
+      opacity: 0; 
+      transform: translateY(20px) scale(0.95); 
+    }
+    to { 
+      opacity: 1; 
+      transform: translateY(0) scale(1); 
+    }
+  }
+
+  /* Gentle bounce for buttons */
+  @keyframes gentle-bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  /* Premium glow pulse */
+  @keyframes glow-pulse {
+    0%, 100% { 
+      box-shadow: 0 0 20px hsl(var(--primary)), 0 0 40px hsl(var(--primary)); 
+    }
+    50% { 
+      box-shadow: 0 0 30px hsl(var(--primary)), 0 0 60px hsl(var(--primary)); 
+    }
+  }
 }
 
 /* Telegram-style scrollbar for chat */

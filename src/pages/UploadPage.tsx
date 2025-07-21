@@ -1,163 +1,232 @@
-
+import { useState, useEffect } from "react";
 import { TelegramLayout } from "@/components/layout/TelegramLayout";
-import { UploadForm } from "@/components/upload/UploadForm";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { Upload, FileText, Camera, Zap } from "lucide-react";
+import { Camera, Plus, FileImage, Sparkles, ArrowLeft } from "lucide-react";
 import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
-import { useState } from "react";
-
 
 export default function UploadPage() {
-  const { hapticFeedback } = useTelegramWebApp();
-  const [language] = useState<'he' | 'en'>('he'); // Default to Hebrew
+  const { hapticFeedback, mainButton } = useTelegramWebApp();
+  const [isVisible, setIsVisible] = useState(false);
 
-  const text = {
-    he: {
-      title: "העלאת יהלומים למלאי",
-      subtitle: "העלו את נתוני המלאי שלכם באמצעות קבצי CSV או הוסיפו יהלומים בנפרד",
-      uploadSingle: "העלאת יהלום בודד",
-      uploadSingleDesc: "הוסיפו יהלומים בודדים עם מידע מפורט וסריקת תעודות",
-      scanCertificate: "סרקו תעודת GIA",
-      scanDesc: "הדרך הכי מהירה להוסיף יהלום - סרקו את התעודה להזנת נתונים מיידית",
-      startScan: "התחלת סריקת תעודה",
-      bulkUpload: "העלאה מרובה CSV",
-      bulkDesc: "העלו מספר יהלומים בבת אחת באמצעות קובץ CSV",
-      stepByStep: "הוראות שלב אחר שלב:",
-      step1: "1. לחצו על 'התחלת סריקת תעודה'",
-      step2: "2. כוונו את המצלמה לתעודת ה-GIA",
-      step3: "3. המתינו לזיהוי אוטומטי של הנתונים",
-      step4: "4. בדקו ושמרו את הפרטים"
-    },
-    en: {
-      title: "Upload Inventory",
-      subtitle: "Upload your inventory data using CSV files or add individual diamonds",
-      uploadSingle: "Upload Single Diamond",
-      uploadSingleDesc: "Add individual diamonds with detailed information and certificate scanning",
-      scanCertificate: "Scan GIA Certificate",
-      scanDesc: "Fastest way to add a diamond - scan your certificate for instant data entry",
-      startScan: "Start Certificate Scan",
-      bulkUpload: "Bulk CSV Upload",
-      bulkDesc: "Upload multiple diamonds at once using a CSV file",
-      stepByStep: "Step by step instructions:",
-      step1: "1. Click 'Start Certificate Scan'",
-      step2: "2. Point camera at GIA certificate",
-      step3: "3. Wait for automatic data recognition",
-      step4: "4. Review and save details"
-    }
+  useEffect(() => {
+    // Smooth entrance animation
+    const timer = setTimeout(() => setIsVisible(true), 100);
+    
+    // Setup Telegram main button
+    mainButton.show("התחלת סריקה מהירה", () => {
+      hapticFeedback.impact('heavy');
+      window.location.href = "/upload-single-stone?action=scan";
+    });
+
+    return () => {
+      clearTimeout(timer);
+      mainButton.hide();
+    };
+  }, [hapticFeedback, mainButton]);
+
+  const handleCameraClick = () => {
+    hapticFeedback.impact('heavy');
   };
 
-  const t = text[language];
+  const handleManualClick = () => {
+    hapticFeedback.impact('medium');
+  };
+
+  const handleBulkClick = () => {
+    hapticFeedback.impact('light');
+  };
 
   return (
     <TelegramLayout>
-      <div className="space-y-6 px-4 py-6">
-        {/* Header with clear instructions */}
-        <div className="text-center space-y-4">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-primary-glow to-primary-dark bg-clip-text text-transparent">
-            {t.title}
-          </h1>
-          <p className="text-muted-foreground text-lg leading-relaxed">
-            {t.subtitle}
-          </p>
+      <div className={`min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 transition-all duration-1000 ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+      }`}>
+        
+        {/* Header with elegant gradient */}
+        <div className="relative px-6 pt-12 pb-8 text-center">
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-primary/5 to-transparent"></div>
           
-          {/* Clear step-by-step guide */}
-          <Card className="border-accent/20 bg-gradient-to-r from-accent/5 to-accent/10">
-            <CardContent className="pt-6">
-              <h3 className="font-semibold text-accent mb-4 flex items-center gap-2">
-                <Zap className="h-5 w-5" />
-                {t.stepByStep}
-              </h3>
-              <div className="text-right space-y-2 text-sm text-muted-foreground">
-                <div>{t.step1}</div>
-                <div>{t.step2}</div>
-                <div>{t.step3}</div>
-                <div>{t.step4}</div>
+          <div className="relative space-y-4">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/30 shadow-xl animate-fade-in">
+              <Sparkles className="h-10 w-10 text-primary animate-pulse" />
+            </div>
+            
+            <h1 className="text-3xl font-black text-foreground leading-tight">
+              העלאת יהלומים
+              <br />
+              <span className="bg-gradient-to-l from-primary via-primary-glow to-primary bg-clip-text text-transparent">
+                למלאי שלכם
+              </span>
+            </h1>
+            
+            <p className="text-lg text-muted-foreground font-medium leading-relaxed max-w-md mx-auto">
+              הוסיפו יהלומים בקלות ובמהירות
+              <br />
+              עם טכנולוגיית סריקה מתקדמת
+            </p>
+          </div>
+        </div>
+
+        {/* Action Cards */}
+        <div className="px-6 space-y-4">
+          
+          {/* Primary: Camera Scan - Pulsing with premium design */}
+          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-primary via-primary-glow to-primary shadow-premium hover:shadow-xl transition-all duration-500 animate-fade-in group">
+            {/* Background pattern */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/10"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
+            
+            {/* Pulsing ring animation */}
+            <div className="absolute inset-0 rounded-xl border-2 border-white/40 animate-pulse"></div>
+            
+            <CardContent className="relative p-8">
+              <Link to="/upload-single-stone?action=scan">
+                <div 
+                  onClick={handleCameraClick}
+                  className="flex items-center justify-between text-right cursor-pointer"
+                >
+                  <div className="space-y-3 flex-1">
+                    <div className="flex items-center justify-end gap-3">
+                      <h3 className="text-2xl font-black text-white">
+                        סריקת תעודה מיידית
+                      </h3>
+                      <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform duration-300">
+                        <Camera className="h-8 w-8 text-white animate-pulse" />
+                      </div>
+                    </div>
+                    
+                    <p className="text-white/90 text-lg font-medium leading-relaxed">
+                      צלמו את תעודת GIA לזיהוי אוטומטי
+                      <br />
+                      של כל הפרטים תוך שניות
+                    </p>
+                    
+                    <div className="flex items-center justify-end gap-2 pt-2">
+                      <span className="text-white/80 font-semibold">המהיר ביותר</span>
+                      <div className="flex gap-1">
+                        {[...Array(3)].map((_, i) => (
+                          <div key={i} className="w-2 h-2 bg-white/60 rounded-full animate-pulse" style={{ animationDelay: `${i * 0.2}s` }}></div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            </CardContent>
+          </Card>
+
+          {/* Secondary: Manual Entry */}
+          <Card className="relative overflow-hidden border border-muted/20 bg-gradient-to-br from-background to-muted/5 shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in group" style={{ animationDelay: '0.1s' }}>
+            <div className="absolute top-0 left-0 w-24 h-24 bg-primary/5 rounded-full -translate-y-12 -translate-x-12"></div>
+            
+            <CardContent className="relative p-6">
+              <Link to="/upload-single-stone">
+                <div 
+                  onClick={handleManualClick}
+                  className="flex items-center justify-between text-right cursor-pointer"
+                >
+                  <div className="space-y-3 flex-1">
+                    <div className="flex items-center justify-end gap-3">
+                      <h3 className="text-xl font-bold text-foreground">
+                        הזנה ידנית מפורטת
+                      </h3>
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center border border-primary/20 group-hover:scale-105 transition-transform duration-300">
+                        <Plus className="h-6 w-6 text-primary" />
+                      </div>
+                    </div>
+                    
+                    <p className="text-muted-foreground text-base leading-relaxed">
+                      הוסיפו יהלום עם מידע מלא
+                      <br />
+                      ובקרה מדויקת על כל הפרטים
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            </CardContent>
+          </Card>
+
+          {/* Tertiary: Bulk Upload */}
+          <Card className="relative overflow-hidden border border-muted/20 bg-gradient-to-br from-background to-muted/5 shadow-md hover:shadow-lg transition-all duration-300 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <CardContent className="p-6">
+              <div 
+                onClick={handleBulkClick}
+                className="flex items-center justify-between text-right cursor-pointer"
+              >
+                <div className="space-y-3 flex-1">
+                  <div className="flex items-center justify-end gap-3">
+                    <h3 className="text-lg font-semibold text-foreground">
+                      העלאה מרובה CSV
+                    </h3>
+                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                      <FileImage className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                  </div>
+                  
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    העלו מספר יהלומים בבת אחת
+                    <br />
+                    באמצעות קובץ אקסל
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
-        
-        {/* PRIMARY: Single Diamond Upload Card with BLINKING animation */}
-        <Card className="border-primary/50 bg-gradient-to-br from-primary/10 via-primary/5 to-primary/15 hover:border-primary/60 transition-all duration-300 shadow-premium relative overflow-hidden">
-          {/* Pulsing background animation */}
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 animate-pulse opacity-60"></div>
-          
-          <CardHeader className="pb-4 relative z-10">
-            <CardTitle className="flex items-center gap-4 text-primary text-xl">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/30 shadow-lg animate-scale-in">
-                <Camera className="h-7 w-7 animate-pulse" />
-              </div>
-              {t.scanCertificate}
-            </CardTitle>
-            <p className="text-base text-muted-foreground leading-relaxed font-medium">
-              {t.scanDesc}
-            </p>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <Link to="/upload-single-stone?action=scan">
-              <Button
-                onClick={() => hapticFeedback.impact('heavy')}
-                data-tutorial="upload-single-diamond"
-                variant="diamond"
-                size="lg"
-                className="w-full h-16 text-lg font-bold animate-pulse hover:animate-none shadow-premium relative overflow-hidden"
-              >
-                {/* Button glow effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -skew-x-12 animate-[shimmer_2s_infinite]"></div>
-                <Camera className="h-6 w-6 mr-3" />
-                {t.startScan}
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
 
-        {/* Secondary Upload Card */}
-        <Card className="border-muted/30 bg-gradient-to-br from-muted/5 to-muted/10 hover:border-muted/40 transition-all duration-300">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-4 text-lg">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-muted/10 to-muted/20 shadow-md">
-                <Upload className="h-6 w-6" />
+        {/* Bottom Instructions with modern glass effect */}
+        <div className="px-6 py-8 mt-8">
+          <Card className="border-0 bg-gradient-to-r from-accent/10 via-accent/5 to-primary/10 backdrop-blur-sm shadow-lg animate-fade-in" style={{ animationDelay: '0.3s' }}>
+            <CardContent className="p-6">
+              <div className="text-center space-y-4">
+                <div className="flex items-center justify-center gap-2">
+                  <Sparkles className="h-5 w-5 text-accent animate-pulse" />
+                  <h4 className="font-bold text-accent">הוראות מהירות</h4>
+                </div>
+                
+                <div className="text-right space-y-2 text-sm text-muted-foreground leading-relaxed">
+                  <div className="flex items-center justify-end gap-2">
+                    <span>לחצו על "סריקת תעודה מיידית"</span>
+                    <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                  </div>
+                  <div className="flex items-center justify-end gap-2">
+                    <span>כוונו את המצלמה לתעודת GIA</span>
+                    <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                  </div>
+                  <div className="flex items-center justify-end gap-2">
+                    <span>המתינו לזיהוי אוטומטי</span>
+                    <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                  </div>
+                  <div className="flex items-center justify-end gap-2">
+                    <span>בדקו ושמרו</span>
+                    <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                  </div>
+                </div>
               </div>
-              {t.uploadSingle}
-            </CardTitle>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {t.uploadSingleDesc}
-            </p>
-          </CardHeader>
-          <CardContent>
-            <Link to="/upload-single-stone">
-              <Button
-                onClick={() => hapticFeedback.impact('medium')}
-                variant="outline"
-                size="lg"
-                className="w-full"
-              >
-                <Upload className="h-5 w-5 mr-2" />
-                {t.uploadSingle}
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
 
-        {/* Bulk Upload Card */}
-        <Card className="hover:shadow-lg transition-all duration-300">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-muted to-muted/80 shadow-md">
-                <FileText className="h-6 w-6" />
-              </div>
-              {t.bulkUpload}
-            </CardTitle>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {t.bulkDesc}
-            </p>
-          </CardHeader>
-          <CardContent>
-            <UploadForm />
-          </CardContent>
-        </Card>
+        {/* Fixed bottom CTA for immediate action */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background/95 to-transparent backdrop-blur-sm border-t border-muted/20">
+          <Link to="/upload-single-stone?action=scan">
+            <Button
+              onClick={handleCameraClick}
+              className="w-full h-14 text-lg font-black bg-gradient-to-r from-primary via-primary-glow to-primary text-white shadow-premium hover:shadow-xl active:scale-95 transition-all duration-300 relative overflow-hidden"
+            >
+              {/* Button shimmer effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 animate-[shimmer_2s_infinite]"></div>
+              <Camera className="h-6 w-6 ml-3" />
+              התחילו סריקה עכשיו
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 w-2 h-2 bg-white/60 rounded-full animate-pulse"></div>
+            </Button>
+          </Link>
+        </div>
+
+        {/* Safe area spacing for iPhone */}
+        <div className="h-20"></div>
       </div>
     </TelegramLayout>
   );
