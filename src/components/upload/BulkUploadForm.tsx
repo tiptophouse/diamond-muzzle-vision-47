@@ -17,6 +17,37 @@ export function BulkUploadForm() {
   const { hapticFeedback } = useTelegramWebApp();
   const { processedData, validationResults, processFile, resetProcessor } = useBulkCsvProcessor();
 
+  async function handleBulkUpload() {
+    if (!processedData?.validRows.length) return;
+
+    setIsProcessing(true);
+    hapticFeedback.impact('heavy');
+
+    try {
+      // TODO: Phase 2 - Connect to FastAPI /diamonds/batch endpoint
+      console.log('📤 Would upload diamonds:', processedData.validRows);
+      
+      hapticFeedback.notification('success');
+      toast({
+        title: "Upload Successful!",
+        description: `Successfully processed ${processedData.validRows.length} diamonds`,
+      });
+      
+      // Reset form
+      setSelectedFile(null);
+      resetProcessor();
+    } catch (error) {
+      hapticFeedback.notification('error');
+      toast({
+        title: "Upload Failed",
+        description: error instanceof Error ? error.message : "Failed to upload diamonds",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  }
+
   // Configure Telegram Main Button for upload
   useTelegramMainButton({
     text: processedData ? `Upload ${processedData.validRows.length} Diamonds` : "Select CSV File",
@@ -52,37 +83,6 @@ export function BulkUploadForm() {
         variant: "destructive",
       });
       setSelectedFile(null);
-    } finally {
-      setIsProcessing(false);
-    }
-  }
-
-  async function handleBulkUpload() {
-    if (!processedData?.validRows.length) return;
-
-    setIsProcessing(true);
-    hapticFeedback.impact('heavy');
-
-    try {
-      // TODO: Phase 2 - Connect to FastAPI /diamonds/batch endpoint
-      console.log('📤 Would upload diamonds:', processedData.validRows);
-      
-      hapticFeedback.notification('success');
-      toast({
-        title: "Upload Successful!",
-        description: `Successfully processed ${processedData.validRows.length} diamonds`,
-      });
-      
-      // Reset form
-      setSelectedFile(null);
-      resetProcessor();
-    } catch (error) {
-      hapticFeedback.notification('error');
-      toast({
-        title: "Upload Failed",
-        description: error instanceof Error ? error.message : "Failed to upload diamonds",
-        variant: "destructive",
-      });
     } finally {
       setIsProcessing(false);
     }
