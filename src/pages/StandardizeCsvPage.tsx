@@ -34,6 +34,35 @@ export default function StandardizeCsvPage() {
   const navigate = useNavigate();
   const { impactOccurred, notificationOccurred, selectionChanged } = useTelegramHapticFeedback();
 
+  // Define downloadStandardizedCsv function before using it
+  const downloadStandardizedCsv = () => {
+    if (standardizedData.length === 0) return;
+    
+    impactOccurred('light');
+    
+    const csvContent = [
+      EXPECTED_COLUMNS.join(','),
+      ...standardizedData.map(row => 
+        EXPECTED_COLUMNS.map(col => `"${row[col] || ''}"`).join(',')
+      )
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `standardized_${uploadedFile?.name || 'inventory'}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    setStep('download');
+    notificationOccurred('success');
+    toast({
+      title: "Download Complete",
+      description: "Your standardized CSV has been downloaded successfully",
+    });
+  };
+
   // Configure Main Button based on current step
   const getMainButtonConfig = () => {
     switch (step) {
@@ -192,33 +221,6 @@ export default function StandardizeCsvPage() {
     });
   };
 
-  const downloadStandardizedCsv = () => {
-    if (standardizedData.length === 0) return;
-    
-    impactOccurred('light');
-    
-    const csvContent = [
-      EXPECTED_COLUMNS.join(','),
-      ...standardizedData.map(row => 
-        EXPECTED_COLUMNS.map(col => `"${row[col] || ''}"`).join(',')
-      )
-    ].join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `standardized_${uploadedFile?.name || 'inventory'}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-    
-    setStep('download');
-    notificationOccurred('success');
-    toast({
-      title: "Download Complete",
-      description: "Your standardized CSV has been downloaded successfully",
-    });
-  };
 
   const resetProcess = () => {
     setUploadedFile(null);
