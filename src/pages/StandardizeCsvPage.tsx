@@ -373,6 +373,26 @@ export default function StandardizeCsvPage() {
                   )}
                 </CardContent>
               </Card>
+              
+              {/* Download Button */}
+              <div className="flex flex-col gap-3">
+                <Button 
+                  onClick={downloadStandardizedCsv}
+                  className="w-full"
+                  size="lg"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Standardized CSV
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={goBack}
+                  className="w-full"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Mapping
+                </Button>
+              </div>
             </div>
           )}
 
