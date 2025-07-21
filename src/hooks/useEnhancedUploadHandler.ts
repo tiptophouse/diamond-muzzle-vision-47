@@ -111,25 +111,30 @@ export function useEnhancedUploadHandler() {
         const diamondData = enhancedData[i];
         
         try {
-          // Validate required fields
-          if (!diamondData.stock?.trim()) {
-            errors.push(`Row ${i + 1}: Stock Number is required`);
-            continue;
-          }
+          // Validate only mandatory fields: color, cut, clarity, shape, carat (weight)
+          const hasMandatoryFields = 
+            diamondData.color && 
+            diamondData.cut && 
+            diamondData.clarity && 
+            diamondData.shape && 
+            diamondData.weight && 
+            Number(diamondData.weight) > 0;
 
-          if (!diamondData.weight || Number(diamondData.weight) <= 0) {
-            errors.push(`Row ${i + 1}: Valid Carat Weight is required`);
-            continue;
-          }
-
-          if (!diamondData.price_per_carat || Number(diamondData.price_per_carat) <= 0) {
-            errors.push(`Row ${i + 1}: Valid Price Per Carat is required`);
+          if (!hasMandatoryFields) {
+            const missingFields = [];
+            if (!diamondData.color) missingFields.push('color');
+            if (!diamondData.cut) missingFields.push('cut'); 
+            if (!diamondData.clarity) missingFields.push('clarity');
+            if (!diamondData.shape) missingFields.push('shape');
+            if (!diamondData.weight || Number(diamondData.weight) <= 0) missingFields.push('carat/weight');
+            
+            errors.push(`Row ${i + 1}: Missing mandatory fields: ${missingFields.join(', ')}`);
             continue;
           }
 
           // Format diamond for batch API
           const formattedDiamond = {
-            stock: diamondData.stock.trim(),
+            stock: diamondData.stock?.trim() || `AUTO-${Date.now()}-${i}`,
             shape: diamondData.shape === 'Round' ? "round brilliant" : (diamondData.shape?.toLowerCase() || "round brilliant"),
             weight: Number(diamondData.weight),
             color: diamondData.color || "G",
@@ -156,7 +161,7 @@ export function useEnhancedUploadHandler() {
             gridle: diamondData.gridle || "Medium",
             culet: diamondData.culet?.toUpperCase() || "NONE",
             rapnet: diamondData.rapnet && Number(diamondData.rapnet) > 0 ? parseInt(diamondData.rapnet.toString()) : 0,
-            price_per_carat: Number(diamondData.price_per_carat),
+            price_per_carat: diamondData.price_per_carat && Number(diamondData.price_per_carat) > 0 ? Number(diamondData.price_per_carat) : 1000,
             picture: diamondData.picture?.toString().trim() || "",
           };
           

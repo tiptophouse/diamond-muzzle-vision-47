@@ -15,6 +15,8 @@ import NotFound from "./pages/NotFound";
 import ChatPage from "./pages/ChatPage";
 import UploadSingleStonePage from "./pages/UploadSingleStonePage";
 import StandardizeCsvPage from "./pages/StandardizeCsvPage";
+import CsvBulkUploadPage from "./pages/CsvBulkUploadPage";
+import UploadPage from "./pages/UploadPage";
 import InsightsPage from "./pages/InsightsPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import Index from "./pages/Index";
@@ -67,8 +69,9 @@ function App() {
                         <Route path="/store" element={<StorePage />} />
           <Route path="/diamond/:stockNumber" element={<DiamondDetailPage />} />
           <Route path="/secure-diamond/:stockNumber" element={<SecureDiamondPage />} />
-                        <Route path="/upload" element={<UploadSingleStonePage />} />
+                        <Route path="/upload" element={<UploadPage />} />
                         <Route path="/upload-single-stone" element={<UploadSingleStonePage />} />
+                        <Route path="/csv-bulk-upload" element={<CsvBulkUploadPage />} />
                         <Route path="/standardize-csv" element={<StandardizeCsvPage />} />
                         <Route path="/chat" element={<ChatPage />} />
                         <Route path="/insights" element={<InsightsPage />} />
