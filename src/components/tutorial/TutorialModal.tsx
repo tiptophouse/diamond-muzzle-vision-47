@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { X, ChevronLeft, ChevronRight, Sparkles, Globe, Camera, Package, Store, ShoppingBag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { tutorialStepsHebrew } from './tutorialStepsHebrew';
 
 export function TutorialModal() {
   const tutorial = useTutorial();
@@ -45,7 +46,7 @@ export function TutorialModal() {
   const handleNavigateToPage = (path: string) => {
     hapticFeedback.impact('medium');
     navigate(path);
-    nextStep();
+    skipTutorial(); // Complete tutorial when navigating
   };
 
   const handleFinishTutorial = () => {
@@ -97,7 +98,7 @@ export function TutorialModal() {
       {/* Modal - Mobile First Design */}
       <div className="relative bg-background rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-sm sm:max-w-md mx-auto overflow-hidden animate-scale-in border border-border max-h-[90vh] flex flex-col">
         {/* Header - Compact on mobile */}
-        <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-blue-600 px-4 sm:px-6 py-3 sm:py-5 text-white relative flex-shrink-0">
+        <div className="bg-gradient-to-r from-primary via-primary-glow to-primary-dark px-4 sm:px-6 py-3 sm:py-5 text-primary-foreground relative flex-shrink-0">
           <div className="flex items-center justify-between mb-2 sm:mb-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <Sparkles className="h-4 w-4 sm:h-6 sm:w-6" />
@@ -128,7 +129,7 @@ export function TutorialModal() {
             value={progressPercentage} 
             className="h-1.5 sm:h-2 bg-white/20"
           />
-          <div className="absolute -bottom-2 sm:-bottom-3 left-1/2 transform -translate-x-1/2 w-4 h-4 sm:w-6 sm:h-6 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-600 rotate-45 border-r border-b border-background"></div>
+          <div className="absolute -bottom-2 sm:-bottom-3 left-1/2 transform -translate-x-1/2 w-4 h-4 sm:w-6 sm:h-6 bg-gradient-to-r from-primary via-primary-glow to-primary-dark rotate-45 border-r border-b border-background"></div>
         </div>
 
         {/* Content - Scrollable on mobile */}
@@ -148,7 +149,7 @@ export function TutorialModal() {
               <Button
                 onClick={() => handleNavigateToPage('/upload')}
                 size="lg"
-                className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all"
+                className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-primary hover:bg-primary-dark text-primary-foreground flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all shadow-lg hover:shadow-xl"
               >
                 <Camera className="h-5 w-5 sm:h-6 sm:w-6" />
                 <span>
@@ -175,7 +176,7 @@ export function TutorialModal() {
               <Button
                 onClick={() => handleNavigateToPage('/inventory')}
                 size="lg"
-                className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all"
+                className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-primary hover:bg-primary-dark text-primary-foreground flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all shadow-lg hover:shadow-xl"
               >
                 <Package className="h-5 w-5 sm:h-6 sm:w-6" />
                 <span>
@@ -196,7 +197,7 @@ export function TutorialModal() {
               <Button
                 onClick={() => handleNavigateToPage('/store')}
                 size="lg"
-                className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all"
+                className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-primary hover:bg-primary-dark text-primary-foreground flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all shadow-lg hover:shadow-xl"
               >
                 <Store className="h-5 w-5 sm:h-6 sm:w-6" />
                 <span>
@@ -229,7 +230,7 @@ export function TutorialModal() {
             <Button
               onClick={isLastStep ? handleFinishTutorial : handleNext}
               size="lg"
-              className={`w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all ${currentLanguage === 'he' ? 'flex-row-reverse' : ''}`}
+              className={`w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-primary hover:bg-primary-dark text-primary-foreground flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all shadow-lg hover:shadow-xl ${currentLanguage === 'he' ? 'flex-row-reverse' : ''}`}
             >
               {currentLanguage === 'he' ? (
                 <>
