@@ -88,15 +88,16 @@ export default function CsvBulkUploadPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <Badge variant="secondary">color (צבע)</Badge>
-              <Badge variant="secondary">cut (חיתוך)</Badge>
-              <Badge variant="secondary">clarity (ניקיון)</Badge>
-              <Badge variant="secondary">shape (צורה)</Badge>
-              <Badge variant="secondary">weight/carat (קרט)</Badge>
+            <div className="grid grid-cols-3 gap-2 text-xs">
+              <Badge variant="secondary">Shape</Badge>
+              <Badge variant="secondary">Weight</Badge>
+              <Badge variant="secondary">Color</Badge>
+              <Badge variant="secondary">Clarity</Badge>
+              <Badge variant="secondary">Cut</Badge>
+              <Badge variant="secondary">Fluorescence</Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              שדות נוספים זמינים: stock, lab, certificate_number, price_per_carat, ועוד
+              שדות אופציונליים: Stock#, Lab, CertNumber, Price/Crt, ועוד
             </p>
           </CardContent>
         </Card>
@@ -263,9 +264,9 @@ export default function CsvBulkUploadPage() {
           <CardContent className="p-4">
             <h3 className="text-sm font-medium mb-2">עצות להעלאה מוצלחת:</h3>
             <ul className="text-xs text-muted-foreground space-y-1">
-              <li>• וודא שהקובץ מכיל את השדות החובה: צבע, חיתוך, ניקיון, צורה, קרט</li>
+              <li>• וודא שהקובץ מכיל את השדות החובה: Shape, Weight, Color, Clarity, Cut, Fluorescence</li>
               <li>• שדות חסרים יושלמו אוטומטית על ידי הבינה המלאכותית</li>
-              <li>• יהלומים ללא הערכים הבסיסיים עדיין יועלו אם יש להם את השדות החובה</li>
+              <li>• שורות ללא השדות החובה יידלגו ולא יועלו</li>
               <li>• תמיכה בפורמטים שונים של CSV</li>
             </ul>
           </CardContent>

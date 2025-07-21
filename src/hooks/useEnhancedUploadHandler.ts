@@ -111,25 +111,28 @@ export function useEnhancedUploadHandler() {
         const diamondData = enhancedData[i];
         
         try {
-          // Validate only mandatory fields: color, cut, clarity, shape, carat (weight)
-          const hasMandatoryFields = 
-            diamondData.color && 
-            diamondData.cut && 
-            diamondData.clarity && 
-            diamondData.shape && 
-            diamondData.weight && 
-            Number(diamondData.weight) > 0;
+          // Check ONLY mandatory fields: Shape, Weight, Color, Clarity, Cut, Fluorescence
+          const mandatoryFields = {
+            shape: diamondData.shape,
+            weight: diamondData.weight,
+            color: diamondData.color,
+            clarity: diamondData.clarity,
+            cut: diamondData.cut,
+            fluorescence: diamondData.fluorescence
+          };
 
-          if (!hasMandatoryFields) {
-            const missingFields = [];
-            if (!diamondData.color) missingFields.push('color');
-            if (!diamondData.cut) missingFields.push('cut'); 
-            if (!diamondData.clarity) missingFields.push('clarity');
-            if (!diamondData.shape) missingFields.push('shape');
-            if (!diamondData.weight || Number(diamondData.weight) <= 0) missingFields.push('carat/weight');
-            
-            errors.push(`Row ${i + 1}: Missing mandatory fields: ${missingFields.join(', ')}`);
-            continue;
+          const missingMandatory = [];
+          if (!mandatoryFields.shape) missingMandatory.push('Shape');
+          if (!mandatoryFields.weight || Number(mandatoryFields.weight) <= 0) missingMandatory.push('Weight');
+          if (!mandatoryFields.color) missingMandatory.push('Color');
+          if (!mandatoryFields.clarity) missingMandatory.push('Clarity');
+          if (!mandatoryFields.cut) missingMandatory.push('Cut');
+          if (!mandatoryFields.fluorescence) missingMandatory.push('Fluorescence');
+
+          // If ANY mandatory field is missing, skip this entire row
+          if (missingMandatory.length > 0) {
+            console.log(`⚠️ Skipping row ${i + 1}: Missing mandatory fields: ${missingMandatory.join(', ')}`);
+            continue; // Skip this row, don't add to errors
           }
 
           // Format diamond for batch API
