@@ -8,14 +8,14 @@ const REQUIRED_FIELDS = ['shape', 'weight', 'color', 'clarity', 'cut', 'fluoresc
 
 // Enhanced shape aliases from your backend
 const SHAPE_ALIASES = {
-  "RB": "round brilliant", "PC": "princess", "PR": "princess", "CC": "cushion", "CU": "cushion",
-  "OC": "oval", "OV": "oval", "EC": "emerald", "EM": "emerald", "PS": "pear", "MC": "marquise",
+  "RB": "round brilliant", "PC": "princess", "PR": "princess", "PS": "princess", "CC": "cushion", "CU": "cushion",
+  "OC": "oval", "OV": "oval", "EC": "emerald", "EM": "emerald", "PE": "pear", "PS2": "pear", "MC": "marquise",
   "MQ": "marquise", "AC": "asscher", "AS": "asscher", "RC": "radiant", "RD": "radiant", "RA": "radiant",
   "HC": "heart", "HT": "heart", "HS": "heart", "BC": "baguette", "BG": "baguette",
   "OEC": "old european", "RS": "rose", "BR": "round brilliant", "TBC": "tapered baguette",
   "BUC": "bullet", "BU": "bullet", "KC": "kite", "HMC": "half moons", "HM": "half moons",
   "TC": "trillion", "TR": "trillion", "SC": "shield", "HXC": "hexagonal", "OM": "old mine",
-  "HH": "horse head", "AF": "asscher", "PE": "pear", "HD": "horse head",
+  "HH": "horse head", "AF": "asscher", "HD": "horse head",
   "עגול": "round brilliant", "עגולות": "round brilliant", "מרקיזה": "marquise", "מרקיזות": "marquise",
   "קושן": "cushion", "קושנים": "cushion", "אובל": "oval", "אובלים": "oval",
   "אמרלד": "emerald", "אמרלדים": "emerald", "טיפה": "pear", "רדיאנים": "radiant", "משולשת": "trillion"
