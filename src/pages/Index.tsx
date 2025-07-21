@@ -103,7 +103,7 @@ const Index = () => {
     return <Navigate to="/admin" replace />;
   }
 
-  // For regular users, redirect to upload page for GIA certificate scanning
+  // For regular users, redirect to upload page for immediate diamond upload
   if (isAuthenticated && user) {
     console.log('✅ Regular user detected - redirecting to upload page');
     redirectHandledRef.current = true;
