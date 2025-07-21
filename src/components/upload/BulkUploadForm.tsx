@@ -1,0 +1,132 @@
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
+import { useTelegramMainButton } from "@/hooks/useTelegramMainButton";
+import { BulkFileUploadArea } from "./BulkFileUploadArea";
+import { CsvValidationResults } from "./CsvValidationResults";
+import { BulkUploadProgress } from "./BulkUploadProgress";
+import { useBulkCsvProcessor } from "@/hooks/useBulkCsvProcessor";
+
+export function BulkUploadForm() {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
+  const { hapticFeedback } = useTelegramWebApp();
+  const { processedData, validationResults, processFile, resetProcessor } = useBulkCsvProcessor();
+
+  // Configure Telegram Main Button for upload
+  useTelegramMainButton({
+    text: processedData ? `Upload ${processedData.validRows.length} Diamonds` : "Select CSV File",
+    isVisible: !!selectedFile,
+    isEnabled: !!processedData && processedData.validRows.length > 0 && !isProcessing,
+    color: "#0088cc",
+    onClick: handleBulkUpload
+  });
+
+  async function handleFileChange(file: File | null) {
+    if (!file) {
+      setSelectedFile(null);
+      resetProcessor();
+      return;
+    }
+
+    setSelectedFile(file);
+    setIsProcessing(true);
+    hapticFeedback.impactOccurred('light');
+
+    try {
+      await processFile(file);
+      hapticFeedback.notificationOccurred('success');
+      toast({
+        title: "File Processed",
+        description: "CSV file has been analyzed and validated",
+      });
+    } catch (error) {
+      hapticFeedback.notificationOccurred('error');
+      toast({
+        title: "Processing Failed",
+        description: error instanceof Error ? error.message : "Failed to process CSV file",
+        variant: "destructive",
+      });
+      setSelectedFile(null);
+    } finally {
+      setIsProcessing(false);
+    }
+  }
+
+  async function handleBulkUpload() {
+    if (!processedData?.validRows.length) return;
+
+    setIsProcessing(true);
+    hapticFeedback.impactOccurred('heavy');
+
+    try {
+      // TODO: Phase 2 - Connect to FastAPI /diamonds/batch endpoint
+      console.log('📤 Would upload diamonds:', processedData.validRows);
+      
+      hapticFeedback.notificationOccurred('success');
+      toast({
+        title: "Upload Successful!",
+        description: `Successfully processed ${processedData.validRows.length} diamonds`,
+      });
+      
+      // Reset form
+      setSelectedFile(null);
+      resetProcessor();
+    } catch (error) {
+      hapticFeedback.notificationOccurred('error');
+      toast({
+        title: "Upload Failed",
+        description: error instanceof Error ? error.message : "Failed to upload diamonds",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  }
+
+  const resetForm = () => {
+    setSelectedFile(null);
+    resetProcessor();
+    hapticFeedback.selectionChanged();
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* File Upload Area */}
+      <BulkFileUploadArea
+        selectedFile={selectedFile}
+        onFileChange={handleFileChange}
+        onReset={resetForm}
+        isProcessing={isProcessing}
+      />
+
+      {/* Processing Progress */}
+      {isProcessing && <BulkUploadProgress />}
+
+      {/* Validation Results */}
+      {validationResults && !isProcessing && (
+        <CsvValidationResults results={validationResults} />
+      )}
+
+      {/* Desktop Upload Button (Mobile uses Telegram Main Button) */}
+      {processedData && !isProcessing && (
+        <Card className="sm:block hidden">
+          <CardContent className="pt-6">
+            <Button
+              onClick={handleBulkUpload}
+              disabled={processedData.validRows.length === 0}
+              className="w-full"
+              size="lg"
+            >
+              Upload {processedData.validRows.length} Diamonds
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

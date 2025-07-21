@@ -1,4 +1,3 @@
-
 import { TelegramLayout } from "@/components/layout/TelegramLayout";
 import { UploadForm } from "@/components/upload/UploadForm";
 import { Button } from "@/components/ui/button";
@@ -155,7 +154,17 @@ export default function UploadPage() {
             </p>
           </CardHeader>
           <CardContent>
-            <UploadForm />
+            <Link to="/upload/bulk">
+              <Button
+                onClick={() => hapticFeedback.impact('medium')}
+                variant="outline"
+                size="lg"
+                className="w-full"
+              >
+                <FileText className="h-5 w-5 mr-2" />
+                {t.bulkUpload}
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       </div>
