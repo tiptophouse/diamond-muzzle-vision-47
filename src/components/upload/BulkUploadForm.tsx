@@ -35,17 +35,17 @@ export function BulkUploadForm() {
 
     setSelectedFile(file);
     setIsProcessing(true);
-    hapticFeedback.impactOccurred('light');
+    hapticFeedback.impact('light');
 
     try {
       await processFile(file);
-      hapticFeedback.notificationOccurred('success');
+      hapticFeedback.notification('success');
       toast({
         title: "File Processed",
         description: "CSV file has been analyzed and validated",
       });
     } catch (error) {
-      hapticFeedback.notificationOccurred('error');
+      hapticFeedback.notification('error');
       toast({
         title: "Processing Failed",
         description: error instanceof Error ? error.message : "Failed to process CSV file",
@@ -61,13 +61,13 @@ export function BulkUploadForm() {
     if (!processedData?.validRows.length) return;
 
     setIsProcessing(true);
-    hapticFeedback.impactOccurred('heavy');
+    hapticFeedback.impact('heavy');
 
     try {
       // TODO: Phase 2 - Connect to FastAPI /diamonds/batch endpoint
       console.log('📤 Would upload diamonds:', processedData.validRows);
       
-      hapticFeedback.notificationOccurred('success');
+      hapticFeedback.notification('success');
       toast({
         title: "Upload Successful!",
         description: `Successfully processed ${processedData.validRows.length} diamonds`,
@@ -77,7 +77,7 @@ export function BulkUploadForm() {
       setSelectedFile(null);
       resetProcessor();
     } catch (error) {
-      hapticFeedback.notificationOccurred('error');
+      hapticFeedback.notification('error');
       toast({
         title: "Upload Failed",
         description: error instanceof Error ? error.message : "Failed to upload diamonds",
@@ -91,7 +91,7 @@ export function BulkUploadForm() {
   const resetForm = () => {
     setSelectedFile(null);
     resetProcessor();
-    hapticFeedback.selectionChanged();
+    hapticFeedback.selection();
   };
 
   return (
