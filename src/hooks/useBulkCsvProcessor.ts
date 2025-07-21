@@ -27,6 +27,30 @@ const VALID_CLARITIES = ["FL", "IF", "VVS1", "VVS2", "VS1", "VS2", "SI1", "SI2",
 const VALID_CUTS = ['EXCELLENT', 'VERY GOOD', 'GOOD', 'FAIR', 'POOR'];
 const VALID_FLUORESCENCE = ['NONE', 'FAINT', 'MEDIUM', 'STRONG', 'VERY STRONG'];
 
+// Cut grade aliases
+const CUT_ALIASES = {
+  "EX": "EXCELLENT",
+  "XE": "EXCELLENT", 
+  "VG": "VERY GOOD",
+  "G": "GOOD",
+  "F": "FAIR",
+  "P": "POOR"
+};
+
+// Fluorescence aliases
+const FLUORESCENCE_ALIASES = {
+  "NON": "NONE",
+  "N": "NONE",
+  "FA": "FAINT",
+  "F": "FAINT",
+  "M": "MEDIUM",
+  "MED": "MEDIUM",
+  "S": "STRONG",
+  "STR": "STRONG",
+  "VS": "VERY STRONG",
+  "VST": "VERY STRONG"
+};
+
 // Field mapping patterns for intelligent column detection
 const FIELD_MAPPINGS = {
   shape: ['shape', 'cut_shape', 'diamond_shape', 'form', 'צורה'],
@@ -186,20 +210,40 @@ export function useBulkCsvProcessor() {
 
       case 'cut':
         const cutUpper = cleanValue.toUpperCase();
-        const isValidCut = VALID_CUTS.includes(cutUpper);
+        // Check direct cut match first
+        let validCut = VALID_CUTS.find(c => c === cutUpper);
+        
+        // If not found, check aliases
+        if (!validCut) {
+          const aliasKey = Object.keys(CUT_ALIASES).find(key => key === cutUpper);
+          if (aliasKey) {
+            validCut = CUT_ALIASES[aliasKey as keyof typeof CUT_ALIASES];
+          }
+        }
+        
         return {
-          isValid: isValidCut,
-          normalizedValue: isValidCut ? cutUpper : 'EXCELLENT',
-          error: !isValidCut ? `Invalid cut: ${cleanValue}` : undefined
+          isValid: !!validCut,
+          normalizedValue: validCut || 'EXCELLENT',
+          error: !validCut ? `Invalid cut: ${cleanValue}. Use: ${VALID_CUTS.join(', ')} or aliases: ${Object.keys(CUT_ALIASES).join(', ')}` : undefined
         };
 
       case 'fluorescence':
         const fluorUpper = cleanValue.toUpperCase();
-        const isValidFluor = VALID_FLUORESCENCE.includes(fluorUpper);
+        // Check direct fluorescence match first
+        let validFluor = VALID_FLUORESCENCE.find(f => f === fluorUpper);
+        
+        // If not found, check aliases
+        if (!validFluor) {
+          const aliasKey = Object.keys(FLUORESCENCE_ALIASES).find(key => key === fluorUpper);
+          if (aliasKey) {
+            validFluor = FLUORESCENCE_ALIASES[aliasKey as keyof typeof FLUORESCENCE_ALIASES];
+          }
+        }
+        
         return {
-          isValid: isValidFluor,
-          normalizedValue: isValidFluor ? fluorUpper : 'NONE',
-          error: !isValidFluor ? `Invalid fluorescence: ${cleanValue}` : undefined
+          isValid: !!validFluor,
+          normalizedValue: validFluor || 'NONE',
+          error: !validFluor ? `Invalid fluorescence: ${cleanValue}. Use: ${VALID_FLUORESCENCE.join(', ')} or aliases: ${Object.keys(FLUORESCENCE_ALIASES).join(', ')}` : undefined
         };
 
       default:
