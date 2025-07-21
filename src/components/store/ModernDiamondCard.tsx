@@ -117,7 +117,7 @@ export function ModernDiamondCard({
             <div className="relative z-10">
               
               <div className="mt-2 text-center">
-                
+                <p className="text-xs font-medium text-gray-600">Premium Diamond</p>
               </div>
             </div>
           </div>)}

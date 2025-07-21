@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { ThreeDViewer } from "./ThreeDViewer";
 
 interface DiamondCardProps {
   diamond: Diamond;
@@ -46,19 +47,17 @@ export function DiamondCard({ diamond, index }: DiamondCardProps) {
       style={{ animationDelay: `${index * 100}ms` }}
     >
       {/* Image Container */}
-      <div className="relative h-48 bg-gradient-to-br from-slate-50 to-slate-100 rounded-t-xl overflow-hidden">
+      <div className="relative h-48 bg-gradient-to-br from-primary/5 to-primary-glow/10 rounded-t-xl overflow-hidden">
         {diamond.imageUrl && !imageError ? (
-          <img
-            src={diamond.imageUrl}
-            alt={`Diamond ${diamond.stockNumber}`}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={() => setImageError(true)}
+          <ThreeDViewer 
+            imageUrl={diamond.imageUrl}
+            stockNumber={diamond.stockNumber}
           />
         ) : (
           <div className="flex items-center justify-center h-full">
             <div className="relative">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
-                <Gem className="h-8 w-8 text-white" />
+              <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-glow rounded-full flex items-center justify-center shadow-lg">
+                <Gem className="h-8 w-8 text-primary-foreground" />
               </div>
               <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
                 <div className="w-2 h-2 bg-white rounded-full"></div>
@@ -119,7 +118,7 @@ export function DiamondCard({ diamond, index }: DiamondCardProps) {
         {/* Contact Button */}
         <Button 
           onClick={handleContactOwner}
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+          className="w-full bg-gradient-to-r from-primary to-primary-glow hover:from-primary-dark hover:to-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300"
         >
           <MessageCircle className="h-4 w-4 mr-2" />
           Contact Owner

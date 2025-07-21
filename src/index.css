@@ -14,7 +14,7 @@
   height: env(safe-area-inset-bottom, 0px);
 }
 
-/* Prevent text overflow in buttons */
+/* Prevent text overflow in buttons and UI elements */
 .btn-text-fit {
   @apply text-ellipsis overflow-hidden whitespace-nowrap;
 }
@@ -22,6 +22,22 @@
 /* Responsive font sizes that prevent text cutoff */
 .text-responsive {
   font-size: clamp(0.75rem, 2.5vw, 1rem);
+}
+
+/* Touch target optimization for mobile */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* $10M Startup Quality Animations */
+.startup-quality {
+  @apply transform transition-all duration-300 hover:scale-105 active:scale-95;
+}
+
+/* Premium text that fits containers */
+.premium-text-fit {
+  @apply text-ellipsis overflow-hidden whitespace-nowrap text-xs sm:text-sm md:text-base;
 }
 
 /* Telegram Mini App specific styles */
@@ -56,19 +72,19 @@
 
 @layer base {
   :root {
-    /* Modern Diamond-Themed Color System */
-    --background: 240 10% 98%;
-    --foreground: 240 10% 8%;
+    /* Bright Store-Optimized Color System */
+    --background: 210 100% 98%;
+    --foreground: 220 15% 15%;
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 8%;
+    --card-foreground: 220 15% 15%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 8%;
+    --popover-foreground: 220 15% 15%;
     
-    /* Premium Diamond Blue Palette */
-    --primary: 220 85% 55%;
+    /* Vibrant Diamond Palette */
+    --primary: 210 100% 60%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 220 100% 70%;
-    --primary-dark: 220 85% 45%;
+    --primary-glow: 210 100% 75%;
+    --primary-dark: 210 90% 50%;
     
     /* Elegant Secondary Colors */
     --secondary: 240 8% 96%;
@@ -92,12 +108,12 @@
     --ring: 220 85% 55%;
     --radius: 0.75rem;
     
-    /* E-commerce Theme Colors */
-    --store-bg: 248 250 252; /* slate-50 */
-    --store-card: 255 255 255; /* white */
-    --store-border: 226 232 240; /* slate-200 */
-    --store-muted: 241 245 249; /* slate-100 */
-    --store-accent: 59 130 246; /* blue-500 */
+    /* Bright Store Theme Colors */
+    --store-bg: 200 100% 97%; /* bright cyan-50 */
+    --store-card: 0 0% 100%; /* white */
+    --store-border: 200 85% 85%; /* cyan-200 */
+    --store-muted: 200 90% 95%; /* cyan-100 */
+    --store-accent: 210 100% 60%; /* bright blue */
     --store-success: 34 197 94; /* green-500 */
     --store-warning: 245 158 11; /* amber-500 */
 

@@ -48,29 +48,20 @@ export default function UploadPage() {
         </Card>
 
         {/* Bulk Upload Card */}
-        <Card className="border-primary/30 bg-gradient-to-br from-primary/5 via-primary/3 to-primary/8 hover:border-primary/40 transition-all duration-300">
+        <Card className="hover:shadow-lg transition-all duration-300">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-4 text-primary">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/20 shadow-md">
+            <CardTitle className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-muted to-muted/80 shadow-md">
                 <FileText className="h-6 w-6" />
               </div>
               Bulk CSV Upload
             </CardTitle>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Upload multiple diamonds at once using a CSV file with smart field mapping
+              Upload multiple diamonds at once using a CSV file
             </p>
           </CardHeader>
           <CardContent>
-            <Link to="/csv-bulk-upload">
-              <Button
-                variant="diamond"
-                size="lg"
-                className="w-full"
-              >
-                <FileText className="h-5 w-5 mr-2" />
-                Upload CSV File
-              </Button>
-            </Link>
+            <UploadForm />
           </CardContent>
         </Card>
       </div>

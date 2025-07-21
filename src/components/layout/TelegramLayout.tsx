@@ -232,7 +232,7 @@ export function TelegramLayout({
 
       {/* Bottom tab navigation */}
       <nav className="flex items-center justify-center bg-background/95 backdrop-blur-sm border-t border-border/50 pb-safe shrink-0 w-full">
-        <div className="flex items-center justify-around w-full max-w-lg px-2 py-[5px]">
+        <div className="flex items-center justify-around w-full max-w-lg px-2 py-[2px]">
           {availableTabs.map(tab => {
           const Icon = tab.icon;
           const isActive = isActiveTab(tab.path);

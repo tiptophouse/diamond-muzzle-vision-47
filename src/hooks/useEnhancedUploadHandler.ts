@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { api, apiEndpoints } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { useTelegramHapticFeedback } from './useTelegramHapticFeedback';
 import { useInventoryDataSync } from './inventory/useInventoryDataSync';
 import { useIntelligentCsvProcessor } from './useIntelligentCsvProcessor';
 import { useOpenAICsvEnhancer } from './useOpenAICsvEnhancer';
@@ -24,7 +23,6 @@ export function useEnhancedUploadHandler() {
   const [result, setResult] = useState<UploadResult | null>(null);
   const { toast } = useToast();
   const { user } = useTelegramAuth();
-  const { notificationOccurred } = useTelegramHapticFeedback();
   const { triggerInventoryChange } = useInventoryDataSync();
   const { processIntelligentCsv } = useIntelligentCsvProcessor();
   const { enhanceDataWithOpenAI } = useOpenAICsvEnhancer();
@@ -113,54 +111,52 @@ export function useEnhancedUploadHandler() {
         const diamondData = enhancedData[i];
         
         try {
-          // Check ONLY mandatory fields: Shape, Weight, Color, Clarity, Cut, Fluorescence
-          const mandatoryFields = {
-            shape: diamondData.shape,
-            weight: diamondData.weight,
-            color: diamondData.color,
-            clarity: diamondData.clarity,
-            cut: diamondData.cut,
-            fluorescence: diamondData.fluorescence
-          };
-
-          const missingMandatory = [];
-          if (!mandatoryFields.shape) missingMandatory.push('Shape');
-          if (!mandatoryFields.weight || Number(mandatoryFields.weight) <= 0) missingMandatory.push('Weight');
-          if (!mandatoryFields.color) missingMandatory.push('Color');
-          if (!mandatoryFields.clarity) missingMandatory.push('Clarity');
-          if (!mandatoryFields.cut) missingMandatory.push('Cut');
-          if (!mandatoryFields.fluorescence) missingMandatory.push('Fluorescence');
-
-          // If ANY mandatory field is missing, skip this entire row
-          if (missingMandatory.length > 0) {
-            console.log(`⚠️ Skipping row ${i + 1}: Missing mandatory fields: ${missingMandatory.join(', ')}`);
-            continue; // Skip this row, don't add to errors
+          // Validate required fields
+          if (!diamondData.stock?.trim()) {
+            errors.push(`Row ${i + 1}: Stock Number is required`);
+            continue;
           }
 
-          // Format diamond for batch API - no default values, leave empty if missing
+          if (!diamondData.weight || Number(diamondData.weight) <= 0) {
+            errors.push(`Row ${i + 1}: Valid Carat Weight is required`);
+            continue;
+          }
+
+          if (!diamondData.price_per_carat || Number(diamondData.price_per_carat) <= 0) {
+            errors.push(`Row ${i + 1}: Valid Price Per Carat is required`);
+            continue;
+          }
+
+          // Format diamond for batch API
           const formattedDiamond = {
-            stock: diamondData.stock?.trim() || `AUTO-${Date.now()}-${i}`,
-            shape: diamondData.shape === 'Round' ? "round brilliant" : diamondData.shape?.toLowerCase(),
+            stock: diamondData.stock.trim(),
+            shape: diamondData.shape === 'Round' ? "round brilliant" : (diamondData.shape?.toLowerCase() || "round brilliant"),
             weight: Number(diamondData.weight),
-            color: diamondData.color,
-            clarity: diamondData.clarity,
-            lab: diamondData.lab || "",
+            color: diamondData.color || "G",
+            clarity: diamondData.clarity || "VS1",
+            lab: diamondData.lab || "GIA",
             certificate_number: processCertificateNumber(diamondData.certificate_number),
             certificate_comment: diamondData.certificate_comment?.toString().trim() || "",
-            length: diamondData.length && Number(diamondData.length) > 0 ? Number(diamondData.length) : null,
-            width: diamondData.width && Number(diamondData.width) > 0 ? Number(diamondData.width) : null,
-            depth: diamondData.depth && Number(diamondData.depth) > 0 ? Number(diamondData.depth) : null,
-            ratio: diamondData.ratio && Number(diamondData.ratio) > 0 ? Number(diamondData.ratio) : null,
+            length: diamondData.length && Number(diamondData.length) > 0 
+              ? Number(diamondData.length) 
+              : Math.round((Number(diamondData.weight) * 6.5) * 100) / 100,
+            width: diamondData.width && Number(diamondData.width) > 0 
+              ? Number(diamondData.width) 
+              : Math.round((Number(diamondData.weight) * 6.5) * 100) / 100,
+            depth: diamondData.depth && Number(diamondData.depth) > 0 
+              ? Number(diamondData.depth) 
+              : Math.round((Number(diamondData.weight) * 4.0) * 100) / 100,
+            ratio: validateRatio(diamondData.ratio),
             cut: mapToApiEnum(diamondData.cut),
-            polish: diamondData.polish ? mapToApiEnum(diamondData.polish) : "",
-            symmetry: diamondData.symmetry ? mapToApiEnum(diamondData.symmetry) : "",
-            fluorescence: diamondData.fluorescence?.toUpperCase(),
-            table: diamondData.table && Number(diamondData.table) > 0 ? Number(diamondData.table) : null,
-            depth_percentage: diamondData.depth_percentage && Number(diamondData.depth_percentage) > 0 ? Number(diamondData.depth_percentage) : null,
-            gridle: diamondData.gridle || "",
-            culet: diamondData.culet?.toUpperCase() || "",
-            rapnet: diamondData.rapnet && Number(diamondData.rapnet) !== 0 ? parseInt(diamondData.rapnet.toString()) : 0,
-            price_per_carat: diamondData.price_per_carat && Number(diamondData.price_per_carat) > 0 ? Number(diamondData.price_per_carat) : null,
+            polish: mapToApiEnum(diamondData.polish),
+            symmetry: mapToApiEnum(diamondData.symmetry),
+            fluorescence: diamondData.fluorescence?.toUpperCase() || "NONE",
+            table: diamondData.table && Number(diamondData.table) > 0 ? Number(diamondData.table) : 60,
+            depth_percentage: diamondData.depth_percentage && Number(diamondData.depth_percentage) > 0 ? Number(diamondData.depth_percentage) : 62,
+            gridle: diamondData.gridle || "Medium",
+            culet: diamondData.culet?.toUpperCase() || "NONE",
+            rapnet: diamondData.rapnet && Number(diamondData.rapnet) > 0 ? parseInt(diamondData.rapnet.toString()) : 0,
+            price_per_carat: Number(diamondData.price_per_carat),
             picture: diamondData.picture?.toString().trim() || "",
           };
           
@@ -179,13 +175,7 @@ export function useEnhancedUploadHandler() {
       if (validDiamonds.length > 0) {
         try {
           console.log(`📤 Uploading ${validDiamonds.length} diamonds in batch...`);
-          console.log('📤 Using exact curl format - diamonds array in payload');
           const batchPayload = { diamonds: validDiamonds };
-          
-          console.log('📤 API endpoint:', apiEndpoints.addDiamondsBatch(user.id));
-          console.log('📤 Sample payload structure:', {
-            diamonds: validDiamonds.slice(0, 1) // Show first diamond only
-          });
           
           const response = await api.post(apiEndpoints.addDiamondsBatch(user.id), batchPayload);
           
@@ -229,15 +219,13 @@ export function useEnhancedUploadHandler() {
         }, 2000);
       }
       
-      // Show immediate toast message with haptic feedback
+      // Show immediate toast message
       if (successCount > 0) {
-        notificationOccurred('success');
         toast({
           title: "🎉 Upload Complete!",
           description: `${successCount} diamonds uploaded successfully${errors.length > 0 ? `, ${errors.length} failed` : ''}`,
         });
       } else {
-        notificationOccurred('error');
         toast({
           title: "❌ Upload Failed",
           description: `All ${enhancedData.length} diamonds failed. Check detailed errors below.`,
@@ -269,7 +257,6 @@ export function useEnhancedUploadHandler() {
       
       setResult(errorResult);
       
-      notificationOccurred('error');
       toast({
         title: "❌ Upload Failed",
         description: errorMessage.length > 50 ? errorMessage.substring(0, 50) + "..." : errorMessage,

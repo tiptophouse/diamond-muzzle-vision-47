@@ -95,7 +95,7 @@ export default function StorePage() {
 
   return (
     <MobilePullToRefresh onRefresh={handleRefresh} enabled={!loading}>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-purple-50">
         <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-6 pb-safe">
           {/* Header with Upload Button and Filters */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -110,12 +110,12 @@ export default function StorePage() {
                 <DialogTrigger asChild>
                   <Button 
                     variant="outline" 
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 touch-target min-h-[44px] border-blue-200 text-blue-600 hover:bg-blue-50"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 touch-target min-h-[44px] border-primary/30 text-primary hover:bg-primary/10 hover:border-primary"
                   >
                     <Filter className="h-4 w-4" />
                     <span>Filters</span>
                     {(filters.shapes?.length || 0) + (filters.colors?.length || 0) + (filters.clarities?.length || 0) > 0 && (
-                      <span className="bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      <span className="bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
                         {(filters.shapes?.length || 0) + (filters.colors?.length || 0) + (filters.clarities?.length || 0)}
                       </span>
                     )}
@@ -141,7 +141,7 @@ export default function StorePage() {
 
               <Dialog open={showUpload} onOpenChange={setShowUpload}>
                 <DialogTrigger asChild>
-                  <Button className="flex-1 sm:flex-none flex items-center justify-center gap-2 touch-target min-h-[44px] bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                  <Button className="flex-1 sm:flex-none flex items-center justify-center gap-2 touch-target min-h-[44px] bg-gradient-to-r from-primary to-primary-glow hover:from-primary-dark hover:to-primary shadow-lg hover:shadow-xl">
                     <Upload className="h-4 w-4" />
                     <span className="hidden sm:inline">Upload Photo</span>
                     <span className="sm:hidden">Upload</span>
