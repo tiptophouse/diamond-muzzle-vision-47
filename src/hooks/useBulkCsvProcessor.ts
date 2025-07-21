@@ -131,14 +131,14 @@ export function useBulkCsvProcessor() {
 
       for (const [standardField, variations] of Object.entries(FIELD_MAPPINGS)) {
         const { match, confidence } = fuzzyMatch(header, variations);
-        if (confidence > bestConfidence && confidence >= 0.6) {
+        if (confidence > bestConfidence && confidence >= 0.3) {
           bestConfidence = confidence;
           bestMapping = match;
           bestField = standardField;
         }
       }
 
-      if (bestMapping && bestConfidence >= 0.6) {
+      if (bestMapping && bestConfidence >= 0.3) {
         mappings.push({
           csvHeader: header,
           mappedTo: bestField,
@@ -314,13 +314,14 @@ export function useBulkCsvProcessor() {
         let hasAllRequired = true;
         let rowErrors: string[] = [];
 
-        // Map and validate each field
+        // Map and validate each field  
         for (const mapping of mappings) {
           const value = row[mapping.csvHeader];
           const { isValid, normalizedValue, error } = validateValue(value, mapping.mappedTo);
           
           processedRow[mapping.mappedTo] = normalizedValue;
           
+          // Only fail if it's a required field AND has invalid data
           if (!isValid && REQUIRED_FIELDS.includes(mapping.mappedTo)) {
             hasAllRequired = false;
             const errorMsg = `${mapping.mappedTo}: ${error}`;
@@ -331,6 +332,14 @@ export function useBulkCsvProcessor() {
               value: value || '',
               reason: error || 'Invalid value'
             });
+          }
+        }
+        
+        // Check if we have all required fields with valid data
+        for (const requiredField of REQUIRED_FIELDS) {
+          if (!processedRow[requiredField]) {
+            hasAllRequired = false;
+            rowErrors.push(`Missing required field: ${requiredField}`);
           }
         }
 
