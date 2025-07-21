@@ -75,12 +75,12 @@ const NotificationsPage = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="relative flex-shrink-0 w-10 h-10 flex items-center justify-center">
-              <Bell className="h-7 w-7 text-primary" />
+            <div className="relative flex-shrink-0">
+              <Bell className="h-8 w-8 text-blue-600" />
               {unreadCount > 0 && (
                 <Badge 
                   variant="destructive" 
-                  className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center text-xs p-0 min-w-[16px]"
+                  className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center text-xs p-0"
                 >
                   {unreadCount}
                 </Badge>

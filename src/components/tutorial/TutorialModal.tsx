@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { X, ChevronLeft, ChevronRight, Sparkles, Globe, Camera, Package, Store, ShoppingBag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { tutorialStepsHebrew } from './tutorialStepsHebrew';
 
 export function TutorialModal() {
   const tutorial = useTutorial();
@@ -46,7 +45,7 @@ export function TutorialModal() {
   const handleNavigateToPage = (path: string) => {
     hapticFeedback.impact('medium');
     navigate(path);
-    skipTutorial(); // Complete tutorial when navigating
+    nextStep();
   };
 
   const handleFinishTutorial = () => {
@@ -98,7 +97,7 @@ export function TutorialModal() {
       {/* Modal - Mobile First Design */}
       <div className="relative bg-background rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-sm sm:max-w-md mx-auto overflow-hidden animate-scale-in border border-border max-h-[90vh] flex flex-col">
         {/* Header - Compact on mobile */}
-        <div className="bg-gradient-to-r from-primary via-primary-glow to-primary-dark px-4 sm:px-6 py-3 sm:py-5 text-primary-foreground relative flex-shrink-0">
+        <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-blue-600 px-4 sm:px-6 py-3 sm:py-5 text-white relative flex-shrink-0">
           <div className="flex items-center justify-between mb-2 sm:mb-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <Sparkles className="h-4 w-4 sm:h-6 sm:w-6" />
@@ -129,7 +128,7 @@ export function TutorialModal() {
             value={progressPercentage} 
             className="h-1.5 sm:h-2 bg-white/20"
           />
-          <div className="absolute -bottom-2 sm:-bottom-3 left-1/2 transform -translate-x-1/2 w-4 h-4 sm:w-6 sm:h-6 bg-gradient-to-r from-primary via-primary-glow to-primary-dark rotate-45 border-r border-b border-background"></div>
+          <div className="absolute -bottom-2 sm:-bottom-3 left-1/2 transform -translate-x-1/2 w-4 h-4 sm:w-6 sm:h-6 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-600 rotate-45 border-r border-b border-background"></div>
         </div>
 
         {/* Content - Scrollable on mobile */}
@@ -145,15 +144,28 @@ export function TutorialModal() {
           {/* Step-specific action buttons and visuals */}
           {currentStepData.id === 'lets-upload' && (
             <div className="mb-4 sm:mb-6 text-center">
-              <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">📄</div>
+              <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">📱</div>
+              <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-4 rounded-xl mb-4">
+                <p className="text-sm text-gray-600 mb-3">
+                  {currentLanguage === 'he' ? 'פשוט לחץ על הכפתור למטה ואז על "העלה תמונה"' : 'Simply tap the button below, then tap "Upload Image"'}
+                </p>
+                <div className="bg-white p-3 rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-center gap-2 text-blue-600">
+                    <span>📸</span>
+                    <span className="font-semibold">
+                      {currentLanguage === 'he' ? 'העלה תמונה' : 'Upload Image'}
+                    </span>
+                  </div>
+                </div>
+              </div>
               <Button
                 onClick={() => handleNavigateToPage('/upload')}
                 size="lg"
-                className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-primary hover:bg-primary-dark text-primary-foreground flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all shadow-lg hover:shadow-xl"
+                className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all"
               >
                 <Camera className="h-5 w-5 sm:h-6 sm:w-6" />
                 <span>
-                  {currentLanguage === 'he' ? 'סרק תעודה עכשיו' : 'Scan Certificate Now'}
+                  {currentLanguage === 'he' ? 'עבור להעלאה' : 'Go to Upload'}
                 </span>
               </Button>
             </div>
@@ -176,7 +188,7 @@ export function TutorialModal() {
               <Button
                 onClick={() => handleNavigateToPage('/inventory')}
                 size="lg"
-                className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-primary hover:bg-primary-dark text-primary-foreground flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all shadow-lg hover:shadow-xl"
+                className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all"
               >
                 <Package className="h-5 w-5 sm:h-6 sm:w-6" />
                 <span>
@@ -197,7 +209,7 @@ export function TutorialModal() {
               <Button
                 onClick={() => handleNavigateToPage('/store')}
                 size="lg"
-                className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-primary hover:bg-primary-dark text-primary-foreground flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all shadow-lg hover:shadow-xl"
+                className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all"
               >
                 <Store className="h-5 w-5 sm:h-6 sm:w-6" />
                 <span>
@@ -230,7 +242,7 @@ export function TutorialModal() {
             <Button
               onClick={isLastStep ? handleFinishTutorial : handleNext}
               size="lg"
-              className={`w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-primary hover:bg-primary-dark text-primary-foreground flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all shadow-lg hover:shadow-xl ${currentLanguage === 'he' ? 'flex-row-reverse' : ''}`}
+              className={`w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 sm:gap-3 rounded-xl active:scale-95 transition-all ${currentLanguage === 'he' ? 'flex-row-reverse' : ''}`}
             >
               {currentLanguage === 'he' ? (
                 <>

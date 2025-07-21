@@ -1,234 +1,161 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { TelegramLayout } from "@/components/layout/TelegramLayout";
+import { Layout } from "@/components/layout/Layout";
 import { SingleStoneUploadForm } from "@/components/upload/SingleStoneUploadForm";
+import { UploadForm } from "@/components/upload/UploadForm";
+import { UploadWizard } from "@/components/upload/UploadWizard";
+import { MobileTutorialWizard } from "@/components/tutorial/MobileTutorialWizard";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
-import { Camera, CheckCircle, ArrowRight, Sparkles, RotateCcw } from "lucide-react";
+import { FileText, Camera, Scan, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
-
 export default function UploadSingleStonePage() {
   const [searchParams] = useSearchParams();
   const [isScanning, setIsScanning] = useState(false);
   const [hasScannedCertificate, setHasScannedCertificate] = useState(false);
   const [scannedData, setScannedData] = useState<any>(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const { toast } = useToast();
-  const { hapticFeedback, mainButton } = useTelegramWebApp();
+  const [showWizard, setShowWizard] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [language, setLanguage] = useState<'en' | 'he'>('en');
+  const {
+    toast
+  } = useToast();
+  const {
+    platform,
+    hapticFeedback
+  } = useTelegramWebApp();
 
+  // Check URL parameters for actions
   useEffect(() => {
-    // Entrance animation
-    const timer = setTimeout(() => setIsVisible(true), 100);
-    
-    // Check URL parameters for actions
     const action = searchParams.get('action');
+    const tutorial = searchParams.get('tutorial');
     if (action === 'scan') {
-      setIsScanning(true);
-    }
-
-    // Setup main button based on state
-    if (!hasScannedCertificate) {
-      mainButton.show("התחלת סריקה", () => {
-        hapticFeedback.impact('heavy');
+      // Check if it's a mobile platform (iPhone/Android in Telegram)
+      if (platform === 'ios' || platform === 'android' || window.innerWidth < 768) {
+        setShowWizard(true);
+      } else {
         setIsScanning(true);
-      });
-    } else {
-      mainButton.hide();
+      }
     }
-
-    return () => {
-      clearTimeout(timer);
-      mainButton.hide();
-    };
-  }, [searchParams, hasScannedCertificate, hapticFeedback, mainButton]);
-
+    if (tutorial === 'true') {
+      setShowTutorial(true);
+    }
+  }, [searchParams, platform]);
   const handleScanSuccess = (giaData: any) => {
     hapticFeedback.notification('success');
     setScannedData(giaData);
     setHasScannedCertificate(true);
     setIsScanning(false);
     toast({
-      title: "התעודה נסרקה בהצלחה!",
-      description: "נתוני היהלום חולצו ומוכנים לעריכה",
-      duration: 3000
+      title: "✅ Certificate Scanned",
+      description: "Diamond data extracted successfully",
+      duration: 2000
     });
   };
-
   const handleStartOver = () => {
-    hapticFeedback.impact('medium');
+    hapticFeedback.impact('light');
     setHasScannedCertificate(false);
     setScannedData(null);
-    mainButton.show("התחלת סריקה", () => {
-      hapticFeedback.impact('heavy');
-      setIsScanning(true);
+  };
+  const handleWizardComplete = () => {
+    setShowWizard(false);
+    toast({
+      title: language === 'he' ? 'העלאה הושלמה!' : 'Upload Complete!',
+      description: language === 'he' ? 'היהלום שלך נוסף בהצלחה למלאי' : 'Your diamond has been successfully added to inventory'
     });
   };
 
-  return (
-    <TelegramLayout>
-      <div className={`min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 transition-all duration-1000 ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-      }`}>
-        
-        {!hasScannedCertificate ? (
-          <>
-            {/* Header */}
-            <div className="relative px-6 pt-12 pb-8 text-center">
-              <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-primary/5 to-transparent"></div>
+  // Show tutorial on mobile if requested
+  if (showTutorial) {
+    return <MobileTutorialWizard isOpen={showTutorial} onClose={() => setShowTutorial(false)} language={language} onLanguageChange={setLanguage} />;
+  }
+
+  // Show wizard on mobile platforms for better UX
+  if (showWizard) {
+    return <UploadWizard language={language} onLanguageChange={setLanguage} onComplete={handleWizardComplete} />;
+  }
+  const isMobile = platform === 'ios' || platform === 'android' || window.innerWidth < 768;
+  return <Layout>
+      <div className="min-h-screen bg-background">
+        <div className="px-4 pb-safe pt-4">
+          {/* Mobile Enhancement Suggestion */}
+          {isMobile && !hasScannedCertificate && <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 mb-4">
               
-              <div className="relative space-y-4">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/30 shadow-xl animate-fade-in">
-                  <Camera className="h-10 w-10 text-primary animate-pulse" />
-                </div>
-                
-                <h1 className="text-3xl font-black text-foreground leading-tight">
-                  סריקת תעודת
-                  <br />
-                  <span className="bg-gradient-to-l from-primary via-primary-glow to-primary bg-clip-text text-transparent">
-                    GIA
-                  </span>
-                </h1>
-                
-                <p className="text-lg text-muted-foreground font-medium leading-relaxed max-w-md mx-auto">
-                  הדרך הכי מהירה להוסיף יהלום
-                  <br />
-                  עם זיהוי אוטומטי מתקדם
-                </p>
-              </div>
-            </div>
+            </Card>}
 
-            {/* Instructions Card */}
-            <div className="px-6 mb-6">
-              <Card className="border-0 bg-gradient-to-r from-accent/10 via-accent/5 to-primary/10 backdrop-blur-sm shadow-lg animate-fade-in">
-                <CardContent className="p-6">
-                  <div className="text-center space-y-4">
-                    <div className="flex items-center justify-center gap-2">
-                      <Sparkles className="h-5 w-5 text-accent animate-pulse" />
-                      <h4 className="font-bold text-accent">הוראות סריקה</h4>
+          {!hasScannedCertificate ? <div className="space-y-4">
+              {/* Scan Certificate Card - Primary Action */}
+              <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-3 text-primary">
+                    <div className="p-2 rounded-full bg-primary/10">
+                      <Scan className="h-5 w-5" />
                     </div>
-                    
-                    <div className="text-right space-y-3 text-base text-muted-foreground leading-relaxed">
-                      <div className="flex items-center justify-end gap-3">
-                        <span>וודאו שהתעודה מוארת היטב</span>
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">1</div>
-                      </div>
-                      <div className="flex items-center justify-end gap-3">
-                        <span>כוונו את המצלמה ישירות לתעודה</span>
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">2</div>
-                      </div>
-                      <div className="flex items-center justify-end gap-3">
-                        <span>המתינו לזיהוי אוטומטי של הנתונים</span>
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">3</div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Scan Button */}
-            <div className="px-6">
-              <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-primary via-primary-glow to-primary shadow-premium animate-fade-in">
-                <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/10"></div>
-                <div className="absolute inset-0 rounded-xl border-2 border-white/40 animate-pulse"></div>
-                
-                <CardContent className="relative p-8">
-                  <Button
-                    onClick={() => {
-                      hapticFeedback.impact('heavy');
-                      setIsScanning(true);
-                    }}
-                    className="w-full h-20 text-xl font-black bg-transparent hover:bg-white/10 text-white border-0 shadow-none relative overflow-hidden group"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 animate-[shimmer_2s_infinite]"></div>
-                    <div className="flex items-center justify-center gap-4">
-                      <Camera className="h-8 w-8 animate-pulse" />
-                      <span>התחלת סריקה</span>
-                      <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
-                    </div>
+                    Scan GIA Certificate
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Fastest way to add a diamond - scan your certificate for instant data entry
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <Button onClick={() => {
+                hapticFeedback.impact('medium');
+                setIsScanning(true);
+              }} className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm active:scale-95 transition-all" style={{
+                minHeight: '48px'
+              }}>
+                    <Camera className="h-5 w-5 mr-2" />
+                    Start Certificate Scan
                   </Button>
                 </CardContent>
               </Card>
-            </div>
-          </>
-        ) : (
-          <>
-            {/* Success Header */}
-            <div className="relative px-6 pt-12 pb-8 text-center">
-              <div className="absolute inset-0 bg-gradient-to-b from-green-500/10 via-green-500/5 to-transparent"></div>
-              
-              <div className="relative space-y-4">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-green-500/20 to-green-500/30 shadow-xl animate-fade-in">
-                  <CheckCircle className="h-10 w-10 text-green-500 animate-pulse" />
-                </div>
-                
-                <h1 className="text-3xl font-black text-foreground leading-tight">
-                  התעודה נסרקה
-                  <br />
-                  <span className="bg-gradient-to-l from-green-500 via-green-400 to-green-500 bg-clip-text text-transparent">
-                    בהצלחה!
-                  </span>
-                </h1>
-                
-                <p className="text-lg text-muted-foreground font-medium leading-relaxed max-w-md mx-auto">
-                  בדקו את הפרטים ושמרו את היהלום
-                  <br />
-                  למלאי שלכם
-                </p>
-              </div>
-            </div>
 
-            {/* Success Status */}
-            <div className="px-6 mb-6">
-              <Card className="border-0 bg-gradient-to-r from-green-500/10 via-green-500/5 to-green-400/10 backdrop-blur-sm shadow-lg animate-fade-in">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleStartOver}
-                      className="text-muted-foreground hover:text-foreground gap-2"
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                      סריקה מחדש
-                    </Button>
-                    
-                    <div className="flex items-center gap-2">
-                      <span className="text-green-700 dark:text-green-400 font-semibold">
-                        נתונים חולצו בהצלחה
-                      </span>
-                      <CheckCircle className="h-5 w-5 text-green-500" />
+              {/* Bulk Upload Option */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-muted">
+                      <FileText className="h-5 w-5" />
                     </div>
-                  </div>
+                    Bulk CSV Upload
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Upload multiple diamonds at once using a CSV file
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <UploadForm />
                 </CardContent>
               </Card>
-            </div>
-
-            {/* Form */}
-            <div className="px-6 pb-safe">
-              <SingleStoneUploadForm 
-                initialData={scannedData} 
-                showScanButton={false}
-              />
-            </div>
-          </>
-        )}
+            </div> :
+        // Show form after successful scan
+        <div>
+              <div className="mb-4 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-green-700 dark:text-green-400">
+                      Certificate scanned successfully
+                    </span>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={handleStartOver} className="text-xs text-muted-foreground hover:text-foreground active:scale-95 transition-all h-8" style={{
+                minHeight: '32px'
+              }}>
+                    Start Over
+                  </Button>
+                </div>
+              </div>
+              <SingleStoneUploadForm initialData={scannedData} showScanButton={false} />
+            </div>}
+        </div>
 
         {/* QR Scanner Modal */}
-        <QRCodeScanner 
-          isOpen={isScanning} 
-          onClose={() => {
-            hapticFeedback.impact('light');
-            setIsScanning(false);
-          }} 
-          onScanSuccess={handleScanSuccess} 
-        />
-
-        {/* Safe area spacing */}
-        <div className="h-20"></div>
+        <QRCodeScanner isOpen={isScanning} onClose={() => {
+        hapticFeedback.impact('light');
+        setIsScanning(false);
+      }} onScanSuccess={handleScanSuccess} />
       </div>
-    </TelegramLayout>
-  );
+    </Layout>;
 }
