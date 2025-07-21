@@ -259,9 +259,30 @@ export function CsvColumnMapper({
             <p className="text-xs text-green-600 mt-1">
               All required columns are mapped. Tap "Process Mapping" to continue.
             </p>
+            <Button 
+              onClick={() => onMappingComplete(mappings)} 
+              className="w-full mt-3"
+              size="sm"
+            >
+              <ArrowRight className="w-3 h-3 mr-1" />
+              Process Mapping
+            </Button>
           </CardContent>
         </Card>
       )}
+
+      {/* Action Buttons */}
+      <div className="flex gap-2 pt-4">
+        <Button variant="outline" onClick={onBack} className="flex-1">
+          Back
+        </Button>
+        {canProceed && (
+          <Button onClick={() => onMappingComplete(mappings)} className="flex-1">
+            <ArrowRight className="w-4 h-4 mr-2" />
+            Continue
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
