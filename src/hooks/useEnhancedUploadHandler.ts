@@ -135,36 +135,30 @@ export function useEnhancedUploadHandler() {
             continue; // Skip this row, don't add to errors
           }
 
-          // Format diamond for batch API
+          // Format diamond for batch API - no default values, leave empty if missing
           const formattedDiamond = {
             stock: diamondData.stock?.trim() || `AUTO-${Date.now()}-${i}`,
-            shape: diamondData.shape === 'Round' ? "round brilliant" : (diamondData.shape?.toLowerCase() || "round brilliant"),
+            shape: diamondData.shape === 'Round' ? "round brilliant" : diamondData.shape?.toLowerCase(),
             weight: Number(diamondData.weight),
-            color: diamondData.color || "G",
-            clarity: diamondData.clarity || "VS1",
-            lab: diamondData.lab || "GIA",
+            color: diamondData.color,
+            clarity: diamondData.clarity,
+            lab: diamondData.lab || "",
             certificate_number: processCertificateNumber(diamondData.certificate_number),
             certificate_comment: diamondData.certificate_comment?.toString().trim() || "",
-            length: diamondData.length && Number(diamondData.length) > 0 
-              ? Number(diamondData.length) 
-              : Math.round((Number(diamondData.weight) * 6.5) * 100) / 100,
-            width: diamondData.width && Number(diamondData.width) > 0 
-              ? Number(diamondData.width) 
-              : Math.round((Number(diamondData.weight) * 6.5) * 100) / 100,
-            depth: diamondData.depth && Number(diamondData.depth) > 0 
-              ? Number(diamondData.depth) 
-              : Math.round((Number(diamondData.weight) * 4.0) * 100) / 100,
-            ratio: validateRatio(diamondData.ratio),
+            length: diamondData.length && Number(diamondData.length) > 0 ? Number(diamondData.length) : null,
+            width: diamondData.width && Number(diamondData.width) > 0 ? Number(diamondData.width) : null,
+            depth: diamondData.depth && Number(diamondData.depth) > 0 ? Number(diamondData.depth) : null,
+            ratio: diamondData.ratio && Number(diamondData.ratio) > 0 ? Number(diamondData.ratio) : null,
             cut: mapToApiEnum(diamondData.cut),
-            polish: mapToApiEnum(diamondData.polish),
-            symmetry: mapToApiEnum(diamondData.symmetry),
-            fluorescence: diamondData.fluorescence?.toUpperCase() || "NONE",
-            table: diamondData.table && Number(diamondData.table) > 0 ? Number(diamondData.table) : 60,
-            depth_percentage: diamondData.depth_percentage && Number(diamondData.depth_percentage) > 0 ? Number(diamondData.depth_percentage) : 62,
-            gridle: diamondData.gridle || "Medium",
-            culet: diamondData.culet?.toUpperCase() || "NONE",
-            rapnet: diamondData.rapnet && Number(diamondData.rapnet) > 0 ? parseInt(diamondData.rapnet.toString()) : 0,
-            price_per_carat: diamondData.price_per_carat && Number(diamondData.price_per_carat) > 0 ? Number(diamondData.price_per_carat) : 1000,
+            polish: diamondData.polish ? mapToApiEnum(diamondData.polish) : "",
+            symmetry: diamondData.symmetry ? mapToApiEnum(diamondData.symmetry) : "",
+            fluorescence: diamondData.fluorescence?.toUpperCase(),
+            table: diamondData.table && Number(diamondData.table) > 0 ? Number(diamondData.table) : null,
+            depth_percentage: diamondData.depth_percentage && Number(diamondData.depth_percentage) > 0 ? Number(diamondData.depth_percentage) : null,
+            gridle: diamondData.gridle || "",
+            culet: diamondData.culet?.toUpperCase() || "",
+            rapnet: diamondData.rapnet && Number(diamondData.rapnet) !== 0 ? parseInt(diamondData.rapnet.toString()) : 0,
+            price_per_carat: diamondData.price_per_carat && Number(diamondData.price_per_carat) > 0 ? Number(diamondData.price_per_carat) : null,
             picture: diamondData.picture?.toString().trim() || "",
           };
           
