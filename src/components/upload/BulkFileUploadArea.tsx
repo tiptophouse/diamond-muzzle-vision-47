@@ -22,9 +22,9 @@ export function BulkFileUploadArea({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file type
+      // Validate file type - support multiple formats
       const fileName = file.name.toLowerCase();
-      if (!fileName.endsWith('.csv') && !fileName.endsWith('.xlsx')) {
+      if (!fileName.endsWith('.csv') && !fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
         onFileChange(null);
         return;
       }
@@ -37,7 +37,7 @@ export function BulkFileUploadArea({
     const file = e.dataTransfer.files[0];
     if (file) {
       const fileName = file.name.toLowerCase();
-      if (fileName.endsWith('.csv') || fileName.endsWith('.xlsx')) {
+      if (fileName.endsWith('.csv') || fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
         onFileChange(file);
       }
     }
@@ -101,14 +101,14 @@ export function BulkFileUploadArea({
               Choose File
             </Button>
             <p className="text-xs text-muted-foreground">
-              Supports CSV and XLSX files up to 10MB
+              Supports CSV, XLSX, and XLS files up to 10MB
             </p>
           </div>
           <input
             ref={fileInputRef}
             type="file"
             className="hidden"
-            accept=".csv,.xlsx"
+            accept=".csv,.xlsx,.xls"
             onChange={handleFileSelect}
           />
         </div>

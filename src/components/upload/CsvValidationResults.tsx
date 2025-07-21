@@ -11,6 +11,14 @@ interface ValidationResults {
   fieldMappings: Array<{ csvHeader: string; mappedTo: string; confidence: number }>;
   errors: Array<{ row: number; field: string; value: string; reason: string }>;
   warnings: Array<{ message: string }>;
+  processingReport: {
+    totalProcessed: number;
+    successCount: number;
+    failureCount: number;
+    fileType: string;
+    processingTime: number;
+    aiExtracted: boolean;
+  };
 }
 
 interface CsvValidationResultsProps {

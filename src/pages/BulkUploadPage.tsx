@@ -33,7 +33,7 @@ export default function BulkUploadPage() {
                 <h3 className="font-semibold text-amber-800">Required Fields</h3>
                 <p className="text-sm text-amber-700">
                   Each diamond must have: <strong>Shape, Weight, Color, Clarity, Cut, Fluorescence</strong>. 
-                  Rows missing required fields will be automatically skipped.
+                  Supports multiple formats: CSV, XLSX, XLS. Failed records can be downloaded for review.
                 </p>
               </div>
             </div>

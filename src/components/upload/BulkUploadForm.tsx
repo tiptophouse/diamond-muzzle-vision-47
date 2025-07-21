@@ -8,6 +8,7 @@ import { useTelegramMainButton } from "@/hooks/useTelegramMainButton";
 import { BulkFileUploadArea } from "./BulkFileUploadArea";
 import { CsvValidationResults } from "./CsvValidationResults";
 import { BulkUploadProgress } from "./BulkUploadProgress";
+import { ProcessingReport } from "./ProcessingReport";
 import { useBulkCsvProcessor } from "@/hooks/useBulkCsvProcessor";
 
 export function BulkUploadForm() {
@@ -15,7 +16,7 @@ export function BulkUploadForm() {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { hapticFeedback } = useTelegramWebApp();
-  const { processedData, validationResults, processFile, resetProcessor } = useBulkCsvProcessor();
+  const { processedData, validationResults, processFile, resetProcessor, downloadFailedRecords } = useBulkCsvProcessor();
 
   async function handleBulkUpload() {
     if (!processedData?.validRows.length) return;
@@ -106,6 +107,15 @@ export function BulkUploadForm() {
 
       {/* Processing Progress */}
       {isProcessing && <BulkUploadProgress />}
+
+      {/* Processing Report */}
+      {processedData?.processingReport && !isProcessing && (
+        <ProcessingReport 
+          report={processedData.processingReport}
+          onDownloadFailed={downloadFailedRecords}
+          hasFailedRecords={processedData.failedRows?.length > 0}
+        />
+      )}
 
       {/* Validation Results */}
       {validationResults && !isProcessing && (
