@@ -18,6 +18,13 @@ export function BulkUploadForm() {
   const { hapticFeedback } = useTelegramWebApp();
   const { processedData, validationResults, processFile, resetProcessor, downloadFailedRecords } = useBulkCsvProcessor();
 
+  const requiredFields = [
+    'stock', 'shape', 'weight', 'color', 'clarity', 'lab', 'certificate_number',
+    'length', 'width', 'depth', 'ratio', 'cut', 'polish', 'symmetry', 
+    'fluorescence', 'table', 'depth_percentage', 'gridle', 'culet', 
+    'certificate_comment', 'rapnet', 'price_per_carat', 'picture'
+  ];
+
   async function handleBulkUpload() {
     if (!processedData?.validRows.length) return;
 
@@ -25,22 +32,67 @@ export function BulkUploadForm() {
     hapticFeedback.impact('heavy');
 
     try {
-      // TODO: Phase 2 - Connect to FastAPI /diamonds/batch endpoint
-      console.log('📤 Would upload diamonds:', processedData.validRows);
-      
+      // Filter rows to only include those with ALL required fields
+      const validDiamonds = processedData.validRows.filter(row => {
+        return requiredFields.every(field => {
+          const value = row[field];
+          // Allow empty strings for non-critical fields, but require presence
+          return value !== undefined && value !== null;
+        });
+      });
+
+      console.log(`📋 Filtered ${validDiamonds.length} complete diamonds from ${processedData.validRows.length} total rows`);
+
+      if (validDiamonds.length === 0) {
+        toast({
+          title: "❌ No Complete Diamonds",
+          description: "No diamonds have all required fields. Please check your CSV file.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Build JSON payload
+      const payload = {
+        diamonds: validDiamonds
+      };
+
+      console.log('📤 Sending diamonds to batch API:', payload);
+
+      // Send POST request to the specific API endpoint
+      const response = await fetch(
+        'https://api.mazalbot.com/api/v1/diamonds/batch?user_id=6485315240',
+        {
+          method: 'POST',
+          headers: {
+            'accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload)
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Batch upload result:', result);
+
       hapticFeedback.notification('success');
       toast({
-        title: "Upload Successful!",
-        description: `Successfully processed ${processedData.validRows.length} diamonds`,
+        title: "✅ Upload Successful!",
+        description: `Successfully uploaded ${validDiamonds.length} diamonds to the batch API`,
       });
       
       // Reset form
       setSelectedFile(null);
       resetProcessor();
     } catch (error) {
+      console.error('❌ Batch upload failed:', error);
       hapticFeedback.notification('error');
       toast({
-        title: "Upload Failed",
+        title: "❌ Upload Failed",
         description: error instanceof Error ? error.message : "Failed to upload diamonds",
         variant: "destructive",
       });
