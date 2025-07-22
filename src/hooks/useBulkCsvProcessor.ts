@@ -300,6 +300,9 @@ export function useBulkCsvProcessor() {
       // Map headers to standard fields
       const { mappings } = mapHeaders(headers);
       
+      // Debug: Log header mappings to identify misclassification
+      console.log('📋 Header mappings:', mappings.map(m => `${m.csvHeader} -> ${m.mappedTo} (${m.confidence.toFixed(2)})`));
+      
       // Process and validate data with detailed error tracking
       const validRows: any[] = [];
       const failedRows: Array<{ rowNumber: number; data: any; errors: string[] }> = [];
@@ -315,6 +318,12 @@ export function useBulkCsvProcessor() {
         // Map and validate each field  
         for (const mapping of mappings) {
           const value = row[mapping.csvHeader];
+          
+          // Debug: Log when VG is being processed
+          if (value && value.trim().toUpperCase() === 'VG') {
+            console.log(`🔍 Processing VG: Column "${mapping.csvHeader}" -> Field "${mapping.mappedTo}" | Value: "${value}"`);
+          }
+          
           const { isValid, normalizedValue, error } = validateValue(value, mapping.mappedTo);
           
           processedRow[mapping.mappedTo] = normalizedValue;
