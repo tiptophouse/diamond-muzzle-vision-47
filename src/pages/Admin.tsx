@@ -269,9 +269,7 @@ export default function Admin() {
             </TabsContent>
             
             <TabsContent value="users" className="space-y-0">
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <AdminUserManager />
-              </div>
+              <AdminUserManager />
             </TabsContent>
             
             <TabsContent value="sessions" className="space-y-0">
