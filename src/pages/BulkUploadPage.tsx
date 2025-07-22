@@ -40,8 +40,22 @@ export default function BulkUploadPage() {
           </CardContent>
         </Card>
 
-        {/* Upload Form */}
-        <BulkUploadForm />
+        {/* Coming Soon Notice */}
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="pt-6 text-center">
+            <div className="space-y-4">
+              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                <Upload className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg text-foreground">Coming Soon</h3>
+                <p className="text-muted-foreground">
+                  Bulk upload functionality is currently under development and will be available soon.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </TelegramLayout>
   );
