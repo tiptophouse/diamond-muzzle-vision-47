@@ -5,11 +5,36 @@ import { DataDrivenDashboard } from '@/components/dashboard/DataDrivenDashboard'
 import { DashboardLoading } from '@/components/dashboard/DashboardLoading';
 import { SecurityMonitor } from '@/components/auth/SecurityMonitor';
 import { getVerificationResult } from '@/lib/api';
+import { useSearchParams } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
   const { loading, allDiamonds, fetchData } = useInventoryData();
   const verificationResult = getVerificationResult();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { toast } = useToast();
+
+  // Check for upload success notification
+  useEffect(() => {
+    const uploadSuccess = searchParams.get('upload_success');
+    const fromBulkUpload = searchParams.get('from');
+    
+    if (uploadSuccess && fromBulkUpload === 'bulk_upload') {
+      toast({
+        title: `🎉 Bulk Upload Successful!`,
+        description: `${uploadSuccess} diamonds have been added to your inventory and are now visible in your dashboard.`,
+        duration: 5000,
+      });
+      
+      // Clear the search parameters after showing the notification
+      setSearchParams({});
+      
+      // Refresh inventory data to show newly uploaded diamonds
+      fetchData();
+    }
+  }, [searchParams, setSearchParams, toast, fetchData]);
 
   console.log('🔍 DASHBOARD DEBUG:');
   console.log('- Auth loading:', authLoading);

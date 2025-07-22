@@ -4,10 +4,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle2, XCircle, AlertTriangle, Download, RotateCcw, BarChart3, TrendingUp } from "lucide-react";
+import { CheckCircle2, XCircle, AlertTriangle, Download, RotateCcw, BarChart3, TrendingUp, LayoutDashboard } from "lucide-react";
 import { UploadAnalyticsCharts } from "./UploadAnalyticsCharts";
 import { UploadInsightsSummary } from "./UploadInsightsSummary";
 import { calculateUploadAnalytics } from "@/services/uploadAnalytics";
+import { useNavigate } from "react-router-dom";
 
 interface UploadResultsReportProps {
   results: {
@@ -21,10 +22,16 @@ interface UploadResultsReportProps {
 }
 
 export function UploadResultsReport({ results, onReset }: UploadResultsReportProps) {
+  const navigate = useNavigate();
   const successRate = ((results.successCount / results.totalAttempted) * 100).toFixed(1);
   
   // Calculate analytics if we have uploaded diamonds data
   const analytics = results.uploadedDiamonds ? calculateUploadAnalytics(results.uploadedDiamonds) : null;
+
+  const handleViewDashboard = () => {
+    // Navigate to dashboard with query parameters to indicate recent upload
+    navigate(`/?upload_success=${results.successCount}&from=bulk_upload`);
+  };
   
   const downloadFailedData = () => {
     if (results.errors.length === 0) return;
@@ -211,6 +218,17 @@ export function UploadResultsReport({ results, onReset }: UploadResultsReportPro
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3 pt-6 border-t mt-6">
+          {/* Primary action - View Dashboard */}
+          {results.successCount > 0 && (
+            <Button 
+              onClick={handleViewDashboard}
+              className="flex items-center gap-2 bg-primary hover:bg-primary/90"
+            >
+              <LayoutDashboard className="h-4 w-4" />
+              View Your {results.successCount} New Diamonds in Dashboard
+            </Button>
+          )}
+
           {results.errors.length > 0 && (
             <Button 
               variant="outline" 
