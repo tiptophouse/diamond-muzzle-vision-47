@@ -127,37 +127,15 @@ export function useEnhancedUploadHandler() {
             continue;
           }
 
-          // Format diamond for batch API
+          // Format diamond for batch API - Match EXACT FastAPI requirements
           const formattedDiamond = {
+            // Required fields per FastAPI schema
             stock: diamondData.stock.trim(),
             shape: diamondData.shape === 'Round' ? "round brilliant" : (diamondData.shape?.toLowerCase() || "round brilliant"),
             weight: Number(diamondData.weight),
             color: diamondData.color || "G",
             clarity: diamondData.clarity || "VS1",
-            lab: diamondData.lab || "GIA",
-            certificate_number: processCertificateNumber(diamondData.certificate_number),
-            certificate_comment: diamondData.certificate_comment?.toString().trim() || "",
-            length: diamondData.length && Number(diamondData.length) > 0 
-              ? Number(diamondData.length) 
-              : Math.round((Number(diamondData.weight) * 6.5) * 100) / 100,
-            width: diamondData.width && Number(diamondData.width) > 0 
-              ? Number(diamondData.width) 
-              : Math.round((Number(diamondData.weight) * 6.5) * 100) / 100,
-            depth: diamondData.depth && Number(diamondData.depth) > 0 
-              ? Number(diamondData.depth) 
-              : Math.round((Number(diamondData.weight) * 4.0) * 100) / 100,
-            ratio: validateRatio(diamondData.ratio),
-            cut: mapToApiEnum(diamondData.cut),
-            polish: mapToApiEnum(diamondData.polish),
-            symmetry: mapToApiEnum(diamondData.symmetry),
-            fluorescence: diamondData.fluorescence?.toUpperCase() || "NONE",
-            table: diamondData.table && Number(diamondData.table) > 0 ? Number(diamondData.table) : 60,
-            depth_percentage: diamondData.depth_percentage && Number(diamondData.depth_percentage) > 0 ? Number(diamondData.depth_percentage) : 62,
-            gridle: diamondData.gridle || "Medium",
-            culet: diamondData.culet?.toUpperCase() || "NONE",
-            rapnet: diamondData.rapnet && Number(diamondData.rapnet) > 0 ? parseInt(diamondData.rapnet.toString()) : 0,
-            price_per_carat: Number(diamondData.price_per_carat),
-            picture: diamondData.picture?.toString().trim() || "",
+            certificate_number: processCertificateNumber(diamondData.certificate_number) || 1000000, // Required int field, can't be 0
           };
           
           validDiamonds.push(formattedDiamond);
