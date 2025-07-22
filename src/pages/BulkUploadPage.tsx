@@ -76,23 +76,22 @@ export default function BulkUploadPage() {
     hapticFeedback?.impact('medium');
 
     try {
-      // Transform data for API
+      // Transform data for API - match exact FastAPI schema
       const diamondsData = processedData.validRows.map(row => ({
-        stock_number: row.stock || `AUTO-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        stock: row.stock || `AUTO-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         shape: row.shape,
         weight: parseFloat(row.weight),
         color: row.color,
         clarity: row.clarity,
         cut: row.cut || 'EXCELLENT',
         certificate_number: parseInt(row.certificate_number) || 0,
-        certificate_url: row.certificate_url || '',
         certificate_comment: row.certificate_comment || '',
         lab: row.lab || 'GIA',
         length: parseFloat(row.length) || 6.5,
         width: parseFloat(row.width) || 6.5,
         depth: parseFloat(row.depth) || 4.0,
         ratio: parseFloat(row.ratio) || 1.0,
-        table_percentage: parseInt(row.table) || 60,
+        table: parseInt(row.table) || 60,
         depth_percentage: parseFloat(row.depth_percentage) || 62,
         fluorescence: row.fluorescence,
         polish: row.polish || 'EXCELLENT',
@@ -101,8 +100,6 @@ export default function BulkUploadPage() {
         culet: row.culet || 'NONE',
         price_per_carat: parseInt(row.price_per_carat) || 5000,
         rapnet: parseInt(row.rapnet) || 0,
-        status: 'Available',
-        store_visible: false,
         picture: row.picture || ''
       }));
 
