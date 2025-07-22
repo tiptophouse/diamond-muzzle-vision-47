@@ -25,8 +25,10 @@ serve(async (req) => {
       );
     }
 
-    // Get the secure API token from Supabase secrets
-    const apiToken = Deno.env.get('FASTAPI_BEARER_TOKEN');
+    // Get the secure API token from Supabase secrets - check multiple possible names
+    const apiToken = Deno.env.get('FASTAPI_BEARER_TOKEN') || 
+                     Deno.env.get('BACKEND_ACCESS_TOKEN') || 
+                     Deno.env.get('BACKEND_URL');
     
     if (!apiToken) {
       console.error('FASTAPI_BEARER_TOKEN not configured in Supabase secrets');
