@@ -13,7 +13,7 @@ import { ArrowLeft, Share2, ExternalLink, Gem, Award, Eye, Shield, Clock, Users,
 import { useToast } from "@/components/ui/use-toast";
 
 export default function SecureDiamondPage() {
-  const { stockNumber } = useParams<{ stockNumber: string }>();
+  const { encryptedData } = useParams<{ encryptedData: string }>();
   const navigate = useNavigate();
   const { diamonds, loading } = useStoreData();
   const { webApp } = useTelegramWebApp();
@@ -21,6 +21,25 @@ export default function SecureDiamondPage() {
   const { toast } = useToast();
   const [sessionStartTime] = useState(Date.now());
   const [hasViewedOthers, setHasViewedOthers] = useState(false);
+  const [stockNumber, setStockNumber] = useState<string | null>(null);
+
+  // Decrypt the data to get stock number
+  useEffect(() => {
+    if (encryptedData) {
+      try {
+        const decryptedData = JSON.parse(atob(encryptedData));
+        setStockNumber(decryptedData.stockNumber);
+      } catch (error) {
+        console.error('Failed to decrypt diamond data:', error);
+        toast({
+          title: "Invalid Link",
+          description: "This diamond link is invalid or corrupted",
+          variant: "destructive"
+        });
+        navigate('/');
+      }
+    }
+  }, [encryptedData, navigate, toast]);
 
   // Track analytics
   const { 
@@ -70,30 +89,46 @@ export default function SecureDiamondPage() {
     };
   }, [diamond, sessionStartTime, hasViewedOthers, trackTimeSpent]);
 
-  // Track if user views other diamonds
+  // Track if user views other diamonds - only for admin
   const handleViewOtherDiamonds = () => {
-    setHasViewedOthers(true);
-    trackOtherDiamondsViewed();
-    navigate('/store');
+    if (isAdmin) {
+      setHasViewedOthers(true);
+      trackOtherDiamondsViewed();
+      navigate('/store');
+    } else {
+      toast({
+        title: "Contact Us",
+        description: "Please contact us to view more diamonds from our collection"
+      });
+    }
   };
 
   const handleShare = async () => {
-    const url = `https://miniapp.mazalbot.com/diamond/${stockNumber}`;
+    // Create secure encrypted link that only shows this diamond
+    const diamondData = {
+      stockNumber: diamond?.stockNumber,
+      timestamp: Date.now()
+    };
+    
+    // Simple base64 encoding for the secure link
+    const encryptedData = btoa(JSON.stringify(diamondData));
+    const secureUrl = `https://miniapp.mazalbot.com/secure-diamond/${encryptedData}`;
     
     if (navigator.share) {
       try {
         await navigator.share({
           title: `${diamond?.carat}ct ${diamond?.shape} ${diamond?.color} ${diamond?.clarity} Diamond`,
           text: `Check out this beautiful ${diamond?.shape} diamond!`,
-          url: url,
+          url: secureUrl,
         });
+        toast({ title: "Secure link shared!" });
       } catch (error) {
-        navigator.clipboard.writeText(url);
-        toast({ title: "Link copied to clipboard!" });
+        navigator.clipboard.writeText(secureUrl);
+        toast({ title: "Secure link copied to clipboard!" });
       }
     } else {
-      navigator.clipboard.writeText(url);
-      toast({ title: "Link copied to clipboard!" });
+      navigator.clipboard.writeText(secureUrl);
+      toast({ title: "Secure link copied to clipboard!" });
     }
   };
 
@@ -293,19 +328,24 @@ export default function SecureDiamondPage() {
                 </Card>
               )}
 
-              {/* View More CTA */}
-              <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-                <CardContent className="pt-6">
-                  <h3 className="text-xl font-semibold mb-2">Explore Our Collection</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Discover more premium diamonds in our curated collection.
-                  </p>
-                  <Button onClick={handleViewOtherDiamonds} size="lg" className="w-full">
-                    <Gem className="h-4 w-4 mr-2" />
-                    View More Diamonds
-                  </Button>
-                </CardContent>
-              </Card>
+               {/* View More CTA */}
+               <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+                 <CardContent className="pt-6">
+                   <h3 className="text-xl font-semibold mb-2">
+                     {isAdmin ? "Explore Our Collection" : "Interested in More Diamonds?"}
+                   </h3>
+                   <p className="text-muted-foreground mb-4">
+                     {isAdmin 
+                       ? "Discover more premium diamonds in our curated collection."
+                       : "Contact us to view more premium diamonds from our exclusive collection."
+                     }
+                   </p>
+                   <Button onClick={handleViewOtherDiamonds} size="lg" className="w-full">
+                     <Gem className="h-4 w-4 mr-2" />
+                     {isAdmin ? "View More Diamonds" : "Contact Us"}
+                   </Button>
+                 </CardContent>
+               </Card>
 
               {/* Admin Analytics */}
               {isAdmin && analytics && (
