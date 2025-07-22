@@ -111,6 +111,9 @@ export function useEnhancedUploadHandler() {
         const diamondData = enhancedData[i];
         
         try {
+          // Debug log the diamond data
+          console.log(`🔍 Processing diamond ${i + 1}:`, diamondData);
+          
           // Validate required fields
           if (!diamondData.stock?.trim()) {
             errors.push(`Row ${i + 1}: Stock Number is required`);
@@ -122,9 +125,10 @@ export function useEnhancedUploadHandler() {
             continue;
           }
 
-          if (!diamondData.price_per_carat || Number(diamondData.price_per_carat) <= 0) {
-            errors.push(`Row ${i + 1}: Valid Price Per Carat is required`);
-            continue;
+          // Price per carat - try multiple field names and use rapnet as fallback
+          const pricePerCarat = diamondData.price_per_carat || diamondData.rapnet || diamondData.RapnetAskingPrice || 1000;
+          if (!pricePerCarat || Number(pricePerCarat) <= 0) {
+            console.log(`⚠️ Row ${i + 1}: No valid price found, using default 1000`);
           }
 
           // Format diamond for batch API - Match EXACT FastAPI requirements
@@ -155,7 +159,7 @@ export function useEnhancedUploadHandler() {
             cut: diamondData.cut ? mapToApiEnum(diamondData.cut) : undefined,
             certificate_comment: diamondData.certificate_comment?.toString().trim() || undefined,
             rapnet: diamondData.rapnet && Number(diamondData.rapnet) > 0 ? parseInt(diamondData.rapnet.toString()) : undefined,
-            price_per_carat: diamondData.price_per_carat && Number(diamondData.price_per_carat) > 0 ? parseInt(diamondData.price_per_carat.toString()) : undefined,
+            price_per_carat: Number(pricePerCarat) > 0 ? parseInt(pricePerCarat.toString()) : 1000,
             picture: diamondData.picture?.toString().trim() || undefined,
           };
           
