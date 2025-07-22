@@ -1,31 +1,28 @@
-
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
-import { EnhancedStoreHeader } from "@/components/store/EnhancedStoreHeader";
-import { FigmaStoreFilters } from "@/components/store/FigmaStoreFilters";
 import { FigmaDiamondCard } from "@/components/store/FigmaDiamondCard";
 import { DiamondCardSkeleton } from "@/components/store/DiamondCardSkeleton";
-import { ImageUpload } from "@/components/store/ImageUpload";
-import { FloatingShareButton } from "@/components/store/FloatingShareButton";
 import { MobilePullToRefresh } from "@/components/mobile/MobilePullToRefresh";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Upload, Image, Filter, AlertCircle } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Plus, Filter, SortAsc, AlertCircle, Search } from "lucide-react";
 import { toast } from 'sonner';
 import { Diamond } from "@/components/inventory/InventoryTable";
+import { TelegramStoreFilters } from "@/components/store/TelegramStoreFilters";
+import { TelegramSortSheet } from "@/components/store/TelegramSortSheet";
 
 export default function StorePage() {
   const { diamonds, loading, error, refetch } = useStoreData();
   const { filters, filteredDiamonds, updateFilter, clearFilters } = useStoreFilters(diamonds || []);
-  const [showUpload, setShowUpload] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [showSort, setShowSort] = useState(false);
   const [sortBy, setSortBy] = useState("most-popular");
   const [searchParams] = useSearchParams();
   const stockNumber = searchParams.get('stock');
-  const { selectionChanged } = useTelegramHapticFeedback();
+  const { selectionChanged, impactOccurred } = useTelegramHapticFeedback();
 
   const navigate = useNavigate();
 
@@ -46,7 +43,7 @@ export default function StorePage() {
         return diamonds.sort((a, b) => a.stockNumber.localeCompare(b.stockNumber));
       case "most-popular":
       default:
-        return diamonds; // Keep original order for "most popular"
+        return diamonds;
     }
   }, [filteredDiamonds, sortBy]);
 
@@ -68,7 +65,6 @@ export default function StorePage() {
         diamond.stockNumber === stockNumber
       );
       if (stockMatch.length > 0) {
-        console.log('🔍 Found diamond by stock number:', stockNumber, stockMatch);
         return stockMatch;
       }
     }
@@ -90,7 +86,6 @@ export default function StorePage() {
       });
       
       if (paramMatch.length > 0) {
-        console.log('🔍 Found diamond by parameters:', { carat, color, clarity, shape }, paramMatch);
         return paramMatch;
       }
     }
@@ -101,7 +96,6 @@ export default function StorePage() {
   // Auto-scroll to diamond if found via stock parameter
   useEffect(() => {
     if (stockNumber && finalFilteredDiamonds.length > 0) {
-      // Small delay to ensure the component is rendered
       setTimeout(() => {
         const element = document.getElementById(`diamond-${stockNumber}`);
         if (element) {
@@ -111,17 +105,36 @@ export default function StorePage() {
     }
   }, [stockNumber, finalFilteredDiamonds]);
 
-  const handleImageUploaded = (imageUrl: string) => {
-    console.log('Image uploaded to store:', imageUrl);
-    setShowUpload(false);
-    selectionChanged(); // Add haptic feedback
-    toast.success('Image uploaded successfully!');
+  const handleAddDiamond = () => {
+    impactOccurred('medium');
+    navigate('/upload-single-stone');
+  };
+
+  const handleOpenFilters = () => {
+    selectionChanged();
+    setShowFilters(true);
+  };
+
+  const handleOpenSort = () => {
+    selectionChanged();
+    setShowSort(true);
+  };
+
+  const handleApplyFilters = () => {
+    impactOccurred('light');
+    setShowFilters(false);
+  };
+
+  const handleApplySort = (newSortBy: string) => {
+    impactOccurred('light');
+    setSortBy(newSortBy);
+    setShowSort(false);
   };
 
   const renderStoreGrid = () => {
     if (loading) {
       return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-4">
           {Array.from({ length: 12 }, (_, i) => (
             <DiamondCardSkeleton key={i} />
           ))}
@@ -133,9 +146,9 @@ export default function StorePage() {
       return (
         <div className="flex items-center justify-center py-12 px-4">
           <div className="text-center max-w-md">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 mb-2">Error Loading Diamonds</h3>
-            <p className="text-slate-600">{error}</p>
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">Error Loading Diamonds</h3>
+            <p className="text-muted-foreground">{error}</p>
           </div>
         </div>
       );
@@ -145,18 +158,18 @@ export default function StorePage() {
       return (
         <div className="flex items-center justify-center py-12 px-4">
           <div className="text-center max-w-md">
-            <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <div className="w-12 h-12 bg-slate-200 rounded-full"></div>
+            <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-12 h-12 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium text-slate-900 mb-2">No Diamonds Found</h3>
-            <p className="text-slate-600">Try adjusting your filters to see more diamonds.</p>
+            <h3 className="text-lg font-medium text-foreground mb-2">No Diamonds Found</h3>
+            <p className="text-muted-foreground">Try adjusting your filters to see more diamonds.</p>
           </div>
         </div>
       );
     }
 
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-4">
         {finalFilteredDiamonds.map((diamond, index) => (
           <FigmaDiamondCard 
             key={diamond.id} 
@@ -169,69 +182,106 @@ export default function StorePage() {
     );
   };
 
+  const activeFiltersCount = 
+    filters.shapes.length + 
+    filters.colors.length + 
+    filters.clarities.length + 
+    filters.cuts.length + 
+    filters.fluorescence.length;
+
   return (
     <MobilePullToRefresh onRefresh={handleRefresh} enabled={!loading}>
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-6 space-y-6 max-w-7xl">
-          
-          {/* Enhanced Header with Sorting */}
-          <EnhancedStoreHeader
-            totalDiamonds={finalFilteredDiamonds.length}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            onOpenFilters={() => setShowFilters(true)}
-          />
-
-          {/* Upload Button */}
-          <div className="flex justify-end">
-            <Dialog open={showUpload} onOpenChange={setShowUpload}>
-              <DialogTrigger asChild>
-                <Button className="flex items-center gap-2">
-                  <Upload className="h-4 w-4" />
-                  Upload Photo
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
+          <div className="px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-xl font-semibold text-foreground">Diamonds</h1>
+                <p className="text-sm text-muted-foreground">
+                  {finalFilteredDiamonds.length} diamonds available
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleOpenSort}
+                  className="h-8 px-3"
+                >
+                  <SortAsc className="h-4 w-4 mr-1" />
+                  Sort
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="w-[95vw] max-w-md mx-auto">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <Image className="h-5 w-5" />
-                    Upload Image to Store
-                  </DialogTitle>
-                </DialogHeader>
-                <ImageUpload onImageUploaded={handleImageUploaded} />
-              </DialogContent>
-            </Dialog>
+                <Button
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleOpenFilters}
+                  className="h-8 px-3 relative"
+                >
+                  <Filter className="h-4 w-4 mr-1" />
+                  Filter
+                  {activeFiltersCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
+                      {activeFiltersCount}
+                    </span>
+                  )}
+                </Button>
+              </div>
+            </div>
           </div>
+        </div>
 
-          {/* Diamond Grid */}
+        {/* Diamond Grid */}
+        <div className="py-4">
           {renderStoreGrid()}
-
-          {/* Filters Dialog */}
-          <Dialog open={showFilters} onOpenChange={setShowFilters}>
-            <DialogContent className="w-[95vw] max-w-md max-h-[85vh]">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Filter className="h-5 w-5" />
-                  Filters
-                </DialogTitle>
-              </DialogHeader>
-              <FigmaStoreFilters
-                filters={filters}
-                onUpdateFilter={updateFilter}
-                onClearFilters={clearFilters}
-                onApplyFilters={() => setShowFilters(false)}
-                diamonds={diamonds || []}
-              />
-            </DialogContent>
-          </Dialog>
         </div>
 
-        {/* Floating Share Button */}
+        {/* Floating Action Button */}
         <div className="fixed bottom-6 right-4 z-40">
-          <FloatingShareButton />
+          <Button
+            onClick={handleAddDiamond}
+            size="lg"
+            className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-primary hover:bg-primary/90"
+          >
+            <Plus className="h-6 w-6" />
+          </Button>
         </div>
+
+        {/* Filters Bottom Sheet */}
+        <Sheet open={showFilters} onOpenChange={setShowFilters}>
+          <SheetContent side="bottom" className="h-[85vh] p-0">
+            <SheetHeader className="px-4 py-3 border-b border-border">
+              <SheetTitle className="flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Filters
+              </SheetTitle>
+            </SheetHeader>
+            <TelegramStoreFilters
+              filters={filters}
+              onUpdateFilter={updateFilter}
+              onClearFilters={clearFilters}
+              onApplyFilters={handleApplyFilters}
+              diamonds={diamonds || []}
+            />
+          </SheetContent>
+        </Sheet>
+
+        {/* Sort Bottom Sheet */}
+        <Sheet open={showSort} onOpenChange={setShowSort}>
+          <SheetContent side="bottom" className="h-auto p-0">
+            <SheetHeader className="px-4 py-3 border-b border-border">
+              <SheetTitle className="flex items-center gap-2">
+                <SortAsc className="h-5 w-5" />
+                Sort by
+              </SheetTitle>
+            </SheetHeader>
+            <TelegramSortSheet
+              currentSort={sortBy}
+              onSortChange={handleApplySort}
+            />
+          </SheetContent>
+        </Sheet>
       </div>
     </MobilePullToRefresh>
   );
 }
-
