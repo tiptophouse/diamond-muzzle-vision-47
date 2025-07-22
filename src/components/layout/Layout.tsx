@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TutorialModal } from "@/components/tutorial/TutorialModal";
+import { FloatingDiamondsCounter } from "@/components/ui/FloatingDiamondsCounter";
 interface LayoutProps {
   children: React.ReactNode;
 }
@@ -58,5 +59,8 @@ export function Layout({
 
       {/* Tutorial Modal */}
       <TutorialModal />
+      
+      {/* Floating Diamonds Counter */}
+      <FloatingDiamondsCounter />
     </div>;
 }
