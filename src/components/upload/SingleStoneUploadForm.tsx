@@ -334,6 +334,7 @@ export function SingleStoneUploadForm({
               <ImageUploadSection
                 setValue={setValue}
                 watch={watch}
+                onGiaDataExtracted={handleGiaScanSuccess}
               />
             </div>
 
