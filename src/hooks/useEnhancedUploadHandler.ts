@@ -135,7 +135,28 @@ export function useEnhancedUploadHandler() {
             weight: Number(diamondData.weight),
             color: diamondData.color || "G",
             clarity: diamondData.clarity || "VS1",
-            certificate_number: processCertificateNumber(diamondData.certificate_number) || 1000000, // Required int field, can't be 0
+            certificate_number: processCertificateNumber(diamondData.certificate_number) || 1000000, // Required int field
+            
+            // Required fields with defaults
+            polish: mapToApiEnum(diamondData.polish),
+            symmetry: mapToApiEnum(diamondData.symmetry),
+            fluorescence: diamondData.fluorescence?.toUpperCase() || "NONE",
+            table: diamondData.table && Number(diamondData.table) > 0 ? Number(diamondData.table) : 60.0,
+            depth_percentage: diamondData.depth_percentage && Number(diamondData.depth_percentage) > 0 ? Number(diamondData.depth_percentage) : 62.0,
+            gridle: diamondData.gridle || "Medium",
+            culet: diamondData.culet?.toUpperCase() || "NONE",
+            
+            // Optional fields
+            lab: diamondData.lab || "GIA",
+            length: diamondData.length && Number(diamondData.length) > 0 ? Number(diamondData.length) : undefined,
+            width: diamondData.width && Number(diamondData.width) > 0 ? Number(diamondData.width) : undefined,
+            depth: diamondData.depth && Number(diamondData.depth) > 0 ? Number(diamondData.depth) : undefined,
+            ratio: diamondData.ratio && Number(diamondData.ratio) > 0 ? Number(diamondData.ratio) : undefined,
+            cut: diamondData.cut ? mapToApiEnum(diamondData.cut) : undefined,
+            certificate_comment: diamondData.certificate_comment?.toString().trim() || undefined,
+            rapnet: diamondData.rapnet && Number(diamondData.rapnet) > 0 ? parseInt(diamondData.rapnet.toString()) : undefined,
+            price_per_carat: diamondData.price_per_carat && Number(diamondData.price_per_carat) > 0 ? parseInt(diamondData.price_per_carat.toString()) : undefined,
+            picture: diamondData.picture?.toString().trim() || undefined,
           };
           
           validDiamonds.push(formattedDiamond);
