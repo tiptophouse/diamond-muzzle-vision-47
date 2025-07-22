@@ -3,17 +3,19 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Diamond } from "./InventoryTable";
-import { Edit, Trash, ImageIcon } from "lucide-react";
+import { Edit, Trash, ImageIcon, Upload } from "lucide-react";
 import { StoreVisibilityToggle } from "./StoreVisibilityToggle";
+import { UserImageUpload } from "./UserImageUpload";
 
 interface InventoryTableRowProps {
   diamond: Diamond & { store_visible?: boolean };
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
   onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
+  onImageUpdate?: () => void;
 }
 
-export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle }: InventoryTableRowProps) {
+export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle, onImageUpdate }: InventoryTableRowProps) {
   return (
     <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-800">
       <TableCell className="w-16">
@@ -84,6 +86,10 @@ export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle }: 
               onToggle={onStoreToggle}
             />
           )}
+          <UserImageUpload 
+            diamond={diamond}
+            onUpdate={onImageUpdate || (() => {})}
+          />
           {onEdit && (
             <Button
               variant="ghost"

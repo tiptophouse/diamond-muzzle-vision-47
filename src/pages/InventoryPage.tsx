@@ -169,6 +169,7 @@ export default function InventoryPage() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onStoreToggle={handleStoreToggle}
+                onImageUpdate={handleRefresh}
                 data-tutorial="inventory-table"
               />
               
