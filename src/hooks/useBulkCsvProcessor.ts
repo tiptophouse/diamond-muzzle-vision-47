@@ -54,24 +54,26 @@ const FLUORESCENCE_ALIASES = {
 // Field mapping patterns for intelligent column detection - focused on mandatory fields
 const FIELD_MAPPINGS = {
   shape: ['shape', 'diamond_shape', 'form', 'צורה'],
-  weight: ['weight', 'carat', 'carats', 'ct', 'cts', 'size', 'measurements', 'משקל'],
+  weight: ['weight', 'carat', 'carats', 'ct', 'cts', 'size', 'משקל'],
   color: ['color', 'colour', 'grade_color', 'color_grade', 'fancycolor', 'fancy color 2', 'צבע'],
   clarity: ['clarity', 'purity', 'grade_clarity', 'clarity_grade', 'ניקיון'],
   cut: ['cut', 'cut_grade', 'make', 'finish', 'חיתוך'],
   fluorescence: ['fluorescence', 'fluo', 'fluor', 'fluorescenceintensity', 'זרחן'],
-  certificate_number: ['cert_number', 'certificate_number', 'report_number', 'certificateid', 'מספר_תעודה'],
+  certificate_number: ['certnumber', 'cert_number', 'certificate_number', 'report_number', 'certificateid', 'מספר_תעודה'],
   // Optional fields from your CSV format
-  stock: ['stock #', 'stock', 'stock_number', 'sku', 'item_number', 'vendorstocknumber', 'matchingvendorstocknumber', 'מלאי'],
+  stock: ['stock#', 'stock #', 'stock', 'stock_number', 'sku', 'item_number', 'vendorstocknumber', 'matchingvendorstocknumber', 'מלאי'],
   price_per_carat: ['price/crt', 'price_per_carat', 'price per carat', 'ppc', 'rapnetaskingprice', 'indexaskingprice', 'מחיר_לקרט'],
   lab: ['lab', 'laboratory', 'cert', 'certificate', 'מעבדה'],
   depth_percentage: ['depth', 'depth%', 'depthpercent'],
   table: ['table', 'tablepercent', 'table%'],
   polish: ['polish'],
-  symmetry: ['symmetry'],
-  gridle: ['girdlemin', 'girdlemax', 'girdlepercent', 'girdlethick'],
-  culet: ['culetsize', 'culetcondition'],
+  symmetry: ['symm', 'symmetry'],
+  gridle: ['girdle', 'girdlemin', 'girdlemax', 'girdlepercent', 'girdlethick'],
+  culet: ['culet', 'culetsize', 'culetcondition'],
   measurements: ['measurements'],
-  picture: ['diamond image', 'picture url', 'diamondimage', 'pictureurl']
+  rapnet: ['rap%', 'rapnet', 'rap_percent'],
+  certificate_comment: ['certcomments', 'cert_comments', 'certificate_comment', 'comments'],
+  picture: ['pic', 'picture', 'diamond image', 'picture url', 'diamondimage', 'pictureurl']
 };
 
 interface ProcessedData {
@@ -145,6 +147,7 @@ export function useBulkCsvProcessor() {
   const mapHeaders = (headers: string[]) => {
     const mappings: Array<{ csvHeader: string; mappedTo: string; confidence: number }> = [];
     const unmapped: string[] = [];
+    const usedFields = new Set<string>(); // Prevent duplicate field mappings
 
     console.log('📋 Available headers:', headers);
 
@@ -154,15 +157,19 @@ export function useBulkCsvProcessor() {
       let bestField = '';
 
       for (const [standardField, variations] of Object.entries(FIELD_MAPPINGS)) {
+        // Skip if field already used (prevent all mapping to same field)
+        if (usedFields.has(standardField)) continue;
+        
         const { match, confidence } = fuzzyMatch(header, variations);
-        if (confidence > bestConfidence && confidence >= 0.2) { // Lower threshold
+        if (confidence > bestConfidence && confidence >= 0.2 && isFinite(confidence)) {
           bestConfidence = confidence;
           bestMapping = match;
           bestField = standardField;
         }
       }
 
-      if (bestMapping && bestConfidence >= 0.2) { // Lower threshold
+      if (bestMapping && bestField && bestConfidence >= 0.2 && !usedFields.has(bestField)) {
+        usedFields.add(bestField);
         mappings.push({
           csvHeader: header,
           mappedTo: bestField,
