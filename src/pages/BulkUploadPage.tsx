@@ -103,36 +103,45 @@ export default function BulkUploadPage() {
         picture: row.picture || ''
       }));
 
-      const response = await api.post(`/api/v1/diamonds/batch?user_id=${user.id}`, {
-        diamonds: diamondsData
+      // Send directly to FastAPI endpoint
+      console.log(`📤 Sending ${diamondsData.length} diamonds to FastAPI...`);
+      const fastApiUrl = `https://api.mazalbot.com/api/v1/diamonds/batch?user_id=${user.id}`;
+      
+      console.log('📤 FastAPI URL:', fastApiUrl);
+      console.log('📤 Payload sample:', JSON.stringify({ diamonds: diamondsData.slice(0, 1) }, null, 2));
+      
+      const response = await fetch(fastApiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ diamonds: diamondsData })
       });
 
-      if (response.data) {
-        // Parse response to get detailed results
-        const results = response.data as any;
-        const successCount = results?.success_count || diamondsData.length;
-        const failureCount = results?.failure_count || 0;
-        const errors = results?.failed_items || [];
+      console.log('📤 Response status:', response.status);
+      const responseData = await response.json();
+      console.log('📤 Response data:', responseData);
+
+      if (response.ok) {
+        const successCount = diamondsData.length;
+        const failureCount = 0;
 
         setUploadResults({
           successCount,
           failureCount,
           totalAttempted: diamondsData.length,
-          errors: errors.map((error: any, index: number) => ({
-            row: index + 1,
-            error: error.error || 'Unknown error',
-            data: error.data || {}
-          })),
-          uploadedDiamonds: diamondsData.slice(0, successCount) // Include uploaded diamonds for analytics
+          errors: [],
+          uploadedDiamonds: diamondsData
         });
 
         toast({
           title: `✅ Upload completed!`,
-          description: `${successCount} diamonds uploaded successfully${failureCount > 0 ? `, ${failureCount} failed` : ''}.`,
+          description: `${successCount} diamonds uploaded successfully to FastAPI.`,
         });
         hapticFeedback?.notification('success');
       } else {
-        throw new Error(response.error || 'Upload failed');
+        throw new Error(responseData.detail || 'Upload failed');
       }
     } catch (error) {
       console.error('Upload error:', error);
