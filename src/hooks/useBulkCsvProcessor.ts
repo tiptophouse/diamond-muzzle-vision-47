@@ -52,16 +52,16 @@ const FLUORESCENCE_ALIASES = {
 
 // Field mapping patterns for intelligent column detection
 const FIELD_MAPPINGS = {
-  shape: ['shape', 'cut_shape', 'diamond_shape', 'form', 'צורה'],
+  shape: ['shape', 'diamond_shape', 'form', 'צורה'],
   weight: ['weight', 'carat', 'carats', 'ct', 'cts', 'size', 'משקל'],
-  color: ['color', 'colour', 'grade_color', 'color_grade', 'צבע'],
+  color: ['color', 'colour', 'grade_color', 'color_grade', 'fancycolor', 'צבע'],
   clarity: ['clarity', 'purity', 'grade_clarity', 'clarity_grade', 'ניקיון'],
-  cut: ['cut', 'cut_grade', 'make', 'finish', 'חיתוך'],
-  fluorescence: ['fluorescence', 'fluo', 'fluor', 'זרחן'],
-  price_per_carat: ['price/crt', 'price_per_carat', 'price per carat', 'ppc', 'מחיר_לקרט'],
+  cut: ['cut', 'cut_grade', 'make', 'finish', 'cut_shape', 'חיתוך'],
+  fluorescence: ['fluorescence', 'fluo', 'fluor', 'fluorescenceintensity', 'זרחן'],
+  price_per_carat: ['price/crt', 'price_per_carat', 'price per carat', 'ppc', 'rapnetaskingprice', 'indexaskingprice', 'מחיר_לקרט'],
   lab: ['lab', 'laboratory', 'cert', 'certificate', 'מעבדה'],
-  certificate_number: ['cert_number', 'certificate_number', 'report_number', 'מספר_תעודה'],
-  stock: ['stock', 'stock_number', 'sku', 'item_number', 'מלאי']
+  certificate_number: ['cert_number', 'certificate_number', 'report_number', 'certificateid', 'מספר_תעודה'],
+  stock: ['stock', 'stock_number', 'sku', 'item_number', 'vendorstocknumber', 'מלאי']
 };
 
 interface ProcessedData {
