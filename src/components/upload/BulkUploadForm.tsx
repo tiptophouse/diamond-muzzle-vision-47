@@ -114,6 +114,8 @@ export function BulkUploadForm() {
   });
 
   async function handleFileChange(file: File | null) {
+    console.log('🔄 File change triggered:', file?.name);
+    
     if (!file) {
       setSelectedFile(null);
       resetProcessor();
@@ -125,13 +127,17 @@ export function BulkUploadForm() {
     hapticFeedback.impact('light');
 
     try {
+      console.log('📂 Processing file:', file.name, 'Size:', file.size);
       await processFile(file);
+      console.log('✅ File processed successfully');
+      
       hapticFeedback.notification('success');
       toast({
         title: "File Processed",
         description: `Found ${processedData?.validRows.length || 0} diamonds with all mandatory fields. ${processedData?.failedRows.length || 0} rows were skipped.`,
       });
     } catch (error) {
+      console.error('❌ File processing error:', error);
       hapticFeedback.notification('error');
       toast({
         title: "Processing Failed",

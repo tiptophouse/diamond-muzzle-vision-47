@@ -138,6 +138,8 @@ export function useBulkCsvProcessor() {
     const mappings: Array<{ csvHeader: string; mappedTo: string; confidence: number }> = [];
     const unmapped: string[] = [];
 
+    console.log('📋 Available headers:', headers);
+
     for (const header of headers) {
       let bestMapping = '';
       let bestConfidence = 0;
@@ -145,24 +147,28 @@ export function useBulkCsvProcessor() {
 
       for (const [standardField, variations] of Object.entries(FIELD_MAPPINGS)) {
         const { match, confidence } = fuzzyMatch(header, variations);
-        if (confidence > bestConfidence && confidence >= 0.3) {
+        if (confidence > bestConfidence && confidence >= 0.2) { // Lower threshold
           bestConfidence = confidence;
           bestMapping = match;
           bestField = standardField;
         }
       }
 
-      if (bestMapping && bestConfidence >= 0.3) {
+      if (bestMapping && bestConfidence >= 0.2) { // Lower threshold
         mappings.push({
           csvHeader: header,
           mappedTo: bestField,
           confidence: bestConfidence
         });
+        console.log(`✅ Mapped: ${header} -> ${bestField} (confidence: ${bestConfidence.toFixed(2)})`);
       } else {
         unmapped.push(header);
+        console.log(`❌ Could not map: ${header}`);
       }
     }
 
+    console.log('📊 Final mappings:', mappings);
+    console.log('🚫 Unmapped headers:', unmapped);
     return { mappings, unmapped };
   };
 
