@@ -106,9 +106,8 @@ export default function BulkUploadPage() {
         picture: row.picture || ''
       }));
 
-      const response = await api.post('/api/v1/diamonds/batch', {
-        diamonds: diamondsData,
-        user_id: user.id
+      const response = await api.post(`/api/v1/diamonds/batch?user_id=${user.id}`, {
+        diamonds: diamondsData
       });
 
       if (response.data) {
