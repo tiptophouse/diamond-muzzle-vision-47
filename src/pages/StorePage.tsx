@@ -1,29 +1,54 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
-import { StoreHeader } from "@/components/store/StoreHeader";
-import { CollapsibleFilters } from "@/components/store/CollapsibleFilters";
-import { StoreGrid } from "@/components/store/StoreGrid";
+import { EnhancedStoreHeader } from "@/components/store/EnhancedStoreHeader";
+import { FigmaStoreFilters } from "@/components/store/FigmaStoreFilters";
+import { FigmaDiamondCard } from "@/components/store/FigmaDiamondCard";
+import { DiamondCardSkeleton } from "@/components/store/DiamondCardSkeleton";
 import { ImageUpload } from "@/components/store/ImageUpload";
 import { FloatingShareButton } from "@/components/store/FloatingShareButton";
 import { MobilePullToRefresh } from "@/components/mobile/MobilePullToRefresh";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Upload, Image, Filter } from "lucide-react";
+import { Upload, Image, Filter, AlertCircle } from "lucide-react";
 import { toast } from 'sonner';
+import { Diamond } from "@/components/inventory/InventoryTable";
 
 export default function StorePage() {
   const { diamonds, loading, error, refetch } = useStoreData();
   const { filters, filteredDiamonds, updateFilter, clearFilters } = useStoreFilters(diamonds || []);
   const [showUpload, setShowUpload] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [sortBy, setSortBy] = useState("most-popular");
   const [searchParams] = useSearchParams();
   const stockNumber = searchParams.get('stock');
   const { selectionChanged } = useTelegramHapticFeedback();
 
   const navigate = useNavigate();
+
+  // Sort diamonds based on selected sort option
+  const sortedDiamonds = useMemo(() => {
+    const diamonds = [...filteredDiamonds];
+    
+    switch (sortBy) {
+      case "price-low-high":
+        return diamonds.sort((a, b) => a.price - b.price);
+      case "price-high-low":
+        return diamonds.sort((a, b) => b.price - a.price);
+      case "carat-low-high":
+        return diamonds.sort((a, b) => a.carat - b.carat);
+      case "carat-high-low":
+        return diamonds.sort((a, b) => b.carat - a.carat);
+      case "newest":
+        return diamonds.sort((a, b) => a.stockNumber.localeCompare(b.stockNumber));
+      case "most-popular":
+      default:
+        return diamonds; // Keep original order for "most popular"
+    }
+  }, [filteredDiamonds, sortBy]);
 
   // Pull to refresh handler
   const handleRefresh = useCallback(async () => {
@@ -39,7 +64,7 @@ export default function StorePage() {
   // Filter to specific diamond if URL parameters are provided
   const finalFilteredDiamonds = (() => {
     if (stockNumber) {
-      const stockMatch = filteredDiamonds.filter(diamond => 
+      const stockMatch = sortedDiamonds.filter(diamond => 
         diamond.stockNumber === stockNumber
       );
       if (stockMatch.length > 0) {
@@ -55,7 +80,7 @@ export default function StorePage() {
     const shape = searchParams.get('shape');
     
     if (carat || color || clarity || shape) {
-      const paramMatch = filteredDiamonds.filter(diamond => {
+      const paramMatch = sortedDiamonds.filter(diamond => {
         const matches = [];
         if (carat) matches.push(Math.abs(diamond.carat - parseFloat(carat)) < 0.01);
         if (color) matches.push(diamond.color === color);
@@ -70,7 +95,7 @@ export default function StorePage() {
       }
     }
     
-    return filteredDiamonds;
+    return sortedDiamonds;
   })();
 
   // Auto-scroll to diamond if found via stock parameter
@@ -93,84 +118,116 @@ export default function StorePage() {
     toast.success('Image uploaded successfully!');
   };
 
-  return (
-    <MobilePullToRefresh onRefresh={handleRefresh} enabled={!loading}>
-      <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-purple-50">
-        <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-6 pb-safe">
-          {/* Header with Upload Button and Filters */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <StoreHeader 
-              totalDiamonds={finalFilteredDiamonds.length}
-              onOpenFilters={() => {}}
-            />
-            
-            <div className="flex gap-2 w-full sm:w-auto">
-              {/* Filters Button - placed prominently */}
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 touch-target min-h-[44px] border-primary/30 text-primary hover:bg-primary/10 hover:border-primary"
-                  >
-                    <Filter className="h-4 w-4" />
-                    <span>Filters</span>
-                    {(filters.shapes?.length || 0) + (filters.colors?.length || 0) + (filters.clarities?.length || 0) > 0 && (
-                      <span className="bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                        {(filters.shapes?.length || 0) + (filters.colors?.length || 0) + (filters.clarities?.length || 0)}
-                      </span>
-                    )}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="w-[95vw] max-w-2xl max-h-[85vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                      <Filter className="h-5 w-5" />
-                      Refine Your Search
-                    </DialogTitle>
-                  </DialogHeader>
-                  <div className="mt-4">
-                    <CollapsibleFilters
-                      filters={filters}
-                      onUpdateFilter={updateFilter}
-                      onClearFilters={clearFilters}
-                      diamonds={diamonds || []}
-                    />
-                  </div>
-                </DialogContent>
-              </Dialog>
+  const renderStoreGrid = () => {
+    if (loading) {
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 12 }, (_, i) => (
+            <DiamondCardSkeleton key={i} />
+          ))}
+        </div>
+      );
+    }
 
-              <Dialog open={showUpload} onOpenChange={setShowUpload}>
-                <DialogTrigger asChild>
-                  <Button className="flex-1 sm:flex-none flex items-center justify-center gap-2 touch-target min-h-[44px] bg-gradient-to-r from-primary to-primary-glow hover:from-primary-dark hover:to-primary shadow-lg hover:shadow-xl">
-                    <Upload className="h-4 w-4" />
-                    <span className="hidden sm:inline">Upload Photo</span>
-                    <span className="sm:hidden">Upload</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="w-[95vw] max-w-md mx-auto">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                      <Image className="h-5 w-5" />
-                      Upload Image to Store
-                    </DialogTitle>
-                  </DialogHeader>
-                  <ImageUpload onImageUploaded={handleImageUploaded} />
-                </DialogContent>
-              </Dialog>
-            </div>
+    if (error) {
+      return (
+        <div className="flex items-center justify-center py-12 px-4">
+          <div className="text-center max-w-md">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-slate-900 mb-2">Error Loading Diamonds</h3>
+            <p className="text-slate-600">{error}</p>
           </div>
+        </div>
+      );
+    }
 
-          {/* Store Grid - Users see product cards first */}
-          <StoreGrid
-            diamonds={finalFilteredDiamonds}
-            loading={loading}
-            error={error}
+    if (finalFilteredDiamonds.length === 0) {
+      return (
+        <div className="flex items-center justify-center py-12 px-4">
+          <div className="text-center max-w-md">
+            <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-12 h-12 bg-slate-200 rounded-full"></div>
+            </div>
+            <h3 className="text-lg font-medium text-slate-900 mb-2">No Diamonds Found</h3>
+            <p className="text-slate-600">Try adjusting your filters to see more diamonds.</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {finalFilteredDiamonds.map((diamond, index) => (
+          <FigmaDiamondCard 
+            key={diamond.id} 
+            diamond={diamond}
+            index={index}
             onUpdate={refetch}
           />
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <MobilePullToRefresh onRefresh={handleRefresh} enabled={!loading}>
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-6 space-y-6 max-w-7xl">
+          
+          {/* Enhanced Header with Sorting */}
+          <EnhancedStoreHeader
+            totalDiamonds={finalFilteredDiamonds.length}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            onOpenFilters={() => setShowFilters(true)}
+          />
+
+          {/* Upload Button */}
+          <div className="flex justify-end">
+            <Dialog open={showUpload} onOpenChange={setShowUpload}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  Upload Photo
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="w-[95vw] max-w-md mx-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Image className="h-5 w-5" />
+                    Upload Image to Store
+                  </DialogTitle>
+                </DialogHeader>
+                <ImageUpload onImageUploaded={handleImageUploaded} />
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {/* Diamond Grid */}
+          {renderStoreGrid()}
+
+          {/* Filters Dialog */}
+          <Dialog open={showFilters} onOpenChange={setShowFilters}>
+            <DialogContent className="w-[95vw] max-w-md max-h-[85vh]">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Filter className="h-5 w-5" />
+                  Filters
+                </DialogTitle>
+              </DialogHeader>
+              <FigmaStoreFilters
+                filters={filters}
+                onUpdateFilter={updateFilter}
+                onClearFilters={clearFilters}
+                onApplyFilters={() => setShowFilters(false)}
+                diamonds={diamonds || []}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
 
-        {/* Floating Share Button - Repositioned to avoid bottom nav */}
-        <div className="fixed bottom-24 right-4 z-40">
+        {/* Floating Share Button */}
+        <div className="fixed bottom-6 right-4 z-40">
           <FloatingShareButton />
         </div>
       </div>

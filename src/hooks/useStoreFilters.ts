@@ -8,8 +8,12 @@ interface StoreFilters {
   clarities: string[];
   cuts: string[];
   fluorescence: string[];
+  polish: string[];
+  symmetry: string[];
   caratRange: [number, number];
   priceRange: [number, number];
+  depthRange: [number, number];
+  tableRange: [number, number];
 }
 
 export function useStoreFilters(diamonds: Diamond[]) {
@@ -36,7 +40,11 @@ export function useStoreFilters(diamonds: Diamond[]) {
     clarities: [],
     cuts: [],
     fluorescence: [],
-    ...getInitialRanges()
+    polish: [],
+    symmetry: [],
+    ...getInitialRanges(),
+    depthRange: [50, 80] as [number, number],
+    tableRange: [45, 75] as [number, number]
   }));
 
   // Update ranges when diamonds change
@@ -79,6 +87,24 @@ export function useStoreFilters(diamonds: Diamond[]) {
         }
       }
 
+      // Polish filter (placeholder - not in current Diamond type)
+      if (filters.polish.length > 0) {
+        // For now, all diamonds pass this filter since we don't have polish data
+        // In future, would check: filters.polish.includes(diamond.polish || 'N/A')
+      }
+
+      // Symmetry filter (placeholder - not in current Diamond type)
+      if (filters.symmetry.length > 0) {
+        // For now, all diamonds pass this filter since we don't have symmetry data
+        // In future, would check: filters.symmetry.includes(diamond.symmetry || 'N/A')
+      }
+
+      // Depth range filter (placeholder - not in current Diamond type)
+      // For now, all diamonds pass this filter
+
+      // Table range filter (placeholder - not in current Diamond type)
+      // For now, all diamonds pass this filter
+
       // Carat range filter
       if (diamond.carat < filters.caratRange[0] || diamond.carat > filters.caratRange[1]) {
         return false;
@@ -108,6 +134,10 @@ export function useStoreFilters(diamonds: Diamond[]) {
       clarities: [],
       cuts: [],
       fluorescence: [],
+      polish: [],
+      symmetry: [],
+      depthRange: [50, 80] as [number, number],
+      tableRange: [45, 75] as [number, number],
       ...ranges
     });
   };
