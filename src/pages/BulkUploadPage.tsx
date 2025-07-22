@@ -4,6 +4,7 @@ import { TelegramLayout } from "@/components/layout/TelegramLayout";
 import { BulkFileUploadArea } from "@/components/upload/BulkFileUploadArea";
 import { CsvValidationResults } from "@/components/upload/CsvValidationResults";
 import { ProcessingReport } from "@/components/upload/ProcessingReport";
+import { UploadResultsReport } from "@/components/upload/UploadResultsReport";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Upload, FileSpreadsheet, AlertTriangle, Send } from "lucide-react";
@@ -22,6 +23,12 @@ export default function BulkUploadPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadResults, setUploadResults] = useState<{
+    successCount: number;
+    failureCount: number;
+    totalAttempted: number;
+    errors: Array<{ row: number; error: string; data: any }>;
+  } | null>(null);
 
   const handleFileChange = async (file: File | null) => {
     setSelectedFile(file);
@@ -52,6 +59,7 @@ export default function BulkUploadPage() {
     resetProcessor();
     setIsProcessing(false);
     setIsUploading(false);
+    setUploadResults(null);
   };
 
   const handleUpload = async () => {
@@ -104,12 +112,28 @@ export default function BulkUploadPage() {
       });
 
       if (response.data) {
+        // Parse response to get detailed results
+        const results = response.data as any;
+        const successCount = results?.success_count || diamondsData.length;
+        const failureCount = results?.failure_count || 0;
+        const errors = results?.failed_items || [];
+
+        setUploadResults({
+          successCount,
+          failureCount,
+          totalAttempted: diamondsData.length,
+          errors: errors.map((error: any, index: number) => ({
+            row: index + 1,
+            error: error.error || 'Unknown error',
+            data: error.data || {}
+          }))
+        });
+
         toast({
-          title: `✅ Upload successful!`,
-          description: `Successfully uploaded ${diamondsData.length} diamonds to your inventory.`,
+          title: `✅ Upload completed!`,
+          description: `${successCount} diamonds uploaded successfully${failureCount > 0 ? `, ${failureCount} failed` : ''}.`,
         });
         hapticFeedback?.notification('success');
-        handleReset();
       } else {
         throw new Error(response.error || 'Upload failed');
       }
@@ -180,8 +204,16 @@ export default function BulkUploadPage() {
           <CsvValidationResults results={validationResults} />
         )}
 
+        {/* Upload Results */}
+        {uploadResults && (
+          <UploadResultsReport 
+            results={uploadResults}
+            onReset={handleReset}
+          />
+        )}
+
         {/* Upload Button */}
-        {processedData?.validRows.length > 0 && (
+        {processedData?.validRows.length > 0 && !uploadResults && (
           <Card>
             <CardContent className="pt-6">
               <div className="text-center space-y-4">
