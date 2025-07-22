@@ -1,4 +1,10 @@
 import { useState } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL!,
+  import.meta.env.VITE_SUPABASE_ANON_KEY!
+);
 
 interface OpenAIEnhancedMapping {
   originalValue: string;
@@ -16,10 +22,28 @@ export function useOpenAICsvEnhancer() {
     setIsEnhancing(true);
     
     try {
-      // Skip OpenAI enhancement for now and use built-in logic
-      console.log('🤖 Applying built-in data enhancement (OpenAI temporarily disabled)...');
+      console.log('🤖 Calling OpenAI CSV enhancer edge function...');
       
-      // Apply built-in enhancement logic directly
+      // Call the OpenAI enhancement edge function
+      const { data: enhancementResult, error } = await supabase.functions.invoke('openai-csv-enhancer', {
+        body: { csv_data: csvData }
+      });
+      
+      if (error) {
+        console.warn('⚠️ OpenAI enhancement failed, using built-in logic:', error);
+        throw new Error(error.message);
+      }
+      
+      if (enhancementResult?.enhanced_data) {
+        console.log('✅ OpenAI enhancement successful, processed', enhancementResult.enhanced_data.length, 'rows');
+        if (enhancementResult.mappings?.length > 0) {
+          console.log('🔄 Applied', enhancementResult.mappings.length, 'AI-suggested corrections');
+        }
+        return enhancementResult.enhanced_data;
+      }
+      
+      // Fallback to built-in logic if no enhanced data returned
+      console.log('🤖 Applying built-in data enhancement as fallback...');
       const enhancedData = csvData.map(row => {
         const enhanced = { ...row };
         
