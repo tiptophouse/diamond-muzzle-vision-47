@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,8 +17,13 @@ export function BulkUploadForm() {
   const { hapticFeedback } = useTelegramWebApp();
   const { processedData, validationResults, processFile, resetProcessor, downloadFailedRecords } = useBulkCsvProcessor();
 
-  // Only require critical 4C fields + fluorescence + shape
-  const criticalFields = ['shape', 'weight', 'color', 'clarity', 'cut', 'fluorescence'];
+  // All required fields for the API - every field must be present
+  const requiredFields = [
+    'stock', 'shape', 'weight', 'color', 'clarity', 'lab', 'certificate_number',
+    'length', 'width', 'depth', 'ratio', 'cut', 'polish', 'symmetry', 
+    'fluorescence', 'table', 'depth_percentage', 'gridle', 'culet', 
+    'certificate_comment', 'rapnet', 'price_per_carat', 'picture'
+  ];
 
   async function handleBulkUpload() {
     if (!processedData?.validRows.length) return;
@@ -28,21 +32,21 @@ export function BulkUploadForm() {
     hapticFeedback.impact('heavy');
 
     try {
-      // Filter rows to only include those with critical 4C fields + fluorescence + shape
+      // Filter rows to only include those with ALL required fields present
       const validDiamonds = processedData.validRows.filter(row => {
-        return criticalFields.every(field => {
+        return requiredFields.every(field => {
           const value = row[field];
-          // Must have critical fields - color, cut, clarity, weight, fluorescence, shape
+          // All fields must be present and not empty
           return value !== undefined && value !== null && value !== '';
         });
       });
 
-      console.log(`📋 Filtered ${validDiamonds.length} diamonds with critical fields from ${processedData.validRows.length} total rows`);
+      console.log(`📋 Filtered ${validDiamonds.length} complete diamonds from ${processedData.validRows.length} total rows`);
 
       if (validDiamonds.length === 0) {
         toast({
-          title: "❌ No Valid Diamonds",
-          description: "No diamonds have the required 4C fields (color, cut, clarity, weight) + fluorescence + shape.",
+          title: "❌ No Complete Diamonds",
+          description: "No diamonds have all required fields. Please check your CSV file contains all 22 required fields.",
           variant: "destructive",
         });
         return;
