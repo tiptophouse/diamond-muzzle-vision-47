@@ -175,20 +175,46 @@ export function useEnhancedUploadHandler() {
       if (validDiamonds.length > 0) {
         try {
           console.log(`📤 Uploading ${validDiamonds.length} diamonds in batch...`);
-          const batchPayload = { diamonds: validDiamonds };
+          console.log('📤 Request payload:', JSON.stringify({ diamonds: validDiamonds.slice(0, 1) }, null, 2));
           
+          const batchPayload = { diamonds: validDiamonds };
           const response = await api.post(apiEndpoints.addDiamondsBatch(user.id), batchPayload);
+          
+          console.log('📤 API Response:', response);
           
           if (response.error) {
             console.error('❌ Batch upload failed:', response.error);
-            errors.push(`Batch upload failed: ${response.error}`);
+            errors.push(`API Error: ${response.error}`);
+            
+            // Show detailed error toast
+            toast({
+              title: "❌ Upload Failed",
+              description: `API Error: ${response.error}`,
+              variant: "destructive",
+            });
           } else {
             successCount = validDiamonds.length;
             console.log(`✅ Batch upload successful: ${successCount} diamonds uploaded`);
+            
+            // Show success toast immediately
+            toast({
+              title: "🎉 Upload Successful!",
+              description: `${successCount} diamonds added to your inventory`,
+            });
           }
         } catch (error) {
           console.error('❌ Batch upload error:', error);
-          errors.push(`Batch upload error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          const errorMessage = error instanceof Error ? error.message : 'Unknown upload error';
+          errors.push(`Upload Error: ${errorMessage}`);
+          
+          // Show detailed error toast
+          toast({
+            title: "❌ Upload Failed",
+            description: errorMessage.includes('405') 
+              ? "Method not allowed - Check if FastAPI endpoint exists" 
+              : errorMessage,
+            variant: "destructive",
+          });
         }
       }
       

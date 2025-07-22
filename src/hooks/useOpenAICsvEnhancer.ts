@@ -43,7 +43,12 @@ export function useOpenAICsvEnhancer() {
       }
       
       // Fallback to built-in logic if no enhanced data returned
-      console.log('🤖 Applying built-in data enhancement as fallback...');
+      throw new Error('No enhanced data returned from OpenAI');
+      
+    } catch (error) {
+      console.warn('⚠️ OpenAI enhancement failed, using built-in logic:', error);
+      
+      // Apply built-in enhancement logic directly
       const enhancedData = csvData.map(row => {
         const enhanced = { ...row };
         
@@ -120,14 +125,9 @@ export function useOpenAICsvEnhancer() {
 
       console.log('✅ Built-in enhancement complete');
       return enhancedData;
-    } catch (error) {
-      console.warn('⚠️ Data enhancement failed, using original data:', error);
     } finally {
       setIsEnhancing(false);
     }
-
-    // Fallback: return original data
-    return csvData;
   };
 
   return {
