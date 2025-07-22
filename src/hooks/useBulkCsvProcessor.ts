@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
@@ -214,7 +213,7 @@ export function useBulkCsvProcessor() {
         
         // If not found, check aliases
         if (!validCut) {
-          const aliasKey = Object.keys(CUT_ALIASES).find(key => key === cutUpper);
+          const aliasKey = Object.keys(CUT_ALIASES).find(key => key.toUpperCase() === cutUpper);
           if (aliasKey) {
             validCut = CUT_ALIASES[aliasKey as keyof typeof CUT_ALIASES];
           }
@@ -233,7 +232,7 @@ export function useBulkCsvProcessor() {
         
         // If not found, check aliases
         if (!validFluor) {
-          const aliasKey = Object.keys(FLUORESCENCE_ALIASES).find(key => key === fluorUpper);
+          const aliasKey = Object.keys(FLUORESCENCE_ALIASES).find(key => key.toUpperCase() === fluorUpper);
           if (aliasKey) {
             validFluor = FLUORESCENCE_ALIASES[aliasKey as keyof typeof FLUORESCENCE_ALIASES];
           }
