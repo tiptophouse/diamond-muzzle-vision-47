@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { TelegramLayout } from "@/components/layout/TelegramLayout";
 import { BulkFileUploadArea } from "@/components/upload/BulkFileUploadArea";
@@ -28,6 +27,7 @@ export default function BulkUploadPage() {
     failureCount: number;
     totalAttempted: number;
     errors: Array<{ row: number; error: string; data: any }>;
+    uploadedDiamonds?: any[]; // Add this field for analytics
   } | null>(null);
 
   const handleFileChange = async (file: File | null) => {
@@ -126,7 +126,8 @@ export default function BulkUploadPage() {
             row: index + 1,
             error: error.error || 'Unknown error',
             data: error.data || {}
-          }))
+          })),
+          uploadedDiamonds: diamondsData.slice(0, successCount) // Include uploaded diamonds for analytics
         });
 
         toast({
