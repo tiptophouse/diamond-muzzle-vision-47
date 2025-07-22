@@ -9,7 +9,7 @@ const REQUIRED_FIELDS = ['shape', 'weight', 'color', 'clarity', 'cut', 'fluoresc
 // Enhanced shape aliases from your backend
 const SHAPE_ALIASES = {
   "RB": "round brilliant", "PC": "princess", "PR": "princess", "PS": "princess", "CC": "cushion", "CU": "cushion",
-  "OC": "oval", "OV": "oval", "EC": "emerald", "EM": "emerald", "PE": "pear", "PS2": "pear", "MC": "marquise",
+  "OC": "oval", "OV": "oval", "EC": "emerald", "EM": "emerald", "PE": "pear", "PR2": "pear", "MC": "marquise",
   "MQ": "marquise", "AC": "asscher", "AS": "asscher", "RC": "radiant", "RD": "radiant", "RA": "radiant",
   "HC": "heart", "HT": "heart", "HS": "heart", "BC": "baguette", "BG": "baguette",
   "OEC": "old european", "RS": "rose", "BR": "round brilliant", "TBC": "tapered baguette",
