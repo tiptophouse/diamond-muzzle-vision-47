@@ -12,22 +12,23 @@ export function FloatingDiamondsCounter() {
   useEffect(() => {
     const fetchDiamondCount = async () => {
       try {
-        // Use the service role key to bypass RLS for public count
+        // Use the new public function to get diamond count (bypasses RLS)
         const { data, error } = await supabase.rpc('get_public_diamond_count');
         
         if (error) {
-          console.error('Error fetching diamond count:', error);
-          // Fallback to regular query in case the function doesn't exist
+          console.error('Error fetching diamond count from function:', error);
+          // Fallback to regular query in case the function doesn't exist yet
           const { count: diamondCount, error: fallbackError } = await supabase
             .from('inventory')
             .select('*', { count: 'exact', head: true })
             .eq('store_visible', true)
             .is('deleted_at', null);
           
-          if (!fallbackError) {
-            setCount(diamondCount || 0);
+          if (!fallbackError && typeof diamondCount === 'number') {
+            setCount(diamondCount);
           }
         } else {
+          // data is the count returned by the function
           setCount(data || 0);
         }
       } catch (error) {
