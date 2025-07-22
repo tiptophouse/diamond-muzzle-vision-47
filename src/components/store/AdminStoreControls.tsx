@@ -29,7 +29,8 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
   const [formData, setFormData] = useState({
     price: diamond.price,
     description: '',
-    imageUrl: diamond.imageUrl || ''
+    imageUrl: diamond.imageUrl || '',
+    gem360Url: diamond.gem360Url || ''
   });
   const { toast } = useToast();
   const { user, isTelegramEnvironment } = useTelegramAuth();
@@ -101,7 +102,8 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
       const updateData = {
         price_per_carat: Math.round(formData.price / diamond.carat),
         picture: formData.imageUrl,
-        certificate_comment: formData.description
+        certificate_comment: formData.description,
+        gem_360_url: formData.gem360Url
       };
 
       const endpoint = apiEndpoints.updateDiamond(diamond.id, user!.id);
@@ -200,7 +202,7 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
             </div>
 
             <div>
-              <Label htmlFor="imageUrl">Image URL</Label>
+              <Label htmlFor="imageUrl">Diamond Image URL</Label>
               <div className="flex gap-2">
                 <Input
                   id="imageUrl"
@@ -212,6 +214,19 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
                   <Upload className="h-4 w-4" />
                 </Button>
               </div>
+            </div>
+
+            <div>
+              <Label htmlFor="gem360Url">3D 360° Viewer URL</Label>
+              <Input
+                id="gem360Url"
+                value={formData.gem360Url}
+                onChange={(e) => setFormData(prev => ({ ...prev, gem360Url: e.target.value }))}
+                placeholder="https://v360.in/diamondview.aspx?cid=YBDB&d=C1-0K732361"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Format: https://v360.in/diamondview.aspx?cid=YBDB&d=CERTIFICATE_ID
+              </p>
             </div>
 
             <div>
