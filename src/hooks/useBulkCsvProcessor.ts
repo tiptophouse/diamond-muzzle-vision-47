@@ -168,8 +168,7 @@ export function useBulkCsvProcessor() {
         // If not found, check aliases
         if (!validShape) {
           const aliasKey = Object.keys(SHAPE_ALIASES).find(key => 
-            key.toLowerCase() === cleanValue.toUpperCase() || 
-            SHAPE_ALIASES[key as keyof typeof SHAPE_ALIASES].toLowerCase() === shapeNormalized
+            key.toUpperCase() === cleanValue.toUpperCase()
           );
           if (aliasKey) {
             validShape = SHAPE_ALIASES[aliasKey as keyof typeof SHAPE_ALIASES];
