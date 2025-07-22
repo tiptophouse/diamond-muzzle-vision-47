@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 import { useTelegramMainButton } from "@/hooks/useTelegramMainButton";
+import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { BulkFileUploadArea } from "./BulkFileUploadArea";
 import { CsvValidationResults } from "./CsvValidationResults";
 import { BulkUploadProgress } from "./BulkUploadProgress";
@@ -16,6 +17,7 @@ export function BulkUploadForm() {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { hapticFeedback } = useTelegramWebApp();
+  const { user } = useTelegramAuth();
   const { processedData, validationResults, processFile, resetProcessor, downloadFailedRecords } = useBulkCsvProcessor();
 
   // All required fields for the API - every field must be present
@@ -36,11 +38,20 @@ export function BulkUploadForm() {
       return;
     }
 
+    if (!user?.id) {
+      toast({
+        title: "❌ Authentication Error",
+        description: "Unable to identify user. Please try refreshing the page.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsProcessing(true);
     hapticFeedback.impact('heavy');
 
     try {
-      console.log(`📤 Uploading ${processedData.validRows.length} diamonds with mandatory fields`);
+      console.log(`📤 Uploading ${processedData.validRows.length} diamonds for user ${user.id}`);
 
       // Build JSON payload with all valid diamonds
       const payload = {
@@ -49,9 +60,9 @@ export function BulkUploadForm() {
 
       console.log('📤 Sending diamonds to batch API:', payload);
 
-      // Send POST request to the specific API endpoint
+      // Send POST request to the FastAPI endpoint with the actual user ID
       const response = await fetch(
-        'https://api.mazalbot.com/api/v1/diamonds/batch?user_id=6485315240',
+        `https://api.mazalbot.com/api/v1/diamonds/batch?user_id=${user.id}`,
         {
           method: 'POST',
           headers: {

@@ -57,7 +57,7 @@ const FIELD_MAPPINGS = {
   weight: ['weight', 'carat', 'carats', 'ct', 'cts', 'size', 'measurements', 'משקל'],
   color: ['color', 'colour', 'grade_color', 'color_grade', 'fancycolor', 'צבע'],
   clarity: ['clarity', 'purity', 'grade_clarity', 'clarity_grade', 'ניקיון'],
-  cut: ['cut', 'cut_grade', 'make', 'finish', 'cut_shape', 'חיתוך'],
+  cut: ['cut', 'cut_grade', 'make', 'finish', 'חיתוך'],
   fluorescence: ['fluorescence', 'fluo', 'fluor', 'fluorescenceintensity', 'זרחן'],
   certificate_number: ['cert_number', 'certificate_number', 'report_number', 'certificateid', 'מספר_תעודה'],
   // Optional fields - these can be present but are not required
@@ -96,12 +96,12 @@ export function useBulkCsvProcessor() {
   const { toast } = useToast();
 
   const fuzzyMatch = (input: string, candidates: string[]): { match: string; confidence: number } => {
-    const inputLower = input.toLowerCase().trim();
+    const inputLower = input.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
     let bestMatch = '';
     let bestConfidence = 0;
 
     for (const candidate of candidates) {
-      const candidateLower = candidate.toLowerCase();
+      const candidateLower = candidate.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
       
       // Exact match
       if (inputLower === candidateLower) {
@@ -115,6 +115,19 @@ export function useBulkCsvProcessor() {
           bestConfidence = confidence;
           bestMatch = candidate;
         }
+      }
+      
+      // Partial match with lower confidence
+      const maxLen = Math.max(inputLower.length, candidateLower.length);
+      const minLen = Math.min(inputLower.length, candidateLower.length);
+      let matches = 0;
+      for (let i = 0; i < minLen; i++) {
+        if (inputLower[i] === candidateLower[i]) matches++;
+      }
+      const partialConfidence = (matches / maxLen) * 0.6;
+      if (partialConfidence > bestConfidence && partialConfidence >= 0.4) {
+        bestConfidence = partialConfidence;
+        bestMatch = candidate;
       }
     }
 
