@@ -23,18 +23,18 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
   const { impactOccurred, selectionChanged } = useTelegramHapticFeedback();
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // Calculate tilt-based transforms
-  const getMotionTransform = () => {
+  // Calculate diamond image rotation based on device tilt
+  const getDiamondImageTransform = () => {
     if (!isMotionMode) return '';
     
-    // Use orientation data for better motion tracking
+    // Use orientation data for precise motion tracking
     const { beta, gamma } = orientationData;
     
-    // Convert orientation to rotation values (limit range for better UX)
-    const rotateX = Math.max(-15, Math.min(15, beta * 0.3));
-    const rotateY = Math.max(-15, Math.min(15, gamma * 0.3));
+    // Convert orientation to rotation values (max ±10° as specified)
+    const rotateX = Math.max(-10, Math.min(10, beta * 0.5));
+    const rotateY = Math.max(-10, Math.min(10, gamma * 0.5));
     
-    return `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    return `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
   };
 
   // Toggle motion mode
@@ -97,9 +97,7 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
         isMotionMode ? 'motion-card' : 'hover:-translate-y-1'
       }`}
       style={{ 
-        animationDelay: `${index * 100}ms`,
-        transform: getMotionTransform(),
-        transformStyle: 'preserve-3d'
+        animationDelay: `${index * 100}ms`
       }}
     >
       {/* Image Container */}
@@ -117,17 +115,27 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
           <img
             src={diamond.imageUrl}
             alt={`Diamond ${diamond.stockNumber}`}
-            className={`w-full h-full object-cover transition-transform duration-300 ${
+            className={`w-full h-full object-cover transition-transform duration-200 ease-out ${
               isMotionMode ? 'scale-105' : 'group-hover:scale-105'
             }`}
+            style={{
+              transform: isMotionMode ? getDiamondImageTransform() : '',
+              transformStyle: 'preserve-3d'
+            }}
             onError={() => setImageError(true)}
           />
         ) : (
           <div className="flex items-center justify-center h-full">
             <div className="relative">
-              <div className={`w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-lg transition-transform duration-300 ${
-                isMotionMode ? 'rotate-12 scale-110' : ''
-              }`}>
+              <div 
+                className={`w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-lg transition-transform duration-200 ease-out ${
+                  isMotionMode ? 'scale-110' : ''
+                }`}
+                style={{
+                  transform: isMotionMode ? getDiamondImageTransform() : '',
+                  transformStyle: 'preserve-3d'
+                }}
+              >
                 <Gem className="h-8 w-8 text-white" />
               </div>
               <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
