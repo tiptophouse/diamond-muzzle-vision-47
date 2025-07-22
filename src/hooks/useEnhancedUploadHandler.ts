@@ -174,52 +174,55 @@ export function useEnhancedUploadHandler() {
 
       let successCount = 0;
       
-      // Upload valid diamonds in batch if any exist
+      // Send diamonds directly to your FastAPI endpoint
       if (validDiamonds.length > 0) {
         try {
-          console.log(`📤 Uploading ${validDiamonds.length} diamonds in batch...`);
-          console.log('📤 Request payload:', JSON.stringify({ diamonds: validDiamonds.slice(0, 1) }, null, 2));
+          console.log(`📤 Sending ${validDiamonds.length} diamonds to FastAPI...`);
           
-          const batchPayload = { diamonds: validDiamonds };
-          const endpoint = apiEndpoints.addDiamondsBatch(user.id);
-          console.log('📤 BATCH UPLOAD: Using endpoint:', endpoint);
-          console.log('📤 BATCH UPLOAD: Full URL will be:', `${API_BASE_URL}${endpoint}`);
+          const fastApiUrl = `https://api.mazalbot.com/api/v1/diamonds/batch?user_id=${user.id}`;
+          const payload = { diamonds: validDiamonds };
           
-          const response = await api.post(endpoint, batchPayload);
+          console.log('📤 FastAPI URL:', fastApiUrl);
+          console.log('📤 Payload sample:', JSON.stringify({ diamonds: validDiamonds.slice(0, 1) }, null, 2));
           
-          console.log('📤 API Response:', response);
+          const response = await fetch(fastApiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify(payload)
+          });
           
-          if (response.error) {
-            console.error('❌ Batch upload failed:', response.error);
-            errors.push(`API Error: ${response.error}`);
-            
-            // Show detailed error toast
-            toast({
-              title: "❌ Upload Failed",
-              description: `API Error: ${response.error}`,
-              variant: "destructive",
-            });
-          } else {
+          console.log('📤 Response status:', response.status);
+          const responseData = await response.json();
+          console.log('📤 Response data:', responseData);
+          
+          if (response.ok) {
             successCount = validDiamonds.length;
-            console.log(`✅ Batch upload successful: ${successCount} diamonds uploaded`);
+            console.log(`✅ Successfully sent ${successCount} diamonds to FastAPI`);
             
-            // Show success toast immediately
             toast({
               title: "🎉 Upload Successful!",
-              description: `${successCount} diamonds added to your inventory`,
+              description: `${successCount} diamonds uploaded successfully`,
+            });
+          } else {
+            errors.push(`API Error: ${responseData.detail || 'Upload failed'}`);
+            
+            toast({
+              title: "❌ Upload Failed",
+              description: `API Error: ${responseData.detail || 'Upload failed'}`,
+              variant: "destructive",
             });
           }
         } catch (error) {
-          console.error('❌ Batch upload error:', error);
-          const errorMessage = error instanceof Error ? error.message : 'Unknown upload error';
+          console.error('❌ FastAPI upload error:', error);
+          const errorMessage = error instanceof Error ? error.message : 'Upload failed';
           errors.push(`Upload Error: ${errorMessage}`);
           
-          // Show detailed error toast
           toast({
             title: "❌ Upload Failed",
-            description: errorMessage.includes('405') 
-              ? "Method not allowed - Check if FastAPI endpoint exists" 
-              : errorMessage,
+            description: errorMessage,
             variant: "destructive",
           });
         }
