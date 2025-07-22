@@ -149,10 +149,10 @@ export default function BulkUploadPage() {
               <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
               <div className="space-y-2">
                 <h3 className="font-semibold text-amber-800">7 Mandatory Fields Required</h3>
-                <p className="text-sm text-amber-700">
-                  Each diamond must have: <strong>Certificate ID, Color, Cut, Weight (Carat), Clarity, Fluorescence, Shape</strong>. 
-                  Rows missing any of these fields will be skipped. Other fields are optional.
-                </p>
+            <p className="text-sm text-amber-700">
+              Each diamond must have: <strong>Certificate ID, Color, Cut, Weight (Carat), Clarity, Fluorescence, Shape</strong>. 
+              Rows missing any of these fields will be skipped. You can add other optional fields like Price, Polish, Symmetry, etc.
+            </p>
               </div>
             </div>
           </CardContent>
