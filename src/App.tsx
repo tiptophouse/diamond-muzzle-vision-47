@@ -47,7 +47,7 @@ function App() {
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/admin/analytics" element={<AdminAnalytics />} />
-                <Route path="/diamond/:storeId/:stockNumber" element={<DiamondDetailPage />} />
+                <Route path="/diamond/:stockNumber" element={<DiamondDetailPage />} />
                 <Route path="/secure-diamond/:encryptedData" element={<SecureDiamondPage />} />
                 <Route path="/swipe" element={<DiamondSwipe />} />
                 <Route path="/standardize-csv" element={<StandardizeCsvPage />} />
