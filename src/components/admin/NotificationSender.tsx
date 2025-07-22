@@ -19,18 +19,20 @@ export function NotificationSender({ onSendNotification }: NotificationSenderPro
   const [notification, setNotification] = useState({
     title: '',
     message: '',
+    messageHebrew: '',
     type: 'info',
     target: 'all',
-    specificUserId: ''
+    specificUserId: '',
+    language: 'auto' // 'auto', 'en', 'he'
   });
 
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSend = async () => {
-    if (!notification.title || !notification.message) {
+    if (!notification.title || (!notification.message && !notification.messageHebrew)) {
       toast({
         title: "Validation Error",
-        description: "Please fill in both title and message fields.",
+        description: "Please fill in title and at least one message (English or Hebrew).",
         variant: "destructive",
       });
       return;
@@ -59,9 +61,11 @@ export function NotificationSender({ onSendNotification }: NotificationSenderPro
       setNotification({
         title: '',
         message: '',
+        messageHebrew: '',
         type: 'info',
         target: 'all',
-        specificUserId: ''
+        specificUserId: '',
+        language: 'auto'
       });
     } catch (error) {
       toast({
@@ -98,19 +102,33 @@ export function NotificationSender({ onSendNotification }: NotificationSenderPro
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="message">Message</Label>
+          <Label htmlFor="message">Message (English)</Label>
           <Textarea
             id="message"
             value={notification.message}
             onChange={(e) => setNotification(prev => ({ ...prev, message: e.target.value }))}
-            placeholder="Enter your notification message"
-            rows={4}
+            placeholder="Enter your notification message in English"
+            rows={3}
             maxLength={500}
           />
           <p className="text-xs text-gray-500">{notification.message.length}/500 characters</p>
         </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="messageHebrew">Message (Hebrew)</Label>
+          <Textarea
+            id="messageHebrew"
+            value={notification.messageHebrew}
+            onChange={(e) => setNotification(prev => ({ ...prev, messageHebrew: e.target.value }))}
+            placeholder="הזן את הודעת ההתראה שלך בעברית"
+            rows={3}
+            maxLength={500}
+            dir="rtl"
+          />
+          <p className="text-xs text-gray-500">{notification.messageHebrew.length}/500 characters</p>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="type">Notification Type</Label>
             <Select 
@@ -143,6 +161,38 @@ export function NotificationSender({ onSendNotification }: NotificationSenderPro
                   <div className="flex items-center gap-2">
                     <Bell className="h-4 w-4 text-red-500" />
                     Urgent
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="language">Language</Label>
+            <Select 
+              value={notification.language} 
+              onValueChange={(value) => setNotification(prev => ({ ...prev, language: value }))}
+            >
+              <SelectTrigger id="language">
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto">
+                  <div className="flex items-center gap-2">
+                    <span className="i-flag-il h-4 w-4"></span>
+                    Automatic (User's language)
+                  </div>
+                </SelectItem>
+                <SelectItem value="en">
+                  <div className="flex items-center gap-2">
+                    <span className="i-flag-us h-4 w-4"></span>
+                    English Only
+                  </div>
+                </SelectItem>
+                <SelectItem value="he">
+                  <div className="flex items-center gap-2">
+                    <span className="i-flag-il h-4 w-4"></span>
+                    Hebrew Only
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -198,7 +248,7 @@ export function NotificationSender({ onSendNotification }: NotificationSenderPro
         <div className="flex justify-end pt-4">
           <Button 
             onClick={handleSend} 
-            disabled={isLoading || !notification.title || !notification.message}
+            disabled={isLoading || !notification.title || (!notification.message && !notification.messageHebrew)}
             className="bg-blue-600 hover:bg-blue-700"
           >
             <Send className="h-4 w-4 mr-2" />

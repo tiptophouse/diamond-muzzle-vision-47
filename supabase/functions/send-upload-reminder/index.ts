@@ -8,6 +8,7 @@ const corsHeaders = {
 interface User {
   telegram_id: number;
   first_name: string;
+  language_code?: string;
 }
 
 interface RequestBody {
@@ -33,13 +34,17 @@ serve(async (req) => {
 
     const results = await Promise.allSettled(
       users.map(async (user) => {
-        const message = generateUploadReminderMessage(user.first_name);
+        // Determine language - default to Hebrew unless specifically English
+        const isEnglish = user.language_code?.startsWith('en') || false;
         
-        // Create deep link button for Telegram mini app
+        // Generate message in the appropriate language
+        const message = generateUploadReminderMessage(user.first_name, isEnglish);
+        
+        // Create deep link button for Telegram mini app with appropriate language
         const keyboard = {
           inline_keyboard: [[
             {
-              text: "📤 Upload Your Diamonds",
+              text: isEnglish ? "📤 Upload Your Diamonds" : "📤 העלאת יהלומים",
               web_app: {
                 url: "https://miniapp.mazalbot.com/upload-single-stone"
               }
@@ -139,8 +144,9 @@ serve(async (req) => {
   }
 });
 
-function generateUploadReminderMessage(firstName: string): string {
-  return `👋 Hi ${firstName}!
+function generateUploadReminderMessage(firstName: string, isEnglish: boolean = false): string {
+  if (isEnglish) {
+    return `👋 Hi ${firstName}!
 
 🔹 We noticed you haven't uploaded your diamond inventory yet. 
 
@@ -150,13 +156,28 @@ function generateUploadReminderMessage(firstName: string): string {
 • Connect with the diamond trading community
 
 ⚡ Tap the button below to upload now and start growing your business!`;
+  } else {
+    // Hebrew version
+    return `👋 שלום ${firstName}!
+
+🔹 שמנו לב שעדיין לא העלית את מלאי היהלומים שלך. 
+
+💎 <b>מוכן/ה להתחיל?</b>
+• העלאת היהלומים הראשונים שלך בתוך 2 דקות בלבד
+• הצגת המלאי שלך לקונים פוטנציאלים
+• התחברות לקהילת סוחרי היהלומים
+
+⚡ לחץ/י על הכפתור למטה כדי להעלות עכשיו ולהתחיל לפתח את העסק שלך!`;
+  }
 }
 
 function generateAdminPreviewMessage(userCount: number): string {
   return `📋 <b>Admin Preview - Upload Reminder Sent</b>
 
 This is the message that was just sent to ${userCount} users who haven't uploaded inventory yet.
+Messages are sent in Hebrew by default unless the user's language code is English.
 
+<b>English Version:</b>
 👋 Hi [User Name]!
 
 🔹 We noticed you haven't uploaded your diamond inventory yet. 
@@ -167,6 +188,18 @@ This is the message that was just sent to ${userCount} users who haven't uploade
 • Connect with the diamond trading community
 
 ⚡ Tap the button below to upload now and start growing your business!
+
+<b>Hebrew Version:</b>
+👋 שלום [User Name]!
+
+🔹 שמנו לב שעדיין לא העלית את מלאי היהלומים שלך. 
+
+💎 <b>מוכן/ה להתחיל?</b>
+• העלאת היהלומים הראשונים שלך בתוך 2 דקות בלבד
+• הצגת המלאי שלך לקונים פוטנציאלים
+• התחברות לקהילת סוחרי היהלומים
+
+⚡ לחץ/י על הכפתור למטה כדי להעלות עכשיו ולהתחיל לפתח את העסק שלך!
 
 <i>✅ Notification campaign completed successfully</i>`;
 }

@@ -11,6 +11,7 @@ interface EngagementUser {
   last_active?: string;
   created_at: string;
   has_diamonds: boolean;
+  language_code?: string;
 }
 
 Deno.serve(async (req) => {
@@ -73,6 +74,7 @@ async function findInactiveUsers(supabase: any): Promise<EngagementUser[]> {
       first_name,
       last_active,
       created_at,
+      language_code,
       inventory!left(id)
     `)
     .lt('created_at', oneDayAgo.toISOString())
@@ -107,7 +109,8 @@ async function findInactiveUsers(supabase: any): Promise<EngagementUser[]> {
         first_name: user.first_name || 'User',
         last_active: user.last_active,
         created_at: user.created_at,
-        has_diamonds: user.inventory && user.inventory.length > 0
+        has_diamonds: user.inventory && user.inventory.length > 0,
+        language_code: user.language_code || 'he' // Default to Hebrew if not specified
       });
     }
     return acc;
@@ -130,20 +133,23 @@ async function sendEngagementMessages(users: EngagementUser[]): Promise<{success
 
   for (const user of users) {
     try {
-      const message = generatePersonalizedMessage(user);
+      // Check if user uses English or default to Hebrew
+      const isEnglish = user.language_code?.startsWith('en') || false;
+      
+      const message = generatePersonalizedMessage(user, isEnglish);
       const keyboard = {
         inline_keyboard: [[
           {
-            text: "📸 Upload My First Diamond",
+            text: isEnglish ? "📸 Upload My First Diamond" : "📸 העלאת היהלום הראשון שלי",
             web_app: {
-              url: `${Deno.env.get('WEB_APP_URL') || 'https://your-app.lovable.app'}/upload-single-stone`
+              url: `${Deno.env.get('WEB_APP_URL') || 'https://miniapp.mazalbot.com'}/upload-single-stone`
             }
           }
         ], [
           {
-            text: "🏪 Browse Diamond Store",
+            text: isEnglish ? "🏪 Browse Diamond Store" : "🏪 לעיין בחנות היהלומים",
             web_app: {
-              url: `${Deno.env.get('WEB_APP_URL') || 'https://your-app.lovable.app'}/store`
+              url: `${Deno.env.get('WEB_APP_URL') || 'https://miniapp.mazalbot.com'}/store`
             }
           }
         ]]
@@ -179,12 +185,13 @@ async function sendEngagementMessages(users: EngagementUser[]): Promise<{success
   return { successful, failed };
 }
 
-function generatePersonalizedMessage(user: EngagementUser): string {
-  const firstName = user.first_name || 'there';
+function generatePersonalizedMessage(user: EngagementUser, isEnglish: boolean = false): string {
+  const firstName = user.first_name || (isEnglish ? 'there' : 'שלום');
   const isNewUser = new Date(user.created_at) > new Date(Date.now() - 48 * 60 * 60 * 1000); // Less than 48 hours old
   
   if (isNewUser && !user.has_diamonds) {
-    return `
+    if (isEnglish) {
+      return `
 Hi ${firstName}! 👋
 
 Welcome to the Diamond Market! We noticed you just joined but haven't uploaded your first diamond yet. 
@@ -195,11 +202,26 @@ Welcome to the Diamond Market! We noticed you just joined but haven't uploaded y
 • Start showcasing your inventory today
 
 Ready to sparkle? ✨
-    `;
+      `;
+    } else {
+      return `
+שלום ${firstName}! 👋
+
+ברוכים הבאים לשוק היהלומים! שמנו לב שהצטרפת לאחרונה אך עדיין לא העלית את היהלום הראשון שלך.
+
+💎 *התחל/י בשניות:*
+• העלה/י את היהלום הראשון שלך עם תמונה בלבד
+• הצטרף/י לאלפי סוחרי יהלומים
+• התחל/י להציג את המלאי שלך כבר היום
+
+מוכן/ה להתחיל? ✨
+      `;
+    }
   }
 
   if (!user.has_diamonds) {
-    return `
+    if (isEnglish) {
+      return `
 Hi ${firstName}! 💎
 
 Your Diamond Market account is ready, but it's looking a bit empty. Time to add some sparkle! 
@@ -211,10 +233,26 @@ Your Diamond Market account is ready, but it's looking a bit empty. Time to add 
 • Zero listing fees
 
 Let's get your first diamond online! 📸
-    `;
+      `;
+    } else {
+      return `
+שלום ${firstName}! 💎
+
+חשבון שוק היהלומים שלך מוכן, אבל הוא נראה קצת ריק. הגיע הזמן להוסיף קצת נצנוץ!
+
+🌟 *למה להעלות את היהלומים שלך?*
+• הגעה ללקוחות פוטנציאליים ברחבי העולם
+• כלי הצגה מקצועיים
+• ניתוח ותובנות חכמות
+• ללא עמלות רישום
+
+בוא/י נעלה את היהלום הראשון שלך! 📸
+      `;
+    }
   }
 
-  return `
+  if (isEnglish) {
+    return `
 Hi ${firstName}! 👋
 
 We miss seeing you in the Diamond Market! Your inventory could be reaching more buyers right now.
@@ -225,7 +263,21 @@ We miss seeing you in the Diamond Market! Your inventory could be reaching more 
 • Check out what's trending in the market
 
 Your next big sale might be just one upload away! 🎯
-  `;
+    `;
+  } else {
+    return `
+שלום ${firstName}! 👋
+
+מתגעגעים לראות אותך בשוק היהלומים! המלאי שלך יכול להגיע ליותר קונים כרגע.
+
+💼 *פעולות מהירות שתוכל/י לבצע:*
+• הוסף/י יהלומים חדשים לאוסף שלך
+• עדכן/י מחירים במלאי הקיים
+• בדוק/י מה המגמות בשוק
+
+המכירה הגדולה הבאה שלך עשויה להיות במרחק העלאה אחת בלבד! 🎯
+    `;
+  }
 }
 
 // Helper function to be created in Supabase as a database function
