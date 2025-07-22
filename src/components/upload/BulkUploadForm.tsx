@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,35 +27,24 @@ export function BulkUploadForm() {
   ];
 
   async function handleBulkUpload() {
-    if (!processedData?.validRows.length) return;
+    if (!processedData?.validRows.length) {
+      toast({
+        title: "❌ No Valid Data",
+        description: "No valid diamonds found. Please check your file contains the 7 mandatory fields.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsProcessing(true);
     hapticFeedback.impact('heavy');
 
     try {
-      // Filter rows to only include those with ALL required fields present
-      const validDiamonds = processedData.validRows.filter(row => {
-        return requiredFields.every(field => {
-          const value = row[field];
-          // All fields must be present and not empty
-          return value !== undefined && value !== null && value !== '';
-        });
-      });
+      console.log(`📤 Uploading ${processedData.validRows.length} diamonds with mandatory fields`);
 
-      console.log(`📋 Filtered ${validDiamonds.length} complete diamonds from ${processedData.validRows.length} total rows`);
-
-      if (validDiamonds.length === 0) {
-        toast({
-          title: "❌ No Complete Diamonds",
-          description: "No diamonds have all required fields. Please check your CSV file contains all 22 required fields.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Build JSON payload
+      // Build JSON payload with all valid diamonds
       const payload = {
-        diamonds: validDiamonds
+        diamonds: processedData.validRows
       };
 
       console.log('📤 Sending diamonds to batch API:', payload);
@@ -72,17 +62,19 @@ export function BulkUploadForm() {
         }
       );
 
+      const result = await response.json();
+
       if (!response.ok) {
-        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+        console.error('❌ API Error:', result);
+        throw new Error(`Upload failed: ${result.detail || result.message || 'Unknown error'}`);
       }
 
-      const result = await response.json();
       console.log('✅ Batch upload result:', result);
 
       hapticFeedback.notification('success');
       toast({
         title: "✅ Upload Successful!",
-        description: `Successfully uploaded ${validDiamonds.length} diamonds to the batch API`,
+        description: `Successfully uploaded ${processedData.validRows.length} diamonds. ${processedData.failedRows.length} rows were skipped due to missing mandatory fields.`,
       });
       
       // Reset form
@@ -126,13 +118,13 @@ export function BulkUploadForm() {
       hapticFeedback.notification('success');
       toast({
         title: "File Processed",
-        description: "CSV file has been analyzed and validated",
+        description: `Found ${processedData?.validRows.length || 0} diamonds with all mandatory fields. ${processedData?.failedRows.length || 0} rows were skipped.`,
       });
     } catch (error) {
       hapticFeedback.notification('error');
       toast({
         title: "Processing Failed",
-        description: error instanceof Error ? error.message : "Failed to process CSV file",
+        description: error instanceof Error ? error.message : "Failed to process file",
         variant: "destructive",
       });
       setSelectedFile(null);

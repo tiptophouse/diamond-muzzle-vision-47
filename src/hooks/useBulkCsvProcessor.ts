@@ -1,9 +1,10 @@
+
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
 
-// Define required fields for diamond validation
-const REQUIRED_FIELDS = ['shape', 'weight', 'color', 'clarity', 'cut', 'fluorescence'];
+// Define the 7 mandatory fields - rows without ALL of these will be skipped
+const MANDATORY_FIELDS = ['certificate_number', 'color', 'cut', 'weight', 'clarity', 'fluorescence', 'shape'];
 
 // Enhanced shape aliases from your backend
 const SHAPE_ALIASES = {
@@ -50,17 +51,18 @@ const FLUORESCENCE_ALIASES = {
   "VST": "VERY STRONG"
 };
 
-// Field mapping patterns for intelligent column detection
+// Field mapping patterns for intelligent column detection - focused on mandatory fields
 const FIELD_MAPPINGS = {
   shape: ['shape', 'diamond_shape', 'form', 'צורה'],
-  weight: ['weight', 'carat', 'carats', 'ct', 'cts', 'size', 'משקל'],
+  weight: ['weight', 'carat', 'carats', 'ct', 'cts', 'size', 'measurements', 'משקל'],
   color: ['color', 'colour', 'grade_color', 'color_grade', 'fancycolor', 'צבע'],
   clarity: ['clarity', 'purity', 'grade_clarity', 'clarity_grade', 'ניקיון'],
   cut: ['cut', 'cut_grade', 'make', 'finish', 'cut_shape', 'חיתוך'],
   fluorescence: ['fluorescence', 'fluo', 'fluor', 'fluorescenceintensity', 'זרחן'],
+  certificate_number: ['cert_number', 'certificate_number', 'report_number', 'certificateid', 'מספר_תעודה'],
+  // Optional fields - these can be present but are not required
   price_per_carat: ['price/crt', 'price_per_carat', 'price per carat', 'ppc', 'rapnetaskingprice', 'indexaskingprice', 'מחיר_לקרט'],
   lab: ['lab', 'laboratory', 'cert', 'certificate', 'מעבדה'],
-  certificate_number: ['cert_number', 'certificate_number', 'report_number', 'certificateid', 'מספר_תעודה'],
   stock: ['stock', 'stock_number', 'sku', 'item_number', 'vendorstocknumber', 'מלאי']
 };
 
@@ -161,10 +163,8 @@ export function useBulkCsvProcessor() {
     switch (field) {
       case 'shape':
         const shapeNormalized = cleanValue.toLowerCase();
-        // Check direct shape match first
         let validShape = VALID_SHAPES.find(s => s.toLowerCase() === shapeNormalized);
         
-        // If not found, check aliases
         if (!validShape) {
           const aliasKey = Object.keys(SHAPE_ALIASES).find(key => 
             key.toUpperCase() === cleanValue.toUpperCase()
@@ -177,7 +177,7 @@ export function useBulkCsvProcessor() {
         return {
           isValid: !!validShape,
           normalizedValue: validShape || 'round brilliant',
-          error: !validShape ? `Invalid shape: ${cleanValue}. Use one of: ${VALID_SHAPES.join(', ')}` : undefined
+          error: !validShape ? `Invalid shape: ${cleanValue}` : undefined
         };
 
       case 'weight':
@@ -208,10 +208,8 @@ export function useBulkCsvProcessor() {
 
       case 'cut':
         const cutUpper = cleanValue.toUpperCase();
-        // Check direct cut match first
         let validCut = VALID_CUTS.find(c => c === cutUpper);
         
-        // If not found, check aliases
         if (!validCut) {
           const aliasKey = Object.keys(CUT_ALIASES).find(key => key.toUpperCase() === cutUpper);
           if (aliasKey) {
@@ -222,15 +220,13 @@ export function useBulkCsvProcessor() {
         return {
           isValid: !!validCut,
           normalizedValue: validCut || 'EXCELLENT',
-          error: !validCut ? `Invalid cut: ${cleanValue}. Use: ${VALID_CUTS.join(', ')} or aliases: ${Object.keys(CUT_ALIASES).join(', ')}` : undefined
+          error: !validCut ? `Invalid cut: ${cleanValue}` : undefined
         };
 
       case 'fluorescence':
         const fluorUpper = cleanValue.toUpperCase();
-        // Check direct fluorescence match first
         let validFluor = VALID_FLUORESCENCE.find(f => f === fluorUpper);
         
-        // If not found, check aliases
         if (!validFluor) {
           const aliasKey = Object.keys(FLUORESCENCE_ALIASES).find(key => key.toUpperCase() === fluorUpper);
           if (aliasKey) {
@@ -241,7 +237,15 @@ export function useBulkCsvProcessor() {
         return {
           isValid: !!validFluor,
           normalizedValue: validFluor || 'NONE',
-          error: !validFluor ? `Invalid fluorescence: ${cleanValue}. Use: ${VALID_FLUORESCENCE.join(', ')} or aliases: ${Object.keys(FLUORESCENCE_ALIASES).join(', ')}` : undefined
+          error: !validFluor ? `Invalid fluorescence: ${cleanValue}` : undefined
+        };
+
+      case 'certificate_number':
+        // Accept any non-empty string for certificate number
+        return {
+          isValid: cleanValue.length > 0,
+          normalizedValue: cleanValue,
+          error: cleanValue.length === 0 ? 'Certificate number cannot be empty' : undefined
         };
 
       default:
@@ -257,7 +261,7 @@ export function useBulkCsvProcessor() {
       let headers: string[] = [];
       let rawData: any[] = [];
 
-      // Parse file based on type with AI enhancement
+      // Parse file based on type
       if (file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
         fileType = 'Excel';
         const arrayBuffer = await file.arrayBuffer();
@@ -300,37 +304,41 @@ export function useBulkCsvProcessor() {
       // Map headers to standard fields
       const { mappings } = mapHeaders(headers);
       
-      // Debug: Log header mappings to identify misclassification
       console.log('📋 Header mappings:', mappings.map(m => `${m.csvHeader} -> ${m.mappedTo} (${m.confidence.toFixed(2)})`));
       
-      // Process and validate data with detailed error tracking
+      // Check if we have all mandatory fields mapped
+      const mandatoryFieldsMapped = MANDATORY_FIELDS.every(field => 
+        mappings.some(m => m.mappedTo === field)
+      );
+      
+      if (!mandatoryFieldsMapped) {
+        const missingFields = MANDATORY_FIELDS.filter(field => 
+          !mappings.some(m => m.mappedTo === field)
+        );
+        throw new Error(`Missing mandatory fields: ${missingFields.join(', ')}. Please ensure your file contains columns for: ${MANDATORY_FIELDS.join(', ')}`);
+      }
+
+      // Process and validate data - only check mandatory fields
       const validRows: any[] = [];
       const failedRows: Array<{ rowNumber: number; data: any; errors: string[] }> = [];
       const errors: Array<{ row: number; field: string; value: string; reason: string }> = [];
-      const warnings: Array<{ message: string }> = [];
 
       for (let i = 0; i < rawData.length; i++) {
         const row = rawData[i];
         const processedRow: any = {};
-        let hasAllRequired = true;
+        let hasAllMandatory = true;
         let rowErrors: string[] = [];
 
         // Map and validate each field  
         for (const mapping of mappings) {
           const value = row[mapping.csvHeader];
-          
-          // Debug: Log when VG is being processed
-          if (value && value.trim().toUpperCase() === 'VG') {
-            console.log(`🔍 Processing VG: Column "${mapping.csvHeader}" -> Field "${mapping.mappedTo}" | Value: "${value}"`);
-          }
-          
           const { isValid, normalizedValue, error } = validateValue(value, mapping.mappedTo);
           
           processedRow[mapping.mappedTo] = normalizedValue;
           
-          // Only fail if it's a required field AND has invalid data
-          if (!isValid && REQUIRED_FIELDS.includes(mapping.mappedTo)) {
-            hasAllRequired = false;
+          // Only fail if it's a mandatory field AND has invalid data
+          if (!isValid && MANDATORY_FIELDS.includes(mapping.mappedTo)) {
+            hasAllMandatory = false;
             const errorMsg = `${mapping.mappedTo}: ${error}`;
             rowErrors.push(errorMsg);
             errors.push({
@@ -342,29 +350,42 @@ export function useBulkCsvProcessor() {
           }
         }
         
-        // Check if we have all required fields with valid data
-        for (const requiredField of REQUIRED_FIELDS) {
-          if (!processedRow[requiredField]) {
-            hasAllRequired = false;
-            rowErrors.push(`Missing required field: ${requiredField}`);
+        // Check if we have all mandatory fields with valid data
+        for (const mandatoryField of MANDATORY_FIELDS) {
+          if (!processedRow[mandatoryField]) {
+            hasAllMandatory = false;
+            rowErrors.push(`Missing mandatory field: ${mandatoryField}`);
           }
         }
 
-        // Add default values for missing fields
-        if (!processedRow.stock) {
-          processedRow.stock = `AUTO-${Date.now()}-${i}`;
-        }
-        if (!processedRow.lab) {
-          processedRow.lab = 'GIA';
-        }
-        if (!processedRow.certificate_number) {
-          processedRow.certificate_number = Math.floor(Math.random() * 1000000);
-        }
-        if (!processedRow.price_per_carat) {
-          processedRow.price_per_carat = 5000;
-        }
-
-        if (hasAllRequired) {
+        // Only add default values for API required fields if row has all mandatory fields
+        if (hasAllMandatory) {
+          // Add minimal defaults only for fields required by API but not mandatory for upload
+          if (!processedRow.stock) {
+            processedRow.stock = `AUTO-${Date.now()}-${i}`;
+          }
+          if (!processedRow.lab) {
+            processedRow.lab = 'GIA';
+          }
+          if (!processedRow.price_per_carat) {
+            processedRow.price_per_carat = 5000;
+          }
+          
+          // Add other API required fields with minimal defaults
+          processedRow.length = processedRow.length || 6.5;
+          processedRow.width = processedRow.width || 6.5;
+          processedRow.depth = processedRow.depth || 4.0;
+          processedRow.ratio = processedRow.ratio || 1.0;
+          processedRow.polish = processedRow.polish || 'EXCELLENT';
+          processedRow.symmetry = processedRow.symmetry || 'EXCELLENT';
+          processedRow.table = processedRow.table || 60;
+          processedRow.depth_percentage = processedRow.depth_percentage || 62;
+          processedRow.gridle = processedRow.gridle || 'Medium';
+          processedRow.culet = processedRow.culet || 'NONE';
+          processedRow.certificate_comment = processedRow.certificate_comment || 'No comments';
+          processedRow.rapnet = processedRow.rapnet || 0;
+          processedRow.picture = processedRow.picture || '';
+          
           validRows.push(processedRow);
         } else {
           failedRows.push({
@@ -391,8 +412,7 @@ export function useBulkCsvProcessor() {
         skippedRows: failedRows.length,
         fieldMappings: mappings,
         errors,
-        warnings: mappings.length < REQUIRED_FIELDS.length ? 
-          [{ message: `Missing mappings for required fields. Please ensure your file has columns for: ${REQUIRED_FIELDS.join(', ')}` }] : [],
+        warnings: [],
         processingReport
       };
 
