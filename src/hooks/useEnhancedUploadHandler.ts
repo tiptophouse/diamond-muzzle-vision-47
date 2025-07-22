@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { api, apiEndpoints } from '@/lib/api';
+import { api, apiEndpoints, API_BASE_URL } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useInventoryDataSync } from './inventory/useInventoryDataSync';
 import { useIntelligentCsvProcessor } from './useIntelligentCsvProcessor';
@@ -177,7 +177,11 @@ export function useEnhancedUploadHandler() {
           console.log('📤 Request payload:', JSON.stringify({ diamonds: validDiamonds.slice(0, 1) }, null, 2));
           
           const batchPayload = { diamonds: validDiamonds };
-          const response = await api.post(apiEndpoints.addDiamondsBatch(user.id), batchPayload);
+          const endpoint = apiEndpoints.addDiamondsBatch(user.id);
+          console.log('📤 BATCH UPLOAD: Using endpoint:', endpoint);
+          console.log('📤 BATCH UPLOAD: Full URL will be:', `${API_BASE_URL}${endpoint}`);
+          
+          const response = await api.post(endpoint, batchPayload);
           
           console.log('📤 API Response:', response);
           
