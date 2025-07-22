@@ -55,15 +55,23 @@ const FLUORESCENCE_ALIASES = {
 const FIELD_MAPPINGS = {
   shape: ['shape', 'diamond_shape', 'form', 'צורה'],
   weight: ['weight', 'carat', 'carats', 'ct', 'cts', 'size', 'measurements', 'משקל'],
-  color: ['color', 'colour', 'grade_color', 'color_grade', 'fancycolor', 'צבע'],
+  color: ['color', 'colour', 'grade_color', 'color_grade', 'fancycolor', 'fancy color 2', 'צבע'],
   clarity: ['clarity', 'purity', 'grade_clarity', 'clarity_grade', 'ניקיון'],
   cut: ['cut', 'cut_grade', 'make', 'finish', 'חיתוך'],
   fluorescence: ['fluorescence', 'fluo', 'fluor', 'fluorescenceintensity', 'זרחן'],
   certificate_number: ['cert_number', 'certificate_number', 'report_number', 'certificateid', 'מספר_תעודה'],
-  // Optional fields - these can be present but are not required
+  // Optional fields from your CSV format
+  stock: ['stock #', 'stock', 'stock_number', 'sku', 'item_number', 'vendorstocknumber', 'matchingvendorstocknumber', 'מלאי'],
   price_per_carat: ['price/crt', 'price_per_carat', 'price per carat', 'ppc', 'rapnetaskingprice', 'indexaskingprice', 'מחיר_לקרט'],
   lab: ['lab', 'laboratory', 'cert', 'certificate', 'מעבדה'],
-  stock: ['stock', 'stock_number', 'sku', 'item_number', 'vendorstocknumber', 'מלאי']
+  depth_percentage: ['depth', 'depth%', 'depthpercent'],
+  table: ['table', 'tablepercent', 'table%'],
+  polish: ['polish'],
+  symmetry: ['symmetry'],
+  gridle: ['girdlemin', 'girdlemax', 'girdlepercent', 'girdlethick'],
+  culet: ['culetsize', 'culetcondition'],
+  measurements: ['measurements'],
+  picture: ['diamond image', 'picture url', 'diamondimage', 'pictureurl']
 };
 
 interface ProcessedData {
