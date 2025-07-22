@@ -1,19 +1,28 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useStoreData } from "@/hooks/useStoreData";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Share2, ExternalLink, Camera, Award, Gem, Palette, Eye } from "lucide-react";
+import { ArrowLeft, Share2, ExternalLink, Camera, Award, Gem, Palette, Eye, MessageSquare, Upload, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function DiamondDetailPage() {
   const { stockNumber } = useParams<{ stockNumber: string }>();
   const navigate = useNavigate();
-  const { diamonds, loading } = useStoreData();
+  const { diamonds, loading, refetch } = useStoreData();
+  const { user, isAuthenticated } = useTelegramAuth();
   const { toast } = useToast();
+  const [isContactLoading, setIsContactLoading] = useState(false);
+  const [isImageUploading, setIsImageUploading] = useState(false);
+  const [showImageUpload, setShowImageUpload] = useState(false);
+
+  // Admin check
+  const isAdmin = user?.id === 2138564172;
 
   console.log('🔍 DiamondDetailPage - stockNumber from URL:', stockNumber);
   console.log('🔍 DiamondDetailPage - available diamonds:', diamonds?.length);
@@ -58,6 +67,120 @@ export default function DiamondDetailPage() {
     } else {
       navigator.clipboard.writeText(secureUrl);
       toast({ title: "Secure link copied to clipboard!" });
+    }
+  };
+
+  const handleContact = async () => {
+    if (!isAuthenticated || !user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to contact the diamond owner",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsContactLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-diamond-contact', {
+        body: {
+          diamondData: {
+            stockNumber: diamond.stockNumber,
+            shape: diamond.shape,
+            carat: diamond.carat,
+            color: diamond.color,
+            clarity: diamond.clarity,
+            cut: diamond.cut,
+            price: diamond.price,
+            lab: diamond.lab,
+            certificateNumber: diamond.certificateNumber,
+            imageUrl: diamond.imageUrl,
+            certificateUrl: diamond.certificateUrl
+          },
+          visitorInfo: {
+            telegramId: user.id,
+            firstName: user.first_name,
+            lastName: user.last_name,
+            username: user.username
+          },
+          ownerTelegramId: 2138564172 // Default to admin as diamond owner
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Message Sent!",
+        description: "The diamond owner has been notified of your interest",
+      });
+    } catch (error) {
+      console.error('Contact error:', error);
+      toast({
+        title: "Failed to Send Message",
+        description: "Please try again or contact us directly",
+        variant: "destructive"
+      });
+    } finally {
+      setIsContactLoading(false);
+    }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please select an image file",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsImageUploading(true);
+    try {
+      // Upload to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `diamond-${diamond.stockNumber}-${Date.now()}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('diamond-images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('diamond-images')
+        .getPublicUrl(fileName);
+
+      // Update diamond record with new image URL
+      const { error: updateError } = await supabase
+        .from('inventory')
+        .update({ picture: publicUrl })
+        .eq('stock_number', diamond.stockNumber)
+        .eq('user_id', 2138564172); // Admin telegram ID
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Image Uploaded Successfully",
+        description: "The diamond image has been updated",
+      });
+
+      // Refresh the data
+      refetch();
+      setShowImageUpload(false);
+    } catch (error) {
+      console.error('Image upload error:', error);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsImageUploading(false);
     }
   };
 
@@ -162,7 +285,47 @@ export default function DiamondDetailPage() {
                       <p className="text-slate-500">Diamond Image</p>
                     </div>
                   )}
+                  
+                  {/* Admin Image Upload Button */}
+                  {isAdmin && (
+                    <div className="absolute top-2 right-2">
+                      <Button 
+                        size="sm" 
+                        variant="secondary"
+                        onClick={() => setShowImageUpload(!showImageUpload)}
+                        className="bg-white/90 hover:bg-white"
+                      >
+                        <Upload className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
+                
+                {/* Image Upload Interface */}
+                {isAdmin && showImageUpload && (
+                  <div className="p-4 border-t bg-slate-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium">Upload Diamond Image</h4>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => setShowImageUpload(false)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={isImageUploading}
+                      className="w-full p-2 border rounded-md"
+                    />
+                    {isImageUploading && (
+                      <p className="text-sm text-muted-foreground mt-2">Uploading...</p>
+                    )}
+                  </div>
+                )}
               </Card>
 
               {/* 360 View / Certificate Links */}
@@ -272,8 +435,14 @@ export default function DiamondDetailPage() {
                   <p className="text-muted-foreground mb-4">
                     Contact us for more information, additional images, or to schedule a viewing.
                   </p>
-                  <Button size="lg" className="w-full">
-                    Contact Us
+                  <Button 
+                    size="lg" 
+                    className="w-full" 
+                    onClick={handleContact}
+                    disabled={isContactLoading}
+                  >
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    {isContactLoading ? "Sending..." : "Contact Us"}
                   </Button>
                 </CardContent>
               </Card>
