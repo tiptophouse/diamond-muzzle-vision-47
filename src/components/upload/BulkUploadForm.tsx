@@ -18,12 +18,8 @@ export function BulkUploadForm() {
   const { hapticFeedback } = useTelegramWebApp();
   const { processedData, validationResults, processFile, resetProcessor, downloadFailedRecords } = useBulkCsvProcessor();
 
-  const requiredFields = [
-    'stock', 'shape', 'weight', 'color', 'clarity', 'lab', 'certificate_number',
-    'length', 'width', 'depth', 'ratio', 'cut', 'polish', 'symmetry', 
-    'fluorescence', 'table', 'depth_percentage', 'gridle', 'culet', 
-    'certificate_comment', 'rapnet', 'price_per_carat', 'picture'
-  ];
+  // Only require critical 4C fields + fluorescence + shape
+  const criticalFields = ['shape', 'weight', 'color', 'clarity', 'cut', 'fluorescence'];
 
   async function handleBulkUpload() {
     if (!processedData?.validRows.length) return;
@@ -32,21 +28,21 @@ export function BulkUploadForm() {
     hapticFeedback.impact('heavy');
 
     try {
-      // Filter rows to only include those with ALL required fields
+      // Filter rows to only include those with critical 4C fields + fluorescence + shape
       const validDiamonds = processedData.validRows.filter(row => {
-        return requiredFields.every(field => {
+        return criticalFields.every(field => {
           const value = row[field];
-          // Allow empty strings for non-critical fields, but require presence
-          return value !== undefined && value !== null;
+          // Must have critical fields - color, cut, clarity, weight, fluorescence, shape
+          return value !== undefined && value !== null && value !== '';
         });
       });
 
-      console.log(`📋 Filtered ${validDiamonds.length} complete diamonds from ${processedData.validRows.length} total rows`);
+      console.log(`📋 Filtered ${validDiamonds.length} diamonds with critical fields from ${processedData.validRows.length} total rows`);
 
       if (validDiamonds.length === 0) {
         toast({
-          title: "❌ No Complete Diamonds",
-          description: "No diamonds have all required fields. Please check your CSV file.",
+          title: "❌ No Valid Diamonds",
+          description: "No diamonds have the required 4C fields (color, cut, clarity, weight) + fluorescence + shape.",
           variant: "destructive",
         });
         return;
