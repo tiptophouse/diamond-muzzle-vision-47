@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useUserTracking } from '@/hooks/useUserTracking';
 import { getAdminTelegramId } from '@/lib/api/secureConfig';
+import { AvailableDiamondsCounter } from '@/components/dashboard/AvailableDiamondsCounter';
 
 const Index = () => {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
@@ -74,6 +75,9 @@ const Index = () => {
             <div className="flex items-center justify-center gap-3 text-sm text-muted-foreground">
               <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
               <span className="font-medium">Secure • Fast • Reliable</span>
+            </div>
+            <div className="flex justify-center">
+              <AvailableDiamondsCounter />
             </div>
           </div>
           
