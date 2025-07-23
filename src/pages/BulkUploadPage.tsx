@@ -83,23 +83,29 @@ export default function BulkUploadPage() {
         weight: parseFloat(row.weight),
         color: row.color,
         clarity: row.clarity,
-        cut: row.cut || 'EXCELLENT',
         certificate_number: parseInt(row.certificate_number) || 0,
-        certificate_comment: row.certificate_comment || '',
+        
+        // Optional fields with proper defaults
         lab: row.lab || 'GIA',
         length: parseFloat(row.length) || 6.5,
         width: parseFloat(row.width) || 6.5,
         depth: parseFloat(row.depth) || 4.0,
         ratio: parseFloat(row.ratio) || 1.0,
-        table: parseInt(row.table) || 60,
-        depth_percentage: parseFloat(row.depth_percentage) || 62,
-        fluorescence: row.fluorescence,
+        cut: row.cut || 'EXCELLENT',
+        
+        // Required grading fields
         polish: row.polish || 'EXCELLENT',
         symmetry: row.symmetry || 'EXCELLENT',
+        fluorescence: row.fluorescence || 'NONE',
+        table: parseFloat(row.table) || 60,
+        depth_percentage: parseFloat(row.depth_percentage) || 62,
         gridle: row.gridle || 'Medium',
         culet: row.culet || 'NONE',
-        price_per_carat: parseInt(row.price_per_carat) || 5000,
+        
+        // Optional business fields
+        certificate_comment: row.certificate_comment || '',
         rapnet: parseInt(row.rapnet) || 0,
+        price_per_carat: parseInt(row.price_per_carat) || 5000,
         picture: row.picture || ''
       }));
 

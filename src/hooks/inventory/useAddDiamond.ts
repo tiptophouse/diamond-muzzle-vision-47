@@ -74,37 +74,35 @@ export function useAddDiamond(onSuccess?: () => void) {
       const diamondDataPayload = {
         // Required fields - exact schema match
         stock: data.stockNumber.trim(),
-        shape: data.shape === 'Round' ? "round brilliant" : data.shape.toLowerCase(),
+        shape: data.shape,
         weight: Number(data.carat),
         color: data.color,
         clarity: data.clarity,
-        
-        // Certificate data - match schema exactly
-        lab: data.lab || "GIA",
         certificate_number: data.certificateNumber && data.certificateNumber.trim() 
           ? parseInt(data.certificateNumber) || 0
           : 0,
-        certificate_comment: data.certificateComment?.trim() || "",
         
-        // Physical measurements - match schema field names
-        length: data.length && data.length > 0 ? Number(data.length) : 1,
-        width: data.width && data.width > 0 ? Number(data.width) : 1,
-        depth: data.depth && data.depth > 0 ? Number(data.depth) : 1,
-        ratio: data.ratio && data.ratio > 0 ? Number(data.ratio) : 1,
-        
-        // Grading details - match schema exactly with proper enum mapping
+        // Optional fields with defaults
+        lab: data.lab || "GIA",
+        length: data.length && data.length > 0 ? Number(data.length) : 6.5,
+        width: data.width && data.width > 0 ? Number(data.width) : 6.5,
+        depth: data.depth && data.depth > 0 ? Number(data.depth) : 4.0,
+        ratio: data.ratio && data.ratio > 0 ? Number(data.ratio) : 1.0,
         cut: mapToApiEnum(data.cut || 'Excellent'),
+        
+        // Required grading fields
         polish: mapToApiEnum(data.polish || 'Excellent'), 
         symmetry: mapToApiEnum(data.symmetry || 'Excellent'),
         fluorescence: data.fluorescence?.toUpperCase() || "NONE",
-        table: data.tablePercentage && data.tablePercentage > 0 ? Number(data.tablePercentage) : 1,
-        depth_percentage: data.depthPercentage && data.depthPercentage > 0 ? Number(data.depthPercentage) : 1,
+        table: data.tablePercentage && data.tablePercentage > 0 ? Number(data.tablePercentage) : 60,
+        depth_percentage: data.depthPercentage && data.depthPercentage > 0 ? Number(data.depthPercentage) : 62,
         gridle: data.gridle || "Medium",
         culet: data.culet?.toUpperCase() || "NONE",
         
-        // Business data - match schema exactly
-        price_per_carat: actualPricePerCarat,
+        // Optional fields
+        certificate_comment: data.certificateComment?.trim() || "",
         rapnet: data.rapnet && data.rapnet > 0 ? parseInt(data.rapnet.toString()) : 0,
+        price_per_carat: actualPricePerCarat,
         picture: data.picture?.trim() || "",
       };
 
