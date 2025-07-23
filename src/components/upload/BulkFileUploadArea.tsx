@@ -1,8 +1,9 @@
 
-import { useRef } from "react";
-import { Upload, FileSpreadsheet, XCircle, Loader2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { Upload, FileSpreadsheet, XCircle, Loader2, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 
 interface BulkFileUploadAreaProps {
   selectedFile: File | null;
@@ -18,29 +19,82 @@ export function BulkFileUploadArea({
   isProcessing 
 }: BulkFileUploadAreaProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { hapticFeedback } = useTelegramWebApp();
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      hapticFeedback?.selection();
+      
       // Validate file type - support multiple formats
       const fileName = file.name.toLowerCase();
       if (!fileName.endsWith('.csv') && !fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
+        hapticFeedback?.notification('error');
         onFileChange(null);
         return;
       }
+      
+      hapticFeedback?.notification('success');
       onFileChange(file);
     }
   };
 
+  // Create a direct file input click handler for mobile
+  const handleMobileFileClick = () => {
+    hapticFeedback?.impact('light');
+    
+    // Create a new input element each time for better mobile compatibility
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv,.xlsx,.xls';
+    input.multiple = false;
+    
+    // Add styles to make it invisible but accessible
+    input.style.position = 'absolute';
+    input.style.left = '-9999px';
+    input.style.top = '-9999px';
+    
+    // Handle file selection
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        handleFileSelect({ target: { files: [file] } } as any);
+      }
+      // Clean up
+      document.body.removeChild(input);
+    };
+    
+    // Add to body and trigger click
+    document.body.appendChild(input);
+    input.click();
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    setIsDragOver(false);
+    hapticFeedback?.impact('medium');
+    
     const file = e.dataTransfer.files[0];
     if (file) {
       const fileName = file.name.toLowerCase();
       if (fileName.endsWith('.csv') || fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+        hapticFeedback?.notification('success');
         onFileChange(file);
+      } else {
+        hapticFeedback?.notification('error');
       }
     }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
   };
 
   if (selectedFile) {
@@ -83,33 +137,67 @@ export function BulkFileUploadArea({
     <Card>
       <CardContent className="p-6">
         <div
-          className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center transition-colors hover:border-primary/50 cursor-pointer"
-          onClick={() => fileInputRef.current?.click()}
+          className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 cursor-pointer active:scale-95 ${
+            isDragOver 
+              ? 'border-primary/50 bg-primary/5' 
+              : 'border-muted-foreground/25 hover:border-primary/50'
+          }`}
+          onClick={handleMobileFileClick}
           onDrop={handleDrop}
-          onDragOver={(e) => e.preventDefault()}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
         >
-          <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-2">
-            Upload CSV File
-          </h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Drag and drop your CSV file here, or click to browse
-          </p>
-          <div className="space-y-2">
-            <Button variant="outline">
-              <FileSpreadsheet className="h-4 w-4 mr-2" />
-              Choose File
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              Supports CSV, XLSX, and XLS files up to 10MB
-            </p>
+          <div className="flex flex-col items-center space-y-4">
+            <div className="relative">
+              <Upload className={`h-12 w-12 mx-auto transition-colors ${
+                isDragOver ? 'text-primary' : 'text-muted-foreground'
+              }`} />
+              <Smartphone className="h-4 w-4 text-primary absolute -bottom-1 -right-1 bg-background rounded-full p-0.5 border" />
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-foreground">
+                Upload CSV File
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Tap here to select your CSV file from your device
+              </p>
+            </div>
+            
+            <div className="space-y-3">
+              <Button 
+                variant="outline" 
+                size="lg"
+                className="touch-manipulation min-h-[48px] w-full sm:w-auto"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleMobileFileClick();
+                }}
+              >
+                <FileSpreadsheet className="h-5 w-5 mr-2" />
+                Select CSV/Excel File
+              </Button>
+              
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">
+                  Supports CSV, XLSX, and XLS files up to 10MB
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  📱 Mobile-optimized for Telegram
+                </p>
+              </div>
+            </div>
           </div>
+          
+          {/* Hidden fallback input for desktop drag-and-drop */}
           <input
             ref={fileInputRef}
             type="file"
             className="hidden"
             accept=".csv,.xlsx,.xls"
             onChange={handleFileSelect}
+            tabIndex={-1}
           />
         </div>
       </CardContent>
