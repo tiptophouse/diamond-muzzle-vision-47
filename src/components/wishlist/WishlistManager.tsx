@@ -98,14 +98,17 @@ export const WishlistManager: React.FC = () => {
                 <div>
                   <Label>צורה</Label>
                   <Select
-                    value={formData.shape || ''}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, shape: value }))}
+                    value={formData.shape || 'all'}
+                    onValueChange={(value) => setFormData(prev => ({ 
+                      ...prev, 
+                      shape: value === 'all' ? undefined : value 
+                    }))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="כל הצורות" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">כל הצורות</SelectItem>
+                      <SelectItem value="all">כל הצורות</SelectItem>
                       {shapes.map(shape => (
                         <SelectItem key={shape} value={shape}>{shape}</SelectItem>
                       ))}
@@ -116,14 +119,17 @@ export const WishlistManager: React.FC = () => {
                 <div>
                   <Label>צבע</Label>
                   <Select
-                    value={formData.color || ''}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, color: value }))}
+                    value={formData.color || 'all'}
+                    onValueChange={(value) => setFormData(prev => ({ 
+                      ...prev, 
+                      color: value === 'all' ? undefined : value 
+                    }))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="כל הצבעים" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">כל הצבעים</SelectItem>
+                      <SelectItem value="all">כל הצבעים</SelectItem>
                       {colors.map(color => (
                         <SelectItem key={color} value={color}>{color}</SelectItem>
                       ))}
@@ -134,14 +140,17 @@ export const WishlistManager: React.FC = () => {
                 <div>
                   <Label>ניקיון</Label>
                   <Select
-                    value={formData.clarity || ''}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, clarity: value }))}
+                    value={formData.clarity || 'all'}
+                    onValueChange={(value) => setFormData(prev => ({ 
+                      ...prev, 
+                      clarity: value === 'all' ? undefined : value 
+                    }))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="כל רמות הניקיון" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">כל רמות הניקיון</SelectItem>
+                      <SelectItem value="all">כל רמות הניקיון</SelectItem>
                       {clarities.map(clarity => (
                         <SelectItem key={clarity} value={clarity}>{clarity}</SelectItem>
                       ))}
@@ -152,14 +161,17 @@ export const WishlistManager: React.FC = () => {
                 <div>
                   <Label>חיתוך</Label>
                   <Select
-                    value={formData.cut || ''}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, cut: value }))}
+                    value={formData.cut || 'all'}
+                    onValueChange={(value) => setFormData(prev => ({ 
+                      ...prev, 
+                      cut: value === 'all' ? undefined : value 
+                    }))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="כל סוגי החיתוך" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">כל סוגי החיתוך</SelectItem>
+                      <SelectItem value="all">כל סוגי החיתוך</SelectItem>
                       {cuts.map(cut => (
                         <SelectItem key={cut} value={cut}>{cut}</SelectItem>
                       ))}
