@@ -22,6 +22,7 @@ import DiamondSwipe from './pages/DiamondSwipe';
 import NotFound from './pages/NotFound';
 import StandardizeCsvPage from './pages/StandardizeCsvPage';
 import BulkUploadPage from './pages/BulkUploadPage';
+import WishlistPage from './pages/WishlistPage';
 
 function App() {
   const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ function App() {
                 <Route path="/upload-single-stone" element={<UploadSingleStonePage />} />
                 <Route path="/insights" element={<InsightsPage />} />
                 <Route path="/chat" element={<ChatPage />} />
+                <Route path="/wishlist" element={<WishlistPage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/settings" element={<SettingsPage />} />
