@@ -4,6 +4,7 @@ import { BulkFileUploadArea } from "@/components/upload/BulkFileUploadArea";
 import { CsvValidationResults } from "@/components/upload/CsvValidationResults";
 import { ProcessingReport } from "@/components/upload/ProcessingReport";
 import { UploadResultsReport } from "@/components/upload/UploadResultsReport";
+import { BulkUploadProgress } from "@/components/upload/BulkUploadProgress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Upload, FileSpreadsheet, AlertTriangle, Send } from "lucide-react";
@@ -158,71 +159,44 @@ export default function BulkUploadPage() {
         picture: row.picture || undefined
       }));
 
-      // Send to individual endpoint for each diamond
-      console.log(`📤 Sending ${diamondsData.length} diamonds to FastAPI individual endpoint...`);
+      // Send to batch endpoint
+      console.log(`📤 Sending ${diamondsData.length} diamonds to FastAPI batch endpoint...`);
+      const fastApiUrl = `https://api.mazalbot.com/api/v1/diamonds/batch?user_id=${user.id}`;
       
-      let successCount = 0;
-      let failureCount = 0;
-      const errors: Array<{ row: number; error: string; data: any }> = [];
-      
-      for (let i = 0; i < diamondsData.length; i++) {
-        try {
-          const diamond = diamondsData[i];
-          const fastApiUrl = `https://api.mazalbot.com/api/v1/diamonds?user_id=${user.id}`;
-          
-          console.log(`📤 Sending diamond ${i + 1}/${diamondsData.length}:`, diamond.stock);
-          
-          const response = await fetch(fastApiUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: JSON.stringify(diamond)
-          });
-          
-          if (response.ok) {
-            const responseData = await response.json();
-            console.log(`✅ Diamond ${i + 1} uploaded successfully:`, responseData);
-            successCount++;
-          } else {
-            const errorData = await response.json();
-            console.error(`❌ Diamond ${i + 1} failed:`, errorData);
-            failureCount++;
-            errors.push({
-              row: i + 1,
-              error: errorData.detail || 'Upload failed',
-              data: diamond
-            });
-          }
-        } catch (error) {
-          console.error(`❌ Diamond ${i + 1} error:`, error);
-          failureCount++;
-          errors.push({
-            row: i + 1,
-            error: error instanceof Error ? error.message : 'Unknown error',
-            data: diamondsData[i]
-          });
-        }
-      }
+      console.log('📤 FastAPI URL:', fastApiUrl);
+      console.log('📤 Payload sample:', JSON.stringify({ diamonds: diamondsData.slice(0, 1) }, null, 2));
 
-      // Set upload results based on individual uploads
-      setUploadResults({
-        successCount,
-        failureCount,
-        totalAttempted: diamondsData.length,
-        errors,
-        uploadedDiamonds: diamondsData.slice(0, successCount)
+      const response = await fetch(fastApiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ diamonds: diamondsData })
       });
 
-      if (successCount > 0) {
+      console.log('📤 Response status:', response.status);
+      const responseData = await response.json();
+      console.log('📤 Response data:', responseData);
+
+      if (response.ok) {
+        const successCount = responseData.ids?.length || diamondsData.length;
+
+        setUploadResults({
+          successCount,
+          failureCount: 0,
+          totalAttempted: diamondsData.length,
+          errors: [],
+          uploadedDiamonds: diamondsData
+        });
+
         toast({
-          title: `✅ Upload completed!`,
-          description: `${successCount} of ${diamondsData.length} diamonds uploaded successfully to inventory.`,
+          title: `✅ Batch upload completed!`,
+          description: `${successCount} diamonds uploaded successfully to inventory via batch API.`,
         });
         hapticFeedback?.notification('success');
       } else {
-        throw new Error(`All ${failureCount} diamonds failed to upload`);
+        throw new Error(responseData.detail || 'Batch upload failed');
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -260,10 +234,10 @@ export default function BulkUploadPage() {
               <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
               <div className="space-y-2">
                 <h3 className="font-semibold text-amber-800">7 Mandatory Fields Required</h3>
-            <p className="text-sm text-amber-700">
-              Each diamond must have: <strong>Certificate ID, Color, Cut, Weight (Carat), Clarity, Fluorescence, Shape</strong>. 
-              Rows missing any of these fields will be skipped. You can add other optional fields like Price, Polish, Symmetry, etc.
-            </p>
+                <p className="text-sm text-amber-700">
+                  Each diamond must have: <strong>Stock, Shape, Weight, Color, Clarity, Lab, Certificate Number</strong>. 
+                  Rows missing any of these fields will be skipped. All other fields are optional.
+                </p>
               </div>
             </div>
           </CardContent>
@@ -289,6 +263,17 @@ export default function BulkUploadPage() {
         {/* Validation Results */}
         {validationResults && (
           <CsvValidationResults results={validationResults} />
+        )}
+
+        {/* Upload Progress */}
+        {isUploading && processedData && (
+          <BulkUploadProgress 
+            isUploading={isUploading}
+            currentDiamond={processedData.validRows.length}
+            totalDiamonds={processedData.validRows.length}
+            successCount={uploadResults?.successCount || 0}
+            failureCount={uploadResults?.failureCount || 0}
+          />
         )}
 
         {/* Upload Results */}
