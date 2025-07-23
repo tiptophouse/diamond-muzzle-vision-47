@@ -273,18 +273,31 @@ export default function DiamondDetailPage() {
             <div className="space-y-4">
               <Card className="overflow-hidden">
                 <div className="aspect-square bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center relative">
-                  {diamond.imageUrl ? (
+                  {(diamond.imageUrl || diamond.picture) ? (
                     <img 
-                      src={diamond.imageUrl} 
+                      src={diamond.imageUrl || diamond.picture} 
                       alt={`${diamond.shape} Diamond`}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // If main image fails, try the alternative
+                        const currentSrc = e.currentTarget.src;
+                        if (currentSrc === diamond.imageUrl && diamond.picture) {
+                          e.currentTarget.src = diamond.picture;
+                        } else if (currentSrc === diamond.picture && diamond.imageUrl) {
+                          e.currentTarget.src = diamond.imageUrl;
+                        } else {
+                          // Both failed, show placeholder
+                          e.currentTarget.style.display = 'none';
+                          const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
+                          if (placeholder) placeholder.style.display = 'flex';
+                        }
+                      }}
                     />
-                  ) : (
-                    <div className="text-center">
-                      <Gem className="h-24 w-24 text-slate-400 mx-auto mb-4" />
-                      <p className="text-slate-500">Diamond Image</p>
-                    </div>
-                  )}
+                  ) : null}
+                  <div className={`text-center ${(diamond.imageUrl || diamond.picture) ? 'hidden' : 'flex'} flex-col items-center justify-center h-full`}>
+                    <Gem className="h-24 w-24 text-slate-400 mx-auto mb-4" />
+                    <p className="text-slate-500">Diamond Image</p>
+                  </div>
                   
                   {/* Admin Image Upload Button */}
                   {isAdmin && (
