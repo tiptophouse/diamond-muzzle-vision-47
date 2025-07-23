@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
 
 // Define the 7 mandatory fields - rows without ALL of these will be skipped
-const MANDATORY_FIELDS = ['stock', 'shape', 'weight', 'color', 'clarity', 'lab', 'certificate_number'];
+const MANDATORY_FIELDS = ['certificate_number', 'color', 'cut', 'weight', 'clarity', 'fluorescence', 'shape'];
 
 // Enhanced shape aliases from your backend
 const SHAPE_ALIASES = {
