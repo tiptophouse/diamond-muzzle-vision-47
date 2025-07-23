@@ -158,44 +158,71 @@ export default function BulkUploadPage() {
         picture: row.picture || undefined
       }));
 
-      // Send to batch endpoint
-      console.log(`📤 Sending ${diamondsData.length} diamonds to FastAPI batch endpoint...`);
-      const fastApiUrl = `https://api.mazalbot.com/api/v1/diamonds/batch?user_id=${user.id}`;
+      // Send to individual endpoint for each diamond
+      console.log(`📤 Sending ${diamondsData.length} diamonds to FastAPI individual endpoint...`);
       
-      console.log('📤 FastAPI URL:', fastApiUrl);
-      console.log('📤 Payload sample:', JSON.stringify({ diamonds: diamondsData.slice(0, 1) }, null, 2));
+      let successCount = 0;
+      let failureCount = 0;
+      const errors: Array<{ row: number; error: string; data: any }> = [];
       
-      const response = await fetch(fastApiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({ diamonds: diamondsData })
+      for (let i = 0; i < diamondsData.length; i++) {
+        try {
+          const diamond = diamondsData[i];
+          const fastApiUrl = `https://api.mazalbot.com/api/v1/diamonds?user_id=${user.id}`;
+          
+          console.log(`📤 Sending diamond ${i + 1}/${diamondsData.length}:`, diamond.stock);
+          
+          const response = await fetch(fastApiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify(diamond)
+          });
+          
+          if (response.ok) {
+            const responseData = await response.json();
+            console.log(`✅ Diamond ${i + 1} uploaded successfully:`, responseData);
+            successCount++;
+          } else {
+            const errorData = await response.json();
+            console.error(`❌ Diamond ${i + 1} failed:`, errorData);
+            failureCount++;
+            errors.push({
+              row: i + 1,
+              error: errorData.detail || 'Upload failed',
+              data: diamond
+            });
+          }
+        } catch (error) {
+          console.error(`❌ Diamond ${i + 1} error:`, error);
+          failureCount++;
+          errors.push({
+            row: i + 1,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            data: diamondsData[i]
+          });
+        }
+      }
+
+      // Set upload results based on individual uploads
+      setUploadResults({
+        successCount,
+        failureCount,
+        totalAttempted: diamondsData.length,
+        errors,
+        uploadedDiamonds: diamondsData.slice(0, successCount)
       });
 
-      console.log('📤 Response status:', response.status);
-      const responseData = await response.json();
-      console.log('📤 Response data:', responseData);
-
-      if (response.ok) {
-        const successCount = responseData.ids?.length || diamondsData.length;
-
-        setUploadResults({
-          successCount,
-          failureCount: 0,
-          totalAttempted: diamondsData.length,
-          errors: [],
-          uploadedDiamonds: diamondsData
-        });
-
+      if (successCount > 0) {
         toast({
           title: `✅ Upload completed!`,
-          description: `${successCount} diamonds uploaded successfully to FastAPI batch endpoint.`,
+          description: `${successCount} of ${diamondsData.length} diamonds uploaded successfully to inventory.`,
         });
         hapticFeedback?.notification('success');
       } else {
-        throw new Error(responseData.detail || 'Upload failed');
+        throw new Error(`All ${failureCount} diamonds failed to upload`);
       }
     } catch (error) {
       console.error('Upload error:', error);
