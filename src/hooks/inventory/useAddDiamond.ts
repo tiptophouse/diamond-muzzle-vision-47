@@ -131,6 +131,35 @@ export function useAddDiamond(onSuccess?: () => void) {
             description: `Stone "${data.stockNumber}" has been added to your inventory via FastAPI backend`,
           });
           
+          // Send notification with specific diamond link
+          try {
+            const { supabase } = await import('@/integrations/supabase/client');
+            const storeUrl = `${window.location.origin}/inventory?stock=${data.stockNumber}`;
+            
+            await supabase.functions.invoke('send-telegram-message', {
+              body: {
+                telegramId: user.id,
+                stoneData: {
+                  stockNumber: data.stockNumber,
+                  shape: diamondDataPayload.shape,
+                  carat: diamondDataPayload.weight,
+                  color: diamondDataPayload.color,
+                  clarity: diamondDataPayload.clarity,
+                  cut: diamondDataPayload.cut,
+                  polish: diamondDataPayload.polish,
+                  symmetry: diamondDataPayload.symmetry,
+                  fluorescence: diamondDataPayload.fluorescence,
+                  pricePerCarat: diamondDataPayload.price_per_carat,
+                  lab: diamondDataPayload.lab,
+                  certificateNumber: diamondDataPayload.certificate_number
+                },
+                storeUrl
+              }
+            });
+          } catch (notificationError) {
+            console.error('Failed to send notification:', notificationError);
+          }
+          
           if (onSuccess) onSuccess();
           return true;
         } else {

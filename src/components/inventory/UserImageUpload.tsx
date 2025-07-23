@@ -42,7 +42,7 @@ export function UserImageUpload({ diamond, onUpdate }: UserImageUploadProps) {
 
       if (response.data) {
         toast({
-          title: "Success",
+          title: "✅ Success",
           description: "Diamond images updated successfully"
         });
         setOpen(false);
