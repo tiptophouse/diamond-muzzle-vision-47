@@ -19,7 +19,7 @@ export function BulkFileUploadArea({
   isProcessing 
 }: BulkFileUploadAreaProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { hapticFeedback } = useTelegramWebApp();
+  const { hapticFeedback, webApp } = useTelegramWebApp();
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,32 +40,45 @@ export function BulkFileUploadArea({
     }
   };
 
-  // Create a direct file input click handler for mobile
-  const handleMobileFileClick = () => {
+  // Handle file selection for Telegram Mini App
+  const handleTelegramFileUpload = () => {
     hapticFeedback?.impact('light');
     
-    // Create a new input element each time for better mobile compatibility
+    // Check if we're in Telegram environment
+    if (webApp) {
+      // Show instructions for Telegram users
+      hapticFeedback?.notification('warning');
+      
+      // In Telegram Mini Apps, file uploads need to be handled differently
+      // Users should send files directly to the bot
+      webApp.showAlert(
+        "To upload CSV files in Telegram:\n\n" +
+        "1. Send your CSV file directly to @YourBotName\n" +
+        "2. The bot will process it automatically\n" +
+        "3. Return here to see your uploaded diamonds\n\n" +
+        "This is required for security in Telegram Mini Apps."
+      );
+      return;
+    }
+    
+    // Fallback for non-Telegram environments
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.csv,.xlsx,.xls';
     input.multiple = false;
     
-    // Add styles to make it invisible but accessible
     input.style.position = 'absolute';
     input.style.left = '-9999px';
     input.style.top = '-9999px';
     
-    // Handle file selection
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
         handleFileSelect({ target: { files: [file] } } as any);
       }
-      // Clean up
       document.body.removeChild(input);
     };
     
-    // Add to body and trigger click
     document.body.appendChild(input);
     input.click();
   };
@@ -142,7 +155,7 @@ export function BulkFileUploadArea({
               ? 'border-primary/50 bg-primary/5' 
               : 'border-muted-foreground/25 hover:border-primary/50'
           }`}
-          onClick={handleMobileFileClick}
+          onClick={handleTelegramFileUpload}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -160,7 +173,7 @@ export function BulkFileUploadArea({
                 Upload CSV File
               </h3>
               <p className="text-sm text-muted-foreground">
-                Tap here to select your CSV file from your device
+                Send CSV file to @YourBotName or tap for instructions
               </p>
             </div>
             
@@ -172,7 +185,7 @@ export function BulkFileUploadArea({
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  handleMobileFileClick();
+                  handleTelegramFileUpload();
                 }}
               >
                 <FileSpreadsheet className="h-5 w-5 mr-2" />
@@ -184,7 +197,7 @@ export function BulkFileUploadArea({
                   Supports CSV, XLSX, and XLS files up to 10MB
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  📱 Mobile-optimized for Telegram
+                  📱 Send files directly to the bot in Telegram
                 </p>
               </div>
             </div>
