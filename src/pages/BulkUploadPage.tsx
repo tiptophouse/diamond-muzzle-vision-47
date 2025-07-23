@@ -83,56 +83,63 @@ export default function BulkUploadPage() {
         weight: parseFloat(row.weight),
         color: row.color,
         clarity: row.clarity,
+        cut: row.cut || 'EXCELLENT',
         certificate_number: parseInt(row.certificate_number) || 0,
-        
-        // Optional fields with proper defaults
+        certificate_comment: row.certificate_comment || '',
         lab: row.lab || 'GIA',
         length: parseFloat(row.length) || 6.5,
         width: parseFloat(row.width) || 6.5,
         depth: parseFloat(row.depth) || 4.0,
         ratio: parseFloat(row.ratio) || 1.0,
-        cut: row.cut || 'EXCELLENT',
-        
-        // Required grading fields
+        table: parseInt(row.table) || 60,
+        depth_percentage: parseFloat(row.depth_percentage) || 62,
+        fluorescence: row.fluorescence,
         polish: row.polish || 'EXCELLENT',
         symmetry: row.symmetry || 'EXCELLENT',
-        fluorescence: row.fluorescence || 'NONE',
-        table: parseFloat(row.table) || 60,
-        depth_percentage: parseFloat(row.depth_percentage) || 62,
         gridle: row.gridle || 'Medium',
         culet: row.culet || 'NONE',
-        
-        // Optional business fields
-        certificate_comment: row.certificate_comment || '',
-        rapnet: parseInt(row.rapnet) || 0,
         price_per_carat: parseInt(row.price_per_carat) || 5000,
+        rapnet: parseInt(row.rapnet) || 0,
         picture: row.picture || ''
       }));
 
-      // Send all diamonds in bulk to FastAPI
-      console.log(`📤 Sending ${diamondsData.length} diamonds in bulk to FastAPI...`);
-      
-      const fastApiUrl = `https://api.mazalbot.com/api/v1/diamonds/bulk?user_id=${user.id}`;
-      
-      const response = await fetch(fastApiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({ diamonds: diamondsData })
-      });
+      // Send diamonds one by one to the single diamond endpoint
+      console.log(`📤 Sending ${diamondsData.length} diamonds one by one to FastAPI...`);
+      let successCount = 0;
+      let failureCount = 0;
+      const errors: any[] = [];
 
-      if (!response.ok) {
-        throw new Error(`Failed to upload diamonds: ${response.status} ${response.statusText}`);
+      for (let i = 0; i < diamondsData.length; i++) {
+        const diamond = diamondsData[i];
+        try {
+          const fastApiUrl = `https://api.mazalbot.com/api/v1/diamonds?user_id=${user.id}`;
+          
+          console.log(`📤 Sending diamond ${i + 1}/${diamondsData.length}:`, diamond.stock);
+          
+          const response = await fetch(fastApiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify(diamond)
+          });
+
+          if (response.ok) {
+            successCount++;
+            console.log(`✅ Diamond ${diamond.stock} uploaded successfully`);
+          } else {
+            failureCount++;
+            const errorData = await response.json();
+            errors.push({ stock: diamond.stock, error: errorData.detail || 'Upload failed' });
+            console.error(`❌ Diamond ${diamond.stock} failed:`, errorData);
+          }
+        } catch (error) {
+          failureCount++;
+          errors.push({ stock: diamond.stock, error: error instanceof Error ? error.message : 'Unknown error' });
+          console.error(`❌ Diamond ${diamond.stock} error:`, error);
+        }
       }
-
-      const result = await response.json();
-      console.log('✅ Bulk upload successful:', result);
-
-      const successCount = result.success_count || diamondsData.length;
-      const failureCount = result.failure_count || 0;
-      const errors = result.errors || [];
 
       if (successCount > 0) {
         setUploadResults({
