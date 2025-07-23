@@ -8,7 +8,7 @@ import { StoreVisibilityToggle } from "./StoreVisibilityToggle";
 import { UserImageUpload } from "./UserImageUpload";
 
 interface InventoryTableRowProps {
-  diamond: Diamond & { store_visible?: boolean };
+  diamond: Diamond & { store_visible?: boolean; picture?: string };
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
   onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
@@ -19,21 +19,23 @@ export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle, on
   return (
     <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-800">
       <TableCell className="w-16">
-        {diamond.imageUrl ? (
+        {diamond.imageUrl || diamond.picture ? (
           <img 
-            src={diamond.imageUrl} 
+            src={diamond.imageUrl || diamond.picture} 
             alt={`Diamond ${diamond.stockNumber}`}
             className="w-12 h-12 object-cover rounded border border-slate-200 dark:border-slate-600"
             onError={(e) => {
               e.currentTarget.style.display = 'none';
-              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+              const placeholderDiv = e.currentTarget.nextElementSibling as HTMLElement;
+              if (placeholderDiv) {
+                placeholderDiv.classList.remove('hidden');
+              }
             }}
           />
-        ) : (
-          <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 flex items-center justify-center">
-            <ImageIcon className="h-4 w-4 text-slate-400" />
-          </div>
-        )}
+        ) : null}
+        <div className={`w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 flex items-center justify-center ${diamond.imageUrl || diamond.picture ? 'hidden' : ''}`}>
+          <ImageIcon className="h-4 w-4 text-slate-400" />
+        </div>
       </TableCell>
       <TableCell className="font-mono text-xs font-medium text-slate-600 dark:text-slate-400">
         {diamond.diamondId || 'N/A'}

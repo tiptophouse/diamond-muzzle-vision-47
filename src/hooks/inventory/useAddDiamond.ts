@@ -131,10 +131,10 @@ export function useAddDiamond(onSuccess?: () => void) {
             description: `Stone "${data.stockNumber}" has been added to your inventory via FastAPI backend`,
           });
           
-          // Send notification with specific diamond link
+          // Send notification with direct link to the specific diamond
           try {
             const { supabase } = await import('@/integrations/supabase/client');
-            const storeUrl = `${window.location.origin}/inventory?stock=${data.stockNumber}`;
+            const diamondUrl = `${window.location.origin}/inventory?item=${data.stockNumber}`;
             
             await supabase.functions.invoke('send-telegram-message', {
               body: {
@@ -153,7 +153,7 @@ export function useAddDiamond(onSuccess?: () => void) {
                   lab: diamondDataPayload.lab,
                   certificateNumber: diamondDataPayload.certificate_number
                 },
-                storeUrl
+                storeUrl: diamondUrl
               }
             });
           } catch (notificationError) {

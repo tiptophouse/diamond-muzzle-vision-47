@@ -22,6 +22,7 @@ export interface Diamond {
   status: string;
   fluorescence?: string;
   imageUrl?: string;
+  picture?: string; // Alternative image field from API
   store_visible?: boolean;
   certificateNumber?: string;
   lab?: string;
