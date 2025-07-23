@@ -1,5 +1,4 @@
-
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { Upload, FileSpreadsheet, XCircle, Loader2, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,95 +18,58 @@ export function BulkFileUploadArea({
   isProcessing 
 }: BulkFileUploadAreaProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { hapticFeedback, webApp } = useTelegramWebApp();
-  const [isDragOver, setIsDragOver] = useState(false);
+  const { hapticFeedback } = useTelegramWebApp();
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('🔍 File input triggered:', e.target.files?.length || 0, 'files');
+    
     const file = e.target.files?.[0];
     if (file) {
-      hapticFeedback?.selection();
+      console.log('📁 File selected:', {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        lastModified: file.lastModified
+      });
       
       // Validate file type - support multiple formats
       const fileName = file.name.toLowerCase();
       if (!fileName.endsWith('.csv') && !fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
+        console.log('❌ Invalid file type:', fileName);
         hapticFeedback?.notification('error');
         onFileChange(null);
         return;
       }
       
-      hapticFeedback?.notification('success');
+      console.log('✅ Valid file type, processing...');
+      hapticFeedback?.impact('medium');
       onFileChange(file);
+    } else {
+      console.log('❌ No file selected');
     }
   };
 
-  // Handle file selection for Telegram Mini App
-  const handleTelegramFileUpload = () => {
+  const handleButtonClick = () => {
+    console.log('🖱️ File upload button clicked');
     hapticFeedback?.impact('light');
     
-    // Check if we're in Telegram environment
-    if (webApp) {
-      // Show instructions for Telegram users
-      hapticFeedback?.notification('warning');
-      
-      // In Telegram Mini Apps, file uploads need to be handled differently
-      // Users should send files directly to the bot
-      webApp.showAlert(
-        "To upload CSV files in Telegram:\n\n" +
-        "1. Send your CSV file directly to @YourBotName\n" +
-        "2. The bot will process it automatically\n" +
-        "3. Return here to see your uploaded diamonds\n\n" +
-        "This is required for security in Telegram Mini Apps."
-      );
-      return;
-    }
-    
-    // Fallback for non-Telegram environments
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.csv,.xlsx,.xls';
-    input.multiple = false;
-    
-    input.style.position = 'absolute';
-    input.style.left = '-9999px';
-    input.style.top = '-9999px';
-    
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        handleFileSelect({ target: { files: [file] } } as any);
-      }
-      document.body.removeChild(input);
-    };
-    
-    document.body.appendChild(input);
-    input.click();
+    // Try to trigger file input - add timeout for mobile compatibility
+    setTimeout(() => {
+      console.log('🔍 Triggering file input click');
+      fileInputRef.current?.click();
+    }, 100);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragOver(false);
-    hapticFeedback?.impact('medium');
-    
     const file = e.dataTransfer.files[0];
     if (file) {
       const fileName = file.name.toLowerCase();
       if (fileName.endsWith('.csv') || fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
-        hapticFeedback?.notification('success');
+        hapticFeedback?.impact('medium');
         onFileChange(file);
-      } else {
-        hapticFeedback?.notification('error');
       }
     }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
   };
 
   if (selectedFile) {
@@ -134,7 +96,10 @@ export function BulkFileUploadArea({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={onReset}
+                onClick={() => {
+                  hapticFeedback?.impact('light');
+                  onReset();
+                }}
                 className="flex-shrink-0"
               >
                 <XCircle className="h-4 w-4" />
@@ -149,68 +114,59 @@ export function BulkFileUploadArea({
   return (
     <Card>
       <CardContent className="p-6">
-        <div
-          className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 cursor-pointer active:scale-95 ${
-            isDragOver 
-              ? 'border-primary/50 bg-primary/5' 
-              : 'border-muted-foreground/25 hover:border-primary/50'
-          }`}
-          onClick={handleTelegramFileUpload}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-        >
-          <div className="flex flex-col items-center space-y-4">
-            <div className="relative">
-              <Upload className={`h-12 w-12 mx-auto transition-colors ${
-                isDragOver ? 'text-primary' : 'text-muted-foreground'
-              }`} />
-              <Smartphone className="h-4 w-4 text-primary absolute -bottom-1 -right-1 bg-background rounded-full p-0.5 border" />
+        <div className="space-y-4">
+          {/* Mobile-optimized file upload */}
+          <div className="text-center">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Smartphone className="h-8 w-8 text-primary" />
             </div>
-            
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-foreground">
-                Upload CSV File
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Send CSV file to @YourBotName or tap for instructions
-              </p>
-            </div>
-            
-            <div className="space-y-3">
-              <Button 
-                variant="outline" 
-                size="lg"
-                className="touch-manipulation min-h-[48px] w-full sm:w-auto"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleTelegramFileUpload();
-                }}
-              >
-                <FileSpreadsheet className="h-5 w-5 mr-2" />
-                Select CSV/Excel File
-              </Button>
-              
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground">
-                  Supports CSV, XLSX, and XLS files up to 10MB
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  📱 Send files directly to the bot in Telegram
-                </p>
-              </div>
-            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              Upload CSV File
+            </h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Select your diamond inventory file from your device
+            </p>
           </div>
-          
-          {/* Hidden fallback input for desktop drag-and-drop */}
+
+          {/* Large, mobile-friendly upload button */}
+          <Button 
+            onClick={handleButtonClick}
+            className="w-full h-14 text-lg font-medium"
+            size="lg"
+          >
+            <FileSpreadsheet className="h-6 w-6 mr-3" />
+            Choose File from Device
+          </Button>
+
+          {/* Drag and drop area for desktop (hidden on mobile) */}
+          <div
+            className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center transition-colors hover:border-primary/50 cursor-pointer hidden md:block"
+            onClick={handleButtonClick}
+            onDrop={handleDrop}
+            onDragOver={(e) => e.preventDefault()}
+          >
+            <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">
+              Or drag and drop your file here
+            </p>
+          </div>
+
+          <p className="text-xs text-muted-foreground text-center">
+            Supports CSV, XLSX, and XLS files up to 10MB
+          </p>
+
+          {/* Hidden file input with mobile-specific attributes */}
           <input
             ref={fileInputRef}
             type="file"
             className="hidden"
-            accept=".csv,.xlsx,.xls"
+            accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
             onChange={handleFileSelect}
+            capture={false} // Prevent camera capture on mobile
+            multiple={false}
+            style={{ display: 'none' }} // Additional hiding for iOS
             tabIndex={-1}
+            aria-hidden="true"
           />
         </div>
       </CardContent>

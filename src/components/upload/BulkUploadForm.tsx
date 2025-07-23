@@ -167,7 +167,15 @@ export function BulkUploadForm() {
       />
 
       {/* Processing Progress */}
-      {isProcessing && <BulkUploadProgress />}
+      {isProcessing && (
+        <BulkUploadProgress 
+          isUploading={isProcessing}
+          currentDiamond={0}
+          totalDiamonds={0}
+          successCount={0}
+          failureCount={0}
+        />
+      )}
 
       {/* Processing Report */}
       {processedData?.processingReport && !isProcessing && (
