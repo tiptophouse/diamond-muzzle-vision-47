@@ -1,9 +1,8 @@
 
 import { useRef } from "react";
-import { Upload, FileSpreadsheet, XCircle, Loader2, Phone, Download } from "lucide-react";
+import { Upload, FileSpreadsheet, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 
 interface BulkFileUploadAreaProps {
   selectedFile: File | null;
@@ -19,10 +18,6 @@ export function BulkFileUploadArea({
   isProcessing 
 }: BulkFileUploadAreaProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { webApp, hapticFeedback, showAlert, platform } = useTelegramWebApp();
-  
-  // Always show file picker for now - simplified approach
-  const isTelegramApp = !!webApp;
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -46,13 +41,6 @@ export function BulkFileUploadArea({
         onFileChange(file);
       }
     }
-  };
-
-  const handleFileClick = () => {
-    if (isTelegramApp) {
-      hapticFeedback?.impact('light');
-    }
-    fileInputRef.current?.click();
   };
 
   if (selectedFile) {
@@ -94,31 +82,28 @@ export function BulkFileUploadArea({
   return (
     <Card>
       <CardContent className="p-6">
-        <div className="space-y-4">
-          <div className="text-center">
-            <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              Upload CSV File
-            </h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Select your CSV file to upload diamonds in bulk
+        <div
+          className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center transition-colors hover:border-primary/50 cursor-pointer"
+          onClick={() => fileInputRef.current?.click()}
+          onDrop={handleDrop}
+          onDragOver={(e) => e.preventDefault()}
+        >
+          <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">
+            Upload CSV File
+          </h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Drag and drop your CSV file here, or click to browse
+          </p>
+          <div className="space-y-2">
+            <Button variant="outline">
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Choose File
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Supports CSV, XLSX, and XLS files up to 10MB
             </p>
           </div>
-          
-          <Button 
-            onClick={handleFileClick}
-            size="lg"
-            className="w-full h-14 text-lg"
-            variant="outline"
-          >
-            <FileSpreadsheet className="h-5 w-5 mr-3" />
-            Choose CSV File
-          </Button>
-          
-          <p className="text-xs text-muted-foreground text-center">
-            Supports CSV, XLSX, and XLS files up to 10MB
-          </p>
-          
           <input
             ref={fileInputRef}
             type="file"

@@ -76,126 +76,91 @@ export default function BulkUploadPage() {
     hapticFeedback?.impact('medium');
 
     try {
-      // Transform data for API - match exact FastAPI enum values
-      const mapQualityEnum = (value: string): string => {
-        const upperValue = value?.toUpperCase();
-        switch (upperValue) {
-          case 'E':
-          case 'EX':
-          case 'EXCELLENT':
-            return 'EXCELLENT';
-          case 'VG':
-          case 'VERY GOOD':
-            return 'VERY GOOD';
-          case 'G':
-          case 'GOOD':
-            return 'GOOD';
-          case 'F':
-          case 'FAIR':
-          case 'P':
-          case 'POOR':
-            return 'POOR';
-          default:
-            return 'EXCELLENT'; // Default fallback
-        }
-      };
-
-      const mapCuletEnum = (value: string): string => {
-        const upperValue = value?.toUpperCase();
-        switch (upperValue) {
-          case 'N':
-          case 'NONE':
-            return 'NONE';
-          case 'VS':
-          case 'VERY SMALL':
-            return 'VERY SMALL';
-          case 'S':
-          case 'SMALL':
-            return 'SMALL';
-          case 'M':
-          case 'MEDIUM':
-            return 'MEDIUM';
-          case 'SL':
-          case 'SLIGHTLY LARGE':
-            return 'SLIGHTLY LARGE';
-          case 'L':
-          case 'LARGE':
-            return 'LARGE';
-          case 'VL':
-          case 'VERY LARGE':
-            return 'VERY LARGE';
-          case 'EL':
-          case 'EXTREMELY LARGE':
-            return 'EXTREMELY LARGE';
-          default:
-            return 'NONE'; // Default fallback
-        }
-      };
-
+      // Transform data for API - match exact FastAPI schema
       const diamondsData = processedData.validRows.map(row => ({
         stock: row.stock || `AUTO-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         shape: row.shape,
         weight: parseFloat(row.weight),
         color: row.color,
         clarity: row.clarity,
-        lab: row.lab || 'GIA',
+        cut: row.cut || 'EXCELLENT',
         certificate_number: parseInt(row.certificate_number) || 0,
-        length: parseFloat(row.length) || undefined,
-        width: parseFloat(row.width) || undefined,
-        depth: parseFloat(row.depth) || undefined,
-        ratio: parseFloat(row.ratio) || undefined,
-        cut: row.cut ? mapQualityEnum(row.cut) : undefined,
-        polish: mapQualityEnum(row.polish || 'EXCELLENT'),
-        symmetry: mapQualityEnum(row.symmetry || 'EXCELLENT'),
-        fluorescence: row.fluorescence?.toUpperCase() || 'NONE',
-        table: parseFloat(row.table) || undefined,
-        depth_percentage: parseFloat(row.depth_percentage) || undefined,
-        gridle: row.gridle || undefined,
-        culet: mapCuletEnum(row.culet || 'NONE'),
-        certificate_comment: row.certificate_comment || undefined,
-        rapnet: parseInt(row.rapnet) || undefined,
-        price_per_carat: parseInt(row.price_per_carat) || undefined,
-        picture: row.picture || undefined
+        certificate_comment: row.certificate_comment || '',
+        lab: row.lab || 'GIA',
+        length: parseFloat(row.length) || 6.5,
+        width: parseFloat(row.width) || 6.5,
+        depth: parseFloat(row.depth) || 4.0,
+        ratio: parseFloat(row.ratio) || 1.0,
+        table: parseInt(row.table) || 60,
+        depth_percentage: parseFloat(row.depth_percentage) || 62,
+        fluorescence: row.fluorescence,
+        polish: row.polish || 'EXCELLENT',
+        symmetry: row.symmetry || 'EXCELLENT',
+        gridle: row.gridle || 'Medium',
+        culet: row.culet || 'NONE',
+        price_per_carat: parseInt(row.price_per_carat) || 5000,
+        rapnet: parseInt(row.rapnet) || 0,
+        picture: row.picture || ''
       }));
 
-      // Send to batch endpoint
-      console.log(`📤 Sending ${diamondsData.length} diamonds to FastAPI batch endpoint...`);
-      const fastApiUrl = `https://api.mazalbot.com/api/v1/diamonds/batch?user_id=${user.id}`;
-      
-      console.log('📤 FastAPI URL:', fastApiUrl);
-      console.log('📤 Payload sample:', JSON.stringify({ diamonds: diamondsData.slice(0, 1) }, null, 2));
-      
-      const response = await fetch(fastApiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({ diamonds: diamondsData })
-      });
+      // Send diamonds one by one to the single diamond endpoint
+      console.log(`📤 Sending ${diamondsData.length} diamonds one by one to FastAPI...`);
+      let successCount = 0;
+      let failureCount = 0;
+      const errors: any[] = [];
 
-      console.log('📤 Response status:', response.status);
-      const responseData = await response.json();
-      console.log('📤 Response data:', responseData);
+      for (let i = 0; i < diamondsData.length; i++) {
+        const diamond = diamondsData[i];
+        try {
+          const fastApiUrl = `https://api.mazalbot.com/api/v1/diamonds?user_id=${user.id}`;
+          
+          console.log(`📤 Sending diamond ${i + 1}/${diamondsData.length}:`, diamond.stock);
+          
+          const response = await fetch(fastApiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify(diamond)
+          });
 
-      if (response.ok) {
-        const successCount = responseData.ids?.length || diamondsData.length;
+          if (response.ok) {
+            successCount++;
+            console.log(`✅ Diamond ${diamond.stock} uploaded successfully`);
+          } else {
+            failureCount++;
+            const errorData = await response.json();
+            errors.push({ stock: diamond.stock, error: errorData.detail || 'Upload failed' });
+            console.error(`❌ Diamond ${diamond.stock} failed:`, errorData);
+          }
+        } catch (error) {
+          failureCount++;
+          errors.push({ stock: diamond.stock, error: error instanceof Error ? error.message : 'Unknown error' });
+          console.error(`❌ Diamond ${diamond.stock} error:`, error);
+        }
+      }
 
+      if (successCount > 0) {
         setUploadResults({
           successCount,
-          failureCount: 0,
+          failureCount,
           totalAttempted: diamondsData.length,
-          errors: [],
-          uploadedDiamonds: diamondsData
+          errors: errors.map((err, index) => ({
+            row: index + 1,
+            error: err.error,
+            data: { stock: err.stock }
+          })),
+          uploadedDiamonds: diamondsData.slice(0, successCount)
         });
 
         toast({
           title: `✅ Upload completed!`,
-          description: `${successCount} diamonds uploaded successfully to FastAPI batch endpoint.`,
+          description: `${successCount} diamonds uploaded successfully${failureCount > 0 ? `, ${failureCount} failed` : ''}.`,
         });
         hapticFeedback?.notification('success');
       } else {
-        throw new Error(responseData.detail || 'Upload failed');
+        throw new Error('All diamonds failed to upload');
       }
     } catch (error) {
       console.error('Upload error:', error);
