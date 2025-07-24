@@ -62,7 +62,7 @@ export function FigmaDiamondCard({
   return (
     <div 
       id={`diamond-${diamond.stockNumber}`} 
-      className="group relative bg-card rounded-xl overflow-hidden transition-all duration-200 animate-fade-in"
+      className="group relative bg-card rounded-2xl overflow-hidden transition-all duration-200 animate-fade-in"
       style={{ animationDelay: `${index * 100}ms` }}
     >
       {/* Image Container */}
