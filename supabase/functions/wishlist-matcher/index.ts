@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -162,7 +163,7 @@ serve(async (req) => {
             })
             .eq('id', wishItem.id);
 
-          // Send notification to diamond owner (uploader)
+          // Send notification ONLY to diamond owner (uploader)
           const ownerMessage = `💎 <b>יש לך התאמה!</b>
 
 לקוח מחפש יהלום שמתאים בדיוק לאחד היהלומים שלך:
@@ -178,21 +179,7 @@ serve(async (req) => {
 
 👤 פתח צ'אט עם הלקוח כדי לסגור עסקה!`;
 
-          // Send notification to wishlist owner (potential buyer)
-          const buyerMessage = `🎯 <b>נמצאה התאמה לרשימת המשאלות שלך!</b>
-
-היהלום שחיפשת זמין עכשיו:
-
-<b>מלאי #${diamond.stock_number}</b>
-🔸 צורה: ${diamond.shape}
-🔸 משקל: ${diamond.weight} קראט
-🔸 צבע: ${diamond.color}
-🔸 ניקיון: ${diamond.clarity}
-💰 מחיר: $${(diamond.price_per_carat * diamond.weight).toLocaleString()}
-
-📞 פתח את האפליקציה כדי ליצור קשר עם הבעלים!`;
-
-          // Add notification to database
+          // Store notification only for diamond owner
           await supabase
             .from('notifications')
             .insert([
@@ -205,34 +192,15 @@ serve(async (req) => {
                   buyer_telegram_id: wishItem.visitor_telegram_id,
                   match_type: 'owner_notification'
                 }
-              },
-              {
-                telegram_id: wishItem.visitor_telegram_id,
-                message_type: 'wishlist_match_buyer',
-                message_content: buyerMessage,
-                metadata: {
-                  diamond_stock_number: diamond.stock_number,
-                  owner_telegram_id: uploaderTelegramId,
-                  match_type: 'buyer_notification'
-                }
               }
             ]);
 
-          // Send Telegram messages
+          // Send Telegram message ONLY to diamond owner
           await sendTelegramMessage(uploaderTelegramId, ownerMessage, {
             reply_markup: {
               inline_keyboard: [[
                 { text: "פתח צ'אט עם הלקוח", url: `https://t.me/your_bot?start=chat_${wishItem.visitor_telegram_id}` },
                 { text: "פתח אפליקציה", url: "https://your-app-url.com" }
-              ]]
-            }
-          });
-
-          await sendTelegramMessage(wishItem.visitor_telegram_id, buyerMessage, {
-            reply_markup: {
-              inline_keyboard: [[
-                { text: "פתח אפליקציה", url: "https://your-app-url.com" },
-                { text: "צור קשר עם הבעלים", url: `https://t.me/your_bot?start=contact_${uploaderTelegramId}` }
               ]]
             }
           });
@@ -252,7 +220,7 @@ serve(async (req) => {
         matches: totalMatches,
         notifications: notifications.length,
         message: totalMatches > 0 
-          ? `נמצאו ${totalMatches} התאמות לרשימות משאלות! ההתראות נשלחו.`
+          ? `נמצאו ${totalMatches} התאמות לרשימות משאלות! ההתראות נשלחו לבעלי היהלומים.`
           : 'לא נמצאו התאמות לרשימות משאלות.'
       }),
       { 
