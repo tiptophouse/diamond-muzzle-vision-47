@@ -9,10 +9,11 @@ import { UploadReminderNotifier } from '@/components/admin/UploadReminderNotifie
 import { PaymentManagement } from '@/components/admin/PaymentManagement';
 import { SessionUsersDisplay } from '@/components/admin/SessionUsersDisplay';
 import { UserUploadAnalysis } from '@/components/admin/UserUploadAnalysis';
+import { UserDiamondCounts } from '@/components/admin/UserDiamondCounts';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { Users, Settings, MessageSquare, CreditCard, Upload, BarChart3 } from 'lucide-react';
+import { Users, Settings, MessageSquare, CreditCard, Upload, BarChart3, Diamond } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -212,8 +213,16 @@ export default function Admin() {
 
       {/* Main Admin Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-        <Tabs defaultValue="upload-analysis" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 bg-white border border-gray-200 rounded-lg p-1">
+        <Tabs defaultValue="diamond-counts" className="w-full">
+          <TabsList className="grid w-full grid-cols-7 bg-white border border-gray-200 rounded-lg p-1">
+            <TabsTrigger 
+              value="diamond-counts" 
+              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            >
+              <Diamond className="h-4 w-4" />
+              <span className="hidden sm:inline">Diamond Counts</span>
+              <span className="sm:hidden">Diamonds</span>
+            </TabsTrigger>
             <TabsTrigger 
               value="upload-analysis" 
               className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
@@ -262,6 +271,12 @@ export default function Admin() {
           </TabsList>
           
           <div className="mt-6">
+            <TabsContent value="diamond-counts" className="space-y-0">
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <UserDiamondCounts />
+              </div>
+            </TabsContent>
+            
             <TabsContent value="upload-analysis" className="space-y-0">
               <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                 <UserUploadAnalysis />
