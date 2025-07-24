@@ -30,13 +30,22 @@ export function FigmaDiamondCard({ diamond, index, onUpdate }: FigmaDiamondCardP
 
   const handleViewClick = () => {
     impactOccurred('light');
-    // View functionality would be implemented here
+    // Navigate to specific diamond page with stock number
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('stock', diamond.stockNumber);
+    window.history.pushState({}, '', currentUrl.toString());
+    
+    // Scroll to the diamond card
+    setTimeout(() => {
+      const element = document.getElementById(`diamond-${diamond.stockNumber}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
   };
 
   const getOwnerTelegramId = () => {
-    // This would typically come from the diamond data or be passed as a prop
-    // For now, we'll use a placeholder - in real implementation, this should be the actual owner's telegram ID
-    return diamond.diamondId as number || 0;
+    return diamond.userId || 0;
   };
 
   return (
@@ -131,7 +140,7 @@ export function FigmaDiamondCard({ diamond, index, onUpdate }: FigmaDiamondCardP
           {/* 3D Viewer */}
           {diamond.gem360Url && (
             <ThreeDViewer 
-              gem360Url={diamond.gem360Url}
+              url={diamond.gem360Url}
               stockNumber={diamond.stockNumber}
             />
           )}
