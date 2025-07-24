@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { TelegramStoreFilters } from "@/components/store/TelegramStoreFilters";
 import { TelegramSortSheet } from "@/components/store/TelegramSortSheet";
+import { ShareButton } from "@/components/store/ShareButton";
 
 export default function StorePage() {
   const { diamonds, loading, error, refetch } = useStoreData();
@@ -203,6 +204,11 @@ export default function StorePage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
+                <ShareButton 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 px-3"
+                />
                 <Button
                   variant="outline" 
                   size="sm"

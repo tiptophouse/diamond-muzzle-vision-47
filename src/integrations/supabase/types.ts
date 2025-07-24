@@ -1340,6 +1340,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      get_public_diamond_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       get_realistic_analytics_summary: {
         Args: Record<PropertyKey, never>
         Returns: {
