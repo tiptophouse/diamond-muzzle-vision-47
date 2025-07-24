@@ -214,61 +214,66 @@ export default function Admin() {
       {/* Main Admin Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <Tabs defaultValue="diamond-counts" className="w-full">
-          <TabsList className="grid w-full grid-cols-7 bg-white border border-gray-200 rounded-lg p-1">
-            <TabsTrigger 
-              value="diamond-counts" 
-              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-            >
-              <Diamond className="h-4 w-4" />
-              <span className="hidden sm:inline">Diamond Counts</span>
-              <span className="sm:hidden">Diamonds</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="upload-analysis" 
-              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-            >
-              <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">Upload Analysis</span>
-              <span className="sm:hidden">Analysis</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="users" 
-              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-            >
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">User Management</span>
-              <span className="sm:hidden">Users</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="sessions" 
-              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-            >
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Session Users</span>
-              <span className="sm:hidden">Sessions</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="payments" 
-              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-            >
-              <CreditCard className="h-4 w-4" />
-              <span className="hidden sm:inline">Payments</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="notifications" 
-              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-            >
-              <MessageSquare className="h-4 w-4" />
-              <span className="hidden sm:inline">Messages</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="settings" 
-              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-            >
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Settings</span>
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto mb-6">
+            <TabsList className="grid grid-cols-7 bg-white border border-gray-200 rounded-lg p-1 min-w-fit w-full">
+              <TabsTrigger 
+                value="diamond-counts" 
+                className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
+              >
+                <Diamond className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="hidden xs:inline sm:inline">Diamond Counts</span>
+                <span className="xs:hidden sm:hidden">Diamonds</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="upload-analysis" 
+                className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
+              >
+                <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="hidden xs:inline sm:inline">Upload Analysis</span>
+                <span className="xs:hidden sm:hidden">Analysis</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="users" 
+                className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
+              >
+                <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="hidden xs:inline sm:inline">User Management</span>
+                <span className="xs:hidden sm:hidden">Users</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="sessions" 
+                className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
+              >
+                <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="hidden xs:inline sm:inline">Session Users</span>
+                <span className="xs:hidden sm:hidden">Sessions</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="payments" 
+                className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
+              >
+                <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="hidden xs:inline sm:inline">Payments</span>
+                <span className="xs:hidden sm:hidden">Pay</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="notifications" 
+                className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
+              >
+                <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="hidden xs:inline sm:inline">Messages</span>
+                <span className="xs:hidden sm:hidden">Msg</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="settings" 
+                className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
+              >
+                <Settings className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="hidden xs:inline sm:inline">Settings</span>
+                <span className="xs:hidden sm:hidden">Set</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
           
           <div className="mt-6">
             <TabsContent value="diamond-counts" className="space-y-0">
