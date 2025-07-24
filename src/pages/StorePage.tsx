@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
@@ -135,7 +136,7 @@ export default function StorePage() {
   const renderStoreGrid = () => {
     if (loading) {
       return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4">
           {Array.from({ length: 12 }, (_, i) => (
             <DiamondCardSkeleton key={i} />
           ))}
@@ -170,7 +171,7 @@ export default function StorePage() {
     }
 
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4">
         {finalFilteredDiamonds.map((diamond, index) => (
           <FigmaDiamondCard 
             key={diamond.id} 

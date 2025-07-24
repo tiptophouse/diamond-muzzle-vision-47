@@ -9,27 +9,27 @@ import { Toaster } from 'sonner';
 import { TutorialProvider } from './contexts/TutorialContext';
 import StorePage from './pages/StorePage';
 import NotFound from './pages/NotFound';
-import { AnalyticsDashboard } from './pages/AnalyticsDashboard';
 import SecureSharePage from './pages/SecureDiamondPage';
 import SecureStorePage from "./pages/SecureStorePage";
 
 function App() {
+  const queryClient = new QueryClient();
+
   return (
-    <QueryClientProvider client={new QueryClient()}>
-      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
         <TutorialProvider>
-          <Toaster />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<StorePage />} />
               <Route path="/inventory" element={<InventoryPage />} />
               <Route path="/upload-single-stone" element={<UploadSingleStone />} />
-              <Route path="/analytics" element={<AnalyticsDashboard />} />
               <Route path="/secure-diamond/:encryptedData" element={<SecureSharePage />} />
               <Route path="/secure-store/:encryptedData" element={<SecureStorePage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
+          <Toaster />
         </TutorialProvider>
       </ThemeProvider>
     </QueryClientProvider>
