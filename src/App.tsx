@@ -13,7 +13,6 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { TelegramOnlyGuard } from "@/components/auth/TelegramOnlyGuard";
 import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard";
 import { TelegramLayout } from "@/components/layout/TelegramLayout";
-import { TelegramWebApp } from "@/utils/telegramWebApp";
 import "./App.css";
 
 // Lazy load components
@@ -47,9 +46,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-// Initialize Telegram WebApp
-TelegramWebApp.init();
 
 function App() {
   return (
