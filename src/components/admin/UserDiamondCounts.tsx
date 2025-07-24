@@ -1,162 +1,33 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { api, apiEndpoints } from '@/lib/api';
+import { useUserDiamondCounts } from '@/hooks/admin/useUserDiamondCounts';
 import { 
   Users, 
   Diamond, 
   Search, 
   RefreshCw,
   TrendingUp,
-  AlertCircle 
+  AlertCircle,
+  Clock,
+  Database
 } from 'lucide-react';
 
-interface UserDiamondCount {
-  telegram_id: number;
-  first_name: string;
-  last_name?: string;
-  username?: string;
-  created_at: string;
-  diamond_count: number;
-  last_upload?: string;
-  status: 'active' | 'inactive';
-}
-
 export function UserDiamondCounts() {
-  const [userCounts, setUserCounts] = useState<UserDiamondCount[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    userCounts,
+    stats,
+    loading,
+    lastUpdated,
+    forceRefresh,
+    cacheInfo
+  } = useUserDiamondCounts();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'with_diamonds' | 'zero_diamonds'>('all');
-  const { toast } = useToast();
-
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    usersWithDiamonds: 0,
-    usersWithZeroDiamonds: 0,
-    totalDiamonds: 0,
-    avgDiamondsPerUser: 0
-  });
-
-  useEffect(() => {
-    loadUserDiamondCounts();
-  }, []);
-
-  const loadUserDiamondCounts = async () => {
-    setLoading(true);
-    try {
-      console.log('📊 Loading user diamond counts...');
-
-      // Get all users from Supabase
-      const { data: users, error: usersError } = await supabase
-        .from('user_profiles')
-        .select('telegram_id, first_name, last_name, username, created_at, status')
-        .order('created_at', { ascending: false });
-
-      if (usersError) {
-        throw usersError;
-      }
-
-      console.log(`👥 Found ${users?.length || 0} users, fetching diamond counts...`);
-
-      // For each user, get their actual diamond count from FastAPI
-      const userDiamondCounts: UserDiamondCount[] = [];
-      
-      for (const user of users || []) {
-        try {
-          console.log(`💎 Fetching diamonds for user ${user.telegram_id}...`);
-          
-          const response = await api.get(apiEndpoints.getAllStones(user.telegram_id));
-          
-          let diamondCount = 0;
-          let lastUpload: string | undefined;
-          
-          if (response.data && Array.isArray(response.data)) {
-            diamondCount = response.data.length;
-            
-            // Find the most recent diamond upload
-            if (response.data.length > 0) {
-              const sortedDiamonds = response.data.sort((a, b) => 
-                new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
-              );
-              lastUpload = sortedDiamonds[0]?.created_at;
-            }
-          }
-
-          userDiamondCounts.push({
-            telegram_id: user.telegram_id,
-            first_name: user.first_name,
-            last_name: user.last_name,
-            username: user.username,
-            created_at: user.created_at,
-            diamond_count: diamondCount,
-            last_upload: lastUpload,
-            status: (user.status === 'inactive') ? 'inactive' : 'active'
-          });
-
-          console.log(`✅ User ${user.telegram_id}: ${diamondCount} diamonds`);
-        } catch (error) {
-          console.error(`❌ Failed to fetch diamonds for user ${user.telegram_id}:`, error);
-          
-          // Add user with 0 diamonds if API fails
-          userDiamondCounts.push({
-            telegram_id: user.telegram_id,
-            first_name: user.first_name,
-            last_name: user.last_name,
-            username: user.username,
-            created_at: user.created_at,
-            diamond_count: 0,
-            status: (user.status === 'inactive') ? 'inactive' : 'active'
-          });
-        }
-      }
-
-      // Sort by diamond count (highest first)
-      userDiamondCounts.sort((a, b) => b.diamond_count - a.diamond_count);
-
-      // Calculate statistics
-      const totalUsers = userDiamondCounts.length;
-      const usersWithDiamonds = userDiamondCounts.filter(u => u.diamond_count > 0).length;
-      const usersWithZeroDiamonds = userDiamondCounts.filter(u => u.diamond_count === 0).length;
-      const totalDiamonds = userDiamondCounts.reduce((sum, u) => sum + u.diamond_count, 0);
-      const avgDiamondsPerUser = totalUsers > 0 ? totalDiamonds / totalUsers : 0;
-
-      setStats({
-        totalUsers,
-        usersWithDiamonds,
-        usersWithZeroDiamonds,
-        totalDiamonds,
-        avgDiamondsPerUser: Math.round(avgDiamondsPerUser * 10) / 10
-      });
-
-      setUserCounts(userDiamondCounts);
-      
-      console.log('📊 User diamond counts loaded:', {
-        totalUsers,
-        usersWithDiamonds,
-        usersWithZeroDiamonds,
-        totalDiamonds
-      });
-
-      toast({
-        title: "✅ Diamond Counts Loaded",
-        description: `Loaded diamond counts for ${totalUsers} users. Found ${totalDiamonds} total diamonds.`,
-      });
-
-    } catch (error) {
-      console.error('❌ Error loading user diamond counts:', error);
-      toast({
-        title: "❌ Error",
-        description: "Failed to load user diamond counts",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredUsers = userCounts.filter(user => {
     const matchesSearch = !searchTerm || 
@@ -180,13 +51,27 @@ export function UserDiamondCounts() {
     return 'bg-green-100 text-green-800';
   };
 
+  const formatLastUpdated = (date: Date | null) => {
+    if (!date) return 'Never';
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
+  };
+
   if (loading) {
     return (
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-center space-x-2">
             <RefreshCw className="h-6 w-6 animate-spin" />
-            <span>Loading real diamond counts from FastAPI...</span>
+            <span>Loading diamond counts from FastAPI...</span>
           </div>
         </CardContent>
       </Card>
@@ -195,8 +80,23 @@ export function UserDiamondCounts() {
 
   return (
     <div className="space-y-6">
-      {/* Statistics Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      {/* Cache Status & Stats Overview */}
+      <div className="grid grid-cols-1 lg:grid-cols-6 gap-4">
+        {/* Cache Status */}
+        <Card className="lg:col-span-1">
+          <CardContent className="p-4 text-center">
+            <Database className={`h-8 w-8 mx-auto mb-2 ${cacheInfo.isValid ? 'text-green-600' : 'text-orange-600'}`} />
+            <div className="text-sm font-medium">Cache Status</div>
+            <div className={`text-xs ${cacheInfo.isValid ? 'text-green-600' : 'text-orange-600'}`}>
+              {cacheInfo.isValid ? 'Fresh' : 'Expired'}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {formatLastUpdated(lastUpdated)}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Statistics */}
         <Card>
           <CardContent className="p-4 text-center">
             <Users className="h-8 w-8 mx-auto mb-2 text-blue-600" />
@@ -241,10 +141,16 @@ export function UserDiamondCounts() {
       {/* User Diamond Counts Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Diamond className="h-5 w-5" />
-            Real User Diamond Counts (From FastAPI)
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Diamond className="h-5 w-5" />
+              User Diamond Counts (Cached FastAPI Data)
+            </CardTitle>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Clock className="h-4 w-4" />
+              <span>Last updated: {formatLastUpdated(lastUpdated)}</span>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -284,9 +190,9 @@ export function UserDiamondCounts() {
               </Button>
             </div>
             
-            <Button onClick={loadUserDiamondCounts} variant="outline" size="sm">
+            <Button onClick={forceRefresh} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
+              Force Refresh
             </Button>
           </div>
 
