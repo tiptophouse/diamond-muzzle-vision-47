@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, Eye, MessageCircle } from "lucide-react";
@@ -12,12 +13,14 @@ interface FigmaDiamondCardProps {
   diamond: Diamond;
   index: number;
   onUpdate?: () => void;
+  isSecureView?: boolean;
 }
 
 export function FigmaDiamondCard({
   diamond,
   index,
-  onUpdate
+  onUpdate,
+  isSecureView = false
 }: FigmaDiamondCardProps) {
   const [imageError, setImageError] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
@@ -26,6 +29,10 @@ export function FigmaDiamondCard({
   const navigate = useNavigate();
 
   const handleLike = () => {
+    if (isSecureView) {
+      toast.info("Sign in to add to favorites");
+      return;
+    }
     impactOccurred('light');
     setIsLiked(!isLiked);
     toast.success(isLiked ? "Removed from favorites" : "Added to favorites");
@@ -33,6 +40,10 @@ export function FigmaDiamondCard({
 
   const handleViewDetails = () => {
     impactOccurred('light');
+    if (isSecureView) {
+      toast.info("Contact dealer for more details");
+      return;
+    }
     navigate(`/diamond/${diamond.stockNumber}`);
   };
 
@@ -147,7 +158,7 @@ export function FigmaDiamondCard({
             onClick={handleViewDetails}
           >
             <Eye className="h-4 w-4 mr-1" />
-            Details
+            {isSecureView ? 'Inquire' : 'Details'}
           </Button>
         </div>
       </div>

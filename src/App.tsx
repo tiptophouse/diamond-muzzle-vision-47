@@ -1,15 +1,16 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from "@/components/theme-provider"
+import { ThemeProvider } from "./components/ui/theme-provider"
 import InventoryPage from './pages/InventoryPage';
-import UploadSingleStone from './pages/UploadSingleStone';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import UploadSingleStone from './pages/UploadSingleStonePage';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { TutorialProvider } from './contexts/TutorialContext';
 import StorePage from './pages/StorePage';
 import NotFound from './pages/NotFound';
 import { AnalyticsDashboard } from './pages/AnalyticsDashboard';
-import SecureSharePage from './pages/SecureSharePage';
+import SecureSharePage from './pages/SecureDiamondPage';
 import SecureStorePage from "./pages/SecureStorePage";
 
 function App() {
