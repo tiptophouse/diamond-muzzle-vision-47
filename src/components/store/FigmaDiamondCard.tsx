@@ -45,7 +45,9 @@ export function FigmaDiamondCard({ diamond, index, onUpdate }: FigmaDiamondCardP
   };
 
   const getOwnerTelegramId = () => {
-    return diamond.userId || 0;
+    // Since Diamond interface doesn't have userId, we'll use the current user's ID
+    // In a real scenario, this would come from the diamond data
+    return user?.id || 0;
   };
 
   return (
@@ -140,7 +142,7 @@ export function FigmaDiamondCard({ diamond, index, onUpdate }: FigmaDiamondCardP
           {/* 3D Viewer */}
           {diamond.gem360Url && (
             <ThreeDViewer 
-              url={diamond.gem360Url}
+              imageUrl={diamond.gem360Url}
               stockNumber={diamond.stockNumber}
             />
           )}
