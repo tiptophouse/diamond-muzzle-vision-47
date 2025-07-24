@@ -1,5 +1,5 @@
 
-import { Share2, Copy, MessageCircle, Mail, Link, Shield } from "lucide-react";
+import { Share2, Copy, MessageCircle, Mail, Link } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useState } from "react";
@@ -9,51 +9,36 @@ interface ShareButtonProps {
   className?: string;
   variant?: "default" | "outline" | "ghost";
   size?: "default" | "sm" | "lg";
-  storeOwner?: string;
 }
 
-export function ShareButton({ 
-  className = "", 
-  variant = "outline", 
-  size = "default",
-  storeOwner = "Diamond Store"
-}: ShareButtonProps) {
+export function ShareButton({ className = "", variant = "outline", size = "default" }: ShareButtonProps) {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const { toast } = useToast();
 
-  const getSecureStoreUrl = () => {
-    // Create secure encrypted data for store sharing
-    const storeData = {
-      owner: storeOwner,
-      timestamp: Date.now(),
-      type: 'store'
-    };
-    
-    // Base64 encode the data for the secure link
-    const encryptedData = btoa(JSON.stringify(storeData));
-    return `https://miniapp.mazalbot.com/secure-store/${encryptedData}`;
+  const getCurrentUrl = () => {
+    return window.location.href;
   };
 
   const shareOptions = [
     {
-      name: "Copy Secure Link",
+      name: "Copy Link",
       icon: Copy,
       action: () => {
-        navigator.clipboard.writeText(getSecureStoreUrl());
+        navigator.clipboard.writeText(getCurrentUrl());
         toast({
-          title: "Secure Store Link Copied!",
-          description: "Share this link to show your diamond store securely",
+          title: "Link Copied!",
+          description: "Store link has been copied to clipboard",
         });
         setShowShareDialog(false);
       },
       color: "bg-blue-500 hover:bg-blue-600",
-      description: "Secure link with view-only access"
+      description: "Copy the link to share anywhere"
     },
     {
       name: "WhatsApp",
       icon: MessageCircle,
       action: () => {
-        const text = `Check out ${storeOwner}'s premium diamond collection! ${getSecureStoreUrl()}`;
+        const text = `Check out our premium diamond collection! ${getCurrentUrl()}`;
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
       },
       color: "bg-green-500 hover:bg-green-600",
@@ -63,36 +48,27 @@ export function ShareButton({
       name: "Email",
       icon: Mail,
       action: () => {
-        const subject = `${storeOwner} - Premium Diamond Collection`;
-        const body = `I'd like to share ${storeOwner}'s exclusive diamond collection with you:\n\n${getSecureStoreUrl()}\n\nBrowse the carefully curated selection of premium diamonds with secure view-only access.`;
+        const subject = "Premium Diamond Collection";
+        const body = `I'd like to share our exclusive diamond collection with you:\n\n${getCurrentUrl()}\n\nBrowse our carefully curated selection of premium diamonds.`;
         window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
       },
       color: "bg-gray-600 hover:bg-gray-700",
       description: "Share via Email"
     },
     {
-      name: "Generate Marketing Link",
+      name: "Generate Link",
       icon: Link,
       action: () => {
-        const marketingText = `✨ EXCLUSIVE DIAMOND COLLECTION ✨
-
-${storeOwner} presents a curated selection of premium diamonds.
-
-🔐 Secure viewing: ${getSecureStoreUrl()}
-
-Browse our collection with secure, view-only access. Each diamond includes detailed specifications and certification.
-
-#Diamonds #PremiumCollection #Investment #Luxury`;
-
-        navigator.clipboard.writeText(marketingText);
+        const shareableUrl = `${getCurrentUrl()}?shared=true`;
+        navigator.clipboard.writeText(shareableUrl);
         toast({
-          title: "Marketing Text Copied!",
-          description: "Professional marketing text with secure link copied to clipboard",
+          title: "Shareable Link Generated!",
+          description: "A trackable link has been copied to clipboard",
         });
         setShowShareDialog(false);
       },
       color: "bg-purple-500 hover:bg-purple-600",
-      description: "Professional marketing copy"
+      description: "Generate a trackable sharing link"
     }
   ];
 
@@ -100,9 +76,9 @@ Browse our collection with secure, view-only access. Each diamond includes detai
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${storeOwner} - Premium Diamond Collection`,
-          text: "Check out this exclusive diamond collection",
-          url: getSecureStoreUrl(),
+          title: "Premium Diamond Collection",
+          text: "Check out our exquisite selection of premium diamonds",
+          url: getCurrentUrl(),
         });
       } catch (error) {
         // User cancelled sharing or error occurred
@@ -130,11 +106,11 @@ Browse our collection with secure, view-only access. Each diamond includes detai
       <DialogContent className="w-[95vw] max-w-md mx-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
-            <Shield className="h-5 w-5 text-blue-600" />
-            Share Store Securely
+            <Share2 className="h-5 w-5 text-blue-600" />
+            Share Your Diamond Store
           </DialogTitle>
           <p className="text-sm text-slate-600">
-            Share your diamond store with secure, view-only access
+            Share your diamond collection with clients and prospects
           </p>
         </DialogHeader>
         <div className="space-y-3 py-4">
@@ -154,8 +130,7 @@ Browse our collection with secure, view-only access. Each diamond includes detai
           ))}
         </div>
         <div className="text-xs text-slate-500 text-center border-t pt-3">
-          <Shield className="h-3 w-3 inline mr-1" />
-          Secure links provide view-only access and require Telegram authentication
+          Share your collection to reach more potential customers
         </div>
       </DialogContent>
     </Dialog>

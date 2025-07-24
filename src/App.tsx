@@ -1,37 +1,63 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from "@/components/theme-provider"
-import InventoryPage from './pages/InventoryPage';
-import UploadSingleStone from './pages/UploadSingleStone';
-import { QueryClient, QueryClientProvider } from 'react-query';
-import { Toaster } from 'sonner';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { TelegramAuthProvider } from './context/TelegramAuthContext';
 import { TutorialProvider } from './contexts/TutorialContext';
+import Index from './pages/Index';
+import Dashboard from './pages/Dashboard';
+import InventoryPage from './pages/InventoryPage';
 import StorePage from './pages/StorePage';
+import UploadPage from './pages/UploadPage';
+import UploadSingleStonePage from './pages/UploadSingleStonePage';
+import InsightsPage from './pages/InsightsPage';
+import ChatPage from './pages/ChatPage';
+import NotificationsPage from './pages/NotificationsPage';
+import ProfilePage from './pages/ProfilePage';
+import SettingsPage from './pages/SettingsPage';
+import Admin from './pages/Admin';
+import AdminAnalytics from './pages/AdminAnalytics';
+import DiamondDetailPage from './pages/DiamondDetailPage';
+import SecureDiamondPage from './pages/SecureDiamondPage';
+import DiamondSwipe from './pages/DiamondSwipe';
 import NotFound from './pages/NotFound';
-import { AnalyticsDashboard } from './pages/AnalyticsDashboard';
-import SecureSharePage from './pages/SecureSharePage';
-import SecureStorePage from "./pages/SecureStorePage";
+import StandardizeCsvPage from './pages/StandardizeCsvPage';
+import BulkUploadPage from './pages/BulkUploadPage';
 
 function App() {
+  const queryClient = new QueryClient();
+  
   return (
-    <QueryClientProvider client={new QueryClient()}>
-      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-        <TutorialProvider>
-          <Toaster />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<StorePage />} />
-              <Route path="/inventory" element={<InventoryPage />} />
-              <Route path="/upload-single-stone" element={<UploadSingleStone />} />
-              <Route path="/analytics" element={<AnalyticsDashboard />} />
-              <Route path="/secure-diamond/:encryptedData" element={<SecureSharePage />} />
-              <Route path="/secure-store/:encryptedData" element={<SecureStorePage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TutorialProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <Router>
+      <QueryClientProvider client={queryClient}>
+        <TelegramAuthProvider>
+          <TutorialProvider>
+            <div className="min-h-screen bg-background">
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/inventory" element={<InventoryPage />} />
+                <Route path="/store" element={<StorePage />} />
+                <Route path="/upload" element={<UploadPage />} />
+                <Route path="/upload/bulk" element={<BulkUploadPage />} />
+                <Route path="/upload-single-stone" element={<UploadSingleStonePage />} />
+                <Route path="/insights" element={<InsightsPage />} />
+                <Route path="/chat" element={<ChatPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="/admin/analytics" element={<AdminAnalytics />} />
+                <Route path="/diamond/:stockNumber" element={<DiamondDetailPage />} />
+                <Route path="/secure-diamond/:encryptedData" element={<SecureDiamondPage />} />
+                <Route path="/swipe" element={<DiamondSwipe />} />
+                <Route path="/standardize-csv" element={<StandardizeCsvPage />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </div>
+          </TutorialProvider>
+        </TelegramAuthProvider>
+      </QueryClientProvider>
+    </Router>
   );
 }
 

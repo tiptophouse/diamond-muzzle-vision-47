@@ -41,44 +41,32 @@ export default function DiamondDetailPage() {
   }, [diamond, loading, stockNumber, navigate]);
 
   const handleShare = async () => {
-    if (!diamond) return;
-
-    // Create secure encrypted data for deep link sharing
+    // Create secure encrypted link that only shows this diamond
     const diamondData = {
-      stockNumber: diamond.stockNumber,
+      stockNumber: diamond?.stockNumber,
       timestamp: Date.now()
     };
     
-    // Base64 encode the data for the secure link
+    // Simple base64 encoding for the secure link
     const encryptedData = btoa(JSON.stringify(diamondData));
     const secureUrl = `https://miniapp.mazalbot.com/secure-diamond/${encryptedData}`;
     
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond`,
-          text: `Check out this beautiful ${diamond.shape} diamond! Stock #${diamond.stockNumber}`,
+          title: `${diamond?.carat}ct ${diamond?.shape} ${diamond?.color} ${diamond?.clarity} Diamond`,
+          text: `Check out this beautiful ${diamond?.shape} diamond!`,
           url: secureUrl,
         });
-        toast({ 
-          title: "Secure link shared!",
-          description: "Your diamond has been shared securely"
-        });
+        toast({ title: "Secure link shared!" });
       } catch (error) {
-        // User cancelled sharing or error occurred, fallback to clipboard
+        // Fallback to clipboard
         navigator.clipboard.writeText(secureUrl);
-        toast({ 
-          title: "Secure link copied to clipboard!",
-          description: "Share this link to show only this diamond"
-        });
+        toast({ title: "Secure link copied to clipboard!" });
       }
     } else {
-      // Fallback for browsers that don't support navigator.share
       navigator.clipboard.writeText(secureUrl);
-      toast({ 
-        title: "Secure link copied to clipboard!",
-        description: "Share this link to show only this diamond"
-      });
+      toast({ title: "Secure link copied to clipboard!" });
     }
   };
 
@@ -274,7 +262,7 @@ export default function DiamondDetailPage() {
             </Link>
             <Button onClick={handleShare} size="sm" className="flex items-center gap-2">
               <Share2 className="h-4 w-4" />
-              Share Securely
+              Share
             </Button>
           </div>
         </div>
@@ -285,31 +273,18 @@ export default function DiamondDetailPage() {
             <div className="space-y-4">
               <Card className="overflow-hidden">
                 <div className="aspect-square bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center relative">
-                  {(diamond.imageUrl || diamond.picture) ? (
+                  {diamond.imageUrl ? (
                     <img 
-                      src={diamond.imageUrl || diamond.picture} 
+                      src={diamond.imageUrl} 
                       alt={`${diamond.shape} Diamond`}
                       className="w-full h-full object-cover"
-                      onError={(e) => {
-                        // If main image fails, try the alternative
-                        const currentSrc = e.currentTarget.src;
-                        if (currentSrc === diamond.imageUrl && diamond.picture) {
-                          e.currentTarget.src = diamond.picture;
-                        } else if (currentSrc === diamond.picture && diamond.imageUrl) {
-                          e.currentTarget.src = diamond.imageUrl;
-                        } else {
-                          // Both failed, show placeholder
-                          e.currentTarget.style.display = 'none';
-                          const placeholder = e.currentTarget.nextElementSibling as HTMLElement;
-                          if (placeholder) placeholder.style.display = 'flex';
-                        }
-                      }}
                     />
-                  ) : null}
-                  <div className={`text-center ${(diamond.imageUrl || diamond.picture) ? 'hidden' : 'flex'} flex-col items-center justify-center h-full`}>
-                    <Gem className="h-24 w-24 text-slate-400 mx-auto mb-4" />
-                    <p className="text-slate-500">Diamond Image</p>
-                  </div>
+                  ) : (
+                    <div className="text-center">
+                      <Gem className="h-24 w-24 text-slate-400 mx-auto mb-4" />
+                      <p className="text-slate-500">Diamond Image</p>
+                    </div>
+                  )}
                   
                   {/* Admin Image Upload Button */}
                   {isAdmin && (
