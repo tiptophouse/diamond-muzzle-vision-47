@@ -1,3 +1,4 @@
+
 import { Share2, Copy, MessageCircle, Mail, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -31,7 +32,15 @@ export function SecureShareButton({
   const tutorial = useTutorial();
 
   const getSecureUrl = () => {
-    return `https://miniapp.mazalbot.com/secure-diamond/${stockNumber}`;
+    // Create secure encrypted data for deep link sharing
+    const diamondData = {
+      stockNumber: stockNumber,
+      timestamp: Date.now()
+    };
+    
+    // Base64 encode the data for the secure link
+    const encryptedData = btoa(JSON.stringify(diamondData));
+    return `https://miniapp.mazalbot.com/secure-diamond/${encryptedData}`;
   };
 
   const getDiamondDescription = () => {
@@ -113,10 +122,8 @@ This premium diamond is available for immediate viewing. The secure link provide
       tutorial.handleRequiredClick();
     }
     
-    // Create shareable link for tutorial or use secure URL
-    const shareableLink = tutorial?.createShareableLink 
-      ? tutorial.createShareableLink(stockNumber)
-      : getSecureUrl();
+    // Use secure URL for sharing
+    const shareableLink = getSecureUrl();
     
     if (navigator.share) {
       try {

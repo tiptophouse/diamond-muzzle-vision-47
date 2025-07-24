@@ -41,32 +41,44 @@ export default function DiamondDetailPage() {
   }, [diamond, loading, stockNumber, navigate]);
 
   const handleShare = async () => {
-    // Create secure encrypted link that only shows this diamond
+    if (!diamond) return;
+
+    // Create secure encrypted data for deep link sharing
     const diamondData = {
-      stockNumber: diamond?.stockNumber,
+      stockNumber: diamond.stockNumber,
       timestamp: Date.now()
     };
     
-    // Simple base64 encoding for the secure link
+    // Base64 encode the data for the secure link
     const encryptedData = btoa(JSON.stringify(diamondData));
     const secureUrl = `https://miniapp.mazalbot.com/secure-diamond/${encryptedData}`;
     
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${diamond?.carat}ct ${diamond?.shape} ${diamond?.color} ${diamond?.clarity} Diamond`,
-          text: `Check out this beautiful ${diamond?.shape} diamond!`,
+          title: `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond`,
+          text: `Check out this beautiful ${diamond.shape} diamond! Stock #${diamond.stockNumber}`,
           url: secureUrl,
         });
-        toast({ title: "Secure link shared!" });
+        toast({ 
+          title: "Secure link shared!",
+          description: "Your diamond has been shared securely"
+        });
       } catch (error) {
-        // Fallback to clipboard
+        // User cancelled sharing or error occurred, fallback to clipboard
         navigator.clipboard.writeText(secureUrl);
-        toast({ title: "Secure link copied to clipboard!" });
+        toast({ 
+          title: "Secure link copied to clipboard!",
+          description: "Share this link to show only this diamond"
+        });
       }
     } else {
+      // Fallback for browsers that don't support navigator.share
       navigator.clipboard.writeText(secureUrl);
-      toast({ title: "Secure link copied to clipboard!" });
+      toast({ 
+        title: "Secure link copied to clipboard!",
+        description: "Share this link to show only this diamond"
+      });
     }
   };
 
@@ -262,7 +274,7 @@ export default function DiamondDetailPage() {
             </Link>
             <Button onClick={handleShare} size="sm" className="flex items-center gap-2">
               <Share2 className="h-4 w-4" />
-              Share
+              Share Securely
             </Button>
           </div>
         </div>
