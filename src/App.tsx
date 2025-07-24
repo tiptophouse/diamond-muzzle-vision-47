@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -24,13 +25,20 @@ import StandardizeCsvPage from './pages/StandardizeCsvPage';
 import BulkUploadPage from './pages/BulkUploadPage';
 
 function App() {
-  const queryClient = new QueryClient();
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+      },
+    },
+  });
   
   return (
-    <Router>
-      <QueryClientProvider client={queryClient}>
-        <TelegramAuthProvider>
-          <TutorialProvider>
+    <QueryClientProvider client={queryClient}>
+      <TelegramAuthProvider>
+        <TutorialProvider>
+          <Router>
             <div className="min-h-screen bg-background">
               <Routes>
                 <Route path="/" element={<Index />} />
@@ -54,10 +62,10 @@ function App() {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </div>
-          </TutorialProvider>
-        </TelegramAuthProvider>
-      </QueryClientProvider>
-    </Router>
+          </Router>
+        </TutorialProvider>
+      </TelegramAuthProvider>
+    </QueryClientProvider>
   );
 }
 
