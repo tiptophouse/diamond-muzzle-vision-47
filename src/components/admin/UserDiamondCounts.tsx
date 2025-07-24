@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -95,7 +94,7 @@ export function UserDiamondCounts() {
             created_at: user.created_at,
             diamond_count: diamondCount,
             last_upload: lastUpload,
-            status: user.status || 'active'
+            status: (user.status === 'inactive') ? 'inactive' : 'active'
           });
 
           console.log(`✅ User ${user.telegram_id}: ${diamondCount} diamonds`);
@@ -110,7 +109,7 @@ export function UserDiamondCounts() {
             username: user.username,
             created_at: user.created_at,
             diamond_count: 0,
-            status: user.status || 'active'
+            status: (user.status === 'inactive') ? 'inactive' : 'active'
           });
         }
       }
