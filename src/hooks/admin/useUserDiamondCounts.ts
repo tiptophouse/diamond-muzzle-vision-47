@@ -158,8 +158,13 @@ export function useUserDiamondCounts() {
         avgDiamondsPerUser: Math.round(avgDiamondsPerUser * 10) / 10
       };
 
-      // Update cache
-      userDiamondCountsCache.updateCache(userDiamondCounts, newStats);
+      // Update cache with properly typed data
+      const cachedUserCounts = userDiamondCounts.map(user => ({
+        ...user,
+        cached_at: new Date().toISOString()
+      }));
+      
+      userDiamondCountsCache.updateCache(cachedUserCounts, newStats);
 
       setUserCounts(userDiamondCounts);
       setStats(newStats);
