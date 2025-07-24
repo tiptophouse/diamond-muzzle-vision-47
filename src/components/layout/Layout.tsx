@@ -1,17 +1,22 @@
+
 import Sidebar from "./Sidebar";
 import { Header } from "./Header";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { TutorialModal } from "@/components/tutorial/TutorialModal";
+// import { TutorialModal } from "@/components/tutorial/TutorialModal"; // Temporarily disabled
+
 interface LayoutProps {
   children: React.ReactNode;
 }
+
 export function Layout({
   children
 }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  return <div className="min-h-screen w-full overflow-x-hidden flex bg-background">
+  
+  return (
+    <div className="min-h-screen w-full overflow-x-hidden flex bg-background">
       {/* Mobile overlay */}
       {sidebarOpen && <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
       
@@ -56,7 +61,8 @@ export function Layout({
         </main>
       </div>
 
-      {/* Tutorial Modal */}
-      <TutorialModal />
-    </div>;
+      {/* Tutorial Modal - Temporarily disabled */}
+      {/* <TutorialModal /> */}
+    </div>
+  );
 }
