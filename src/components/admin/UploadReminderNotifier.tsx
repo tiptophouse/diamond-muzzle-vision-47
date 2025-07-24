@@ -4,16 +4,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, Send, Users, ExternalLink } from 'lucide-react';
+import { Upload, Send, Users, ExternalLink, RefreshCw } from 'lucide-react';
 import { useUserDiamondCounts } from '@/hooks/admin/useUserDiamondCounts';
 
 export function UploadReminderNotifier() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const { userCounts, stats, loading: diamondCountsLoading } = useUserDiamondCounts();
+  const { userCounts, stats, loading: diamondCountsLoading, forceRefresh } = useUserDiamondCounts();
 
-  // Get users with zero diamonds from our accurate FastAPI data
+  // Get users with EXACTLY zero diamonds from our accurate FastAPI data
   const usersWithoutInventory = userCounts.filter(user => user.diamond_count === 0);
+
+  console.log('📊 UploadReminderNotifier: Total users:', userCounts.length);
+  console.log('📊 UploadReminderNotifier: Users with 0 diamonds:', usersWithoutInventory.length);
+  console.log('📊 UploadReminderNotifier: Sample users with diamonds:', 
+    userCounts.filter(u => u.diamond_count > 0).slice(0, 3).map(u => ({
+      name: u.first_name,
+      count: u.diamond_count
+    }))
+  );
 
   const sendUploadReminder = async () => {
     try {
@@ -60,7 +69,7 @@ export function UploadReminderNotifier() {
         <CardContent className="p-6">
           <div className="flex items-center justify-center space-x-2">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <span>Loading accurate diamond counts...</span>
+            <span>Loading accurate diamond counts from FastAPI...</span>
           </div>
         </CardContent>
       </Card>
@@ -93,6 +102,14 @@ export function UploadReminderNotifier() {
           <div className="flex items-center gap-2 mb-2">
             <Users className="h-4 w-4 text-blue-600" />
             <span className="font-medium">Accurate User Statistics (from FastAPI)</span>
+            <Button
+              onClick={forceRefresh}
+              variant="ghost"
+              size="sm"
+              className="ml-auto"
+            >
+              <RefreshCw className="h-3 w-3" />
+            </Button>
           </div>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
@@ -114,10 +131,19 @@ export function UploadReminderNotifier() {
           </div>
         </div>
 
-        {usersWithoutInventory.length > 0 && (
+        {stats.usersWithZeroDiamonds === 0 ? (
+          <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+            <h4 className="font-medium mb-2 text-green-800 dark:text-green-200">
+              🎉 Great news! All users have uploaded diamonds!
+            </h4>
+            <p className="text-sm text-green-700 dark:text-green-300">
+              Every user in your system has at least one diamond uploaded. No upload reminders needed.
+            </p>
+          </div>
+        ) : (
           <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
             <h4 className="font-medium mb-2 text-orange-800 dark:text-orange-200">
-              Users who will receive notifications:
+              Users who will receive notifications ({usersWithoutInventory.length}):
             </h4>
             <div className="text-sm space-y-1 max-h-32 overflow-y-auto">
               {usersWithoutInventory.slice(0, 10).map((user) => (
@@ -151,7 +177,7 @@ export function UploadReminderNotifier() {
             Deep link will direct users to: /upload-single-stone
           </p>
           <p className="mt-1 text-green-600">
-            ✓ Now using accurate FastAPI diamond counts instead of Supabase inventory
+            ✓ Now using accurate FastAPI diamond counts with real-time verification
           </p>
         </div>
       </CardContent>
