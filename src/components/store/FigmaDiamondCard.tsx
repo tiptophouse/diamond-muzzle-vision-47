@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +11,6 @@ import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { MessageCircle, Eye, Zap } from "lucide-react";
-import { TelegramContactButton } from "./TelegramContactButton";
 
 interface FigmaDiamondCardProps {
   diamond: Diamond;
@@ -158,11 +158,15 @@ export function FigmaDiamondCard({ diamond, index, onUpdate }: FigmaDiamondCardP
               <Eye className="w-4 h-4 mr-1" />
               View Details
             </Button>
-            <TelegramContactButton
-              diamond={diamond}
-              ownerTelegramId={getOwnerTelegramId()}
-              className="flex-1 h-9 text-xs"
-            />
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleContactClick}
+              className="flex-1 h-9 text-xs bg-blue-600 hover:bg-blue-700"
+            >
+              <MessageCircle className="w-4 h-4 mr-1" />
+              Contact
+            </Button>
             <SecureShareButton
               stockNumber={diamond.stockNumber}
               diamond={diamond}
