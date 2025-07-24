@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +11,6 @@ import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { MessageCircle, Eye, Zap } from "lucide-react";
-import { TelegramContactButton } from "./TelegramContactButton";
 
 interface FigmaDiamondCardProps {
   diamond: Diamond;
@@ -30,24 +30,13 @@ export function FigmaDiamondCard({ diamond, index, onUpdate }: FigmaDiamondCardP
 
   const handleViewClick = () => {
     impactOccurred('light');
-    // Navigate to specific diamond page with stock number
-    const currentUrl = new URL(window.location.href);
-    currentUrl.searchParams.set('stock', diamond.stockNumber);
-    window.history.pushState({}, '', currentUrl.toString());
-    
-    // Scroll to the diamond card
-    setTimeout(() => {
-      const element = document.getElementById(`diamond-${diamond.stockNumber}`);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }, 100);
+    // View functionality would be implemented here
   };
 
   const getOwnerTelegramId = () => {
-    // Since Diamond interface doesn't have userId, we'll use the current user's ID
-    // In a real scenario, this would come from the diamond data
-    return user?.id || 0;
+    // This would typically come from the diamond data or be passed as a prop
+    // For now, we'll use a placeholder - in real implementation, this should be the actual owner's telegram ID
+    return diamond.diamondId as number || 0;
   };
 
   return (
@@ -142,7 +131,7 @@ export function FigmaDiamondCard({ diamond, index, onUpdate }: FigmaDiamondCardP
           {/* 3D Viewer */}
           {diamond.gem360Url && (
             <ThreeDViewer 
-              imageUrl={diamond.gem360Url}
+              gem360Url={diamond.gem360Url}
               stockNumber={diamond.stockNumber}
             />
           )}
@@ -158,11 +147,15 @@ export function FigmaDiamondCard({ diamond, index, onUpdate }: FigmaDiamondCardP
               <Eye className="w-4 h-4 mr-1" />
               View Details
             </Button>
-            <TelegramContactButton
-              diamond={diamond}
-              ownerTelegramId={getOwnerTelegramId()}
-              className="flex-1 h-9 text-xs"
-            />
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleContactClick}
+              className="flex-1 h-9 text-xs bg-blue-600 hover:bg-blue-700"
+            >
+              <MessageCircle className="w-4 h-4 mr-1" />
+              Contact
+            </Button>
             <SecureShareButton
               stockNumber={diamond.stockNumber}
               diamond={diamond}
