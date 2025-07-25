@@ -1,182 +1,156 @@
-
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
+import { Heart, Eye, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AdminStoreControls } from "./AdminStoreControls";
-import { SecureShareButton } from "./SecureShareButton";
-import { WishlistButton } from "./WishlistButton";
-import { ThreeDViewer } from "./ThreeDViewer";
-import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
+import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
-import { MessageCircle, Eye, Zap } from "lucide-react";
+import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
+import { useTelegramAccelerometer } from "@/hooks/useTelegramAccelerometer";
+import { toast } from 'sonner';
 
 interface FigmaDiamondCardProps {
   diamond: Diamond;
   index: number;
-  onUpdate: () => void;
+  onUpdate?: () => void;
 }
 
-export function FigmaDiamondCard({ diamond, index, onUpdate }: FigmaDiamondCardProps) {
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const { user } = useTelegramAuth();
+export function FigmaDiamondCard({
+  diamond,
+  index,
+  onUpdate
+}: FigmaDiamondCardProps) {
+  const [imageError, setImageError] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
   const { impactOccurred } = useTelegramHapticFeedback();
+  const { orientationData } = useTelegramAccelerometer(true);
+  const navigate = useNavigate();
 
-  const handleContactClick = () => {
+  const handleLike = () => {
     impactOccurred('light');
-    // Contact functionality would be implemented here
+    setIsLiked(!isLiked);
+    toast.success(isLiked ? "Removed from favorites" : "Added to favorites");
   };
 
-  const handleViewClick = () => {
+  const handleViewDetails = () => {
     impactOccurred('light');
-    // Navigate to specific diamond page with stock number
-    const currentUrl = new URL(window.location.href);
-    currentUrl.searchParams.set('stock', diamond.stockNumber);
-    window.history.pushState({}, '', currentUrl.toString());
-    
-    // Scroll to the diamond card
-    setTimeout(() => {
-      const element = document.getElementById(`diamond-${diamond.stockNumber}`);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }, 100);
+    navigate(`/diamond/${diamond.stockNumber}`);
   };
 
-  const getOwnerTelegramId = () => {
-    // Since Diamond interface doesn't have userId, we'll use the current user's ID
-    // In a real scenario, this would come from the diamond data
-    return user?.id || 0;
+  const handleContact = () => {
+    impactOccurred('light');
+    toast.success("Opening contact options...");
   };
+
+  const isAvailable = diamond.status === "Available";
+
+  // Calculate rotation based on device tilt for diamond image
+  const imageTransform = diamond.imageUrl && !imageError 
+    ? `perspective(1000px) rotateX(${orientationData.beta * 0.2}deg) rotateY(${orientationData.gamma * 0.2}deg)`
+    : undefined;
 
   return (
-    <Card 
-      id={`diamond-${diamond.stockNumber}`}
-      className="group relative bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 animate-fade-in"
-      style={{ animationDelay: `${index * 50}ms` }}
+    <div 
+      id={`diamond-${diamond.stockNumber}`} 
+      className="group relative bg-card rounded-2xl overflow-hidden transition-all duration-200 animate-fade-in"
+      style={{ animationDelay: `${index * 100}ms` }}
     >
-      <CardContent className="p-0">
-        {/* Image Section */}
-        <div className="relative h-48 sm:h-56 overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50">
-          {diamond.imageUrl || diamond.picture ? (
-            <img
-              src={diamond.imageUrl || diamond.picture}
-              alt={`${diamond.shape} Diamond`}
-              className={`w-full h-full object-cover transition-all duration-700 ${
-                imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-110'
-              }`}
-              onLoad={() => setImageLoaded(true)}
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm">
-                  <Zap className="w-8 h-8 text-blue-600" />
-                </div>
-                <p className="text-sm text-gray-600 font-medium">{diamond.shape}</p>
-                <p className="text-xs text-gray-500">Diamond</p>
-              </div>
-            </div>
-          )}
-          
-          {/* Top Controls */}
-          <div className="absolute top-2 left-2 right-2 flex justify-between items-center">
-            <Badge className="bg-white/90 text-gray-800 shadow-sm">
-              Stock: {diamond.stockNumber}
-            </Badge>
-            <div className="flex items-center gap-1">
-              <WishlistButton 
-                diamond={diamond} 
-                ownerTelegramId={getOwnerTelegramId()} 
-                className="bg-white/90 hover:bg-white shadow-sm"
-              />
+      {/* Image Container */}
+      <div className="relative aspect-square bg-muted overflow-hidden">
+        {diamond.imageUrl && !imageError ? (
+          <img 
+            src={diamond.imageUrl} 
+            alt={`${diamond.carat} ct ${diamond.shape} Diamond`} 
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
+            style={{ transform: imageTransform }}
+            onError={() => setImageError(true)} 
+            loading="lazy" 
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full bg-gradient-to-br from-muted to-muted-foreground/10">
+            <div className="w-16 h-16 bg-muted-foreground/20 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-muted-foreground/40 rounded-full"></div>
             </div>
           </div>
-
-          {/* Admin Controls */}
-          <AdminStoreControls diamond={diamond} onUpdate={onUpdate} onDelete={onUpdate} />
+        )}
+        
+        {/* Status Badge */}
+        <div className="absolute top-3 left-3">
+          <Badge 
+            className={`text-xs font-medium border-0 ${
+              isAvailable 
+                ? "bg-green-500/90 text-white" 
+                : "bg-blue-500/90 text-white"
+            }`}
+          >
+            {isAvailable ? "Available" : "Premium"}
+          </Badge>
         </div>
 
-        {/* Content Section */}
-        <div className="p-4 space-y-3">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-gray-900 text-lg">
-                {diamond.carat}ct {diamond.shape}
-              </h3>
-              <p className="text-sm text-gray-600">
-                {diamond.color} • {diamond.clarity} • {diamond.cut}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-xl font-bold text-gray-900">
-                ${diamond.price.toLocaleString()}
-              </p>
-              <p className="text-xs text-gray-500">
-                ${Math.round(diamond.price / diamond.carat).toLocaleString()}/ct
-              </p>
-            </div>
-          </div>
+        {/* Heart Icon */}
+        <button
+          onClick={handleLike}
+          className="absolute top-3 right-3 p-2 bg-background/80 backdrop-blur-sm rounded-full transition-all duration-200 hover:bg-background/90 hover:scale-110"
+        >
+          <Heart 
+            className={`h-4 w-4 transition-colors ${
+              isLiked ? 'text-red-500 fill-red-500' : 'text-muted-foreground'
+            }`} 
+          />
+        </button>
+      </div>
 
-          {/* Diamond Details Grid */}
-          <div className="grid grid-cols-3 gap-2 text-xs">
-            <div className="text-center p-2 bg-gray-50 rounded-lg">
-              <p className="text-gray-500">Shape</p>
-              <p className="font-medium text-gray-900">{diamond.shape}</p>
-            </div>
-            <div className="text-center p-2 bg-gray-50 rounded-lg">
-              <p className="text-gray-500">Color</p>
-              <p className="font-medium text-gray-900">{diamond.color}</p>
-            </div>
-            <div className="text-center p-2 bg-gray-50 rounded-lg">
-              <p className="text-gray-500">Clarity</p>
-              <p className="font-medium text-gray-900">{diamond.clarity}</p>
-            </div>
+      {/* Content */}
+      <div className="p-4">
+        {/* Title and Price */}
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-foreground text-base leading-tight truncate">
+              {diamond.carat} ct {diamond.shape}
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1 truncate">
+              {diamond.stockNumber}
+            </p>
           </div>
-
-          {/* 3D Viewer */}
-          {diamond.gem360Url && (
-            <ThreeDViewer 
-              imageUrl={diamond.gem360Url}
-              stockNumber={diamond.stockNumber}
-            />
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex gap-2 pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleViewClick}
-              className="flex-1 h-9 text-xs"
-            >
-              <Eye className="w-4 h-4 mr-1" />
-              View Details
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={handleContactClick}
-              className="flex-1 h-9 text-xs bg-blue-600 hover:bg-blue-700"
-            >
-              <MessageCircle className="w-4 h-4 mr-1" />
-              Contact
-            </Button>
-            <SecureShareButton
-              stockNumber={diamond.stockNumber}
-              diamond={diamond}
-              variant="outline"
-              size="sm"
-              className="h-9 px-3"
-            />
-          </div>
+          <p className="text-lg font-bold text-foreground ml-2">
+            ${diamond.price?.toLocaleString() || 'N/A'}
+          </p>
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Specs */}
+        <div className="flex items-center gap-2 mb-4">
+          <span className="bg-muted px-2 py-1 rounded-md text-xs font-medium text-muted-foreground">
+            {diamond.color}
+          </span>
+          <span className="bg-muted px-2 py-1 rounded-md text-xs font-medium text-muted-foreground">
+            {diamond.clarity}
+          </span>
+          <span className="text-xs font-medium text-yellow-600">
+            Very Good
+          </span>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex-1 h-10 border-border text-foreground hover:bg-muted"
+            onClick={handleContact}
+          >
+            <MessageCircle className="h-4 w-4 mr-1" />
+            Contact
+          </Button>
+          <Button 
+            variant="default" 
+            size="sm" 
+            className="flex-1 h-10 bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={handleViewDetails}
+          >
+            <Eye className="h-4 w-4 mr-1" />
+            Details
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }

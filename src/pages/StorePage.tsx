@@ -13,7 +13,6 @@ import { toast } from 'sonner';
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { TelegramStoreFilters } from "@/components/store/TelegramStoreFilters";
 import { TelegramSortSheet } from "@/components/store/TelegramSortSheet";
-import { ShareButton } from "@/components/store/ShareButton";
 
 export default function StorePage() {
   const { diamonds, loading, error, refetch } = useStoreData();
@@ -21,31 +20,11 @@ export default function StorePage() {
   const [showFilters, setShowFilters] = useState(false);
   const [showSort, setShowSort] = useState(false);
   const [sortBy, setSortBy] = useState("most-popular");
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const stockNumber = searchParams.get('stock');
   const { selectionChanged, impactOccurred } = useTelegramHapticFeedback();
 
   const navigate = useNavigate();
-
-  // Handle Telegram deep link parameters
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const startParam = urlParams.get('tgWebAppStartParam');
-    
-    if (startParam) {
-      // Parse start parameter for store and diamond info
-      if (startParam.startsWith('store_')) {
-        const parts = startParam.split('&');
-        const storeId = parts[0].replace('store_', '');
-        const stockParam = parts.find(p => p.startsWith('stock='));
-        
-        if (stockParam) {
-          const stock = stockParam.split('=')[1];
-          setSearchParams({ stock });
-        }
-      }
-    }
-  }, [setSearchParams]);
 
   // Sort diamonds based on selected sort option
   const sortedDiamonds = useMemo(() => {
@@ -224,11 +203,6 @@ export default function StorePage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <ShareButton 
-                  variant="outline" 
-                  size="sm" 
-                  className="h-8 px-3"
-                />
                 <Button
                   variant="outline" 
                   size="sm"
