@@ -1,4 +1,6 @@
+
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { MessageCircle, Gem, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +24,7 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
   const { accelerometerData, orientationData, isSupported, startAccelerometer, stopAccelerometer } = useTelegramAccelerometer(isMotionMode, 60);
   const { impactOccurred, selectionChanged } = useTelegramHapticFeedback();
   const cardRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // Calculate diamond image rotation based on device tilt
   const getDiamondImageTransform = () => {
@@ -84,6 +87,9 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
     impactOccurred('medium');
     if (onViewDetails) {
       onViewDetails(diamond);
+    } else {
+      // Navigate to diamond detail page
+      navigate(`/diamond/${diamond.stockNumber}`);
     }
   };
 
