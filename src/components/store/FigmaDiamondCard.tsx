@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,7 +22,6 @@ export function FigmaDiamondCard({ diamond, index, onUpdate }: FigmaDiamondCardP
   const [imageLoaded, setImageLoaded] = useState(false);
   const { user } = useTelegramAuth();
   const { impactOccurred } = useTelegramHapticFeedback();
-  const navigate = useNavigate();
 
   const handleContactClick = () => {
     impactOccurred('light');
@@ -32,8 +30,18 @@ export function FigmaDiamondCard({ diamond, index, onUpdate }: FigmaDiamondCardP
 
   const handleViewClick = () => {
     impactOccurred('light');
-    // Navigate to the diamond detail page
-    navigate(`/diamond/${diamond.stockNumber}`);
+    // Navigate to specific diamond page with stock number
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('stock', diamond.stockNumber);
+    window.history.pushState({}, '', currentUrl.toString());
+    
+    // Scroll to the diamond card
+    setTimeout(() => {
+      const element = document.getElementById(`diamond-${diamond.stockNumber}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
   };
 
   const getOwnerTelegramId = () => {

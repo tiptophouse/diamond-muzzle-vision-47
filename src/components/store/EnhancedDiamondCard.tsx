@@ -1,7 +1,6 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { MessageCircle, ImageIcon, Gem, Eye } from "lucide-react";
+import { MessageCircle, ImageIcon, Gem } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
@@ -20,7 +19,6 @@ interface EnhancedDiamondCardProps {
 export function EnhancedDiamondCard({ diamond, index, onUpdate, onDelete }: EnhancedDiamondCardProps) {
   const [imageError, setImageError] = useState(false);
   const { user } = useTelegramAuth();
-  const navigate = useNavigate();
   const isAdmin = user?.id === ADMIN_TELEGRAM_ID;
 
   const handleContactOwner = () => {
@@ -37,10 +35,6 @@ export function EnhancedDiamondCard({ diamond, index, onUpdate, onDelete }: Enha
     const telegramUrl = `https://t.me/share/url?url=${encodedMessage}`;
     
     window.open(telegramUrl, '_blank');
-  };
-
-  const handleViewDetails = () => {
-    navigate(`/diamond/${diamond.stockNumber}`);
   };
 
   return (
@@ -128,25 +122,14 @@ export function EnhancedDiamondCard({ diamond, index, onUpdate, onDelete }: Enha
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2">
-          <Button 
-            onClick={handleViewDetails}
-            variant="outline"
-            className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50"
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            View Details
-          </Button>
-          
-          <Button 
-            onClick={handleContactOwner}
-            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-          >
-            <MessageCircle className="h-4 w-4 mr-2" />
-            Contact
-          </Button>
-        </div>
+        {/* Contact Button */}
+        <Button 
+          onClick={handleContactOwner}
+          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+        >
+          <MessageCircle className="h-4 w-4 mr-2" />
+          Contact Owner
+        </Button>
       </div>
     </div>
   );
