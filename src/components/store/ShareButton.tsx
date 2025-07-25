@@ -15,22 +15,9 @@ interface ShareButtonProps {
     name: string;
     telegramId: number;
   };
-  specificDiamond?: {
-    stockNumber: string;
-    carat: number;
-    shape: string;
-    color: string;
-    clarity: string;
-  };
 }
 
-export function ShareButton({ 
-  className = "", 
-  variant = "outline", 
-  size = "default", 
-  storeOwner,
-  specificDiamond 
-}: ShareButtonProps) {
+export function ShareButton({ className = "", variant = "outline", size = "default", storeOwner }: ShareButtonProps) {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const { toast } = useToast();
   const { user } = useTelegramAuth();
@@ -42,64 +29,43 @@ export function ShareButton({
 
   const getStoreShareUrl = () => {
     if (storeOwner) {
-      const baseUrl = `https://t.me/MazalBotBot/app?startapp=store_${storeOwner.telegramId}`;
-      if (specificDiamond) {
-        return `${baseUrl}&stock=${specificDiamond.stockNumber}`;
-      }
-      return baseUrl;
+      return `https://miniapp.mazalbot.com/store/${storeOwner.telegramId}`;
     }
-    
-    // For current user's store
-    const currentUserId = user?.id || 0;
-    const baseUrl = `https://t.me/MazalBotBot/app?startapp=store_${currentUserId}`;
-    if (specificDiamond) {
-      return `${baseUrl}&stock=${specificDiamond.stockNumber}`;
-    }
-    return baseUrl;
+    return getCurrentUrl();
   };
 
   const getShareText = () => {
-    if (specificDiamond) {
-      return `💎 Check out this ${specificDiamond.carat}ct ${specificDiamond.shape} diamond!\n\n${specificDiamond.color} color, ${specificDiamond.clarity} clarity\nStock #${specificDiamond.stockNumber}`;
-    }
-    
     if (storeOwner) {
       return `💎 Check out ${storeOwner.name}'s diamond collection!\n\nBrowse premium diamonds and find your perfect match.`;
     }
-    
     return "Check out our premium diamond collection!";
   };
 
   const shareOptions = [
     {
-      name: specificDiamond ? "Copy Diamond Link" : "Copy Store Link",
+      name: "Copy Store Link",
       icon: Copy,
       action: () => {
         navigator.clipboard.writeText(getStoreShareUrl());
         toast({
-          title: specificDiamond ? "Diamond Link Copied!" : "Store Link Copied!",
-          description: specificDiamond 
-            ? "Diamond link has been copied to clipboard" 
-            : "Store link has been copied to clipboard",
+          title: "Store Link Copied!",
+          description: "Store link has been copied to clipboard",
         });
         setShowShareDialog(false);
       },
       color: "bg-blue-500 hover:bg-blue-600",
-      description: specificDiamond 
-        ? "Copy the direct link to this diamond"
-        : "Copy the store link to share anywhere"
+      description: "Copy the store link to share anywhere"
     },
     {
       name: "Share via Telegram",
       icon: MessageCircle,
       action: () => {
-        const text = getShareText();
-        const url = getStoreShareUrl();
+        const text = `${getShareText()}\n\n${getStoreShareUrl()}`;
         
         if (webApp?.openTelegramLink) {
-          webApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`);
+          webApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(getStoreShareUrl())}&text=${encodeURIComponent(getShareText())}`);
         } else {
-          window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank');
+          window.open(`https://t.me/share/url?url=${encodeURIComponent(getStoreShareUrl())}&text=${encodeURIComponent(getShareText())}`, '_blank');
         }
       },
       color: "bg-blue-600 hover:bg-blue-700",
@@ -109,7 +75,7 @@ export function ShareButton({
       name: "WhatsApp",
       icon: MessageCircle,
       action: () => {
-        const text = `${getShareText()}\n\n${getStoreShareUrl()}`;
+        const text = `${getShareText()} ${getStoreShareUrl()}`;
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
       },
       color: "bg-green-500 hover:bg-green-600",
@@ -119,10 +85,7 @@ export function ShareButton({
       name: "Email",
       icon: Mail,
       action: () => {
-        const subject = specificDiamond 
-          ? `${specificDiamond.carat}ct ${specificDiamond.shape} Diamond - ${specificDiamond.color} ${specificDiamond.clarity}`
-          : storeOwner ? `${storeOwner.name}'s Diamond Collection` : "Premium Diamond Collection";
-        
+        const subject = storeOwner ? `${storeOwner.name}'s Diamond Collection` : "Premium Diamond Collection";
         const body = `${getShareText()}\n\n${getStoreShareUrl()}\n\nBrowse our carefully curated selection of premium diamonds.`;
         window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
       },
@@ -145,9 +108,7 @@ export function ShareButton({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: specificDiamond 
-            ? `${specificDiamond.carat}ct ${specificDiamond.shape} Diamond`
-            : storeOwner ? `${storeOwner.name}'s Diamond Store` : "Premium Diamond Collection",
+          title: storeOwner ? `${storeOwner.name}'s Diamond Store` : "Premium Diamond Collection",
           text: getShareText(),
           url: getStoreShareUrl(),
         });
@@ -170,9 +131,7 @@ export function ShareButton({
           className={`flex items-center gap-2 ${className}`}
         >
           <Share2 className="h-4 w-4" />
-          <span className="hidden sm:inline">
-            {specificDiamond ? "Share Diamond" : "Share Store"}
-          </span>
+          <span className="hidden sm:inline">Share Store</span>
           <span className="sm:hidden">Share</span>
         </Button>
       </DialogTrigger>
@@ -180,13 +139,10 @@ export function ShareButton({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Store className="h-5 w-5 text-blue-600" />
-            {specificDiamond ? "Share Diamond" : "Share Diamond Store"}
+            Share Diamond Store
           </DialogTitle>
           <p className="text-sm text-slate-600">
-            {specificDiamond 
-              ? `Share this ${specificDiamond.carat}ct ${specificDiamond.shape} diamond`
-              : storeOwner ? `Share ${storeOwner.name}'s collection` : "Share your diamond collection with clients and prospects"
-            }
+            {storeOwner ? `Share ${storeOwner.name}'s collection` : "Share your diamond collection with clients and prospects"}
           </p>
         </DialogHeader>
         <div className="space-y-3 py-4">
@@ -207,10 +163,7 @@ export function ShareButton({
         </div>
         <div className="text-xs text-slate-500 text-center border-t pt-3">
           <Store className="h-3 w-3 inline mr-1" />
-          {specificDiamond 
-            ? "Share specific diamond to reach interested buyers"
-            : "Share your collection to reach more potential customers"
-          }
+          Share your collection to reach more potential customers
         </div>
       </DialogContent>
     </Dialog>

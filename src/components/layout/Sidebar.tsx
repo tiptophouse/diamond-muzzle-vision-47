@@ -1,82 +1,63 @@
-
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Package, Upload, MessageSquare, TrendingUp, FileText, Settings, Bell, Users, BarChart3, Store, Heart } from 'lucide-react';
-
+import { LayoutDashboard, Package, Upload, MessageSquare, TrendingUp, FileText, Settings, Bell, Users, BarChart3, Store } from 'lucide-react';
 const ADMIN_TELEGRAM_ID = 2138564172;
-
 interface SidebarProps {
   onClose?: () => void;
 }
-
-const Sidebar = ({ onClose }: SidebarProps) => {
-  const { user } = useTelegramAuth();
+const Sidebar = ({
+  onClose
+}: SidebarProps) => {
+  const {
+    user
+  } = useTelegramAuth();
   const isAdmin = user?.id === ADMIN_TELEGRAM_ID;
-
-  const navigation = [
-    {
-      name: 'Dashboard',
-      href: '/',
-      icon: LayoutDashboard
-    },
-    {
-      name: 'Inventory',
-      href: '/inventory',
-      icon: Package
-    },
-    {
-      name: 'Store',
-      href: '/store',
-      icon: Store
-    },
-    {
-      name: 'Wishlist',
-      href: '/wishlist',
-      icon: Heart
-    },
-    {
-      name: 'Upload',
-      href: '/upload',
-      icon: Upload
-    },
-    {
-      name: 'Chat',
-      href: '/chat',
-      icon: MessageSquare
-    },
-    {
-      name: 'Insights',
-      href: '/insights',
-      icon: TrendingUp
-    },
-    {
-      name: 'Settings',
-      href: '/settings',
-      icon: Settings
-    },
-    {
-      name: 'Notifications',
-      href: '/notifications',
-      icon: Bell
-    }
-  ];
-
-  const adminNavigation = [
-    {
-      name: 'Admin Analytics',
-      href: '/admin',
-      icon: BarChart3
-    }
-  ];
-
+  const navigation = [{
+    name: 'Dashboard',
+    href: '/',
+    icon: LayoutDashboard
+  }, {
+    name: 'Inventory',
+    href: '/inventory',
+    icon: Package
+  }, {
+    name: 'Store',
+    href: '/store',
+    icon: Store
+  }, {
+    name: 'Upload',
+    href: '/upload',
+    icon: Upload
+  }, {
+    name: 'Chat',
+    href: '/chat',
+    icon: MessageSquare
+  }, {
+    name: 'Insights',
+    href: '/insights',
+    icon: TrendingUp
+  }, {
+    name: 'Settings',
+    href: '/settings',
+    icon: Settings
+  }, {
+    name: 'Notifications',
+    href: '/notifications',
+    icon: Bell
+  }];
+  const adminNavigation = [{
+    name: 'Admin Analytics',
+    href: '/admin',
+    icon: BarChart3
+  }];
   const handleNavClick = () => {
+    // Close sidebar on mobile when navigation item is clicked
     onClose?.();
   };
-
   return (
     <aside className="w-64 bg-card/60 backdrop-blur-xl border-r border-border/30 flex flex-col h-full shadow-lg">
       {/* Header with close button for mobile */}
@@ -154,5 +135,4 @@ const Sidebar = ({ onClose }: SidebarProps) => {
     </aside>
   );
 };
-
 export default Sidebar;

@@ -21,31 +21,11 @@ export default function StorePage() {
   const [showFilters, setShowFilters] = useState(false);
   const [showSort, setShowSort] = useState(false);
   const [sortBy, setSortBy] = useState("most-popular");
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const stockNumber = searchParams.get('stock');
   const { selectionChanged, impactOccurred } = useTelegramHapticFeedback();
 
   const navigate = useNavigate();
-
-  // Handle Telegram deep link parameters
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const startParam = urlParams.get('tgWebAppStartParam');
-    
-    if (startParam) {
-      // Parse start parameter for store and diamond info
-      if (startParam.startsWith('store_')) {
-        const parts = startParam.split('&');
-        const storeId = parts[0].replace('store_', '');
-        const stockParam = parts.find(p => p.startsWith('stock='));
-        
-        if (stockParam) {
-          const stock = stockParam.split('=')[1];
-          setSearchParams({ stock });
-        }
-      }
-    }
-  }, [setSearchParams]);
 
   // Sort diamonds based on selected sort option
   const sortedDiamonds = useMemo(() => {
