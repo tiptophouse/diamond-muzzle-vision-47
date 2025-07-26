@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
@@ -125,6 +124,9 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
       if (result) {
         // Send Telegram notification on successful upload
         await sendTelegramNotification(data);
+        
+        // Check for wishlist matches after successful upload
+        await checkWishlistMatches(data);
       }
       return result;
     } catch (error) {
@@ -132,6 +134,124 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
       return false;
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const checkWishlistMatches = async (uploadedDiamond: DiamondFormData) => {
+    try {
+      console.log('🔍 Checking for wishlist matches...');
+      
+      // Get all wishlist items to check for matches (excluding uploader's own wishlist)
+      const { data: wishlistItems, error } = await supabase
+        .from('wishlist')
+        .select('*')
+        .neq('visitor_telegram_id', user?.id);
+
+      if (error) {
+        console.error('Error fetching wishlist items:', error);
+        return;
+      }
+
+      console.log(`📋 Found ${wishlistItems?.length || 0} wishlist items to check`);
+
+      // Check each wishlist item for matches
+      for (const item of wishlistItems || []) {
+        const wishlistDiamond = item.diamond_data;
+        const isMatch = checkDiamondMatch(uploadedDiamond, wishlistDiamond);
+
+        if (isMatch) {
+          console.log('✨ Match found! Sending notification...');
+          await sendWishlistNotification(item, uploadedDiamond);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking wishlist matches:', error);
+    }
+  };
+
+  const checkDiamondMatch = (uploaded: DiamondFormData, wishlist: any) => {
+    // Shape matching
+    const shapeMatch = !wishlist.shape || uploaded.shape === wishlist.shape;
+    
+    // Color matching
+    const colorMatch = !wishlist.color || uploaded.color === wishlist.color;
+    
+    // Clarity matching
+    const clarityMatch = !wishlist.clarity || uploaded.clarity === wishlist.clarity;
+    
+    // Cut matching
+    const cutMatch = !wishlist.cut || uploaded.cut === wishlist.cut;
+    
+    // Carat range matching
+    let caratMatch = true;
+    if (wishlist.caratMin && uploaded.carat < parseFloat(wishlist.caratMin)) {
+      caratMatch = false;
+    }
+    if (wishlist.caratMax && uploaded.carat > parseFloat(wishlist.caratMax)) {
+      caratMatch = false;
+    }
+
+    // Price range matching
+    let priceMatch = true;
+    const uploadedPrice = uploaded.pricePerCarat * uploaded.carat;
+    if (wishlist.priceMin && uploadedPrice < parseFloat(wishlist.priceMin)) {
+      priceMatch = false;
+    }
+    if (wishlist.priceMax && uploadedPrice > parseFloat(wishlist.priceMax)) {
+      priceMatch = false;
+    }
+
+    const matches = shapeMatch && colorMatch && clarityMatch && cutMatch && caratMatch && priceMatch;
+    
+    console.log('🔍 Match check:', {
+      shape: shapeMatch,
+      color: colorMatch,
+      clarity: clarityMatch,
+      cut: cutMatch,
+      carat: caratMatch,
+      price: priceMatch,
+      overall: matches
+    });
+
+    return matches;
+  };
+
+  const sendWishlistNotification = async (wishlistItem: any, uploadedDiamond: DiamondFormData) => {
+    try {
+      console.log('📤 Sending wishlist notification...');
+      
+      const { error } = await supabase.functions.invoke('send-wishlist-notification', {
+        body: {
+          wishlistOwnerTelegramId: wishlistItem.visitor_telegram_id,
+          uploaderInfo: {
+            telegramId: user?.id,
+            firstName: user?.first_name || 'Diamond Seller',
+            username: user?.username
+          },
+          matchedDiamond: {
+            stockNumber: uploadedDiamond.stockNumber,
+            shape: uploadedDiamond.shape,
+            carat: uploadedDiamond.carat,
+            color: uploadedDiamond.color,
+            clarity: uploadedDiamond.clarity,
+            cut: uploadedDiamond.cut,
+            price: uploadedDiamond.pricePerCarat * uploadedDiamond.carat,
+            imageUrl: uploadedDiamond.picture
+          }
+        }
+      });
+
+      if (error) {
+        console.error('❌ Error sending wishlist notification:', error);
+      } else {
+        console.log('✅ Wishlist notification sent successfully');
+        toast({
+          title: "🎉 Wishlist Match!",
+          description: "Your diamond matched someone's wishlist - they've been notified!",
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error in sendWishlistNotification:', error);
     }
   };
 
