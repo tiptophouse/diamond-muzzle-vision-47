@@ -11,13 +11,13 @@ export function Header() {
         <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg flex-shrink-0 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <span className="text-white font-bold text-lg sm:text-xl">💎</span>
+              <span className="text-white font-bold text-lg sm:text-xl">🤖</span>
             </div>
             <div className="flex flex-col min-w-0">
               <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight truncate bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
-                Diamond Mazal
+                BrilliantBot
               </h1>
-              <p className="text-xs text-muted-foreground hidden sm:block font-medium">Premium Diamond Platform</p>
+              <p className="text-xs text-muted-foreground hidden sm:block font-medium">AI Diamond Assistant</p>
             </div>
           </div>
         </div>

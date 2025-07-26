@@ -13,7 +13,7 @@ import {
   User,
   Settings,
   Heart,
-  Gem,
+  Bot,
 } from 'lucide-react';
 
 const navigation = [
@@ -41,8 +41,8 @@ export function Sidebar({ className }: SidebarProps) {
       <div className="space-y-4 py-4">
         <div className="px-3 py-2">
           <div className="flex items-center mb-6 px-4">
-            <Gem className="h-8 w-8 text-blue-600" />
-            <span className="ml-2 text-xl font-bold text-slate-800">MazalBot</span>
+            <Bot className="h-8 w-8 text-blue-600" />
+            <span className="ml-2 text-xl font-bold text-slate-800">BrilliantBot</span>
           </div>
           <div className="space-y-1">
             {navigation.map((item) => {

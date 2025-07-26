@@ -36,10 +36,10 @@ export function Layout({
           
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 justify-center">
             <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-xl bg-gradient-to-br from-[#0088cc] to-[#229ED9] flex items-center justify-center shadow-sm flex-shrink-0">
-              <span className="text-white font-bold text-xs sm:text-sm">💎</span>
+              <span className="text-white font-bold text-xs sm:text-sm">🤖</span>
             </div>
             <h1 className="font-semibold text-foreground text-base sm:text-lg tracking-tight truncate">
-              Diamond Mazal
+              BrilliantBot
             </h1>
           </div>
           
