@@ -8,10 +8,11 @@ import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { useTelegramAccelerometer } from "@/hooks/useTelegramAccelerometer";
 import { useWishlist } from "@/hooks/useWishlist";
+import { formatStorePrice } from "@/utils/diamondUtils";
 import { toast } from 'sonner';
 
 interface FigmaDiamondCardProps {
-  diamond: Diamond;
+  diamond: Diamond & { user_id?: number };
   index: number;
   onUpdate?: () => void;
 }
@@ -124,9 +125,17 @@ export function FigmaDiamondCard({
               {diamond.stockNumber}
             </p>
           </div>
-          <p className="text-lg font-bold text-foreground ml-2">
-            ${diamond.price?.toLocaleString() || 'N/A'}
-          </p>
+          <div className="ml-2 text-right">
+            {diamond.price === 0 ? (
+              <p className="text-sm font-medium text-primary">
+                Contact us for more information
+              </p>
+            ) : (
+              <p className="text-lg font-bold text-foreground">
+                {formatStorePrice(diamond.price)}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Specs */}
