@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { useAddDiamond } from './inventory/useAddDiamond';

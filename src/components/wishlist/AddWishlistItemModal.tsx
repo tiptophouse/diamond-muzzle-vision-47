@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useWishlist } from '@/hooks/useWishlist';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { Diamond } from '@/components/inventory/InventoryTable';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface AddWishlistItemModalProps {
   open: boolean;
@@ -23,7 +23,8 @@ const FLUORESCENCES = ['None', 'Faint', 'Medium', 'Strong', 'Very Strong'];
 
 export function AddWishlistItemModal({ open, onOpenChange, onSuccess }: AddWishlistItemModalProps) {
   const { user } = useTelegramAuth();
-  const { addToWishlist, isLoading } = useWishlist();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     shape: '',
@@ -42,29 +43,64 @@ export function AddWishlistItemModal({ open, onOpenChange, onSuccess }: AddWishl
     e.preventDefault();
     
     if (!user?.id) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to add items to wishlist",
+        variant: "destructive",
+      });
       return;
     }
 
-    // Create a custom diamond object for wishlist preferences
-    const customDiamond: Diamond = {
-      id: crypto.randomUUID(),
-      stockNumber: `CUSTOM-${Date.now()}`,
-      shape: formData.shape,
-      carat: parseFloat(formData.caratMin) || 0,
-      color: formData.color,
-      clarity: formData.clarity,
-      cut: formData.cut,
-      price: parseFloat(formData.priceMin) || 0,
-      fluorescence: formData.fluorescence,
-      userId: 0, // Custom preference, no specific owner
-      status: 'Wishlist Preference',
-      imageUrl: '',
-      certificateUrl: ''
-    };
-
-    const success = await addToWishlist(customDiamond, 0);
+    setIsLoading(true);
     
-    if (success) {
+    try {
+      console.log('🔄 Saving custom wishlist preference...');
+      
+      // Save the wishlist preference with custom data
+      const { error } = await supabase.from('wishlist').insert({
+        visitor_telegram_id: user.id,
+        diamond_owner_telegram_id: 0, // 0 indicates custom preference
+        diamond_stock_number: `CUSTOM-${Date.now()}`,
+        diamond_data: {
+          stockNumber: `CUSTOM-${Date.now()}`,
+          shape: formData.shape,
+          carat: parseFloat(formData.caratMin) || 0,
+          color: formData.color,
+          clarity: formData.clarity,
+          cut: formData.cut,
+          fluorescence: formData.fluorescence,
+          price: parseFloat(formData.priceMin) || 0,
+          imageUrl: '',
+          certificateUrl: '',
+          lab: '',
+          // Custom preference specific fields
+          caratMin: formData.caratMin,
+          caratMax: formData.caratMax,
+          priceMin: formData.priceMin,
+          priceMax: formData.priceMax,
+          notes: formData.notes,
+          isCustomPreference: true
+        },
+      });
+
+      if (error) {
+        console.error('❌ Error saving wishlist preference:', error);
+        toast({
+          title: "❌ Save Failed",
+          description: "Failed to save your diamond preference. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('✅ Wishlist preference saved successfully');
+      
+      toast({
+        title: "✅ Preference Saved",
+        description: "Your diamond preference has been saved! You'll be notified when matching diamonds are uploaded.",
+      });
+      
+      // Reset form
       setFormData({
         shape: '',
         caratMin: '',
@@ -77,8 +113,19 @@ export function AddWishlistItemModal({ open, onOpenChange, onSuccess }: AddWishl
         priceMax: '',
         notes: ''
       });
+      
       onOpenChange(false);
       if (onSuccess) onSuccess();
+      
+    } catch (error) {
+      console.error('❌ Error in handleSubmit:', error);
+      toast({
+        title: "❌ Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -215,7 +262,7 @@ export function AddWishlistItemModal({ open, onOpenChange, onSuccess }: AddWishl
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading || !formData.shape}>
-              {isLoading ? 'Adding...' : 'Add to Wishlist'}
+              {isLoading ? 'Saving...' : 'Add to Wishlist'}
             </Button>
           </div>
         </form>

@@ -32,7 +32,7 @@ export function FigmaDiamondCard({
     impactOccurred('light');
     
     if (!isLiked) {
-      const success = await addToWishlist(diamond, diamond.userId || 0);
+      const success = await addToWishlist(diamond, diamond.user_id || 0);
       if (success) {
         setIsLiked(true);
         toast.success("Added to wishlist - you'll be notified when similar diamonds are uploaded!");
