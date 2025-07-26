@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Plus, Loader2, Camera } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -29,8 +30,7 @@ export function SingleStoneUploadForm({
 }: SingleStoneUploadFormProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { hapticFeedback } = useTelegramWebApp();
-  const { language } = useTelegramWebApp();
+  const { hapticFeedback, language } = useTelegramWebApp();
 
   const form = useForm<DiamondFormData>({
     resolver: zodResolver(diamondFormSchema),
