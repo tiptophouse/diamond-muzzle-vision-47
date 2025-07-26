@@ -13,7 +13,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 // Components
 import { TelegramLayout } from "@/components/layout/TelegramLayout";
 import { GamifiedWizardOverlay } from "@/components/wizard/GamifiedWizardOverlay";
-import ErrorBoundary from "@/components/ErrorBoundary";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Pages
 import Index from "@/pages/Index";
@@ -52,7 +52,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <TelegramAuthProvider>
           <InteractiveWizardProvider>
-            <ThemeProvider defaultTheme="light" storageKey="app-theme">
+            <ThemeProvider storageKey="app-theme">
               <TooltipProvider>
                 <BrowserRouter>
                   <div className="min-h-screen bg-background font-sans antialiased">

@@ -84,6 +84,7 @@ export function useTelegramWebApp() {
   const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
   const [user, setUser] = useState<any>(null);
   const [isReady, setIsReady] = useState(false);
+  const [language, setLanguage] = useState<'en' | 'he'>('he'); // Default to Hebrew
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
@@ -96,6 +97,12 @@ export function useTelegramWebApp() {
       // Set theme colors for better integration
       tg.setHeaderColor('#ffffff');
       tg.setBackgroundColor('#f8fafc');
+      
+      // Set language from user's Telegram settings if available
+      const userLanguage = tg.initDataUnsafe?.user?.language_code;
+      if (userLanguage === 'he' || userLanguage === 'en') {
+        setLanguage(userLanguage);
+      }
       
       // Handle viewport changes for better responsiveness
       const handleViewportChange = () => {
@@ -231,6 +238,7 @@ export function useTelegramWebApp() {
     webApp,
     user,
     isReady,
+    language,
     hapticFeedback,
     mainButton,
     backButton,
