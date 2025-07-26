@@ -1,4 +1,3 @@
-
 // Telegram WebApp utility functions for secure authentication
 export interface TelegramWebApp {
   initData: string;
@@ -23,7 +22,14 @@ export interface TelegramWebApp {
   sendData?: (data: string) => void;
   openTelegramLink?: (url: string) => void;
   onEvent?: (eventType: string, callback: () => void) => void;
-  themeParams: any;
+  themeParams: {
+    bg_color: string;
+    text_color: string;
+    hint_color: string;
+    link_color: string;
+    button_color: string;
+    button_text_color: string;
+  };
   BackButton?: {
     show: () => void;
     hide: () => void;

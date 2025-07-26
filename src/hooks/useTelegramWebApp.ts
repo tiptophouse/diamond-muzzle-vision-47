@@ -61,10 +61,29 @@ interface TelegramWebApp {
   version: string;
   platform: string;
   colorScheme: 'light' | 'dark';
-  themeParams: Record<string, string>;
+  themeParams: {
+    bg_color: string;
+    text_color: string;
+    hint_color: string;
+    link_color: string;
+    button_color: string;
+    button_text_color: string;
+  };
   isExpanded: boolean;
   viewportHeight: number;
   viewportStableHeight: number;
+  Accelerometer?: {
+    start: (config?: { refresh_rate?: number }) => void;
+    stop: () => void;
+    isStarted: boolean;
+  };
+  DeviceOrientation?: {
+    start: (config?: { refresh_rate?: number }) => void;
+    stop: () => void;
+    isStarted: boolean;
+  };
+  lockOrientation?: (orientation: 'portrait' | 'landscape') => void;
+  unlockOrientation?: () => void;
 }
 
 export function useTelegramWebApp() {
@@ -128,7 +147,14 @@ export function useTelegramWebApp() {
         version: '6.0',
         platform: 'web',
         colorScheme: 'light' as const,
-        themeParams: {},
+        themeParams: {
+          bg_color: '#ffffff',
+          text_color: '#000000',
+          hint_color: '#999999',
+          link_color: '#007AFF',
+          button_color: '#007AFF',
+          button_text_color: '#ffffff'
+        },
         isExpanded: true,
         viewportHeight: window.innerHeight,
         viewportStableHeight: window.innerHeight,
@@ -152,7 +178,12 @@ export function useTelegramWebApp() {
   };
 
   const mainButton = {
-    show: () => webApp?.MainButton?.show(),
+    show: (text?: string, callback?: () => void, color?: string) => {
+      if (text) webApp?.MainButton?.setText(text);
+      if (callback) webApp?.MainButton?.onClick(callback);
+      if (color) webApp!.MainButton!.color = color;
+      webApp?.MainButton?.show();
+    },
     hide: () => webApp?.MainButton?.hide(),
     enable: () => webApp?.MainButton?.enable(),
     disable: () => webApp?.MainButton?.disable(),
@@ -164,7 +195,10 @@ export function useTelegramWebApp() {
   };
 
   const backButton = {
-    show: () => webApp?.BackButton?.show(),
+    show: (callback?: () => void) => {
+      if (callback) webApp?.BackButton?.onClick(callback);
+      webApp?.BackButton?.show();
+    },
     hide: () => webApp?.BackButton?.hide(),
     onClick: (callback: () => void) => webApp?.BackButton?.onClick(callback),
     offClick: (callback: () => void) => webApp?.BackButton?.offClick(callback),

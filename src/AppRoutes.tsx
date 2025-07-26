@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Outlet } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
 import { AuthGuard } from './components/auth/AuthGuard';
 import Index from './pages/Index';
@@ -21,7 +21,7 @@ import NotFound from './pages/NotFound';
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Layout />}>
+      <Route path="/" element={<Layout><Outlet /></Layout>}>
         <Route index element={<Index />} />
         <Route
           path="/dashboard"

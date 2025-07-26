@@ -1,7 +1,7 @@
 
 export interface TelegramUser {
   id: number;
-  first_name: string;
+  first_name: string; // Made required
   last_name?: string;
   username?: string;
   language_code?: string;
