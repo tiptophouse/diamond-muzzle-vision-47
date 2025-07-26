@@ -1,3 +1,4 @@
+
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { useState } from "react";
@@ -24,7 +25,7 @@ export function Layout({
           fixed lg:static inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `} data-tutorial="sidebar">
-        <Sidebar />
+        <Sidebar onClose={() => setSidebarOpen(false)} />
       </div>
       
       <div className="flex-1 w-full min-w-0 flex flex-col bg-background lg:ml-0">

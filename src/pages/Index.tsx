@@ -1,10 +1,9 @@
+
 import { useEffect, useState, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useUserTracking } from '@/hooks/useUserTracking';
 import { getAdminTelegramId } from '@/lib/api/secureConfig';
-import { WizardStarter } from "@/components/wizard/WizardStarter";
-import { useInteractiveWizard } from "@/contexts/InteractiveWizardContext";
 
 const Index = () => {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
@@ -13,8 +12,6 @@ const Index = () => {
   const [adminTelegramId, setAdminTelegramId] = useState<number | null>(null);
   const [loadingConfig, setLoadingConfig] = useState(true);
   const redirectHandledRef = useRef(false);
-  const { isActive: wizardActive } = useInteractiveWizard();
-  const [showWizardStarter, setShowWizardStarter] = useState(false);
 
   useEffect(() => {
     const loadAdminId = async () => {
@@ -53,24 +50,6 @@ const Index = () => {
       trackPageVisit('/', 'Diamond Muzzle - Home');
     }
   }, [trackPageVisit, isLoading, loadingConfig]);
-
-  // Check if user should see wizard starter
-  useEffect(() => {
-    if (user && !wizardActive) {
-      const hasCompletedWizard = localStorage.getItem(`wizard-completed-${user.id}`);
-      const hasSeenStarter = localStorage.getItem(`wizard-starter-seen-${user.id}`);
-      
-      if (!hasCompletedWizard && !hasSeenStarter) {
-        // Show wizard starter after a short delay
-        const timer = setTimeout(() => {
-          setShowWizardStarter(true);
-          localStorage.setItem(`wizard-starter-seen-${user.id}`, 'true');
-        }, 2000);
-        
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [user, wizardActive]);
 
   // Show loading state while auth is initializing
   if (isLoading || loadingConfig) {

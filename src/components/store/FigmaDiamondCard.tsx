@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, Eye, MessageCircle } from "lucide-react";
@@ -7,12 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { useTelegramAccelerometer } from "@/hooks/useTelegramAccelerometer";
-import { useWishlist } from "@/hooks/useWishlist";
-import { formatStorePrice } from "@/utils/diamondUtils";
 import { toast } from 'sonner';
 
 interface FigmaDiamondCardProps {
-  diamond: Diamond & { user_id?: number };
+  diamond: Diamond;
   index: number;
   onUpdate?: () => void;
 }
@@ -26,22 +23,12 @@ export function FigmaDiamondCard({
   const [isLiked, setIsLiked] = useState(false);
   const { impactOccurred } = useTelegramHapticFeedback();
   const { orientationData } = useTelegramAccelerometer(true);
-  const { addToWishlist, isLoading: wishlistLoading } = useWishlist();
   const navigate = useNavigate();
 
-  const handleLike = async () => {
+  const handleLike = () => {
     impactOccurred('light');
-    
-    if (!isLiked) {
-      const success = await addToWishlist(diamond, diamond.user_id || 0);
-      if (success) {
-        setIsLiked(true);
-        toast.success("Added to wishlist - you'll be notified when similar diamonds are uploaded!");
-      }
-    } else {
-      setIsLiked(false);
-      toast.success("Removed from wishlist");
-    }
+    setIsLiked(!isLiked);
+    toast.success(isLiked ? "Removed from favorites" : "Added to favorites");
   };
 
   const handleViewDetails = () => {
@@ -102,8 +89,7 @@ export function FigmaDiamondCard({
         {/* Heart Icon */}
         <button
           onClick={handleLike}
-          disabled={wishlistLoading}
-          className="absolute top-3 right-3 p-2 bg-background/80 backdrop-blur-sm rounded-full transition-all duration-200 hover:bg-background/90 hover:scale-110 disabled:opacity-50"
+          className="absolute top-3 right-3 p-2 bg-background/80 backdrop-blur-sm rounded-full transition-all duration-200 hover:bg-background/90 hover:scale-110"
         >
           <Heart 
             className={`h-4 w-4 transition-colors ${
@@ -125,17 +111,9 @@ export function FigmaDiamondCard({
               {diamond.stockNumber}
             </p>
           </div>
-          <div className="ml-2 text-right">
-            {diamond.price === 0 ? (
-              <p className="text-sm font-medium text-primary">
-                Contact us for more information
-              </p>
-            ) : (
-              <p className="text-lg font-bold text-foreground">
-                {formatStorePrice(diamond.price)}
-              </p>
-            )}
-          </div>
+          <p className="text-lg font-bold text-foreground ml-2">
+            ${diamond.price?.toLocaleString() || 'N/A'}
+          </p>
         </div>
 
         {/* Specs */}

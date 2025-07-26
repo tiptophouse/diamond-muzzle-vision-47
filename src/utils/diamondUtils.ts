@@ -19,11 +19,3 @@ export const formatCurrency = (amount: number): string => {
     maximumFractionDigits: 0,
   }).format(amount);
 };
-
-// Helper function to format price display for store
-export const formatStorePrice = (price: number): string => {
-  if (price === 0 || !price) {
-    return "Contact us for more information";
-  }
-  return `$${price.toLocaleString()}`;
-};
