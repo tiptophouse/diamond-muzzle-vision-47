@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { RotateCcw, Settings, Diamond } from 'lucide-react';
+import { RotateCcw, Settings } from 'lucide-react';
 
 interface ChatHeaderProps {
   title: string;
@@ -15,7 +15,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({ title, subtitle, onNewCh
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-            <Diamond className="text-white h-4 w-4" />
+            <span className="text-white text-sm font-bold">💎</span>
           </div>
           <div>
             <h1 className="font-semibold text-foreground text-base">{title}</h1>

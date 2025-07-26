@@ -13,7 +13,7 @@ import {
   User,
   Settings,
   Heart,
-  Diamond,
+  Gem,
 } from 'lucide-react';
 
 const navigation = [
@@ -37,12 +37,12 @@ export function Sidebar({ className }: SidebarProps) {
   const location = useLocation();
 
   return (
-    <div className={cn('pb-12 min-h-screen bg-white border-r border-gray-200', className)}>
+    <div className={cn('pb-12 min-h-screen', className)}>
       <div className="space-y-4 py-4">
         <div className="px-3 py-2">
           <div className="flex items-center mb-6 px-4">
-            <Diamond className="h-8 w-8 text-blue-600" />
-            <span className="ml-2 text-xl font-bold text-slate-800">BrilliantBot</span>
+            <Gem className="h-8 w-8 text-blue-600" />
+            <span className="ml-2 text-xl font-bold text-slate-800">MazalBot</span>
           </div>
           <div className="space-y-1">
             {navigation.map((item) => {
