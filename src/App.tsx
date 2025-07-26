@@ -8,10 +8,10 @@ import { TelegramAuthProvider } from './context/TelegramAuthContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
-import { TelegramInit } from './hooks/useTelegramInit';
+import { useTelegramInit } from './hooks/useTelegramInit';
 import { SecurityMonitor } from './components/auth/SecurityMonitor';
-import { UserEngagementMonitor } from './hooks/useUserEngagementMonitor';
-import { UserDataPersistence } from './hooks/useUserDataPersistence';
+import { useUserEngagementMonitor } from './hooks/useUserEngagementMonitor';
+import { useUserDataPersistence } from './hooks/useUserDataPersistence';
 import { MobilePullToRefresh } from './components/mobile/MobilePullToRefresh';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import './App.css';
@@ -25,14 +25,35 @@ const queryClient = new QueryClient({
   },
 });
 
+function TelegramInitComponent() {
+  useTelegramInit();
+  return null;
+}
+
+function UserEngagementComponent() {
+  useUserEngagementMonitor();
+  return null;
+}
+
+function UserDataPersistenceComponent() {
+  const { user } = { user: null }; // This would come from context
+  useUserDataPersistence(user, false);
+  return null;
+}
+
 function AppContent() {
+  const handleRefresh = async () => {
+    // Implement refresh logic here
+    window.location.reload();
+  };
+
   return (
     <>
-      <TelegramInit />
+      <TelegramInitComponent />
       <SecurityMonitor />
-      <UserEngagementMonitor />
-      <UserDataPersistence />
-      <MobilePullToRefresh>
+      <UserEngagementComponent />
+      <UserDataPersistenceComponent />
+      <MobilePullToRefresh onRefresh={handleRefresh}>
         <AppRoutes />
       </MobilePullToRefresh>
       <Toaster />

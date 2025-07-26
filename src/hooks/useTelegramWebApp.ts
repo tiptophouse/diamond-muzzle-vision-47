@@ -10,9 +10,28 @@ declare global {
 }
 
 interface TelegramWebApp {
+  initData: string;
+  initDataUnsafe: {
+    user?: {
+      id: number;
+      first_name?: string;
+      last_name?: string;
+      username?: string;
+      language_code?: string;
+      is_premium?: boolean;
+      photo_url?: string;
+      phone_number?: string;
+    };
+    query_id?: string;
+    auth_date?: number;
+    start_param?: string;
+  };
   ready: () => void;
   close: () => void;
   expand: () => void;
+  sendData?: (data: string) => void;
+  openTelegramLink?: (url: string) => void;
+  onEvent?: (eventType: string, callback: () => void) => void;
   MainButton: {
     text: string;
     color: string;
@@ -39,15 +58,6 @@ interface TelegramWebApp {
     notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
     selectionChanged: () => void;
   };
-  initDataUnsafe?: {
-    user?: {
-      id: number;
-      first_name?: string;
-      last_name?: string;
-      username?: string;
-      language_code?: string;
-    };
-  };
   version: string;
   platform: string;
   colorScheme: 'light' | 'dark';
@@ -72,10 +82,23 @@ export function useTelegramWebApp() {
       setIsReady(true);
     } else {
       // Mock for development
-      const mockWebApp = {
+      const mockWebApp: TelegramWebApp = {
+        initData: '',
+        initDataUnsafe: {
+          user: {
+            id: 12345,
+            first_name: 'Test',
+            last_name: 'User',
+            username: 'testuser',
+            language_code: 'en',
+          },
+        },
         ready: () => {},
         close: () => {},
         expand: () => {},
+        sendData: () => {},
+        openTelegramLink: () => {},
+        onEvent: () => {},
         MainButton: {
           text: '',
           color: '#007AFF',
@@ -101,15 +124,6 @@ export function useTelegramWebApp() {
           impactOccurred: () => {},
           notificationOccurred: () => {},
           selectionChanged: () => {},
-        },
-        initDataUnsafe: {
-          user: {
-            id: 12345,
-            first_name: 'Test',
-            last_name: 'User',
-            username: 'testuser',
-            language_code: 'en',
-          },
         },
         version: '6.0',
         platform: 'web',

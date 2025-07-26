@@ -2,16 +2,33 @@
 // Telegram WebApp utility functions for secure authentication
 export interface TelegramWebApp {
   initData: string;
-  initDataUnsafe: any;
+  initDataUnsafe: {
+    user?: {
+      id: number;
+      first_name?: string;
+      last_name?: string;
+      username?: string;
+      language_code?: string;
+      is_premium?: boolean;
+      photo_url?: string;
+      phone_number?: string;
+    };
+    query_id?: string;
+    auth_date?: number;
+    start_param?: string;
+  };
   ready: () => void;
   expand: () => void;
+  close?: () => void;
+  sendData?: (data: string) => void;
+  openTelegramLink?: (url: string) => void;
+  onEvent?: (eventType: string, callback: () => void) => void;
   themeParams: any;
   BackButton?: {
     show: () => void;
     hide: () => void;
     onClick: (callback: () => void) => void;
   };
-  close?: () => void;
 }
 
 declare global {
