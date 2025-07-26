@@ -1,6 +1,7 @@
 
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { TutorialTrigger } from '@/components/tutorial/TutorialTrigger';
+import { Diamond } from 'lucide-react';
 
 export function Header() {
   const { user } = useTelegramAuth();
@@ -11,7 +12,7 @@ export function Header() {
         <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg flex-shrink-0 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <span className="text-white font-bold text-lg sm:text-xl">🤖</span>
+              <Diamond className="text-white h-5 w-5 sm:h-6 sm:w-6" />
             </div>
             <div className="flex flex-col min-w-0">
               <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight truncate bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">

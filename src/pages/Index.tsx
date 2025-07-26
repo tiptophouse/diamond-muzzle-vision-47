@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useUserTracking } from '@/hooks/useUserTracking';
 import { getAdminTelegramId } from '@/lib/api/secureConfig';
+import { Diamond } from 'lucide-react';
 
 const Index = () => {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
@@ -60,7 +61,7 @@ const Index = () => {
             <div className="animate-spin rounded-full h-24 w-24 border-4 border-primary/20 border-t-primary mx-auto"></div>
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-premium">
-                <span className="text-white font-bold text-2xl">🤖</span>
+                <Diamond className="text-white h-8 w-8" />
               </div>
             </div>
           </div>
@@ -116,7 +117,7 @@ const Index = () => {
       <div className="text-center space-y-8 p-8 max-w-md glass-card">
         <div className="space-y-6">
           <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center mx-auto shadow-premium">
-            <span className="text-4xl">🤖</span>
+            <Diamond className="text-white h-12 w-12" />
           </div>
           <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-primary-glow to-primary-dark bg-clip-text text-transparent">
             BrilliantBot

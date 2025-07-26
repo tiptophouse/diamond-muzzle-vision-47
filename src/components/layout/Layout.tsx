@@ -2,7 +2,7 @@
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { useState } from "react";
-import { Menu } from "lucide-react";
+import { Menu, Diamond } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface LayoutProps {
@@ -36,7 +36,7 @@ export function Layout({
           
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 justify-center">
             <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-xl bg-gradient-to-br from-[#0088cc] to-[#229ED9] flex items-center justify-center shadow-sm flex-shrink-0">
-              <span className="text-white font-bold text-xs sm:text-sm">🤖</span>
+              <Diamond className="text-white h-3 w-3 sm:h-4 sm:w-4" />
             </div>
             <h1 className="font-semibold text-foreground text-base sm:text-lg tracking-tight truncate">
               BrilliantBot
