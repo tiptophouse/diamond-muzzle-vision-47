@@ -2,9 +2,8 @@
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-// import { TutorialModal } from "@/components/tutorial/TutorialModal"; // Temporarily disabled
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -25,7 +24,7 @@ export function Layout({
           fixed lg:static inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `} data-tutorial="sidebar">
-        <Sidebar onClose={() => setSidebarOpen(false)} />
+        <Sidebar />
       </div>
       
       <div className="flex-1 w-full min-w-0 flex flex-col bg-background lg:ml-0">
@@ -60,9 +59,6 @@ export function Layout({
           </div>
         </main>
       </div>
-
-      {/* Tutorial Modal - Temporarily disabled */}
-      {/* <TutorialModal /> */}
     </div>
   );
 }
