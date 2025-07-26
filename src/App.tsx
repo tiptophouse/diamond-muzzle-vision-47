@@ -15,6 +15,7 @@ import ChatPage from './pages/ChatPage';
 import NotificationsPage from './pages/NotificationsPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
+import WishlistPage from './pages/WishlistPage';
 import Admin from './pages/Admin';
 import AdminAnalytics from './pages/AdminAnalytics';
 import DiamondDetailPage from './pages/DiamondDetailPage';
@@ -53,6 +54,7 @@ function App() {
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/wishlist" element={<WishlistPage />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/admin/analytics" element={<AdminAnalytics />} />
                 <Route path="/diamond/:stockNumber" element={<DiamondDetailPage />} />
