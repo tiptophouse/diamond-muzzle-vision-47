@@ -37,7 +37,7 @@ export function Sidebar({ className }: SidebarProps) {
   const location = useLocation();
 
   return (
-    <div className={cn('pb-12 min-h-screen', className)}>
+    <div className={cn('pb-12 min-h-screen bg-white border-r border-gray-200', className)}>
       <div className="space-y-4 py-4">
         <div className="px-3 py-2">
           <div className="flex items-center mb-6 px-4">
