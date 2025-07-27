@@ -1,43 +1,45 @@
-
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { TutorialTrigger } from '@/components/tutorial/TutorialTrigger';
-import { Diamond } from 'lucide-react';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
+import { UserMenu } from '@/components/UserMenu';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { MobileSidebar } from './MobileSidebar';
+import { TutorialTriggerButton } from '@/components/tutorial/TutorialTriggerButton';
 
 export function Header() {
-  const { user } = useTelegramAuth();
+  const { backButton, MainButton, hapticFeedback } = useTelegramWebApp();
+
+  const handleGoBack = () => {
+    hapticFeedback.impact('light');
+    backButton.offClick(handleGoBack);
+    window.history.back();
+  };
 
   return (
-    <header className="bg-card/60 backdrop-blur-xl border-b border-border/30 px-4 sm:px-6 py-4 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg flex-shrink-0 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <Diamond className="text-white h-5 w-5 sm:h-6 sm:w-6" />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight truncate bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
-                BrilliantBot
-              </h1>
-              <p className="text-xs text-muted-foreground hidden sm:block font-medium">AI Diamond Assistant</p>
-            </div>
-          </div>
+    <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-md">
+      <div className="flex h-16 items-center justify-between px-4">
+        <div className="flex items-center gap-4">
+          <Link to="/" className="flex items-center gap-2 font-semibold">
+            <img src="/logo.png" alt="Diamond Mazal Logo" className="h-8 w-auto" />
+            <span className="hidden sm:block">Diamond Mazal</span>
+          </Link>
+          <nav className="hidden lg:flex items-center gap-6 text-sm">
+            <Link to="/inventory" className="hover:text-primary transition-colors">Inventory</Link>
+            <Link to="/store" className="hover:text-primary transition-colors">Store</Link>
+            <Link to="/upload" className="hover:text-primary transition-colors">Upload</Link>
+            <Link to="/chat" className="hover:text-primary transition-colors">Chat</Link>
+            <Link to="/insights" className="hover:text-primary transition-colors">Insights</Link>
+            {/* <Link to="/settings" className="hover:text-primary transition-colors">Settings</Link> */}
+          </nav>
         </div>
-        
-        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-          <TutorialTrigger />
+
+        <div className="flex items-center gap-2">
+          {/* Add tutorial trigger button */}
+          <TutorialTriggerButton variant="ghost" size="sm" />
           
-          {user && (
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="hidden md:block text-sm text-muted-foreground">
-                Welcome, <span className="font-semibold text-foreground">{user.first_name}</span>
-              </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary to-primary-dark rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-primary/20">
-                <span className="text-sm sm:text-base font-bold text-white">
-                  {user.first_name?.charAt(0)}
-                </span>
-              </div>
-            </div>
-          )}
+          <ThemeToggle />
+          <UserMenu />
+          <MobileSidebar />
         </div>
       </div>
     </header>

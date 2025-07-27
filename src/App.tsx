@@ -1,76 +1,71 @@
-
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { TelegramAuthProvider } from './context/TelegramAuthContext';
-import { TutorialProvider } from './contexts/TutorialContext';
-import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
-import Index from './pages/Index';
-import Dashboard from './pages/Dashboard';
-import InventoryPage from './pages/InventoryPage';
-import StorePage from './pages/StorePage';
-import UploadPage from './pages/UploadPage';
-import UploadSingleStonePage from './pages/UploadSingleStonePage';
-import InsightsPage from './pages/InsightsPage';
-import ChatPage from './pages/ChatPage';
-import NotificationsPage from './pages/NotificationsPage';
-import ProfilePage from './pages/ProfilePage';
-import SettingsPage from './pages/SettingsPage';
-import WishlistPage from './pages/WishlistPage';
-import Admin from './pages/Admin';
-import AdminAnalytics from './pages/AdminAnalytics';
-import DiamondDetailPage from './pages/DiamondDetailPage';
-import SecureDiamondPage from './pages/SecureDiamondPage';
-import DiamondSwipe from './pages/DiamondSwipe';
-import NotFound from './pages/NotFound';
-import StandardizeCsvPage from './pages/StandardizeCsvPage';
-import BulkUploadPage from './pages/BulkUploadPage';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from "@/components/theme-provider"
+import { TelegramAuthProvider } from '@/contexts/TelegramAuth';
+import { TutorialProvider } from '@/contexts/TutorialContext';
+import { QueryClient } from '@tanstack/react-query';
+import { StartupQualityLayout } from '@/components/layout/StartupQualityLayout';
+import { ErrorBoundary } from 'react-error-boundary';
+import Dashboard from '@/pages/Dashboard';
+import Inventory from '@/pages/Inventory';
+import Store from '@/pages/Store';
+import Upload from '@/pages/Upload';
+import Chat from '@/pages/Chat';
+import Insights from '@/pages/Insights';
+import Settings from '@/pages/Settings';
+import Login from '@/pages/Login';
+import SecureDiamond from '@/pages/SecureDiamond';
+import UploadSingleStone from '@/pages/UploadSingleStone';
+import { TutorialWizardManager } from '@/components/tutorial/TutorialWizardManager';
 
 function App() {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-        staleTime: 5 * 60 * 1000, // 5 minutes
-      },
-    },
-  });
-  
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <TelegramAuthProvider>
-        <Router>
+    <ThemeProvider>
+      <BrowserRouter>
+        <TelegramAuthProvider>
           <TutorialProvider>
-            <InteractiveWizardProvider>
-              <div className="min-h-screen bg-background">
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/inventory" element={<InventoryPage />} />
-                  <Route path="/store" element={<StorePage />} />
-                  <Route path="/upload" element={<UploadPage />} />
-                  <Route path="/upload/bulk" element={<BulkUploadPage />} />
-                  <Route path="/upload-single-stone" element={<UploadSingleStonePage />} />
-                  <Route path="/insights" element={<InsightsPage />} />
-                  <Route path="/chat" element={<ChatPage />} />
-                  <Route path="/notifications" element={<NotificationsPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  <Route path="/settings" element={<SettingsPage />} />
-                  <Route path="/wishlist" element={<WishlistPage />} />
-                  <Route path="/admin" element={<Admin />} />
-                  <Route path="/admin/analytics" element={<AdminAnalytics />} />
-                  <Route path="/diamond/:stockNumber" element={<DiamondDetailPage />} />
-                  <Route path="/secure-diamond/:encryptedData" element={<SecureDiamondPage />} />
-                  <Route path="/swipe" element={<DiamondSwipe />} />
-                  <Route path="/standardize-csv" element={<StandardizeCsvPage />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </div>
-            </InteractiveWizardProvider>
+            <QueryClient>
+              <StartupQualityLayout>
+                <div className="App min-h-screen bg-background text-foreground">
+                  <ErrorBoundary>
+                    <Routes>
+                      <Route path="/" element={<Login />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/inventory" element={<Inventory />} />
+                      <Route path="/store" element={<Store />} />
+                      <Route path="/upload" element={<Upload />} />
+                      <Route path="/chat" element={<Chat />} />
+                      <Route path="/insights" element={<Insights />} />
+                      <Route path="/settings" element={<Settings />} />
+                      <Route path="/secure-diamond/:stockNumber" element={<SecureDiamond />} />
+                      <Route path="/upload-single-stone" element={<UploadSingleStone />} />
+                    </Routes>
+                    
+                    {/* Add the tutorial wizard manager */}
+                    <TutorialWizardManager />
+                  </ErrorBoundary>
+                </div>
+              </StartupQualityLayout>
+            </QueryClient>
           </TutorialProvider>
-        </Router>
-      </TelegramAuthProvider>
-    </QueryClientProvider>
+        </TelegramAuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 
