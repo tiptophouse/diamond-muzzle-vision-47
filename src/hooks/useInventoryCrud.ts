@@ -1,171 +1,191 @@
 
-import { useState, useCallback } from 'react';
-import { api } from '@/lib/api';
-import { toast } from 'sonner';
-import { getCurrentUserId } from '@/lib/api';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { DiamondFormData } from '@/components/inventory/form/types';
 import { Diamond } from '@/components/inventory/InventoryTable';
+import { useAddDiamond } from './inventory/useAddDiamond';
+import { useUpdateDiamond } from './inventory/useUpdateDiamond';
+import { useDeleteDiamond } from './inventory/useDeleteDiamond';
+import { useInventoryDataSync } from './inventory/useInventoryDataSync';
 
-interface UseCrudOptions {
+interface UseInventoryCrudProps {
   onSuccess?: () => void;
-  onError?: (error: string) => void;
+  removeDiamondFromState?: (diamondId: string) => void;
+  restoreDiamondToState?: (diamond: Diamond) => void;
 }
 
-interface DiamondFormData {
-  stockNumber: string;
-  shape: string;
-  carat: number;
-  color: string;
-  clarity: string;
-  cut: string;
-  price: number;
-  certificateNumber?: string;
-  certificateUrl?: string;
-  lab?: string;
-  status?: string;
-  storeVisible?: boolean;
-}
-
-export function useInventoryCrud({ onSuccess, onError }: UseCrudOptions = {}) {
+export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDiamondToState }: UseInventoryCrudProps = {}) {
+  const { toast } = useToast();
+  const { user } = useTelegramAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const { triggerInventoryChange } = useInventoryDataSync();
 
-  const addDiamond = useCallback(async (data: DiamondFormData): Promise<boolean> => {
-    setIsLoading(true);
-    console.log('🔄 CRUD: Adding new diamond with data:', data);
+  const successHandler = () => {
+    console.log('🔄 CRUD: Operation successful, triggering inventory change...');
+    triggerInventoryChange();
+    if (onSuccess) onSuccess();
+  };
+
+  const { addDiamond: addDiamondFn } = useAddDiamond(successHandler);
+  const { updateDiamond: updateDiamondFn } = useUpdateDiamond(successHandler);
+  const { deleteDiamond: deleteDiamondFn } = useDeleteDiamond({ 
+    onSuccess: successHandler, 
+    removeDiamondFromState, 
+    restoreDiamondToState 
+  });
+
+  const sendTelegramNotification = async (stoneData: DiamondFormData) => {
+    if (!user?.id) {
+      console.log('❌ No user ID for Telegram notification');
+      return;
+    }
     
     try {
-      const userId = getCurrentUserId();
-      if (!userId) {
-        const errorMsg = 'User not authenticated for diamond creation';
-        console.error('❌ CRUD:', errorMsg);
-        toast.error('Authentication required to add diamonds');
-        onError?.(errorMsg);
-        return false;
-      }
-
-      const diamondPayload = {
-        user_id: userId,
-        stock_number: data.stockNumber,
-        shape: data.shape,
-        carat: data.carat,
-        color: data.color,
-        clarity: data.clarity,
-        cut: data.cut,
-        price: data.price,
-        certificate_number: data.certificateNumber || '',
-        certificate_url: data.certificateUrl || '',
-        lab: data.lab || '',
-        status: data.status || 'available',
-        store_visible: data.storeVisible ?? true,
-      };
-
-      console.log('📤 CRUD: Sending diamond payload to FastAPI:', diamondPayload);
+      console.log('📱 Sending Telegram notification for stone:', stoneData.stockNumber);
       
-      const response = await api.post('/diamonds', diamondPayload);
+      // Use production URL - miniapp.mazalbot.com
+      let baseUrl = window.location.origin;
       
-      if (response.error) {
-        console.error('❌ CRUD: FastAPI error when adding diamond:', response.error);
-        toast.error(`Failed to add diamond: ${response.error}`);
-        onError?.(response.error);
-        return false;
+      // If it's a development/preview URL, replace with the production URL
+      if (baseUrl.includes('lovable.dev') || baseUrl.includes('lovableproject.com')) {
+        baseUrl = 'https://miniapp.mazalbot.com';
       }
       
-      console.log('✅ CRUD: Diamond added successfully:', response.data);
-      toast.success(`Diamond ${data.stockNumber} added successfully!`);
-      onSuccess?.();
-      return true;
+      // Build URL with diamond parameters (like the share function)
+      const params = new URLSearchParams({
+        carat: stoneData.carat.toString(),
+        color: stoneData.color,
+        clarity: stoneData.clarity,
+        cut: stoneData.cut,
+        shape: stoneData.shape,
+        stock: stoneData.stockNumber,
+        price: (stoneData.pricePerCarat * stoneData.carat).toString(),
+      });
+
+      // Add optional parameters if they exist
+      if (stoneData.fluorescence) params.set('fluorescence', stoneData.fluorescence);
+      if (stoneData.picture) params.set('imageUrl', stoneData.picture);
+      if (stoneData.certificateUrl) params.set('certificateUrl', stoneData.certificateUrl);
+      if (stoneData.lab) params.set('lab', stoneData.lab);
+      if (stoneData.certificateNumber) params.set('certificateNumber', stoneData.certificateNumber);
+      if (stoneData.polish) params.set('polish', stoneData.polish);
+      if (stoneData.symmetry) params.set('symmetry', stoneData.symmetry);
       
+      const storeUrl = `${baseUrl}/store?${params.toString()}`;
+      console.log('🔗 Generated store URL with parameters:', storeUrl);
+      
+      const response = await fetch('https://uhhljqgxhdhbbhpohxll.supabase.co/functions/v1/send-telegram-message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGxqcWd4aGRoYmJocG9oeGxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0ODY1NTMsImV4cCI6MjA2MzA2MjU1M30._CGnKnTyltp1lIUmmOVI1nC4jRew2WkAU-bSf22HCDE`,
+        },
+        body: JSON.stringify({
+          telegramId: user.id,
+          stoneData: {
+            stockNumber: stoneData.stockNumber,
+            shape: stoneData.shape,
+            carat: stoneData.carat,
+            color: stoneData.color,
+            clarity: stoneData.clarity,
+            cut: stoneData.cut,
+            polish: stoneData.polish,
+            symmetry: stoneData.symmetry,
+            fluorescence: stoneData.fluorescence,
+            pricePerCarat: stoneData.pricePerCarat,
+            lab: stoneData.lab,
+            certificateNumber: stoneData.certificateNumber
+          },
+          storeUrl
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Telegram notification sent successfully:', result);
+        toast({
+          title: "📱 Telegram Sent",
+          description: "Stone summary sent to your Telegram!",
+        });
+      } else {
+        const error = await response.text();
+        console.error('❌ Failed to send Telegram notification:', error);
+      }
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error('❌ CRUD: Exception when adding diamond:', error);
-      toast.error(`Failed to add diamond: ${errorMsg}`);
-      onError?.(errorMsg);
+      console.error('❌ Error sending Telegram notification:', error);
+    }
+  };
+
+  const addDiamond = async (data: DiamondFormData) => {
+    console.log('➕ CRUD: Starting add diamond operation');
+    setIsLoading(true);
+    try {
+      const result = await addDiamondFn(data);
+      if (result) {
+        // Send Telegram notification on successful upload
+        await sendTelegramNotification(data);
+      }
+      return result;
+    } catch (error) {
+      console.error('❌ CRUD: Add diamond failed:', error);
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, [onSuccess, onError]);
+  };
 
-  const updateDiamond = useCallback(async (diamondId: string, data: Partial<DiamondFormData>): Promise<boolean> => {
+  const updateDiamond = async (diamondId: string, data: DiamondFormData) => {
+    console.log('📝 CRUD: Starting update diamond operation for:', diamondId);
     setIsLoading(true);
-    console.log('🔄 CRUD: Updating diamond ID:', diamondId, 'with data:', data);
-    
     try {
-      const updatePayload = {
-        stock_number: data.stockNumber,
-        shape: data.shape,
-        carat: data.carat,
-        color: data.color,
-        clarity: data.clarity,
-        cut: data.cut,
-        price: data.price,
-        certificate_number: data.certificateNumber || '',
-        certificate_url: data.certificateUrl || '',
-        lab: data.lab || '',
-        status: data.status || 'available',
-        store_visible: data.storeVisible ?? true,
-      };
-
-      console.log('📤 CRUD: Sending update payload to FastAPI:', updatePayload);
-      
-      const response = await api.put(`/diamonds/${diamondId}`, updatePayload);
-      
-      if (response.error) {
-        console.error('❌ CRUD: FastAPI error when updating diamond:', response.error);
-        toast.error(`Failed to update diamond: ${response.error}`);
-        onError?.(response.error);
-        return false;
+      const result = await updateDiamondFn(diamondId, data);
+      if (result) {
+        console.log('✅ CRUD: Diamond updated successfully');
+        toast({
+          title: "✅ Diamond Updated",
+          description: "Changes saved and synced across dashboard, store, and inventory",
+        });
       }
-      
-      console.log('✅ CRUD: Diamond updated successfully:', response.data);
-      toast.success('Diamond updated successfully!');
-      onSuccess?.();
-      return true;
-      
+      return result;
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error('❌ CRUD: Exception when updating diamond:', error);
-      toast.error(`Failed to update diamond: ${errorMsg}`);
-      onError?.(errorMsg);
+      console.error('❌ CRUD: Update diamond failed:', error);
+      toast({
+        title: "❌ Update Failed",
+        description: "Failed to update diamond. Please try again.",
+        variant: "destructive",
+      });
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, [onSuccess, onError]);
+  };
 
-  const deleteDiamond = useCallback(async (diamondId: string, diamond?: Diamond): Promise<boolean> => {
+  const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
+    console.log('🗑️ CRUD: Starting delete diamond operation for:', diamondId);
     setIsLoading(true);
-    const stockNumber = diamond?.stockNumber || diamondId;
-    console.log('🔄 CRUD: Deleting diamond ID:', diamondId, 'Stock:', stockNumber);
-    
     try {
-      // Use the actual diamond ID from FastAPI for deletion
-      const deleteId = diamond?.diamondId?.toString() || diamondId;
-      console.log('🗑️ CRUD: Using delete ID:', deleteId);
-      
-      const response = await api.delete(`/diamonds/${deleteId}`);
-      
-      if (response.error) {
-        console.error('❌ CRUD: FastAPI error when deleting diamond:', response.error);
-        toast.error(`Failed to delete diamond: ${response.error}`);
-        onError?.(response.error);
-        return false;
+      const result = await deleteDiamondFn(diamondId, diamondData);
+      if (result) {
+        console.log('✅ CRUD: Diamond deleted successfully');
+        toast({
+          title: "✅ Diamond Deleted",
+          description: "Diamond removed from inventory, dashboard, and store",
+        });
       }
-      
-      console.log('✅ CRUD: Diamond deleted successfully from FastAPI');
-      toast.success(`Diamond ${stockNumber} deleted successfully!`);
-      onSuccess?.();
-      return true;
-      
+      return result;
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error('❌ CRUD: Exception when deleting diamond:', error);
-      toast.error(`Failed to delete diamond: ${errorMsg}`);
-      onError?.(errorMsg);
+      console.error('❌ CRUD: Delete diamond failed:', error);
+      toast({
+        title: "❌ Delete Failed",
+        description: "Failed to delete diamond. Please try again.",
+        variant: "destructive",
+      });
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, [onSuccess, onError]);
+  };
 
   return {
     addDiamond,

@@ -1,205 +1,156 @@
-
-import React, { useState } from 'react';
-import { Diamond } from '@/components/inventory/InventoryTable';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Heart, Share, Eye, Star } from 'lucide-react';
-import { useButtonFunctionality } from '@/hooks/useButtonFunctionality';
-import { cn } from '@/lib/utils';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Heart, Eye, MessageCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Diamond } from "@/components/inventory/InventoryTable";
+import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
+import { useTelegramAccelerometer } from "@/hooks/useTelegramAccelerometer";
+import { toast } from 'sonner';
 
 interface FigmaDiamondCardProps {
   diamond: Diamond;
-  index?: number;
+  index: number;
   onUpdate?: () => void;
 }
 
-export function FigmaDiamondCard({ diamond, index = 0, onUpdate }: FigmaDiamondCardProps) {
+export function FigmaDiamondCard({
+  diamond,
+  index,
+  onUpdate
+}: FigmaDiamondCardProps) {
+  const [imageError, setImageError] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
-  const [viewCount, setViewCount] = useState(Math.floor(Math.random() * 50) + 10);
-  const { shareButton, createFunctionalButton } = useButtonFunctionality();
+  const { impactOccurred } = useTelegramHapticFeedback();
+  const { orientationData } = useTelegramAccelerometer(true);
+  const navigate = useNavigate();
 
-  const handleLike = createFunctionalButton(
-    () => {
-      setIsLiked(!isLiked);
-      // Here you would typically update the backend
-      console.log(`Diamond ${diamond.stockNumber} ${isLiked ? 'unliked' : 'liked'}`);
-    },
-    { 
-      haptic: 'light',
-      showToast: { 
-        message: isLiked ? 'Removed from favorites' : 'Added to favorites',
-        type: 'success' 
-      }
-    }
-  );
-
-  const handleShare = shareButton({
-    title: `${diamond.carat}ct ${diamond.shape} Diamond`,
-    text: `Check out this beautiful ${diamond.carat}ct ${diamond.color} ${diamond.clarity} ${diamond.shape} diamond - $${diamond.price.toLocaleString()}`,
-    url: `${window.location.origin}/store?stock=${diamond.stockNumber}`
-  });
-
-  const handleView = createFunctionalButton(
-    () => {
-      setViewCount(prev => prev + 1);
-      // Navigate to detailed view or open modal
-      console.log(`Viewing diamond details: ${diamond.stockNumber}`);
-      // You could navigate to a detail page or open a modal here
-    },
-    { haptic: 'medium' }
-  );
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price);
+  const handleLike = () => {
+    impactOccurred('light');
+    setIsLiked(!isLiked);
+    toast.success(isLiked ? "Removed from favorites" : "Added to favorites");
   };
 
-  const getShapeEmoji = (shape: string) => {
-    const shapeEmojis: { [key: string]: string } = {
-      'Round': '💎',
-      'Princess': '🔶',
-      'Emerald': '🟢',
-      'Asscher': '⬜',
-      'Oval': '🥚',
-      'Radiant': '✨',
-      'Cushion': '🛏️',
-      'Marquise': '🚢',
-      'Pear': '🍐',
-      'Heart': '💖',
-    };
-    return shapeEmojis[shape] || '💎';
+  const handleViewDetails = () => {
+    impactOccurred('light');
+    navigate(`/diamond/${diamond.stockNumber}`);
   };
+
+  const handleContact = () => {
+    impactOccurred('light');
+    toast.success("Opening contact options...");
+  };
+
+  const isAvailable = diamond.status === "Available";
+
+  // Calculate rotation based on device tilt for diamond image
+  const imageTransform = diamond.imageUrl && !imageError 
+    ? `perspective(1000px) rotateX(${orientationData.beta * 0.2}deg) rotateY(${orientationData.gamma * 0.2}deg)`
+    : undefined;
 
   return (
-    <Card
-      id={`diamond-${diamond.stockNumber}`}
-      className={cn(
-        "group relative bg-white hover:shadow-lg transition-all duration-300 cursor-pointer",
-        "border border-gray-100 hover:border-blue-200 rounded-2xl overflow-hidden",
-        "touch-target" // Ensure proper touch targets for mobile
-      )}
-      style={{
-        animationDelay: `${index * 100}ms`,
-      }}
+    <div 
+      id={`diamond-${diamond.stockNumber}`} 
+      className="group relative bg-card rounded-2xl overflow-hidden transition-all duration-200 animate-fade-in"
+      style={{ animationDelay: `${index * 100}ms` }}
     >
-      <CardContent className="p-0">
-        {/* Image Section */}
-        <div className="relative aspect-square bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
-          {diamond.imageUrl ? (
-            <img
-              src={diamond.imageUrl}
-              alt={`${diamond.shape} Diamond ${diamond.stockNumber}`}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              loading="lazy"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-6xl">
-              {getShapeEmoji(diamond.shape)}
+      {/* Image Container */}
+      <div className="relative aspect-square bg-muted overflow-hidden">
+        {diamond.imageUrl && !imageError ? (
+          <img 
+            src={diamond.imageUrl} 
+            alt={`${diamond.carat} ct ${diamond.shape} Diamond`} 
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
+            style={{ transform: imageTransform }}
+            onError={() => setImageError(true)} 
+            loading="lazy" 
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full bg-gradient-to-br from-muted to-muted-foreground/10">
+            <div className="w-16 h-16 bg-muted-foreground/20 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-muted-foreground/40 rounded-full"></div>
             </div>
-          )}
-          
-          {/* Overlay Actions */}
-          <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleLike}
-              className={cn(
-                "h-8 w-8 p-0 rounded-full backdrop-blur-sm",
-                isLiked 
-                  ? "bg-red-500 text-white hover:bg-red-600" 
-                  : "bg-white/90 text-gray-700 hover:bg-white"
-              )}
-            >
-              <Heart className={cn("h-4 w-4", isLiked && "fill-current")} />
-            </Button>
-            
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleShare}
-              className="h-8 w-8 p-0 rounded-full bg-white/90 backdrop-blur-sm text-gray-700 hover:bg-white"
-            >
-              <Share className="h-4 w-4" />
-            </Button>
           </div>
-
-          {/* Price Badge */}
-          <div className="absolute bottom-3 left-3">
-            <Badge className="bg-blue-600 text-white font-semibold text-sm px-3 py-1 rounded-full">
-              {formatPrice(diamond.price)}
-            </Badge>
-          </div>
-
-          {/* View Count */}
-          <div className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/50 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
-            <Eye className="h-3 w-3" />
-            {viewCount}
-          </div>
+        )}
+        
+        {/* Status Badge */}
+        <div className="absolute top-3 left-3">
+          <Badge 
+            className={`text-xs font-medium border-0 ${
+              isAvailable 
+                ? "bg-green-500/90 text-white" 
+                : "bg-blue-500/90 text-white"
+            }`}
+          >
+            {isAvailable ? "Available" : "Premium"}
+          </Badge>
         </div>
 
-        {/* Content Section */}
-        <div className="p-4 space-y-3">
-          {/* Header */}
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="font-semibold text-gray-900 text-lg leading-tight">
-                {diamond.carat}ct {diamond.shape}
-              </h3>
-              <p className="text-sm text-gray-500">Stock #{diamond.stockNumber}</p>
-            </div>
-            
-            {diamond.lab && (
-              <Badge variant="outline" className="text-xs font-medium">
-                {diamond.lab}
-              </Badge>
-            )}
-          </div>
+        {/* Heart Icon */}
+        <button
+          onClick={handleLike}
+          className="absolute top-3 right-3 p-2 bg-background/80 backdrop-blur-sm rounded-full transition-all duration-200 hover:bg-background/90 hover:scale-110"
+        >
+          <Heart 
+            className={`h-4 w-4 transition-colors ${
+              isLiked ? 'text-red-500 fill-red-500' : 'text-muted-foreground'
+            }`} 
+          />
+        </button>
+      </div>
 
-          {/* Specifications Grid */}
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="space-y-1">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Color:</span>
-                <span className="font-medium text-gray-900">{diamond.color}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Clarity:</span>
-                <span className="font-medium text-gray-900">{diamond.clarity}</span>
-              </div>
-            </div>
-            
-            <div className="space-y-1">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Cut:</span>
-                <span className="font-medium text-gray-900">{diamond.cut}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Status:</span>
-                <Badge 
-                  variant={diamond.status === 'available' ? 'default' : 'secondary'}
-                  className="text-xs"
-                >
-                  {diamond.status}
-                </Badge>
-              </div>
-            </div>
+      {/* Content */}
+      <div className="p-4">
+        {/* Title and Price */}
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-foreground text-base leading-tight truncate">
+              {diamond.carat} ct {diamond.shape}
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1 truncate">
+              {diamond.stockNumber}
+            </p>
           </div>
+          <p className="text-lg font-bold text-foreground ml-2">
+            ${diamond.price?.toLocaleString() || 'N/A'}
+          </p>
+        </div>
 
-          {/* Action Button */}
+        {/* Specs */}
+        <div className="flex items-center gap-2 mb-4">
+          <span className="bg-muted px-2 py-1 rounded-md text-xs font-medium text-muted-foreground">
+            {diamond.color}
+          </span>
+          <span className="bg-muted px-2 py-1 rounded-md text-xs font-medium text-muted-foreground">
+            {diamond.clarity}
+          </span>
+          <span className="text-xs font-medium text-yellow-600">
+            Very Good
+          </span>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2">
           <Button 
-            onClick={handleView}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-xl transition-colors touch-target"
+            variant="outline" 
+            size="sm" 
+            className="flex-1 h-10 border-border text-foreground hover:bg-muted"
+            onClick={handleContact}
           >
-            View Details
+            <MessageCircle className="h-4 w-4 mr-1" />
+            Contact
+          </Button>
+          <Button 
+            variant="default" 
+            size="sm" 
+            className="flex-1 h-10 bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={handleViewDetails}
+          >
+            <Eye className="h-4 w-4 mr-1" />
+            Details
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
