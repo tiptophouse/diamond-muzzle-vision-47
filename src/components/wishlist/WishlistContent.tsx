@@ -9,23 +9,25 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { supabase } from '@/integrations/supabase/client';
 
+interface DiamondData {
+  stockNumber: string;
+  shape: string;
+  carat: number;
+  color: string;
+  clarity: string;
+  cut: string;
+  price: number;
+  price_per_carat: number;
+  imageUrl?: string;
+  certificateUrl?: string;
+  gem360Url?: string;
+  lab?: string;
+}
+
 interface WishlistItem {
   id: string;
   diamond_stock_number: string;
-  diamond_data: {
-    stockNumber: string;
-    shape: string;
-    carat: number;
-    color: string;
-    clarity: string;
-    cut: string;
-    price: number;
-    price_per_carat: number;
-    imageUrl?: string;
-    certificateUrl?: string;
-    gem360Url?: string;
-    lab?: string;
-  };
+  diamond_data: DiamondData;
   diamond_owner_telegram_id: number;
   created_at: string;
 }
@@ -53,7 +55,14 @@ export function WishlistContent() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setWishlistItems(data || []);
+      
+      // Cast the Json type to our expected structure
+      const typedData: WishlistItem[] = (data || []).map(item => ({
+        ...item,
+        diamond_data: item.diamond_data as DiamondData
+      }));
+      
+      setWishlistItems(typedData);
     } catch (error) {
       console.error('❌ Error fetching wishlist:', error);
       toast({
@@ -106,7 +115,7 @@ export function WishlistContent() {
     }
   };
 
-  const shareDiamond = async (diamond: WishlistItem['diamond_data']) => {
+  const shareDiamond = async (diamond: DiamondData) => {
     hapticFeedback.selection();
     
     const shareText = `💎 ${diamond.carat}ct ${diamond.shape} Diamond
@@ -125,7 +134,7 @@ export function WishlistContent() {
     await share(shareText);
   };
 
-  const contactOwner = (ownerTelegramId: number, diamond: WishlistItem['diamond_data']) => {
+  const contactOwner = (ownerTelegramId: number, diamond: DiamondData) => {
     hapticFeedback.impact('light');
     
     const message = `Hi! I'm interested in your ${diamond.carat}ct ${diamond.shape} diamond (Stock #${diamond.stockNumber}). Could you provide more details?`;
