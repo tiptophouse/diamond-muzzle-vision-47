@@ -1,36 +1,73 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
-import { TelegramAuthProvider } from '@/context/TelegramAuthContext';
-import { TelegramLayout } from '@/components/layout/TelegramLayout';
-import UploadPage from '@/pages/UploadPage';
-import InventoryPage from '@/pages/InventoryPage';
-
-// Create query client
-const queryClient = new QueryClient();
+import { TelegramAuthProvider } from './context/TelegramAuthContext';
+import { TutorialProvider } from './contexts/TutorialContext';
+import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
+import Index from './pages/Index';
+import Dashboard from './pages/Dashboard';
+import InventoryPage from './pages/InventoryPage';
+import StorePage from './pages/StorePage';
+import UploadPage from './pages/UploadPage';
+import UploadSingleStonePage from './pages/UploadSingleStonePage';
+import InsightsPage from './pages/InsightsPage';
+import ChatPage from './pages/ChatPage';
+import NotificationsPage from './pages/NotificationsPage';
+import ProfilePage from './pages/ProfilePage';
+import SettingsPage from './pages/SettingsPage';
+import WishlistPage from './pages/WishlistPage';
+import Admin from './pages/Admin';
+import AdminAnalytics from './pages/AdminAnalytics';
+import DiamondDetailPage from './pages/DiamondDetailPage';
+import SecureDiamondPage from './pages/SecureDiamondPage';
+import DiamondSwipe from './pages/DiamondSwipe';
+import NotFound from './pages/NotFound';
+import StandardizeCsvPage from './pages/StandardizeCsvPage';
+import BulkUploadPage from './pages/BulkUploadPage';
 
 function App() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+      },
+    },
+  });
+  
   return (
     <QueryClientProvider client={queryClient}>
       <TelegramAuthProvider>
         <Router>
-          <div className="App">
-            <Routes>
-              <Route path="/upload" element={<UploadPage />} />
-              <Route path="/inventory" element={<InventoryPage />} />
-              <Route path="/" element={
-                <TelegramLayout>
-                  <div className="container mx-auto p-4">
-                    <h1 className="text-2xl font-bold mb-4">Diamond Inventory Manager</h1>
-                    <p>Welcome to your diamond inventory management system.</p>
-                  </div>
-                </TelegramLayout>
-              } />
-            </Routes>
-            <Toaster />
-          </div>
+          <TutorialProvider>
+            <InteractiveWizardProvider>
+              <div className="min-h-screen bg-background">
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/inventory" element={<InventoryPage />} />
+                  <Route path="/store" element={<StorePage />} />
+                  <Route path="/upload" element={<UploadPage />} />
+                  <Route path="/upload/bulk" element={<BulkUploadPage />} />
+                  <Route path="/upload-single-stone" element={<UploadSingleStonePage />} />
+                  <Route path="/insights" element={<InsightsPage />} />
+                  <Route path="/chat" element={<ChatPage />} />
+                  <Route path="/notifications" element={<NotificationsPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="/wishlist" element={<WishlistPage />} />
+                  <Route path="/admin" element={<Admin />} />
+                  <Route path="/admin/analytics" element={<AdminAnalytics />} />
+                  <Route path="/diamond/:stockNumber" element={<DiamondDetailPage />} />
+                  <Route path="/secure-diamond/:encryptedData" element={<SecureDiamondPage />} />
+                  <Route path="/swipe" element={<DiamondSwipe />} />
+                  <Route path="/standardize-csv" element={<StandardizeCsvPage />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </div>
+            </InteractiveWizardProvider>
+          </TutorialProvider>
         </Router>
       </TelegramAuthProvider>
     </QueryClientProvider>
