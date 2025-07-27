@@ -1,45 +1,91 @@
+
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
-import { UserMenu } from '@/components/UserMenu';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { MobileSidebar } from './MobileSidebar';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import { TutorialTriggerButton } from '@/components/tutorial/TutorialTriggerButton';
+import { ChevronLeft, Menu, Search } from 'lucide-react';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 
-export function Header() {
-  const { backButton, MainButton, hapticFeedback } = useTelegramWebApp();
+interface HeaderProps {
+  onMenuToggle?: () => void;
+}
 
-  const handleGoBack = () => {
-    hapticFeedback.impact('light');
-    backButton.offClick(handleGoBack);
-    window.history.back();
+export function Header({ onMenuToggle }: HeaderProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { webApp } = useTelegramWebApp();
+
+  const canGoBack = location.pathname !== '/' && location.pathname !== '/inventory';
+
+  const handleBack = () => {
+    if (canGoBack) {
+      navigate(-1);
+    }
+  };
+
+  const getPageTitle = () => {
+    switch (location.pathname) {
+      case '/':
+      case '/inventory':
+        return 'My Diamonds';
+      case '/store':
+        return 'Diamond Store';
+      case '/upload':
+        return 'Upload Inventory';
+      case '/chat':
+        return 'AI Assistant';
+      case '/insights':
+        return 'Market Insights';
+      case '/settings':
+        return 'Settings';
+      default:
+        return 'Mazal Bot';
+    }
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-md">
-      <div className="flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-4">
-          <Link to="/" className="flex items-center gap-2 font-semibold">
-            <img src="/logo.png" alt="Diamond Mazal Logo" className="h-8 w-auto" />
-            <span className="hidden sm:block">Diamond Mazal</span>
-          </Link>
-          <nav className="hidden lg:flex items-center gap-6 text-sm">
-            <Link to="/inventory" className="hover:text-primary transition-colors">Inventory</Link>
-            <Link to="/store" className="hover:text-primary transition-colors">Store</Link>
-            <Link to="/upload" className="hover:text-primary transition-colors">Upload</Link>
-            <Link to="/chat" className="hover:text-primary transition-colors">Chat</Link>
-            <Link to="/insights" className="hover:text-primary transition-colors">Insights</Link>
-            {/* <Link to="/settings" className="hover:text-primary transition-colors">Settings</Link> */}
-          </nav>
+    <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+      <div className="flex h-14 items-center px-4">
+        {/* Left side */}
+        <div className="flex items-center gap-2">
+          {canGoBack ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBack}
+              className="h-8 w-8 p-0 md:hidden"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onMenuToggle}
+              className="h-8 w-8 p-0 md:hidden"
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
+        {/* Center - Title */}
+        <div className="flex-1 text-center">
+          <h1 className="text-lg font-semibold text-foreground truncate">
+            {getPageTitle()}
+          </h1>
+        </div>
+
+        {/* Right side */}
         <div className="flex items-center gap-2">
-          {/* Add tutorial trigger button */}
-          <TutorialTriggerButton variant="ghost" size="sm" />
-          
-          <ThemeToggle />
-          <UserMenu />
-          <MobileSidebar />
+          <TutorialTriggerButton />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+          >
+            <Search className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     </header>

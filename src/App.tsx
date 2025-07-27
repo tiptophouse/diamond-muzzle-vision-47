@@ -1,71 +1,70 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from "@/components/theme-provider"
-import { TelegramAuthProvider } from '@/contexts/TelegramAuth';
-import { TutorialProvider } from '@/contexts/TutorialContext';
-import { QueryClient } from '@tanstack/react-query';
-import { StartupQualityLayout } from '@/components/layout/StartupQualityLayout';
+
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from '@/components/theme-provider';
+import { TelegramAuthProvider } from '@/context/TelegramAuthContext';
+import { Toaster } from '@/components/ui/toaster';
+import { TelegramLayout } from '@/components/layout/TelegramLayout';
 import { ErrorBoundary } from 'react-error-boundary';
-import Dashboard from '@/pages/Dashboard';
-import Inventory from '@/pages/Inventory';
-import Store from '@/pages/Store';
-import Upload from '@/pages/Upload';
-import Chat from '@/pages/Chat';
-import Insights from '@/pages/Insights';
-import Settings from '@/pages/Settings';
-import Login from '@/pages/Login';
-import SecureDiamond from '@/pages/SecureDiamond';
-import UploadSingleStone from '@/pages/UploadSingleStone';
 import { TutorialWizardManager } from '@/components/tutorial/TutorialWizardManager';
+import InventoryPage from '@/pages/InventoryPage';
+import StorePage from '@/pages/StorePage';
+import UploadPage from '@/pages/UploadPage';
+import ChatPage from '@/pages/ChatPage';
+import InsightsPage from '@/pages/InsightsPage';
+import SettingsPage from '@/pages/SettingsPage';
+import LoginPage from '@/pages/LoginPage';
+import SecureDiamondPage from '@/pages/SecureDiamondPage';
+import UploadSingleStonePage from '@/pages/UploadSingleStonePage';
+
+// Create QueryClient instance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  },
+});
+
+function ErrorFallback({error}: {error: Error}) {
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="text-center">
+        <h2 className="text-lg font-semibold text-red-600 mb-2">Something went wrong</h2>
+        <pre className="text-sm text-gray-600 bg-gray-100 p-3 rounded">{error.message}</pre>
+      </div>
+    </div>
+  );
+}
 
 function App() {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
   return (
-    <ThemeProvider>
-      <BrowserRouter>
-        <TelegramAuthProvider>
-          <TutorialProvider>
-            <QueryClient>
-              <StartupQualityLayout>
-                <div className="App min-h-screen bg-background text-foreground">
-                  <ErrorBoundary>
-                    <Routes>
-                      <Route path="/" element={<Login />} />
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/inventory" element={<Inventory />} />
-                      <Route path="/store" element={<Store />} />
-                      <Route path="/upload" element={<Upload />} />
-                      <Route path="/chat" element={<Chat />} />
-                      <Route path="/insights" element={<Insights />} />
-                      <Route path="/settings" element={<Settings />} />
-                      <Route path="/secure-diamond/:stockNumber" element={<SecureDiamond />} />
-                      <Route path="/upload-single-stone" element={<UploadSingleStone />} />
-                    </Routes>
-                    
-                    {/* Add the tutorial wizard manager */}
-                    <TutorialWizardManager />
-                  </ErrorBoundary>
-                </div>
-              </StartupQualityLayout>
-            </QueryClient>
-          </TutorialProvider>
-        </TelegramAuthProvider>
-      </BrowserRouter>
-    </ThemeProvider>
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+          <TelegramAuthProvider>
+            <Router>
+              <TelegramLayout>
+                <Routes>
+                  <Route path="/" element={<InventoryPage />} />
+                  <Route path="/inventory" element={<InventoryPage />} />
+                  <Route path="/store" element={<StorePage />} />
+                  <Route path="/upload" element={<UploadPage />} />
+                  <Route path="/chat" element={<ChatPage />} />
+                  <Route path="/insights" element={<InsightsPage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/diamond/:stockNumber" element={<SecureDiamondPage />} />
+                  <Route path="/upload/single" element={<UploadSingleStonePage />} />
+                </Routes>
+                <TutorialWizardManager />
+              </TelegramLayout>
+            </Router>
+            <Toaster />
+          </TelegramAuthProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
