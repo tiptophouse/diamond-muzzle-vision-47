@@ -71,11 +71,15 @@ export function useButtonFunctionality() {
             : `${content.title}\n${content.text}`;
           
           try {
-            // Use the correct method from Telegram WebApp API
-            if (window.Telegram.WebApp.switchInlineQuery) {
-              window.Telegram.WebApp.switchInlineQuery(shareText);
+            // Use the Telegram WebApp sendData method instead
+            if (typeof window.Telegram.WebApp.sendData === 'function') {
+              window.Telegram.WebApp.sendData(JSON.stringify({
+                action: 'share',
+                content: shareText
+              }));
+              toast.success('Content shared via Telegram');
             } else {
-              // Fallback to clipboard if method doesn't exist
+              // Fallback to clipboard
               await navigator.clipboard.writeText(shareText);
               toast.success('Content copied to clipboard');
             }
