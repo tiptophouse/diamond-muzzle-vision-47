@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Send } from 'lucide-react';
+import { useButtonFunctionality } from '@/hooks/useButtonFunctionality';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -11,19 +12,30 @@ interface ChatInputProps {
 
 export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled }) => {
   const [message, setMessage] = useState('');
+  const { createFunctionalButton } = useButtonFunctionality();
+
+  const handleSendMessage = createFunctionalButton(
+    () => {
+      if (message.trim()) {
+        onSendMessage(message.trim());
+        setMessage('');
+      }
+    },
+    { 
+      haptic: 'light',
+      showToast: message.trim() ? undefined : { message: 'Please enter a message', type: 'error' }
+    }
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim() && !disabled) {
-      onSendMessage(message.trim());
-      setMessage('');
-    }
+    handleSendMessage();
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit(e);
+      handleSendMessage();
     }
   };
 
@@ -36,14 +48,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled })
           onKeyPress={handleKeyPress}
           placeholder="Message Diamond Assistant..."
           disabled={disabled}
-          className="min-h-[44px] max-h-[100px] sm:max-h-[120px] resize-none pr-12 rounded-2xl border-muted-foreground/20 focus:border-primary bg-background text-sm sm:text-base w-full"
+          className="min-h-[44px] max-h-[100px] sm:max-h-[120px] resize-none pr-12 rounded-2xl border-muted-foreground/20 focus:border-primary bg-background text-sm sm:text-base w-full touch-target"
           rows={1}
         />
         <Button
           type="submit"
           size="sm"
           disabled={!message.trim() || disabled}
-          className="absolute right-2 bottom-2 h-8 w-8 p-0 rounded-full bg-primary hover:bg-primary/90 shrink-0"
+          className="absolute right-2 bottom-2 h-8 w-8 p-0 rounded-full bg-primary hover:bg-primary/90 shrink-0 touch-target"
         >
           <Send size={14} />
           <span className="sr-only">Send message</span>
