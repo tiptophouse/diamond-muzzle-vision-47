@@ -71,11 +71,18 @@ export function useButtonFunctionality() {
             : `${content.title}\n${content.text}`;
           
           try {
-            window.Telegram.WebApp.switchInlineQuery(shareText);
+            // Use the correct method from Telegram WebApp API
+            if (window.Telegram.WebApp.switchInlineQuery) {
+              window.Telegram.WebApp.switchInlineQuery(shareText);
+            } else {
+              // Fallback to clipboard if method doesn't exist
+              await navigator.clipboard.writeText(shareText);
+              toast.success('Content copied to clipboard');
+            }
           } catch (error) {
             // Fallback to clipboard
             await navigator.clipboard.writeText(shareText);
-            throw new Error('Shared to clipboard');
+            toast.success('Content copied to clipboard');
           }
         } else if (navigator.share) {
           await navigator.share(content);
@@ -84,7 +91,7 @@ export function useButtonFunctionality() {
             ? `${content.title}\n${content.text}\n${content.url}` 
             : `${content.title}\n${content.text}`;
           await navigator.clipboard.writeText(shareText);
-          throw new Error('Link copied to clipboard');
+          toast.success('Link copied to clipboard');
         }
       },
       { 
