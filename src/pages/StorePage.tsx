@@ -134,7 +134,7 @@ export default function StorePage() {
   const renderStoreGrid = () => {
     if (loading) {
       return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-4 pb-24">
           {Array.from({ length: 12 }, (_, i) => (
             <DiamondCardSkeleton key={i} />
           ))}
@@ -169,7 +169,7 @@ export default function StorePage() {
     }
 
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-4 pb-24">
         {finalFilteredDiamonds.map((diamond, index) => (
           <FigmaDiamondCard 
             key={diamond.id} 
@@ -191,7 +191,7 @@ export default function StorePage() {
 
   return (
     <MobilePullToRefresh onRefresh={handleRefresh} enabled={!loading}>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pb-safe">
         {/* Header */}
         <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
           <div className="px-4 py-4">
@@ -237,7 +237,7 @@ export default function StorePage() {
         </div>
 
         {/* Floating Action Button */}
-        <div className="fixed bottom-6 right-4 z-40">
+        <div className="fixed bottom-20 right-4 z-40">
           <Button
             onClick={handleAddDiamond}
             size="lg"
