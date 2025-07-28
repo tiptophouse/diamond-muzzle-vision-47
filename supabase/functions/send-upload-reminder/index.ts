@@ -33,7 +33,7 @@ serve(async (req) => {
       throw new Error('Telegram bot token not configured');
     }
 
-    console.log(`📤 Sending enhanced upload reminders to ${users.length} users`);
+    console.log(`📤 Sending enhanced welcome messages to ${users.length} users`);
 
     const results = [];
     
@@ -42,7 +42,7 @@ serve(async (req) => {
         // Determine language - default to Hebrew unless specifically English
         const isEnglish = user.language_code?.startsWith('en') || false;
         
-        // Generate enhanced welcome message (same as welcome message)
+        // Generate enhanced welcome message
         const message = generateEnhancedWelcomeMessage(user.first_name, isEnglish);
         
         // Create comprehensive feature keyboard
@@ -69,7 +69,7 @@ serve(async (req) => {
           throw new Error(`Failed to send message to ${user.telegram_id}: ${errorData}`);
         }
 
-        console.log(`✅ Enhanced reminder sent to ${user.first_name} (${user.telegram_id})`);
+        console.log(`✅ Enhanced welcome message sent to ${user.first_name} (${user.telegram_id})`);
 
         // Send follow-up tutorial message after a short delay
         setTimeout(async () => {
@@ -101,7 +101,7 @@ serve(async (req) => {
         // Add delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (error) {
-        console.error(`❌ Failed to send reminder to ${user.telegram_id}:`, error);
+        console.error(`❌ Failed to send welcome message to ${user.telegram_id}:`, error);
         results.push({ user: user.telegram_id, success: false, error: error.message });
       }
     }
@@ -119,7 +119,7 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             chat_id: 2138564172, // Admin telegram ID
-            text: `📊 <b>Admin Preview - Enhanced Upload Reminder</b>\n\nThis is what users received:\n\n${adminMessage}`,
+            text: `📊 <b>Admin Preview - Enhanced Welcome Message</b>\n\nThis is what users received:\n\n${adminMessage}`,
             parse_mode: 'HTML',
             reply_markup: adminKeyboard
           })
@@ -140,7 +140,7 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true,
-      message: `Enhanced reminders sent to ${successful} recipients, ${failed} failed`,
+      message: `Enhanced welcome messages sent to ${successful} recipients, ${failed} failed`,
       results
     }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -149,7 +149,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('❌ Error in send-upload-reminder:', error);
     return new Response(JSON.stringify({
-      error: 'Failed to send upload reminders',
+      error: 'Failed to send enhanced welcome messages',
       details: error.message
     }), {
       status: 500,

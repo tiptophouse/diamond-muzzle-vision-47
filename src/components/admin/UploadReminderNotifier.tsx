@@ -24,7 +24,7 @@ export function UploadReminderNotifier() {
     }))
   );
 
-  const sendUploadReminder = async () => {
+  const sendEnhancedWelcomeMessage = async () => {
     try {
       setIsLoading(true);
       
@@ -103,7 +103,7 @@ export function UploadReminderNotifier() {
           <h4 className="font-medium mb-2">What this will do:</h4>
           <ul className="text-sm text-muted-foreground space-y-1">
             <li>• Find all users who haven't uploaded any diamonds (verified via FastAPI)</li>
-            <li>• Send them the same enhanced welcome message as new users receive</li>
+            <li>• Send them the enhanced welcome message with comprehensive feature overview</li>
             <li>• Include comprehensive 8-button navigation keyboard</li>
             <li>• Send follow-up tutorial message after 3 seconds</li>
             <li>• Include you (admin) in the notification to see the message</li>
@@ -186,7 +186,7 @@ export function UploadReminderNotifier() {
 
         <div className="flex gap-2">
           <Button 
-            onClick={sendUploadReminder}
+            onClick={sendEnhancedWelcomeMessage}
             disabled={isLoading || usersWithoutInventory.length === 0}
             className="bg-blue-600 hover:bg-blue-700"
           >
@@ -201,7 +201,7 @@ export function UploadReminderNotifier() {
             Primary button will direct users to: /upload-single-stone
           </p>
           <p className="mt-1 text-green-600">
-            ✓ Now sending the same enhanced welcome message with comprehensive 8-button navigation
+            ✓ Now sending enhanced welcome message with comprehensive 8-button navigation and tutorial follow-up
           </p>
         </div>
       </CardContent>
