@@ -15,13 +15,15 @@ interface StoreVisibilityToggleProps {
 export function StoreVisibilityToggle({ stockNumber, isVisible, onToggle }: StoreVisibilityToggleProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { handleRequiredClick } = useTutorial();
+  const tutorial = useTutorial();
 
   const handleToggle = async () => {
     setLoading(true);
     
-    // Handle tutorial interaction
-    handleRequiredClick();
+    // Handle tutorial interaction if tutorial context is available
+    if (tutorial?.handleRequiredClick) {
+      tutorial.handleRequiredClick();
+    }
     
     try {
       const { error } = await supabase
