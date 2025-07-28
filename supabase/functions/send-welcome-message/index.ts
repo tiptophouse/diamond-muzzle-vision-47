@@ -38,8 +38,8 @@ serve(async (req) => {
     // Generate welcome message in the appropriate language
     const message = generateWelcomeMessage(user.first_name, isEnglish);
     
-    // Create feature showcase keyboard
-    const keyboard = createFeatureKeyboard(isEnglish);
+    // Create comprehensive feature keyboard
+    const keyboard = createComprehensiveKeyboard(isEnglish);
 
     const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
     
@@ -141,20 +141,45 @@ function generateWelcomeMessage(firstName: string, isEnglish: boolean = false): 
 
 Ready to transform your diamond business? Let's get started! 🚀`;
   } else {
-    return `👋 שלום ${firstName}!
+    return `🎉 <b>ברוכים הבאים ל-Diamond Muzzle, ${firstName}!</b>
 
-🔹 שמנו לב שעדיין לא העלית את מלאי היהלומים שלך. 
+💎 <b>הצטרפת לפלטפורמת המסחר ביהלומים המתקדמת בעולם!</b>
 
-💎 מוכן/ה להתחיל?
-• העלאת היהלומים הראשונים שלך בתוך 2 דקות בלבד
-• הצגת המלאי שלך לקונים פוטנציאליים
-• התחברות לקהילת סוחרי היהלומים
+🔍 <b>ניטור קבוצות חכם 24/7</b>
+• אנחנו מאזינים לכל קבוצות היהלומים בזמן אמת
+• קבל התראות מיידיות כשמישהו מחפש בדיוק את האבנים שלך
+• לעולם לא תפספס הזדמנות מכירה!
 
-⚡ לחץ/י על הכפתור למטה כדי להעלות עכשיו ולהתחיל לפתח את העסק שלך!`;
+📊 <b>ניהול מלאי מתקדם</b>
+• העלאת יהלומים קלה ומהירה מתעודות GIA
+• חזית חנות מקצועית לאוסף שלך
+• אנליטיקות עסקיות בזמן אמת
+
+🤖 <b>בינה מלאכותית מתקדמת</b>
+• צ'אט חכם עם המלאי שלך - שאל שאלות וקבל תשובות מיידיות
+• התאמות אוטומטיות בין ביקוש להיצע
+• המלצות חכמות להגדלת הרווחים
+
+💰 <b>כלי צמיחה עסקית</b>
+• שיתוף מקצועי של יהלומים ברשתות החברתיות
+• ניהול לידים ולקוחות פוטנציאליים
+• דוחות ביצועים ומעקב הכנסות
+
+🌐 <b>קהילה גלובלית</b>
+• חיבור לקונים ברחבי העולם
+• פלטפורמה רב-לשונית
+• סביבת עסקאות מאובטחת ומקצועית
+
+⭐ <b>התחל עכשיו ב-3 צעדים פשוטים:</b>
+1️⃣ העלה את היהלומים הראשונים מתעודה
+2️⃣ הגדר את החנות המקצועית שלך
+3️⃣ התחל לקבל לידים והתאמות אוטומטיות
+
+🚀 <b>מוכן לשנות את עסק היהלומים שלך לנצח?</b>`;
   }
 }
 
-function createFeatureKeyboard(isEnglish: boolean = false) {
+function createComprehensiveKeyboard(isEnglish: boolean = false) {
   const baseUrl = Deno.env.get('WEB_APP_URL') || 'https://miniapp.mazalbot.com';
   
   if (isEnglish) {
@@ -162,29 +187,57 @@ function createFeatureKeyboard(isEnglish: boolean = false) {
       inline_keyboard: [
         [
           {
-            text: "📤 Upload from Certificate",
+            text: "💎 Upload Diamonds",
             web_app: {
               url: `${baseUrl}/upload-single-stone`
             }
           },
           {
-            text: "🤖 Chat with AI",
+            text: "🏪 View Store",
             web_app: {
-              url: `${baseUrl}/chat`
+              url: `${baseUrl}/store`
             }
           }
         ],
         [
           {
-            text: "📊 Dashboard",
+            text: "🤖 AI Assistant",
             web_app: {
-              url: `${baseUrl}/dashboard`
+              url: `${baseUrl}/chat`
             }
           },
           {
-            text: "🏪 Store",
+            text: "📊 Analytics",
             web_app: {
-              url: `${baseUrl}/store`
+              url: `${baseUrl}/insights`
+            }
+          }
+        ],
+        [
+          {
+            text: "📋 Inventory",
+            web_app: {
+              url: `${baseUrl}/inventory`
+            }
+          },
+          {
+            text: "📈 Dashboard",
+            web_app: {
+              url: `${baseUrl}/dashboard`
+            }
+          }
+        ],
+        [
+          {
+            text: "🔔 Notifications",
+            web_app: {
+              url: `${baseUrl}/notifications`
+            }
+          },
+          {
+            text: "⚙️ Settings",
+            web_app: {
+              url: `${baseUrl}/settings`
             }
           }
         ]
@@ -195,29 +248,57 @@ function createFeatureKeyboard(isEnglish: boolean = false) {
       inline_keyboard: [
         [
           {
-            text: "📤 העלאה מתעודה",
+            text: "💎 העלאת יהלומים",
             web_app: {
               url: `${baseUrl}/upload-single-stone`
             }
           },
           {
-            text: "🤖 צ'אט עם AI",
+            text: "🏪 צפייה בחנות",
             web_app: {
-              url: `${baseUrl}/chat`
+              url: `${baseUrl}/store`
             }
           }
         ],
         [
           {
-            text: "📊 דשבורד",
+            text: "🤖 עוזר AI",
             web_app: {
-              url: `${baseUrl}/dashboard`
+              url: `${baseUrl}/chat`
             }
           },
           {
-            text: "🏪 חנות",
+            text: "📊 אנליטיקס",
             web_app: {
-              url: `${baseUrl}/store`
+              url: `${baseUrl}/insights`
+            }
+          }
+        ],
+        [
+          {
+            text: "📋 מלאי",
+            web_app: {
+              url: `${baseUrl}/inventory`
+            }
+          },
+          {
+            text: "📈 דשבורד",
+            web_app: {
+              url: `${baseUrl}/dashboard`
+            }
+          }
+        ],
+        [
+          {
+            text: "🔔 התראות",
+            web_app: {
+              url: `${baseUrl}/notifications`
+            }
+          },
+          {
+            text: "⚙️ הגדרות",
+            web_app: {
+              url: `${baseUrl}/settings`
             }
           }
         ]
