@@ -1,134 +1,161 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { Bell } from 'lucide-react';
+import { Bell, Diamond } from 'lucide-react';
+import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 
-interface CreateWishlistAlertProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
+interface WishlistAlertCriteria {
+  shape: string;
+  minCarat: number;
+  maxCarat: number;
+  color: string;
+  clarity: string;
+  cut: string;
+  polish: string;
+  symmetry: string;
+  maxPricePerCarat: number;
 }
 
-const shapes = ['Round', 'Princess', 'Emerald', 'Asscher', 'Oval', 'Radiant', 'Pear', 'Heart', 'Marquise', 'Cushion'];
-const colors = ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'];
-const clarities = ['FL', 'IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'SI3', 'I1', 'I2'];
-const cuts = ['Excellent', 'Very Good', 'Good', 'Poor'];
-const polishGrades = ['Excellent', 'Very Good', 'Good', 'Poor'];
-const symmetryGrades = ['Excellent', 'Very Good', 'Good', 'Poor'];
-
-export function CreateWishlistAlert({ isOpen, onClose, onSuccess }: CreateWishlistAlertProps) {
+export function CreateWishlistAlert() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { user } = useTelegramAuth();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const { triggerHaptic } = useTelegramHapticFeedback();
   
-  const [formData, setFormData] = useState({
+  const [criteria, setCriteria] = useState<WishlistAlertCriteria>({
     shape: '',
-    minCarat: '',
-    maxCarat: '',
-    colors: [] as string[],
-    clarities: [] as string[],
-    cuts: [] as string[],
-    polish: [] as string[],
-    symmetry: [] as string[],
-    maxPricePerCarat: '',
-    alertName: ''
+    minCarat: 0,
+    maxCarat: 10,
+    color: '',
+    clarity: '',
+    cut: '',
+    polish: '',
+    symmetry: '',
+    maxPricePerCarat: 0
   });
 
-  const handleMultiSelect = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: prev[field as keyof typeof prev].includes(value)
-        ? (prev[field as keyof typeof prev] as string[]).filter((item: string) => item !== value)
-        : [...(prev[field as keyof typeof prev] as string[]), value]
-    }));
-  };
+  const shapes = ['Round', 'Princess', 'Emerald', 'Asscher', 'Oval', 'Radiant', 'Cushion', 'Marquise', 'Heart', 'Pear'];
+  const colors = ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
+  const clarities = ['FL', 'IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'I1', 'I2'];
+  const cuts = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'];
+  const polish = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'];
+  const symmetry = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'];
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user?.id) return;
+  const handleCreateAlert = async () => {
+    if (!user) {
+      toast({
+        title: "שגיאה",
+        description: "יש להתחבר כדי ליצור התראה",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!criteria.shape || !criteria.maxPricePerCarat) {
+      toast({
+        title: "שגיאה",
+        description: "יש למלא לפחות צורה ומחיר מקסימלי",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setIsLoading(true);
-    
-    try {
-      const alertData = {
-        visitor_telegram_id: user.id,
-        alert_name: formData.alertName || `התראה מותאמת - ${new Date().toLocaleDateString('he-IL')}`,
-        criteria: {
-          shape: formData.shape,
-          minCarat: formData.minCarat ? parseFloat(formData.minCarat) : null,
-          maxCarat: formData.maxCarat ? parseFloat(formData.maxCarat) : null,
-          colors: formData.colors,
-          clarities: formData.clarities,
-          cuts: formData.cuts,
-          polish: formData.polish,
-          symmetry: formData.symmetry,
-          maxPricePerCarat: formData.maxPricePerCarat ? parseFloat(formData.maxPricePerCarat) : null
-        },
-        is_active: true
-      };
+    triggerHaptic('light');
 
+    try {
+      // Store the alert criteria in the wishlist table as a special entry
       const { error } = await supabase
-        .from('wishlist_alerts')
-        .insert(alertData);
+        .from('wishlist')
+        .insert({
+          visitor_telegram_id: user.id,
+          diamond_owner_telegram_id: user.id, // Self-reference for alerts
+          diamond_stock_number: `ALERT_${Date.now()}`, // Unique identifier for alerts
+          diamond_data: {
+            type: 'price_alert',
+            criteria: criteria,
+            created_at: new Date().toISOString(),
+            alert_name: `התראת מחיר - ${criteria.shape} עד $${criteria.maxPricePerCarat}`
+          }
+        });
 
       if (error) throw error;
 
       toast({
         title: "✅ התראה נוצרה בהצלחה!",
-        description: "תקבל הודעה ב-Telegram כאשר יהלום עונה על הקריטריונים שלך",
+        description: `תקבל הודעה בטלגרם כשיימצא יהלום ${criteria.shape} במחיר עד $${criteria.maxPricePerCarat} לקרט`,
+        duration: 5000
       });
 
-      onSuccess();
+      // Reset form
+      setCriteria({
+        shape: '',
+        minCarat: 0,
+        maxCarat: 10,
+        color: '',
+        clarity: '',
+        cut: '',
+        polish: '',
+        symmetry: '',
+        maxPricePerCarat: 0
+      });
+      
+      setIsOpen(false);
+      triggerHaptic('success');
+
     } catch (error) {
       console.error('Error creating alert:', error);
       toast({
-        title: "❌ שגיאה ביצירת התראה",
-        description: "לא ניתן ליצור את ההתראה כרגע. נסה שוב מאוחר יותר",
-        variant: "destructive",
+        title: "שגיאה",
+        description: "לא ניתן ליצור את ההתראה",
+        variant: "destructive"
       });
+      triggerHaptic('error');
     } finally {
       setIsLoading(false);
     }
   };
 
+  if (!isOpen) {
+    return (
+      <Button
+        onClick={() => setIsOpen(true)}
+        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
+        size="lg"
+      >
+        <Bell className="mr-2 h-5 w-5" />
+        צור התראת מחיר מותאמת אישית
+      </Button>
+    );
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" dir="rtl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <Bell className="h-5 w-5 text-blue-600" />
-            צור התראת מחיר מותאמת אישית
-          </DialogTitle>
-          <p className="text-muted-foreground text-sm">
-            הגדר קריטריונים והתראות יישלחו לך ב-Telegram כאשר יהלומים עונים על הדרישות שלך
-          </p>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Alert Name */}
-          <div>
-            <Label htmlFor="alertName">שם ההתראה (אופציונלי)</Label>
-            <Input
-              id="alertName"
-              value={formData.alertName}
-              onChange={(e) => setFormData(prev => ({ ...prev, alertName: e.target.value }))}
-              placeholder="למשל: יהלומים קטנים לטבעת"
-            />
-          </div>
-
+    <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-purple-50">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-blue-800">
+          <Diamond className="h-6 w-6" />
+          יצירת התראת מחיר מותאמת אישית
+        </CardTitle>
+        <CardDescription>
+          הגדר קריטריונים ליהלומים שאתה מחפש - תקבל הודעה בטלגרם כשיימצא יהלום המתאים
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4" dir="rtl">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Shape */}
           <div>
-            <Label>צורת יהלום</Label>
-            <Select onValueChange={(value) => setFormData(prev => ({ ...prev, shape: value }))}>
+            <Label htmlFor="shape">צורה *</Label>
+            <Select value={criteria.shape} onValueChange={(value) => setCriteria({...criteria, shape: value})}>
               <SelectTrigger>
-                <SelectValue placeholder="בחר צורה (אופציונלי)" />
+                <SelectValue placeholder="בחר צורה" />
               </SelectTrigger>
               <SelectContent>
                 {shapes.map(shape => (
@@ -138,157 +165,128 @@ export function CreateWishlistAlert({ isOpen, onClose, onSuccess }: CreateWishli
             </Select>
           </div>
 
+          {/* Max Price Per Carat */}
+          <div>
+            <Label htmlFor="maxPrice">מחיר מקסימלי לקרט ($) *</Label>
+            <Input
+              id="maxPrice"
+              type="number"
+              value={criteria.maxPricePerCarat || ''}
+              onChange={(e) => setCriteria({...criteria, maxPricePerCarat: parseInt(e.target.value) || 0})}
+              placeholder="לדוגמה: 5000"
+            />
+          </div>
+
           {/* Carat Range */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="minCarat">מינימום קרט</Label>
-              <Input
-                id="minCarat"
-                type="number"
-                step="0.01"
-                value={formData.minCarat}
-                onChange={(e) => setFormData(prev => ({ ...prev, minCarat: e.target.value }))}
-                placeholder="0.50"
-              />
-            </div>
-            <div>
-              <Label htmlFor="maxCarat">מקסימום קרט</Label>
-              <Input
-                id="maxCarat"
-                type="number"
-                step="0.01"
-                value={formData.maxCarat}
-                onChange={(e) => setFormData(prev => ({ ...prev, maxCarat: e.target.value }))}
-                placeholder="2.00"
-              />
-            </div>
+          <div>
+            <Label htmlFor="minCarat">קרט מינימלי</Label>
+            <Input
+              id="minCarat"
+              type="number"
+              step="0.01"
+              value={criteria.minCarat || ''}
+              onChange={(e) => setCriteria({...criteria, minCarat: parseFloat(e.target.value) || 0})}
+              placeholder="0.50"
+            />
           </div>
 
-          {/* Colors */}
           <div>
-            <Label className="text-sm font-medium">צבעים מועדפים</Label>
-            <div className="grid grid-cols-6 gap-2 mt-2">
-              {colors.map(color => (
-                <Button
-                  key={color}
-                  type="button"
-                  variant={formData.colors.includes(color) ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleMultiSelect('colors', color)}
-                  className="h-8"
-                >
-                  {color}
-                </Button>
-              ))}
-            </div>
+            <Label htmlFor="maxCarat">קרט מקסימלי</Label>
+            <Input
+              id="maxCarat"
+              type="number"
+              step="0.01"
+              value={criteria.maxCarat || ''}
+              onChange={(e) => setCriteria({...criteria, maxCarat: parseFloat(e.target.value) || 10})}
+              placeholder="2.00"
+            />
           </div>
 
-          {/* Clarities */}
+          {/* Color */}
           <div>
-            <Label className="text-sm font-medium">רמות בהירות מועדפות</Label>
-            <div className="grid grid-cols-6 gap-2 mt-2">
-              {clarities.map(clarity => (
-                <Button
-                  key={clarity}
-                  type="button"
-                  variant={formData.clarities.includes(clarity) ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleMultiSelect('clarities', clarity)}
-                  className="h-8"
-                >
-                  {clarity}
-                </Button>
-              ))}
-            </div>
+            <Label htmlFor="color">צבע</Label>
+            <Select value={criteria.color} onValueChange={(value) => setCriteria({...criteria, color: value})}>
+              <SelectTrigger>
+                <SelectValue placeholder="בחר צבע (אופציונלי)" />
+              </SelectTrigger>
+              <SelectContent>
+                {colors.map(color => (
+                  <SelectItem key={color} value={color}>{color}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Cuts */}
+          {/* Clarity */}
           <div>
-            <Label className="text-sm font-medium">איכות חיתוך</Label>
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              {cuts.map(cut => (
-                <Button
-                  key={cut}
-                  type="button"
-                  variant={formData.cuts.includes(cut) ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleMultiSelect('cuts', cut)}
-                  className="h-8"
-                >
-                  {cut}
-                </Button>
-              ))}
-            </div>
+            <Label htmlFor="clarity">בהירות</Label>
+            <Select value={criteria.clarity} onValueChange={(value) => setCriteria({...criteria, clarity: value})}>
+              <SelectTrigger>
+                <SelectValue placeholder="בחר בהירות (אופציונלי)" />
+              </SelectTrigger>
+              <SelectContent>
+                {clarities.map(clarity => (
+                  <SelectItem key={clarity} value={clarity}>{clarity}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Cut */}
+          <div>
+            <Label htmlFor="cut">חיתוך</Label>
+            <Select value={criteria.cut} onValueChange={(value) => setCriteria({...criteria, cut: value})}>
+              <SelectTrigger>
+                <SelectValue placeholder="בחר חיתוך (אופציונלי)" />
+              </SelectTrigger>
+              <SelectContent>
+                {cuts.map(cut => (
+                  <SelectItem key={cut} value={cut}>{cut}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Polish */}
           <div>
-            <Label className="text-sm font-medium">איכות ליטוש</Label>
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              {polishGrades.map(polish => (
-                <Button
-                  key={polish}
-                  type="button"
-                  variant={formData.polish.includes(polish) ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleMultiSelect('polish', polish)}
-                  className="h-8"
-                >
-                  {polish}
-                </Button>
-              ))}
-            </div>
+            <Label htmlFor="polish">ליטוש</Label>
+            <Select value={criteria.polish} onValueChange={(value) => setCriteria({...criteria, polish: value})}>
+              <SelectTrigger>
+                <SelectValue placeholder="בחר ליטוש (אופציונלי)" />
+              </SelectTrigger>
+              <SelectContent>
+                {polish.map(pol => (
+                  <SelectItem key={pol} value={pol}>{pol}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Symmetry */}
           <div>
-            <Label className="text-sm font-medium">סימטריה</Label>
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              {symmetryGrades.map(symmetry => (
-                <Button
-                  key={symmetry}
-                  type="button"
-                  variant={formData.symmetry.includes(symmetry) ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleMultiSelect('symmetry', symmetry)}
-                  className="h-8"
-                >
-                  {symmetry}
-                </Button>
-              ))}
-            </div>
+            <Label htmlFor="symmetry">סימטריה</Label>
+            <Select value={criteria.symmetry} onValueChange={(value) => setCriteria({...criteria, symmetry: value})}>
+              <SelectTrigger>
+                <SelectValue placeholder="בחר סימטריה (אופציונלי)" />
+              </SelectTrigger>
+              <SelectContent>
+                {symmetry.map(sym => (
+                  <SelectItem key={sym} value={sym}>{sym}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+        </div>
 
-          {/* Max Price */}
-          <div>
-            <Label htmlFor="maxPricePerCarat">מחיר מקסימלי לקרט ($)</Label>
-            <Input
-              id="maxPricePerCarat"
-              type="number"
-              value={formData.maxPricePerCarat}
-              onChange={(e) => setFormData(prev => ({ ...prev, maxPricePerCarat: e.target.value }))}
-              placeholder="5000"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              תקבל התראה רק אם המחיר לקרט נמוך מהסכום הזה
-            </p>
-          </div>
-
-          {/* Submit */}
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            >
-              {isLoading ? 'יוצר התראה...' : 'צור התראה'}
-            </Button>
-            <Button type="button" variant="outline" onClick={onClose}>
-              ביטול
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+        <div className="flex gap-2">
+          <Button onClick={handleCreateAlert} disabled={isLoading} className="flex-1">
+            {isLoading ? 'יוצר התראה...' : 'צור התראה'}
+          </Button>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
+            בטל
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

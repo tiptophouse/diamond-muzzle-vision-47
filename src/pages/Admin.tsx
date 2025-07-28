@@ -19,6 +19,7 @@ import { UserDetailsModal } from '@/components/admin/UserDetailsModal';
 import { OnboardingMessagePreview } from '@/components/admin/OnboardingMessagePreview';
 import { PaymentManagement } from '@/components/admin/PaymentManagement';
 import { BlockedUsersManager } from '@/components/admin/BlockedUsersManager';
+import { DailyActivityDashboard } from '@/components/admin/DailyActivityDashboard';
 import { useAdminActions } from '@/hooks/useAdminActions';
 
 const AdminPage = () => {
@@ -61,10 +62,14 @@ const AdminPage = () => {
   return (
     <AdminGuard>
       <div className="container mx-auto px-4 py-8 space-y-8">
-        <AdminHeader />
+        <AdminHeader 
+          onExportData={() => console.log('Export functionality')}
+          onAddUser={() => console.log('Add user functionality')}
+        />
         
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+        <Tabs defaultValue="activity" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-7">
+            <TabsTrigger value="activity">Today's Activity</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="outreach">Outreach</TabsTrigger>
@@ -72,6 +77,10 @@ const AdminPage = () => {
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="management">Management</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="activity" className="space-y-6">
+            <DailyActivityDashboard />
+          </TabsContent>
 
           <TabsContent value="overview" className="space-y-6">
             <AdminStatsGrid 
@@ -84,11 +93,11 @@ const AdminPage = () => {
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
               getUserEngagementScore={getUserEngagementScore}
-              onBlockUser={handleBlockUser}
-              onUnblockUser={handleUnblockUser}
-              onDeleteUser={handleDeleteUser}
-              onPromoteUser={handlePromoteUser}
-              onViewDetails={setSelectedUserId}
+              isUserBlocked={(telegramId: number) => false}
+              onViewUser={(user: any) => setSelectedUserId(user.id)}
+              onEditUser={(user: any) => console.log('Edit user:', user)}
+              onToggleBlock={(user: any) => handleBlockUser(user)}
+              onDeleteUser={(user: any) => handleDeleteUser(user)}
             />
           </TabsContent>
 
@@ -99,11 +108,11 @@ const AdminPage = () => {
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
               getUserEngagementScore={getUserEngagementScore}
-              onBlockUser={handleBlockUser}
-              onUnblockUser={handleUnblockUser}
-              onDeleteUser={handleDeleteUser}
-              onPromoteUser={handlePromoteUser}
-              onViewDetails={setSelectedUserId}
+              isUserBlocked={(telegramId: number) => false}
+              onViewUser={(user: any) => setSelectedUserId(user.id)}
+              onEditUser={(user: any) => console.log('Edit user:', user)}
+              onToggleBlock={(user: any) => handleBlockUser(user)}
+              onDeleteUser={(user: any) => handleDeleteUser(user)}
             />
           </TabsContent>
 
@@ -126,7 +135,9 @@ const AdminPage = () => {
             />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <TestNotificationSender />
-              <OnboardingMessagePreview />
+              <OnboardingMessagePreview 
+                sessionUsers={[]}
+              />
             </div>
           </TabsContent>
 
@@ -168,7 +179,7 @@ const AdminPage = () => {
 
         {selectedUserId && (
           <UserDetailsModal
-            userId={selectedUserId}
+            user={filteredUsers.find(u => u.id === selectedUserId)}
             onClose={() => setSelectedUserId(null)}
           />
         )}
