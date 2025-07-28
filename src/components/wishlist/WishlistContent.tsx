@@ -1,109 +1,85 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Heart, Trash2, ExternalLink, Phone, Plus } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Trash2, Bell, BellOff, Plus, Settings } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { CreateWishlistAlert } from './CreateWishlistAlert';
 
-interface DiamondData {
-  stockNumber: string;
-  shape: string;
-  carat: number;
-  color: string;
-  clarity: string;
-  cut?: string;
-  price?: number;
-}
-
 interface WishlistItem {
   id: string;
   diamond_stock_number: string;
-  diamond_owner_telegram_id: number;
-  diamond_data: DiamondData;
+  diamond_data: any;
+  created_at: string;
+}
+
+interface WishlistAlert {
+  id: string;
+  shape?: string;
+  min_carat?: number;
+  max_carat?: number;
+  colors: string[];
+  clarities: string[];
+  cuts: string[];
+  polish: string[];
+  symmetry: string[];
+  max_price_per_carat?: number;
+  is_active: boolean;
+  alert_name?: string;
   created_at: string;
 }
 
 export function WishlistContent() {
   const { user } = useTelegramAuth();
-  const { toast } = useToast();
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
+  const [wishlistAlerts, setWishlistAlerts] = useState<WishlistAlert[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateAlert, setShowCreateAlert] = useState(false);
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchWishlist();
-    }
-  }, [user?.id]);
+  const fetchWishlistData = async () => {
+    if (!user?.id) return;
 
-  const fetchWishlist = async () => {
     try {
       setIsLoading(true);
-      
-      await supabase.functions.invoke('set-session-context', {
-        body: {
-          setting_name: 'app.current_user_id',
-          setting_value: user?.id?.toString()
-        }
-      });
 
-      const { data, error } = await supabase
+      // Fetch wishlist items
+      const { data: items, error: itemsError } = await supabase
         .from('wishlist')
         .select('*')
-        .eq('visitor_telegram_id', user?.id)
+        .eq('visitor_telegram_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (itemsError) throw itemsError;
 
-      const processedItems = (data || []).map(item => {
-        let diamondData: DiamondData;
-        
-        // Handle the Json type conversion safely
-        if (typeof item.diamond_data === 'object' && item.diamond_data !== null && !Array.isArray(item.diamond_data)) {
-          const data = item.diamond_data as { [key: string]: any };
-          diamondData = {
-            stockNumber: data.stockNumber || '',
-            shape: data.shape || '',
-            carat: data.carat || 0,
-            color: data.color || '',
-            clarity: data.clarity || '',
-            cut: data.cut || '',
-            price: data.price || 0
-          };
-        } else {
-          diamondData = {
-            stockNumber: '',
-            shape: '',
-            carat: 0,
-            color: '',
-            clarity: '',
-            cut: '',
-            price: 0
-          };
-        }
+      // Fetch wishlist alerts
+      const { data: alerts, error: alertsError } = await supabase
+        .from('wishlist_alerts')
+        .select('*')
+        .eq('telegram_id', user.id)
+        .order('created_at', { ascending: false });
 
-        return {
-          ...item,
-          diamond_data: diamondData
-        };
-      }) as WishlistItem[];
+      if (alertsError) throw alertsError;
 
-      setWishlistItems(processedItems);
+      setWishlistItems(items || []);
+      setWishlistAlerts(alerts || []);
     } catch (error) {
-      console.error('Error fetching wishlist:', error);
+      console.error('Error fetching wishlist data:', error);
       toast({
-        title: "שגיאה בטעינת רשימת המועדפים",
-        description: "לא ניתן לטעון את רשימת המועדפים כרגע",
+        title: "שגיאה",
+        description: "שגיאה בטעינת נתוני רשימת המשאלות",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchWishlistData();
+  }, [user?.id]);
 
   const removeFromWishlist = async (itemId: string) => {
     try {
@@ -114,163 +90,244 @@ export function WishlistContent() {
 
       if (error) throw error;
 
-      setWishlistItems(prev => prev.filter(item => item.id !== itemId));
-      
+      setWishlistItems(items => items.filter(item => item.id !== itemId));
       toast({
-        title: "✅ הוסר מרשימת המועדפים",
-        description: "היהלום הוסר בהצלחה מרשימת המועדפים שלך",
+        title: "הצלחה",
+        description: "היהלום הוסר מרשימת המשאלות",
       });
     } catch (error) {
       console.error('Error removing from wishlist:', error);
       toast({
-        title: "❌ שגיאה בהסרה",
-        description: "לא ניתן להסיר את היהלום מרשימת המועדפים כרגע",
+        title: "שגיאה",
+        description: "שגיאה בהסרת היהלום מרשימת המשאלות",
         variant: "destructive",
       });
     }
   };
 
-  const contactSeller = (ownerTelegramId: number) => {
-    window.open(`https://t.me/${ownerTelegramId}`, '_blank');
+  const toggleAlert = async (alertId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('wishlist_alerts')
+        .update({ is_active: !currentStatus })
+        .eq('id', alertId);
+
+      if (error) throw error;
+
+      setWishlistAlerts(alerts => 
+        alerts.map(alert => 
+          alert.id === alertId 
+            ? { ...alert, is_active: !currentStatus }
+            : alert
+        )
+      );
+
+      toast({
+        title: "הצלחה",
+        description: currentStatus ? "התראה בוטלה" : "התראה הופעלה",
+      });
+    } catch (error) {
+      console.error('Error toggling alert:', error);
+      toast({
+        title: "שגיאה",
+        description: "שגיאה בעדכון ההתראה",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteAlert = async (alertId: string) => {
+    try {
+      const { error } = await supabase
+        .from('wishlist_alerts')
+        .delete()
+        .eq('id', alertId);
+
+      if (error) throw error;
+
+      setWishlistAlerts(alerts => alerts.filter(alert => alert.id !== alertId));
+      toast({
+        title: "הצלחה",
+        description: "התראה נמחקה בהצלחה",
+      });
+    } catch (error) {
+      console.error('Error deleting alert:', error);
+      toast({
+        title: "שגיאה",
+        description: "שגיאה במחיקת התראה",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
+      <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="animate-pulse text-lg">טוען רשימת מועדפים...</div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">טוען רשימת משאלות...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header with Create Alert Button */}
-      <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold mb-2">רשימת המועדפים שלי</h1>
-        <p className="text-muted-foreground mb-4">
-          {wishlistItems.length} יהלומים ברשימת המועדפים שלך
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl font-bold">רשימת המשאלות שלי</h1>
+        <p className="text-muted-foreground">
+          נהל את היהלומים המועדפים עליך והגדר התראות מחיר אוטומטיות
         </p>
-        
-        <Button
-          onClick={() => setShowCreateAlert(true)}
-          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-          size="lg"
-        >
-          <Plus className="h-5 w-5 mr-2" />
-          צור התראת מחיר מותאמת אישית
-        </Button>
       </div>
 
-      {wishlistItems.length === 0 && (
-        <Card className="max-w-md mx-auto">
-          <CardContent className="text-center p-8">
-            <Heart className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">רשימת המועדפים ריקה</h3>
-            <p className="text-muted-foreground mb-4">
-              עדיין לא הוספת יהלומים לרשימת המועדפים שלך
-            </p>
-            <div className="space-y-2">
-              <Button 
-                onClick={() => window.location.href = '/store'}
-                className="bg-blue-600 hover:bg-blue-700 w-full"
-              >
-                עבור לחנות
-              </Button>
-              <Button
-                onClick={() => setShowCreateAlert(true)}
-                variant="outline"
-                className="w-full"
-              >
-                צור התראת מחיר
-              </Button>
+      {/* Create Alert Button */}
+      <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
+        <CardContent className="text-center py-8">
+          <div className="space-y-4">
+            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
+              <Bell className="w-8 h-8 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold mb-2">צור התראת מחיר מותאמת אישית</h3>
+              <p className="text-muted-foreground mb-4">
+                הגדר קריטריונים מדויקים וקבל הודעות טלגרם אוטומטיות כשיהלומים מתאימים זמינים במחיר שמתאים לך
+              </p>
+            </div>
+            <Button 
+              onClick={() => setShowCreateAlert(true)}
+              size="lg"
+              className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              צור התראת מחיר חדשה
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Wishlist Alerts */}
+      {wishlistAlerts.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              התראות המחיר שלי ({wishlistAlerts.length})
+            </CardTitle>
+            <CardDescription>
+              נהל את ההתראות האוטומטיות שלך
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {wishlistAlerts.map((alert) => (
+                <div key={alert.id} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-medium">{alert.alert_name || 'התראה ללא שם'}</h4>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {alert.shape && <Badge variant="outline">צורה: {alert.shape}</Badge>}
+                        {alert.min_carat && <Badge variant="outline">מ-{alert.min_carat} קראט</Badge>}
+                        {alert.max_carat && <Badge variant="outline">עד {alert.max_carat} קראט</Badge>}
+                        {alert.max_price_per_carat && <Badge variant="outline">עד ${alert.max_price_per_carat}/קראט</Badge>}
+                        {alert.colors.length > 0 && <Badge variant="outline">צבעים: {alert.colors.join(', ')}</Badge>}
+                        {alert.clarities.length > 0 && <Badge variant="outline">בהירות: {alert.clarities.join(', ')}</Badge>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleAlert(alert.id, alert.is_active)}
+                        className={alert.is_active ? "text-green-600" : "text-gray-400"}
+                      >
+                        {alert.is_active ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteAlert(alert.id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Wishlist Items */}
-      <div className="grid gap-4">
-        {wishlistItems.map((item) => (
-          <Card key={item.id} className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <div>
-                <CardTitle className="text-lg">
-                  יהלום {item.diamond_data.stockNumber}
-                </CardTitle>
-                <CardDescription>
-                  נוסף ב{new Date(item.created_at).toLocaleDateString('he-IL')}
-                </CardDescription>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => removeFromWishlist(item.id)}
-                className="text-red-600 hover:text-red-700"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <span className="text-sm font-medium">צורה:</span>
-                  <Badge variant="secondary" className="ml-2">
-                    {item.diamond_data.shape}
-                  </Badge>
+      {/* Saved Diamonds */}
+      {wishlistItems.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>יהלומים שמורים ({wishlistItems.length})</CardTitle>
+            <CardDescription>
+              יהלומים שהוספת לרשימת המשאלות שלך
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2">
+              {wishlistItems.map((item) => (
+                <div key={item.id} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-2">
+                      <h4 className="font-medium">יהלום #{item.diamond_stock_number}</h4>
+                      {item.diamond_data && (
+                        <div className="text-sm text-muted-foreground space-y-1">
+                          <div>{item.diamond_data.shape} - {item.diamond_data.weight} קראט</div>
+                          <div>{item.diamond_data.color} / {item.diamond_data.clarity}</div>
+                          <div>${item.diamond_data.price_per_carat}/קראט</div>
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeFromWishlist(item.id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-sm font-medium">קרט:</span>
-                  <span className="ml-2">{item.diamond_data.carat}</span>
-                </div>
-                <div>
-                  <span className="text-sm font-medium">צבע:</span>
-                  <Badge variant="outline" className="ml-2">
-                    {item.diamond_data.color}
-                  </Badge>
-                </div>
-                <div>
-                  <span className="text-sm font-medium">בהירות:</span>
-                  <Badge variant="outline" className="ml-2">
-                    {item.diamond_data.clarity}
-                  </Badge>
-                </div>
-              </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => contactSeller(item.diamond_owner_telegram_id)}
-                  className="bg-green-600 hover:bg-green-700 flex-1"
-                  size="sm"
-                >
-                  <Phone className="h-4 w-4 mr-2" />
-                  צור קשר עם המוכר
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.open(`/diamond/${item.diamond_stock_number}`, '_blank')}
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </Button>
+      {/* Empty State */}
+      {wishlistItems.length === 0 && wishlistAlerts.length === 0 && (
+        <Card>
+          <CardContent className="text-center py-12">
+            <div className="space-y-4">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto">
+                <Bell className="w-8 h-8 text-muted-foreground" />
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              <div>
+                <h3 className="text-lg font-medium">רשימת המשאלות ריקה</h3>
+                <p className="text-muted-foreground">
+                  התחל בצירת התראות מחיר מותאמות אישית או הוסף יהלומים לרשימת המשאלות
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Create Alert Modal */}
-      {showCreateAlert && (
-        <CreateWishlistAlert
-          isOpen={showCreateAlert}
-          onClose={() => setShowCreateAlert(false)}
-          onSuccess={() => {
-            setShowCreateAlert(false);
-            fetchWishlist();
-          }}
-        />
-      )}
+      <CreateWishlistAlert
+        isOpen={showCreateAlert}
+        onClose={() => setShowCreateAlert(false)}
+        onSuccess={() => {
+          fetchWishlistData();
+          setShowCreateAlert(false);
+        }}
+      />
     </div>
   );
 }
