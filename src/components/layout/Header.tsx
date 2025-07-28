@@ -1,43 +1,28 @@
 
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { TutorialTrigger } from '@/components/tutorial/TutorialTrigger';
-import { Diamond } from 'lucide-react';
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 
 export function Header() {
-  const { user } = useTelegramAuth();
+  const { hapticFeedback } = useTelegramWebApp();
+
+  const handleMenuClick = () => {
+    hapticFeedback.impact('light');
+  };
 
   return (
-    <header className="bg-card/60 backdrop-blur-xl border-b border-border/30 px-4 sm:px-6 py-4 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg flex-shrink-0 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <Diamond className="text-white h-5 w-5 sm:h-6 sm:w-6" />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight truncate bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
-                BrilliantBot
-              </h1>
-              <p className="text-xs text-muted-foreground hidden sm:block font-medium">AI Diamond Assistant</p>
-            </div>
-          </div>
+    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center">
+        <div className="mr-4 flex">
+          <a className="mr-6 flex items-center space-x-2" href="/">
+            <span className="font-bold">Diamond Manager</span>
+          </a>
         </div>
         
-        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-          <TutorialTrigger />
-          
-          {user && (
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="hidden md:block text-sm text-muted-foreground">
-                Welcome, <span className="font-semibold text-foreground">{user.first_name}</span>
-              </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary to-primary-dark rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-primary/20">
-                <span className="text-sm sm:text-base font-bold text-white">
-                  {user.first_name?.charAt(0)}
-                </span>
-              </div>
-            </div>
-          )}
+        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+          <Button variant="ghost" size="sm" onClick={handleMenuClick}>
+            Menu
+          </Button>
         </div>
       </div>
     </header>

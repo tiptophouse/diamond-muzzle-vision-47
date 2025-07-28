@@ -1,7 +1,8 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { supabase } from '@/integrations/supabase/client';
 import { Diamond } from '@/components/inventory/InventoryTable';
 
@@ -9,14 +10,16 @@ export function useWishlist() {
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useTelegramAuth();
   const { toast } = useToast();
+  const { hapticFeedback } = useTelegramWebApp();
 
-  const addToWishlist = async (diamond: Diamond, ownerTelegramId: number) => {
+  const addToWishlist = useCallback(async (diamond: Diamond, ownerTelegramId: number) => {
     if (!user?.id) {
       toast({
-        title: "Authentication Required",
+        title: "❌ Authentication Required",
         description: "Please log in to add items to wishlist",
         variant: "destructive",
       });
+      hapticFeedback.notification('error');
       return false;
     }
 
@@ -32,9 +35,10 @@ export function useWishlist() {
 
       if (existing) {
         toast({
-          title: "Already in Wishlist",
+          title: "💎 Already in Wishlist",
           description: "This diamond is already in your wishlist",
         });
+        hapticFeedback.notification('warning');
         return false;
       }
 
@@ -49,9 +53,11 @@ export function useWishlist() {
           color: diamond.color,
           clarity: diamond.clarity,
           cut: diamond.cut,
+          price: diamond.price,
           price_per_carat: diamond.price / diamond.carat,
           imageUrl: diamond.imageUrl,
           certificateUrl: diamond.certificateUrl,
+          gem360Url: diamond.gem360Url,
           lab: diamond.lab,
         },
       });
@@ -60,24 +66,29 @@ export function useWishlist() {
 
       toast({
         title: "❤️ Added to Wishlist",
-        description: "Diamond has been added to your wishlist",
+        description: `${diamond.carat}ct ${diamond.shape} diamond added successfully`,
       });
+      hapticFeedback.notification('success');
       return true;
     } catch (error) {
-      console.error('Error adding to wishlist:', error);
+      console.error('❌ Error adding to wishlist:', error);
       toast({
-        title: "❌ Error",
-        description: "Failed to add to wishlist",
+        title: "❌ Failed to Add",
+        description: "Could not add diamond to wishlist. Please try again.",
         variant: "destructive",
       });
+      hapticFeedback.notification('error');
       return false;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id, toast, hapticFeedback]);
 
-  const removeFromWishlist = async (stockNumber: string) => {
-    if (!user?.id) return false;
+  const removeFromWishlist = useCallback(async (stockNumber: string) => {
+    if (!user?.id) {
+      hapticFeedback.notification('error');
+      return false;
+    }
 
     setIsLoading(true);
     try {
@@ -90,24 +101,26 @@ export function useWishlist() {
       if (error) throw error;
 
       toast({
-        title: "✅ Removed",
-        description: "Diamond removed from wishlist",
+        title: "✅ Removed from Wishlist",
+        description: "Diamond successfully removed",
       });
+      hapticFeedback.notification('success');
       return true;
     } catch (error) {
-      console.error('Error removing from wishlist:', error);
+      console.error('❌ Error removing from wishlist:', error);
       toast({
-        title: "❌ Error",
-        description: "Failed to remove from wishlist",
+        title: "❌ Removal Failed",
+        description: "Could not remove diamond from wishlist",
         variant: "destructive",
       });
+      hapticFeedback.notification('error');
       return false;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id, toast, hapticFeedback]);
 
-  const checkIsInWishlist = async (stockNumber: string) => {
+  const checkIsInWishlist = useCallback(async (stockNumber: string) => {
     if (!user?.id) return false;
 
     try {
@@ -122,7 +135,7 @@ export function useWishlist() {
     } catch (error) {
       return false;
     }
-  };
+  }, [user?.id]);
 
   return {
     addToWishlist,
