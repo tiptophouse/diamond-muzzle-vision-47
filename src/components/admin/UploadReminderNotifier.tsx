@@ -12,34 +12,24 @@ export function UploadReminderNotifier() {
   const [isLoading, setIsLoading] = useState(false);
   const { userCounts, stats, loading: diamondCountsLoading, forceRefresh } = useUserDiamondCounts();
 
-  // Get users with EXACTLY zero diamonds from our accurate FastAPI data
-  const usersWithoutInventory = userCounts.filter(user => user.diamond_count === 0);
-
   console.log('📊 UploadReminderNotifier: Total users:', userCounts.length);
-  console.log('📊 UploadReminderNotifier: Users with 0 diamonds:', usersWithoutInventory.length);
-  console.log('📊 UploadReminderNotifier: Sample users with diamonds:', 
-    userCounts.filter(u => u.diamond_count > 0).slice(0, 3).map(u => ({
-      name: u.first_name,
-      count: u.diamond_count
-    }))
-  );
 
   const sendEnhancedWelcomeMessage = async () => {
     try {
       setIsLoading(true);
       
-      if (usersWithoutInventory.length === 0) {
+      if (userCounts.length === 0) {
         toast({
           title: "No Users Found",
-          description: "All users already have diamonds uploaded!",
+          description: "No users found in the system!",
         });
         return;
       }
 
-      // Call edge function to send enhanced welcome messages
+      // Call edge function to send enhanced welcome messages to ALL users
       const { data, error } = await supabase.functions.invoke('send-upload-reminder', {
         body: {
-          users: usersWithoutInventory,
+          users: userCounts, // Send to ALL users, not filtered
           includeAdmin: true
         }
       });
@@ -48,7 +38,7 @@ export function UploadReminderNotifier() {
 
       toast({
         title: "Enhanced Welcome Messages Sent!",
-        description: `Successfully sent comprehensive welcome messages with 8-button navigation to ${usersWithoutInventory.length} users (including admin preview).`,
+        description: `Successfully sent comprehensive welcome messages with 8-button navigation to ${userCounts.length} users (including admin preview).`,
       });
 
     } catch (error) {
@@ -69,7 +59,7 @@ export function UploadReminderNotifier() {
         <CardContent className="p-6">
           <div className="flex items-center justify-center space-x-2">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <span>Loading accurate diamond counts from FastAPI...</span>
+            <span>Loading user data from FastAPI...</span>
           </div>
         </CardContent>
       </Card>
@@ -84,7 +74,7 @@ export function UploadReminderNotifier() {
           Enhanced Welcome Message Campaign
         </CardTitle>
         <CardDescription>
-          Send comprehensive welcome messages with full feature overview and 8-button navigation to users who haven't uploaded inventory yet
+          Send comprehensive welcome messages with full feature overview and 8-button navigation to ALL users in the system
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -102,18 +92,18 @@ export function UploadReminderNotifier() {
         <div className="bg-muted/50 p-4 rounded-lg">
           <h4 className="font-medium mb-2">What this will do:</h4>
           <ul className="text-sm text-muted-foreground space-y-1">
-            <li>• Find all users who haven't uploaded any diamonds (verified via FastAPI)</li>
-            <li>• Send them the enhanced welcome message with comprehensive feature overview</li>
+            <li>• Send enhanced welcome messages to ALL users in the system</li>
             <li>• Include comprehensive 8-button navigation keyboard</li>
             <li>• Send follow-up tutorial message after 3 seconds</li>
             <li>• Include you (admin) in the notification to see the message</li>
+            <li>• Message will be sent regardless of user's diamond count</li>
           </ul>
         </div>
 
         <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
             <Users className="h-4 w-4 text-blue-600" />
-            <span className="font-medium">Accurate User Statistics (from FastAPI)</span>
+            <span className="font-medium">User Statistics (from FastAPI)</span>
             <Button
               onClick={forceRefresh}
               variant="ghost"
@@ -129,12 +119,12 @@ export function UploadReminderNotifier() {
               <span className="ml-2 font-medium">{stats.totalUsers}</span>
             </div>
             <div>
-              <span className="text-muted-foreground">Need Welcome:</span>
-              <span className="ml-2 font-medium text-orange-600">{stats.usersWithZeroDiamonds}</span>
+              <span className="text-muted-foreground">With Diamonds:</span>
+              <span className="ml-2 font-medium text-green-600">{stats.usersWithDiamonds}</span>
             </div>
             <div>
-              <span className="text-muted-foreground">Have Diamonds:</span>
-              <span className="ml-2 font-medium text-green-600">{stats.usersWithDiamonds}</span>
+              <span className="text-muted-foreground">Without Diamonds:</span>
+              <span className="ml-2 font-medium text-orange-600">{stats.usersWithZeroDiamonds}</span>
             </div>
             <div>
               <span className="text-muted-foreground">Total Diamonds:</span>
@@ -143,34 +133,23 @@ export function UploadReminderNotifier() {
           </div>
         </div>
 
-        {stats.usersWithZeroDiamonds === 0 ? (
-          <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-            <h4 className="font-medium mb-2 text-green-800 dark:text-green-200">
-              🎉 Great news! All users have uploaded diamonds!
-            </h4>
-            <p className="text-sm text-green-700 dark:text-green-300">
-              Every user in your system has at least one diamond uploaded. No enhanced welcome messages needed.
-            </p>
+        <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
+          <h4 className="font-medium mb-2 text-orange-800 dark:text-orange-200">
+            All users will receive the enhanced welcome message ({userCounts.length}):
+          </h4>
+          <div className="text-sm space-y-1 max-h-32 overflow-y-auto">
+            {userCounts.slice(0, 10).map((user) => (
+              <div key={user.telegram_id} className="text-orange-700 dark:text-orange-300">
+                • {user.first_name} {user.last_name} (@{user.username || 'no username'}) - {user.diamond_count} diamonds
+              </div>
+            ))}
+            {userCounts.length > 10 && (
+              <div className="text-orange-600 dark:text-orange-400 italic">
+                ...and {userCounts.length - 10} more users
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
-            <h4 className="font-medium mb-2 text-orange-800 dark:text-orange-200">
-              Users who will receive enhanced welcome messages ({usersWithoutInventory.length}):
-            </h4>
-            <div className="text-sm space-y-1 max-h-32 overflow-y-auto">
-              {usersWithoutInventory.slice(0, 10).map((user) => (
-                <div key={user.telegram_id} className="text-orange-700 dark:text-orange-300">
-                  • {user.first_name} {user.last_name} (@{user.username || 'no username'}) - {user.diamond_count} diamonds
-                </div>
-              ))}
-              {usersWithoutInventory.length > 10 && (
-                <div className="text-orange-600 dark:text-orange-400 italic">
-                  ...and {usersWithoutInventory.length - 10} more users
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        </div>
 
         <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
           <h4 className="font-medium mb-2 text-green-800 dark:text-green-200">Message Preview (Hebrew):</h4>
@@ -187,11 +166,11 @@ export function UploadReminderNotifier() {
         <div className="flex gap-2">
           <Button 
             onClick={sendEnhancedWelcomeMessage}
-            disabled={isLoading || usersWithoutInventory.length === 0}
+            disabled={isLoading || userCounts.length === 0}
             className="bg-blue-600 hover:bg-blue-700"
           >
             <Send className="h-4 w-4 mr-2" />
-            {isLoading ? 'Sending Enhanced Welcome...' : `Send Enhanced Welcome Messages (${usersWithoutInventory.length} users)`}
+            {isLoading ? 'Sending Enhanced Welcome...' : `Send Enhanced Welcome Messages to ALL Users (${userCounts.length})`}
           </Button>
         </div>
 
@@ -201,7 +180,7 @@ export function UploadReminderNotifier() {
             Primary button will direct users to: /upload-single-stone
           </p>
           <p className="mt-1 text-green-600">
-            ✓ Now sending enhanced welcome message with comprehensive 8-button navigation and tutorial follow-up
+            ✓ Now sending enhanced welcome message with comprehensive 8-button navigation to ALL users
           </p>
         </div>
       </CardContent>
