@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, Send, Users, ExternalLink, RefreshCw } from 'lucide-react';
 import { useUserDiamondCounts } from '@/hooks/admin/useUserDiamondCounts';
@@ -36,7 +36,7 @@ export function UploadReminderNotifier() {
         return;
       }
 
-      // Call edge function to send notifications
+      // Call edge function to send enhanced welcome messages
       const { data, error } = await supabase.functions.invoke('send-upload-reminder', {
         body: {
           users: usersWithoutInventory,
@@ -47,8 +47,8 @@ export function UploadReminderNotifier() {
       if (error) throw error;
 
       toast({
-        title: "Notifications Sent!",
-        description: `Successfully sent upload reminders to ${usersWithoutInventory.length} users (including admin).`,
+        title: "Enhanced Welcome Messages Sent!",
+        description: `Successfully sent comprehensive welcome messages with 8-button navigation to ${usersWithoutInventory.length} users (including admin preview).`,
       });
 
     } catch (error) {
@@ -81,19 +81,31 @@ export function UploadReminderNotifier() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Upload className="h-5 w-5" />
-          Upload Reminder Notifications
+          Enhanced Welcome Message Campaign
         </CardTitle>
         <CardDescription>
-          Send Telegram notifications to users who haven't uploaded their inventory yet (based on real FastAPI diamond counts)
+          Send comprehensive welcome messages with full feature overview and 8-button navigation to users who haven't uploaded inventory yet
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+          <h4 className="font-medium mb-2">Enhanced Message Features:</h4>
+          <ul className="text-sm text-muted-foreground space-y-1">
+            <li>• Comprehensive platform overview with detailed feature explanations</li>
+            <li>• 8-button inline keyboard: Upload, Store, AI Chat, Analytics, Inventory, Dashboard, Notifications, Settings</li>
+            <li>• Follow-up tutorial message with interactive guide</li>
+            <li>• Multi-language support (Hebrew/English based on user preference)</li>
+            <li>• Professional business-focused messaging for diamond traders</li>
+          </ul>
+        </div>
+
         <div className="bg-muted/50 p-4 rounded-lg">
           <h4 className="font-medium mb-2">What this will do:</h4>
           <ul className="text-sm text-muted-foreground space-y-1">
             <li>• Find all users who haven't uploaded any diamonds (verified via FastAPI)</li>
-            <li>• Send them a personalized Telegram message</li>
-            <li>• Include a deep link button that opens the upload page directly</li>
+            <li>• Send them the same enhanced welcome message as new users receive</li>
+            <li>• Include comprehensive 8-button navigation keyboard</li>
+            <li>• Send follow-up tutorial message after 3 seconds</li>
             <li>• Include you (admin) in the notification to see the message</li>
           </ul>
         </div>
@@ -117,7 +129,7 @@ export function UploadReminderNotifier() {
               <span className="ml-2 font-medium">{stats.totalUsers}</span>
             </div>
             <div>
-              <span className="text-muted-foreground">Need Upload:</span>
+              <span className="text-muted-foreground">Need Welcome:</span>
               <span className="ml-2 font-medium text-orange-600">{stats.usersWithZeroDiamonds}</span>
             </div>
             <div>
@@ -137,13 +149,13 @@ export function UploadReminderNotifier() {
               🎉 Great news! All users have uploaded diamonds!
             </h4>
             <p className="text-sm text-green-700 dark:text-green-300">
-              Every user in your system has at least one diamond uploaded. No upload reminders needed.
+              Every user in your system has at least one diamond uploaded. No enhanced welcome messages needed.
             </p>
           </div>
         ) : (
           <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
             <h4 className="font-medium mb-2 text-orange-800 dark:text-orange-200">
-              Users who will receive notifications ({usersWithoutInventory.length}):
+              Users who will receive enhanced welcome messages ({usersWithoutInventory.length}):
             </h4>
             <div className="text-sm space-y-1 max-h-32 overflow-y-auto">
               {usersWithoutInventory.slice(0, 10).map((user) => (
@@ -160,6 +172,18 @@ export function UploadReminderNotifier() {
           </div>
         )}
 
+        <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+          <h4 className="font-medium mb-2 text-green-800 dark:text-green-200">Message Preview (Hebrew):</h4>
+          <div className="text-sm space-y-1 text-green-700 dark:text-green-300">
+            <p><strong>🎉 ברוכים הבאים ל-Diamond Muzzle, [שם המשתמש]!</strong></p>
+            <p>💎 הצטרפת לפלטפורמת המסחר ביהלומים המתקדמת בעולם!</p>
+            <p><strong>🔍 ניטור קבוצות חכם 24/7</strong> - התראות מיידיות על אבנים שלך</p>
+            <p><strong>📊 ניהול מלאי מתקדם</strong> - העלאה קלה מתעודות GIA</p>
+            <p><strong>🤖 בינה מלאכותית</strong> - צ'אט חכם עם המלאי</p>
+            <p className="text-muted-foreground">+ 8 לחצנים אינטראקטיביים ומדריך עוקב</p>
+          </div>
+        </div>
+
         <div className="flex gap-2">
           <Button 
             onClick={sendUploadReminder}
@@ -167,17 +191,17 @@ export function UploadReminderNotifier() {
             className="bg-blue-600 hover:bg-blue-700"
           >
             <Send className="h-4 w-4 mr-2" />
-            {isLoading ? 'Sending...' : `Send Upload Reminders (${usersWithoutInventory.length} users)`}
+            {isLoading ? 'Sending Enhanced Welcome...' : `Send Enhanced Welcome Messages (${usersWithoutInventory.length} users)`}
           </Button>
         </div>
 
         <div className="text-xs text-muted-foreground border-t pt-2">
           <p className="flex items-center gap-1">
             <ExternalLink className="h-3 w-3" />
-            Deep link will direct users to: /upload-single-stone
+            Primary button will direct users to: /upload-single-stone
           </p>
           <p className="mt-1 text-green-600">
-            ✓ Now using accurate FastAPI diamond counts with real-time verification
+            ✓ Now sending the same enhanced welcome message with comprehensive 8-button navigation
           </p>
         </div>
       </CardContent>

@@ -1,3 +1,4 @@
+
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 
 const corsHeaders = {
@@ -8,6 +9,8 @@ const corsHeaders = {
 interface User {
   telegram_id: number;
   first_name: string;
+  last_name?: string;
+  username?: string;
   language_code?: string;
 }
 
@@ -30,27 +33,20 @@ serve(async (req) => {
       throw new Error('Telegram bot token not configured');
     }
 
-    console.log(`📤 Sending upload reminders to ${users.length} users (includeAdmin: ${includeAdmin})`);
+    console.log(`📤 Sending enhanced upload reminders to ${users.length} users`);
 
-    const results = await Promise.allSettled(
-      users.map(async (user) => {
+    const results = [];
+    
+    for (const user of users) {
+      try {
         // Determine language - default to Hebrew unless specifically English
         const isEnglish = user.language_code?.startsWith('en') || false;
         
-        // Generate message in the appropriate language
-        const message = generateUploadReminderMessage(user.first_name, isEnglish);
+        // Generate enhanced welcome message (same as welcome message)
+        const message = generateEnhancedWelcomeMessage(user.first_name, isEnglish);
         
-        // Create deep link button for Telegram mini app with appropriate language
-        const keyboard = {
-          inline_keyboard: [[
-            {
-              text: isEnglish ? "📤 Upload Your Diamonds" : "📤 העלאת יהלומים",
-              web_app: {
-                url: "https://miniapp.mazalbot.com/upload-single-stone"
-              }
-            }
-          ]]
-        };
+        // Create comprehensive feature keyboard
+        const keyboard = createComprehensiveKeyboard(isEnglish);
 
         const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
         
@@ -63,71 +59,89 @@ serve(async (req) => {
             chat_id: user.telegram_id,
             text: message,
             parse_mode: 'HTML',
-            reply_markup: keyboard
+            reply_markup: keyboard,
+            disable_web_page_preview: false
           })
         });
 
         if (!response.ok) {
           const errorData = await response.text();
-          throw new Error(`Failed to send to ${user.telegram_id}: ${errorData}`);
+          throw new Error(`Failed to send message to ${user.telegram_id}: ${errorData}`);
         }
 
-        console.log(`✅ Message sent to ${user.first_name} (${user.telegram_id})`);
-        return { success: true, user: user.telegram_id };
-      })
-    );
+        console.log(`✅ Enhanced reminder sent to ${user.first_name} (${user.telegram_id})`);
 
-    // If includeAdmin, also send to admin
+        // Send follow-up tutorial message after a short delay
+        setTimeout(async () => {
+          try {
+            const tutorialMessage = generateTutorialMessage(user.first_name, isEnglish);
+            const tutorialKeyboard = createTutorialKeyboard(user.telegram_id, isEnglish);
+
+            await fetch(telegramUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                chat_id: user.telegram_id,
+                text: tutorialMessage,
+                parse_mode: 'HTML',
+                reply_markup: tutorialKeyboard
+              })
+            });
+
+            console.log(`✅ Tutorial message sent to ${user.first_name}`);
+          } catch (error) {
+            console.error(`❌ Failed to send tutorial message to ${user.first_name}:`, error);
+          }
+        }, 3000);
+
+        results.push({ user: user.telegram_id, success: true });
+        
+        // Add delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (error) {
+        console.error(`❌ Failed to send reminder to ${user.telegram_id}:`, error);
+        results.push({ user: user.telegram_id, success: false, error: error.message });
+      }
+    }
+
+    // Also send to admin if requested
     if (includeAdmin) {
       try {
-        // Get admin telegram ID from app settings or use fallback
-        const adminId = 2138564172; // You can configure this in app_settings table
+        const adminMessage = generateEnhancedWelcomeMessage("Admin", false);
+        const adminKeyboard = createComprehensiveKeyboard(false);
         
-        const adminMessage = generateAdminPreviewMessage(users.length);
-        const adminKeyboard = {
-          inline_keyboard: [[
-            {
-              text: "📤 Upload Your Diamonds",
-              web_app: {
-                url: "https://miniapp.mazalbot.com/upload-single-stone"
-              }
-            }
-          ]]
-        };
-
-        const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
-        
-        await fetch(telegramUrl, {
+        const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            chat_id: adminId,
-            text: adminMessage,
+            chat_id: 2138564172, // Admin telegram ID
+            text: `📊 <b>Admin Preview - Enhanced Upload Reminder</b>\n\nThis is what users received:\n\n${adminMessage}`,
             parse_mode: 'HTML',
             reply_markup: adminKeyboard
           })
         });
 
-        console.log(`✅ Admin preview message sent to ${adminId}`);
-      } catch (adminError) {
-        console.error('❌ Failed to send admin preview:', adminError);
+        if (response.ok) {
+          console.log('✅ Admin preview sent successfully');
+          results.push({ user: 'admin', success: true });
+        }
+      } catch (error) {
+        console.error('❌ Failed to send admin preview:', error);
+        results.push({ user: 'admin', success: false, error: error.message });
       }
     }
 
-    const successful = results.filter(result => result.status === 'fulfilled').length;
-    const failed = results.filter(result => result.status === 'rejected').length;
-
-    console.log(`📊 Upload reminder results: ${successful} successful, ${failed} failed`);
+    const successful = results.filter(r => r.success).length;
+    const failed = results.filter(r => !r.success).length;
 
     return new Response(JSON.stringify({
       success: true,
-      results: {
-        successful,
-        failed,
-        total: users.length
-      }
+      message: `Enhanced reminders sent to ${successful} recipients, ${failed} failed`,
+      results
     }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
@@ -144,62 +158,297 @@ serve(async (req) => {
   }
 });
 
-function generateUploadReminderMessage(firstName: string, isEnglish: boolean = false): string {
+function generateEnhancedWelcomeMessage(firstName: string, isEnglish: boolean = false): string {
   if (isEnglish) {
-    return `👋 Hi ${firstName}!
+    return `🎉 <b>Welcome to Diamond Muzzle, ${firstName}!</b>
 
-🔹 We noticed you haven't uploaded your diamond inventory yet. 
+💎 You've joined the most advanced diamond trading platform! Here's what makes us special:
 
-💎 <b>Ready to get started?</b>
-• Upload your first diamonds in just 2 minutes
-• Showcase your inventory to potential buyers
-• Connect with the diamond trading community
+🔍 <b>Smart Group Monitoring</b>
+• We listen to diamond groups 24/7
+• Get instant alerts when someone needs YOUR exact stones
+• Never miss a potential sale again!
 
-⚡ Tap the button below to upload now and start growing your business!`;
+📊 <b>Intelligent Inventory Management</b>
+• Upload your diamonds easily with photos or certificates
+• Professional store front for your collection
+• Real-time analytics and insights
+
+🚀 <b>Automated Matching</b>
+• Our AI matches client requests to your inventory
+• Instant notifications when demand matches your supply
+• Smart recommendations for market opportunities
+
+💰 <b>Business Growth Tools</b>
+• Professional sharing features
+• Client management system
+• Revenue tracking and analytics
+
+🌍 <b>Global Reach</b>
+• Connect with buyers worldwide
+• Multi-language support
+• Secure transaction environment
+
+Ready to transform your diamond business? Let's get started! 🚀`;
   } else {
-    // Hebrew version
-    return `👋 שלום ${firstName}!
+    return `🎉 <b>ברוכים הבאים ל-Diamond Muzzle, ${firstName}!</b>
 
-🔹 שמנו לב שעדיין לא העלית את מלאי היהלומים שלך. 
+💎 <b>הצטרפת לפלטפורמת המסחר ביהלומים המתקדמת בעולם!</b>
 
-💎 <b>מוכן/ה להתחיל?</b>
-• העלאת היהלומים הראשונים שלך בתוך 2 דקות בלבד
-• הצגת המלאי שלך לקונים פוטנציאלים
-• התחברות לקהילת סוחרי היהלומים
+🔍 <b>ניטור קבוצות חכם 24/7</b>
+• אנחנו מאזינים לכל קבוצות היהלומים בזמן אמת
+• קבל התראות מיידיות כשמישהו מחפש בדיוק את האבנים שלך
+• לעולם לא תפספס הזדמנות מכירה!
 
-⚡ לחץ/י על הכפתור למטה כדי להעלות עכשיו ולהתחיל לפתח את העסק שלך!`;
+📊 <b>ניהול מלאי מתקדם</b>
+• העלאת יהלומים קלה ומהירה מתעודות GIA
+• חזית חנות מקצועית לאוסף שלך
+• אנליטיקות עסקיות בזמן אמת
+
+🤖 <b>בינה מלאכותית מתקדמת</b>
+• צ'אט חכם עם המלאי שלך - שאל שאלות וקבל תשובות מיידיות
+• התאמות אוטומטיות בין ביקוש להיצע
+• המלצות חכמות להגדלת הרווחים
+
+💰 <b>כלי צמיחה עסקית</b>
+• שיתוף מקצועי של יהלומים ברשתות החברתיות
+• ניהול לידים ולקוחות פוטנציאליים
+• דוחות ביצועים ומעקב הכנסות
+
+🌐 <b>קהילה גלובלית</b>
+• חיבור לקונים ברחבי העולם
+• פלטפורמה רב-לשונית
+• סביבת עסקאות מאובטחת ומקצועית
+
+⭐ <b>התחל עכשיו ב-3 צעדים פשוטים:</b>
+1️⃣ העלה את היהלומים הראשונים מתעודה
+2️⃣ הגדר את החנות המקצועית שלך
+3️⃣ התחל לקבל לידים והתאמות אוטומטיות
+
+🚀 <b>מוכן לשנות את עסק היהלומים שלך לנצח?</b>`;
   }
 }
 
-function generateAdminPreviewMessage(userCount: number): string {
-  return `📋 <b>Admin Preview - Upload Reminder Sent</b>
+function createComprehensiveKeyboard(isEnglish: boolean = false) {
+  const baseUrl = Deno.env.get('WEB_APP_URL') || 'https://miniapp.mazalbot.com';
+  
+  if (isEnglish) {
+    return {
+      inline_keyboard: [
+        [
+          {
+            text: "💎 Upload Diamonds",
+            web_app: {
+              url: `${baseUrl}/upload-single-stone`
+            }
+          },
+          {
+            text: "🏪 View Store",
+            web_app: {
+              url: `${baseUrl}/store`
+            }
+          }
+        ],
+        [
+          {
+            text: "🤖 AI Assistant",
+            web_app: {
+              url: `${baseUrl}/chat`
+            }
+          },
+          {
+            text: "📊 Analytics",
+            web_app: {
+              url: `${baseUrl}/insights`
+            }
+          }
+        ],
+        [
+          {
+            text: "📋 Inventory",
+            web_app: {
+              url: `${baseUrl}/inventory`
+            }
+          },
+          {
+            text: "📈 Dashboard",
+            web_app: {
+              url: `${baseUrl}/dashboard`
+            }
+          }
+        ],
+        [
+          {
+            text: "🔔 Notifications",
+            web_app: {
+              url: `${baseUrl}/notifications`
+            }
+          },
+          {
+            text: "⚙️ Settings",
+            web_app: {
+              url: `${baseUrl}/settings`
+            }
+          }
+        ]
+      ]
+    };
+  } else {
+    return {
+      inline_keyboard: [
+        [
+          {
+            text: "💎 העלאת יהלומים",
+            web_app: {
+              url: `${baseUrl}/upload-single-stone`
+            }
+          },
+          {
+            text: "🏪 צפייה בחנות",
+            web_app: {
+              url: `${baseUrl}/store`
+            }
+          }
+        ],
+        [
+          {
+            text: "🤖 עוזר AI",
+            web_app: {
+              url: `${baseUrl}/chat`
+            }
+          },
+          {
+            text: "📊 אנליטיקס",
+            web_app: {
+              url: `${baseUrl}/insights`
+            }
+          }
+        ],
+        [
+          {
+            text: "📋 מלאי",
+            web_app: {
+              url: `${baseUrl}/inventory`
+            }
+          },
+          {
+            text: "📈 דשבורד",
+            web_app: {
+              url: `${baseUrl}/dashboard`
+            }
+          }
+        ],
+        [
+          {
+            text: "🔔 התראות",
+            web_app: {
+              url: `${baseUrl}/notifications`
+            }
+          },
+          {
+            text: "⚙️ הגדרות",
+            web_app: {
+              url: `${baseUrl}/settings`
+            }
+          }
+        ]
+      ]
+    };
+  }
+}
 
-This is the message that was just sent to ${userCount} users who haven't uploaded inventory yet.
-Messages are sent in Hebrew by default unless the user's language code is English.
+function generateTutorialMessage(firstName: string, isEnglish: boolean = false): string {
+  if (isEnglish) {
+    return `🎓 <b>Quick Start Guide for ${firstName}</b>
 
-<b>English Version:</b>
-👋 Hi [User Name]!
+Ready to get the most out of Diamond Muzzle? Here's your personalized tutorial:
 
-🔹 We noticed you haven't uploaded your diamond inventory yet. 
+✨ <b>In just 5 minutes, you'll learn:</b>
+• How to upload your first diamond
+• Setting up group monitoring alerts
+• Understanding the matching system
+• Maximizing your sales opportunities
 
-💎 <b>Ready to get started?</b>
-• Upload your first diamonds in just 2 minutes
-• Showcase your inventory to potential buyers
-• Connect with the diamond trading community
+🎯 <b>Best practices from successful traders:</b>
+• Upload high-quality photos for better visibility
+• Enable store visibility to reach more buyers
+• Keep your inventory updated and accurate
+• Respond quickly to match notifications
 
-⚡ Tap the button below to upload now and start growing your business!
+Let's start your journey to diamond trading success! 🚀`;
+  } else {
+    return `🎓 <b>מדריך התחלה מהירה עבור ${firstName}</b>
 
-<b>Hebrew Version:</b>
-👋 שלום [User Name]!
+מוכן להפיק את המקסימום מ-Diamond Muzzle? הנה המדריך האישי שלך:
 
-🔹 שמנו לב שעדיין לא העלית את מלאי היהלומים שלך. 
+✨ <b>תוך 5 דקות בלבד תלמד:</b>
+• איך להעלות את היהלום הראשון שלך
+• הגדרת התראות ניטור קבוצות
+• הבנת מערכת ההתאמות
+• מקסימום הזדמנויות המכירה שלך
 
-💎 <b>מוכן/ה להתחיל?</b>
-• העלאת היהלומים הראשונים שלך בתוך 2 דקות בלבד
-• הצגת המלאי שלך לקונים פוטנציאלים
-• התחברות לקהילת סוחרי היהלומים
+🎯 <b>שיטות עבודה מומלצות מסוחרים מצליחים:</b>
+• העלאת תמונות איכותיות לנראות טובה יותר
+• הפעלת נראות בחנות כדי להגיע ליותר קונים
+• שמירה על מלאי מעודכן ומדויק
+• מענה מהיר להתראות התאמה
 
-⚡ לחץ/י על הכפתור למטה כדי להעלות עכשיו ולהתחיל לפתח את העסק שלך!
+בואו נתחיל את המסע שלך להצלחה במסחר ביהלומים! 🚀`;
+  }
+}
 
-<i>✅ Notification campaign completed successfully</i>`;
+function createTutorialKeyboard(telegramId: number, isEnglish: boolean = false) {
+  const baseUrl = Deno.env.get('WEB_APP_URL') || 'https://miniapp.mazalbot.com';
+  
+  if (isEnglish) {
+    return {
+      inline_keyboard: [
+        [
+          {
+            text: "🎓 Start Interactive Tutorial",
+            web_app: {
+              url: `${baseUrl}/?tutorial=start&onboarding=true&user_id=${telegramId}`
+            }
+          }
+        ],
+        [
+          {
+            text: "📖 Feature Guide",
+            web_app: {
+              url: `${baseUrl}/tutorial`
+            }
+          },
+          {
+            text: "💬 Get Support",
+            url: "https://t.me/DiamondMuzzelSupport"
+          }
+        ]
+      ]
+    };
+  } else {
+    return {
+      inline_keyboard: [
+        [
+          {
+            text: "🎓 התחלת מדריך אינטראקטיבי",
+            web_app: {
+              url: `${baseUrl}/?tutorial=start&onboarding=true&user_id=${telegramId}`
+            }
+          }
+        ],
+        [
+          {
+            text: "📖 מדריך תכונות",
+            web_app: {
+              url: `${baseUrl}/tutorial`
+            }
+          },
+          {
+            text: "💬 קבלת תמיכה",
+            url: "https://t.me/DiamondMuzzelSupport"
+          }
+        ]
+      ]
+    };
+  }
 }
