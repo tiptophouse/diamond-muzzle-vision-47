@@ -1,11 +1,13 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Heart, Trash2, ExternalLink, Phone, Mail } from 'lucide-react';
+import { Heart, Trash2, ExternalLink, Phone, Plus } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { CreateWishlistAlert } from './CreateWishlistAlert';
 
 interface DiamondData {
   stockNumber: string;
@@ -30,6 +32,7 @@ export function WishlistContent() {
   const { toast } = useToast();
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showCreateAlert, setShowCreateAlert] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
@@ -41,7 +44,6 @@ export function WishlistContent() {
     try {
       setIsLoading(true);
       
-      // Set user context for RLS
       await supabase.functions.invoke('set-session-context', {
         body: {
           setting_name: 'app.current_user_id',
@@ -57,21 +59,38 @@ export function WishlistContent() {
 
       if (error) throw error;
 
-      // Process the data to ensure proper typing
-      const processedItems = (data || []).map(item => ({
-        ...item,
-        diamond_data: typeof item.diamond_data === 'object' && item.diamond_data !== null 
-          ? item.diamond_data as DiamondData
-          : {
-              stockNumber: '',
-              shape: '',
-              carat: 0,
-              color: '',
-              clarity: '',
-              cut: '',
-              price: 0
-            }
-      })) as WishlistItem[];
+      const processedItems = (data || []).map(item => {
+        let diamondData: DiamondData;
+        
+        // Handle the Json type conversion safely
+        if (typeof item.diamond_data === 'object' && item.diamond_data !== null && !Array.isArray(item.diamond_data)) {
+          const data = item.diamond_data as { [key: string]: any };
+          diamondData = {
+            stockNumber: data.stockNumber || '',
+            shape: data.shape || '',
+            carat: data.carat || 0,
+            color: data.color || '',
+            clarity: data.clarity || '',
+            cut: data.cut || '',
+            price: data.price || 0
+          };
+        } else {
+          diamondData = {
+            stockNumber: '',
+            shape: '',
+            carat: 0,
+            color: '',
+            clarity: '',
+            cut: '',
+            price: 0
+          };
+        }
+
+        return {
+          ...item,
+          diamond_data: diamondData
+        };
+      }) as WishlistItem[];
 
       setWishlistItems(processedItems);
     } catch (error) {
@@ -98,13 +117,13 @@ export function WishlistContent() {
       setWishlistItems(prev => prev.filter(item => item.id !== itemId));
       
       toast({
-        title: "הוסר מרשימת המועדפים",
+        title: "✅ הוסר מרשימת המועדפים",
         description: "היהלום הוסר בהצלחה מרשימת המועדפים שלך",
       });
     } catch (error) {
       console.error('Error removing from wishlist:', error);
       toast({
-        title: "שגיאה בהסרה",
+        title: "❌ שגיאה בהסרה",
         description: "לא ניתן להסיר את היהלום מרשימת המועדפים כרגע",
         variant: "destructive",
       });
@@ -125,35 +144,53 @@ export function WishlistContent() {
     );
   }
 
-  if (wishlistItems.length === 0) {
-    return (
-      <Card className="max-w-md mx-auto">
-        <CardContent className="text-center p-8">
-          <Heart className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-semibold mb-2">רשימת המועדפים ריקה</h3>
-          <p className="text-muted-foreground mb-4">
-            עדיין לא הוספת יהלומים לרשימת המועדפים שלך
-          </p>
-          <Button 
-            onClick={() => window.location.href = '/store'}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            עבור לחנות
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Header with Create Alert Button */}
       <div className="text-center mb-6">
         <h1 className="text-2xl font-bold mb-2">רשימת המועדפים שלי</h1>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground mb-4">
           {wishlistItems.length} יהלומים ברשימת המועדפים שלך
         </p>
+        
+        <Button
+          onClick={() => setShowCreateAlert(true)}
+          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+          size="lg"
+        >
+          <Plus className="h-5 w-5 mr-2" />
+          צור התראת מחיר מותאמת אישית
+        </Button>
       </div>
 
+      {wishlistItems.length === 0 && (
+        <Card className="max-w-md mx-auto">
+          <CardContent className="text-center p-8">
+            <Heart className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-semibold mb-2">רשימת המועדפים ריקה</h3>
+            <p className="text-muted-foreground mb-4">
+              עדיין לא הוספת יהלומים לרשימת המועדפים שלך
+            </p>
+            <div className="space-y-2">
+              <Button 
+                onClick={() => window.location.href = '/store'}
+                className="bg-blue-600 hover:bg-blue-700 w-full"
+              >
+                עבור לחנות
+              </Button>
+              <Button
+                onClick={() => setShowCreateAlert(true)}
+                variant="outline"
+                className="w-full"
+              >
+                צור התראת מחיר
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Wishlist Items */}
       <div className="grid gap-4">
         {wishlistItems.map((item) => (
           <Card key={item.id} className="hover:shadow-md transition-shadow">
@@ -222,6 +259,18 @@ export function WishlistContent() {
           </Card>
         ))}
       </div>
+
+      {/* Create Alert Modal */}
+      {showCreateAlert && (
+        <CreateWishlistAlert
+          isOpen={showCreateAlert}
+          onClose={() => setShowCreateAlert(false)}
+          onSuccess={() => {
+            setShowCreateAlert(false);
+            fetchWishlist();
+          }}
+        />
+      )}
     </div>
   );
 }
