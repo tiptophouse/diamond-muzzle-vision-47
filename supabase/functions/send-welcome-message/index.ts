@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 
 const corsHeaders = {
@@ -184,45 +183,29 @@ function createFeatureKeyboard(isEnglish: boolean = false) {
       inline_keyboard: [
         [
           {
-            text: "📤 Upload Your First Diamond",
+            text: "📤 Upload from Certificate",
             web_app: {
               url: `${baseUrl}/upload-single-stone`
             }
+          },
+          {
+            text: "🤖 Chat with AI",
+            web_app: {
+              url: `${baseUrl}/chat`
+            }
           }
         ],
         [
           {
-            text: "🏪 Browse Diamond Store",
-            web_app: {
-              url: `${baseUrl}/store`
-            }
-          },
-          {
-            text: "📊 View Dashboard",
+            text: "📊 Dashboard",
             web_app: {
               url: `${baseUrl}/dashboard`
             }
-          }
-        ],
-        [
-          {
-            text: "💼 Manage Inventory",
-            web_app: {
-              url: `${baseUrl}/inventory`
-            }
           },
           {
-            text: "📈 Analytics",
+            text: "🏪 Store",
             web_app: {
-              url: `${baseUrl}/insights`
-            }
-          }
-        ],
-        [
-          {
-            text: "⚙️ Settings",
-            web_app: {
-              url: `${baseUrl}/settings`
+              url: `${baseUrl}/store`
             }
           }
         ]
@@ -233,45 +216,29 @@ function createFeatureKeyboard(isEnglish: boolean = false) {
       inline_keyboard: [
         [
           {
-            text: "📤 העלאת היהלום הראשון",
+            text: "📤 העלאה מתעודה",
             web_app: {
               url: `${baseUrl}/upload-single-stone`
             }
+          },
+          {
+            text: "🤖 צ'אט עם AI",
+            web_app: {
+              url: `${baseUrl}/chat`
+            }
           }
         ],
         [
           {
-            text: "🏪 עיון בחנות יהלומים",
-            web_app: {
-              url: `${baseUrl}/store`
-            }
-          },
-          {
-            text: "📊 צפייה בדשבורד",
+            text: "📊 דשבורד",
             web_app: {
               url: `${baseUrl}/dashboard`
             }
-          }
-        ],
-        [
-          {
-            text: "💼 ניהול מלאי",
-            web_app: {
-              url: `${baseUrl}/inventory`
-            }
           },
           {
-            text: "📈 אנליטיקות",
+            text: "🏪 חנות",
             web_app: {
-              url: `${baseUrl}/insights`
-            }
-          }
-        ],
-        [
-          {
-            text: "⚙️ הגדרות",
-            web_app: {
-              url: `${baseUrl}/settings`
+              url: `${baseUrl}/store`
             }
           }
         ]
