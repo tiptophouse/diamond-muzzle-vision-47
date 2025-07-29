@@ -1,366 +1,659 @@
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
-import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { useInventoryCrud } from "@/hooks/useInventoryCrud";
-import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
-import { Camera } from "lucide-react";
-import { UploadSuccessCard } from "./UploadSuccessCard";
-import { DiamondFormData } from '@/components/inventory/form/types';
-import { DiamondDetailsSection } from './form/DiamondDetailsSection';
-import { CertificateSection } from './form/CertificateSection';
-import { MeasurementsSection } from './form/MeasurementsSection';
-import { DetailedGradingSection } from './form/DetailedGradingSection';
-import { BusinessInfoSection } from './form/BusinessInfoSection';
-import { ImageUploadSection } from './form/ImageUploadSection';
-import { FormActions } from './form/FormActions';
-import { useFormValidation } from './form/useFormValidation';
-import { ApiStatusIndicator } from '@/components/ui/ApiStatusIndicator';
-import { ApiTestButton } from '@/components/ui/ApiTestButton';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { QRCodeScanner } from '@/components/inventory/QRCodeScanner';
+import { UserImageUpload } from '@/components/inventory/UserImageUpload';
+import { useToast } from '@/hooks/use-toast';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
+import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
+import { api, apiEndpoints } from '@/lib/api';
+import { Camera, Save, Sparkles, CheckCircle } from 'lucide-react';
+
+// Comprehensive diamond validation schema
+const diamondSchema = z.object({
+  stockNumber: z.string().min(1, "Stock number is required"),
+  shape: z.enum(['Round', 'Princess', 'Emerald', 'Asscher', 'Oval', 'Radiant', 'Pear', 'Heart', 'Marquise', 'Cushion'], {
+    required_error: "Shape is required",
+  }),
+  carat: z.number().min(0.01, "Carat must be at least 0.01").max(50, "Carat must be less than 50"),
+  color: z.enum(['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'], {
+    required_error: "Color is required",
+  }),
+  clarity: z.enum(['FL', 'IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'SI3', 'I1', 'I2', 'I3'], {
+    required_error: "Clarity is required",
+  }),
+  cut: z.enum(['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'], {
+    required_error: "Cut is required",
+  }),
+  polish: z.enum(['Excellent', 'Very Good', 'Good', 'Fair', 'Poor']).optional(),
+  symmetry: z.enum(['Excellent', 'Very Good', 'Good', 'Fair', 'Poor']).optional(),
+  fluorescence: z.enum(['None', 'Faint', 'Medium', 'Strong', 'Very Strong']).optional(),
+  price: z.number().min(1, "Price must be at least $1"),
+  certificateNumber: z.string().optional(),
+  lab: z.string().optional(),
+  length: z.number().optional(),
+  width: z.number().optional(),
+  depth: z.number().optional(),
+  tablePercentage: z.number().min(40).max(80).optional(),
+  depthPercentage: z.number().min(40).max(80).optional(),
+  certificateUrl: z.string().optional(),
+  picture: z.string().optional(),
+  status: z.enum(['Available', 'Sold', 'Reserved']).default('Available'),
+});
+
+type DiamondFormData = z.infer<typeof diamondSchema>;
 
 interface SingleStoneUploadFormProps {
-  initialData?: any;
+  initialData?: Partial<DiamondFormData>;
   showScanButton?: boolean;
-  onSuccess?: () => void;
 }
 
-export function SingleStoneUploadForm({ 
-  initialData, 
-  showScanButton = true, 
-  onSuccess 
-}: SingleStoneUploadFormProps) {
+export function SingleStoneUploadForm({ initialData, showScanButton = true }: SingleStoneUploadFormProps) {
+  const [isScanning, setIsScanning] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
   const { toast } = useToast();
   const { user } = useTelegramAuth();
-  const [isScanning, setIsScanning] = useState(false);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
-  const [apiConnected, setApiConnected] = useState(true); // Track API connection status
-  const { addDiamond, isLoading } = useInventoryCrud({
-    onSuccess: () => {
-      console.log('✅ Diamond added successfully, showing success card');
-      setUploadSuccess(true);
-    }
-  });
+  const { hapticFeedback } = useTelegramWebApp();
+  const { triggerInventoryChange } = useInventoryDataSync();
 
-  // Memoize default values to prevent unnecessary re-calculations
-  const defaultValues = useMemo(() => {
-    const defaults = {
+  const form = useForm<DiamondFormData>({
+    resolver: zodResolver(diamondSchema),
+    defaultValues: {
       stockNumber: '',
-      carat: 1,
-      price: 0,
-      status: 'Available',
-      picture: '',
       shape: 'Round',
+      carat: 1.0,
       color: 'G',
       clarity: 'VS1',
       cut: 'Excellent',
-      fluorescence: 'None',
       polish: 'Excellent',
       symmetry: 'Excellent',
+      fluorescence: 'None',
+      price: 5000,
+      status: 'Available',
       lab: 'GIA',
-      gridle: 'Medium',
-      culet: 'None',
-      storeVisible: true
-    };
+      ...initialData,
+    },
+  });
 
+  // Populate form with scanned data
+  useEffect(() => {
     if (initialData) {
-      return {
-        ...defaults,
-        stockNumber: initialData.stock || defaults.stockNumber,
-        shape: initialData.shape || defaults.shape,
-        carat: Number(initialData.weight) || defaults.carat,
-        color: initialData.color || defaults.color,
-        clarity: initialData.clarity || defaults.clarity,
-        cut: initialData.cut || defaults.cut,
-        certificateNumber: initialData.certificate_number?.toString() || '',
-        lab: initialData.lab || defaults.lab,
-        fluorescence: initialData.fluorescence || defaults.fluorescence,
-        polish: initialData.polish || defaults.polish,
-        symmetry: initialData.symmetry || defaults.symmetry,
-        gridle: initialData.gridle || defaults.gridle,
-        culet: initialData.culet || defaults.culet,
+      console.log('🔍 Received GIA data:', initialData);
+      
+      // Map GIA data to form fields with proper validation
+      const mappedData: Partial<DiamondFormData> = {
+        stockNumber: initialData.stockNumber || `GIA-${Date.now()}`,
+        shape: mapGiaShape(initialData.shape),
+        carat: Number(initialData.carat) || 1.0,
+        color: mapGiaColor(initialData.color),
+        clarity: mapGiaClarity(initialData.clarity),
+        cut: mapGiaCut(initialData.cut),
+        polish: mapGiaGrade(initialData.polish),
+        symmetry: mapGiaGrade(initialData.symmetry),
+        fluorescence: mapGiaFluorescence(initialData.fluorescence),
+        price: Number(initialData.price) || calculateEstimatedPrice(initialData),
+        certificateNumber: initialData.certificateNumber,
+        lab: initialData.lab || 'GIA',
         length: Number(initialData.length) || undefined,
         width: Number(initialData.width) || undefined,
         depth: Number(initialData.depth) || undefined,
-        ratio: Number(initialData.ratio) || undefined,
-        tablePercentage: Number(initialData.table_percentage) || undefined,
-        depthPercentage: Number(initialData.depth_percentage) || undefined,
-        pricePerCarat: Number(initialData.price_per_carat) || undefined,
-        rapnet: Number(initialData.rapnet) || undefined,
-        picture: initialData.picture || defaults.picture,
-        certificateUrl: initialData.certificate_url || initialData.certificateUrl || '',
-        certificateComment: initialData.certificate_comment || ''
+        tablePercentage: Number(initialData.tablePercentage) || undefined,
+        depthPercentage: Number(initialData.depthPercentage) || undefined,
+        certificateUrl: initialData.certificateUrl,
+        picture: initialData.picture,
+        status: 'Available',
       };
+
+      console.log('🔍 Mapped data for form:', mappedData);
+      
+      // Reset form with mapped data
+      form.reset(mappedData);
+      
+      toast({
+        title: "✅ GIA Data Loaded",
+        description: "Certificate information has been imported successfully",
+      });
     }
+  }, [initialData, form]);
 
-    return defaults;
-  }, [initialData]);
+  // Helper functions to map GIA data to valid form values
+  const mapGiaShape = (shape: string | undefined): DiamondFormData['shape'] => {
+    if (!shape) return 'Round';
+    const shapeMap: Record<string, DiamondFormData['shape']> = {
+      'ROUND': 'Round',
+      'PRINCESS': 'Princess', 
+      'EMERALD': 'Emerald',
+      'ASSCHER': 'Asscher',
+      'OVAL': 'Oval',
+      'RADIANT': 'Radiant',
+      'PEAR': 'Pear',
+      'HEART': 'Heart',
+      'MARQUISE': 'Marquise',
+      'CUSHION': 'Cushion',
+    };
+    return shapeMap[shape.toUpperCase()] || 'Round';
+  };
 
-  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<DiamondFormData>({
-    defaultValues
-  });
+  const mapGiaColor = (color: string | undefined): DiamondFormData['color'] => {
+    if (!color) return 'G';
+    const validColors = ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+    return validColors.includes(color.toUpperCase()) ? color.toUpperCase() as DiamondFormData['color'] : 'G';
+  };
 
-  const { validateFormData, formatFormData } = useFormValidation();
+  const mapGiaClarity = (clarity: string | undefined): DiamondFormData['clarity'] => {
+    if (!clarity) return 'VS1';
+    const validClarities = ['FL', 'IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'SI3', 'I1', 'I2', 'I3'];
+    return validClarities.includes(clarity.toUpperCase()) ? clarity.toUpperCase() as DiamondFormData['clarity'] : 'VS1';
+  };
 
-  const handleGiaScanSuccess = useCallback((giaData: any) => {
-    console.log('GIA data received:', giaData);
+  const mapGiaCut = (cut: string | undefined): DiamondFormData['cut'] => {
+    if (!cut) return 'Excellent';
+    const cutMap: Record<string, DiamondFormData['cut']> = {
+      'EXCELLENT': 'Excellent',
+      'VERY GOOD': 'Very Good',
+      'GOOD': 'Good',
+      'FAIR': 'Fair',
+      'POOR': 'Poor',
+    };
+    return cutMap[cut.toUpperCase()] || 'Excellent';
+  };
+
+  const mapGiaGrade = (grade: string | undefined): 'Excellent' | 'Very Good' | 'Good' | 'Fair' | 'Poor' | undefined => {
+    if (!grade) return undefined;
+    const gradeMap: Record<string, 'Excellent' | 'Very Good' | 'Good' | 'Fair' | 'Poor'> = {
+      'EXCELLENT': 'Excellent',
+      'VERY GOOD': 'Very Good',
+      'GOOD': 'Good',
+      'FAIR': 'Fair',
+      'POOR': 'Poor',
+    };
+    return gradeMap[grade.toUpperCase()];
+  };
+
+  const mapGiaFluorescence = (fluorescence: string | undefined): 'None' | 'Faint' | 'Medium' | 'Strong' | 'Very Strong' | undefined => {
+    if (!fluorescence) return 'None';
+    const fluorMap: Record<string, 'None' | 'Faint' | 'Medium' | 'Strong' | 'Very Strong'> = {
+      'NONE': 'None',
+      'FAINT': 'Faint',
+      'MEDIUM': 'Medium',
+      'STRONG': 'Strong',
+      'VERY STRONG': 'Very Strong',
+    };
+    return fluorMap[fluorescence.toUpperCase()] || 'None';
+  };
+
+  const calculateEstimatedPrice = (data: any): number => {
+    const carat = Number(data.carat) || 1.0;
+    const basePrice = 5000; // Base price per carat
+    return Math.round(basePrice * carat);
+  };
+
+  const handleScanSuccess = (giaData: any) => {
+    console.log('🔍 GIA scan successful:', giaData);
     
-    // Comprehensive mapping of all GIA data fields including certificate URL
-    if (giaData.stock) setValue('stockNumber', giaData.stock);
-    if (giaData.shape) setValue('shape', giaData.shape);
-    if (giaData.weight) setValue('carat', Number(giaData.weight));
-    if (giaData.color) setValue('color', giaData.color);
-    if (giaData.clarity) setValue('clarity', giaData.clarity);
-    if (giaData.cut) setValue('cut', giaData.cut);
-    if (giaData.certificate_number) setValue('certificateNumber', giaData.certificate_number.toString());
-    if (giaData.lab) setValue('lab', giaData.lab);
-    if (giaData.fluorescence) setValue('fluorescence', giaData.fluorescence);
-    if (giaData.polish) setValue('polish', giaData.polish);
-    if (giaData.symmetry) setValue('symmetry', giaData.symmetry);
-    if (giaData.gridle) setValue('gridle', giaData.gridle);
-    if (giaData.culet) setValue('culet', giaData.culet);
-    if (giaData.length) setValue('length', Number(giaData.length));
-    if (giaData.width) setValue('width', Number(giaData.width));
-    if (giaData.depth) setValue('depth', Number(giaData.depth));
-    if (giaData.ratio) setValue('ratio', Number(giaData.ratio));
-    if (giaData.table_percentage) setValue('tablePercentage', Number(giaData.table_percentage));
-    if (giaData.depth_percentage) setValue('depthPercentage', Number(giaData.depth_percentage));
-    if (giaData.price_per_carat) setValue('pricePerCarat', Number(giaData.price_per_carat));
-    if (giaData.rapnet) setValue('rapnet', Number(giaData.rapnet));
-    if (giaData.picture) setValue('picture', giaData.picture);
-    
-    // Handle certificate URL from uploaded certificate image
-    if (giaData.certificate_url || giaData.certificateUrl) {
-      setValue('certificateUrl', giaData.certificate_url || giaData.certificateUrl);
-      console.log('Certificate image uploaded to:', giaData.certificate_url || giaData.certificateUrl);
-    }
-    
-    if (giaData.certificate_comment) setValue('certificateComment', giaData.certificate_comment);
-    
+    // Map the GIA data properly
+    const mappedData = {
+      stockNumber: giaData.stockNumber || `GIA-${Date.now()}`,
+      shape: mapGiaShape(giaData.shape),
+      carat: Number(giaData.carat) || 1.0,
+      color: mapGiaColor(giaData.color),
+      clarity: mapGiaClarity(giaData.clarity),
+      cut: mapGiaCut(giaData.cut),
+      polish: mapGiaGrade(giaData.polish),
+      symmetry: mapGiaGrade(giaData.symmetry),
+      fluorescence: mapGiaFluorescence(giaData.fluorescence),
+      price: Number(giaData.price) || calculateEstimatedPrice(giaData),
+      certificateNumber: giaData.certificateNumber,
+      lab: giaData.lab || 'GIA',
+      length: Number(giaData.length) || undefined,
+      width: Number(giaData.width) || undefined,
+      depth: Number(giaData.depth) || undefined,
+      tablePercentage: Number(giaData.table) || undefined,
+      depthPercentage: Number(giaData.depth_percentage) || undefined,
+      certificateUrl: giaData.certificateUrl || giaData.certificate_url,
+      picture: giaData.picture,
+    };
+
+    console.log('🔍 Mapped GIA data:', mappedData);
+    form.reset(mappedData);
     setIsScanning(false);
     
+    hapticFeedback.notification('success');
     toast({
       title: "✅ Certificate Scanned Successfully",
-      description: "All diamond information auto-filled and certificate image uploaded",
+      description: "Diamond data has been imported from GIA certificate",
     });
-  }, [setValue, toast]);
+  };
 
-  const currentShape = watch('shape');
-  const showCutField = currentShape === 'Round';
+  const handleImageUpload = (imageUrl: string) => {
+    form.setValue('picture', imageUrl);
+    toast({
+      title: "Image Uploaded",
+      description: "Diamond image has been uploaded successfully",
+    });
+  };
 
-  const handleFormSubmit = useCallback((data: DiamondFormData) => {
-    console.log('🔍 UPLOAD: Form submitted', { user: user?.id, data });
-    console.log('🔍 UPLOAD: Shape captured:', data.shape);
-    console.log('🔍 UPLOAD: Table % captured:', data.tablePercentage);
-    console.log('🔍 UPLOAD: Form submit button clicked - processing data...');
-    
+  const onSubmit = async (data: DiamondFormData) => {
     if (!user?.id) {
-      console.log('❌ UPLOAD: No user ID found');
       toast({
         title: "Authentication Error",
-        description: "Please log in to add diamonds",
+        description: "Please log in to upload diamonds",
         variant: "destructive",
       });
       return;
     }
 
-    console.log('🔍 UPLOAD: User authenticated, validating form data...');
-    if (!validateFormData(data)) {
-      console.log('❌ UPLOAD: Form validation failed');
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
+    setUploading(true);
+    hapticFeedback.impact('medium');
 
-    console.log('✅ UPLOAD: Form validation passed, formatting data...');
-    const formattedData = formatFormData(data, showCutField);
-    console.log('🔍 UPLOAD: Calling addDiamond with:', formattedData);
-    console.log('🔍 UPLOAD: About to make API call to FastAPI create diamond endpoint...');
-    
-    addDiamond(formattedData).then(success => {
-      console.log('🔍 UPLOAD: addDiamond result:', success);
-      console.log('🔍 UPLOAD: API call completed, success:', success);
+    try {
+      console.log('🔍 Submitting diamond data:', data);
       
-      if (!success) {
-        console.log('❌ UPLOAD: Diamond creation failed');
-        setApiConnected(false);
+      // Prepare data for API
+      const diamondData = {
+        user_id: user.id,
+        stock_number: data.stockNumber,
+        shape: data.shape,
+        weight: data.carat,
+        color: data.color,
+        clarity: data.clarity,
+        cut: data.cut,
+        polish: data.polish || 'Excellent',
+        symmetry: data.symmetry || 'Excellent',
+        fluorescence: data.fluorescence || 'None',
+        price_per_carat: Math.round(data.price / data.carat),
+        certificate_number: data.certificateNumber ? parseInt(data.certificateNumber) : null,
+        lab: data.lab || 'GIA',
+        length: data.length || null,
+        width: data.width || null,
+        depth: data.depth || null,
+        table_percentage: data.tablePercentage || null,
+        depth_percentage: data.depthPercentage || null,
+        certificate_url: data.certificateUrl || null,
+        picture: data.picture || null,
+        status: data.status,
+        store_visible: true,
+      };
+
+      console.log('🔍 Sending to API:', diamondData);
+
+      // Try to submit to FastAPI backend
+      const response = await api.addDiamond(apiEndpoints.addDiamond(), diamondData);
+      
+      if (response.success) {
+        triggerInventoryChange();
+        
         toast({
-          title: "❌ Upload Failed",
-          description: "Failed to add diamond to inventory. Please try again.",
-          variant: "destructive",
+          title: "✅ Diamond Added Successfully! 💎",
+          description: `${data.shape} diamond ${data.stockNumber} has been added to your inventory and is now visible in the store.`,
         });
+        
+        // Reset form
+        form.reset({
+          stockNumber: '',
+          shape: 'Round',
+          carat: 1.0,
+          color: 'G',
+          clarity: 'VS1',
+          cut: 'Excellent',
+          polish: 'Excellent',
+          symmetry: 'Excellent',
+          fluorescence: 'None',
+          price: 5000,
+          status: 'Available',
+          lab: 'GIA',
+        });
+        
+        hapticFeedback.notification('success');
       } else {
-        console.log('✅ UPLOAD: Diamond creation successful!');
-        setApiConnected(true);
-        setUploadSuccess(true);
-        toast({
-          title: "Diamond Added Successfully",
-          description: "Your diamond has been added to your inventory.",
-        });
-        
-        // Call success callback if provided
-        onSuccess?.();
-        
-        // Reset form after 3 seconds
-        setTimeout(() => {
-          resetForm();
-          setUploadSuccess(false);
-        }, 3000);
+        throw new Error(response.error || 'Failed to add diamond');
       }
-    }).catch(error => {
-      console.error('❌ UPLOAD: Error in addDiamond promise:', error);
-      setApiConnected(false);
+
+    } catch (error) {
+      console.error('❌ Error adding diamond:', error);
+      
       toast({
-        title: "❌ Upload Error",
-        description: "An error occurred while uploading. Please try again.",
+        title: "Upload Failed",
+        description: error instanceof Error ? error.message : 'Failed to add diamond to inventory',
         variant: "destructive",
       });
-    });
-  }, [user?.id, validateFormData, formatFormData, showCutField, addDiamond, toast, setApiConnected]);
-
-  const resetForm = useCallback(() => {
-    reset(defaultValues);
-  }, [reset, defaultValues]);
-
-  // Show success card after successful upload
-  if (uploadSuccess) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center px-4">
-        <UploadSuccessCard
-          title="Stone Uploaded Successfully"
-          description="Your diamond has been added to your inventory. Ready to share or continue adding more stones."
-          onContinue={() => {
-            setUploadSuccess(false);
-            resetForm();
-          }}
-          onShare={() => {
-            toast({
-              title: "✨ Ready to Share",
-              description: "Your diamond is now visible in your store",
-            });
-          }}
-        />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <Card>
-        <CardContent className="pt-6 text-center">
-          <p className="text-muted-foreground">Please log in to add diamonds to your inventory.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+      
+      hapticFeedback.notification('error');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
-    <>
-      {/* iPhone/TMA optimized form */}
-      <div className="space-y-4">
-        {showScanButton && (
-          <Card className="border-primary/20">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Add Single Diamond</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsScanning(true)}
-                className="w-full h-12 text-base active:scale-95 transition-transform"
-              >
-                <Camera className="h-5 w-5 mr-2" />
-                Scan Diamond Certificate
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        <ApiTestButton />
-        <ApiStatusIndicator isConnected={apiConnected} className="mb-4" />
-        
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col min-h-screen">
-          {/* Main form content - scrollable */}
-          <div className="flex-1 overflow-y-auto smooth-scroll">
-            <DiamondDetailsSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
-
-            <div className="border-t border-border/20 mt-8">
-              <MeasurementsSection
-                register={register}
-                watch={watch}
-                errors={errors}
-              />
-            </div>
-
-            <div className="border-t border-border/20 mt-8 pt-8 px-4 space-y-6">
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold text-foreground">Certificate</h3>
-              </div>
-              <CertificateSection
-                register={register}
-                setValue={setValue}
-                watch={watch}
-                errors={errors}
-              />
-            </div>
-
-            <div className="border-t border-border/20 mt-8 pt-8 px-4 space-y-6">
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold text-foreground">Business Info</h3>
-              </div>
-              <BusinessInfoSection
-                register={register}
-                setValue={setValue}
-                watch={watch}
-                errors={errors}
-              />
-            </div>
-
-            <div className="border-t border-border/20 mt-8 pt-8 px-4 space-y-6">
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold text-foreground">Images</h3>
-              </div>
-              <ImageUploadSection
-                setValue={setValue}
-                watch={watch}
-                onGiaDataExtracted={handleGiaScanSuccess}
-              />
-            </div>
-
-            {/* Bottom padding for safe area */}
-            <div className="h-24"></div>
-          </div>
-
-          {/* Sticky bottom actions */}
-          <div className="sticky bottom-0 bg-background border-t border-border/20 safe-area-inset-bottom">
-            <div data-tutorial="submit-diamond">
-              <FormActions
-                onReset={resetForm}
-                isLoading={isLoading}
-              />
-            </div>
-          </div>
-        </form>
-      </div>
-
+    <div className="space-y-6">
+      {/* Scan Button */}
       {showScanButton && (
-        <QRCodeScanner
-          isOpen={isScanning}
-          onClose={() => setIsScanning(false)}
-          onScanSuccess={handleGiaScanSuccess}
-        />
+        <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+          <CardContent className="pt-6">
+            <Button
+              onClick={() => setIsScanning(true)}
+              className="w-full h-12 bg-gradient-to-r from-primary to-primary-glow hover:from-primary-dark hover:to-primary text-primary-foreground font-medium"
+            >
+              <Camera className="h-5 w-5 mr-2" />
+              Scan GIA Certificate
+            </Button>
+          </CardContent>
+        </Card>
       )}
-    </>
+
+      {/* Main Form */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5" />
+            Diamond Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Basic Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="stockNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Stock Number *</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Enter stock number" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="shape"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Shape *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select shape" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Round">Round</SelectItem>
+                          <SelectItem value="Princess">Princess</SelectItem>
+                          <SelectItem value="Emerald">Emerald</SelectItem>
+                          <SelectItem value="Asscher">Asscher</SelectItem>
+                          <SelectItem value="Oval">Oval</SelectItem>
+                          <SelectItem value="Radiant">Radiant</SelectItem>
+                          <SelectItem value="Pear">Pear</SelectItem>
+                          <SelectItem value="Heart">Heart</SelectItem>
+                          <SelectItem value="Marquise">Marquise</SelectItem>
+                          <SelectItem value="Cushion">Cushion</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Diamond Properties */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <FormField
+                  control={form.control}
+                  name="carat"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Carat *</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01" 
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="color"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Color *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select color" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'].map(color => (
+                            <SelectItem key={color} value={color}>{color}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="clarity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Clarity *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select clarity" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {['FL', 'IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'SI3', 'I1', 'I2', 'I3'].map(clarity => (
+                            <SelectItem key={clarity} value={clarity}>{clarity}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="cut"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cut *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select cut" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'].map(cut => (
+                            <SelectItem key={cut} value={cut}>{cut}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Additional Properties */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="polish"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Polish</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select polish" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'].map(grade => (
+                            <SelectItem key={grade} value={grade}>{grade}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="symmetry"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Symmetry</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select symmetry" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'].map(grade => (
+                            <SelectItem key={grade} value={grade}>{grade}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="fluorescence"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Fluorescence</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select fluorescence" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {['None', 'Faint', 'Medium', 'Strong', 'Very Strong'].map(fluor => (
+                            <SelectItem key={fluor} value={fluor}>{fluor}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Price and Certificate */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Price ($) *</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="1" 
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="certificateNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Certificate Number</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Enter certificate number" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Image Upload */}
+              <div className="space-y-4">
+                <FormLabel>Diamond Image</FormLabel>
+                <UserImageUpload
+                  onImageUpload={handleImageUpload}
+                  isUploading={imageUploading}
+                  setIsUploading={setImageUploading}
+                />
+                {form.watch('picture') && (
+                  <div className="flex items-center gap-2 p-2 bg-green-50 rounded">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <span className="text-sm text-green-700">Image uploaded successfully</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Submit Button */}
+              <Button 
+                type="submit" 
+                className="w-full h-12 bg-gradient-to-r from-primary to-primary-glow hover:from-primary-dark hover:to-primary text-primary-foreground font-medium"
+                disabled={uploading || imageUploading}
+              >
+                {uploading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    Adding Diamond...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Add Diamond to Inventory
+                  </>
+                )}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+
+      {/* QR Scanner Modal */}
+      <QRCodeScanner
+        isOpen={isScanning}
+        onClose={() => setIsScanning(false)}
+        onScanSuccess={handleScanSuccess}
+      />
+    </div>
   );
 }
