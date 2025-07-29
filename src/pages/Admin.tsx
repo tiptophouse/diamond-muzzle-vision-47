@@ -1,131 +1,127 @@
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TelegramLayout } from "@/components/layout/TelegramLayout";
-import { AdminHeader } from "@/components/admin/AdminHeader";
-import { AdminStatsGrid } from "@/components/admin/AdminStatsGrid";
-import { AdminUserManager } from "@/components/admin/AdminUserManager";
-import { NotificationCenter } from "@/components/admin/NotificationCenter";
-import { BlockedUsersManager } from "@/components/admin/BlockedUsersManager";
-import { DailyActivityDashboard } from "@/components/admin/DailyActivityDashboard";
-import { GroupDiscussionAnalytics } from "@/components/admin/GroupDiscussionAnalytics";
-import { DiamondShareAnalytics } from "@/components/admin/DiamondShareAnalytics";
-import { UserUploadAnalysis } from "@/components/admin/UserUploadAnalysis";
-import { PersonalizedOutreachSystem } from "@/components/admin/PersonalizedOutreachSystem";
-import { PaymentManagement } from "@/components/admin/PaymentManagement";
-import { EngagementDashboard } from "@/components/engagement/EngagementDashboard";
-import { SmartNotificationSystem } from "@/components/engagement/SmartNotificationSystem";
-import { DeepLinkReports } from "@/components/engagement/DeepLinkReports";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { Users, TrendingUp, DollarSign, Database } from 'lucide-react';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { AdminStatsGrid } from '@/components/admin/AdminStatsGrid';
+import { AdminUserManager } from '@/components/admin/AdminUserManager';
+import { NotificationSender } from '@/components/admin/NotificationSender';
+import { PersonalizedOutreachSystem } from '@/components/admin/PersonalizedOutreachSystem';
+import { TestNotificationSender } from '@/components/admin/TestNotificationSender';
+import { SelectiveNotificationSender } from '@/components/admin/SelectiveNotificationSender';
+import { BlockedUsersManager } from '@/components/admin/BlockedUsersManager';
+import { WelcomeMessageSender } from '@/components/admin/WelcomeMessageSender';
+import { UploadReminderNotifier } from '@/components/admin/UploadReminderNotifier';
+import { ZeroDiamondUsersNotifier } from '@/components/admin/ZeroDiamondUsersNotifier';
+import { PaymentManagement } from '@/components/admin/PaymentManagement';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
-export default function Admin() {
-  const { user } = useTelegramAuth();
-  const { toast } = useToast();
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    activeUsers: 0,
-    premiumUsers: 0,
-    totalRevenue: 0,
-    totalCosts: 0,
-    profit: 0,
-  });
+interface User {
+  id: string;
+  telegram_id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  created_at: string;
+}
 
-  const fetchStats = async () => {
-    try {
-      const { data, error } = await supabase.rpc('get_user_statistics');
-      if (error) throw error;
-      
-      if (data && data.length > 0) {
-        const userStats = data[0];
-        setStats({
-          totalUsers: userStats.total_users || 0,
-          activeUsers: userStats.active_users || 0,
-          premiumUsers: userStats.premium_users || 0,
-          totalRevenue: 0,
-          totalCosts: 0,
-          profit: 0,
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch statistics",
-        variant: "destructive",
-      });
-    }
-  };
+const Admin = () => {
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const { user, isAuthenticated } = useTelegramAuth();
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
+  // Check if user is admin (using your specific admin ID)
+  const isAdmin = user?.id === 2138564172;
 
-  if (!user) {
+  if (!isAuthenticated) {
     return (
-      <TelegramLayout>
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-4">Access Denied</h2>
-            <p className="text-muted-foreground">You must be logged in to access the admin panel.</p>
-          </div>
-        </div>
-      </TelegramLayout>
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center">Authentication Required</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-center text-muted-foreground">
+              Please authenticate to access the admin panel.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center">Access Denied</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-center text-muted-foreground">
+              You don't have permission to access this page.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <TelegramLayout>
-      <div className="container mx-auto p-4">
-        <AdminHeader />
-        
-        <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="engagement">Engagement</TabsTrigger>
-            <TabsTrigger value="payment">Payment</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-4">
-            <AdminStatsGrid stats={stats} />
-            <DailyActivityDashboard />
-          </TabsContent>
-
-          <TabsContent value="users" className="space-y-4">
-            <AdminUserManager />
-            <BlockedUsersManager />
-          </TabsContent>
-
-          <TabsContent value="notifications" className="space-y-4">
-            <NotificationCenter />
-            <SmartNotificationSystem />
-          </TabsContent>
-
-          <TabsContent value="analytics" className="space-y-4">
-            <GroupDiscussionAnalytics />
-            <DiamondShareAnalytics />
-            <UserUploadAnalysis />
-            <DeepLinkReports />
-          </TabsContent>
-
-          <TabsContent value="engagement" className="space-y-4">
-            <EngagementDashboard />
-            <PersonalizedOutreachSystem />
-          </TabsContent>
-
-          <TabsContent value="payment" className="space-y-4">
-            <PaymentManagement />
-          </TabsContent>
-        </Tabs>
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
+        <p className="text-muted-foreground">
+          Manage users, notifications, and system settings
+        </p>
       </div>
-    </TelegramLayout>
+
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="payments">Payments</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <AdminStatsGrid 
+            stats={{
+              totalUsers: 0,
+              activeUsers: 0,
+              totalDiamonds: 0,
+              recentSignups: 0
+            }}
+            blockedUsersCount={0}
+            averageEngagement={0}
+          />
+        </TabsContent>
+
+        <TabsContent value="users" className="space-y-6">
+          <AdminUserManager />
+        </TabsContent>
+
+        <TabsContent value="notifications" className="space-y-6">
+          <div className="grid gap-6">
+            <NotificationSender />
+            <PersonalizedOutreachSystem />
+            <TestNotificationSender />
+            <SelectiveNotificationSender />
+            <WelcomeMessageSender />
+            <UploadReminderNotifier />
+            <ZeroDiamondUsersNotifier />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="payments" className="space-y-6">
+          <PaymentManagement />
+        </TabsContent>
+      </Tabs>
+
+      <div className="mt-8">
+        <BlockedUsersManager />
+      </div>
+    </div>
   );
-}
+};
+
+export default Admin;
