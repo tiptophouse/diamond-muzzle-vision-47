@@ -68,13 +68,7 @@ export function BeautifulStorePage({ diamonds, loading, error, onRefresh }: Beau
 
   const handleDiamondClick = (diamond: Diamond) => {
     selectionChanged();
-    navigate(`/diamond/${diamond.stockNumber}`);
-  };
-
-  const handleViewDetails = (diamond: Diamond, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent event bubbling
-    selectionChanged();
-    navigate(`/diamond/${diamond.stockNumber}`);
+    navigate(`/store?stock=${diamond.stockNumber}`, { replace: true });
   };
 
   if (loading) {
@@ -161,7 +155,6 @@ export function BeautifulStorePage({ diamonds, loading, error, onRefresh }: Beau
                     diamond={diamond}
                     index={index}
                     onClick={() => handleDiamondClick(diamond)}
-                    onViewDetails={handleViewDetails}
                   />
                 ))}
               </AnimatePresence>
@@ -189,12 +182,6 @@ export function BeautifulStorePage({ diamonds, loading, error, onRefresh }: Beau
 // Featured Diamond Section Component
 function FeaturedDiamondSection({ diamond }: { diamond?: Diamond }) {
   if (!diamond) return null;
-
-  const navigate = useNavigate();
-
-  const handleViewDetails = () => {
-    navigate(`/diamond/${diamond.stockNumber}`);
-  };
 
   return (
     <div className="px-4 py-6 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600">
@@ -248,7 +235,7 @@ function FeaturedDiamondSection({ diamond }: { diamond?: Diamond }) {
             <div className="flex gap-2">
               <MobileShareButton diamond={diamond} className="flex-1" />
               <WishlistButton diamond={diamond} />
-              <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 text-white" onClick={handleViewDetails}>
+              <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
                 <Eye className="h-4 w-4 mr-2" />
                 View Details
               </Button>
@@ -261,11 +248,10 @@ function FeaturedDiamondSection({ diamond }: { diamond?: Diamond }) {
 }
 
 // Individual Diamond Card Component
-function DiamondCard({ diamond, index, onClick, onViewDetails }: { 
+function DiamondCard({ diamond, index, onClick }: { 
   diamond: Diamond; 
   index: number; 
   onClick: () => void;
-  onViewDetails: (diamond: Diamond, e: React.MouseEvent) => void;
 }) {
   return (
     <motion.div
@@ -342,7 +328,10 @@ function DiamondCard({ diamond, index, onClick, onViewDetails }: {
             <Button 
               size="sm" 
               variant="outline"
-              onClick={(e) => onViewDetails(diamond, e)}
+              onClick={(e) => {
+                e.stopPropagation();
+                // Handle quick view
+              }}
             >
               <Eye className="h-4 w-4" />
             </Button>
