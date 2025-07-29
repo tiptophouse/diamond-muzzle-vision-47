@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AdminGuard } from '@/components/admin/AdminGuard';
+import { AdminGuard } from '@/components/auth/AdminGuard';
 import { AdminStatsGrid } from '@/components/admin/AdminStatsGrid';
 import { AdminUserManager } from '@/components/admin/AdminUserManager';
 import { TestNotificationSender } from '@/components/admin/TestNotificationSender';
@@ -26,16 +26,6 @@ interface User {
 
 const Admin = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-
-  // Mock stats data - in a real app, this would come from your data source
-  const mockStats = {
-    totalUsers: 0,
-    activeUsers: 0,
-    premiumUsers: 0,
-    totalRevenue: 0,
-    totalCosts: 0,
-    profit: 0
-  };
 
   return (
     <AdminGuard>
@@ -62,11 +52,7 @@ const Admin = () => {
           </TabsList>
 
           <TabsContent value="stats" className="space-y-6">
-            <AdminStatsGrid 
-              stats={mockStats}
-              blockedUsersCount={0}
-              averageEngagement={0}
-            />
+            <AdminStatsGrid />
           </TabsContent>
 
           <TabsContent value="activity" className="space-y-6">
@@ -74,7 +60,7 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="users" className="space-y-6">
-            <AdminUserManager />
+            <AdminUserManager onUserSelect={setSelectedUser} />
           </TabsContent>
 
           <TabsContent value="notifications" className="space-y-6">
