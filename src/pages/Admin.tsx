@@ -1,18 +1,20 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AdminGuard } from '@/components/auth/AdminGuard';
+import { Button } from '@/components/ui/button';
 import { AdminStatsGrid } from '@/components/admin/AdminStatsGrid';
 import { AdminUserManager } from '@/components/admin/AdminUserManager';
+import { NotificationSender } from '@/components/admin/NotificationSender';
+import { PersonalizedOutreachSystem } from '@/components/admin/PersonalizedOutreachSystem';
 import { TestNotificationSender } from '@/components/admin/TestNotificationSender';
+import { SelectiveNotificationSender } from '@/components/admin/SelectiveNotificationSender';
+import { BlockedUsersManager } from '@/components/admin/BlockedUsersManager';
 import { WelcomeMessageSender } from '@/components/admin/WelcomeMessageSender';
 import { UploadReminderNotifier } from '@/components/admin/UploadReminderNotifier';
 import { ZeroDiamondUsersNotifier } from '@/components/admin/ZeroDiamondUsersNotifier';
 import { PaymentManagement } from '@/components/admin/PaymentManagement';
-import { PersonalizedOutreachSystem } from '@/components/admin/PersonalizedOutreachSystem';
-import { DailyActivityDashboard } from '@/components/admin/DailyActivityDashboard';
-import { UserDetailsModal } from '@/components/admin/UserDetailsModal';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
 interface User {
   id: string;
@@ -21,95 +23,104 @@ interface User {
   last_name?: string;
   username?: string;
   created_at: string;
-  last_active?: string;
 }
 
 const Admin = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const { user, isAuthenticated } = useTelegramAuth();
+
+  // Check if user is admin (using your specific admin ID)
+  const isAdmin = user?.id === 2138564172;
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center">Authentication Required</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-center text-muted-foreground">
+              Please authenticate to access the admin panel.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center">Access Denied</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-center text-muted-foreground">
+              You don't have permission to access this page.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <AdminGuard>
-      <div className="container mx-auto p-6 space-y-6" dir="rtl">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">פאנל ניהול</h1>
-            <p className="text-muted-foreground">
-              נהל משתמשים, שלח הודעות ועקוב אחר סטטיסטיקות המערכת
-            </p>
-          </div>
-        </div>
-
-        <Tabs defaultValue="stats" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8">
-            <TabsTrigger value="stats">סטטיסטיקות</TabsTrigger>
-            <TabsTrigger value="activity">פעילות יומית</TabsTrigger>
-            <TabsTrigger value="users">משתמשים</TabsTrigger>
-            <TabsTrigger value="notifications">הודעות</TabsTrigger>
-            <TabsTrigger value="outreach">יצירת קשר</TabsTrigger>
-            <TabsTrigger value="reminders">תזכורות</TabsTrigger>
-            <TabsTrigger value="payments">תשלומים</TabsTrigger>
-            <TabsTrigger value="tools">כלים</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="stats" className="space-y-6">
-            <AdminStatsGrid />
-          </TabsContent>
-
-          <TabsContent value="activity" className="space-y-6">
-            <DailyActivityDashboard />
-          </TabsContent>
-
-          <TabsContent value="users" className="space-y-6">
-            <AdminUserManager onUserSelect={setSelectedUser} />
-          </TabsContent>
-
-          <TabsContent value="notifications" className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              <TestNotificationSender />
-              <WelcomeMessageSender />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="outreach" className="space-y-6">
-            <PersonalizedOutreachSystem />
-          </TabsContent>
-
-          <TabsContent value="reminders" className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              <UploadReminderNotifier />
-              <ZeroDiamondUsersNotifier />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="payments" className="space-y-6">
-            <PaymentManagement />
-          </TabsContent>
-
-          <TabsContent value="tools" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>כלי ניהול נוספים</CardTitle>
-                <CardDescription>
-                  כלים נוספים לניהול המערכת יתווספו כאן
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">בקרוב...</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        {/* User Details Modal */}
-        {selectedUser && (
-          <UserDetailsModal
-            user={selectedUser}
-            isOpen={!!selectedUser}
-            onClose={() => setSelectedUser(null)}
-          />
-        )}
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
+        <p className="text-muted-foreground">
+          Manage users, notifications, and system settings
+        </p>
       </div>
-    </AdminGuard>
+
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="payments">Payments</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <AdminStatsGrid 
+            stats={{
+              totalUsers: 0,
+              activeUsers: 0,
+              totalDiamonds: 0,
+              recentSignups: 0
+            }}
+            blockedUsersCount={0}
+            averageEngagement={0}
+          />
+        </TabsContent>
+
+        <TabsContent value="users" className="space-y-6">
+          <AdminUserManager />
+        </TabsContent>
+
+        <TabsContent value="notifications" className="space-y-6">
+          <div className="grid gap-6">
+            <NotificationSender />
+            <PersonalizedOutreachSystem />
+            <TestNotificationSender />
+            <SelectiveNotificationSender />
+            <WelcomeMessageSender />
+            <UploadReminderNotifier />
+            <ZeroDiamondUsersNotifier />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="payments" className="space-y-6">
+          <PaymentManagement />
+        </TabsContent>
+      </Tabs>
+
+      <div className="mt-8">
+        <BlockedUsersManager />
+      </div>
+    </div>
   );
 };
 
