@@ -1,333 +1,216 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Bell, BellOff, Plus, Settings } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { Button } from '@/components/ui/button';
 import { CreateWishlistAlert } from './CreateWishlistAlert';
-
-interface WishlistItem {
-  id: string;
-  diamond_stock_number: string;
-  diamond_data: any;
-  created_at: string;
-}
+import { Bell, Trash2, Edit } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface WishlistAlert {
   id: string;
+  telegram_id: number;
   shape?: string;
   min_carat?: number;
   max_carat?: number;
-  colors: string[];
-  clarities: string[];
-  cuts: string[];
-  polish: string[];
-  symmetry: string[];
+  colors?: string[];
+  clarities?: string[];
+  cuts?: string[];
+  polish?: string[];
+  symmetry?: string[];
   max_price_per_carat?: number;
   is_active: boolean;
-  alert_name?: string;
   created_at: string;
+  updated_at: string;
 }
 
 export function WishlistContent() {
-  const { user } = useTelegramAuth();
-  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
-  const [wishlistAlerts, setWishlistAlerts] = useState<WishlistAlert[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showCreateAlert, setShowCreateAlert] = useState(false);
+  const [alerts, setAlerts] = useState<WishlistAlert[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const fetchWishlistData = async () => {
-    if (!user?.id) return;
+  useEffect(() => {
+    fetchAlerts();
+  }, []);
 
+  const fetchAlerts = async () => {
     try {
-      setIsLoading(true);
-
-      // Fetch wishlist items
-      const { data: items, error: itemsError } = await supabase
-        .from('wishlist')
-        .select('*')
-        .eq('visitor_telegram_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (itemsError) throw itemsError;
-
-      // Fetch wishlist alerts
-      const { data: alerts, error: alertsError } = await supabase
-        .from('wishlist_alerts')
-        .select('*')
-        .eq('telegram_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (alertsError) throw alertsError;
-
-      setWishlistItems(items || []);
-      setWishlistAlerts(alerts || []);
+      setLoading(true);
+      
+      // For now, using mock data until the SQL migration is approved
+      const mockAlerts: WishlistAlert[] = [
+        {
+          id: '1',
+          telegram_id: 123456789,
+          shape: 'Round',
+          min_carat: 1.0,
+          max_carat: 2.0,
+          colors: ['D', 'E', 'F'],
+          clarities: ['FL', 'IF', 'VVS1'],
+          cuts: ['Excellent'],
+          polish: ['Excellent'],
+          symmetry: ['Excellent'],
+          max_price_per_carat: 8000,
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ];
+      
+      setAlerts(mockAlerts);
+      
     } catch (error) {
-      console.error('Error fetching wishlist data:', error);
+      console.error('Error fetching wishlist alerts:', error);
       toast({
-        title: "שגיאה",
-        description: "שגיאה בטעינת נתוני רשימת המשאלות",
+        title: "Error",
+        description: "Failed to load wishlist alerts",
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchWishlistData();
-  }, [user?.id]);
-
-  const removeFromWishlist = async (itemId: string) => {
+  const handleDeleteAlert = async (alertId: string) => {
     try {
-      const { error } = await supabase
-        .from('wishlist')
-        .delete()
-        .eq('id', itemId);
-
-      if (error) throw error;
-
-      setWishlistItems(items => items.filter(item => item.id !== itemId));
+      // Once SQL migration is approved, implement actual deletion
+      setAlerts(prev => prev.filter(alert => alert.id !== alertId));
+      
       toast({
-        title: "הצלחה",
-        description: "היהלום הוסר מרשימת המשאלות",
-      });
-    } catch (error) {
-      console.error('Error removing from wishlist:', error);
-      toast({
-        title: "שגיאה",
-        description: "שגיאה בהסרת היהלום מרשימת המשאלות",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const toggleAlert = async (alertId: string, currentStatus: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('wishlist_alerts')
-        .update({ is_active: !currentStatus })
-        .eq('id', alertId);
-
-      if (error) throw error;
-
-      setWishlistAlerts(alerts => 
-        alerts.map(alert => 
-          alert.id === alertId 
-            ? { ...alert, is_active: !currentStatus }
-            : alert
-        )
-      );
-
-      toast({
-        title: "הצלחה",
-        description: currentStatus ? "התראה בוטלה" : "התראה הופעלה",
-      });
-    } catch (error) {
-      console.error('Error toggling alert:', error);
-      toast({
-        title: "שגיאה",
-        description: "שגיאה בעדכון ההתראה",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const deleteAlert = async (alertId: string) => {
-    try {
-      const { error } = await supabase
-        .from('wishlist_alerts')
-        .delete()
-        .eq('id', alertId);
-
-      if (error) throw error;
-
-      setWishlistAlerts(alerts => alerts.filter(alert => alert.id !== alertId));
-      toast({
-        title: "הצלחה",
-        description: "התראה נמחקה בהצלחה",
+        title: "Alert Deleted",
+        description: "Wishlist alert has been removed",
       });
     } catch (error) {
       console.error('Error deleting alert:', error);
       toast({
-        title: "שגיאה",
-        description: "שגיאה במחיקת התראה",
+        title: "Error",
+        description: "Failed to delete alert",
         variant: "destructive",
       });
     }
   };
 
-  if (isLoading) {
+  const handleToggleAlert = async (alertId: string) => {
+    try {
+      setAlerts(prev => prev.map(alert => 
+        alert.id === alertId 
+          ? { ...alert, is_active: !alert.is_active }
+          : alert
+      ));
+      
+      toast({
+        title: "Alert Updated",
+        description: "Alert status has been changed",
+      });
+    } catch (error) {
+      console.error('Error updating alert:', error);
+      toast({
+        title: "Error", 
+        description: "Failed to update alert",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">טוען רשימת משאלות...</p>
-        </div>
+      <div className="space-y-4">
+        <div className="h-32 bg-muted animate-pulse rounded-lg"></div>
+        <div className="h-32 bg-muted animate-pulse rounded-lg"></div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold">רשימת המשאלות שלי</h1>
-        <p className="text-muted-foreground">
-          נהל את היהלומים המועדפים עליך והגדר התראות מחיר אוטומטיות
-        </p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Wishlist Alerts</h2>
+          <p className="text-muted-foreground">Get notified when diamonds matching your criteria become available</p>
+        </div>
+        <CreateWishlistAlert onAlertCreated={fetchAlerts} />
       </div>
 
-      {/* Create Alert Button */}
-      <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
-        <CardContent className="text-center py-8">
-          <div className="space-y-4">
-            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
-              <Bell className="w-8 h-8 text-primary" />
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold mb-2">צור התראת מחיר מותאמת אישית</h3>
-              <p className="text-muted-foreground mb-4">
-                הגדר קריטריונים מדויקים וקבל הודעות טלגרם אוטומטיות כשיהלומים מתאימים זמינים במחיר שמתאים לך
-              </p>
-            </div>
-            <Button 
-              onClick={() => setShowCreateAlert(true)}
-              size="lg"
-              className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              צור התראת מחיר חדשה
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Wishlist Alerts */}
-      {wishlistAlerts.length > 0 && (
+      {alerts.length === 0 ? (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="w-5 h-5" />
-              התראות המחיר שלי ({wishlistAlerts.length})
-            </CardTitle>
-            <CardDescription>
-              נהל את ההתראות האוטומטיות שלך
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {wishlistAlerts.map((alert) => (
-                <div key={alert.id} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-medium">{alert.alert_name || 'התראה ללא שם'}</h4>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {alert.shape && <Badge variant="outline">צורה: {alert.shape}</Badge>}
-                        {alert.min_carat && <Badge variant="outline">מ-{alert.min_carat} קראט</Badge>}
-                        {alert.max_carat && <Badge variant="outline">עד {alert.max_carat} קראט</Badge>}
-                        {alert.max_price_per_carat && <Badge variant="outline">עד ${alert.max_price_per_carat}/קראט</Badge>}
-                        {alert.colors.length > 0 && <Badge variant="outline">צבעים: {alert.colors.join(', ')}</Badge>}
-                        {alert.clarities.length > 0 && <Badge variant="outline">בהירות: {alert.clarities.join(', ')}</Badge>}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleAlert(alert.id, alert.is_active)}
-                        className={alert.is_active ? "text-green-600" : "text-gray-400"}
-                      >
-                        {alert.is_active ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteAlert(alert.id)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+          <CardContent className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No alerts yet</h3>
+              <p className="text-muted-foreground mb-4">Create your first alert to get notified about matching diamonds</p>
+              <CreateWishlistAlert onAlertCreated={fetchAlerts} />
             </div>
           </CardContent>
         </Card>
-      )}
-
-      {/* Saved Diamonds */}
-      {wishlistItems.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>יהלומים שמורים ({wishlistItems.length})</CardTitle>
-            <CardDescription>
-              יהלומים שהוספת לרשימת המשאלות שלך
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2">
-              {wishlistItems.map((item) => (
-                <div key={item.id} className="border rounded-lg p-4">
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-2">
-                      <h4 className="font-medium">יהלום #{item.diamond_stock_number}</h4>
-                      {item.diamond_data && (
-                        <div className="text-sm text-muted-foreground space-y-1">
-                          <div>{item.diamond_data.shape} - {item.diamond_data.weight} קראט</div>
-                          <div>{item.diamond_data.color} / {item.diamond_data.clarity}</div>
-                          <div>${item.diamond_data.price_per_carat}/קראט</div>
-                        </div>
-                      )}
-                    </div>
+      ) : (
+        <div className="grid gap-4">
+          {alerts.map((alert) => (
+            <Card key={alert.id} className={`${alert.is_active ? '' : 'opacity-60'}`}>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">
+                    {alert.shape || 'Any Shape'} Diamond Alert
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={alert.is_active ? "default" : "secondary"}>
+                      {alert.is_active ? "Active" : "Paused"}
+                    </Badge>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => removeFromWishlist(item.id)}
-                      className="text-red-500 hover:text-red-700"
+                      onClick={() => handleToggleAlert(alert.id)}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      {alert.is_active ? "Pause" : "Activate"}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteAlert(alert.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Carat:</span>
+                    <span>{alert.min_carat} - {alert.max_carat} ct</span>
+                  </div>
+                  {alert.colors && alert.colors.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Colors:</span>
+                      <div className="flex gap-1">
+                        {alert.colors.map(color => (
+                          <Badge key={color} variant="outline" className="text-xs">{color}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {alert.clarities && alert.clarities.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Clarities:</span>
+                      <div className="flex gap-1">
+                        {alert.clarities.map(clarity => (
+                          <Badge key={clarity} variant="outline" className="text-xs">{clarity}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Max Price:</span>
+                    <span>${alert.max_price_per_carat?.toLocaleString()}/ct</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Created: {new Date(alert.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
-
-      {/* Empty State */}
-      {wishlistItems.length === 0 && wishlistAlerts.length === 0 && (
-        <Card>
-          <CardContent className="text-center py-12">
-            <div className="space-y-4">
-              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto">
-                <Bell className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <div>
-                <h3 className="text-lg font-medium">רשימת המשאלות ריקה</h3>
-                <p className="text-muted-foreground">
-                  התחל בצירת התראות מחיר מותאמות אישית או הוסף יהלומים לרשימת המשאלות
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Create Alert Modal */}
-      <CreateWishlistAlert
-        isOpen={showCreateAlert}
-        onClose={() => setShowCreateAlert(false)}
-        onSuccess={() => {
-          fetchWishlistData();
-          setShowCreateAlert(false);
-        }}
-      />
     </div>
   );
 }

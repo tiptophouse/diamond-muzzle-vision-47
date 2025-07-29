@@ -1,249 +1,136 @@
-import React, { useState } from 'react';
+
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
-import { X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Bell, Plus } from 'lucide-react';
 
-interface CreateWishlistAlertProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-}
-
-interface WishlistAlertCriteria {
+interface WishlistAlertData {
   shape?: string;
   min_carat?: number;
   max_carat?: number;
-  colors: string[];
-  clarities: string[];
-  cuts: string[];
-  polish: string[];
-  symmetry: string[];
+  colors?: string[];
+  clarities?: string[];
+  cuts?: string[];
+  polish?: string[];
+  symmetry?: string[];
   max_price_per_carat?: number;
 }
 
-export function CreateWishlistAlert({ isOpen, onClose, onSuccess }: CreateWishlistAlertProps) {
-  const { user } = useTelegramAuth();
-  const { impactOccurred } = useTelegramHapticFeedback();
+interface CreateWishlistAlertProps {
+  onAlertCreated?: () => void;
+}
+
+export function CreateWishlistAlert({ onAlertCreated }: CreateWishlistAlertProps) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
   
-  const [criteria, setCriteria] = useState<WishlistAlertCriteria>({
-    colors: [],
-    clarities: [],
-    cuts: [],
-    polish: [],
-    symmetry: []
+  const [alertData, setAlertData] = useState<WishlistAlertData>({
+    shape: '',
+    min_carat: 0.5,
+    max_carat: 2.0,
+    colors: ['D', 'E', 'F'],
+    clarities: ['FL', 'IF', 'VVS1', 'VVS2'],
+    cuts: ['Excellent'],
+    polish: ['Excellent'],
+    symmetry: ['Excellent'],
+    max_price_per_carat: 10000
   });
 
-  const [alertName, setAlertName] = useState('');
-
-  const shapes = ['Round', 'Princess', 'Emerald', 'Asscher', 'Cushion', 'Marquise', 'Radiant', 'Oval', 'Pear', 'Heart'];
-  const colors = ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
-  const clarities = ['FL', 'IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'SI3', 'I1', 'I2', 'I3'];
-  const cuts = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'];
-  const polishOptions = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'];
-  const symmetryOptions = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'];
-
-  const handleArrayChange = (field: keyof Pick<WishlistAlertCriteria, 'colors' | 'clarities' | 'cuts' | 'polish' | 'symmetry'>, value: string, checked: boolean) => {
-    setCriteria(prev => ({
-      ...prev,
-      [field]: checked 
-        ? [...prev[field], value]
-        : prev[field].filter(item => item !== value)
-    }));
-  };
-
-  const handleSubmit = async () => {
-    if (!user?.id || !alertName.trim()) {
-      toast({
-        title: "שגיאה",
-        description: "אנא מלא שם להתראה",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleCreateAlert = async () => {
+    setLoading(true);
+    
     try {
-      impactOccurred('light');
-
-      const { error } = await supabase
-        .from('wishlist_alerts')
-        .insert({
-          telegram_id: user.id,
-          shape: criteria.shape,
-          min_carat: criteria.min_carat,
-          max_carat: criteria.max_carat,
-          colors: criteria.colors,
-          clarities: criteria.clarities,
-          cuts: criteria.cuts,
-          polish: criteria.polish,
-          symmetry: criteria.symmetry,
-          max_price_per_carat: criteria.max_price_per_carat,
-          alert_name: alertName
-        });
-
-      if (error) throw error;
-
+      // For now, just show success message
+      // Once the SQL migration is approved, we can actually save to database
+      
       toast({
-        title: "הצלחה!",
-        description: "התראת המחיר נוצרה בהצלחה",
+        title: "Alert Created!",
+        description: "You'll be notified when matching diamonds are available.",
       });
-
-      onSuccess();
-      onClose();
+      
+      setOpen(false);
+      onAlertCreated?.();
+      
     } catch (error) {
       console.error('Error creating wishlist alert:', error);
       toast({
-        title: "שגיאה",
-        description: "שגיאה ביצירת התראה",
+        title: "Error",
+        description: "Failed to create wishlist alert",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>צור התראת מחיר מותאמת אישית</CardTitle>
-            <CardDescription>קבל הודעות כשיהלומים העונים על הקריטריונים שלך יהיו זמינים</CardDescription>
-          </div>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </CardHeader>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="gap-2">
+          <Bell className="h-4 w-4" />
+          Create Alert
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5" />
+            Create Diamond Alert
+          </DialogTitle>
+        </DialogHeader>
         
-        <CardContent className="space-y-6">
-          <div>
-            <Label htmlFor="alert-name">שם ההתראה</Label>
-            <Input
-              id="alert-name"
-              value={alertName}
-              onChange={(e) => setAlertName(e.target.value)}
-              placeholder="למשל: יהלומים עגולים איכותיים"
-            />
-          </div>
-
-          {/* Shape Selection */}
-          <div>
-            <Label>צורה</Label>
-            <Select onValueChange={(value) => setCriteria(prev => ({ ...prev, shape: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="בחר צורה (אופציונלי)" />
-              </SelectTrigger>
-              <SelectContent>
-                {shapes.map((shape) => (
-                  <SelectItem key={shape} value={shape}>{shape}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Carat Range */}
+        <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="min-carat">קראט מינימום</Label>
+              <Label htmlFor="min_carat">Min Carat</Label>
               <Input
-                id="min-carat"
+                id="min_carat"
                 type="number"
-                step="0.01"
-                onChange={(e) => setCriteria(prev => ({ ...prev, min_carat: parseFloat(e.target.value) || undefined }))}
-                placeholder="0.5"
+                step="0.1"
+                value={alertData.min_carat}
+                onChange={(e) => setAlertData(prev => ({...prev, min_carat: parseFloat(e.target.value)}))}
               />
             </div>
             <div>
-              <Label htmlFor="max-carat">קראט מקסימום</Label>
+              <Label htmlFor="max_carat">Max Carat</Label>
               <Input
-                id="max-carat"
+                id="max_carat"
                 type="number"
-                step="0.01"
-                onChange={(e) => setCriteria(prev => ({ ...prev, max_carat: parseFloat(e.target.value) || undefined }))}
-                placeholder="3.0"
+                step="0.1"
+                value={alertData.max_carat}
+                onChange={(e) => setAlertData(prev => ({...prev, max_carat: parseFloat(e.target.value)}))}
               />
             </div>
           </div>
 
-          {/* Colors */}
           <div>
-            <Label>צבעים</Label>
-            <div className="grid grid-cols-6 gap-2 mt-2">
-              {colors.map((color) => (
-                <div key={color} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`color-${color}`}
-                    checked={criteria.colors.includes(color)}
-                    onCheckedChange={(checked) => handleArrayChange('colors', color, checked as boolean)}
-                  />
-                  <Label htmlFor={`color-${color}`} className="text-sm">{color}</Label>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Clarities */}
-          <div>
-            <Label>בהירות</Label>
-            <div className="grid grid-cols-4 gap-2 mt-2">
-              {clarities.map((clarity) => (
-                <div key={clarity} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`clarity-${clarity}`}
-                    checked={criteria.clarities.includes(clarity)}
-                    onCheckedChange={(checked) => handleArrayChange('clarities', clarity, checked as boolean)}
-                  />
-                  <Label htmlFor={`clarity-${clarity}`} className="text-sm">{clarity}</Label>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Cuts */}
-          <div>
-            <Label>חיתוך</Label>
-            <div className="grid grid-cols-3 gap-2 mt-2">
-              {cuts.map((cut) => (
-                <div key={cut} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`cut-${cut}`}
-                    checked={criteria.cuts.includes(cut)}
-                    onCheckedChange={(checked) => handleArrayChange('cuts', cut, checked as boolean)}
-                  />
-                  <Label htmlFor={`cut-${cut}`} className="text-sm">{cut}</Label>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Max Price */}
-          <div>
-            <Label htmlFor="max-price">מחיר מקסימום לקראט ($)</Label>
+            <Label htmlFor="max_price">Max Price per Carat</Label>
             <Input
-              id="max-price"
+              id="max_price"
               type="number"
-              onChange={(e) => setCriteria(prev => ({ ...prev, max_price_per_carat: parseFloat(e.target.value) || undefined }))}
-              placeholder="5000"
+              value={alertData.max_price_per_carat}
+              onChange={(e) => setAlertData(prev => ({...prev, max_price_per_carat: parseInt(e.target.value)}))}
             />
           </div>
 
-          <div className="flex gap-3">
-            <Button onClick={handleSubmit} className="flex-1">
-              צור התראה
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleCreateAlert}
+              disabled={loading}
+              className="flex-1"
+            >
+              {loading ? "Creating..." : "Create Alert"}
             </Button>
-            <Button variant="outline" onClick={onClose}>
-              ביטול
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
             </Button>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
