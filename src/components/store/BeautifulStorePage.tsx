@@ -1,7 +1,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useStoreData } from "@/hooks/useStoreData";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { MobilePullToRefresh } from "@/components/mobile/MobilePullToRefresh";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
@@ -10,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Share2, Filter, SortAsc, Search, Plus, Eye, Heart, Zap, Sparkles, ArrowRight } from "lucide-react";
 import { toast } from 'sonner';
-import { Gem360Viewer } from "./Gem360Viewer";
 import { ThreeDViewer } from "./ThreeDViewer";
 import { MobileShareButton } from "./MobileShareButton";
 import { WishlistButton } from "./WishlistButton";
@@ -27,14 +25,16 @@ export function BeautifulStorePage({ diamonds, loading, error, onRefresh }: Beau
   const [searchParams] = useSearchParams();
   const { selectionChanged, impactOccurred } = useTelegramHapticFeedback();
   const navigate = useNavigate();
-  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState("featured");
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const stockNumber = searchParams.get('stock');
   
-  // Filter diamonds for sharing - show only visible ones
+  // Filter diamonds for sharing - show only visible ones, default to true if undefined
   const visibleDiamonds = diamonds.filter(diamond => diamond.store_visible !== false);
+  
+  console.log('🏪 STORE PAGE: Total diamonds:', diamonds.length);
+  console.log('🏪 STORE PAGE: Visible diamonds:', visibleDiamonds.length);
+  console.log('🏪 STORE PAGE: Loading:', loading);
+  console.log('🏪 STORE PAGE: Error:', error);
   
   // Handle sharing the entire store
   const handleShareStore = () => {
@@ -72,7 +72,7 @@ export function BeautifulStorePage({ diamonds, loading, error, onRefresh }: Beau
   };
 
   const handleViewDetails = (diamond: Diamond, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent the card click event
+    e.stopPropagation();
     selectionChanged();
     navigate(`/diamond/${diamond.stockNumber}`);
   };
