@@ -88,8 +88,10 @@ const Admin = () => {
             stats={{
               totalUsers: 0,
               activeUsers: 0,
-              totalDiamonds: 0,
-              recentSignups: 0
+              premiumUsers: 0,
+              totalRevenue: 0,
+              totalCosts: 0,
+              profit: 0
             }}
             blockedUsersCount={0}
             averageEngagement={0}

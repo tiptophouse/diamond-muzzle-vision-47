@@ -1,4 +1,3 @@
-
 import { Suspense, lazy } from 'react';
 import { Toaster } from '@/components/ui/toaster';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -10,7 +9,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { TelegramLayout } from '@/components/layout/TelegramLayout';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { TelegramOnlyGuard } from '@/components/auth/TelegramOnlyGuard';
-import { AdminGuard } from '@/components/auth/AdminGuard';
+import { AdminGuard } from '@/components/admin/AdminGuard';
 
 // Lazy load pages
 const Index = lazy(() => import('@/pages/Index'));

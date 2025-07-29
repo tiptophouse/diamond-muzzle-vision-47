@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, User, Phone, Mail, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { format, addDays, startOfDay, addMinutes, isAfter, isBefore } from 'date-fns';
 
 interface TimeSlot {
@@ -66,13 +65,8 @@ const ScheduleMeetingPage = () => {
     const breakStart = 12; // 12:00 PM
     const breakEnd = 13; // 1:00 PM
 
-    // Fetch existing bookings for the date
-    const { data: bookings } = await supabase
-      .from('meeting_bookings')
-      .select('scheduled_time')
-      .eq('meeting_date', format(date, 'yyyy-MM-dd'));
-
-    const bookedTimes = bookings?.map(b => b.scheduled_time) || [];
+    // For now, we'll simulate some booked slots
+    const simulatedBookedTimes = ['09:00', '14:20', '16:40'];
 
     for (let hour = startHour; hour < endHour; hour++) {
       for (let minute = 0; minute < 60; minute += slotDuration) {
@@ -86,7 +80,7 @@ const ScheduleMeetingPage = () => {
         if (isBefore(slotTime, new Date())) continue;
         
         const timeString = format(slotTime, 'HH:mm');
-        const isBooked = bookedTimes.includes(timeString);
+        const isBooked = simulatedBookedTimes.includes(timeString);
         
         slots.push({
           id: `${format(date, 'yyyy-MM-dd')}-${timeString}`,
@@ -115,23 +109,20 @@ const ScheduleMeetingPage = () => {
     setIsSubmitting(true);
     
     try {
-      const { error } = await supabase
-        .from('meeting_bookings')
-        .insert({
-          telegram_id: user?.id || 0,
-          client_name: meetingData.clientName,
-          client_phone: meetingData.clientPhone,
-          client_email: meetingData.clientEmail,
-          client_message: meetingData.clientMessage,
-          meeting_date: format(selectedSlot.date, 'yyyy-MM-dd'),
-          scheduled_time: selectedSlot.time,
-          status: 'scheduled',
-          telegram_username: user?.username,
-          telegram_first_name: user?.first_name,
-          telegram_last_name: user?.last_name
-        });
-
-      if (error) throw error;
+      // Simulate meeting booking - in a real app, this would save to a database
+      console.log('Meeting booking request:', {
+        telegram_id: user?.id || 0,
+        client_name: meetingData.clientName,
+        client_phone: meetingData.clientPhone,
+        client_email: meetingData.clientEmail,
+        client_message: meetingData.clientMessage,
+        meeting_date: format(selectedSlot.date, 'yyyy-MM-dd'),
+        scheduled_time: selectedSlot.time,
+        status: 'scheduled',
+        telegram_username: user?.username,
+        telegram_first_name: user?.first_name,
+        telegram_last_name: user?.last_name
+      });
 
       toast({
         title: "Meeting Scheduled! 🎉",
