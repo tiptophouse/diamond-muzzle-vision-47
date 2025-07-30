@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AdminGuard } from '@/components/auth/AdminGuard';
+import { AdminGuard } from '@/components/admin/AdminGuard';
 import { AdminStatsGrid } from '@/components/admin/AdminStatsGrid';
 import { AdminUserManager } from '@/components/admin/AdminUserManager';
 import { TestNotificationSender } from '@/components/admin/TestNotificationSender';
@@ -13,6 +13,8 @@ import { PaymentManagement } from '@/components/admin/PaymentManagement';
 import { PersonalizedOutreachSystem } from '@/components/admin/PersonalizedOutreachSystem';
 import { DailyActivityDashboard } from '@/components/admin/DailyActivityDashboard';
 import { UserDetailsModal } from '@/components/admin/UserDetailsModal';
+import { useEnhancedAnalytics } from '@/hooks/useEnhancedAnalytics';
+import { useBlockedUsers } from '@/hooks/useBlockedUsers';
 
 interface User {
   id: string;
@@ -26,6 +28,15 @@ interface User {
 
 const Admin = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const { enhancedUsers, getUserEngagementScore, getUserStats } = useEnhancedAnalytics();
+  const { blockedUsers } = useBlockedUsers();
+
+  // Calculate stats for AdminStatsGrid
+  const stats = getUserStats();
+  const blockedUsersCount = blockedUsers.length;
+  const averageEngagement = enhancedUsers.length > 0 
+    ? Math.round(enhancedUsers.reduce((sum, user) => sum + getUserEngagementScore(user), 0) / enhancedUsers.length)
+    : 0;
 
   return (
     <AdminGuard>
@@ -52,7 +63,11 @@ const Admin = () => {
           </TabsList>
 
           <TabsContent value="stats" className="space-y-6">
-            <AdminStatsGrid />
+            <AdminStatsGrid 
+              stats={stats}
+              blockedUsersCount={blockedUsersCount}
+              averageEngagement={averageEngagement}
+            />
           </TabsContent>
 
           <TabsContent value="activity" className="space-y-6">
@@ -60,7 +75,7 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="users" className="space-y-6">
-            <AdminUserManager onUserSelect={setSelectedUser} />
+            <AdminUserManager />
           </TabsContent>
 
           <TabsContent value="notifications" className="space-y-6">
