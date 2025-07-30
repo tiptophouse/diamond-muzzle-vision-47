@@ -1,7 +1,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useStoreData } from "@/hooks/useStoreData";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { MobilePullToRefresh } from "@/components/mobile/MobilePullToRefresh";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
@@ -33,8 +32,12 @@ export function BeautifulStorePage({ diamonds, loading, error, onRefresh }: Beau
 
   const stockNumber = searchParams.get('stock');
   
-  // Filter diamonds for sharing - show only visible ones
-  const visibleDiamonds = diamonds.filter(diamond => diamond.store_visible !== false);
+  // Show all diamonds (don't filter by store_visible since we want to show everything)
+  const visibleDiamonds = diamonds;
+  
+  console.log('🏪 BeautifulStorePage: Rendering with', visibleDiamonds.length, 'diamonds');
+  console.log('🏪 BeautifulStorePage: Loading state:', loading);
+  console.log('🏪 BeautifulStorePage: Error state:', error);
   
   // Handle sharing the entire store
   const handleShareStore = () => {
@@ -73,7 +76,7 @@ export function BeautifulStorePage({ diamonds, loading, error, onRefresh }: Beau
 
   const handleViewDetails = (diamond: Diamond, e?: React.MouseEvent) => {
     if (e) {
-      e.stopPropagation(); // Prevent the card click event
+      e.stopPropagation();
     }
     selectionChanged();
     navigate(`/diamond/${diamond.stockNumber}`);
