@@ -71,8 +71,10 @@ export function BeautifulStorePage({ diamonds, loading, error, onRefresh }: Beau
     navigate(`/diamond/${diamond.stockNumber}`);
   };
 
-  const handleViewDetails = (diamond: Diamond, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent the card click event
+  const handleViewDetails = (diamond: Diamond, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation(); // Prevent the card click event
+    }
     selectionChanged();
     navigate(`/diamond/${diamond.stockNumber}`);
   };
@@ -162,7 +164,7 @@ export function BeautifulStorePage({ diamonds, loading, error, onRefresh }: Beau
                     diamond={diamond}
                     index={index}
                     onClick={() => handleDiamondClick(diamond)}
-                    onViewDetails={handleViewDetails}
+                    onViewDetails={(e) => handleViewDetails(diamond, e)}
                   />
                 ))}
               </AnimatePresence>
@@ -190,7 +192,7 @@ export function BeautifulStorePage({ diamonds, loading, error, onRefresh }: Beau
 // Featured Diamond Section Component
 function FeaturedDiamondSection({ diamond, onViewDetails }: { 
   diamond?: Diamond; 
-  onViewDetails: (diamond: Diamond, e: React.MouseEvent) => void;
+  onViewDetails: (diamond: Diamond, e?: React.MouseEvent) => void;
 }) {
   if (!diamond) return null;
 
@@ -267,7 +269,7 @@ function DiamondCard({ diamond, index, onClick, onViewDetails }: {
   diamond: Diamond; 
   index: number; 
   onClick: () => void;
-  onViewDetails: (diamond: Diamond, e: React.MouseEvent) => void;
+  onViewDetails: (e: React.MouseEvent) => void;
 }) {
   return (
     <motion.div
@@ -344,7 +346,7 @@ function DiamondCard({ diamond, index, onClick, onViewDetails }: {
             <Button 
               size="sm" 
               variant="outline"
-              onClick={(e) => onViewDetails(diamond, e)}
+              onClick={onViewDetails}
             >
               <Eye className="h-4 w-4" />
             </Button>
