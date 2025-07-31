@@ -50,8 +50,7 @@ export function useStoreData() {
           certificateUrl: item.certificate_url || item.certificateUrl || undefined
         };
       })
-      .filter(diamond => diamond.store_visible && diamond.status === 'Available')
-      .slice(0, 50); // Limit to 50 diamonds for performance
+      .filter(diamond => diamond.store_visible && diamond.status === 'Available');
   }, []);
 
   const fetchStoreData = useCallback(async (useCache = true) => {
