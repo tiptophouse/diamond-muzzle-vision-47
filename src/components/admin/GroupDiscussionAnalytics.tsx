@@ -1,18 +1,21 @@
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageCircle, TrendingUp, AlertTriangle, Users, Eye } from 'lucide-react';
+import { RefreshCw, MessageSquare, TrendingUp, TrendingDown, AlertCircle, Users } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface GroupMessage {
   id: string;
-  group_id: number;
-  telegram_id: number;
+  group_id: string;
+  sender_telegram_id?: number;
+  sender_username?: string;
   message_text: string;
   message_timestamp: string;
   processed_for_insights: boolean;
-  created_at: string;
 }
 
 interface AnalysisInsight {
@@ -26,222 +29,345 @@ interface AnalysisInsight {
 export function GroupDiscussionAnalytics() {
   const [messages, setMessages] = useState<GroupMessage[]>([]);
   const [insights, setInsights] = useState<AnalysisInsight[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalMessages: 0,
-    activeGroups: 0,
-    supplyMentions: 0,
-    demandMentions: 0
-  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchDiscussionData = async () => {
     try {
-      setLoading(true);
-      
-      // For now, using mock data until tables are created
-      const mockMessages: GroupMessage[] = [
-        {
-          id: '1',
-          group_id: 123456789,
-          telegram_id: 987654321,
-          message_text: 'מחפש יהלום עגול 1 קראט צבע D',
-          message_timestamp: new Date().toISOString(),
-          processed_for_insights: false,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '2', 
-          group_id: 123456789,
-          telegram_id: 555666777,
-          message_text: 'יש לי יהלומי פנסי באיכות גבוהה למכירה',
-          message_timestamp: new Date().toISOString(),
-          processed_for_insights: true,
-          created_at: new Date().toISOString()
-        }
-      ];
+      setIsLoading(true);
 
-      const mockInsights: AnalysisInsight[] = [
-        {
-          id: '1',
-          analysis_type: 'supply_demand',
-          insights: {
-            trend: 'high_demand_round_diamonds',
-            details: 'ביקוש גבוה ליהלומים עגולים 1-2 קראט'
-          },
-          confidence_score: 0.85,
-          created_at: new Date().toISOString()
-        }
-      ];
+      // Fetch recent group messages
+      const { data: messageData, error: messageError } = await supabase
+        .from('group_discussions')
+        .select('*')
+        .order('message_timestamp', { ascending: false })
+        .limit(100);
 
-      setMessages(mockMessages);
-      setInsights(mockInsights);
-      
-      setStats({
-        totalMessages: mockMessages.length,
-        activeGroups: 3,
-        supplyMentions: 12,
-        demandMentions: 18
-      });
+      if (messageError) throw messageError;
 
+      // Fetch analysis insights
+      const { data: insightData, error: insightError } = await supabase
+        .from('discussion_insights')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (insightError && insightError.code !== 'PGRST116') {
+        throw insightError;
+      }
+
+      setMessages(messageData || []);
+      setInsights(insightData || []);
     } catch (error) {
-      console.error('Error fetching group discussion data:', error);
+      console.error('Error fetching discussion data:', error);
+      toast({
+        title: "שגיאה",
+        description: "שגיאה בטעינת נתוני הדיונים",
+        variant: "destructive",
+      });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  if (loading) {
+  const analyzeDiscussions = async () => {
+    try {
+      setIsAnalyzing(true);
+
+      const { data, error } = await supabase.functions.invoke('analyze-group-discussions', {
+        body: {
+          analyze_recent_messages: true,
+          analysis_types: ['supply_demand', 'pain_points', 'market_trends']
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "הצלחה",
+        description: "ניתוח הדיונים הושלם בהצלחה",
+      });
+
+      // Refresh data to show new insights
+      await fetchDiscussionData();
+    } catch (error) {
+      console.error('Error analyzing discussions:', error);
+      toast({
+        title: "שגיאה",
+        description: "שגיאה בניתוח הדיונים",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDiscussionData();
+  }, []);
+
+  const getInsightIcon = (type: string) => {
+    switch (type) {
+      case 'supply_demand':
+        return <TrendingUp className="w-4 h-4" />;
+      case 'pain_points':
+        return <AlertCircle className="w-4 h-4" />;
+      case 'market_trends':
+        return <TrendingDown className="w-4 h-4" />;
+      default:
+        return <MessageSquare className="w-4 h-4" />;
+    }
+  };
+
+  const getInsightTitle = (type: string) => {
+    switch (type) {
+      case 'supply_demand':
+        return 'היצע וביקוש';
+      case 'pain_points':
+        return 'בעיות ואתגרים';
+      case 'market_trends':
+        return 'מגמות שוק';
+      default:
+        return type;
+    }
+  };
+
+  if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="h-32 bg-muted animate-pulse rounded-lg"></div>
-        <div className="h-64 bg-muted animate-pulse rounded-lg"></div>
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">טוען נתוני דיונים...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6" dir="rtl">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">ניתוח דיוני קבוצה</h2>
+          <p className="text-muted-foreground">
+            תובנות מתוך דיונים בקבוצות הטלגרם של יהלומנים
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            onClick={fetchDiscussionData}
+            variant="outline"
+            size="sm"
+            disabled={isLoading}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            רענן
+          </Button>
+          <Button
+            onClick={analyzeDiscussions}
+            disabled={isAnalyzing}
+            size="sm"
+          >
+            {isAnalyzing ? (
+              <>
+                <div className="w-4 h-4 mr-2 animate-spin border-2 border-white border-t-transparent rounded-full" />
+                מנתח...
+              </>
+            ) : (
+              <>
+                <MessageSquare className="w-4 h-4 mr-2" />
+                נתח דיונים
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
-          <CardContent className="flex items-center justify-between p-6">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">הודעות כוללות</p>
-              <div className="text-2xl font-bold">{stats.totalMessages}</div>
-            </div>
-            <MessageCircle className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">הודעות בקבוצות</CardTitle>
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{messages.length}</div>
+            <p className="text-xs text-muted-foreground">
+              הודעות אחרונות שנאספו
+            </p>
           </CardContent>
         </Card>
-        
+
         <Card>
-          <CardContent className="flex items-center justify-between p-6">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">קבוצות פעילות</p>
-              <div className="text-2xl font-bold">{stats.activeGroups}</div>
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">הודעות מעובדות</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {messages.filter(m => m.processed_for_insights).length}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              מתוך {messages.length} הודעות
+            </p>
           </CardContent>
         </Card>
-        
+
         <Card>
-          <CardContent className="flex items-center justify-between p-6">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">אזכורי היצע</p>
-              <div className="text-2xl font-bold text-green-600">{stats.supplyMentions}</div>
-            </div>
-            <TrendingUp className="h-4 w-4 text-green-600" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">תובנות שזוהו</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{insights.length}</div>
+            <p className="text-xs text-muted-foreground">
+              ניתוחים אחרונים
+            </p>
           </CardContent>
         </Card>
-        
+
         <Card>
-          <CardContent className="flex items-center justify-between p-6">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">אזכורי ביקוש</p>
-              <div className="text-2xl font-bold text-blue-600">{stats.demandMentions}</div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">דיוק ממוצע</CardTitle>
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {insights.length > 0 
+                ? Math.round((insights.reduce((acc, insight) => acc + insight.confidence_score, 0) / insights.length) * 100)
+                : 0}%
             </div>
-            <AlertTriangle className="h-4 w-4 text-blue-600" />
+            <p className="text-xs text-muted-foreground">
+              דיוק ממוצע של הניתוח
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Main Content */}
       <Tabs defaultValue="insights" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="insights">תובנות AI</TabsTrigger>
+        <TabsList>
+          <TabsTrigger value="insights">תובנות מהדיונים</TabsTrigger>
           <TabsTrigger value="messages">הודעות אחרונות</TabsTrigger>
-          <TabsTrigger value="trends">מגמות שוק</TabsTrigger>
         </TabsList>
 
         <TabsContent value="insights" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>תובנות מבוססות AI</CardTitle>
-              <CardDescription>
-                ניתוח אוטומטי של דיונים בקבוצות למציאת הזדמנויות עסקיות
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {insights.map((insight) => (
-                  <div key={insight.id} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <Badge variant="secondary">
-                        {insight.analysis_type === 'supply_demand' ? 'היצע וביקוש' : insight.analysis_type}
+          {insights.length > 0 ? (
+            <div className="space-y-4">
+              {insights.map((insight) => (
+                <Card key={insight.id}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {getInsightIcon(insight.analysis_type)}
+                        <CardTitle className="text-lg">
+                          {getInsightTitle(insight.analysis_type)}
+                        </CardTitle>
+                      </div>
+                      <Badge variant="outline">
+                        {Math.round(insight.confidence_score * 100)}% דיוק
                       </Badge>
-                      <span className="text-sm text-muted-foreground">
-                        ביטחון: {Math.round(insight.confidence_score * 100)}%
-                      </span>
                     </div>
-                    <p className="text-sm">{insight.insights.details}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                    <CardDescription>
+                      {new Date(insight.created_at).toLocaleDateString('he-IL')}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {insight.insights?.summary && (
+                        <div>
+                          <h4 className="font-medium mb-2">סיכום:</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {insight.insights.summary}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {insight.insights?.key_findings && (
+                        <div>
+                          <h4 className="font-medium mb-2">ממצאים עיקריים:</h4>
+                          <ul className="space-y-1">
+                            {insight.insights.key_findings.map((finding: string, index: number) => (
+                              <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
+                                <span className="text-primary">•</span>
+                                {finding}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {insight.insights?.recommendations && (
+                        <div>
+                          <h4 className="font-medium mb-2">המלצות:</h4>
+                          <ul className="space-y-1">
+                            {insight.insights.recommendations.map((rec: string, index: number) => (
+                              <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
+                                <span className="text-green-600">→</span>
+                                {rec}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="text-center py-12">
+                <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">אין תובנות זמינות</h3>
+                <p className="text-muted-foreground mb-4">
+                  לחץ על "נתח דיונים" כדי לקבל תובנות מהדיונים בקבוצות
+                </p>
+                <Button onClick={analyzeDiscussions} disabled={isAnalyzing}>
+                  נתח דיונים עכשיו
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="messages" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>הודעות שנתפסו מהקבוצות</CardTitle>
-              <CardDescription>
-                הודעות אחרונות מקבוצות המסחר שנותחו על ידי המערכת
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {messages.map((message) => (
-                  <div key={message.id} className="p-3 border rounded-lg">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium">קבוצה {message.group_id}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(message.message_timestamp).toLocaleTimeString('he-IL')}
-                      </span>
+          {messages.length > 0 ? (
+            <div className="space-y-3">
+              {messages.slice(0, 20).map((message) => (
+                <Card key={message.id}>
+                  <CardContent className="pt-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-medium">
+                            {message.sender_username ? `@${message.sender_username}` : `משתמש ${message.sender_telegram_id}`}
+                          </span>
+                          <Badge variant={message.processed_for_insights ? "default" : "secondary"} className="text-xs">
+                            {message.processed_for_insights ? "מעובד" : "ממתין"}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {message.message_text}
+                        </p>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(message.message_timestamp).toLocaleDateString('he-IL')}
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">{message.message_text}</p>
-                    <div className="mt-2">
-                      <Badge variant={message.processed_for_insights ? "default" : "outline"} className="text-xs">
-                        {message.processed_for_insights ? "עובד" : "ממתין לעיבוד"}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="trends" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>מגמות שוק בזמן אמת</CardTitle>
-              <CardDescription>
-                ניתוח מגמות מבוסס על פעילות בקבוצות
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h4 className="font-medium text-green-800 mb-2">📈 מגמה חמה</h4>
-                  <p className="text-sm text-green-700">יהלומים עגולים 1-2 קראט בביקוש גבוה השבוע</p>
-                </div>
-                
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h4 className="font-medium text-blue-800 mb-2">💎 הזדמנות השקעה</h4>
-                  <p className="text-sm text-blue-700">יהלומי פנסי באיכות VS+ מוצעים במחירים אטרקטיביים</p>
-                </div>
-                
-                <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                  <h4 className="font-medium text-orange-800 mb-2">⚠️ מחסור היצע</h4>
-                  <p className="text-sm text-orange-700">מחסור ביהלומים צבע D-F, בהירות FL-VS1 במשקלים 0.5-1 קראט</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="text-center py-12">
+                <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">אין הודעות זמינות</h3>
+                <p className="text-muted-foreground">
+                  הודעות מקבוצות יופיעו כאן לאחר שהבוט יתחיל לאסוף נתונים
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>
