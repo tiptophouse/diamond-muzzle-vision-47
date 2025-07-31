@@ -36,6 +36,11 @@ export interface DiamondFormData {
   status: string;
   storeVisible?: boolean;
   
-  // Image
+  // Enhanced Media Fields
   picture?: string;
+  v360Url?: string;
+  gem360Url?: string;
+  videoUrl?: string;
+  certificateImageUrl?: string;
+  giaReportPdf?: string;
 }

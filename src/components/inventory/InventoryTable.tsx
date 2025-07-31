@@ -11,7 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface Diamond {
   id: string;
-  diamondId?: string | number; // FastAPI diamond ID
+  diamondId?: string;
   stockNumber: string;
   shape: string;
   carat: number;
@@ -22,12 +22,32 @@ export interface Diamond {
   status: string;
   fluorescence?: string;
   imageUrl?: string;
-  picture?: string; // Alternative image field from API
-  store_visible?: boolean;
+  store_visible: boolean;
   certificateNumber?: string;
   lab?: string;
-  gem360Url?: string;
   certificateUrl?: string;
+  
+  // Enhanced media fields
+  v360Url?: string;
+  gem360Url?: string;
+  videoUrl?: string;
+  certificateImageUrl?: string;
+  giaReportPdf?: string;
+  
+  // Additional fields for compatibility
+  polish?: string;
+  symmetry?: string;
+  tablePercentage?: number;
+  depthPercentage?: number;
+  length?: number;
+  width?: number;
+  depth?: number;
+  ratio?: number;
+  gridle?: string;
+  culet?: string;
+  rapnet?: number;
+  pricePerCarat?: number;
+  certificateComment?: string;
 }
 
 interface InventoryTableProps {

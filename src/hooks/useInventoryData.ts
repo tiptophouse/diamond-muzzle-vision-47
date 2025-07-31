@@ -54,10 +54,10 @@ export function useInventoryData() {
       if (result.data && result.data.length > 0) {
         console.log('📥 INVENTORY HOOK: Processing', result.data.length, 'diamonds');
         
-        // Transform data to match Diamond interface
+        // Transform data to match Diamond interface with enhanced media fields
         const transformedDiamonds: Diamond[] = result.data.map(item => ({
           id: item.id || `${item.stock || item.stock_number}-${Date.now()}`,
-          diamondId: item.id || item.diamond_id, // FastAPI diamond ID
+          diamondId: item.id || item.diamond_id,
           stockNumber: item.stock || item.stock_number || item.stockNumber || '',
           shape: normalizeShape(item.shape),
           carat: parseFloat((item.weight || item.carat || 0).toString()) || 0,
@@ -72,6 +72,28 @@ export function useInventoryData() {
           certificateNumber: item.certificate_number || item.certificateNumber || undefined,
           lab: item.lab || undefined,
           certificateUrl: item.certificate_url || item.certificateUrl || undefined,
+          
+          // Enhanced media fields
+          v360Url: item.v360_url || undefined,
+          gem360Url: item.gem360_url || undefined,
+          videoUrl: item.video_url || undefined,
+          certificateImageUrl: item.certificate_image_url || undefined,
+          giaReportPdf: item.gia_report_pdf || undefined,
+          
+          // Additional compatibility fields
+          polish: item.polish || undefined,
+          symmetry: item.symmetry || undefined,
+          tablePercentage: item.table_percentage || undefined,
+          depthPercentage: item.depth_percentage || undefined,
+          length: item.length || undefined,
+          width: item.width || undefined,
+          depth: item.depth || undefined,
+          ratio: item.ratio || undefined,
+          gridle: item.gridle || undefined,
+          culet: item.culet || undefined,
+          rapnet: item.rapnet || undefined,
+          pricePerCarat: item.price_per_carat || undefined,
+          certificateComment: item.certificate_comment || undefined,
         }));
 
         console.log('📥 INVENTORY HOOK: Transformed diamonds:', transformedDiamonds.length);

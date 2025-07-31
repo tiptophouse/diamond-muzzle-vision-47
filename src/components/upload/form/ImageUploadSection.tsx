@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { UseFormSetValue, UseFormWatch } from 'react-hook-form';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Upload, X, Image, FileText } from 'lucide-react';
+import { Upload, X, Image, FileText, RotateCcw, Video, FileImage } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,6 +18,9 @@ export function ImageUploadSection({ setValue, watch, onGiaDataExtracted }: Imag
   const [uploading, setUploading] = useState(false);
   const [extractingData, setExtractingData] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [v360Url, setV360Url] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
+  const [certificateImageUrl, setCertificateImageUrl] = useState('');
   const { toast } = useToast();
   const currentImage = watch('picture');
 
@@ -188,13 +190,28 @@ export function ImageUploadSection({ setValue, watch, onGiaDataExtracted }: Imag
     }
   };
 
+  const handleV360UrlChange = (url: string) => {
+    setV360Url(url);
+    setValue('v360Url', url);
+  };
+
+  const handleVideoUrlChange = (url: string) => {
+    setVideoUrl(url);
+    setValue('videoUrl', url);
+  };
+
+  const handleCertificateImageChange = (url: string) => {
+    setCertificateImageUrl(url);
+    setValue('certificateImageUrl', url);
+  };
+
   const removeImage = () => {
     setValue('picture', '');
     setImagePreview(null);
   };
 
   return (
-    <div className="space-y-6">
+    <div className="grid grid-cols-1 gap-6">
       {/* GIA Certificate Upload Section */}
       <div className="space-y-4 p-4 border border-primary/20 rounded-lg bg-primary/5">
         <div className="space-y-2">
@@ -276,6 +293,60 @@ export function ImageUploadSection({ setValue, watch, onGiaDataExtracted }: Imag
             />
           </div>
         </div>
+      </div>
+
+      {/* V360 URL Input */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground flex items-center gap-2">
+          <RotateCcw className="h-4 w-4" />
+          360° Diamond Viewer URL (V360.in)
+        </label>
+        <Input
+          type="url"
+          value={v360Url}
+          onChange={(e) => handleV360UrlChange(e.target.value)}
+          placeholder="https://v360.in/diamondview.aspx?cid=YBDB&d=R1.0L170221"
+          className="w-full"
+        />
+        <p className="text-xs text-muted-foreground">
+          Add a 360° viewer link from V360.in for interactive diamond viewing
+        </p>
+      </div>
+
+      {/* Video URL Input */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground flex items-center gap-2">
+          <Video className="h-4 w-4" />
+          Diamond Video URL
+        </label>
+        <Input
+          type="url"
+          value={videoUrl}
+          onChange={(e) => handleVideoUrlChange(e.target.value)}
+          placeholder="https://example.com/diamond-video.mp4"
+          className="w-full"
+        />
+        <p className="text-xs text-muted-foreground">
+          Add a video URL showcasing the diamond
+        </p>
+      </div>
+
+      {/* Certificate Image URL */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground flex items-center gap-2">
+          <FileImage className="h-4 w-4" />
+          Certificate Image URL
+        </label>
+        <Input
+          type="url"
+          value={certificateImageUrl}
+          onChange={(e) => handleCertificateImageChange(e.target.value)}
+          placeholder="https://example.com/certificate-image.jpg"
+          className="w-full"
+        />
+        <p className="text-xs text-muted-foreground">
+          High-resolution certificate image for detailed viewing
+        </p>
       </div>
     </div>
   );
