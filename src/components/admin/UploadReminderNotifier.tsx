@@ -24,38 +24,117 @@ export function UploadReminderNotifier() {
     }))
   );
 
-  const sendUploadReminder = async () => {
+  const sendAnnouncementToAll = async () => {
     try {
       setIsLoading(true);
       
-      if (usersWithoutInventory.length === 0) {
-        toast({
-          title: "No Users Found",
-          description: "All users already have diamonds uploaded!",
-        });
-        return;
-      }
+      const message = `שלום לכולם,
 
-      // Call edge function to send notifications
-      const { data, error } = await supabase.functions.invoke('send-upload-reminder', {
+אני שמח לבשר כי הגענו ל-100 משתמשים פעילים בפלטפורמה!
+זהו ציון דרך משמעותי, וההישג הזה שייך בראש ובראשונה לכם – המשתמשים הראשונים, שהיו שותפים לדרך ולחזון.
+
+בזכותכם, פתחנו גישה בלעדית לקבוצת הליבה:
+
+• הגבלת יהלומים מורחבת ל-3,000
+• גישה מוקדמת לפיצ'רים ולכלים חכמים, כולל רשימות משאלות והעדפות מותאמות
+• עדכונים שוטפים ושיפור מתמיד – בזכות הפידבק שלכם
+
+תודה אישית לאביעד בשארי, יושב הראש, שמוביל את החזון.
+תודה לישראל וונצובסקי, המשנה למנכ"ל, שמנווט את הדרך ודואג שכל פרט יתבצע.
+ותודה למנש בטאט, שמלווה ודוחף את המיזם בהתמדה.
+
+תודה רבה גם לוועדת החדשנות על התמיכה והאמון.
+
+מהיום אני עם תג קבוע לבורסה, ואשמח לפגוש כל אחד ואחת מכם גם באופן אישי – להכיר, להקשיב, ולבנות יחד עתיד חכם וטוב יותר לענף.
+
+אני מזמין אתכם לתאם פגישה אישית או דמו, כדי שנוכל להתקדם ביחד ולהפיק את המקסימום מהכלים החדשים.
+פנו אליי בפרטי – ואשמח לסייע.
+
+תודה על האמון והשותפות.
+חד נמשיך להציע את המערכת קדימה.`;
+
+      // Call edge function to send announcement
+      const { data, error } = await supabase.functions.invoke('send-announcement', {
         body: {
-          users: usersWithoutInventory,
-          includeAdmin: true
+          message,
+          groupUrl: 'https://t.me/+VhmlB_31N_NmMzJk',
+          buttonText: 'הצטרף לקבוצת הליבה 💎',
+          users: userCounts, // Send to all users
+          testMode: false
         }
       });
 
       if (error) throw error;
 
       toast({
-        title: "Notifications Sent!",
-        description: `Successfully sent upload reminders to ${usersWithoutInventory.length} users (including admin).`,
+        title: "הודעה נשלחה!",
+        description: `ההודעה נשלחה בהצלחה ל-${userCounts.length} משתמשים`,
       });
 
     } catch (error) {
-      console.error('Error sending notifications:', error);
+      console.error('Error sending announcement:', error);
       toast({
-        title: "Error",
-        description: "Failed to send notifications. Please try again.",
+        title: "שגיאה",
+        description: "נכשל לשלוח את ההודעה. אנא נסה שוב.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const sendTestMessage = async () => {
+    try {
+      setIsLoading(true);
+      
+      const message = `שלום לכולם,
+
+אני שמח לבשר כי הגענו ל-100 משתמשים פעילים בפלטפורמה!
+זהו ציון דרך משמעותי, וההישג הזה שייך בראש ובראשונה לכם – המשתמשים הראשונים, שהיו שותפים לדרך ולחזון.
+
+בזכותכם, פתחנו גישה בלעדית לקבוצת הליבה:
+
+• הגבלת יהלומים מורחבת ל-3,000
+• גישה מוקדמת לפיצ'רים ולכלים חכמים, כולל רשימות משאלות והעדפות מותאמות
+• עדכונים שוטפים ושיפור מתמיד – בזכות הפידבק שלכם
+
+תודה אישית לאביעד בשארי, יושב הראש, שמוביל את החזון.
+תודה לישראל וונצובסקי, המשנה למנכ"ל, שמנווט את הדרך ודואג שכל פרט יתבצע.
+ותודה למנש בטאט, שמלווה ודוחף את המיזם בהתמדה.
+
+תודה רבה גם לוועדת החדשנות על התמיכה והאמון.
+
+מהיום אני עם תג קבוע לבורסה, ואשמח לפגוש כל אחד ואחת מכם גם באופן אישי – להכיר, להקשיב, ולבנות יחד עתיד חכם וטוב יותר לענף.
+
+אני מזמין אתכם לתאם פגישה אישית או דמו, כדי שנוכל להתקדם ביחד ולהפיק את המקסימום מהכלים החדשים.
+פנו אליי בפרטי – ואשמח לסייע.
+
+תודה על האמון והשותפות.
+חד נמשיך להציע את המערכת קדימה.`;
+
+      // Send test message to admin only
+      const { data, error } = await supabase.functions.invoke('send-announcement', {
+        body: {
+          message,
+          groupUrl: 'https://t.me/+VhmlB_31N_NmMzJk',
+          buttonText: 'הצטרף לקבוצת הליבה 💎',
+          users: [], // Empty array will send only to admin
+          testMode: true
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "הודעת בדיקה נשלחה!",
+        description: "ההודעה נשלחה אליך בטלגרם לבדיקה",
+      });
+
+    } catch (error) {
+      console.error('Error sending test message:', error);
+      toast({
+        title: "שגיאה",
+        description: "נכשל לשלוח הודעת בדיקה. אנא נסה שוב.",
         variant: "destructive",
       });
     } finally {
@@ -80,28 +159,28 @@ export function UploadReminderNotifier() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Upload className="h-5 w-5" />
-          Upload Reminder Notifications
+          <Send className="h-5 w-5" />
+          הודעת ציון דרך - 100 משתמשים
         </CardTitle>
         <CardDescription>
-          Send Telegram notifications to users who haven't uploaded their inventory yet (based on real FastAPI diamond counts)
+          שלח הודעה מיוחדת לכל המשתמשים בטלגרם עם קישור לקבוצת הליבה
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="bg-muted/50 p-4 rounded-lg">
-          <h4 className="font-medium mb-2">What this will do:</h4>
+        <div className="bg-muted/50 p-4 rounded-lg" dir="rtl">
+          <h4 className="font-medium mb-2">מה זה יעשה:</h4>
           <ul className="text-sm text-muted-foreground space-y-1">
-            <li>• Find all users who haven't uploaded any diamonds (verified via FastAPI)</li>
-            <li>• Send them a personalized Telegram message</li>
-            <li>• Include a deep link button that opens the upload page directly</li>
-            <li>• Include you (admin) in the notification to see the message</li>
+            <li>• שלח הודעה מיוחדת לכל המשתמשים בטלגרם</li>
+            <li>• הוסף כפתור מובנה לקבוצת הליבה</li>
+            <li>• בדוק תחילה עם הודעת מבחן למנהל</li>
+            <li>• הודעה מותאמת אישית בעברית</li>
           </ul>
         </div>
 
         <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
             <Users className="h-4 w-4 text-blue-600" />
-            <span className="font-medium">Accurate User Statistics (from FastAPI)</span>
+            <span className="font-medium">סטטיסטיקות משתמשים</span>
             <Button
               onClick={forceRefresh}
               variant="ghost"
@@ -113,71 +192,89 @@ export function UploadReminderNotifier() {
           </div>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-muted-foreground">Total Users:</span>
+              <span className="text-muted-foreground">סה"כ משתמשים:</span>
               <span className="ml-2 font-medium">{stats.totalUsers}</span>
             </div>
             <div>
-              <span className="text-muted-foreground">Need Upload:</span>
-              <span className="ml-2 font-medium text-orange-600">{stats.usersWithZeroDiamonds}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Have Diamonds:</span>
+              <span className="text-muted-foreground">עם יהלומים:</span>
               <span className="ml-2 font-medium text-green-600">{stats.usersWithDiamonds}</span>
             </div>
             <div>
-              <span className="text-muted-foreground">Total Diamonds:</span>
+              <span className="text-muted-foreground">ללא יהלומים:</span>
+              <span className="ml-2 font-medium text-orange-600">{stats.usersWithZeroDiamonds}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">סה"כ יהלומים:</span>
               <span className="ml-2 font-medium text-purple-600">{stats.totalDiamonds}</span>
             </div>
           </div>
         </div>
 
-        {stats.usersWithZeroDiamonds === 0 ? (
-          <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-            <h4 className="font-medium mb-2 text-green-800 dark:text-green-200">
-              🎉 Great news! All users have uploaded diamonds!
-            </h4>
-            <p className="text-sm text-green-700 dark:text-green-300">
-              Every user in your system has at least one diamond uploaded. No upload reminders needed.
-            </p>
-          </div>
-        ) : (
-          <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
-            <h4 className="font-medium mb-2 text-orange-800 dark:text-orange-200">
-              Users who will receive notifications ({usersWithoutInventory.length}):
-            </h4>
-            <div className="text-sm space-y-1 max-h-32 overflow-y-auto">
-              {usersWithoutInventory.slice(0, 10).map((user) => (
-                <div key={user.telegram_id} className="text-orange-700 dark:text-orange-300">
-                  • {user.first_name} {user.last_name} (@{user.username || 'no username'}) - {user.diamond_count} diamonds
-                </div>
-              ))}
-              {usersWithoutInventory.length > 10 && (
-                <div className="text-orange-600 dark:text-orange-400 italic">
-                  ...and {usersWithoutInventory.length - 10} more users
-                </div>
-              )}
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-6 rounded-lg border border-purple-200 dark:border-purple-700">
+          <h4 className="font-medium mb-3 text-purple-800 dark:text-purple-200 text-lg">
+            🎉 הודעת ציון דרך - 100 משתמשים!
+          </h4>
+          <div className="bg-white/50 dark:bg-black/20 p-4 rounded-lg mb-4 max-h-64 overflow-y-auto" dir="rtl">
+            <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
+שלום לכולם,
+
+אני שמח לבשר כי הגענו ל-100 משתמשים פעילים בפלטפורמה!
+זהו ציון דרך משמעותי, וההישג הזה שייך בראש ובראשונה לכם – המשתמשים הראשונים, שהיו שותפים לדרך ולחזון.
+
+בזכותכם, פתחנו גישה בלעדית לקבוצת הליבה:
+
+• הגבלת יהלומים מורחבת ל-3,000
+• גישה מוקדמת לפיצ'רים ולכלים חכמים, כולל רשימות משאלות והעדפות מותאמות
+• עדכונים שוטפים ושיפור מתמיד – בזכות הפידבק שלכם
+
+תודה אישית לאביעד בשארי, יושב הראש, שמוביל את החזון.
+תודה לישראל וונצובסקי, המשנה למנכ"ל, שמנווט את הדרך ודואג שכל פרט יתבצע.
+ותודה למנש בטאט, שמלווה ודוחף את המיזם בהתמדה.
+
+תודה רבה גם לוועדת החדשנות על התמיכה והאמון.
+
+מהיום אני עם תג קבוע לבורסה, ואשמח לפגוש כל אחד ואחת מכם גם באופן אישי – להכיר, להקשיב, ולבנות יחד עתיד חכם וטוב יותר לענף.
+
+אני מזמין אתכם לתאם פגישה אישית או דמו, כדי שנוכל להתקדם ביחד ולהפיק את המקסימום מהכלים החדשים.
+פנו אליי בפרטי – ואשמח לסייע.
+
+תודה על האמון והשותפות.
+חד נמשיך להציע את המערכת קדימה.
             </div>
           </div>
-        )}
+          <div className="text-xs text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30 p-2 rounded">
+            💎 הודעה תכלול כפתור לינק לקבוצת הליבה: https://t.me/+VhmlB_31N_NmMzJk
+          </div>
+        </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button 
-            onClick={sendUploadReminder}
-            disabled={isLoading || usersWithoutInventory.length === 0}
-            className="bg-blue-600 hover:bg-blue-700"
+            onClick={sendTestMessage}
+            disabled={isLoading}
+            variant="outline"
+            className="border-blue-600 text-blue-600 hover:bg-blue-50"
           >
             <Send className="h-4 w-4 mr-2" />
-            {isLoading ? 'Sending...' : `Send Upload Reminders (${usersWithoutInventory.length} users)`}
+            {isLoading ? 'שולח...' : 'שלח הודעת בדיקה למנהל'}
+          </Button>
+          
+          <Button 
+            onClick={sendAnnouncementToAll}
+            disabled={isLoading}
+            className="bg-purple-600 hover:bg-purple-700"
+          >
+            <Send className="h-4 w-4 mr-2" />
+            {isLoading ? 'שולח...' : `שלח לכל המשתמשים (${userCounts.length})`}
           </Button>
         </div>
 
-        <div className="text-xs text-muted-foreground border-t pt-2">
+        <div className="text-xs text-muted-foreground border-t pt-2" dir="rtl">
           <p className="flex items-center gap-1">
             <ExternalLink className="h-3 w-3" />
-            Deep link will direct users to: /upload-single-stone
+            קישור עמוק לקבוצת הליבה עם כפתור מובנה
           </p>
           <p className="mt-1 text-green-600">
-            ✓ Now using accurate FastAPI diamond counts with real-time verification
+            ✓ הודעה בעברית עם תמיכה RTL מלאה
           </p>
         </div>
       </CardContent>
