@@ -62,27 +62,44 @@ function DiamondDetailPage() {
   const handleShare = useCallback(async () => {
     if (!diamond) return;
     
-    // Share the current page URL
     const currentUrl = window.location.href;
     
+    // Create comprehensive diamond information
+    const diamondInfo = `💎 ${diamond.carat}ct ${diamond.shape} Diamond
+
+🔸 Shape: ${diamond.shape}
+⚖️ Weight: ${diamond.carat}ct
+🎨 Color: ${diamond.color}
+💎 Clarity: ${diamond.clarity}
+✂️ Cut: ${diamond.cut}
+💰 Price: ${formatPrice(diamond.price)}
+📋 Stock #: ${diamond.stockNumber}
+${diamond.lab ? `🏛️ Lab: ${diamond.lab}` : ''}
+${diamond.certificateNumber ? `🆔 Certificate: ${diamond.certificateNumber}` : ''}
+
+${diamond.gem360Url ? `🌐 360° View: ${diamond.gem360Url}` : ''}
+${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}
+
+View full details: ${currentUrl}`;
+
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond`,
-          text: `Check out this beautiful ${diamond.shape} diamond!`,
+          title: `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond - Stock #${diamond.stockNumber}`,
+          text: diamondInfo,
           url: currentUrl,
         });
-        toast({ title: "Page shared!" });
+        toast({ title: "Diamond details shared!" });
       } catch (error) {
-        // Fallback to clipboard
-        navigator.clipboard.writeText(currentUrl);
-        toast({ title: "Page link copied to clipboard!" });
+        // Fallback to clipboard with comprehensive info
+        navigator.clipboard.writeText(diamondInfo);
+        toast({ title: "Diamond details copied to clipboard!" });
       }
     } else {
-      navigator.clipboard.writeText(currentUrl);
-      toast({ title: "Page link copied to clipboard!" });
+      navigator.clipboard.writeText(diamondInfo);
+      toast({ title: "Diamond details copied to clipboard!" });
     }
-  }, [diamond, toast]);
+  }, [diamond, toast, formatPrice]);
 
   const handleContact = useCallback(async () => {
     if (!isAuthenticated || !user || !diamond) {
