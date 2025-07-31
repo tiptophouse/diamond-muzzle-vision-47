@@ -1,5 +1,31 @@
 import { Diamond } from "@/components/inventory/InventoryTable";
 
+export function processDiamondDataForDashboard(diamonds: any[], userId?: number) {
+  // Calculate basic stats
+  const stats = {
+    totalDiamonds: diamonds.length,
+    matchedPairs: 0,
+    totalLeads: 0,
+    activeSubscriptions: 0
+  };
+
+  // Group by shape for chart
+  const inventoryByShape = diamonds.reduce((acc: any[], diamond) => {
+    const existing = acc.find(item => item.name === diamond.shape);
+    if (existing) {
+      existing.value += 1;
+    } else {
+      acc.push({ name: diamond.shape, value: 1 });
+    }
+    return acc;
+  }, []);
+
+  // Empty sales data for now
+  const salesByCategory: any[] = [];
+
+  return { stats, inventoryByShape, salesByCategory };
+}
+
 export function convertDiamondsToInventoryFormat(diamonds: any[], userId?: number): Diamond[] {
   const normalizeShape = (apiShape: string): string => {
     if (!apiShape) return 'Round';

@@ -36,7 +36,7 @@ export const useFormValidation = () => {
       polish: data.polish || 'Excellent',
       symmetry: data.symmetry || 'Excellent',
       status: data.status || 'Available',
-      picture: data.picture?.trim() || '',
+      imageUrl: data.imageUrl?.trim() || '',
       // Include all comprehensive fields
       certificateNumber: data.certificateNumber?.trim() || '',
       certificateUrl: data.certificateUrl?.trim() || '',
@@ -52,7 +52,7 @@ export const useFormValidation = () => {
       culet: data.culet || 'None',
       pricePerCarat: data.pricePerCarat ? Number(data.pricePerCarat) : undefined,
       rapnet: data.rapnet ? Number(data.rapnet) : undefined,
-      storeVisible: data.storeVisible !== undefined ? data.storeVisible : true,
+      store_visible: data.store_visible !== undefined ? data.store_visible : true,
     };
   };
 

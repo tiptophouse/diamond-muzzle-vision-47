@@ -1,5 +1,4 @@
-
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTelegramWebApp } from './useTelegramWebApp';
 
 interface ScanQRResult {
@@ -22,36 +21,21 @@ export function useEnhancedTelegramWebApp() {
 
       setIsScanning(true);
 
-      baseWebApp.webApp.showScanQrPopup({
-        text: 'Scan diamond certificate QR code'
-      });
-
-      // Listen for scan result
-      const handleScanResult = (event: any) => {
-        const data = event.data || '';
-        setIsScanning(false);
-        
-        // Detect if it's a GIA certificate or other diamond-related QR
-        const isGiaCertificate = data.includes('gia.edu') || 
-                               data.includes('certificate') || 
-                               data.match(/\d{10,}/); // Long number sequences typical in certificates
-
-        resolve({ 
-          data, 
-          success: isGiaCertificate 
+      try {
+        baseWebApp.webApp.showScanQrPopup({
+          text: 'Scan diamond certificate QR code'
         });
-      };
 
-      // Set up temporary listener
-      baseWebApp.webApp.onEvent('qrTextReceived', handleScanResult);
-      
-      // Cleanup after 30 seconds
-      setTimeout(() => {
-        baseWebApp.webApp?.closeScanQrPopup();
-        baseWebApp.webApp?.offEvent('qrTextReceived', handleScanResult);
+        // Set up timeout for cleanup
+        setTimeout(() => {
+          setIsScanning(false);
+          resolve({ data: '', success: false });
+        }, 30000);
+      } catch (error) {
+        console.error('Failed to show QR scanner:', error);
         setIsScanning(false);
         resolve({ data: '', success: false });
-      }, 30000);
+      }
     });
   }, [baseWebApp.webApp]);
 
@@ -106,13 +90,6 @@ export function useEnhancedTelegramWebApp() {
         { id: 'share', type: 'default', text: 'Share Diamond' },
         { id: 'cancel', type: 'cancel', text: 'Cancel' }
       ]
-    });
-
-    // Handle popup result
-    baseWebApp.webApp.onEvent('popupClosed', (event: any) => {
-      if (event.button_id && event.button_id !== 'cancel') {
-        onAction(event.button_id);
-      }
     });
   }, [baseWebApp.webApp]);
 
