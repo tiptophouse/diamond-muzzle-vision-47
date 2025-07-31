@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
@@ -58,8 +58,8 @@ export default function StorePage() {
     }
   }, [refetch]);
 
-  // Filter to specific diamond if URL parameters are provided
-  const finalFilteredDiamonds = (() => {
+  // Filter to specific diamond if URL parameters are provided (optimized with useMemo)
+  const finalFilteredDiamonds = useMemo(() => {
     if (stockNumber) {
       const stockMatch = sortedDiamonds.filter(diamond => 
         diamond.stockNumber === stockNumber
@@ -91,7 +91,7 @@ export default function StorePage() {
     }
     
     return sortedDiamonds;
-  })();
+  }, [sortedDiamonds, stockNumber, searchParams]);
 
   // Auto-scroll to diamond if found via stock parameter
   useEffect(() => {
@@ -131,11 +131,12 @@ export default function StorePage() {
     setShowSort(false);
   };
 
-  const renderStoreGrid = () => {
+  // Memoized store grid to prevent unnecessary re-renders
+  const renderStoreGrid = useMemo(() => {
     if (loading) {
       return (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-4">
-          {Array.from({ length: 12 }, (_, i) => (
+          {Array.from({ length: 6 }, (_, i) => (
             <DiamondCardSkeleton key={i} />
           ))}
         </div>
@@ -180,7 +181,7 @@ export default function StorePage() {
         ))}
       </div>
     );
-  };
+  }, [loading, error, finalFilteredDiamonds, refetch]);
 
   const activeFiltersCount = 
     filters.shapes.length + 
@@ -233,7 +234,7 @@ export default function StorePage() {
 
         {/* Diamond Grid */}
         <div className="py-4">
-          {renderStoreGrid()}
+          {renderStoreGrid}
         </div>
 
         {/* Floating Action Button */}
