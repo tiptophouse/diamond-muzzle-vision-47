@@ -90,6 +90,14 @@ export function useStoreData() {
           })
           .filter(diamond => diamond.store_visible && diamond.status === 'Available'); // Only show store-visible and available diamonds
 
+        // Check for duplicate stock numbers and log warning
+        const stockNumbers = transformedDiamonds.map(d => d.stockNumber);
+        const duplicates = stockNumbers.filter((stock, index) => stockNumbers.indexOf(stock) !== index);
+        if (duplicates.length > 0) {
+          console.warn('🚨 STORE: Found duplicate stock numbers:', duplicates);
+          console.warn('🚨 STORE: This could cause wrong diamond details to be shown!');
+        }
+
         console.log('🏪 STORE: Processed', transformedDiamonds.length, 'store-visible diamonds from', result.data.length, 'total diamonds');
         console.log('🏪 STORE: Found', transformedDiamonds.filter(d => d.gem360Url).length, 'diamonds with Gem360 URLs');
         setDiamonds(transformedDiamonds);

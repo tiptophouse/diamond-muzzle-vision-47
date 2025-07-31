@@ -26,11 +26,18 @@ export default function DiamondDetailPage() {
 
   console.log('🔍 DiamondDetailPage - stockNumber from URL:', stockNumber);
   console.log('🔍 DiamondDetailPage - available diamonds:', diamonds?.length);
+  console.log('🔍 DiamondDetailPage - all stock numbers:', diamonds?.map(d => d.stockNumber));
 
   const diamond = diamonds?.find(d => d.stockNumber === stockNumber);
 
   console.log('🔍 DiamondDetailPage - found diamond:', diamond ? 'YES' : 'NO');
   console.log('🔍 DiamondDetailPage - diamond data:', diamond);
+  
+  // Check for potential duplicates
+  const matchingDiamonds = diamonds?.filter(d => d.stockNumber === stockNumber) || [];
+  if (matchingDiamonds.length > 1) {
+    console.warn('🚨 DiamondDetailPage - Multiple diamonds found with same stock number:', stockNumber, matchingDiamonds);
+  }
 
   useEffect(() => {
     if (!loading && !diamond && stockNumber) {
