@@ -136,7 +136,7 @@ export default function StorePage() {
     if (loading) {
       return (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-4">
-          {Array.from({ length: 6 }, (_, i) => (
+          {Array.from({ length: 8 }, (_, i) => (
             <DiamondCardSkeleton key={i} />
           ))}
         </div>
@@ -171,7 +171,7 @@ export default function StorePage() {
 
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-4">
-        {finalFilteredDiamonds.map((diamond, index) => (
+        {finalFilteredDiamonds.slice(0, 20).map((diamond, index) => (
           <FigmaDiamondCard 
             key={diamond.id} 
             diamond={diamond}
@@ -179,6 +179,19 @@ export default function StorePage() {
             onUpdate={refetch}
           />
         ))}
+        {finalFilteredDiamonds.length > 20 && (
+          <div className="col-span-full text-center py-4">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                // Load more diamonds logic can be implemented here
+                toast.info('Load more feature coming soon!');
+              }}
+            >
+              Load More ({finalFilteredDiamonds.length - 20} remaining)
+            </Button>
+          </div>
+        )}
       </div>
     );
   }, [loading, error, finalFilteredDiamonds, refetch]);

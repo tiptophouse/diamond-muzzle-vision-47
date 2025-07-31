@@ -1,4 +1,4 @@
-import { useState, memo, useCallback, useMemo } from "react";
+import { useState, memo, useCallback, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, Eye, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,10 +20,14 @@ function FigmaDiamondCard({
   onUpdate
 }: FigmaDiamondCardProps) {
   const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const { impactOccurred } = useTelegramHapticFeedback();
   const { orientationData } = useTelegramAccelerometer(true);
   const navigate = useNavigate();
+  const cardRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   const handleLike = useCallback(() => {
     impactOccurred('light');
@@ -41,6 +45,34 @@ function FigmaDiamondCard({
     impactOccurred('light');
     toast.success("Opening contact options...");
   }, [impactOccurred]);
+
+  // Intersection Observer for lazy loading
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '50px' }
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  const handleImageLoad = useCallback(() => {
+    setImageLoaded(true);
+  }, []);
+
+  const handleImageError = useCallback(() => {
+    setImageError(true);
+    setImageLoaded(true);
+  }, []);
 
   const isAvailable = useMemo(() => diamond.status === "Available", [diamond.status]);
 
@@ -62,28 +94,45 @@ function FigmaDiamondCard({
 
   return (
     <div 
+      ref={cardRef}
       id={`diamond-${diamond.stockNumber}`} 
       className="group relative bg-card rounded-2xl overflow-hidden transition-all duration-200 animate-fade-in"
-      style={{ animationDelay: `${index * 100}ms` }}
+      style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
     >
       {/* Image Container */}
       <div className="relative aspect-square bg-muted overflow-hidden">
-        {diamond.imageUrl && !imageError ? (
+        {/* Loading skeleton */}
+        {!imageLoaded && (
+          <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10 animate-pulse">
+            <div className="flex items-center justify-center h-full">
+              <div className="w-16 h-16 bg-muted-foreground/20 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-muted-foreground/40 rounded-full animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {diamond.imageUrl && !imageError && isVisible ? (
           <img 
+            ref={imgRef}
             src={diamond.imageUrl} 
             alt={`${diamond.carat} ct ${diamond.shape} Diamond`} 
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
+            className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
             style={{ transform: imageTransform }}
-            onError={() => setImageError(true)} 
-            loading="lazy" 
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+            loading="lazy"
+            decoding="async"
           />
-        ) : (
+        ) : imageError ? (
           <div className="flex items-center justify-center h-full bg-gradient-to-br from-muted to-muted-foreground/10">
             <div className="w-16 h-16 bg-muted-foreground/20 rounded-full flex items-center justify-center">
               <div className="w-8 h-8 bg-muted-foreground/40 rounded-full"></div>
             </div>
           </div>
-        )}
+        ) : null}
         
         {/* Status Badge */}
         <div className="absolute top-3 left-3">
