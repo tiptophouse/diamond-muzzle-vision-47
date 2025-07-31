@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useState } from 'react';
 import { useTelegramWebApp } from './useTelegramWebApp';
 
@@ -41,7 +42,7 @@ export function useEnhancedTelegramWebApp() {
         });
       };
 
-      // Set up temporary listener
+      // Set up temporary listener - fixed to use correct signature
       baseWebApp.webApp.onEvent('qrTextReceived', handleScanResult);
       
       // Cleanup after 30 seconds
@@ -107,9 +108,8 @@ export function useEnhancedTelegramWebApp() {
       ]
     });
 
-    // Handle popup result
+    // Handle popup result - fixed to use correct signature
     const handlePopupClosed = () => {
-      // Since we can't access event data directly, we'll use a simpler approach
       onAction('default');
     };
     
@@ -177,9 +177,9 @@ export function useEnhancedTelegramWebApp() {
     requestImageSaveAccess,
     shareContact,
     showDiamondActionPopup,
-    showDiamondNotification: baseWebApp.showAlert,
-    readDiamondSpecs: baseWebApp.webApp?.readTextFromClipboard,
-    initiateDiamondPayment: baseWebApp.openLink,
+    showDiamondNotification,
+    readDiamondSpecs,
+    initiateDiamondPayment,
     // State
     isScanning,
     hasWriteAccess

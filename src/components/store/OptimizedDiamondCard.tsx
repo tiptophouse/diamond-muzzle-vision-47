@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { StoreVisibilityToggle } from "@/components/inventory/StoreVisibilityToggle";
+import { StoreVisibilityToggle } from "./StoreVisibilityToggle";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/diamondUtils";
