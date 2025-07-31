@@ -1,91 +1,176 @@
-import { Diamond } from "@/components/inventory/InventoryTable";
-
-export function processDiamondDataForDashboard(diamonds: any[], userId?: number) {
-  // Calculate basic stats
-  const stats = {
-    totalDiamonds: diamonds.length,
-    matchedPairs: 0,
-    totalLeads: 0,
-    activeSubscriptions: 0
-  };
-
-  // Group by shape for chart
-  const inventoryByShape = diamonds.reduce((acc: any[], diamond) => {
-    const existing = acc.find(item => item.name === diamond.shape);
-    if (existing) {
-      existing.value += 1;
-    } else {
-      acc.push({ name: diamond.shape, value: 1 });
-    }
-    return acc;
-  }, []);
-
-  // Empty sales data for now
-  const salesByCategory: any[] = [];
-
-  return { stats, inventoryByShape, salesByCategory };
+interface DiamondData {
+  id?: number;
+  shape?: string;
+  color?: string;
+  clarity?: string;
+  weight?: number;
+  carat?: number;
+  price?: number;
+  price_per_carat?: number;
+  stock?: string;
+  owners?: number[];
+  owner_id?: number;
+  status?: string;
 }
 
-export function convertDiamondsToInventoryFormat(diamonds: any[], userId?: number): Diamond[] {
-  const normalizeShape = (apiShape: string): string => {
-    if (!apiShape) return 'Round';
+interface DashboardStats {
+  totalDiamonds: number;
+  matchedPairs: number;
+  totalLeads: number;
+  activeSubscriptions: number;
+}
+
+interface InventoryData {
+  name: string;
+  value: number;
+}
+
+export function processDiamondDataForDashboard(diamonds: DiamondData[], currentUserId?: number): {
+  stats: DashboardStats;
+  inventoryByShape: InventoryData[];
+  salesByCategory: InventoryData[];
+} {
+  console.log('📊 ANALYTICS: Processing dashboard data');
+  console.log('📊 ANALYTICS: Input diamonds count:', diamonds.length);
+  console.log('📊 ANALYTICS: Current user ID:', currentUserId, 'type:', typeof currentUserId);
+  console.log('📊 ANALYTICS: Sample diamonds:', diamonds.slice(0, 3));
+  
+  // Filter diamonds for current user if user ID is provided
+  const userDiamonds = currentUserId 
+    ? diamonds.filter(diamond => {
+        const hasOwners = diamond.owners?.includes(currentUserId);
+        const hasOwnerId = diamond.owner_id === currentUserId;
+        console.log('📊 ANALYTICS: Checking diamond:', diamond.id, {
+          owners: diamond.owners,
+          owner_id: diamond.owner_id,
+          currentUserId,
+          hasOwners,
+          hasOwnerId,
+          included: hasOwners || hasOwnerId
+        });
+        return hasOwners || hasOwnerId;
+      })
+    : diamonds;
+  
+  console.log('📊 ANALYTICS: Filtered diamonds count:', userDiamonds.length);
+  console.log('📊 ANALYTICS: User diamonds sample:', userDiamonds.slice(0, 2));
+  
+  // Calculate basic stats
+  const totalDiamonds = userDiamonds.length;
+  
+  // Calculate matched pairs based on similar characteristics
+  const pairMap = new Map<string, number>();
+  userDiamonds.forEach(diamond => {
+    if (diamond.color && diamond.clarity && diamond.shape) {
+      const key = `${diamond.shape}-${diamond.color}-${diamond.clarity}`;
+      pairMap.set(key, (pairMap.get(key) || 0) + 1);
+    }
+  });
+  const matchedPairs = Array.from(pairMap.values()).reduce((acc, count) => 
+    acc + Math.floor(count / 2), 0
+  );
+  
+  // Count unique shapes as market diversity
+  const uniqueShapes = new Set(userDiamonds.map(d => d.shape).filter(Boolean));
+  const totalLeads = uniqueShapes.size;
+  
+  // Calculate inventory value tiers
+  const highValueDiamonds = userDiamonds.filter(d => 
+    (d.price_per_carat || 0) * (d.weight || d.carat || 0) > 10000
+  ).length;
+  
+  const stats: DashboardStats = {
+    totalDiamonds,
+    matchedPairs,
+    totalLeads,
+    activeSubscriptions: highValueDiamonds,
+  };
+  
+  // Group diamonds by shape for inventory chart
+  const shapeMap = new Map<string, number>();
+  userDiamonds.forEach(diamond => {
+    if (diamond.shape) {
+      const shape = diamond.shape;
+      shapeMap.set(shape, (shapeMap.get(shape) || 0) + 1);
+    }
+  });
+  
+  const inventoryByShape: InventoryData[] = Array.from(shapeMap.entries())
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
+  
+  // Group diamonds by color for sales chart
+  const colorMap = new Map<string, number>();
+  userDiamonds.forEach(diamond => {
+    if (diamond.color) {
+      const color = diamond.color;
+      colorMap.set(color, (colorMap.get(color) || 0) + 1);
+    }
+  });
+  
+  const salesByCategory: InventoryData[] = Array.from(colorMap.entries())
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 8);
+  
+  return {
+    stats,
+    inventoryByShape,
+    salesByCategory,
+  };
+}
+
+export function convertDiamondsToInventoryFormat(diamonds: DiamondData[], currentUserId?: number) {
+  console.log('🔄 CONVERT: Starting conversion to inventory format');
+  console.log('🔄 CONVERT: Input diamonds count:', diamonds.length);
+  console.log('🔄 CONVERT: Current user ID:', currentUserId, 'type:', typeof currentUserId);
+  console.log('🔄 CONVERT: Sample input diamonds:', diamonds.slice(0, 3));
+  
+  // Filter diamonds for current user if user ID is provided
+  const userDiamonds = currentUserId 
+    ? diamonds.filter(diamond => {
+        const hasOwners = diamond.owners?.includes(currentUserId);
+        const hasOwnerId = diamond.owner_id === currentUserId;
+        console.log('🔄 CONVERT: Filtering diamond:', diamond.id, {
+          owners: diamond.owners,
+          owner_id: diamond.owner_id,
+          currentUserId,
+          hasOwners,
+          hasOwnerId,
+          included: hasOwners || hasOwnerId
+        });
+        return hasOwners || hasOwnerId;
+      })
+    : diamonds;
+  
+  console.log('🔄 CONVERT: Filtered diamonds count:', userDiamonds.length);
+  console.log('🔄 CONVERT: Sample filtered diamonds:', userDiamonds.slice(0, 2));
+  
+  const converted = userDiamonds.map(diamond => {
+    const weight = diamond.weight || diamond.carat || 0;
+    const pricePerCarat = diamond.price_per_carat || 0;
+    const totalPrice = Math.round(pricePerCarat * weight);
     
-    const shapeMap: Record<string, string> = {
-      'round brilliant': 'Round',
-      'round': 'Round',
-      'princess': 'Princess',
-      'cushion': 'Cushion',
-      'emerald': 'Emerald',
-      'oval': 'Oval',
-      'pear': 'Pear',
-      'marquise': 'Marquise',
-      'radiant': 'Radiant',
-      'asscher': 'Asscher',
-      'heart': 'Heart'
+    const result = {
+      id: diamond.id?.toString() || '',
+      stockNumber: diamond.stock || `D${diamond.id || Math.floor(Math.random() * 10000)}`,
+      shape: diamond.shape || 'Unknown',
+      carat: weight,
+      color: diamond.color || 'Unknown',
+      clarity: diamond.clarity || 'Unknown',
+      cut: 'Excellent', // Default since not in your data
+      price: totalPrice,
+      status: diamond.status || 'Available',
     };
     
-    const normalized = apiShape.toLowerCase().trim();
-    return shapeMap[normalized] || apiShape.charAt(0).toUpperCase() + apiShape.slice(1).toLowerCase();
-  };
-
-  return diamonds.map((item, index) => ({
-    id: item.id || `${item.stock || item.stock_number || 'diamond'}-${Date.now()}-${index}`,
-    diamondId: item.id || item.diamond_id,
-    stockNumber: item.stock || item.stock_number || item.stockNumber || `STOCK-${Date.now()}-${index}`,
-    shape: normalizeShape(item.shape),
-    carat: parseFloat((item.weight || item.carat || 0).toString()) || 0,
-    color: (item.color || 'D').toUpperCase(),
-    clarity: (item.clarity || 'FL').toUpperCase(),
-    cut: item.cut || 'Excellent',
-    price: Number(item.price_per_carat ? item.price_per_carat * (item.weight || item.carat) : item.price) || 0,
-    status: item.status || 'Available',
-    fluorescence: item.fluorescence || undefined,
-    imageUrl: item.picture || item.imageUrl || undefined,
-    store_visible: item.store_visible !== false, // Default to true if not specified
-    certificateNumber: item.certificate_number || item.certificateNumber || undefined,
-    lab: item.lab || undefined,
-    certificateUrl: item.certificate_url || item.certificateUrl || undefined,
+    console.log('🔄 CONVERT: Converted diamond:', {
+      original: diamond,
+      converted: result
+    });
     
-    // Enhanced media fields
-    v360Url: item.v360_url || item.v360Url || undefined,
-    gem360Url: item.gem360_url || item.gem360Url || undefined,
-    videoUrl: item.video_url || item.videoUrl || undefined,
-    certificateImageUrl: item.certificate_image_url || item.certificateImageUrl || undefined,
-    giaReportPdf: item.gia_report_pdf || item.giaReportPdf || undefined,
-    
-    // Additional compatibility fields
-    polish: item.polish || undefined,
-    symmetry: item.symmetry || undefined,
-    tablePercentage: item.table_percentage || undefined,
-    depthPercentage: item.depth_percentage || undefined,
-    length: item.length || undefined,
-    width: item.width || undefined,
-    depth: item.depth || undefined,
-    ratio: item.ratio || undefined,
-    gridle: item.gridle || undefined,
-    culet: item.culet || undefined,
-    rapnet: item.rapnet || undefined,
-    pricePerCarat: item.price_per_carat || undefined,
-    certificateComment: item.certificate_comment || undefined,
-  }));
+    return result;
+  });
+  
+  console.log('🔄 CONVERT: Conversion complete, result count:', converted.length);
+  return converted;
 }

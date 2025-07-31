@@ -3,8 +3,6 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
-import { useTelegramSendData } from "@/hooks/useTelegramSendData";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,8 +16,6 @@ function DiamondDetailPage() {
   const navigate = useNavigate();
   const { diamonds, loading, refetch } = useStoreData();
   const { user, isAuthenticated } = useTelegramAuth();
-  const { webApp, share: telegramShare } = useTelegramWebApp();
-  const { sendData, reportDiamondInteraction } = useTelegramSendData();
   const { toast } = useToast();
   const [isContactLoading, setIsContactLoading] = useState(false);
   const [isImageUploading, setIsImageUploading] = useState(false);
@@ -31,7 +27,7 @@ function DiamondDetailPage() {
   // Memoized diamond finding with early return optimization
   const diamond = useMemo(() => {
     if (!diamonds || !diamondId) return null;
-    return diamonds.find(d => d.stockNumber === diamondId) || null;
+    return diamonds.find(d => d.id === diamondId) || null;
   }, [diamonds, diamondId]);
 
   // Memoized price formatting to avoid recreation
@@ -66,68 +62,27 @@ function DiamondDetailPage() {
   const handleShare = useCallback(async () => {
     if (!diamond) return;
     
-    const diamondInfo = `💎 ${diamond.carat}ct ${diamond.shape} Diamond
-🎨 Color: ${diamond.color} | 💎 Clarity: ${diamond.clarity}
-💰 Price: ${formatPrice(diamond.price)}
-📦 Stock: ${diamond.stockNumber}
-
-View this premium diamond:`;
-    
+    // Share the current page URL
     const currentUrl = window.location.href;
     
-    // Report the share interaction to Telegram bot
-    reportDiamondInteraction('share', {
-      stockNumber: diamond.stockNumber,
-      shape: diamond.shape,
-      carat: diamond.carat,
-      color: diamond.color,
-      clarity: diamond.clarity,
-      price: diamond.price,
-      sharedUrl: currentUrl
-    });
-    
-    // Try Telegram's secure sharing first
-    if (webApp && telegramShare) {
-      try {
-        await telegramShare(diamondInfo, currentUrl);
-        toast({ 
-          title: "Shared via Telegram!",
-          description: "Diamond details shared securely through Telegram"
-        });
-        return;
-      } catch (error) {
-        console.log('Telegram share failed, falling back to native share');
-      }
-    }
-    
-    // Fallback to native Web Share API
     if (navigator.share) {
       try {
         await navigator.share({
           title: `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond`,
-          text: diamondInfo,
+          text: `Check out this beautiful ${diamond.shape} diamond!`,
           url: currentUrl,
         });
         toast({ title: "Page shared!" });
       } catch (error) {
-        // Final fallback to clipboard
-        const shareText = `${diamondInfo}\n${currentUrl}`;
-        navigator.clipboard.writeText(shareText);
-        toast({ 
-          title: "Diamond details copied!",
-          description: "Link and details copied to clipboard"
-        });
+        // Fallback to clipboard
+        navigator.clipboard.writeText(currentUrl);
+        toast({ title: "Page link copied to clipboard!" });
       }
     } else {
-      // Final fallback to clipboard
-      const shareText = `${diamondInfo}\n${currentUrl}`;
-      navigator.clipboard.writeText(shareText);
-      toast({ 
-        title: "Diamond details copied!",
-        description: "Link and details copied to clipboard"
-      });
+      navigator.clipboard.writeText(currentUrl);
+      toast({ title: "Page link copied to clipboard!" });
     }
-  }, [diamond, formatPrice, webApp, telegramShare, reportDiamondInteraction, toast]);
+  }, [diamond, toast]);
 
   const handleContact = useCallback(async () => {
     if (!isAuthenticated || !user || !diamond) {
@@ -266,6 +221,7 @@ View this premium diamond:`;
       </div>
     );
   }
+
 
   return (
     <>

@@ -105,7 +105,7 @@ export function useAddDiamond(onSuccess?: () => void) {
         // Business data - match schema exactly
         price_per_carat: actualPricePerCarat,
         rapnet: data.rapnet && data.rapnet > 0 ? parseInt(data.rapnet.toString()) : 0,
-        picture: data.imageUrl?.trim() || "",
+        picture: data.picture?.trim() || "",
       };
 
       console.log('💎 Sending diamond data to FastAPI (api.mazalbot.com):', diamondDataPayload);

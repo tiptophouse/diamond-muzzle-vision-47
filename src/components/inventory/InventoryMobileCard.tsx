@@ -16,10 +16,10 @@ export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobi
     <Card className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors">
       <CardContent className="p-3 sm:p-4 w-full">
         {/* Image section */}
-        {diamond.imageUrl && (
+        {(diamond.imageUrl || diamond.picture) && (
           <div className="mb-3 sm:mb-4 w-full">
             <img 
-              src={diamond.imageUrl} 
+              src={diamond.imageUrl || diamond.picture} 
               alt={`Diamond ${diamond.stockNumber}`}
               className="w-full h-28 sm:h-32 object-cover rounded-lg border border-slate-200 dark:border-slate-600"
               onError={(e) => {
@@ -33,7 +33,7 @@ export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobi
           </div>
         )}
         
-        <div className={`mb-3 sm:mb-4 w-full h-28 sm:h-32 bg-slate-100 dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center ${diamond.imageUrl ? 'hidden' : ''}`}>
+        <div className={`mb-3 sm:mb-4 w-full h-28 sm:h-32 bg-slate-100 dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center ${(diamond.imageUrl || diamond.picture) ? 'hidden' : ''}`}>
           <ImageIcon className="h-6 w-6 sm:h-8 sm:w-8 text-slate-400" />
         </div>
 

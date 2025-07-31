@@ -34,13 +34,8 @@ export interface DiamondFormData {
   pricePerCarat?: number;
   rapnet?: number;
   status: string;
-  store_visible?: boolean; // Changed from storeVisible to match Diamond interface
+  storeVisible?: boolean;
   
-  // Enhanced Media Fields
-  imageUrl?: string; // Changed from picture to match Diamond interface
-  v360Url?: string;
-  gem360Url?: string;
-  videoUrl?: string;
-  certificateImageUrl?: string;
-  giaReportPdf?: string;
+  // Image
+  picture?: string;
 }

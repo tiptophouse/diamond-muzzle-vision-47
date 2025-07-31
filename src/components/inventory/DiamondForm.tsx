@@ -28,7 +28,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       cut: diamond.cut || 'Excellent',
       price: diamond.price || 0,
       status: diamond.status || 'Available',
-      imageUrl: diamond.imageUrl || '',
+      picture: diamond.imageUrl || '',
       // Map additional fields from diamond object if they exist
       certificateNumber: (diamond as any).certificateNumber || '',
       lab: (diamond as any).lab || 'GIA',
@@ -37,13 +37,13 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       symmetry: (diamond as any).symmetry || 'Excellent',
       gridle: (diamond as any).gridle || 'Medium',
       culet: (diamond as any).culet || 'None',
-      store_visible: (diamond as any).store_visible || false,
+      storeVisible: (diamond as any).store_visible || false,
     } : {
       stockNumber: '',
       carat: 1,
       price: 0,
       status: 'Available',
-      imageUrl: '',
+      picture: '',
       shape: 'Round',
       color: 'G',
       clarity: 'VS1',
@@ -54,7 +54,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       lab: 'GIA',
       gridle: 'Medium',
       culet: 'None',
-      store_visible: false
+      storeVisible: false
     }
   });
 
@@ -70,7 +70,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
         cut: diamond.cut || 'Excellent',
         price: diamond.price || 0,
         status: diamond.status || 'Available',
-        imageUrl: diamond.imageUrl || '',
+        picture: diamond.imageUrl || '',
         certificateNumber: (diamond as any).certificateNumber || '',
         lab: (diamond as any).lab || 'GIA',
         fluorescence: (diamond as any).fluorescence || 'None',
@@ -78,7 +78,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
         symmetry: (diamond as any).symmetry || 'Excellent',
         gridle: (diamond as any).gridle || 'Medium',
         culet: (diamond as any).culet || 'None',
-        store_visible: (diamond as any).store_visible || false,
+        storeVisible: (diamond as any).store_visible || false,
       });
     }
   }, [diamond?.id, reset]);
@@ -112,7 +112,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       clarity: data.clarity || 'VS1',
       cut: data.cut || 'Excellent',
       status: data.status || 'Available',
-      imageUrl: data.imageUrl?.trim() || '',
+      picture: data.picture?.trim() || '',
       // Include all the new fields
       certificateNumber: data.certificateNumber?.trim() || '',
       certificateUrl: data.certificateUrl?.trim() || '',
@@ -131,7 +131,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       culet: data.culet || 'None',
       pricePerCarat: data.pricePerCarat ? Number(data.pricePerCarat) : undefined,
       rapnet: data.rapnet ? Number(data.rapnet) : undefined,
-      store_visible: data.store_visible || false,
+      storeVisible: data.storeVisible || false,
     };
     
     console.log('Formatted form data:', formattedData);

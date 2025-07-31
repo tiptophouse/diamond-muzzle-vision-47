@@ -65,7 +65,7 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
 
       // Add optional parameters if they exist
       if (stoneData.fluorescence) params.set('fluorescence', stoneData.fluorescence);
-      if (stoneData.imageUrl) params.set('imageUrl', stoneData.imageUrl);
+      if (stoneData.picture) params.set('imageUrl', stoneData.picture);
       if (stoneData.certificateUrl) params.set('certificateUrl', stoneData.certificateUrl);
       if (stoneData.lab) params.set('lab', stoneData.lab);
       if (stoneData.certificateNumber) params.set('certificateNumber', stoneData.certificateNumber);

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { convertDiamondsToInventoryFormat } from "@/services/diamondAnalytics";
@@ -16,17 +15,7 @@ export function useInventoryProcessor() {
     // Check if this is already processed Diamond data (from mock service)
     if (rawData.length > 0 && rawData[0].id && rawData[0].stockNumber) {
       console.log('🔍 INVENTORY PROCESSOR: Data already in Diamond format');
-      // Ensure all required fields are present
-      return rawData.map((diamond: any) => ({
-        ...diamond,
-        store_visible: diamond.store_visible !== undefined ? diamond.store_visible : true,
-        imageUrl: diamond.imageUrl || diamond.picture,
-        v360Url: diamond.v360Url,
-        gem360Url: diamond.gem360Url,
-        videoUrl: diamond.videoUrl,
-        certificateImageUrl: diamond.certificateImageUrl,
-        giaReportPdf: diamond.giaReportPdf,
-      })) as Diamond[];
+      return rawData as Diamond[];
     }
     
     // Otherwise convert from raw API format
