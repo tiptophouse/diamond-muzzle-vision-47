@@ -15,7 +15,8 @@ interface StoreVisibilityToggleProps {
 export function StoreVisibilityToggle({ stockNumber, isVisible, onToggle }: StoreVisibilityToggleProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { handleRequiredClick } = useTutorial();
+  const tutorial = useTutorial();
+  const handleRequiredClick = tutorial?.handleRequiredClick || (() => {});
 
   const handleToggle = async () => {
     setLoading(true);
