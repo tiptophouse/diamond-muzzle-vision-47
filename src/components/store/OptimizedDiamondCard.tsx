@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { StoreVisibilityToggle } from "@/components/store/StoreVisibilityToggle";
+import { StoreVisibilityToggle } from "@/components/inventory/StoreVisibilityToggle";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/diamondUtils";
@@ -30,7 +30,7 @@ interface OptimizedDiamondCardProps {
 
 export function OptimizedDiamondCard({ diamond, index, onUpdate }: OptimizedDiamondCardProps) {
   const [toggleLoading, setToggleLoading] = useState(false);
-  const { hapticFeedback } = useTelegramHapticFeedback();
+  const { impactOccurred, notificationOccurred, selectionChanged } = useTelegramHapticFeedback();
   const { toast } = useToast();
   const { updateDiamond, deleteDiamond } = useInventoryCrud({ onSuccess: onUpdate });
   const navigate = useNavigate();
@@ -38,11 +38,11 @@ export function OptimizedDiamondCard({ diamond, index, onUpdate }: OptimizedDiam
   const isOwner = true; // Replace with actual ownership check
 
   const handleToggleStoreVisibility = useCallback(async () => {
-    hapticFeedback.impact('light');
+    impactOccurred('light');
     setToggleLoading(true);
     
     try {
-      await updateDiamond({
+      await updateDiamond(diamond.id, {
         ...diamond,
         store_visible: !diamond.store_visible,
       });
@@ -60,15 +60,15 @@ export function OptimizedDiamondCard({ diamond, index, onUpdate }: OptimizedDiam
     } finally {
       setToggleLoading(false);
     }
-  }, [diamond, hapticFeedback, updateDiamond, toast]);
+  }, [diamond, impactOccurred, updateDiamond, toast]);
 
   const handleEditDiamond = useCallback(() => {
-    hapticFeedback.impact('light');
+    impactOccurred('light');
     navigate(`/edit-stone/${diamond.id}`);
-  }, [diamond, hapticFeedback, navigate]);
+  }, [diamond, impactOccurred, navigate]);
 
   const handleDeleteDiamond = useCallback(async () => {
-    hapticFeedback.notification('warning');
+    notificationOccurred('warning');
     
     try {
       await deleteDiamond(diamond.id);
@@ -83,10 +83,10 @@ export function OptimizedDiamondCard({ diamond, index, onUpdate }: OptimizedDiam
         variant: "destructive",
       });
     }
-  }, [diamond, deleteDiamond, hapticFeedback, toast]);
+  }, [diamond, deleteDiamond, notificationOccurred, toast]);
 
   const handleShareDiamond = useCallback(() => {
-    hapticFeedback.impact('light');
+    impactOccurred('light');
     
     const shareText = `Check out this ${diamond.carat}ct ${diamond.shape} diamond! ${formatCurrency(diamond.price)}`;
     
@@ -123,7 +123,7 @@ export function OptimizedDiamondCard({ diamond, index, onUpdate }: OptimizedDiam
         });
       });
     }
-  }, [diamond, hapticFeedback, toast]);
+  }, [diamond, impactOccurred, toast]);
 
   // Enhanced media viewer logic
   const renderMediaViewer = useMemo(() => {
