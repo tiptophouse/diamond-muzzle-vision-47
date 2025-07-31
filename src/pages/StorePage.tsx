@@ -21,7 +21,7 @@ const tg = getTelegramWebApp();
 const ITEMS_PER_PAGE = 6; // Reduced for better performance
 const SKELETON_COUNT = 3; // Fewer skeletons
 
-const StorePage = memo(() => {
+function StorePage() {
   const { diamonds, loading, error, refetch } = useStoreData();
   const { filters, filteredDiamonds, updateFilter, clearFilters } = useStoreFilters(diamonds || []);
   const [showFilters, setShowFilters] = useState(false);
@@ -344,8 +344,6 @@ const StorePage = memo(() => {
       </div>
     </MobilePullToRefresh>
   );
-});
-
-StorePage.displayName = 'StorePage';
+}
 
 export default StorePage;
