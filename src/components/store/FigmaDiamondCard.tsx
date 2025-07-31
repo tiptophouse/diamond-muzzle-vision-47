@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, Eye, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ interface FigmaDiamondCardProps {
   onUpdate?: () => void;
 }
 
-export function FigmaDiamondCard({
+function FigmaDiamondCard({
   diamond,
   index,
   onUpdate
@@ -25,29 +25,40 @@ export function FigmaDiamondCard({
   const { orientationData } = useTelegramAccelerometer(true);
   const navigate = useNavigate();
 
-  const handleLike = () => {
+  const handleLike = useCallback(() => {
     impactOccurred('light');
     setIsLiked(!isLiked);
     toast.success(isLiked ? "Removed from favorites" : "Added to favorites");
-  };
+  }, [impactOccurred, isLiked]);
 
-  const handleViewDetails = () => {
+  const handleViewDetails = useCallback(() => {
     impactOccurred('light');
     // Use unique diamond ID instead of stock number to avoid duplicate stock number issues
     navigate(`/diamond/${diamond.id}`);
-  };
+  }, [impactOccurred, navigate, diamond.id]);
 
-  const handleContact = () => {
+  const handleContact = useCallback(() => {
     impactOccurred('light');
     toast.success("Opening contact options...");
-  };
+  }, [impactOccurred]);
 
-  const isAvailable = diamond.status === "Available";
+  const isAvailable = useMemo(() => diamond.status === "Available", [diamond.status]);
 
-  // Calculate rotation based on device tilt for diamond image
-  const imageTransform = diamond.imageUrl && !imageError 
-    ? `perspective(1000px) rotateX(${orientationData.beta * 0.2}deg) rotateY(${orientationData.gamma * 0.2}deg)`
-    : undefined;
+  // Calculate rotation based on device tilt for diamond image - memoized for performance
+  const imageTransform = useMemo(() => {
+    return diamond.imageUrl && !imageError 
+      ? `perspective(1000px) rotateX(${orientationData.beta * 0.2}deg) rotateY(${orientationData.gamma * 0.2}deg)`
+      : undefined;
+  }, [diamond.imageUrl, imageError, orientationData.beta, orientationData.gamma]);
+
+  // Memoized price formatting
+  const formattedPrice = useMemo(() => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(diamond.price);
+  }, [diamond.price]);
 
   return (
     <div 
@@ -113,7 +124,7 @@ export function FigmaDiamondCard({
             </p>
           </div>
           <p className="text-lg font-bold text-foreground ml-2">
-            ${diamond.price?.toLocaleString() || 'N/A'}
+            {formattedPrice}
           </p>
         </div>
 
@@ -155,3 +166,6 @@ export function FigmaDiamondCard({
     </div>
   );
 }
+
+export default memo(FigmaDiamondCard);
+export { FigmaDiamondCard };

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback, memo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useStoreData } from "@/hooks/useStoreData";
@@ -11,7 +11,7 @@ import { ArrowLeft, Share2, ExternalLink, Camera, Award, Gem, Palette, Eye, Mess
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-export default function DiamondDetailPage() {
+function DiamondDetailPage() {
   const { stockNumber: diamondId } = useParams<{ stockNumber: string }>();
   const navigate = useNavigate();
   const { diamonds, loading, refetch } = useStoreData();
@@ -21,27 +21,35 @@ export default function DiamondDetailPage() {
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [showImageUpload, setShowImageUpload] = useState(false);
 
-  // Admin check
-  const isAdmin = user?.id === 2138564172;
+  // Memoized admin check
+  const isAdmin = useMemo(() => user?.id === 2138564172, [user?.id]);
 
-  console.log('🔍 DiamondDetailPage - diamondId from URL:', diamondId);
-  console.log('🔍 DiamondDetailPage - available diamonds:', diamonds?.length);
-  console.log('🔍 DiamondDetailPage - all diamond IDs:', diamonds?.map(d => d.id));
+  // Memoized diamond finding with early return optimization
+  const diamond = useMemo(() => {
+    if (!diamonds || !diamondId) return null;
+    return diamonds.find(d => d.id === diamondId) || null;
+  }, [diamonds, diamondId]);
 
-  // Use diamond ID instead of stock number to avoid duplicate stock number issues
-  const diamond = diamonds?.find(d => d.id === diamondId);
+  // Memoized price formatting to avoid recreation
+  const formatPrice = useCallback((price: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(price);
+  }, []);
 
-  console.log('🔍 DiamondDetailPage - found diamond:', diamond ? 'YES' : 'NO');
-  console.log('🔍 DiamondDetailPage - diamond data:', diamond);
-  
-  // Check for potential duplicates by stock number
-  const stockNumber = diamond?.stockNumber;
-  if (stockNumber) {
-    const duplicatesByStock = diamonds?.filter(d => d.stockNumber === stockNumber) || [];
-    if (duplicatesByStock.length > 1) {
-      console.warn('🚨 DiamondDetailPage - Multiple diamonds found with same stock number:', stockNumber, duplicatesByStock);
-    }
-  }
+  // Memoized meta data for better performance
+  const metaData = useMemo(() => {
+    if (!diamond) return null;
+    
+    const title = `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond - Mazalbot`;
+    const description = `Premium ${diamond.cut} cut ${diamond.shape} diamond. ${diamond.color} color, ${diamond.clarity} clarity. Stock #${diamond.stockNumber}. Price: $${diamond.price.toLocaleString()}`;
+    const imageUrl = diamond.imageUrl || `https://miniapp.mazalbot.com/api/diamond-image/${diamond.stockNumber}`;
+    const url = `https://miniapp.mazalbot.com/diamond/${diamond.stockNumber}`;
+    
+    return { title, description, imageUrl, url };
+  }, [diamond]);
 
   useEffect(() => {
     if (!loading && !diamond && diamondId) {
@@ -51,10 +59,12 @@ export default function DiamondDetailPage() {
     }
   }, [diamond, loading, diamondId, navigate]);
 
-  const handleShare = async () => {
+  const handleShare = useCallback(async () => {
+    if (!diamond) return;
+    
     // Create secure encrypted link that only shows this diamond
     const diamondData = {
-      stockNumber: diamond?.stockNumber,
+      stockNumber: diamond.stockNumber,
       timestamp: Date.now()
     };
     
@@ -65,8 +75,8 @@ export default function DiamondDetailPage() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${diamond?.carat}ct ${diamond?.shape} ${diamond?.color} ${diamond?.clarity} Diamond`,
-          text: `Check out this beautiful ${diamond?.shape} diamond!`,
+          title: `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond`,
+          text: `Check out this beautiful ${diamond.shape} diamond!`,
           url: secureUrl,
         });
         toast({ title: "Secure link shared!" });
@@ -79,10 +89,10 @@ export default function DiamondDetailPage() {
       navigator.clipboard.writeText(secureUrl);
       toast({ title: "Secure link copied to clipboard!" });
     }
-  };
+  }, [diamond, toast]);
 
-  const handleContact = async () => {
-    if (!isAuthenticated || !user) {
+  const handleContact = useCallback(async () => {
+    if (!isAuthenticated || !user || !diamond) {
       toast({
         title: "Authentication Required",
         description: "Please log in to contact the diamond owner",
@@ -134,11 +144,11 @@ export default function DiamondDetailPage() {
     } finally {
       setIsContactLoading(false);
     }
-  };
+  }, [isAuthenticated, user, diamond, toast]);
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file || !diamond) return;
 
     if (!file.type.startsWith('image/')) {
       toast({
@@ -193,7 +203,7 @@ export default function DiamondDetailPage() {
     } finally {
       setIsImageUploading(false);
     }
-  };
+  }, [diamond, toast, refetch]);
 
   if (loading) {
     return (
@@ -219,47 +229,36 @@ export default function DiamondDetailPage() {
     );
   }
 
-  // Generate meta tags for this specific diamond
-  const title = `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond - Mazalbot`;
-  const description = `Premium ${diamond.cut} cut ${diamond.shape} diamond. ${diamond.color} color, ${diamond.clarity} clarity. Stock #${diamond.stockNumber}. Price: $${diamond.price.toLocaleString()}`;
-  const imageUrl = diamond.imageUrl || `https://miniapp.mazalbot.com/api/diamond-image/${diamond.stockNumber}`;
-  const url = `https://miniapp.mazalbot.com/diamond/${diamond.stockNumber}`;
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
 
   return (
     <>
       {/* Dynamic Meta Tags for Link Previews */}
-      <Helmet>
-        <title>{title}</title>
-        <meta name="description" content={description} />
-        
-        {/* Open Graph / Facebook */}
-        <meta property="og:type" content="product" />
-        <meta property="og:title" content={title} />
-        <meta property="og:description" content={description} />
-        <meta property="og:image" content={imageUrl} />
-        <meta property="og:url" content={url} />
-        <meta property="og:site_name" content="Mazalbot Diamond Store" />
-        
-        {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={title} />
-        <meta name="twitter:description" content={description} />
-        <meta name="twitter:image" content={imageUrl} />
-        
-        {/* Product Schema */}
-        <meta name="keywords" content={`diamond, ${diamond.shape}, ${diamond.color}, ${diamond.clarity}, ${diamond.cut}, jewelry, precious stones`} />
-        <meta property="product:price:amount" content={diamond.price.toString()} />
-        <meta property="product:price:currency" content="USD" />
-        <meta property="product:availability" content="in stock" />
-      </Helmet>
+      {metaData && (
+        <Helmet>
+          <title>{metaData.title}</title>
+          <meta name="description" content={metaData.description} />
+          
+          {/* Open Graph / Facebook */}
+          <meta property="og:type" content="product" />
+          <meta property="og:title" content={metaData.title} />
+          <meta property="og:description" content={metaData.description} />
+          <meta property="og:image" content={metaData.imageUrl} />
+          <meta property="og:url" content={metaData.url} />
+          <meta property="og:site_name" content="Mazalbot Diamond Store" />
+          
+          {/* Twitter */}
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={metaData.title} />
+          <meta name="twitter:description" content={metaData.description} />
+          <meta name="twitter:image" content={metaData.imageUrl} />
+          
+          {/* Product Schema */}
+          <meta name="keywords" content={`diamond, ${diamond.shape}, ${diamond.color}, ${diamond.clarity}, ${diamond.cut}, jewelry, precious stones`} />
+          <meta property="product:price:amount" content={diamond.price.toString()} />
+          <meta property="product:price:currency" content="USD" />
+          <meta property="product:availability" content="in stock" />
+        </Helmet>
+      )}
 
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
         {/* Header */}
@@ -480,3 +479,5 @@ export default function DiamondDetailPage() {
     </>
   );
 }
+
+export default memo(DiamondDetailPage);
