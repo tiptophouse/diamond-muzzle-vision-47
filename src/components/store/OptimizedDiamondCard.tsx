@@ -172,94 +172,153 @@ export function OptimizedDiamondCard({ diamond, index, onUpdate }: OptimizedDiam
   }, [diamond.v360Url, diamond.gem360Url, diamond.imageUrl, diamond.stockNumber, diamond.shape]);
 
   return (
-    <Card className="group relative overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all duration-300 bg-white">
+    <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-white via-gray-50/30 to-white shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 hover:-translate-y-1 hover:scale-[1.02]">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      
       <div className="relative">
-        {/* Enhanced Media Viewer */}
-        <div className="aspect-square overflow-hidden rounded-t-lg">
-          {renderMediaViewer}
-        </div>
-
-        {/* Media Type Indicators */}
-        <div className="absolute top-2 right-2 flex gap-1">
-          {diamond.v360Url && (
-            <Badge className="bg-blue-600 text-white text-xs px-1.5 py-0.5">
-              360°
-            </Badge>
-          )}
-          {diamond.videoUrl && (
-            <Badge className="bg-purple-600 text-white text-xs px-1.5 py-0.5">
-              VIDEO
-            </Badge>
-          )}
-          {diamond.certificateImageUrl && (
-            <Badge className="bg-green-600 text-white text-xs px-1.5 py-0.5">
-              CERT
-            </Badge>
-          )}
-        </div>
-
-        {/* Store visibility toggle */}
-        {isOwner && (
-          <div className="absolute top-2 left-2">
-            <StoreVisibilityToggle
-              isVisible={diamond.store_visible}
-              onToggle={handleToggleStoreVisibility}
-              isLoading={toggleLoading}
-            />
+        {/* Enhanced Media Viewer with Modern Frame */}
+        <div className="aspect-square overflow-hidden relative bg-gradient-to-br from-gray-50 to-gray-100">
+          <div className="absolute inset-2 rounded-xl overflow-hidden border border-white/20 shadow-inner">
+            {renderMediaViewer}
           </div>
-        )}
+          
+          {/* Elegant Corner Accent */}
+          <div className="absolute top-0 right-0 w-8 h-8 bg-gradient-to-bl from-blue-400/20 to-transparent" />
+          
+          {/* Media Type Indicators - Redesigned */}
+          <div className="absolute top-3 right-3 flex gap-1.5">
+            {diamond.v360Url && (
+              <div className="bg-blue-600/90 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full font-medium border border-white/20">
+                360°
+              </div>
+            )}
+            {diamond.videoUrl && (
+              <div className="bg-purple-600/90 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full font-medium border border-white/20">
+                VIDEO
+              </div>
+            )}
+            {diamond.certificateImageUrl && (
+              <div className="bg-emerald-600/90 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full font-medium border border-white/20">
+                CERT
+              </div>
+            )}
+          </div>
+
+          {/* Store visibility toggle - Refined */}
+          {isOwner && (
+            <div className="absolute top-3 left-3">
+              <div className="bg-white/90 backdrop-blur-sm rounded-full p-1 border border-gray-200/50">
+                <StoreVisibilityToggle
+                  isVisible={diamond.store_visible}
+                  onToggle={handleToggleStoreVisibility}
+                  isLoading={toggleLoading}
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold">
-          {diamond.carat}ct {diamond.shape}
-        </CardTitle>
-        <CardDescription className="text-sm text-muted-foreground">
-          {diamond.color} / {diamond.clarity}
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent className="py-2">
-        <div className="flex items-center justify-between">
-          <div className="text-xl font-bold">{formatCurrency(diamond.price)}</div>
-          <Badge variant="secondary">{diamond.status}</Badge>
+      {/* Modern Content Layout */}
+      <div className="p-5 space-y-4">
+        {/* Header Section */}
+        <div className="space-y-2">
+          <div className="flex items-start justify-between">
+            <h3 className="text-xl font-bold text-gray-900 leading-tight">
+              {diamond.carat}ct {diamond.shape}
+            </h3>
+            <div className="flex items-center gap-2">
+              {isOwner && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-gray-100 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                      <MoreVertical className="h-4 w-4 text-gray-500" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 bg-white/95 backdrop-blur-md border border-gray-200/50">
+                    <DropdownMenuLabel className="text-gray-700">Actions</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={handleEditDiamond} className="hover:bg-blue-50">
+                      <Pencil className="mr-2 h-4 w-4 text-blue-600" /> Edit Stone
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleDeleteDiamond} className="hover:bg-red-50 text-red-600">
+                      <Trash2 className="mr-2 h-4 w-4" /> Delete Stone
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="hover:bg-emerald-50">
+                      <ExternalLink className="mr-2 h-4 w-4 text-emerald-600" />
+                      <a href={`https://gia.edu/report-check?reportno=${diamond.certificateNumber}`} target="_blank" rel="noopener noreferrer">
+                        View GIA Report
+                      </a>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="hover:bg-gray-50">
+                      <Copy className="mr-2 h-4 w-4 text-gray-600" /> Copy Details
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          </div>
+          
+          {/* Specs Pills */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200/50">
+              {diamond.color}
+            </span>
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200/50">
+              {diamond.clarity}
+            </span>
+            {diamond.cut && diamond.cut !== 'N/A' && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200/50">
+                {diamond.cut}
+              </span>
+            )}
+          </div>
         </div>
-      </CardContent>
 
-      <CardFooter className="flex items-center justify-between pt-3 pb-2">
-        <Button variant="secondary" size="sm" onClick={handleShareDiamond}>
-          Share
-        </Button>
-        {isOwner && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={handleEditDiamond}>
-                <Pencil className="mr-2 h-4 w-4" /> Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleDeleteDiamond}>
-                <Trash2 className="mr-2 h-4 w-4" /> Delete
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <ExternalLink className="mr-2 h-4 w-4" />
-                <a href={`https://gia.edu/report-check?reportno=${diamond.certificateNumber}`} target="_blank" rel="noopener noreferrer">
-                  View GIA Report
-                </a>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Copy className="mr-2 h-4 w-4" /> Copy Details
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </CardFooter>
+        {/* Price Section */}
+        <div className="flex items-end justify-between">
+          <div className="space-y-1">
+            <div className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+              {formatCurrency(diamond.price)}
+            </div>
+            {diamond.carat > 0 && (
+              <div className="text-sm text-gray-500 font-medium">
+                {formatCurrency(Math.round(diamond.price / diamond.carat))}/ct
+              </div>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Badge 
+              variant={diamond.status === 'Available' ? 'default' : 'secondary'} 
+              className={`font-medium ${
+                diamond.status === 'Available' 
+                  ? 'bg-emerald-100 text-emerald-800 border-emerald-200' 
+                  : 'bg-gray-100 text-gray-600 border-gray-200'
+              }`}
+            >
+              {diamond.status}
+            </Badge>
+          </div>
+        </div>
+
+        {/* Action Button */}
+        <div className="pt-2">
+          <Button 
+            onClick={handleShareDiamond}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 font-medium py-2.5 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25"
+          >
+            Share Diamond
+          </Button>
+        </div>
+
+        {/* Stock Number Footer */}
+        <div className="pt-2 border-t border-gray-100">
+          <div className="text-xs text-gray-400 font-mono tracking-wider uppercase">
+            Stock #{diamond.stockNumber}
+          </div>
+        </div>
+      </div>
     </Card>
   );
 }
