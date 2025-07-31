@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Layout } from '@/components/layout/Layout';
+import { TelegramLayout } from '@/components/layout/TelegramLayout';
 import { SmartNotificationCard } from '@/components/notifications/SmartNotificationCard';
 import { GroupNotificationCard } from '@/components/notifications/GroupNotificationCard';
 import { BusinessNotificationCard } from '@/components/notifications/BusinessNotificationCard';
@@ -32,13 +32,13 @@ const NotificationsPage = () => {
 
   if (isLoading) {
     return (
-      <Layout>
+      <TelegramLayout>
         <div className="max-w-4xl mx-auto p-6">
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
         </div>
-      </Layout>
+      </TelegramLayout>
     );
   }
 
@@ -70,7 +70,7 @@ const NotificationsPage = () => {
   };
 
   return (
-    <Layout>
+    <TelegramLayout>
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -264,7 +264,7 @@ const NotificationsPage = () => {
           </ul>
         </div>
       </div>
-    </Layout>
+    </TelegramLayout>
   );
 };
 

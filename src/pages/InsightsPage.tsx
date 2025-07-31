@@ -1,5 +1,5 @@
 
-import { Layout } from "@/components/layout/Layout";
+import { TelegramLayout } from "@/components/layout/TelegramLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { InsightsHeader } from "@/components/insights/InsightsHeader";
 import { ShapeDistributionChart } from "@/components/insights/ShapeDistributionChart";
@@ -24,7 +24,7 @@ export default function InsightsPage() {
   
   if (!isAuthenticated) {
     return (
-      <Layout>
+      <TelegramLayout>
         <div className="flex items-center justify-center h-64">
           <Card>
             <CardHeader>
@@ -33,13 +33,13 @@ export default function InsightsPage() {
             </CardHeader>
           </Card>
         </div>
-      </Layout>
+      </TelegramLayout>
     );
   }
   
   if (loading) {
     return (
-      <Layout>
+      <TelegramLayout>
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold">Market Insights</h1>
@@ -53,12 +53,12 @@ export default function InsightsPage() {
             </div>
           </div>
         </div>
-      </Layout>
+      </TelegramLayout>
     );
   }
 
   return (
-    <Layout>
+    <TelegramLayout>
       <div className="space-y-6">
         <InsightsHeader
           totalDiamonds={totalDiamonds}
@@ -84,6 +84,6 @@ export default function InsightsPage() {
           />
         )}
       </div>
-    </Layout>
+    </TelegramLayout>
   );
 }

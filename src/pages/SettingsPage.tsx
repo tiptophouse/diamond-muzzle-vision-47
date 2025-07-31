@@ -1,10 +1,10 @@
 
-import { Layout } from "@/components/layout/Layout";
+import { TelegramLayout } from "@/components/layout/TelegramLayout";
 import { AccountSettings } from "@/components/settings/AccountSettings";
 
 export default function SettingsPage() {
   return (
-    <Layout>
+    <TelegramLayout>
       <div className="space-y-6 max-w-4xl mx-auto">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Account Settings</h1>
@@ -15,6 +15,6 @@ export default function SettingsPage() {
         
         <AccountSettings />
       </div>
-    </Layout>
+    </TelegramLayout>
   );
 }
