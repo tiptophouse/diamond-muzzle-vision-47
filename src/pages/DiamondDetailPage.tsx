@@ -62,32 +62,25 @@ function DiamondDetailPage() {
   const handleShare = useCallback(async () => {
     if (!diamond) return;
     
-    // Create secure encrypted link that only shows this diamond
-    const diamondData = {
-      stockNumber: diamond.stockNumber,
-      timestamp: Date.now()
-    };
-    
-    // Simple base64 encoding for the secure link
-    const encryptedData = btoa(JSON.stringify(diamondData));
-    const secureUrl = `https://miniapp.mazalbot.com/secure-diamond/${encryptedData}`;
+    // Share the current page URL
+    const currentUrl = window.location.href;
     
     if (navigator.share) {
       try {
         await navigator.share({
           title: `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond`,
           text: `Check out this beautiful ${diamond.shape} diamond!`,
-          url: secureUrl,
+          url: currentUrl,
         });
-        toast({ title: "Secure link shared!" });
+        toast({ title: "Page shared!" });
       } catch (error) {
         // Fallback to clipboard
-        navigator.clipboard.writeText(secureUrl);
-        toast({ title: "Secure link copied to clipboard!" });
+        navigator.clipboard.writeText(currentUrl);
+        toast({ title: "Page link copied to clipboard!" });
       }
     } else {
-      navigator.clipboard.writeText(secureUrl);
-      toast({ title: "Secure link copied to clipboard!" });
+      navigator.clipboard.writeText(currentUrl);
+      toast({ title: "Page link copied to clipboard!" });
     }
   }, [diamond, toast]);
 
