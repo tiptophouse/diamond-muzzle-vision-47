@@ -71,7 +71,7 @@ export function useStoreData() {
             console.log('🔍 STORE: item.stock_number type:', typeof item.stock_number, 'value:', item.stock_number);
 
             return {
-              id: item.id || `${item.stock_number}-${Date.now()}`,
+              id: String(item.id), // Use the stable FastAPI ID directly
               stockNumber: String(item.stock_number || item.stockNumber || 'UNKNOWN'),
               shape: item.shape,
               carat: Number(item.weight || item.carat) || 0,
