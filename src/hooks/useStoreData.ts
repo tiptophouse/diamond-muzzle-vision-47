@@ -4,6 +4,12 @@ import { Diamond } from "@/components/inventory/InventoryTable";
 import { fetchInventoryData } from "@/services/inventoryDataService";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useInventoryDataSync } from "./inventory/useInventoryDataSync";
+import { getTelegramWebApp } from "@/utils/telegramWebApp";
+
+// Telegram memory management
+const tg = getTelegramWebApp();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+let dataCache: { data: Diamond[], timestamp: number } | null = null;
 
 export function useStoreData() {
   const { user, isLoading: authLoading } = useTelegramAuth();
@@ -11,29 +17,23 @@ export function useStoreData() {
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Cache for processed data to avoid re-processing
-  const [dataCache, setDataCache] = useState<{ rawData: any[], processedData: Diamond[] } | null>(null);
 
-  // Memoized data transformation function
-  const transformData = useMemo(() => (rawData: any[]): Diamond[] => {
+  // Optimized data transformation with caching
+  const transformData = useCallback((rawData: any[]): Diamond[] => {
     return rawData
       .map(item => {
-        // Better Gem360 URL detection and handling
         let gem360Url = item.gem360_url || item.gem360Url;
         
-        // Check if certificate_url contains gem360
         if (!gem360Url && item.certificate_url && item.certificate_url.includes('gem360')) {
           gem360Url = item.certificate_url;
         }
         
-        // Check if certificateUrl contains gem360
         if (!gem360Url && item.certificateUrl && item.certificateUrl.includes('gem360')) {
           gem360Url = item.certificateUrl;
         }
 
         return {
-          id: String(item.id), // Use the stable FastAPI ID directly
+          id: String(item.id),
           stockNumber: String(item.stock_number || item.stockNumber || 'UNKNOWN'),
           shape: item.shape,
           carat: Number(item.weight || item.carat) || 0,
@@ -43,20 +43,29 @@ export function useStoreData() {
           price: Number(item.price_per_carat ? item.price_per_carat * (item.weight || item.carat) : item.price) || 0,
           status: item.status || 'Available',
           imageUrl: item.picture || item.imageUrl || undefined,
-          store_visible: item.store_visible !== false, // Default to true for store display
+          store_visible: item.store_visible !== false,
           certificateNumber: item.certificate_number || undefined,
           lab: item.lab || undefined,
           gem360Url: gem360Url || undefined,
           certificateUrl: item.certificate_url || item.certificateUrl || undefined
         };
       })
-      .filter(diamond => diamond.store_visible && diamond.status === 'Available'); // Only show store-visible and available diamonds
+      .filter(diamond => diamond.store_visible && diamond.status === 'Available')
+      .slice(0, 50); // Limit to 50 diamonds for performance
   }, []);
 
-  const fetchStoreData = useCallback(async () => {
+  const fetchStoreData = useCallback(async (useCache = true) => {
     try {
-      setLoading(true);
       setError(null);
+
+      // Check cache first
+      if (useCache && dataCache && (Date.now() - dataCache.timestamp) < CACHE_DURATION) {
+        setDiamonds(dataCache.data);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
 
       const result = await fetchInventoryData();
 
@@ -67,20 +76,13 @@ export function useStoreData() {
       }
 
       if (result.data && result.data.length > 0) {
-        // Check if we can reuse cached processed data
-        if (dataCache && JSON.stringify(dataCache.rawData) === JSON.stringify(result.data)) {
-          setDiamonds(dataCache.processedData);
-          return;
-        }
-
-        // Transform data using memoized function
         const transformedDiamonds = transformData(result.data);
-
+        
         // Update cache
-        setDataCache({
-          rawData: result.data,
-          processedData: transformedDiamonds
-        });
+        dataCache = {
+          data: transformedDiamonds,
+          timestamp: Date.now()
+        };
 
         setDiamonds(transformedDiamonds);
       } else {
@@ -93,7 +95,23 @@ export function useStoreData() {
     } finally {
       setLoading(false);
     }
-  }, [transformData, dataCache]);
+  }, [transformData]);
+
+  // Telegram memory optimization
+  useEffect(() => {
+    if (tg) {
+      // Clear memory when component unmounts
+      return () => {
+        try {
+          if ('gc' in window && typeof window.gc === 'function') {
+            window.gc();
+          }
+        } catch (e) {
+          // Ignore errors
+        }
+      };
+    }
+  }, []);
 
   useEffect(() => {
     if (authLoading) {
@@ -112,15 +130,23 @@ export function useStoreData() {
   useEffect(() => {
     return subscribeToInventoryChanges(() => {
       if (user && !authLoading) {
-        fetchStoreData();
+        // Clear cache and force refresh
+        dataCache = null;
+        fetchStoreData(false);
       }
     });
   }, [user, authLoading, subscribeToInventoryChanges, fetchStoreData]);
+
+  const refetch = useCallback(() => {
+    // Clear cache and force refresh
+    dataCache = null;
+    return fetchStoreData(false);
+  }, [fetchStoreData]);
 
   return {
     diamonds,
     loading: loading || authLoading,
     error,
-    refetch: fetchStoreData,
+    refetch,
   };
 }
