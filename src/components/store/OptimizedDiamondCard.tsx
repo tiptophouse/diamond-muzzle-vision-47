@@ -74,6 +74,16 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     minimumFractionDigits: 0,
   }).format(diamond.price);
 
+  // Create a smaller, optimized image URL
+  const getOptimizedImageUrl = (url: string) => {
+    // If it's a URL with query parameters, add size optimization
+    if (url.includes('?')) {
+      return `${url}&w=300&h=300&fit=crop&auto=format,compress&q=75`;
+    }
+    // For other URLs, try to add basic optimization
+    return url;
+  };
+
   return (
     <div 
       ref={cardRef}
@@ -81,14 +91,14 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
       className="group relative bg-card rounded-xl overflow-hidden transition-all duration-200 border border-border/50 hover:border-border"
       style={{ animationDelay: `${Math.min(index * 30, 200)}ms` }}
     >
-      {/* Image Container */}
-      <div className="relative aspect-square bg-muted overflow-hidden">
+      {/* Image Container - Reduced aspect ratio for smaller images */}
+      <div className="relative aspect-[4/3] bg-muted overflow-hidden">
         {/* Loading skeleton */}
         {!imageLoaded && (
           <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10 animate-pulse">
             <div className="flex items-center justify-center h-full">
-              <div className="w-12 h-12 bg-muted-foreground/20 rounded-full flex items-center justify-center">
-                <div className="w-6 h-6 bg-muted-foreground/40 rounded-full animate-pulse"></div>
+              <div className="w-8 h-8 bg-muted-foreground/20 rounded-full flex items-center justify-center">
+                <div className="w-4 h-4 bg-muted-foreground/40 rounded-full animate-pulse"></div>
               </div>
             </div>
           </div>
@@ -97,7 +107,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
         {diamond.imageUrl && !imageError && isVisible ? (
           <img 
             ref={imgRef}
-            src={diamond.imageUrl} 
+            src={getOptimizedImageUrl(diamond.imageUrl)} 
             alt={`${diamond.carat} ct ${diamond.shape} Diamond`} 
             className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
@@ -106,11 +116,13 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
             onError={handleImageError}
             loading="lazy"
             decoding="async"
+            width="300"
+            height="225"
           />
-        ) : imageError ? (
+        ) : imageError || !diamond.imageUrl ? (
           <div className="flex items-center justify-center h-full bg-gradient-to-br from-muted to-muted-foreground/10">
-            <div className="w-12 h-12 bg-muted-foreground/20 rounded-full flex items-center justify-center">
-              <div className="w-6 h-6 bg-muted-foreground/40 rounded-full"></div>
+            <div className="w-8 h-8 bg-muted-foreground/20 rounded-full flex items-center justify-center">
+              <div className="w-4 h-4 bg-muted-foreground/40 rounded-full"></div>
             </div>
           </div>
         ) : null}

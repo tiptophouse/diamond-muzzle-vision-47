@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
@@ -21,19 +22,15 @@ function StorePage() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Default filters with all required properties
+  // Default filters that match StoreFilters interface
   const defaultFilters = {
     shapes: [] as string[],
     colors: [] as string[],
     clarities: [] as string[],
     cuts: [] as string[],
     fluorescence: [] as string[],
-    polish: [] as string[],
-    symmetry: [] as string[],
     caratRange: [0, 10] as [number, number],
-    priceRange: [0, 1000000] as [number, number],
-    depthRange: [0, 100] as [number, number],
-    tableRange: [0, 100] as [number, number]
+    priceRange: [0, 100000] as [number, number]
   };
 
   const [filters, setFilters] = useState(defaultFilters);
@@ -42,12 +39,13 @@ function StorePage() {
 
   const { filteredDiamonds } = useStoreFilters(diamonds, filters, searchQuery, sortOption);
 
-  // Sort diamonds with images first, then apply user's selected sorting
+  // Prioritize diamonds with images first, then apply sorting
   const sortedDiamonds = useMemo(() => {
     if (!filteredDiamonds) return [];
     
-    const withImages = filteredDiamonds.filter(d => d.imageUrl);
-    const withoutImages = filteredDiamonds.filter(d => !d.imageUrl);
+    // First separate diamonds with and without images
+    const withImages = filteredDiamonds.filter(d => d.imageUrl && d.imageUrl.trim());
+    const withoutImages = filteredDiamonds.filter(d => !d.imageUrl || !d.imageUrl.trim());
     
     const sortByOption = (diamonds: any[]) => {
       switch (sortOption) {
@@ -66,6 +64,7 @@ function StorePage() {
       }
     };
     
+    // Return sorted diamonds with images first, then without images
     return [...sortByOption(withImages), ...sortByOption(withoutImages)];
   }, [filteredDiamonds, sortOption]);
 
