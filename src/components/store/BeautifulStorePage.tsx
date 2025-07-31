@@ -7,6 +7,7 @@ import { MobilePullToRefresh } from "@/components/mobile/MobilePullToRefresh";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { EnhancedStoreHeader } from "./EnhancedStoreHeader";
 import { StoreGrid } from "./StoreGrid";
+import { CollapsibleFilters } from "./CollapsibleFilters";
 import { toast } from "sonner";
 
 interface BeautifulStorePageProps {
@@ -25,6 +26,8 @@ export function BeautifulStorePage({
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { selectionChanged } = useTelegramHapticFeedback();
+  const [sortBy, setSortBy] = useState("most-popular");
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   
   // Use store data hook if props are not provided
   const { 
@@ -102,6 +105,14 @@ export function BeautifulStorePage({
     onRefresh();
   };
 
+  const handleSortChange = (value: string) => {
+    setSortBy(value);
+  };
+
+  const handleOpenFilters = () => {
+    setIsFiltersOpen(true);
+  };
+
   // Auto-scroll to diamond if found via stock parameter
   useEffect(() => {
     if (stockNumber && visibleDiamonds.length > 0) {
@@ -119,10 +130,14 @@ export function BeautifulStorePage({
       <MobilePullToRefresh onRefresh={onRefresh}>
         <div className="w-full max-w-7xl mx-auto">
           {/* Header */}
-          <EnhancedStoreHeader 
-            diamondCount={visibleDiamonds.length}
-            onShareStore={handleShareStore}
-          />
+          <div className="px-4 pt-6 pb-4">
+            <EnhancedStoreHeader 
+              totalDiamonds={visibleDiamonds.length}
+              sortBy={sortBy}
+              onSortChange={handleSortChange}
+              onOpenFilters={handleOpenFilters}
+            />
+          </div>
           
           {/* Main Content */}
           <div className="px-4 pb-6">
