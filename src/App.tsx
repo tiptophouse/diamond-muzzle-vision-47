@@ -17,21 +17,40 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <TelegramAuthProvider>
           <Router>
-            <div className="App">
-              <Routes>
-                <Route path="/upload" element={<UploadPage />} />
-                <Route path="/inventory" element={<InventoryPage />} />
-                <Route path="/" element={
-                  <TelegramLayout>
+            <TelegramLayout>
+              <div className="App">
+                <Routes>
+                  <Route path="/upload" element={<UploadPage />} />
+                  <Route path="/inventory" element={<InventoryPage />} />
+                  <Route path="/" element={
                     <div className="container mx-auto p-4">
                       <h1 className="text-2xl font-bold mb-4">Diamond Inventory Manager</h1>
-                      <p>Welcome to your diamond inventory management system.</p>
+                      <p className="mb-4">Welcome to your diamond inventory management system.</p>
+                      <div className="space-y-4">
+                        <div className="p-4 border rounded-lg">
+                          <h2 className="text-lg font-semibold mb-2">Quick Actions</h2>
+                          <div className="space-x-2">
+                            <button 
+                              onClick={() => window.location.href = '/inventory'}
+                              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                            >
+                              View Inventory
+                            </button>
+                            <button 
+                              onClick={() => window.location.href = '/upload'}
+                              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                            >
+                              Upload Diamonds
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </TelegramLayout>
-                } />
-              </Routes>
-              <Toaster />
-            </div>
+                  } />
+                </Routes>
+                <Toaster />
+              </div>
+            </TelegramLayout>
           </Router>
         </TelegramAuthProvider>
       </QueryClientProvider>

@@ -22,26 +22,24 @@ export default function UploadPage() {
   };
 
   return (
-    <TelegramLayout>
-      <div className="container mx-auto p-4 space-y-6 pb-safe">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold mb-2">🤖 AI-Powered Diamond CSV Upload</h1>
-          <p className="text-muted-foreground">
-            Upload your diamond inventory with intelligent AI assistance
-          </p>
-          <div className="text-sm text-muted-foreground mt-2 flex items-center justify-center gap-2">
-            <span>✨ AI Validation</span>
-            <span>•</span>
-            <span>💬 Smart Questions</span>
-            <span>•</span>
-            <span>🔧 Auto-corrections</span>
-            <span>•</span>
-            <span>📊 Quality Scoring</span>
-          </div>
+    <div className="container mx-auto p-4 space-y-6 pb-safe">
+      <div className="text-center mb-6">
+        <h1 className="text-3xl font-bold mb-2">🤖 AI-Powered Diamond CSV Upload</h1>
+        <p className="text-muted-foreground">
+          Upload your diamond inventory with intelligent AI assistance
+        </p>
+        <div className="text-sm text-muted-foreground mt-2 flex items-center justify-center gap-2">
+          <span>✨ AI Validation</span>
+          <span>•</span>
+          <span>💬 Smart Questions</span>
+          <span>•</span>
+          <span>🔧 Auto-corrections</span>
+          <span>•</span>
+          <span>📊 Quality Scoring</span>
         </div>
-        
-        <AIEnhancedCsvValidator onUploadSuccess={handleUploadSuccess} />
       </div>
-    </TelegramLayout>
+      
+      <AIEnhancedCsvValidator onUploadSuccess={handleUploadSuccess} />
+    </div>
   );
 }
