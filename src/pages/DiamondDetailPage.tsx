@@ -402,7 +402,17 @@ export default function DiamondDetailPage() {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Cut</label>
-                    <p className="text-lg font-semibold">{diamond.cut}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-lg font-semibold">{diamond.cut}</p>
+                      <Button
+                        onClick={handleShare}
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0 opacity-70 hover:opacity-100"
+                      >
+                        <Share2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                   {diamond.fluorescence && (
                     <div>
