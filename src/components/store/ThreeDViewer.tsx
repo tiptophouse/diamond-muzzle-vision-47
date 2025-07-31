@@ -43,23 +43,27 @@ export function ThreeDViewer({ imageUrl, stockNumber, onClose }: ThreeDViewerPro
   if (!is3DImage) {
     // Regular image display
     return (
-      <div className="relative group">
+      <div className="relative group overflow-hidden rounded-lg">
         <img
           src={imageUrl}
           alt={`Diamond ${stockNumber}`}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
           onLoad={handleImageLoad}
         />
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-          <Button
-            onClick={toggleFullscreen}
-            size="sm"
-            variant="outline"
-            className="bg-white/90 hover:bg-white"
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            View Full
-          </Button>
+        
+        {/* Improved hover overlay - positioned at bottom instead of covering entire image */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 p-3">
+          <div className="flex justify-center">
+            <Button
+              onClick={toggleFullscreen}
+              size="sm"
+              variant="outline"
+              className="bg-white/95 hover:bg-white border-white/20 backdrop-blur-sm"
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              View Full
+            </Button>
+          </div>
         </div>
       </div>
     );
