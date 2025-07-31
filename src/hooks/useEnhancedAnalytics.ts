@@ -10,58 +10,79 @@ export function useEnhancedAnalytics() {
 
   const fetchEnhancedUsers = async () => {
     try {
-      console.log('Fetching enhanced users data...');
+      console.log('🔍 Fetching enhanced users data...');
       
-      // Fetch user profiles with analytics data
+      // First, fetch all user profiles
       const { data: profiles, error: profileError } = await supabase
         .from('user_profiles')
-        .select(`
-          *,
-          user_analytics (
-            total_visits,
-            api_calls_count,
-            storage_used_mb,
-            cost_per_user,
-            revenue_per_user,
-            profit_loss,
-            lifetime_value,
-            subscription_status,
-            last_active,
-            total_time_spent
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (profileError) {
-        console.error('Error fetching profiles:', profileError);
+        console.error('❌ Error fetching profiles:', profileError);
         throw profileError;
       }
 
-      console.log('Raw profiles data:', profiles);
+      console.log('✅ Fetched user profiles:', profiles?.length || 0);
 
-      // Transform the data to flatten analytics
-      const transformedUsers = profiles?.map(profile => ({
-        ...profile,
-        // Flatten analytics data
-        total_visits: profile.user_analytics?.[0]?.total_visits || 0,
-        api_calls_count: profile.user_analytics?.[0]?.api_calls_count || 0,
-        storage_used_mb: profile.user_analytics?.[0]?.storage_used_mb || 0,
-        cost_per_user: profile.user_analytics?.[0]?.cost_per_user || 0,
-        revenue_per_user: profile.user_analytics?.[0]?.revenue_per_user || 0,
-        profit_loss: profile.user_analytics?.[0]?.profit_loss || 0,
-        lifetime_value: profile.user_analytics?.[0]?.lifetime_value || 0,
-        subscription_status: profile.user_analytics?.[0]?.subscription_status || profile.subscription_plan || 'free',
-        last_active: profile.user_analytics?.[0]?.last_active || profile.updated_at,
-        total_time_spent: profile.user_analytics?.[0]?.total_time_spent || '00:00:00'
-      })) || [];
+      // Then fetch analytics data
+      const { data: analytics, error: analyticsError } = await supabase
+        .from('user_analytics')
+        .select('*');
 
-      console.log('Transformed users:', transformedUsers);
+      if (analyticsError) {
+        console.warn('⚠️ Error fetching analytics (continuing without):', analyticsError);
+      }
+
+      console.log('✅ Fetched analytics data:', analytics?.length || 0);
+
+      // Combine profiles with analytics
+      const transformedUsers = profiles?.map(profile => {
+        const userAnalytics = analytics?.find(a => a.telegram_id === profile.telegram_id);
+        
+        return {
+          ...profile,
+          // Analytics data
+          total_visits: userAnalytics?.total_visits || 0,
+          api_calls_count: userAnalytics?.api_calls_count || 0,
+          storage_used_mb: userAnalytics?.storage_used_mb || 0,
+          cost_per_user: userAnalytics?.cost_per_user || 0,
+          revenue_per_user: userAnalytics?.revenue_per_user || 0,
+          profit_loss: userAnalytics?.profit_loss || 0,
+          lifetime_value: userAnalytics?.lifetime_value || 0,
+          subscription_status: userAnalytics?.subscription_status || profile.subscription_plan || 'free',
+          last_active: userAnalytics?.last_active || profile.updated_at,
+          total_time_spent: userAnalytics?.total_time_spent || '00:00:00'
+        };
+      }) || [];
+
+      console.log('✅ Enhanced users created:', transformedUsers.length);
       setEnhancedUsers(transformedUsers);
+
+      if (transformedUsers.length === 0) {
+        console.warn('⚠️ No users found in database');
+        toast({
+          title: "⚠️ No Users Found",
+          description: "The user database appears to be empty. Check your database connection.",
+          variant: "destructive",
+        });
+      } else {
+        console.log('✅ Admin data loaded successfully:', {
+          totalUsers: transformedUsers.length,
+          premiumUsers: transformedUsers.filter(u => u.is_premium).length,
+          recentUsers: transformedUsers.filter(u => {
+            const created = new Date(u.created_at);
+            const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+            return created > weekAgo;
+          }).length
+        });
+      }
+      
     } catch (error: any) {
-      console.error('Error fetching enhanced users:', error);
+      console.error('❌ Error fetching enhanced users:', error);
       toast({
-        title: "Error",
-        description: "Failed to load user data",
+        title: "❌ Database Error",
+        description: `Failed to load user data: ${error.message}`,
         variant: "destructive",
       });
       setEnhancedUsers([]);
@@ -113,6 +134,7 @@ export function useEnhancedAnalytics() {
   };
 
   const refetch = () => {
+    console.log('🔄 Refetching admin data...');
     setIsLoading(true);
     fetchEnhancedUsers();
   };
