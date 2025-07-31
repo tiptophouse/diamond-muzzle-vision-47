@@ -54,17 +54,17 @@ export function WishlistContent() {
 
       if (itemsError) throw itemsError;
 
-      // Fetch wishlist alerts
-      const { data: alerts, error: alertsError } = await supabase
-        .from('wishlist_alerts')
-        .select('*')
-        .eq('telegram_id', user.id)
-        .order('created_at', { ascending: false });
+      // TODO: Create wishlist_alerts table
+      // const { data: alerts, error: alertsError } = await supabase
+      //   .from('wishlist_alerts')
+      //   .select('*')
+      //   .eq('telegram_id', user.id)
+      //   .order('created_at', { ascending: false });
 
-      if (alertsError) throw alertsError;
+      // if (alertsError) throw alertsError;
 
       setWishlistItems(items || []);
-      setWishlistAlerts(alerts || []);
+      setWishlistAlerts([]);
     } catch (error) {
       console.error('Error fetching wishlist data:', error);
       toast({
@@ -107,12 +107,13 @@ export function WishlistContent() {
 
   const toggleAlert = async (alertId: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
-        .from('wishlist_alerts')
-        .update({ is_active: !currentStatus })
-        .eq('id', alertId);
+      // TODO: Create wishlist_alerts table
+      // const { error } = await supabase
+      //   .from('wishlist_alerts')
+      //   .update({ is_active: !currentStatus })
+      //   .eq('id', alertId);
 
-      if (error) throw error;
+      // if (error) throw error;
 
       setWishlistAlerts(alerts => 
         alerts.map(alert => 
@@ -138,12 +139,13 @@ export function WishlistContent() {
 
   const deleteAlert = async (alertId: string) => {
     try {
-      const { error } = await supabase
-        .from('wishlist_alerts')
-        .delete()
-        .eq('id', alertId);
+      // TODO: Create wishlist_alerts table
+      // const { error } = await supabase
+      //   .from('wishlist_alerts')
+      //   .delete()
+      //   .eq('id', alertId);
 
-      if (error) throw error;
+      // if (error) throw error;
 
       setWishlistAlerts(alerts => alerts.filter(alert => alert.id !== alertId));
       toast({

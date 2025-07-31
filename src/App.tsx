@@ -7,6 +7,10 @@ import { TelegramAuthProvider } from '@/context/TelegramAuthContext';
 import { TelegramLayout } from '@/components/layout/TelegramLayout';
 import UploadPage from '@/pages/UploadPage';
 import InventoryPage from '@/pages/InventoryPage';
+import StorePage from '@/pages/StorePage';
+import Admin from '@/pages/Admin';
+import Dashboard from '@/pages/Dashboard';
+import Index from '@/pages/Index';
 
 // Create query client
 const queryClient = new QueryClient();
@@ -18,14 +22,34 @@ function App() {
         <Router>
           <div className="App">
             <Routes>
-              <Route path="/upload" element={<UploadPage />} />
-              <Route path="/inventory" element={<InventoryPage />} />
+              <Route path="/upload" element={
+                <TelegramLayout>
+                  <UploadPage />
+                </TelegramLayout>
+              } />
+              <Route path="/inventory" element={
+                <TelegramLayout>
+                  <InventoryPage />
+                </TelegramLayout>
+              } />
+              <Route path="/store" element={
+                <TelegramLayout>
+                  <StorePage />
+                </TelegramLayout>
+              } />
+              <Route path="/admin" element={
+                <TelegramLayout>
+                  <Admin />
+                </TelegramLayout>
+              } />
+              <Route path="/dashboard" element={
+                <TelegramLayout>
+                  <Dashboard />
+                </TelegramLayout>
+              } />
               <Route path="/" element={
                 <TelegramLayout>
-                  <div className="container mx-auto p-4">
-                    <h1 className="text-2xl font-bold mb-4">Diamond Inventory Manager</h1>
-                    <p>Welcome to your diamond inventory management system.</p>
-                  </div>
+                  <Index />
                 </TelegramLayout>
               } />
             </Routes>

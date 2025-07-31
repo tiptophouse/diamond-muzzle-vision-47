@@ -36,28 +36,15 @@ export function GroupDiscussionAnalytics() {
     try {
       setIsLoading(true);
 
-      // Fetch recent group messages
-      const { data: messageData, error: messageError } = await supabase
-        .from('group_discussions')
-        .select('*')
-        .order('message_timestamp', { ascending: false })
-        .limit(100);
-
-      if (messageError) throw messageError;
-
-      // Fetch analysis insights
-      const { data: insightData, error: insightError } = await supabase
-        .from('discussion_insights')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (insightError && insightError.code !== 'PGRST116') {
-        throw insightError;
-      }
-
-      setMessages(messageData || []);
-      setInsights(insightData || []);
+      // For now, show placeholder data until tables are created
+      setMessages([]);
+      setInsights([]);
+      
+      toast({
+        title: "מידע",
+        description: "הדיונים יופיעו כאן לאחר הגדרת הטבלאות",
+        variant: "default",
+      });
     } catch (error) {
       console.error('Error fetching discussion data:', error);
       toast({

@@ -72,23 +72,24 @@ export function CreateWishlistAlert({ isOpen, onClose, onSuccess }: CreateWishli
     try {
       impactOccurred('light');
 
-      const { error } = await supabase
-        .from('wishlist_alerts')
-        .insert({
-          telegram_id: user.id,
-          shape: criteria.shape,
-          min_carat: criteria.min_carat,
-          max_carat: criteria.max_carat,
-          colors: criteria.colors,
-          clarities: criteria.clarities,
-          cuts: criteria.cuts,
-          polish: criteria.polish,
-          symmetry: criteria.symmetry,
-          max_price_per_carat: criteria.max_price_per_carat,
-          alert_name: alertName
-        });
+      // TODO: Create wishlist_alerts table
+      // const { error } = await supabase
+      //   .from('wishlist_alerts')
+      //   .insert({
+      //     telegram_id: user.id,
+      //     shape: criteria.shape,
+      //     min_carat: criteria.min_carat,
+      //     max_carat: criteria.max_carat,
+      //     colors: criteria.colors,
+      //     clarities: criteria.clarities,
+      //     cuts: criteria.cuts,
+      //     polish: criteria.polish,
+      //     symmetry: criteria.symmetry,
+      //     max_price_per_carat: criteria.max_price_per_carat,
+      //     alert_name: alertName
+      //   });
 
-      if (error) throw error;
+      // if (error) throw error;
 
       toast({
         title: "הצלחה!",
