@@ -271,10 +271,6 @@ export default function DiamondDetailPage() {
                 Back to Store
               </Button>
             </Link>
-            <Button onClick={handleShare} size="sm" className="flex items-center gap-2">
-              <Share2 className="h-4 w-4" />
-              Share
-            </Button>
           </div>
         </div>
 
@@ -456,15 +452,25 @@ export default function DiamondDetailPage() {
                   <p className="text-muted-foreground mb-4">
                     Contact us for more information, additional images, or to schedule a viewing.
                   </p>
-                  <Button 
-                    size="lg" 
-                    className="w-full" 
-                    onClick={handleContact}
-                    disabled={isContactLoading}
-                  >
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    {isContactLoading ? "Sending..." : "Contact Us"}
-                  </Button>
+                  <div className="flex gap-3">
+                    <Button 
+                      size="lg" 
+                      className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all duration-200" 
+                      onClick={handleContact}
+                      disabled={isContactLoading}
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      {isContactLoading ? "Sending..." : "Contact Us"}
+                    </Button>
+                    <Button 
+                      onClick={handleShare} 
+                      size="lg"
+                      variant="outline"
+                      className="px-4 border-2 border-primary/20 bg-gradient-to-r from-background to-muted/30 hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 shadow-md hover:shadow-lg transition-all duration-200"
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </div>
