@@ -2,8 +2,7 @@ import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
-import { FigmaDiamondCard } from "@/components/store/FigmaDiamondCard";
-import { DiamondCardSkeleton } from "@/components/store/DiamondCardSkeleton";
+import { VirtualizedStoreGrid } from "@/components/store/VirtualizedStoreGrid";
 import { MobilePullToRefresh } from "@/components/mobile/MobilePullToRefresh";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,7 @@ import { Diamond } from "@/components/inventory/InventoryTable";
 import { TelegramStoreFilters } from "@/components/store/TelegramStoreFilters";
 import { TelegramSortSheet } from "@/components/store/TelegramSortSheet";
 
-export default function StorePage() {
+const StorePage = memo(() => {
   const { diamonds, loading, error, refetch } = useStoreData();
   const { filters, filteredDiamonds, updateFilter, clearFilters } = useStoreFilters(diamonds || []);
   const [showFilters, setShowFilters] = useState(false);
@@ -131,57 +130,15 @@ export default function StorePage() {
     setShowSort(false);
   };
 
-  // Memoized store grid to prevent unnecessary re-renders
-  const renderStoreGrid = useMemo(() => {
-    if (loading) {
-      return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-4">
-          {Array.from({ length: 6 }, (_, i) => (
-            <DiamondCardSkeleton key={i} />
-          ))}
-        </div>
-      );
-    }
-
-    if (error) {
-      return (
-        <div className="flex items-center justify-center py-12 px-4">
-          <div className="text-center max-w-md">
-            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-2">Error Loading Diamonds</h3>
-            <p className="text-muted-foreground">{error}</p>
-          </div>
-        </div>
-      );
-    }
-
-    if (finalFilteredDiamonds.length === 0) {
-      return (
-        <div className="flex items-center justify-center py-12 px-4">
-          <div className="text-center max-w-md">
-            <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="w-12 h-12 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-medium text-foreground mb-2">No Diamonds Found</h3>
-            <p className="text-muted-foreground">Try adjusting your filters to see more diamonds.</p>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-4">
-        {finalFilteredDiamonds.map((diamond, index) => (
-          <FigmaDiamondCard 
-            key={diamond.id} 
-            diamond={diamond}
-            index={index}
-            onUpdate={refetch}
-          />
-        ))}
-      </div>
-    );
-  }, [loading, error, finalFilteredDiamonds, refetch]);
+  // Memoized virtualized grid for ultra-fast rendering
+  const renderStoreGrid = useMemo(() => (
+    <VirtualizedStoreGrid 
+      diamonds={finalFilteredDiamonds}
+      loading={loading}
+      error={error}
+      onUpdate={refetch}
+    />
+  ), [finalFilteredDiamonds, loading, error, refetch]);
 
   const activeFiltersCount = 
     filters.shapes.length + 
@@ -233,7 +190,7 @@ export default function StorePage() {
         </div>
 
         {/* Diamond Grid */}
-        <div className="py-4">
+        <div className="flex-1 py-4">
           {renderStoreGrid}
         </div>
 
@@ -285,4 +242,8 @@ export default function StorePage() {
       </div>
     </MobilePullToRefresh>
   );
-}
+});
+
+StorePage.displayName = "StorePage";
+
+export default StorePage;
