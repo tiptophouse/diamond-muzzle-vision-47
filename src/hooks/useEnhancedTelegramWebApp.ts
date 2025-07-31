@@ -43,12 +43,12 @@ export function useEnhancedTelegramWebApp() {
       };
 
       // Set up temporary listener
-      baseWebApp.webApp.onEvent('qrTextReceived', () => handleScanResult);
+      baseWebApp.webApp.onEvent('qrTextReceived', handleScanResult);
       
       // Cleanup after 30 seconds
       setTimeout(() => {
         baseWebApp.webApp?.closeScanQrPopup();
-        baseWebApp.webApp?.offEvent('qrTextReceived', () => handleScanResult);
+        baseWebApp.webApp?.offEvent('qrTextReceived', handleScanResult);
         setIsScanning(false);
         resolve({ data: '', success: false });
       }, 30000);
@@ -109,8 +109,7 @@ export function useEnhancedTelegramWebApp() {
     });
 
     // Handle popup result
-    baseWebApp.webApp.onEvent('popupClosed', () => {
-      const event = arguments[0] as any;
+    baseWebApp.webApp.onEvent('popupClosed', (event: any) => {
       if (event.button_id && event.button_id !== 'cancel') {
         onAction(event.button_id);
       }

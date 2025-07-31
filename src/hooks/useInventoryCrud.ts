@@ -60,12 +60,12 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
         cut: stoneData.cut,
         shape: stoneData.shape,
         stock: stoneData.stockNumber,
-        price: ((stoneData.pricePerCarat || 0) * stoneData.carat).toString(),
+        price: (stoneData.pricePerCarat * stoneData.carat).toString(),
       });
 
       // Add optional parameters if they exist
       if (stoneData.fluorescence) params.set('fluorescence', stoneData.fluorescence);
-      if (stoneData.imageUrl) params.set('imageUrl', stoneData.imageUrl);
+      if (stoneData.picture) params.set('imageUrl', stoneData.picture);
       if (stoneData.certificateUrl) params.set('certificateUrl', stoneData.certificateUrl);
       if (stoneData.lab) params.set('lab', stoneData.lab);
       if (stoneData.certificateNumber) params.set('certificateNumber', stoneData.certificateNumber);

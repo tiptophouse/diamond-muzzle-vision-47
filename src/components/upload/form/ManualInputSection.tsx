@@ -43,7 +43,7 @@ export function ManualInputSection({ register, setValue, watch, errors }: Manual
 
         <div className="md:col-span-2">
           <DiamondInputField
-            id="imageUrl"
+            id="picture"
             label="Stone Image URL (Optional)"
             placeholder="Enter image URL or upload separately"
             register={register}

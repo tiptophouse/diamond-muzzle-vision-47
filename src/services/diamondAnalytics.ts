@@ -63,24 +63,3 @@ export function convertDiamondsToInventoryFormat(diamonds: any[], userId?: numbe
     certificateComment: item.certificate_comment || undefined,
   }));
 }
-
-export function processDiamondDataForDashboard(diamonds: any[], userId?: number) {
-  return {
-    stats: {
-      totalDiamonds: diamonds.length,
-      matchedPairs: 0,
-      totalLeads: 0,
-      activeSubscriptions: 0
-    },
-    inventoryByShape: diamonds.reduce((acc, d) => {
-      const existing = acc.find(item => item.name === d.shape);
-      if (existing) {
-        existing.value++;
-      } else {
-        acc.push({ name: d.shape, value: 1 });
-      }
-      return acc;
-    }, [] as any[]),
-    salesByCategory: []
-  };
-}
