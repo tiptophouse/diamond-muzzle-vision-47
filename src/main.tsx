@@ -26,9 +26,11 @@ const root = createRoot(container);
 
 try {
   root.render(
-    <HelmetProvider>
-      <App />
-    </HelmetProvider>
+    <StrictMode>
+      <HelmetProvider>
+        <App />
+      </HelmetProvider>
+    </StrictMode>
   );
 } catch (error) {
   console.error('Failed to render app:', error);

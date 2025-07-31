@@ -1,56 +1,35 @@
 
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React, { useState, useEffect } from 'react';
+import { Heart, Trash2, Eye, Share2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, Trash2, ExternalLink, Phone, Plus } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { CreateWishlistAlert } from './CreateWishlistAlert';
-
-interface DiamondData {
-  stockNumber: string;
-  shape: string;
-  carat: number;
-  color: string;
-  clarity: string;
-  cut?: string;
-  price?: number;
-}
+import { supabase } from '@/integrations/supabase/client';
 
 interface WishlistItem {
   id: string;
   diamond_stock_number: string;
-  diamond_owner_telegram_id: number;
-  diamond_data: DiamondData;
+  diamond_data: any;
   created_at: string;
+  diamond_owner_telegram_id: number;
 }
 
 export function WishlistContent() {
+  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const { user } = useTelegramAuth();
   const { toast } = useToast();
-  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showCreateAlert, setShowCreateAlert] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
       fetchWishlist();
     }
-  }, [user?.id]);
+  }, [user]);
 
   const fetchWishlist = async () => {
     try {
-      setIsLoading(true);
-      
-      await supabase.functions.invoke('set-session-context', {
-        body: {
-          setting_name: 'app.current_user_id',
-          setting_value: user?.id?.toString()
-        }
-      });
-
+      setLoading(true);
       const { data, error } = await supabase
         .from('wishlist')
         .select('*')
@@ -58,50 +37,16 @@ export function WishlistContent() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-
-      const processedItems = (data || []).map(item => {
-        let diamondData: DiamondData;
-        
-        // Handle the Json type conversion safely
-        if (typeof item.diamond_data === 'object' && item.diamond_data !== null && !Array.isArray(item.diamond_data)) {
-          const data = item.diamond_data as { [key: string]: any };
-          diamondData = {
-            stockNumber: data.stockNumber || '',
-            shape: data.shape || '',
-            carat: data.carat || 0,
-            color: data.color || '',
-            clarity: data.clarity || '',
-            cut: data.cut || '',
-            price: data.price || 0
-          };
-        } else {
-          diamondData = {
-            stockNumber: '',
-            shape: '',
-            carat: 0,
-            color: '',
-            clarity: '',
-            cut: '',
-            price: 0
-          };
-        }
-
-        return {
-          ...item,
-          diamond_data: diamondData
-        };
-      }) as WishlistItem[];
-
-      setWishlistItems(processedItems);
+      setWishlistItems(data || []);
     } catch (error) {
       console.error('Error fetching wishlist:', error);
       toast({
-        title: "שגיאה בטעינת רשימת המועדפים",
-        description: "לא ניתן לטעון את רשימת המועדפים כרגע",
+        title: "Error",
+        description: "Failed to load wishlist items",
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -110,164 +55,177 @@ export function WishlistContent() {
       const { error } = await supabase
         .from('wishlist')
         .delete()
-        .eq('id', itemId);
+        .eq('id', itemId)
+        .eq('visitor_telegram_id', user?.id);
 
       if (error) throw error;
 
       setWishlistItems(prev => prev.filter(item => item.id !== itemId));
-      
       toast({
-        title: "✅ הוסר מרשימת המועדפים",
-        description: "היהלום הוסר בהצלחה מרשימת המועדפים שלך",
+        title: "✅ Removed",
+        description: "Diamond removed from wishlist",
       });
     } catch (error) {
       console.error('Error removing from wishlist:', error);
       toast({
-        title: "❌ שגיאה בהסרה",
-        description: "לא ניתן להסיר את היהלום מרשימת המועדפים כרגע",
+        title: "❌ Error",
+        description: "Failed to remove from wishlist",
         variant: "destructive",
       });
     }
   };
 
-  const contactSeller = (ownerTelegramId: number) => {
-    window.open(`https://t.me/${ownerTelegramId}`, '_blank');
+  const viewDiamond = (stockNumber: string) => {
+    // Navigate to diamond detail page or store
+    window.open(`/diamond/${stockNumber}`, '_blank');
   };
 
-  if (isLoading) {
+  const shareDiamond = (diamondData: any) => {
+    if (navigator.share) {
+      navigator.share({
+        title: `${diamondData.shape} Diamond - ${diamondData.carat}ct`,
+        text: `Check out this ${diamondData.carat}ct ${diamondData.color} ${diamondData.clarity} ${diamondData.shape} diamond`,
+        url: window.location.origin + `/diamond/${diamondData.stockNumber}`,
+      });
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      navigator.clipboard.writeText(window.location.origin + `/diamond/${diamondData.stockNumber}`);
+      toast({
+        title: "📋 Link Copied",
+        description: "Diamond link copied to clipboard",
+      });
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="animate-pulse text-lg">טוען רשימת מועדפים...</div>
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center gap-2 mb-6">
+          <Heart className="h-6 w-6 text-red-500" />
+          <h1 className="text-2xl font-bold">My Wishlist</h1>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-4">
+                <div className="h-32 bg-gray-200 rounded mb-4"></div>
+                <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (wishlistItems.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center gap-2 mb-6">
+          <Heart className="h-6 w-6 text-red-500" />
+          <h1 className="text-2xl font-bold">My Wishlist</h1>
+        </div>
+        <div className="text-center py-12">
+          <Heart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-600 mb-2">Your wishlist is empty</h2>
+          <p className="text-gray-500 mb-6">Start browsing diamonds and add them to your wishlist</p>
+          <Button 
+            onClick={() => window.location.href = '/store'}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Browse Diamonds
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header with Create Alert Button */}
-      <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold mb-2">רשימת המועדפים שלי</h1>
-        <p className="text-muted-foreground mb-4">
-          {wishlistItems.length} יהלומים ברשימת המועדפים שלך
-        </p>
-        
-        <Button
-          onClick={() => setShowCreateAlert(true)}
-          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-          size="lg"
-        >
-          <Plus className="h-5 w-5 mr-2" />
-          צור התראת מחיר מותאמת אישית
-        </Button>
+    <div className="container mx-auto px-4 py-6">
+      <div className="flex items-center gap-2 mb-6">
+        <Heart className="h-6 w-6 text-red-500" />
+        <h1 className="text-2xl font-bold">My Wishlist</h1>
+        <span className="text-sm text-gray-500">({wishlistItems.length} items)</span>
       </div>
 
-      {wishlistItems.length === 0 && (
-        <Card className="max-w-md mx-auto">
-          <CardContent className="text-center p-8">
-            <Heart className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">רשימת המועדפים ריקה</h3>
-            <p className="text-muted-foreground mb-4">
-              עדיין לא הוספת יהלומים לרשימת המועדפים שלך
-            </p>
-            <div className="space-y-2">
-              <Button 
-                onClick={() => window.location.href = '/store'}
-                className="bg-blue-600 hover:bg-blue-700 w-full"
-              >
-                עבור לחנות
-              </Button>
-              <Button
-                onClick={() => setShowCreateAlert(true)}
-                variant="outline"
-                className="w-full"
-              >
-                צור התראת מחיר
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Wishlist Items */}
-      <div className="grid gap-4">
-        {wishlistItems.map((item) => (
-          <Card key={item.id} className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <div>
-                <CardTitle className="text-lg">
-                  יהלום {item.diamond_data.stockNumber}
-                </CardTitle>
-                <CardDescription>
-                  נוסף ב{new Date(item.created_at).toLocaleDateString('he-IL')}
-                </CardDescription>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => removeFromWishlist(item.id)}
-                className="text-red-600 hover:text-red-700"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <span className="text-sm font-medium">צורה:</span>
-                  <Badge variant="secondary" className="ml-2">
-                    {item.diamond_data.shape}
-                  </Badge>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {wishlistItems.map((item) => {
+          const diamond = item.diamond_data;
+          const totalPrice = diamond.price_per_carat * diamond.carat;
+          
+          return (
+            <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <CardContent className="p-4">
+                {diamond.imageUrl && (
+                  <div className="w-full h-32 bg-gray-100 rounded-lg mb-3 overflow-hidden">
+                    <img 
+                      src={diamond.imageUrl} 
+                      alt={`${diamond.shape} Diamond`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-semibold text-sm">{diamond.stockNumber}</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeFromWishlist(item.id)}
+                      className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-1 text-xs">
+                    <span className="font-medium">{diamond.shape}</span>
+                    <span className="font-medium">{diamond.carat}ct</span>
+                    <span>{diamond.color}</span>
+                    <span>{diamond.clarity}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center pt-2">
+                    <div className="text-lg font-bold text-green-600">
+                      ${totalPrice.toLocaleString()}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      ${diamond.price_per_carat}/ct
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => viewDiamond(diamond.stockNumber)}
+                      className="flex-1 h-8"
+                    >
+                      <Eye className="h-3 w-3 mr-1" />
+                      View
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => shareDiamond(diamond)}
+                      className="flex-1 h-8"
+                    >
+                      <Share2 className="h-3 w-3 mr-1" />
+                      Share
+                    </Button>
+                  </div>
+                  
+                  <div className="text-xs text-gray-400 pt-1">
+                    Added {new Date(item.created_at).toLocaleDateString()}
+                  </div>
                 </div>
-                <div>
-                  <span className="text-sm font-medium">קרט:</span>
-                  <span className="ml-2">{item.diamond_data.carat}</span>
-                </div>
-                <div>
-                  <span className="text-sm font-medium">צבע:</span>
-                  <Badge variant="outline" className="ml-2">
-                    {item.diamond_data.color}
-                  </Badge>
-                </div>
-                <div>
-                  <span className="text-sm font-medium">בהירות:</span>
-                  <Badge variant="outline" className="ml-2">
-                    {item.diamond_data.clarity}
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => contactSeller(item.diamond_owner_telegram_id)}
-                  className="bg-green-600 hover:bg-green-700 flex-1"
-                  size="sm"
-                >
-                  <Phone className="h-4 w-4 mr-2" />
-                  צור קשר עם המוכר
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.open(`/diamond/${item.diamond_stock_number}`, '_blank')}
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
-
-      {/* Create Alert Modal */}
-      {showCreateAlert && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={() => setShowCreateAlert(false)}>
-          <div onClick={(e) => e.stopPropagation()}>
-            <CreateWishlistAlert />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

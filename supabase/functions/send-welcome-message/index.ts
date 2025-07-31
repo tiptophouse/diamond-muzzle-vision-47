@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 
 const corsHeaders = {
@@ -142,37 +141,42 @@ function generateWelcomeMessage(firstName: string, isEnglish: boolean = false): 
 
 Ready to transform your diamond business? Let's get started! 🚀`;
   } else {
-    // Hebrew version
+    // Enhanced Hebrew version with comprehensive feature overview
     return `🎉 <b>ברוכים הבאים ל-Diamond Muzzle, ${firstName}!</b>
 
-💎 הצטרפת לפלטפורמת המסחר ביהלומים המתקדמת ביותר! הנה מה שעושה אותנו מיוחדים:
+💎 <b>הצטרפת לפלטפורמת המסחר ביהלומים המתקדמת בעולם!</b>
 
-🔍 <b>ניטור קבוצות חכם</b>
-• אנחנו מאזינים לקבוצות יהלומים 24/7
+🔍 <b>ניטור קבוצות חכם 24/7</b>
+• אנחנו מאזינים לכל קבוצות היהלומים בזמן אמת
 • קבל התראות מיידיות כשמישהו מחפש בדיוק את האבנים שלך
-• לעולם לא תפספס מכירה פוטנציאלית!
+• לעולם לא תפספס הזדמנות מכירה!
 
-📊 <b>ניהול מלאי חכם</b>
-• העלה את היהלומים שלך בקלות עם תמונות או תעודות
+📊 <b>ניהול מלאי מתקדם</b>
+• העלאת יהלומים קלה ומהירה מתעודות GIA
 • חזית חנות מקצועית לאוסף שלך
-• אנליטיקות ותובנות בזמן אמת
+• אנליטיקות עסקיות בזמן אמת
 
-🚀 <b>התאמה אוטומטית</b>
-• הבינה המלאכותית שלנו מתאימה בקשות לקוחות למלאי שלך
-• התראות מיידיות כשהביקוש תואם להיצע שלך
-• המלצות חכמות להזדמנויות בשוק
+🤖 <b>בינה מלאכותית מתקדמת</b>
+• צ'אט חכם עם המלאי שלך - שאל שאלות וקבל תשובות מיידיות
+• התאמות אוטומטיות בין ביקוש להיצע
+• המלצות חכמות להגדלת הרווחים
 
 💰 <b>כלי צמיחה עסקית</b>
-• תכונות שיתוף מקצועיות
-• מערכת ניהול לקוחות
-• מעקב הכנסות ואנליטיקות
+• שיתוף מקצועי של יהלומים ברשתות החברתיות
+• ניהול לידים ולקוחות פוטנציאליים
+• דוחות ביצועים ומעקב הכנסות
 
-🌍 <b>הגעה גלובלית</b>
-• התחבר לקונים ברחבי העולם
-• תמיכה רב-לשונית
-• סביבת עסקאות מאובטחת
+🌐 <b>קהילה גלובלית</b>
+• חיבור לקונים ברחבי העולם
+• פלטפורמה רב-לשונית
+• סביבת עסקאות מאובטחת ומקצועית
 
-מוכן לשנות את עסק היהלומים שלך? בואו נתחיל! 🚀`;
+⭐ <b>התחל עכשיו ב-3 צעדים פשוטים:</b>
+1️⃣ העלה את היהלומים הראשונים מתעודה
+2️⃣ הגדר את החנות המקצועית שלך
+3️⃣ התחל לקבל לידים והתאמות אוטומטיות
+
+🚀 <b>מוכן לשנות את עסק היהלומים שלך לנצח?</b>`;
   }
 }
 
@@ -184,45 +188,29 @@ function createFeatureKeyboard(isEnglish: boolean = false) {
       inline_keyboard: [
         [
           {
-            text: "📤 Upload Your First Diamond",
+            text: "📤 Upload from Certificate",
             web_app: {
               url: `${baseUrl}/upload-single-stone`
             }
+          },
+          {
+            text: "🤖 Chat with AI",
+            web_app: {
+              url: `${baseUrl}/chat`
+            }
           }
         ],
         [
           {
-            text: "🏪 Browse Diamond Store",
-            web_app: {
-              url: `${baseUrl}/store`
-            }
-          },
-          {
-            text: "📊 View Dashboard",
+            text: "📊 Dashboard",
             web_app: {
               url: `${baseUrl}/dashboard`
             }
-          }
-        ],
-        [
-          {
-            text: "💼 Manage Inventory",
-            web_app: {
-              url: `${baseUrl}/inventory`
-            }
           },
           {
-            text: "📈 Analytics",
+            text: "🏪 Store",
             web_app: {
-              url: `${baseUrl}/insights`
-            }
-          }
-        ],
-        [
-          {
-            text: "⚙️ Settings",
-            web_app: {
-              url: `${baseUrl}/settings`
+              url: `${baseUrl}/store`
             }
           }
         ]
@@ -233,45 +221,29 @@ function createFeatureKeyboard(isEnglish: boolean = false) {
       inline_keyboard: [
         [
           {
-            text: "📤 העלאת היהלום הראשון",
+            text: "📤 העלאה מתעודה",
             web_app: {
               url: `${baseUrl}/upload-single-stone`
             }
+          },
+          {
+            text: "🤖 צ'אט עם AI",
+            web_app: {
+              url: `${baseUrl}/chat`
+            }
           }
         ],
         [
           {
-            text: "🏪 עיון בחנות יהלומים",
-            web_app: {
-              url: `${baseUrl}/store`
-            }
-          },
-          {
-            text: "📊 צפייה בדשבורד",
+            text: "📊 דשבורד",
             web_app: {
               url: `${baseUrl}/dashboard`
             }
-          }
-        ],
-        [
-          {
-            text: "💼 ניהול מלאי",
-            web_app: {
-              url: `${baseUrl}/inventory`
-            }
           },
           {
-            text: "📈 אנליטיקות",
+            text: "🏪 חנות",
             web_app: {
-              url: `${baseUrl}/insights`
-            }
-          }
-        ],
-        [
-          {
-            text: "⚙️ הגדרות",
-            web_app: {
-              url: `${baseUrl}/settings`
+              url: `${baseUrl}/store`
             }
           }
         ]

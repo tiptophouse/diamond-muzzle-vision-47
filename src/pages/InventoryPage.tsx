@@ -1,4 +1,5 @@
 
+import { Layout } from "@/components/layout/Layout";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
 import { InventoryPagination } from "@/components/inventory/InventoryPagination";
@@ -123,13 +124,16 @@ export default function InventoryPage() {
 
   if (loading && allDiamonds.length === 0) {
     return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground">Loading inventory...</p>
-      </div>
+      <Layout>
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Loading inventory...</p>
+        </div>
+      </Layout>
     );
   }
 
   return (
+    <Layout>
       <div className="space-y-6">
         <InventoryHeader 
           totalCount={allDiamonds.length}
@@ -224,5 +228,6 @@ export default function InventoryPage() {
           </DialogContent>
         </Dialog>
       </div>
+    </Layout>
   );
 }
