@@ -41,8 +41,8 @@ export function useUpdateDiamond(onSuccess?: () => void) {
           fluorescence: data.fluorescence?.toUpperCase(),
           price_per_carat: data.carat > 0 ? Math.round(Number(data.price) / Number(data.carat)) : Math.round(Number(data.price)),
           status: data.status,
-          store_visible: data.storeVisible,
-          picture: data.picture,
+          store_visible: data.store_visible,
+          picture: data.imageUrl,
           certificate_url: data.certificateUrl,
           certificate_comment: data.certificateComment,
           lab: data.lab,
@@ -102,7 +102,7 @@ export function useUpdateDiamond(onSuccess?: () => void) {
             cut: data.cut,
             price: Number(data.price),
             status: data.status,
-            store_visible: data.storeVisible,
+            store_visible: data.store_visible,
             updated_at: new Date().toISOString()
           };
           

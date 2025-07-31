@@ -64,14 +64,23 @@ export function convertDiamondsToInventoryFormat(diamonds: any[], userId?: numbe
   }));
 }
 
-export function processDiamondDataForDashboard(diamonds: Diamond[]) {
+export function processDiamondDataForDashboard(diamonds: any[], userId?: number) {
   return {
-    totalDiamonds: diamonds.length,
-    totalValue: diamonds.reduce((sum, d) => sum + d.price, 0),
-    averagePrice: diamonds.length > 0 ? diamonds.reduce((sum, d) => sum + d.price, 0) / diamonds.length : 0,
-    shapeDistribution: diamonds.reduce((acc, d) => {
-      acc[d.shape] = (acc[d.shape] || 0) + 1;
+    stats: {
+      totalDiamonds: diamonds.length,
+      matchedPairs: 0,
+      totalLeads: 0,
+      activeSubscriptions: 0
+    },
+    inventoryByShape: diamonds.reduce((acc, d) => {
+      const existing = acc.find(item => item.name === d.shape);
+      if (existing) {
+        existing.value++;
+      } else {
+        acc.push({ name: d.shape, value: 1 });
+      }
       return acc;
-    }, {} as Record<string, number>)
+    }, [] as any[]),
+    salesByCategory: []
   };
 }

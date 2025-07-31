@@ -51,7 +51,7 @@ export function SingleStoneUploadForm({
       carat: 1,
       price: 0,
       status: 'Available',
-      picture: '',
+      imageUrl: '',
       shape: 'Round',
       color: 'G',
       clarity: 'VS1',
@@ -62,7 +62,7 @@ export function SingleStoneUploadForm({
       lab: 'GIA',
       gridle: 'Medium',
       culet: 'None',
-      storeVisible: true
+      store_visible: true
     };
 
     if (initialData) {
@@ -89,7 +89,7 @@ export function SingleStoneUploadForm({
         depthPercentage: Number(initialData.depth_percentage) || undefined,
         pricePerCarat: Number(initialData.price_per_carat) || undefined,
         rapnet: Number(initialData.rapnet) || undefined,
-        picture: initialData.picture || defaults.picture,
+        imageUrl: initialData.picture || defaults.imageUrl,
         certificateUrl: initialData.certificate_url || initialData.certificateUrl || '',
         certificateComment: initialData.certificate_comment || ''
       };
@@ -129,7 +129,7 @@ export function SingleStoneUploadForm({
     if (giaData.depth_percentage) setValue('depthPercentage', Number(giaData.depth_percentage));
     if (giaData.price_per_carat) setValue('pricePerCarat', Number(giaData.price_per_carat));
     if (giaData.rapnet) setValue('rapnet', Number(giaData.rapnet));
-    if (giaData.picture) setValue('picture', giaData.picture);
+    if (giaData.picture) setValue('imageUrl', giaData.picture);
     
     // Handle certificate URL from uploaded certificate image
     if (giaData.certificate_url || giaData.certificateUrl) {
