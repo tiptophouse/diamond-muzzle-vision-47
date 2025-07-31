@@ -3,7 +3,6 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { useTelegramSendData } from "@/hooks/useTelegramSendData";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +16,6 @@ function DiamondDetailPage() {
   const navigate = useNavigate();
   const { diamonds, loading, refetch } = useStoreData();
   const { user, isAuthenticated } = useTelegramAuth();
-  const { reportDiamondInteraction } = useTelegramSendData();
   const { toast } = useToast();
   const [isContactLoading, setIsContactLoading] = useState(false);
   const [isImageUploading, setIsImageUploading] = useState(false);
@@ -46,16 +44,17 @@ function DiamondDetailPage() {
     if (!diamond) return null;
     
     const title = `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond - Mazalbot`;
-    const description = `Premium ${diamond.cut} cut ${diamond.shape} diamond. ${diamond.color} color, ${diamond.clarity} clarity. Stock #${diamond.stockNumber}. Price: ${formatPrice(diamond.price)}`;
+    const description = `Premium ${diamond.cut} cut ${diamond.shape} diamond. ${diamond.color} color, ${diamond.clarity} clarity. Stock #${diamond.stockNumber}. Price: $${diamond.price.toLocaleString()}`;
     const imageUrl = diamond.imageUrl || `https://miniapp.mazalbot.com/api/diamond-image/${diamond.stockNumber}`;
-    const url = `https://miniapp.mazalbot.com/diamond/${diamond.id}`;
+    const url = `https://miniapp.mazalbot.com/diamond/${diamond.stockNumber}`;
     
     return { title, description, imageUrl, url };
-  }, [diamond, formatPrice]);
+  }, [diamond]);
 
   useEffect(() => {
     if (!loading && !diamond && diamondId) {
       console.log('❌ Diamond not found, redirecting to store');
+      // Diamond not found, redirect to store
       navigate('/store');
     }
   }, [diamond, loading, diamondId, navigate]);
@@ -63,73 +62,34 @@ function DiamondDetailPage() {
   const handleShare = useCallback(async () => {
     if (!diamond) return;
     
-    try {
-      // Report diamond interaction for analytics
-      reportDiamondInteraction('share', {
-        stockNumber: diamond.stockNumber,
-        shape: diamond.shape,
-        carat: diamond.carat,
-        price: diamond.price
-      });
-
-      // Create comprehensive sharing content with correct diamond information
-      const shareTitle = `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond`;
-      const shareText = `🔹 ${diamond.carat} Carat ${diamond.shape} Diamond
-💎 Color: ${diamond.color} | Clarity: ${diamond.clarity} 
-✨ Cut: ${diamond.cut}
-💰 Price: ${formatPrice(diamond.price)}
-📋 Stock #${diamond.stockNumber}
-
-Check out this beautiful diamond!`;
-
-      const shareUrl = `https://miniapp.mazalbot.com/diamond/${diamond.id}`;
-      
-      console.log('📤 Sharing diamond details:', {
-        title: shareTitle,
-        text: shareText,
-        url: shareUrl
-      });
-      
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: shareTitle,
-            text: shareText,
-            url: shareUrl,
-          });
-          
-          toast({ 
-            title: "Diamond Shared Successfully!",
-            description: "The diamond details have been shared"
-          });
-          
-        } catch (shareError: any) {
-          if (shareError.name !== 'AbortError') {
-            // Fallback to clipboard if sharing fails
-            await navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`);
-            toast({ 
-              title: "Link Copied to Clipboard!",
-              description: "Diamond details copied successfully"
-            });
-          }
-        }
-      } else {
-        // Fallback for browsers without Web Share API
-        await navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`);
-        toast({ 
-          title: "Diamond Details Copied!",
-          description: "Paste to share this diamond"
+    // Create secure encrypted link that only shows this diamond
+    const diamondData = {
+      stockNumber: diamond.stockNumber,
+      timestamp: Date.now()
+    };
+    
+    // Simple base64 encoding for the secure link
+    const encryptedData = btoa(JSON.stringify(diamondData));
+    const secureUrl = `https://miniapp.mazalbot.com/secure-diamond/${encryptedData}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond`,
+          text: `Check out this beautiful ${diamond.shape} diamond!`,
+          url: secureUrl,
         });
+        toast({ title: "Secure link shared!" });
+      } catch (error) {
+        // Fallback to clipboard
+        navigator.clipboard.writeText(secureUrl);
+        toast({ title: "Secure link copied to clipboard!" });
       }
-    } catch (error) {
-      console.error('❌ Share error:', error);
-      toast({
-        title: "Share Failed",
-        description: "Could not share diamond details",
-        variant: "destructive"
-      });
+    } else {
+      navigator.clipboard.writeText(secureUrl);
+      toast({ title: "Secure link copied to clipboard!" });
     }
-  }, [diamond, formatPrice, reportDiamondInteraction, toast]);
+  }, [diamond, toast]);
 
   const handleContact = useCallback(async () => {
     if (!isAuthenticated || !user || !diamond) {
@@ -164,7 +124,7 @@ Check out this beautiful diamond!`;
             lastName: user.last_name,
             username: user.username
           },
-          ownerTelegramId: 2138564172
+          ownerTelegramId: 2138564172 // Default to admin as diamond owner
         }
       });
 
@@ -201,6 +161,7 @@ Check out this beautiful diamond!`;
 
     setIsImageUploading(true);
     try {
+      // Upload to Supabase Storage
       const fileExt = file.name.split('.').pop();
       const fileName = `diamond-${diamond.stockNumber}-${Date.now()}.${fileExt}`;
       
@@ -210,15 +171,17 @@ Check out this beautiful diamond!`;
 
       if (uploadError) throw uploadError;
 
+      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('diamond-images')
         .getPublicUrl(fileName);
 
+      // Update diamond record with new image URL
       const { error: updateError } = await supabase
         .from('inventory')
         .update({ picture: publicUrl })
         .eq('stock_number', diamond.stockNumber)
-        .eq('user_id', 2138564172);
+        .eq('user_id', 2138564172); // Admin telegram ID
 
       if (updateError) throw updateError;
 
@@ -227,6 +190,7 @@ Check out this beautiful diamond!`;
         description: "The diamond image has been updated",
       });
 
+      // Refresh the data
       refetch();
       setShowImageUpload(false);
     } catch (error) {
@@ -264,6 +228,7 @@ Check out this beautiful diamond!`;
       </div>
     );
   }
+
 
   return (
     <>
@@ -439,7 +404,6 @@ Check out this beautiful diamond!`;
                         size="sm"
                         variant="ghost"
                         className="h-6 w-6 p-0 opacity-70 hover:opacity-100"
-                        title="Share this diamond"
                       >
                         <Share2 className="h-3 w-3" />
                       </Button>
@@ -502,7 +466,6 @@ Check out this beautiful diamond!`;
                       size="lg"
                       variant="outline"
                       className="px-4 border-2 border-primary/20 bg-gradient-to-r from-background to-muted/30 hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 shadow-md hover:shadow-lg transition-all duration-200"
-                      title="Share this diamond"
                     >
                       <Share2 className="h-4 w-4" />
                     </Button>

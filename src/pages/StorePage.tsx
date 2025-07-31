@@ -1,289 +1,351 @@
 
-import { useState, useEffect, useMemo, useCallback, memo } from "react";
+import { useState, useEffect, useCallback, useMemo, memo, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
 import { OptimizedDiamondCard } from "@/components/store/OptimizedDiamondCard";
 import { DiamondCardSkeleton } from "@/components/store/DiamondCardSkeleton";
-import { EnhancedStoreHeader } from "@/components/store/EnhancedStoreHeader";
-import { TelegramStoreFilters } from "@/components/store/TelegramStoreFilters";
-import { getTelegramWebApp } from "@/utils/telegramWebApp";
+import { MobilePullToRefresh } from "@/components/mobile/MobilePullToRefresh";
+import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { Button } from "@/components/ui/button";
-import { ChevronUp, RefreshCw } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Plus, Filter, SortAsc, AlertCircle, Search } from "lucide-react";
+import { toast } from 'sonner';
+import { Diamond } from "@/components/inventory/InventoryTable";
+import { TelegramStoreFilters } from "@/components/store/TelegramStoreFilters";
+import { TelegramSortSheet } from "@/components/store/TelegramSortSheet";
+import { getTelegramWebApp } from "@/utils/telegramWebApp";
 
+// Telegram memory management
 const tg = getTelegramWebApp();
+const ITEMS_PER_PAGE = 6; // Reduced for better performance
+const SKELETON_COUNT = 3; // Fewer skeletons
 
-// Reduced items per page for better performance
-const ITEMS_PER_PAGE = 6;
-
-function StorePage() {
+const StorePage = memo(() => {
   const { diamonds, loading, error, refetch } = useStoreData();
-  const [displayedCount, setDisplayedCount] = useState(ITEMS_PER_PAGE);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [showScrollTop, setShowScrollTop] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  const { filters, filteredDiamonds, updateFilter, clearFilters } = useStoreFilters(diamonds || []);
+  const [showFilters, setShowFilters] = useState(false);
+  const [showSort, setShowSort] = useState(false);
+  const [sortBy, setSortBy] = useState("most-popular");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchParams] = useSearchParams();
+  const stockNumber = searchParams.get('stock');
+  const { selectionChanged, impactOccurred } = useTelegramHapticFeedback();
+  const observerRef = useRef<IntersectionObserver>();
+  const loadingRef = useRef<HTMLDivElement>(null);
+  
+  const navigate = useNavigate();
 
-  // Complete filters that match TelegramStoreFilters interface
-  const defaultFilters = {
-    shapes: [] as string[],
-    colors: [] as string[],
-    clarities: [] as string[],
-    cuts: [] as string[],
-    fluorescence: [] as string[],
-    polish: [] as string[],
-    symmetry: [] as string[],
-    caratRange: [0, 10] as [number, number],
-    priceRange: [0, 100000] as [number, number],
-    depthRange: [0, 100] as [number, number],
-    tableRange: [0, 100] as [number, number]
-  };
-
-  const [filters, setFilters] = useState(defaultFilters);
-  const [sortOption, setSortOption] = useState("price_asc");
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const { filteredDiamonds } = useStoreFilters(diamonds, filters, searchQuery, sortOption);
-
-  // Prioritize diamonds with images first, then apply sorting
-  const sortedDiamonds = useMemo(() => {
-    if (!filteredDiamonds) return [];
-    
-    // First separate diamonds with and without images
-    const withImages = filteredDiamonds.filter(d => d.imageUrl && d.imageUrl.trim());
-    const withoutImages = filteredDiamonds.filter(d => !d.imageUrl || !d.imageUrl.trim());
-    
-    const sortByOption = (diamonds: any[]) => {
-      switch (sortOption) {
-        case "price_asc":
-          return [...diamonds].sort((a, b) => a.price - b.price);
-        case "price_desc":
-          return [...diamonds].sort((a, b) => b.price - a.price);
-        case "carat_asc":
-          return [...diamonds].sort((a, b) => a.carat - b.carat);
-        case "carat_desc":
-          return [...diamonds].sort((a, b) => b.carat - a.carat);
-        case "newest":
-          return [...diamonds].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-        default:
-          return diamonds;
+  // Telegram memory optimization
+  useEffect(() => {
+    if (tg) {
+      // Clear any cached data when component mounts
+      try {
+        if ('caches' in window) {
+          caches.keys().then(names => {
+            names.forEach(name => {
+              if (name.includes('diamond-images')) {
+                caches.delete(name);
+              }
+            });
+          });
+        }
+      } catch (e) {
+        console.log('Cache cleanup skipped');
       }
-    };
-    
-    // Return sorted diamonds with images first, then without images
-    return [...sortByOption(withImages), ...sortByOption(withoutImages)];
-  }, [filteredDiamonds, sortOption]);
-
-  const displayedDiamonds = useMemo(() => 
-    sortedDiamonds.slice(0, displayedCount), 
-    [sortedDiamonds, displayedCount]
-  );
-
-  // Scroll to top handler
-  const scrollToTop = useCallback(() => {
-    if (tg?.HapticFeedback) {
-      tg.HapticFeedback.impactOccurred('light');
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  // Load more handler with proper loading state
-  const loadMore = useCallback(() => {
-    if (isLoadingMore || displayedCount >= sortedDiamonds.length) return;
+  // Memoized sorted diamonds
+  const sortedDiamonds = useMemo(() => {
+    const diamonds = [...filteredDiamonds];
     
-    setIsLoadingMore(true);
-    // Simulate loading delay for better UX
-    setTimeout(() => {
-      setDisplayedCount(prev => Math.min(prev + ITEMS_PER_PAGE, sortedDiamonds.length));
-      setIsLoadingMore(false);
-    }, 300);
-  }, [isLoadingMore, displayedCount, sortedDiamonds.length]);
+    switch (sortBy) {
+      case "price-low-high":
+        return diamonds.sort((a, b) => a.price - b.price);
+      case "price-high-low":
+        return diamonds.sort((a, b) => b.price - a.price);
+      case "carat-low-high":
+        return diamonds.sort((a, b) => a.carat - b.carat);
+      case "carat-high-low":
+        return diamonds.sort((a, b) => b.carat - a.carat);
+      case "newest":
+        return diamonds.sort((a, b) => a.stockNumber.localeCompare(b.stockNumber));
+      case "most-popular":
+      default:
+        return diamonds;
+    }
+  }, [filteredDiamonds, sortBy]);
 
-  // Manual refresh handler
+  // Paginated diamonds for performance
+  const paginatedDiamonds = useMemo(() => {
+    return sortedDiamonds.slice(0, currentPage * ITEMS_PER_PAGE);
+  }, [sortedDiamonds, currentPage]);
+
+  // Infinite scroll with intersection observer
+  const lastDiamondElementRef = useCallback((node: HTMLDivElement) => {
+    if (loading) return;
+    if (observerRef.current) observerRef.current.disconnect();
+    
+    observerRef.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && paginatedDiamonds.length < sortedDiamonds.length) {
+        setCurrentPage(prevPage => prevPage + 1);
+      }
+    }, { rootMargin: '100px' });
+    
+    if (node) observerRef.current.observe(node);
+  }, [loading, paginatedDiamonds.length, sortedDiamonds.length]);
+
+  // Filter to specific diamond if URL parameters are provided
+  const finalFilteredDiamonds = useMemo(() => {
+    if (stockNumber) {
+      const stockMatch = sortedDiamonds.filter(diamond => 
+        diamond.stockNumber === stockNumber
+      );
+      if (stockMatch.length > 0) {
+        return stockMatch;
+      }
+    }
+    return paginatedDiamonds;
+  }, [paginatedDiamonds, stockNumber, sortedDiamonds]);
+
+  // Auto-scroll to diamond if found via stock parameter
+  useEffect(() => {
+    if (stockNumber && finalFilteredDiamonds.length > 0) {
+      const timer = setTimeout(() => {
+        const element = document.getElementById(`diamond-${stockNumber}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [stockNumber, finalFilteredDiamonds]);
+
+  // Pull to refresh handler
   const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
     try {
+      setCurrentPage(1); // Reset pagination
       await refetch();
-      setDisplayedCount(ITEMS_PER_PAGE);
-    } finally {
-      setRefreshing(false);
+      toast.success('Store refreshed!');
+    } catch (error) {
+      toast.error('Failed to refresh');
+      throw error;
     }
   }, [refetch]);
 
-  // Filter update handler
-  const handleUpdateFilter = useCallback((key: string, value: any) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-  }, []);
+  const handleAddDiamond = useCallback(() => {
+    impactOccurred('medium');
+    navigate('/upload-single-stone');
+  }, [impactOccurred, navigate]);
 
-  // Clear filters handler
-  const handleClearFilters = useCallback(() => {
-    setFilters(defaultFilters);
-    setSearchQuery("");
-  }, []);
+  const handleOpenFilters = useCallback(() => {
+    selectionChanged();
+    setShowFilters(true);
+  }, [selectionChanged]);
 
-  // Apply filters handler (for mobile optimization)
+  const handleOpenSort = useCallback(() => {
+    selectionChanged();
+    setShowSort(true);
+  }, [selectionChanged]);
+
   const handleApplyFilters = useCallback(() => {
-    // Filters are applied automatically via state changes
-    // This can be used for analytics or UI feedback
-    if (tg?.HapticFeedback) {
-      tg.HapticFeedback.impactOccurred('light');
+    impactOccurred('light');
+    setCurrentPage(1); // Reset pagination when filters change
+    setShowFilters(false);
+  }, [impactOccurred]);
+
+  const handleApplySort = useCallback((newSortBy: string) => {
+    impactOccurred('light');
+    setSortBy(newSortBy);
+    setCurrentPage(1); // Reset pagination when sort changes
+    setShowSort(false);
+  }, [impactOccurred]);
+
+  const activeFiltersCount = useMemo(() => 
+    filters.shapes.length + 
+    filters.colors.length + 
+    filters.clarities.length + 
+    filters.cuts.length + 
+    filters.fluorescence.length,
+    [filters]
+  );
+
+  // Render store content
+  const renderStoreContent = useMemo(() => {
+    if (loading && currentPage === 1) {
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4">
+          {Array.from({ length: SKELETON_COUNT }, (_, i) => (
+            <DiamondCardSkeleton key={i} />
+          ))}
+        </div>
+      );
     }
-  }, []);
 
-  // Scroll event listener
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      setShowScrollTop(scrollTop > 500);
-
-      // Load more when near bottom
-      const scrollHeight = document.documentElement.scrollHeight;
-      const clientHeight = window.innerHeight;
-      const scrolled = scrollTop + clientHeight;
-
-      if (scrollHeight - scrolled < 200 && !isLoadingMore && displayedCount < sortedDiamonds.length) {
-        loadMore();
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isLoadingMore, displayedCount, sortedDiamonds.length, loadMore]);
-
-  // Memory cleanup on unmount
-  useEffect(() => {
-    return () => {
-      try {
-        if ('gc' in window && typeof window.gc === 'function') {
-          window.gc();
-        }
-      } catch (e) {
-        // Ignore errors
-      }
-    };
-  }, []);
-
-  if (loading && displayedDiamonds.length === 0) {
-    return (
-      <div className="min-h-screen bg-background">
-        <EnhancedStoreHeader 
-          totalDiamonds={0}
-          sortBy={sortOption}
-          onSortChange={setSortOption}
-          onOpenFilters={() => {}}
-        />
-        <TelegramStoreFilters 
-          filters={filters}
-          onUpdateFilter={handleUpdateFilter}
-          onClearFilters={handleClearFilters}
-          onApplyFilters={handleApplyFilters}
-          diamonds={[]}
-        />
-        <div className="container mx-auto px-3 py-4">
-          <div className="grid grid-cols-2 gap-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <DiamondCardSkeleton key={i} />
-            ))}
+    if (error) {
+      return (
+        <div className="flex items-center justify-center py-8 px-4">
+          <div className="text-center max-w-md">
+            <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
+            <h3 className="text-base font-medium text-foreground mb-2">Error Loading Diamonds</h3>
+            <p className="text-sm text-muted-foreground">{error}</p>
           </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center p-6">
-          <p className="text-muted-foreground mb-4">{error}</p>
-          <Button onClick={handleRefresh} disabled={refreshing}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Refreshing...' : 'Try Again'}
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-background">
-      <EnhancedStoreHeader 
-        totalDiamonds={sortedDiamonds.length}
-        sortBy={sortOption}
-        onSortChange={setSortOption}
-        onOpenFilters={() => {}}
-      />
-      
-      <TelegramStoreFilters 
-        filters={filters}
-        onUpdateFilter={handleUpdateFilter}
-        onClearFilters={handleClearFilters}
-        onApplyFilters={handleApplyFilters}
-        diamonds={diamonds}
-      />
-
-      <div className="container mx-auto px-3 py-4">
-        {displayedDiamonds.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground mb-4">No diamonds found matching your criteria</p>
-            <Button 
-              variant="outline" 
-              onClick={handleClearFilters}
-            >
-              Clear Filters
-            </Button>
-          </div>
-        ) : (
-          <>
-            {/* Results count */}
-            <div className="mb-4 text-sm text-muted-foreground">
-              Showing {displayedDiamonds.length} of {sortedDiamonds.length} diamonds
+    if (finalFilteredDiamonds.length === 0) {
+      return (
+        <div className="flex items-center justify-center py-8 px-4">
+          <div className="text-center max-w-md">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+              <Search className="w-8 h-8 text-muted-foreground" />
             </div>
+            <h3 className="text-base font-medium text-foreground mb-2">No Diamonds Found</h3>
+            <p className="text-sm text-muted-foreground">Try adjusting your filters.</p>
+          </div>
+        </div>
+      );
+    }
 
-            {/* Diamond grid */}
-            <div className="grid grid-cols-2 gap-3">
-              {displayedDiamonds.map((diamond, index) => (
-                <OptimizedDiamondCard
-                  key={diamond.id}
+    return (
+      <>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4">
+          {finalFilteredDiamonds.map((diamond, index) => {
+            const isLast = index === finalFilteredDiamonds.length - 1;
+            return (
+              <div
+                key={diamond.id}
+                ref={isLast ? lastDiamondElementRef : undefined}
+                id={`diamond-${diamond.stockNumber}`}
+              >
+                <OptimizedDiamondCard 
                   diamond={diamond}
                   index={index}
+                  onUpdate={refetch}
                 />
-              ))}
-            </div>
-
-            {/* Load more / Loading state */}
-            {displayedCount < sortedDiamonds.length && (
-              <div className="text-center mt-6">
-                {isLoadingMore ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    {Array.from({ length: 2 }).map((_, i) => (
-                      <DiamondCardSkeleton key={`loading-${i}`} />
-                    ))}
-                  </div>
-                ) : (
-                  <Button 
-                    variant="outline" 
-                    onClick={loadMore}
-                    className="w-full max-w-sm"
-                  >
-                    Load More ({sortedDiamonds.length - displayedCount} remaining)
-                  </Button>
-                )}
               </div>
-            )}
-          </>
+            );
+          })}
+        </div>
+        
+        {/* Loading indicator for infinite scroll */}
+        {loading && currentPage > 1 && (
+          <div className="flex justify-center py-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+          </div>
         )}
+        
+        {/* Load more info */}
+        {paginatedDiamonds.length < sortedDiamonds.length && !loading && (
+          <div className="text-center py-4 px-4">
+            <p className="text-sm text-muted-foreground">
+              Showing {paginatedDiamonds.length} of {sortedDiamonds.length} diamonds
+            </p>
+          </div>
+        )}
+      </>
+    );
+  }, [loading, currentPage, error, finalFilteredDiamonds, lastDiamondElementRef, refetch, paginatedDiamonds.length, sortedDiamonds.length]);
 
-        {/* Scroll to top button */}
-        {showScrollTop && (
+  return (
+    <MobilePullToRefresh onRefresh={handleRefresh} enabled={!loading}>
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-lg font-semibold text-foreground">Diamonds</h1>
+                <p className="text-xs text-muted-foreground">
+                  {finalFilteredDiamonds.length} available
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleOpenSort}
+                  className="h-8 px-2 text-xs"
+                >
+                  <SortAsc className="h-3 w-3 mr-1" />
+                  Sort
+                </Button>
+                <Button
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleOpenFilters}
+                  className="h-8 px-2 text-xs relative"
+                >
+                  <Filter className="h-3 w-3 mr-1" />
+                  Filter
+                  {activeFiltersCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-3 w-3 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
+                      {activeFiltersCount}
+                    </span>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Diamond Grid */}
+        <div className="py-3">
+          {renderStoreContent}
+        </div>
+
+        {/* Floating Action Button */}
+        <div className="fixed bottom-4 right-4 z-40">
           <Button
-            onClick={scrollToTop}
-            size="icon"
-            className="fixed bottom-4 right-4 z-50 rounded-full shadow-lg"
+            onClick={handleAddDiamond}
+            size="lg"
+            className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-primary hover:bg-primary/90"
           >
-            <ChevronUp className="h-4 w-4" />
+            <Plus className="h-5 w-5" />
           </Button>
-        )}
-      </div>
-    </div>
-  );
-}
+        </div>
 
-export default memo(StorePage);
+        {/* Filters Bottom Sheet */}
+        <Sheet open={showFilters} onOpenChange={setShowFilters}>
+          <SheetContent side="bottom" className="h-[80vh] p-0">
+            <SheetHeader className="px-4 py-3 border-b border-border">
+              <SheetTitle className="flex items-center gap-2 text-sm">
+                <Filter className="h-4 w-4" />
+                Filters
+              </SheetTitle>
+            </SheetHeader>
+            <TelegramStoreFilters
+              filters={filters}
+              onUpdateFilter={updateFilter}
+              onClearFilters={clearFilters}
+              onApplyFilters={handleApplyFilters}
+              diamonds={diamonds || []}
+            />
+          </SheetContent>
+        </Sheet>
+
+        {/* Sort Bottom Sheet */}
+        <Sheet open={showSort} onOpenChange={setShowSort}>
+          <SheetContent side="bottom" className="h-auto p-0">
+            <SheetHeader className="px-4 py-3 border-b border-border">
+              <SheetTitle className="flex items-center gap-2 text-sm">
+                <SortAsc className="h-4 w-4" />
+                Sort by
+              </SheetTitle>
+            </SheetHeader>
+            <TelegramSortSheet
+              currentSort={sortBy}
+              onSortChange={handleApplySort}
+            />
+          </SheetContent>
+        </Sheet>
+      </div>
+    </MobilePullToRefresh>
+  );
+});
+
+StorePage.displayName = 'StorePage';
+
+export default StorePage;
