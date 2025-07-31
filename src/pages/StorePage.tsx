@@ -62,9 +62,16 @@ function StorePage() {
     
     // First sort by image preference: 3D/360° > regular image > no image
     const getImagePriority = (diamond: Diamond) => {
-      if (diamond.gem360Url) return 0; // Highest priority for 3D/360°
-      if (diamond.imageUrl) return 1;  // Second priority for regular images
-      return 2; // Lowest priority for no images
+      // Check for 3D/360° images first
+      if (diamond.gem360Url && diamond.gem360Url.trim()) return 0;
+      
+      // Check for regular images (both imageUrl and picture fields)
+      const hasImage = (diamond.imageUrl && diamond.imageUrl.trim()) || 
+                      (diamond.picture && diamond.picture.trim());
+      if (hasImage) return 1;
+      
+      // No images
+      return 2;
     };
     
     diamonds.sort((a, b) => {
