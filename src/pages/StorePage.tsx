@@ -22,15 +22,19 @@ function StorePage() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Default filters that match StoreFilters interface
+  // Complete filters that match TelegramStoreFilters interface
   const defaultFilters = {
     shapes: [] as string[],
     colors: [] as string[],
     clarities: [] as string[],
     cuts: [] as string[],
     fluorescence: [] as string[],
+    polish: [] as string[],
+    symmetry: [] as string[],
     caratRange: [0, 10] as [number, number],
-    priceRange: [0, 100000] as [number, number]
+    priceRange: [0, 100000] as [number, number],
+    depthRange: [0, 100] as [number, number],
+    tableRange: [0, 100] as [number, number]
   };
 
   const [filters, setFilters] = useState(defaultFilters);
@@ -104,6 +108,26 @@ function StorePage() {
     }
   }, [refetch]);
 
+  // Filter update handler
+  const handleUpdateFilter = useCallback((key: string, value: any) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  }, []);
+
+  // Clear filters handler
+  const handleClearFilters = useCallback(() => {
+    setFilters(defaultFilters);
+    setSearchQuery("");
+  }, []);
+
+  // Apply filters handler (for mobile optimization)
+  const handleApplyFilters = useCallback(() => {
+    // Filters are applied automatically via state changes
+    // This can be used for analytics or UI feedback
+    if (tg?.HapticFeedback) {
+      tg.HapticFeedback.impactOccurred('light');
+    }
+  }, []);
+
   // Scroll event listener
   useEffect(() => {
     const handleScroll = () => {
@@ -141,15 +165,16 @@ function StorePage() {
     return (
       <div className="min-h-screen bg-background">
         <EnhancedStoreHeader 
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          sortOption={sortOption}
+          totalDiamonds={0}
+          sortBy={sortOption}
           onSortChange={setSortOption}
-          totalCount={0}
+          onOpenFilters={() => {}}
         />
         <TelegramStoreFilters 
           filters={filters}
-          onFiltersChange={setFilters}
+          onUpdateFilter={handleUpdateFilter}
+          onClearFilters={handleClearFilters}
+          onApplyFilters={handleApplyFilters}
           diamonds={[]}
         />
         <div className="container mx-auto px-3 py-4">
@@ -180,16 +205,17 @@ function StorePage() {
   return (
     <div className="min-h-screen bg-background">
       <EnhancedStoreHeader 
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        sortOption={sortOption}
+        totalDiamonds={sortedDiamonds.length}
+        sortBy={sortOption}
         onSortChange={setSortOption}
-        totalCount={sortedDiamonds.length}
+        onOpenFilters={() => {}}
       />
       
       <TelegramStoreFilters 
         filters={filters}
-        onFiltersChange={setFilters}
+        onUpdateFilter={handleUpdateFilter}
+        onClearFilters={handleClearFilters}
+        onApplyFilters={handleApplyFilters}
         diamonds={diamonds}
       />
 
@@ -199,10 +225,7 @@ function StorePage() {
             <p className="text-muted-foreground mb-4">No diamonds found matching your criteria</p>
             <Button 
               variant="outline" 
-              onClick={() => {
-                setFilters(defaultFilters);
-                setSearchQuery("");
-              }}
+              onClick={handleClearFilters}
             >
               Clear Filters
             </Button>
