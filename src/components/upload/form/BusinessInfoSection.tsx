@@ -77,11 +77,11 @@ export function BusinessInfoSection({ register, setValue, watch, errors }: Busin
 
         <div className="flex items-center space-x-3 p-4 bg-accent/10 rounded-lg">
           <Switch
-            id="storeVisible"
-            checked={watch('storeVisible') || false}
-            onCheckedChange={(checked) => setValue('storeVisible', checked)}
+            id="store_visible"
+            checked={watch('store_visible') || false}
+            onCheckedChange={(checked) => setValue('store_visible', checked)}
           />
-          <Label htmlFor="storeVisible" className="text-base font-medium">
+          <Label htmlFor="store_visible" className="text-base font-medium">
             Make visible in public store
           </Label>
         </div>

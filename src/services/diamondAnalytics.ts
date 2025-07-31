@@ -63,3 +63,15 @@ export function convertDiamondsToInventoryFormat(diamonds: any[], userId?: numbe
     certificateComment: item.certificate_comment || undefined,
   }));
 }
+
+export function processDiamondDataForDashboard(diamonds: Diamond[]) {
+  return {
+    totalDiamonds: diamonds.length,
+    totalValue: diamonds.reduce((sum, d) => sum + d.price, 0),
+    averagePrice: diamonds.length > 0 ? diamonds.reduce((sum, d) => sum + d.price, 0) / diamonds.length : 0,
+    shapeDistribution: diamonds.reduce((acc, d) => {
+      acc[d.shape] = (acc[d.shape] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>)
+  };
+}

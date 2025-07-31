@@ -24,7 +24,7 @@ export function SingleStoneForm({ initialData, onSubmit, isLoading = false }: Si
       carat: 1,
       price: 0,
       status: 'Available',
-      picture: '',
+      imageUrl: '',
       shape: 'Round',
       color: 'G',
       clarity: 'VS1',
@@ -35,7 +35,7 @@ export function SingleStoneForm({ initialData, onSubmit, isLoading = false }: Si
       lab: 'GIA',
       gridle: 'Medium',
       culet: 'None',
-      storeVisible: false
+      store_visible: false
     }
   });
 
@@ -74,7 +74,7 @@ export function SingleStoneForm({ initialData, onSubmit, isLoading = false }: Si
       carat: 1,
       price: 0,
       status: 'Available',
-      picture: '',
+      imageUrl: '',
       shape: 'Round',
       color: 'G',
       clarity: 'VS1',
@@ -85,7 +85,7 @@ export function SingleStoneForm({ initialData, onSubmit, isLoading = false }: Si
       lab: 'GIA',
       gridle: 'Medium',
       culet: 'None',
-      storeVisible: false
+      store_visible: false
     });
   };
 

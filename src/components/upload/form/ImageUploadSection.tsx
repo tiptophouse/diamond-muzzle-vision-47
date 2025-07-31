@@ -22,7 +22,7 @@ export function ImageUploadSection({ setValue, watch, onGiaDataExtracted }: Imag
   const [videoUrl, setVideoUrl] = useState('');
   const [certificateImageUrl, setCertificateImageUrl] = useState('');
   const { toast } = useToast();
-  const currentImage = watch('picture');
+  const currentImage = watch('imageUrl');
 
   React.useEffect(() => {
     if (currentImage) {
@@ -74,7 +74,7 @@ export function ImageUploadSection({ setValue, watch, onGiaDataExtracted }: Imag
         .from('diamond-images')
         .getPublicUrl(filePath);
 
-      setValue('picture', publicUrl);
+      setValue('imageUrl', publicUrl);
       setImagePreview(publicUrl);
 
       toast({
@@ -206,7 +206,7 @@ export function ImageUploadSection({ setValue, watch, onGiaDataExtracted }: Imag
   };
 
   const removeImage = () => {
-    setValue('picture', '');
+    setValue('imageUrl', '');
     setImagePreview(null);
   };
 
