@@ -56,25 +56,44 @@ function StorePage() {
     }
   }, []);
 
-  // Memoized sorted diamonds
+  // Memoized sorted diamonds with image preference
   const sortedDiamonds = useMemo(() => {
     const diamonds = [...filteredDiamonds];
     
-    switch (sortBy) {
-      case "price-low-high":
-        return diamonds.sort((a, b) => a.price - b.price);
-      case "price-high-low":
-        return diamonds.sort((a, b) => b.price - a.price);
-      case "carat-low-high":
-        return diamonds.sort((a, b) => a.carat - b.carat);
-      case "carat-high-low":
-        return diamonds.sort((a, b) => b.carat - a.carat);
-      case "newest":
-        return diamonds.sort((a, b) => a.stockNumber.localeCompare(b.stockNumber));
-      case "most-popular":
-      default:
-        return diamonds;
-    }
+    // First sort by image preference: 3D/360° > regular image > no image
+    const getImagePriority = (diamond: Diamond) => {
+      if (diamond.gem360Url) return 0; // Highest priority for 3D/360°
+      if (diamond.imageUrl) return 1;  // Second priority for regular images
+      return 2; // Lowest priority for no images
+    };
+    
+    diamonds.sort((a, b) => {
+      const priorityA = getImagePriority(a);
+      const priorityB = getImagePriority(b);
+      
+      // If same image priority, sort by user selection
+      if (priorityA === priorityB) {
+        switch (sortBy) {
+          case "price-low-high":
+            return a.price - b.price;
+          case "price-high-low":
+            return b.price - a.price;
+          case "carat-low-high":
+            return a.carat - b.carat;
+          case "carat-high-low":
+            return b.carat - a.carat;
+          case "newest":
+            return a.stockNumber.localeCompare(b.stockNumber);
+          case "most-popular":
+          default:
+            return 0;
+        }
+      }
+      
+      return priorityA - priorityB;
+    });
+    
+    return diamonds;
   }, [filteredDiamonds, sortBy]);
 
   // Paginated diamonds for performance
