@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo, memo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
@@ -56,25 +55,35 @@ const StorePage = memo(() => {
     }
   }, []);
 
-  // Memoized sorted diamonds
+  // Memoized sorted diamonds - now maintains image-first priority
   const sortedDiamonds = useMemo(() => {
     const diamonds = [...filteredDiamonds];
     
-    switch (sortBy) {
-      case "price-low-high":
-        return diamonds.sort((a, b) => a.price - b.price);
-      case "price-high-low":
-        return diamonds.sort((a, b) => b.price - a.price);
-      case "carat-low-high":
-        return diamonds.sort((a, b) => a.carat - b.carat);
-      case "carat-high-low":
-        return diamonds.sort((a, b) => b.carat - a.carat);
-      case "newest":
-        return diamonds.sort((a, b) => a.stockNumber.localeCompare(b.stockNumber));
-      case "most-popular":
-      default:
-        return diamonds;
-    }
+    // Separate diamonds with and without images
+    const withImages = diamonds.filter(d => !!(d.imageUrl && d.imageUrl.trim()));
+    const withoutImages = diamonds.filter(d => !(d.imageUrl && d.imageUrl.trim()));
+    
+    // Sort each group separately
+    const sortGroup = (group: Diamond[]) => {
+      switch (sortBy) {
+        case "price-low-high":
+          return group.sort((a, b) => a.price - b.price);
+        case "price-high-low":
+          return group.sort((a, b) => b.price - a.price);
+        case "carat-low-high":
+          return group.sort((a, b) => a.carat - b.carat);
+        case "carat-high-low":
+          return group.sort((a, b) => b.carat - a.carat);
+        case "newest":
+          return group.sort((a, b) => a.stockNumber.localeCompare(b.stockNumber));
+        case "most-popular":
+        default:
+          return group;
+      }
+    };
+    
+    // Return with images first, then without images
+    return [...sortGroup(withImages), ...sortGroup(withoutImages)];
   }, [filteredDiamonds, sortBy]);
 
   // Paginated diamonds for performance
