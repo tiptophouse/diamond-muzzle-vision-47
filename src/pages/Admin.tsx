@@ -180,6 +180,7 @@ const AdminPage = () => {
         {selectedUserId && (
           <UserDetailsModal
             user={filteredUsers.find(u => u.id === selectedUserId)}
+            isOpen={true}
             onClose={() => setSelectedUserId(null)}
           />
         )}

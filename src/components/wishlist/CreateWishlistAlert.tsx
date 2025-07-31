@@ -28,7 +28,7 @@ export function CreateWishlistAlert() {
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useTelegramAuth();
   const { toast } = useToast();
-  const { triggerHaptic } = useTelegramHapticFeedback();
+  const hapticFeedback = useTelegramHapticFeedback();
   
   const [criteria, setCriteria] = useState<WishlistAlertCriteria>({
     shape: '',
@@ -69,7 +69,7 @@ export function CreateWishlistAlert() {
     }
 
     setIsLoading(true);
-    triggerHaptic('light');
+    hapticFeedback.impactOccurred('light');
 
     try {
       // Store the alert criteria in the wishlist table as a special entry
@@ -81,7 +81,7 @@ export function CreateWishlistAlert() {
           diamond_stock_number: `ALERT_${Date.now()}`, // Unique identifier for alerts
           diamond_data: {
             type: 'price_alert',
-            criteria: criteria,
+            criteria: criteria as any,
             created_at: new Date().toISOString(),
             alert_name: `התראת מחיר - ${criteria.shape} עד $${criteria.maxPricePerCarat}`
           }
@@ -109,7 +109,7 @@ export function CreateWishlistAlert() {
       });
       
       setIsOpen(false);
-      triggerHaptic('success');
+      hapticFeedback.notificationOccurred('success');
 
     } catch (error) {
       console.error('Error creating alert:', error);
@@ -118,7 +118,7 @@ export function CreateWishlistAlert() {
         description: "לא ניתן ליצור את ההתראה",
         variant: "destructive"
       });
-      triggerHaptic('error');
+      hapticFeedback.notificationOccurred('error');
     } finally {
       setIsLoading(false);
     }

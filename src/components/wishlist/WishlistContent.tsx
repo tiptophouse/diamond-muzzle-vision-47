@@ -262,14 +262,11 @@ export function WishlistContent() {
 
       {/* Create Alert Modal */}
       {showCreateAlert && (
-        <CreateWishlistAlert
-          isOpen={showCreateAlert}
-          onClose={() => setShowCreateAlert(false)}
-          onSuccess={() => {
-            setShowCreateAlert(false);
-            fetchWishlist();
-          }}
-        />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={() => setShowCreateAlert(false)}>
+          <div onClick={(e) => e.stopPropagation()}>
+            <CreateWishlistAlert />
+          </div>
+        </div>
       )}
     </div>
   );
