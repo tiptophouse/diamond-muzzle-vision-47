@@ -27,7 +27,7 @@ function DiamondDetailPage() {
   // Memoized diamond finding with early return optimization
   const diamond = useMemo(() => {
     if (!diamonds || !diamondId) return null;
-    return diamonds.find(d => d.stockNumber === diamondId) || null;
+    return diamonds.find(d => d.id === diamondId) || null;
   }, [diamonds, diamondId]);
 
   // Memoized price formatting to avoid recreation
