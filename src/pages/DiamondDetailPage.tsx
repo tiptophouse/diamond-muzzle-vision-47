@@ -12,7 +12,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function DiamondDetailPage() {
-  const { stockNumber } = useParams<{ stockNumber: string }>();
+  const { stockNumber: diamondId } = useParams<{ stockNumber: string }>();
   const navigate = useNavigate();
   const { diamonds, loading, refetch } = useStoreData();
   const { user, isAuthenticated } = useTelegramAuth();
@@ -24,28 +24,32 @@ export default function DiamondDetailPage() {
   // Admin check
   const isAdmin = user?.id === 2138564172;
 
-  console.log('🔍 DiamondDetailPage - stockNumber from URL:', stockNumber);
+  console.log('🔍 DiamondDetailPage - diamondId from URL:', diamondId);
   console.log('🔍 DiamondDetailPage - available diamonds:', diamonds?.length);
-  console.log('🔍 DiamondDetailPage - all stock numbers:', diamonds?.map(d => d.stockNumber));
+  console.log('🔍 DiamondDetailPage - all diamond IDs:', diamonds?.map(d => d.id));
 
-  const diamond = diamonds?.find(d => d.stockNumber === stockNumber);
+  // Use diamond ID instead of stock number to avoid duplicate stock number issues
+  const diamond = diamonds?.find(d => d.id === diamondId);
 
   console.log('🔍 DiamondDetailPage - found diamond:', diamond ? 'YES' : 'NO');
   console.log('🔍 DiamondDetailPage - diamond data:', diamond);
   
-  // Check for potential duplicates
-  const matchingDiamonds = diamonds?.filter(d => d.stockNumber === stockNumber) || [];
-  if (matchingDiamonds.length > 1) {
-    console.warn('🚨 DiamondDetailPage - Multiple diamonds found with same stock number:', stockNumber, matchingDiamonds);
+  // Check for potential duplicates by stock number
+  const stockNumber = diamond?.stockNumber;
+  if (stockNumber) {
+    const duplicatesByStock = diamonds?.filter(d => d.stockNumber === stockNumber) || [];
+    if (duplicatesByStock.length > 1) {
+      console.warn('🚨 DiamondDetailPage - Multiple diamonds found with same stock number:', stockNumber, duplicatesByStock);
+    }
   }
 
   useEffect(() => {
-    if (!loading && !diamond && stockNumber) {
+    if (!loading && !diamond && diamondId) {
       console.log('❌ Diamond not found, redirecting to store');
       // Diamond not found, redirect to store
       navigate('/store');
     }
-  }, [diamond, loading, stockNumber, navigate]);
+  }, [diamond, loading, diamondId, navigate]);
 
   const handleShare = async () => {
     // Create secure encrypted link that only shows this diamond

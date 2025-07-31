@@ -33,7 +33,8 @@ export function FigmaDiamondCard({
 
   const handleViewDetails = () => {
     impactOccurred('light');
-    navigate(`/diamond/${diamond.stockNumber}`);
+    // Use unique diamond ID instead of stock number to avoid duplicate stock number issues
+    navigate(`/diamond/${diamond.id}`);
   };
 
   const handleContact = () => {
