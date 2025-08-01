@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { fetchInventoryData } from "@/services/inventoryDataService";
@@ -18,45 +17,53 @@ export function useStoreData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Optimized data transformation with caching
+  // Direct and simple data transformation focused on getting images to display
   const transformData = useCallback((rawData: any[]): Diamond[] => {
+    console.log('🔧 TRANSFORM DATA: Processing', rawData.length, 'items from FastAPI');
+    
     return rawData
       .map(item => {
-        let gem360Url = item.gem360_url || item.gem360Url;
-        
-        if (!gem360Url && item.certificate_url && item.certificate_url.includes('gem360')) {
-          gem360Url = item.certificate_url;
-        }
-        
-        if (!gem360Url && item.certificateUrl && item.certificateUrl.includes('gem360')) {
-          gem360Url = item.certificateUrl;
-        }
-
-        console.log('🔍 STORE DATA: Processing item:', item.id, {
-          stock: item.stock,
-          picture: item.picture,
-          Image: item.Image,
-          'Video link': item['Video link'],
-          imageUrl: item.imageUrl
-        });
-
-        // Prioritize Image field from CSV, then picture, then imageUrl
+        // Get the primary image URL - check all possible fields
         let finalImageUrl = undefined;
-        if (item.Image && item.Image !== 'default' && !item.Image.includes('.html')) {
-          finalImageUrl = item.Image;
-        } else if (item.picture && item.picture !== 'default' && !item.picture.includes('.html')) {
-          finalImageUrl = item.picture;
-        } else if (item.imageUrl && item.imageUrl !== 'default' && !item.imageUrl.includes('.html')) {
-          finalImageUrl = item.imageUrl;
+        
+        // Priority order: Image (CSV) > picture > imageUrl > image
+        const imageFields = [
+          item.Image,        // CSV Image field
+          item.picture,      // FastAPI picture field  
+          item.imageUrl,     // Standard imageUrl field
+          item.image         // Generic image field
+        ];
+        
+        for (const imageField of imageFields) {
+          if (imageField && 
+              typeof imageField === 'string' && 
+              imageField.trim() && 
+              imageField !== 'default' && 
+              !imageField.includes('.html') &&
+              (imageField.startsWith('http') || imageField.startsWith('//'))) {
+            finalImageUrl = imageField.trim();
+            console.log('✅ FOUND IMAGE URL for', item.stock, ':', finalImageUrl);
+            break;
+          }
         }
-
-        // Handle 360° URLs
-        let final360Url = gem360Url;
-        if (!final360Url && item['Video link'] && item['Video link'].includes('.html')) {
-          final360Url = item['Video link'];
-        }
-        if (!final360Url && item.Image && item.Image.includes('.html')) {
-          final360Url = item.Image;
+        
+        // Get 360° URL
+        let final360Url = undefined;
+        const video360Fields = [
+          item.gem360Url,
+          item['Video link'],
+          item.videoLink
+        ];
+        
+        for (const videoField of video360Fields) {
+          if (videoField && 
+              typeof videoField === 'string' && 
+              videoField.trim() && 
+              videoField.includes('.html')) {
+            final360Url = videoField.trim();
+            console.log('✅ FOUND 360° URL for', item.stock, ':', final360Url);
+            break;
+          }
         }
 
         const result = {
@@ -69,26 +76,26 @@ export function useStoreData() {
           cut: item.cut || 'Excellent',
           price: Number(item.price_per_carat ? item.price_per_carat * (item.weight || item.carat) : item.price) || 0,
           status: item.status || 'Available',
-          imageUrl: finalImageUrl,
+          imageUrl: finalImageUrl, // This is what the store will use
+          gem360Url: final360Url,  // This is what the store will use for 360°
+          store_visible: item.store_visible !== false,
+          certificateNumber: item.certificate_number || undefined,
+          lab: item.lab || undefined,
+          certificateUrl: item.certificate_url || item.certificateUrl || undefined,
+          // Keep original fields for debugging
           Image: item.Image,
           picture: item.picture,
           image: item.image,
           'Video link': item['Video link'],
-          videoLink: item.videoLink,
-          gem360Url: final360Url,
-          store_visible: item.store_visible !== false,
-          certificateNumber: item.certificate_number || undefined,
-          lab: item.lab || undefined,
-          certificateUrl: item.certificate_url || item.certificateUrl || undefined
+          videoLink: item.videoLink
         };
 
-        console.log('🔍 STORE DATA: Final result:', {
-          id: result.id,
-          stockNumber: result.stockNumber,
-          imageUrl: result.imageUrl,
-          gem360Url: result.gem360Url,
-          Image: result.Image,
-          'Video link': result['Video link']
+        // Log the final result for each diamond
+        console.log('🔧 FINAL TRANSFORM for', result.stockNumber, ':', {
+          finalImageUrl: result.imageUrl,
+          final360Url: result.gem360Url,
+          originalImage: item.Image,
+          originalPicture: item.picture
         });
 
         return result;
@@ -111,7 +118,7 @@ export function useStoreData() {
 
       const result = await fetchInventoryData();
       
-      // CRITICAL DEBUGGING: Log the raw API response
+      // Log what we got from the API
       console.log('🚨 RAW API RESPONSE:', {
         hasData: !!result.data,
         dataLength: result.data?.length || 0,
@@ -138,6 +145,18 @@ export function useStoreData() {
 
       if (result.data && result.data.length > 0) {
         const transformedDiamonds = transformData(result.data);
+        
+        // Log how many diamonds have images after transformation
+        const diamondsWithImages = transformedDiamonds.filter(d => d.imageUrl);
+        console.log('🖼️ TRANSFORM SUMMARY:', {
+          totalDiamonds: transformedDiamonds.length,
+          diamondsWithImages: diamondsWithImages.length,
+          diamondsWith360: transformedDiamonds.filter(d => d.gem360Url).length,
+          sampleImageUrls: diamondsWithImages.slice(0, 3).map(d => ({ 
+            stock: d.stockNumber, 
+            imageUrl: d.imageUrl 
+          }))
+        });
         
         // Update cache
         dataCache = {
