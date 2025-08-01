@@ -110,6 +110,25 @@ export function useStoreData() {
       setLoading(true);
 
       const result = await fetchInventoryData();
+      
+      // CRITICAL DEBUGGING: Log the raw API response
+      console.log('🚨 RAW API RESPONSE:', {
+        hasData: !!result.data,
+        dataLength: result.data?.length || 0,
+        error: result.error,
+        firstItem: result.data?.[0] ? {
+          id: result.data[0].id,
+          stock: result.data[0].stock,
+          picture: result.data[0].picture,
+          Image: result.data[0].Image,
+          image: result.data[0].image,
+          imageUrl: result.data[0].imageUrl,
+          'Video link': result.data[0]['Video link'],
+          videoLink: result.data[0].videoLink,
+          gem360Url: result.data[0].gem360Url,
+          allKeys: Object.keys(result.data[0])
+        } : null
+      });
 
       if (result.error) {
         setError(result.error);

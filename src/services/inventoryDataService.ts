@@ -51,6 +51,24 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       
       if (dataArray && dataArray.length > 0) {
         console.log('✅ INVENTORY SERVICE: Successfully fetched', dataArray.length, 'diamonds from FastAPI');
+        
+        // CRITICAL DEBUGGING: Log exactly what we're getting from FastAPI
+        console.log('🚨 FASTAPI RESPONSE ANALYSIS:', {
+          totalCount: dataArray.length,
+          firstItem: {
+            id: dataArray[0].id,
+            stock: dataArray[0].stock,
+            picture: dataArray[0].picture,
+            Image: dataArray[0].Image,
+            image: dataArray[0].image,
+            imageUrl: dataArray[0].imageUrl,
+            'Video link': dataArray[0]['Video link'],
+            videoLink: dataArray[0].videoLink,
+            gem360Url: dataArray[0].gem360Url,
+            allFields: Object.keys(dataArray[0])
+          },
+          sampleItems: dataArray.slice(0, 3)
+        });
         console.log('📊 INVENTORY SERVICE: Sample diamond data:', dataArray[0]);
         
         return {
