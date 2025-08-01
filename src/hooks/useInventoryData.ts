@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { fetchInventoryData } from '@/services/inventoryDataService';
@@ -20,15 +19,22 @@ export function useInventoryData() {
     const shapeMap: Record<string, string> = {
       'round brilliant': 'Round',
       'round': 'Round',
+      'br': 'Round', // From CSV - BR = Brilliant Round
       'princess': 'Princess',
+      'ps': 'Princess', // From CSV
       'cushion': 'Cushion',
+      'cu': 'Cushion', // From CSV
       'emerald': 'Emerald',
       'oval': 'Oval',
       'pear': 'Pear',
       'marquise': 'Marquise',
       'radiant': 'Radiant',
+      'rad': 'Radiant', // From CSV
       'asscher': 'Asscher',
-      'heart': 'Heart'
+      'heart': 'Heart',
+      'hs': 'Heart', // From CSV
+      'tp': 'Trillion', // From CSV - TP = Trillion/Pear variant
+      'bg': 'Baguette' // From CSV
     };
     
     const normalized = apiShape.toLowerCase().trim();
@@ -54,27 +60,51 @@ export function useInventoryData() {
       if (result.data && result.data.length > 0) {
         console.log('📥 INVENTORY HOOK: Processing', result.data.length, 'diamonds');
         
-        // Transform data to match Diamond interface
+        // Transform data to match Diamond interface with enhanced field mapping
         const transformedDiamonds: Diamond[] = result.data.map(item => ({
-          id: item.id || `${item.stock || item.stock_number}-${Date.now()}`,
-          diamondId: item.id || item.diamond_id, // FastAPI diamond ID
-          stockNumber: item.stock || item.stock_number || item.stockNumber || '',
-          shape: normalizeShape(item.shape),
-          carat: parseFloat((item.weight || item.carat || 0).toString()) || 0,
-          color: (item.color || 'D').toUpperCase(),
-          clarity: (item.clarity || 'FL').toUpperCase(),
-          cut: item.cut || 'Excellent',
-          price: Number(item.price_per_carat ? item.price_per_carat * (item.weight || item.carat) : item.price) || 0,
-          status: item.status || 'Available',
-          fluorescence: item.fluorescence || undefined,
-          imageUrl: item.picture || item.imageUrl || undefined,
+          id: item.id || `${item.stock || item.stock_number || item.VendorStockNumber}-${Date.now()}`,
+          diamondId: item.id || item.diamond_id,
+          stockNumber: item.stock || item.stock_number || item.stockNumber || item.VendorStockNumber || '',
+          shape: normalizeShape(item.shape || item.Shape),
+          carat: parseFloat((item.weight || item.carat || item.Weight || 0).toString()) || 0,
+          color: (item.color || item.Color || 'D').toUpperCase(),
+          clarity: (item.clarity || item.Clarity || 'FL').toUpperCase(),
+          cut: item.cut || item.Cut || item.Make || 'Excellent',
+          price: Number(
+            item.price_per_carat ? 
+              item.price_per_carat * (item.weight || item.carat || item.Weight) : 
+              item.price || item.Price || item.RapnetAskingPrice || item.IndexAskingPrice || 0
+          ) || 0,
+          status: item.status || item.Availability || 'Available',
+          fluorescence: item.fluorescence || item.FluorescenceIntensity || undefined,
+          // Enhanced image URL mapping - check multiple possible fields
+          imageUrl: item.picture || 
+                   item.imageUrl || 
+                   item.Image || // From CSV
+                   item.image ||
+                   undefined,
+          // Map gem360Url from Video link field in CSV
+          gem360Url: item.gem360Url || 
+                     item['Video link'] || 
+                     item.videoLink ||
+                     undefined,
           store_visible: item.store_visible !== false,
-          certificateNumber: item.certificate_number || item.certificateNumber || undefined,
-          lab: item.lab || undefined,
+          certificateNumber: item.certificate_number || 
+                           item.certificateNumber || 
+                           item.CertificateID || 
+                           undefined,
+          lab: item.lab || item.Lab || undefined,
           certificateUrl: item.certificate_url || item.certificateUrl || undefined,
         }));
 
-        console.log('📥 INVENTORY HOOK: Transformed diamonds:', transformedDiamonds.length);
+        console.log('📥 INVENTORY HOOK: Transformed diamonds with image URLs:', 
+          transformedDiamonds.map(d => ({ 
+            stock: d.stockNumber, 
+            imageUrl: d.imageUrl,
+            gem360Url: d.gem360Url 
+          }))
+        );
+        
         setDiamonds(transformedDiamonds);
         setAllDiamonds(transformedDiamonds);
       } else {
