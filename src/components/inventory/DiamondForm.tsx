@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { DiamondFormData } from './form/types';
@@ -30,7 +31,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       status: diamond.status || 'Available',
       picture: diamond.imageUrl || '',
       // Map additional fields from diamond object if they exist
-      certificateNumber: (diamond as any).certificateNumber || '',
+      certificateNumber: String((diamond as any).certificateNumber || ''),
       lab: (diamond as any).lab || 'GIA',
       fluorescence: (diamond as any).fluorescence || 'None',
       polish: (diamond as any).polish || 'Excellent',
@@ -71,7 +72,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
         price: diamond.price || 0,
         status: diamond.status || 'Available',
         picture: diamond.imageUrl || '',
-        certificateNumber: (diamond as any).certificateNumber || '',
+        certificateNumber: String((diamond as any).certificateNumber || ''),
         lab: (diamond as any).lab || 'GIA',
         fluorescence: (diamond as any).fluorescence || 'None',
         polish: (diamond as any).polish || 'Excellent',
@@ -106,15 +107,15 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       ...data,
       stockNumber: data.stockNumber.trim(),
       carat: Number(data.carat),
-      price: Number(data.price),
+      price: Math.round(Number(data.price)),
       shape: data.shape || 'Round',
       color: data.color || 'G',
       clarity: data.clarity || 'VS1',
       cut: data.cut || 'Excellent',
       status: data.status || 'Available',
       picture: data.picture?.trim() || '',
-      // Include all the new fields
-      certificateNumber: data.certificateNumber?.trim() || '',
+      // Handle certificate number safely
+      certificateNumber: data.certificateNumber ? String(data.certificateNumber).trim() : '',
       certificateUrl: data.certificateUrl?.trim() || '',
       certificateComment: data.certificateComment?.trim() || '',
       lab: data.lab || 'GIA',
@@ -129,7 +130,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       symmetry: data.symmetry || 'Excellent',
       gridle: data.gridle || 'Medium',
       culet: data.culet || 'None',
-      pricePerCarat: data.pricePerCarat ? Number(data.pricePerCarat) : undefined,
+      pricePerCarat: data.pricePerCarat ? Math.round(Number(data.pricePerCarat)) : undefined,
       rapnet: data.rapnet ? Number(data.rapnet) : undefined,
       storeVisible: data.storeVisible || false,
     };

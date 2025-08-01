@@ -19,10 +19,10 @@ export function BusinessInfoSection({ register, setValue, watch, errors }: Busin
   const carat = watch('carat');
   const price = watch('price');
 
-  // Auto-calculate price per carat
+  // Auto-calculate price per carat with proper rounding
   React.useEffect(() => {
     if (carat && price && carat > 0) {
-      const pricePerCarat = Math.round(price / carat);
+      const pricePerCarat = Math.round(Number(price) / Number(carat));
       setValue('pricePerCarat', pricePerCarat);
     }
   }, [carat, price, setValue]);
