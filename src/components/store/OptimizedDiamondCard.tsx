@@ -1,4 +1,3 @@
-
 import { useState, memo, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, Eye, MessageCircle, Gem } from "lucide-react";
@@ -44,51 +43,57 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     return () => observer.disconnect();
   }, []);
 
-  // Get the best available image URL with enhanced validation
+  // Enhanced image URL detection with better validation
   const getImageUrl = useCallback(() => {
-    // Try multiple possible image fields
+    // Try multiple possible image fields in priority order
     const possibleImageUrls = [
       diamond.imageUrl,
       diamond.picture,
-      diamond.Image, // From CSV data
-      diamond.image  // Alternative field name
+      diamond.Image,
+      diamond.image,
     ];
 
-    console.log('🖼️ OptimizedDiamondCard - Checking image sources for', diamond.stockNumber, ':', {
+    console.log('🖼️ OptimizedDiamondCard - Image sources for', diamond.stockNumber, ':', {
       imageUrl: diamond.imageUrl,
       picture: diamond.picture,
-      Image: (diamond as any).Image,
-      image: (diamond as any).image
+      Image: diamond.Image,
+      image: diamond.image
     });
 
     for (const url of possibleImageUrls) {
       if (url && typeof url === 'string' && url.trim()) {
         const cleanUrl = url.trim();
         
-        // Validate URL format
-        if (cleanUrl.startsWith('http') || cleanUrl.startsWith('//')) {
-          console.log('✅ OptimizedDiamondCard - Valid image URL found for', diamond.stockNumber, ':', cleanUrl);
-          return cleanUrl;
+        // Validate URL format - must start with http/https or //
+        if (cleanUrl.match(/^(https?:\/\/|\/\/)/)) {
+          // Exclude 360° HTML files from regular image display
+          if (!cleanUrl.includes('.html')) {
+            console.log('✅ OptimizedDiamondCard - Valid image URL found:', cleanUrl);
+            return cleanUrl;
+          }
         }
       }
     }
     
     console.log('❌ OptimizedDiamondCard - No valid image URL found for', diamond.stockNumber);
     return null;
-  }, [diamond.imageUrl, diamond.picture, diamond.stockNumber, diamond]);
+  }, [diamond.imageUrl, diamond.picture, diamond.Image, diamond.image, diamond.stockNumber]);
 
-  // Get 360° URL - separate from regular image
+  // Get 360° URL - check Video link field and gem360Url
   const get360Url = useCallback(() => {
-    // Check for dedicated gem360Url first
+    // Check gem360Url first
     if (diamond.gem360Url && diamond.gem360Url.trim()) {
-      return diamond.gem360Url.trim();
+      const url = diamond.gem360Url.trim();
+      if (url.includes('.html')) {
+        return url;
+      }
     }
 
-    // Check for Video link field (from CSV - often contains 360° links)
-    const videoLink = (diamond as any)['Video link'] || (diamond as any).videoLink;
+    // Check Video link field from CSV
+    const videoLink = diamond['Video link'] || diamond.videoLink;
     if (videoLink && typeof videoLink === 'string' && videoLink.trim()) {
       const cleanVideoUrl = videoLink.trim();
-      if (cleanVideoUrl.includes('.html') || cleanVideoUrl.includes('360')) {
+      if (cleanVideoUrl.includes('.html')) {
         return cleanVideoUrl;
       }
     }
@@ -96,18 +101,11 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     return null;
   }, [diamond.gem360Url, diamond]);
 
-  // Enhanced 360° detection
+  // Enhanced 360° detection - only for .html files
   const is360Image = useCallback(() => {
     const gem360Url = get360Url();
-    
-    // If we have a dedicated 360° URL, it's definitely 360° content
-    if (gem360Url) {
-      console.log('🔄 OptimizedDiamondCard - Has 360° URL for', diamond.stockNumber, ':', gem360Url);
-      return true;
-    }
-
-    return false;
-  }, [get360Url, diamond.stockNumber]);
+    return !!gem360Url && gem360Url.includes('.html');
+  }, [get360Url]);
 
   const handleLike = useCallback(() => {
     impactOccurred('light');
@@ -132,7 +130,12 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
   }, [diamond.stockNumber]);
 
   const handleImageError = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
-    console.error('❌ OptimizedDiamondCard - Image failed to load for', diamond.stockNumber, ':', event.currentTarget.src);
+    const target = event.currentTarget;
+    console.error('❌ OptimizedDiamondCard - Image failed to load:', {
+      stockNumber: diamond.stockNumber,
+      src: target.src,
+      error: event.type
+    });
     setImageError(true);
     setImageLoaded(true);
   }, [diamond.stockNumber]);
@@ -168,7 +171,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
       {/* Image Container */}
       <div className="relative aspect-square bg-muted overflow-hidden">
         {/* Loading skeleton */}
-        {!imageLoaded && hasImage && isVisible && (
+        {!imageLoaded && (hasImage || has360) && isVisible && (
           <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10 animate-pulse z-10">
             <div className="flex items-center justify-center h-full">
               <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -176,7 +179,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
           </div>
         )}
         
-        {/* 360° Viewer for vision360.html URLs */}
+        {/* 360° Viewer for .html URLs */}
         {has360 && gem360Url && isVisible ? (
           <div className="relative w-full h-full">
             <Gem360Viewer 
@@ -210,7 +213,12 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
               </div>
               <p className="text-xs text-muted-foreground">No Image</p>
               {imageError && (
-                <p className="text-xs text-red-500 mt-1">Load failed</p>
+                <p className="text-xs text-red-500 mt-1">Failed to load</p>
+              )}
+              {hasImage && (
+                <p className="text-xs text-muted-foreground mt-1 px-2">
+                  {imageUrl?.substring(0, 30)}...
+                </p>
               )}
             </div>
           </div>

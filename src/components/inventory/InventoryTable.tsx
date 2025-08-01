@@ -11,7 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface Diamond {
   id: string;
-  diamondId?: string | number; // FastAPI diamond ID
+  diamondId?: string;
   stockNumber: string;
   shape: string;
   carat: number;
@@ -22,12 +22,17 @@ export interface Diamond {
   status: string;
   fluorescence?: string;
   imageUrl?: string;
-  picture?: string; // Alternative image field from API
-  store_visible?: boolean;
+  gem360Url?: string;
+  store_visible: boolean;
   certificateNumber?: string;
   lab?: string;
-  gem360Url?: string;
   certificateUrl?: string;
+  // Add CSV-specific fields
+  Image?: string; // CSV Image field
+  image?: string; // Alternative image field
+  picture?: string; // Another possible image field
+  'Video link'?: string; // CSV Video link field
+  videoLink?: string; // Alternative video link field
 }
 
 interface InventoryTableProps {
