@@ -52,7 +52,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     return imageUrl;
   }, [diamond.imageUrl, diamond.picture, diamond.stockNumber]);
 
-  // Check if this is a 360° image
+  // Enhanced 360° detection including vision360.html
   const is360Image = useCallback(() => {
     const gem360Url = diamond.gem360Url;
     const imageUrl = getImageUrl();
@@ -63,10 +63,17 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
         imageUrl.includes('3d') || 
         imageUrl.includes('rotate') ||
         imageUrl.includes('my360.sela') ||
-        imageUrl.includes('gem360')
+        imageUrl.includes('gem360') ||
+        imageUrl.includes('vision360.html') || // Added vision360.html detection
+        imageUrl.includes('diamonds-images') // Added diamonds-images detection
       ));
     
-    console.log('🔄 OptimizedDiamondCard - 360° check for', diamond.stockNumber, ':', has360, { gem360Url, imageUrl });
+    console.log('🔄 OptimizedDiamondCard - 360° check for', diamond.stockNumber, ':', has360, { 
+      gem360Url, 
+      imageUrl,
+      hasVision360: imageUrl?.includes('vision360.html'),
+      hasDiamondsImages: imageUrl?.includes('diamonds-images')
+    });
     return has360;
   }, [diamond.gem360Url, diamond.stockNumber, getImageUrl]);
 
@@ -136,7 +143,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
           </div>
         )}
         
-        {/* 360° / 3D Image Display */}
+        {/* 360° / 3D Image Display - Enhanced for vision360.html */}
         {has360 && (diamond.gem360Url || hasImage) && isVisible ? (
           <div className="relative w-full h-full">
             <Gem360Viewer 
@@ -180,11 +187,11 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
           </Badge>
         </div>
 
-        {/* 360° Badge for 3D images */}
+        {/* Enhanced 360° Badge for 3D images */}
         {has360 && (
           <div className="absolute top-2 right-12">
-            <Badge className="text-xs font-medium border-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white">
-              360°
+            <Badge className="text-xs font-medium border-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg">
+              ✨ 360°
             </Badge>
           </div>
         )}
