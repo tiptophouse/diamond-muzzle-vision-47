@@ -7,6 +7,7 @@ import { statuses } from '@/components/inventory/form/diamondFormConstants';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { NativeMobileSelector } from '@/components/ui/NativeMobileSelector';
+import { roundToInteger, formatPricePerCarat } from '@/utils/numberUtils';
 
 interface BusinessInfoSectionProps {
   register: UseFormRegister<DiamondFormData>;
@@ -19,13 +20,23 @@ export function BusinessInfoSection({ register, setValue, watch, errors }: Busin
   const carat = watch('carat');
   const price = watch('price');
 
-  // Auto-calculate price per carat with proper rounding
+  // Auto-calculate price per carat with proper integer rounding
   React.useEffect(() => {
     if (carat && price && carat > 0) {
-      const pricePerCarat = Math.round(Number(price) / Number(carat));
+      const pricePerCarat = formatPricePerCarat(price, carat);
       setValue('pricePerCarat', pricePerCarat);
     }
   }, [carat, price, setValue]);
+
+  // Ensure price field always shows as integer
+  React.useEffect(() => {
+    if (price) {
+      const roundedPrice = roundToInteger(price);
+      if (roundedPrice !== price) {
+        setValue('price', roundedPrice);
+      }
+    }
+  }, [price, setValue]);
 
   return (
     <div className="space-y-6 border-t pt-6">
