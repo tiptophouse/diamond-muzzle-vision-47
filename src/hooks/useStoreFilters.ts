@@ -14,6 +14,8 @@ interface StoreFilters {
   priceRange: [number, number];
   depthRange: [number, number];
   tableRange: [number, number];
+  hasImages: boolean;
+  has360: boolean;
 }
 
 export function useStoreFilters(diamonds: Diamond[]) {
@@ -42,6 +44,8 @@ export function useStoreFilters(diamonds: Diamond[]) {
     fluorescence: [],
     polish: [],
     symmetry: [],
+    hasImages: false,
+    has360: false,
     ...getInitialRanges(),
     depthRange: [50, 80] as [number, number],
     tableRange: [45, 75] as [number, number]
@@ -59,6 +63,27 @@ export function useStoreFilters(diamonds: Diamond[]) {
 
   const filteredDiamonds = useMemo(() => {
     return diamonds.filter(diamond => {
+      // Image availability filter
+      if (filters.hasImages) {
+        const hasValidImage = diamond.imageUrl && 
+                            diamond.imageUrl !== 'default' && 
+                            diamond.imageUrl.trim() !== '' &&
+                            diamond.imageUrl.startsWith('http');
+        if (!hasValidImage) {
+          return false;
+        }
+      }
+
+      // 360° availability filter
+      if (filters.has360) {
+        const hasValid360 = diamond.gem360Url && 
+                          diamond.gem360Url.trim() !== '' &&
+                          diamond.gem360Url.includes('.html');
+        if (!hasValid360) {
+          return false;
+        }
+      }
+
       // Shape filter
       if (filters.shapes.length > 0 && !filters.shapes.includes(diamond.shape)) {
         return false;
@@ -136,16 +161,43 @@ export function useStoreFilters(diamonds: Diamond[]) {
       fluorescence: [],
       polish: [],
       symmetry: [],
+      hasImages: false,
+      has360: false,
       depthRange: [50, 80] as [number, number],
       tableRange: [45, 75] as [number, number],
       ...ranges
     });
   };
 
+  // Calculate image statistics
+  const imageStats = useMemo(() => {
+    const withImages = diamonds.filter(d => 
+      d.imageUrl && 
+      d.imageUrl !== 'default' && 
+      d.imageUrl.trim() !== '' &&
+      d.imageUrl.startsWith('http')
+    ).length;
+    
+    const with360 = diamonds.filter(d => 
+      d.gem360Url && 
+      d.gem360Url.trim() !== '' &&
+      d.gem360Url.includes('.html')
+    ).length;
+
+    return {
+      withImages,
+      with360,
+      total: diamonds.length,
+      withoutImages: diamonds.length - withImages,
+      without360: diamonds.length - with360
+    };
+  }, [diamonds]);
+
   return {
     filters,
     filteredDiamonds,
     updateFilter,
     clearFilters,
+    imageStats,
   };
 }

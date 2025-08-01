@@ -1,3 +1,4 @@
+
 import { Diamond as DiamondType } from "@/components/inventory/InventoryTable";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -12,6 +13,7 @@ import { CutFilter } from "./filters/CutFilter";
 import { FluorescenceFilter } from "./filters/FluorescenceFilter";
 import { PolishFilter } from "./filters/PolishFilter";
 import { SymmetryFilter } from "./filters/SymmetryFilter";
+import { ImageAvailabilityFilter } from "./filters/ImageAvailabilityFilter";
 
 interface TelegramStoreFiltersProps {
   filters: {
@@ -26,11 +28,20 @@ interface TelegramStoreFiltersProps {
     priceRange: [number, number];
     depthRange: [number, number];
     tableRange: [number, number];
+    hasImages: boolean;
+    has360: boolean;
   };
   onUpdateFilter: (key: string, value: any) => void;
   onClearFilters: () => void;
   onApplyFilters: () => void;
   diamonds: DiamondType[];
+  imageStats?: {
+    withImages: number;
+    with360: number;
+    total: number;
+    withoutImages: number;
+    without360: number;
+  };
 }
 
 export function TelegramStoreFilters({ 
@@ -38,7 +49,8 @@ export function TelegramStoreFilters({
   onUpdateFilter, 
   onClearFilters,
   onApplyFilters,
-  diamonds
+  diamonds,
+  imageStats
 }: TelegramStoreFiltersProps) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
@@ -80,7 +92,9 @@ export function TelegramStoreFilters({
     filters.polish.length +
     filters.symmetry.length +
     (filters.caratRange[0] > minCarat || filters.caratRange[1] < maxCarat ? 1 : 0) +
-    (filters.priceRange[0] > minPrice || filters.priceRange[1] < maxPrice ? 1 : 0);
+    (filters.priceRange[0] > minPrice || filters.priceRange[1] < maxPrice ? 1 : 0) +
+    (filters.hasImages ? 1 : 0) +
+    (filters.has360 ? 1 : 0);
 
   return (
     <div className="flex flex-col h-full">
@@ -100,6 +114,29 @@ export function TelegramStoreFilters({
               </Button>
             </div>
           )}
+
+          {/* Image Statistics - Show counts */}
+          {imageStats && (
+            <div className="bg-muted/30 rounded-lg p-3 text-sm text-muted-foreground">
+              <div className="grid grid-cols-2 gap-2">
+                <div>📸 With Photos: {imageStats.withImages}</div>
+                <div>🌐 With 360°: {imageStats.with360}</div>
+                <div>📷 No Photos: {imageStats.withoutImages}</div>
+                <div>🔄 No 360°: {imageStats.without360}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Image Availability Filters - High Priority */}
+          <div className="space-y-3">
+            <h4 className="font-semibold text-foreground">Media Availability</h4>
+            <ImageAvailabilityFilter
+              hasImages={filters.hasImages}
+              has360={filters.has360}
+              onHasImagesChange={(value) => onUpdateFilter('hasImages', value)}
+              onHas360Change={(value) => onUpdateFilter('has360', value)}
+            />
+          </div>
 
           {/* Basic Filters - Always Visible */}
           
