@@ -44,37 +44,57 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     return () => observer.disconnect();
   }, []);
 
-  // Get the best available image URL
+  // Get the best available image URL with better validation
   const getImageUrl = useCallback(() => {
-    // Check multiple possible image fields
     const imageUrl = diamond.imageUrl || diamond.picture;
-    console.log('🖼️ OptimizedDiamondCard - Image URL for', diamond.stockNumber, ':', imageUrl);
-    return imageUrl;
+    console.log('🖼️ OptimizedDiamondCard - Raw image data for', diamond.stockNumber, ':', {
+      imageUrl: diamond.imageUrl,
+      picture: diamond.picture,
+      selected: imageUrl
+    });
+    
+    // Validate and clean the URL
+    if (imageUrl && typeof imageUrl === 'string' && imageUrl.trim()) {
+      const cleanUrl = imageUrl.trim();
+      console.log('🖼️ OptimizedDiamondCard - Clean image URL for', diamond.stockNumber, ':', cleanUrl);
+      return cleanUrl;
+    }
+    
+    console.log('🖼️ OptimizedDiamondCard - No valid image URL for', diamond.stockNumber);
+    return null;
   }, [diamond.imageUrl, diamond.picture, diamond.stockNumber]);
 
-  // Enhanced 360° detection including vision360.html
+  // Enhanced 360° detection - be more specific about what constitutes 360° content
   const is360Image = useCallback(() => {
     const gem360Url = diamond.gem360Url;
     const imageUrl = getImageUrl();
     
-    const has360 = gem360Url || 
-      (imageUrl && (
-        imageUrl.includes('360') || 
-        imageUrl.includes('3d') || 
-        imageUrl.includes('rotate') ||
-        imageUrl.includes('my360.sela') ||
-        imageUrl.includes('gem360') ||
-        imageUrl.includes('vision360.html') || // Added vision360.html detection
-        imageUrl.includes('diamonds-images') // Added diamonds-images detection
-      ));
+    // First check if there's a dedicated gem360Url
+    if (gem360Url && gem360Url.trim()) {
+      console.log('🔄 OptimizedDiamondCard - Has gem360Url for', diamond.stockNumber, ':', gem360Url);
+      return true;
+    }
+    
+    // Check if imageUrl contains vision360.html (these are definitely 360°)
+    if (imageUrl && imageUrl.includes('vision360.html')) {
+      console.log('🔄 OptimizedDiamondCard - vision360.html detected for', diamond.stockNumber);
+      return true;
+    }
+    
+    // For other URLs, be more conservative - only treat as 360° if explicitly indicated
+    const has360 = imageUrl && (
+      imageUrl.includes('360') || 
+      imageUrl.includes('3d') || 
+      imageUrl.includes('rotate') ||
+      imageUrl.includes('gem360')
+    );
     
     console.log('🔄 OptimizedDiamondCard - 360° check for', diamond.stockNumber, ':', has360, { 
       gem360Url, 
       imageUrl,
-      hasVision360: imageUrl?.includes('vision360.html'),
-      hasDiamondsImages: imageUrl?.includes('diamonds-images')
+      hasVision360: imageUrl?.includes('vision360.html')
     });
-    return has360;
+    return !!has360;
   }, [diamond.gem360Url, diamond.stockNumber, getImageUrl]);
 
   const handleLike = useCallback(() => {
@@ -94,8 +114,9 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
   }, [impactOccurred]);
 
   const handleImageLoad = useCallback(() => {
-    console.log('✅ OptimizedDiamondCard - Image loaded for', diamond.stockNumber);
+    console.log('✅ OptimizedDiamondCard - Image loaded successfully for', diamond.stockNumber);
     setImageLoaded(true);
+    setImageError(false);
   }, [diamond.stockNumber]);
 
   const handleImageError = useCallback(() => {
@@ -111,11 +132,10 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
   }).format(diamond.price);
 
   const imageUrl = getImageUrl();
-  const hasImage = imageUrl && imageUrl.trim();
+  const hasImage = !!imageUrl;
   const has360 = is360Image();
 
-  console.log('🔍 OptimizedDiamondCard - Rendering diamond:', {
-    stockNumber: diamond.stockNumber,
+  console.log('🔍 OptimizedDiamondCard - Final render state for', diamond.stockNumber, ':', {
     hasImage,
     has360,
     imageUrl,
@@ -134,17 +154,17 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     >
       {/* Image Container */}
       <div className="relative aspect-square bg-muted overflow-hidden">
-        {/* Loading skeleton */}
+        {/* Loading skeleton - show while image is loading */}
         {!imageLoaded && hasImage && isVisible && (
-          <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10 animate-pulse">
+          <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10 animate-pulse z-10">
             <div className="flex items-center justify-center h-full">
               <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
             </div>
           </div>
         )}
         
-        {/* 360° / 3D Image Display - Enhanced for vision360.html */}
-        {has360 && (diamond.gem360Url || hasImage) && isVisible ? (
+        {/* 360° Viewer for special URLs */}
+        {has360 && (diamond.gem360Url || (imageUrl && imageUrl.includes('vision360.html'))) && isVisible ? (
           <div className="relative w-full h-full">
             <Gem360Viewer 
               gem360Url={diamond.gem360Url || imageUrl!}
@@ -153,7 +173,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
             />
           </div>
         ) : hasImage && !imageError && isVisible ? (
-          /* Regular Image Display */
+          /* Regular Image Display - including my360.sela JPG images */
           <img 
             ref={imgRef}
             src={imageUrl} 
@@ -165,6 +185,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
             onError={handleImageError}
             loading="lazy"
             decoding="async"
+            crossOrigin="anonymous"
           />
         ) : (
           /* No Image Placeholder */
@@ -174,6 +195,9 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
                 <Gem className="h-8 w-8 text-primary/60" />
               </div>
               <p className="text-xs text-muted-foreground">No Image</p>
+              {imageError && (
+                <p className="text-xs text-red-500 mt-1">Failed to load</p>
+              )}
             </div>
           </div>
         )}
@@ -187,7 +211,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
           </Badge>
         </div>
 
-        {/* Enhanced 360° Badge for 3D images */}
+        {/* 360° Badge for rotational content */}
         {has360 && (
           <div className="absolute top-2 right-12">
             <Badge className="text-xs font-medium border-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg">
