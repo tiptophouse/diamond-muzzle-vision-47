@@ -3,6 +3,7 @@ import { useToast } from '@/hooks/use-toast';
 import { api, apiEndpoints } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
+import { roundToInteger } from '@/utils/numberUtils';
 
 export function useUpdateDiamond(onSuccess?: () => void) {
   const { toast } = useToast();
@@ -10,6 +11,7 @@ export function useUpdateDiamond(onSuccess?: () => void) {
 
   const updateDiamond = async (diamondId: string, data: DiamondFormData) => {
     if (!user?.id) {
+      console.error('❌ UPDATE: User not authenticated');
       toast({
         variant: "destructive",
         title: "Error",
@@ -26,8 +28,9 @@ export function useUpdateDiamond(onSuccess?: () => void) {
       const fastApiDiamondId = /^\d+$/.test(diamondId) ? diamondId : diamondId;
       const endpoint = apiEndpoints.updateDiamond(fastApiDiamondId, user.id);
       console.log('📝 UPDATE: Using endpoint:', endpoint);
+      console.log('📝 UPDATE: User ID:', user.id, 'type:', typeof user.id);
       
-      // Prepare update data according to FastAPI schema - use correct field names
+      // Prepare update data according to FastAPI schema - ensure all numbers are integers
       const updateData = {
         stock: data.stockNumber,
         shape: data.shape?.toLowerCase(),
@@ -38,7 +41,7 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         polish: data.polish?.toUpperCase(),
         symmetry: data.symmetry?.toUpperCase(),
         fluorescence: data.fluorescence?.toUpperCase(),
-        price_per_carat: data.carat > 0 ? Math.round(Number(data.price) / Number(data.carat)) : Math.round(Number(data.price)),
+        price_per_carat: data.carat > 0 ? roundToInteger(Number(data.price) / Number(data.carat)) : roundToInteger(Number(data.price)),
         status: data.status,
         store_visible: data.storeVisible,
         picture: data.picture,
@@ -55,24 +58,27 @@ export function useUpdateDiamond(onSuccess?: () => void) {
         gridle: data.gridle,
         culet: data.culet?.toUpperCase(),
         rapnet: data.rapnet ? Number(data.rapnet) : null,
+        // Add the total price field that FastAPI expects
+        price: roundToInteger(Number(data.price)),
       };
 
       // Remove null/undefined values
       Object.keys(updateData).forEach(key => {
-        if (updateData[key] === null || updateData[key] === undefined) {
+        if (updateData[key] === null || updateData[key] === undefined || updateData[key] === '') {
           delete updateData[key];
         }
       });
 
-      console.log('📝 UPDATE: Sending data to FastAPI:', updateData);
+      console.log('📝 UPDATE: Sending data to FastAPI (all integers):', updateData);
       
       const response = await api.put(endpoint, updateData);
       
       if (response.error) {
+        console.error('❌ UPDATE: FastAPI returned error:', response.error);
         throw new Error(response.error);
       }
 
-      console.log('✅ UPDATE: FastAPI response:', response.data);
+      console.log('✅ UPDATE: FastAPI response successful:', response.data);
 
       toast({
         title: "✅ Success",

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo, memo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
@@ -8,7 +9,7 @@ import { MobilePullToRefresh } from "@/components/mobile/MobilePullToRefresh";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Filter, SortAsc, AlertCircle, Search } from "lucide-react";
+import { Plus, Filter, SortAsc, AlertCircle, Search, Sparkles } from "lucide-react";
 import { toast } from 'sonner';
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { TelegramStoreFilters } from "@/components/store/TelegramStoreFilters";
@@ -20,12 +21,12 @@ const tg = getTelegramWebApp();
 const ITEMS_PER_PAGE = 6; // Reduced for better performance
 const SKELETON_COUNT = 3; // Fewer skeletons
 
-function StorePage() {
+function CatalogPage() {
   const { diamonds, loading, error, refetch } = useStoreData();
   const { filters, filteredDiamonds, updateFilter, clearFilters } = useStoreFilters(diamonds || []);
   const [showFilters, setShowFilters] = useState(false);
   const [showSort, setShowSort] = useState(false);
-  const [sortBy, setSortBy] = useState("most-popular");
+  const [sortBy, setSortBy] = useState("media-priority");
   const [currentPage, setCurrentPage] = useState(1);
   const [searchParams] = useSearchParams();
   const stockNumber = searchParams.get('stock');
@@ -38,7 +39,6 @@ function StorePage() {
   // Telegram memory optimization
   useEffect(() => {
     if (tg) {
-      // Clear any cached data when component mounts
       try {
         if ('caches' in window) {
           caches.keys().then(names => {
@@ -55,48 +55,52 @@ function StorePage() {
     }
   }, []);
 
-  // Enhanced image priority detection for better 360° and image sorting
-  const getImagePriority = useCallback((diamond: Diamond) => {
-    // Priority 0: 360° / 3D images (highest priority)
+  // Enhanced media priority detection - CRITICAL PRIORITY ORDER: 3D > Image > Info Only
+  const getMediaPriority = useCallback((diamond: Diamond) => {
+    console.log('🎯 CATALOG: Checking media priority for', diamond.stockNumber, {
+      gem360Url: diamond.gem360Url,
+      imageUrl: diamond.imageUrl,
+      price: diamond.price
+    });
+
+    // Priority 0: 3D/360° content (HIGHEST PRIORITY)
     if (diamond.gem360Url && diamond.gem360Url.trim()) {
-      return 0;
+      // Check for various 360° formats
+      if (diamond.gem360Url.includes('gem360') || 
+          diamond.gem360Url.includes('360') || 
+          diamond.gem360Url.includes('vision360.html') ||
+          diamond.gem360Url.includes('my360.sela') ||
+          diamond.gem360Url.includes('3d')) {
+        console.log('✨ CATALOG: Priority 0 - 3D/360° detected for', diamond.stockNumber);
+        return 0;
+      }
     }
     
-    // Check for 360° indicators in imageUrl or picture fields
-    const imageUrl = diamond.imageUrl || diamond.picture || '';
-    if (imageUrl && (
-      imageUrl.includes('360') || 
-      imageUrl.includes('3d') || 
-      imageUrl.includes('rotate') ||
-      imageUrl.includes('my360.sela') || // Your specific 360° provider
-      imageUrl.includes('gem360')
-    )) {
-      return 0; // Treat as 360° image
-    }
-    
-    // Priority 1: Regular images (second priority)
-    if (imageUrl && imageUrl.trim()) {
+    // Priority 1: Regular images (SECOND PRIORITY)
+    if (diamond.imageUrl && diamond.imageUrl.trim() && diamond.imageUrl !== 'default') {
+      console.log('🖼️ CATALOG: Priority 1 - Image detected for', diamond.stockNumber);
       return 1;
     }
     
-    // Priority 2: No images (lowest priority)
+    // Priority 2: Info only (LOWEST PRIORITY)
+    console.log('📄 CATALOG: Priority 2 - Info only for', diamond.stockNumber);
     return 2;
   }, []);
 
-  // Memoized sorted diamonds with enhanced image preference
+  // Memoized sorted diamonds with STRICT media priority ordering
   const sortedDiamonds = useMemo(() => {
     const diamonds = [...filteredDiamonds];
     
     diamonds.sort((a, b) => {
-      const priorityA = getImagePriority(a);
-      const priorityB = getImagePriority(b);
+      const priorityA = getMediaPriority(a);
+      const priorityB = getMediaPriority(b);
       
-      // First sort by image priority: 360°/3D > regular image > no image
+      // FIRST: Always sort by media priority (3D > Image > Info Only)
       if (priorityA !== priorityB) {
         return priorityA - priorityB;
       }
       
-      // If same image priority, sort by user selection
+      // SECOND: If same media priority, sort by user selection
       switch (sortBy) {
         case "price-low-high":
           return a.price - b.price;
@@ -108,21 +112,28 @@ function StorePage() {
           return b.carat - a.carat;
         case "newest":
           return a.stockNumber.localeCompare(b.stockNumber);
-        case "most-popular":
+        case "media-priority":
         default:
-          return 0;
+          // For same priority, sort by stock number
+          return a.stockNumber.localeCompare(b.stockNumber);
       }
     });
     
-    console.log('🔍 StorePage - Diamond sorting results:', {
+    console.log('🔍 CATALOG: Media priority sorting results:', {
       total: diamonds.length,
-      with360Images: diamonds.filter(d => getImagePriority(d) === 0).length,
-      withRegularImages: diamonds.filter(d => getImagePriority(d) === 1).length,
-      withoutImages: diamonds.filter(d => getImagePriority(d) === 2).length
+      with3D: diamonds.filter(d => getMediaPriority(d) === 0).length,
+      withImages: diamonds.filter(d => getMediaPriority(d) === 1).length,
+      infoOnly: diamonds.filter(d => getMediaPriority(d) === 2).length,
+      first5Diamonds: diamonds.slice(0, 5).map(d => ({
+        stock: d.stockNumber,
+        priority: getMediaPriority(d),
+        has3D: !!(d.gem360Url && d.gem360Url.trim()),
+        hasImage: !!(d.imageUrl && d.imageUrl.trim() && d.imageUrl !== 'default')
+      }))
     });
     
     return diamonds;
-  }, [filteredDiamonds, sortBy, getImagePriority]);
+  }, [filteredDiamonds, sortBy, getMediaPriority]);
 
   // Paginated diamonds for performance
   const paginatedDiamonds = useMemo(() => {
@@ -174,7 +185,7 @@ function StorePage() {
     try {
       setCurrentPage(1); // Reset pagination
       await refetch();
-      toast.success('Store refreshed!');
+      toast.success('Catalog refreshed!');
     } catch (error) {
       toast.error('Failed to refresh');
       throw error;
@@ -218,8 +229,16 @@ function StorePage() {
     [filters]
   );
 
-  // Render store content
-  const renderStoreContent = useMemo(() => {
+  // Get media type counts for header display
+  const mediaCounts = useMemo(() => {
+    const with3D = sortedDiamonds.filter(d => getMediaPriority(d) === 0).length;
+    const withImages = sortedDiamonds.filter(d => getMediaPriority(d) === 1).length;
+    const infoOnly = sortedDiamonds.filter(d => getMediaPriority(d) === 2).length;
+    return { with3D, withImages, infoOnly };
+  }, [sortedDiamonds, getMediaPriority]);
+
+  // Render catalog content
+  const renderCatalogContent = useMemo(() => {
     if (loading && currentPage === 1) {
       return (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4">
@@ -235,7 +254,7 @@ function StorePage() {
         <div className="flex items-center justify-center py-8 px-4">
           <div className="text-center max-w-md">
             <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
-            <h3 className="text-base font-medium text-foreground mb-2">Error Loading Diamonds</h3>
+            <h3 className="text-base font-medium text-foreground mb-2">Error Loading Catalog</h3>
             <p className="text-sm text-muted-foreground">{error}</p>
           </div>
         </div>
@@ -304,10 +323,33 @@ function StorePage() {
           <div className="px-4 py-3">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-lg font-semibold text-foreground">Diamonds</h1>
-                <p className="text-xs text-muted-foreground">
-                  {finalFilteredDiamonds.length} available • Sorted by images first
-                </p>
+                <h1 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  Diamond Catalog
+                </h1>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>{finalFilteredDiamonds.length} available • Priority: 3D → Image → Info</p>
+                  <div className="flex items-center gap-3 text-xs">
+                    {mediaCounts.with3D > 0 && (
+                      <span className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                        {mediaCounts.with3D} with 3D
+                      </span>
+                    )}
+                    {mediaCounts.withImages > 0 && (
+                      <span className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        {mediaCounts.withImages} with images
+                      </span>
+                    )}
+                    {mediaCounts.infoOnly > 0 && (
+                      <span className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                        {mediaCounts.infoOnly} info only
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -340,7 +382,7 @@ function StorePage() {
 
         {/* Diamond Grid */}
         <div className="py-3">
-          {renderStoreContent}
+          {renderCatalogContent}
         </div>
 
         {/* Floating Action Button */}
@@ -393,4 +435,4 @@ function StorePage() {
   );
 }
 
-export default StorePage;
+export default CatalogPage;

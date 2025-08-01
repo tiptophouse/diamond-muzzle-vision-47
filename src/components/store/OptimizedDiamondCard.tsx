@@ -1,13 +1,14 @@
 
 import { useState, memo, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, Eye, MessageCircle, Gem } from "lucide-react";
+import { Heart, Eye, MessageCircle, Gem, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { toast } from 'sonner';
 import { Gem360Viewer } from "./Gem360Viewer";
+import { formatCurrency } from "@/utils/numberUtils";
 
 interface OptimizedDiamondCardProps {
   diamond: Diamond;
@@ -44,16 +45,17 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     return () => observer.disconnect();
   }, []);
 
-  // Simple and direct image/360° detection
-  const hasImage = !!(diamond.imageUrl && diamond.imageUrl !== 'default');
+  // CRITICAL: Media detection with strict priority (3D > Image > Info Only)
   const has360 = !!(diamond.gem360Url && diamond.gem360Url.includes('.html'));
+  const hasImage = !!(diamond.imageUrl && diamond.imageUrl !== 'default');
   
   console.log('🎯 CARD RENDER for', diamond.stockNumber, ':', {
-    hasImage,
     has360,
+    hasImage,
     imageUrl: diamond.imageUrl,
     gem360Url: diamond.gem360Url,
-    isVisible
+    isVisible,
+    price: diamond.price
   });
 
   const handleLike = useCallback(() => {
@@ -69,8 +71,43 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
 
   const handleContact = useCallback(() => {
     impactOccurred('light');
-    toast.success("Opening contact options...");
-  }, [impactOccurred]);
+    
+    // Create deep link message for Telegram sharing
+    const message = `💎 Interested in this diamond:\n\n` +
+      `Stock: ${diamond.stockNumber}\n` +
+      `${diamond.carat} ct ${diamond.shape}\n` +
+      `${diamond.color} • ${diamond.clarity} • ${diamond.cut}\n` +
+      `${diamond.price > 0 ? formatCurrency(diamond.price) : 'Contact for Price'}\n\n` +
+      `View: ${window.location.origin}/catalog?stock=${diamond.stockNumber}`;
+    
+    const encodedMessage = encodeURIComponent(message);
+    const telegramUrl = `https://t.me/share/url?url=&text=${encodedMessage}`;
+    
+    try {
+      window.open(telegramUrl, '_blank');
+      toast.success("Opening Telegram to contact...");
+    } catch (error) {
+      console.error('Failed to open Telegram:', error);
+      toast.error("Failed to open contact options");
+    }
+  }, [impactOccurred, diamond]);
+
+  const handleShare = useCallback(() => {
+    impactOccurred('medium');
+    
+    const shareUrl = `${window.location.origin}/catalog?stock=${diamond.stockNumber}`;
+    const shareText = `💎 Check out this ${diamond.carat} ct ${diamond.shape} diamond!\n${diamond.color} • ${diamond.clarity} • ${diamond.cut}\n${diamond.price > 0 ? formatCurrency(diamond.price) : 'Contact for Price'}`;
+    
+    const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
+    
+    try {
+      window.open(telegramShareUrl, '_blank');
+      toast.success("Share link opened in Telegram");
+    } catch (error) {
+      console.error('Failed to share:', error);
+      toast.error("Failed to share");
+    }
+  }, [impactOccurred, diamond]);
 
   const handleImageLoad = useCallback(() => {
     console.log('✅ IMAGE LOADED for', diamond.stockNumber);
@@ -85,23 +122,20 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     setImageLoaded(true);
   }, [diamond.stockNumber]);
 
-  const formattedPrice = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-  }).format(diamond.price);
+  // Price display logic - show "Contact for Price" when price is 0
+  const priceDisplay = diamond.price > 0 ? formatCurrency(diamond.price) : null;
 
   return (
     <div 
       ref={cardRef}
       id={`diamond-${diamond.stockNumber}`} 
-      className="group relative bg-card rounded-xl overflow-hidden transition-all duration-200 border border-border/50 hover:border-border"
+      className="group relative bg-card rounded-xl overflow-hidden transition-all duration-200 border border-border/50 hover:border-border hover:shadow-md"
       style={{ animationDelay: `${Math.min(index * 30, 200)}ms` }}
     >
-      {/* Image Container */}
+      {/* Image Container with STRICT PRIORITY: 3D > Image > Info Only */}
       <div className="relative aspect-square bg-muted overflow-hidden">
         {/* Loading skeleton */}
-        {!imageLoaded && (hasImage || has360) && isVisible && (
+        {!imageLoaded && (has360 || hasImage) && isVisible && (
           <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10 animate-pulse z-10">
             <div className="flex items-center justify-center h-full">
               <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -109,7 +143,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
           </div>
         )}
         
-        {/* 360° Viewer */}
+        {/* PRIORITY 1: 360° Viewer (HIGHEST PRIORITY) */}
         {has360 && isVisible ? (
           <div className="relative w-full h-full">
             <Gem360Viewer 
@@ -119,7 +153,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
             />
           </div>
         ) : hasImage && isVisible ? (
-          /* Regular Image Display */
+          /* PRIORITY 2: Regular Image Display (SECOND PRIORITY) */
           <img 
             ref={imgRef}
             src={diamond.imageUrl} 
@@ -135,15 +169,15 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
             referrerPolicy="no-referrer"
           />
         ) : (
-          /* No Image Placeholder */
+          /* PRIORITY 3: Info Only Placeholder (LOWEST PRIORITY) */
           <div className="flex items-center justify-center h-full bg-gradient-to-br from-muted to-muted-foreground/10">
             <div className="text-center">
               <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/40 rounded-full flex items-center justify-center mx-auto mb-2">
                 <Gem className="h-8 w-8 text-primary/60" />
               </div>
-              <p className="text-xs text-muted-foreground">No Image</p>
+              <p className="text-xs text-muted-foreground">Info Only</p>
               {imageError && (
-                <p className="text-xs text-red-500 mt-1">Failed to load</p>
+                <p className="text-xs text-red-500 mt-1">Image failed</p>
               )}
             </div>
           </div>
@@ -151,33 +185,44 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
         
         {/* Status Badge */}
         <div className="absolute top-2 left-2">
-          <Badge 
-            className="text-xs font-medium border-0 bg-green-500/90 text-white"
-          >
+          <Badge className="text-xs font-medium border-0 bg-green-500/90 text-white">
             Available
           </Badge>
         </div>
 
-        {/* 360° Badge */}
-        {has360 && (
-          <div className="absolute top-2 right-12">
+        {/* Media Type Badges */}
+        <div className="absolute top-2 right-12 flex gap-1">
+          {has360 && (
             <Badge className="text-xs font-medium border-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg">
-              ✨ 360°
+              ✨ 3D
             </Badge>
-          </div>
-        )}
+          )}
+          {hasImage && !has360 && (
+            <Badge className="text-xs font-medium border-0 bg-blue-500/90 text-white">
+              📷 IMG
+            </Badge>
+          )}
+        </div>
 
-        {/* Heart Icon */}
-        <button
-          onClick={handleLike}
-          className="absolute top-2 right-2 p-1.5 bg-background/80 backdrop-blur-sm rounded-full transition-all duration-200 hover:bg-background/90 hover:scale-110"
-        >
-          <Heart 
-            className={`h-3 w-3 transition-colors ${
-              isLiked ? 'text-red-500 fill-red-500' : 'text-muted-foreground'
-            }`} 
-          />
-        </button>
+        {/* Action Icons */}
+        <div className="absolute top-2 right-2 flex gap-1">
+          <button
+            onClick={handleShare}
+            className="p-1 bg-background/80 backdrop-blur-sm rounded-full transition-all duration-200 hover:bg-background/90 hover:scale-110"
+          >
+            <Share2 className="h-3 w-3 text-muted-foreground hover:text-primary" />
+          </button>
+          <button
+            onClick={handleLike}
+            className="p-1 bg-background/80 backdrop-blur-sm rounded-full transition-all duration-200 hover:bg-background/90 hover:scale-110"
+          >
+            <Heart 
+              className={`h-3 w-3 transition-colors ${
+                isLiked ? 'text-red-500 fill-red-500' : 'text-muted-foreground'
+              }`} 
+            />
+          </button>
+        </div>
       </div>
 
       {/* Content */}
@@ -192,9 +237,17 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
               {diamond.stockNumber}
             </p>
           </div>
-          <p className="text-sm font-bold text-foreground ml-2">
-            {formattedPrice}
-          </p>
+          <div className="ml-2 text-right">
+            {priceDisplay ? (
+              <p className="text-sm font-bold text-foreground">
+                {priceDisplay}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">
+                Contact for Price
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Specs */}

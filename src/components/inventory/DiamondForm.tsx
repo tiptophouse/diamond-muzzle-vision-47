@@ -10,6 +10,7 @@ import { BusinessInfoSection } from '../upload/form/BusinessInfoSection';
 import { ImageUploadSection } from '../upload/form/ImageUploadSection';
 import { DiamondFormActions } from './form/DiamondFormActions';
 import { Diamond } from './InventoryTable';
+import { roundToInteger } from '@/utils/numberUtils';
 
 interface DiamondFormProps {
   diamond?: Diamond;
@@ -27,10 +28,9 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       color: diamond.color || 'G',
       clarity: diamond.clarity || 'VS1',
       cut: diamond.cut || 'Excellent',
-      price: diamond.price || 0,
+      price: roundToInteger(diamond.price || 0),
       status: diamond.status || 'Available',
       picture: diamond.imageUrl || '',
-      // Map additional fields from diamond object if they exist
       certificateNumber: String((diamond as any).certificateNumber || ''),
       lab: (diamond as any).lab || 'GIA',
       fluorescence: (diamond as any).fluorescence || 'None',
@@ -61,7 +61,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
 
   React.useEffect(() => {
     if (diamond && diamond.id) {
-      console.log('Resetting form with diamond data:', diamond);
+      console.log('🔄 DiamondForm: Resetting form with diamond data:', diamond);
       reset({
         stockNumber: diamond.stockNumber || '',
         shape: diamond.shape || 'Round',
@@ -69,7 +69,7 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
         color: diamond.color || 'G',
         clarity: diamond.clarity || 'VS1',
         cut: diamond.cut || 'Excellent',
-        price: diamond.price || 0,
+        price: roundToInteger(diamond.price || 0),
         status: diamond.status || 'Available',
         picture: diamond.imageUrl || '',
         certificateNumber: String((diamond as any).certificateNumber || ''),
@@ -85,21 +85,21 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
   }, [diamond?.id, reset]);
 
   const handleFormSubmit = (data: DiamondFormData) => {
-    console.log('Form submitted with data:', data);
+    console.log('📝 DiamondForm: Form submitted with data:', data);
     
     // Validate required fields
     if (!data.stockNumber || data.stockNumber.trim() === '') {
-      console.error('Stock number is required');
+      console.error('❌ DiamondForm: Stock number is required');
       return;
     }
     
     if (!data.carat || data.carat <= 0) {
-      console.error('Valid carat weight is required');
+      console.error('❌ DiamondForm: Valid carat weight is required');
       return;
     }
     
-    if (!data.price || data.price <= 0) {
-      console.error('Valid price is required');
+    if (data.price < 0) {
+      console.error('❌ DiamondForm: Price cannot be negative');
       return;
     }
     
@@ -107,14 +107,13 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       ...data,
       stockNumber: data.stockNumber.trim(),
       carat: Number(data.carat),
-      price: Math.round(Number(data.price)),
+      price: roundToInteger(Number(data.price)),
       shape: data.shape || 'Round',
       color: data.color || 'G',
       clarity: data.clarity || 'VS1',
       cut: data.cut || 'Excellent',
       status: data.status || 'Available',
       picture: data.picture?.trim() || '',
-      // Handle certificate number safely
       certificateNumber: data.certificateNumber ? String(data.certificateNumber).trim() : '',
       certificateUrl: data.certificateUrl?.trim() || '',
       certificateComment: data.certificateComment?.trim() || '',
@@ -130,12 +129,12 @@ export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: 
       symmetry: data.symmetry || 'Excellent',
       gridle: data.gridle || 'Medium',
       culet: data.culet || 'None',
-      pricePerCarat: data.pricePerCarat ? Math.round(Number(data.pricePerCarat)) : undefined,
+      pricePerCarat: data.pricePerCarat ? roundToInteger(Number(data.pricePerCarat)) : undefined,
       rapnet: data.rapnet ? Number(data.rapnet) : undefined,
       storeVisible: data.storeVisible || false,
     };
     
-    console.log('Formatted form data:', formattedData);
+    console.log('✅ DiamondForm: Formatted form data (all integers):', formattedData);
     onSubmit(formattedData);
   };
 
