@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo, memo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
@@ -56,52 +55,74 @@ function StorePage() {
     }
   }, []);
 
-  // Memoized sorted diamonds with image preference
+  // Enhanced image priority detection for better 360° and image sorting
+  const getImagePriority = useCallback((diamond: Diamond) => {
+    // Priority 0: 360° / 3D images (highest priority)
+    if (diamond.gem360Url && diamond.gem360Url.trim()) {
+      return 0;
+    }
+    
+    // Check for 360° indicators in imageUrl or picture fields
+    const imageUrl = diamond.imageUrl || diamond.picture || '';
+    if (imageUrl && (
+      imageUrl.includes('360') || 
+      imageUrl.includes('3d') || 
+      imageUrl.includes('rotate') ||
+      imageUrl.includes('my360.sela') || // Your specific 360° provider
+      imageUrl.includes('gem360')
+    )) {
+      return 0; // Treat as 360° image
+    }
+    
+    // Priority 1: Regular images (second priority)
+    if (imageUrl && imageUrl.trim()) {
+      return 1;
+    }
+    
+    // Priority 2: No images (lowest priority)
+    return 2;
+  }, []);
+
+  // Memoized sorted diamonds with enhanced image preference
   const sortedDiamonds = useMemo(() => {
     const diamonds = [...filteredDiamonds];
-    
-    // First sort by image preference: 3D/360° > regular image > no image
-    const getImagePriority = (diamond: Diamond) => {
-      // Check for 3D/360° images first
-      if (diamond.gem360Url && diamond.gem360Url.trim()) return 0;
-      
-      // Check for regular images (both imageUrl and picture fields)
-      const hasImage = (diamond.imageUrl && diamond.imageUrl.trim()) || 
-                      (diamond.picture && diamond.picture.trim());
-      if (hasImage) return 1;
-      
-      // No images
-      return 2;
-    };
     
     diamonds.sort((a, b) => {
       const priorityA = getImagePriority(a);
       const priorityB = getImagePriority(b);
       
-      // If same image priority, sort by user selection
-      if (priorityA === priorityB) {
-        switch (sortBy) {
-          case "price-low-high":
-            return a.price - b.price;
-          case "price-high-low":
-            return b.price - a.price;
-          case "carat-low-high":
-            return a.carat - b.carat;
-          case "carat-high-low":
-            return b.carat - a.carat;
-          case "newest":
-            return a.stockNumber.localeCompare(b.stockNumber);
-          case "most-popular":
-          default:
-            return 0;
-        }
+      // First sort by image priority: 360°/3D > regular image > no image
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
       }
       
-      return priorityA - priorityB;
+      // If same image priority, sort by user selection
+      switch (sortBy) {
+        case "price-low-high":
+          return a.price - b.price;
+        case "price-high-low":
+          return b.price - a.price;
+        case "carat-low-high":
+          return a.carat - b.carat;
+        case "carat-high-low":
+          return b.carat - a.carat;
+        case "newest":
+          return a.stockNumber.localeCompare(b.stockNumber);
+        case "most-popular":
+        default:
+          return 0;
+      }
+    });
+    
+    console.log('🔍 StorePage - Diamond sorting results:', {
+      total: diamonds.length,
+      with360Images: diamonds.filter(d => getImagePriority(d) === 0).length,
+      withRegularImages: diamonds.filter(d => getImagePriority(d) === 1).length,
+      withoutImages: diamonds.filter(d => getImagePriority(d) === 2).length
     });
     
     return diamonds;
-  }, [filteredDiamonds, sortBy]);
+  }, [filteredDiamonds, sortBy, getImagePriority]);
 
   // Paginated diamonds for performance
   const paginatedDiamonds = useMemo(() => {
@@ -285,7 +306,7 @@ function StorePage() {
               <div>
                 <h1 className="text-lg font-semibold text-foreground">Diamonds</h1>
                 <p className="text-xs text-muted-foreground">
-                  {finalFilteredDiamonds.length} available
+                  {finalFilteredDiamonds.length} available • Sorted by images first
                 </p>
               </div>
               <div className="flex items-center gap-2">
