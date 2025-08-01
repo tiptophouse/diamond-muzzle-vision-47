@@ -8,7 +8,7 @@ import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
 import Index from './pages/Index';
 import Dashboard from './pages/Dashboard';
 import InventoryPage from './pages/InventoryPage';
-import StorePage from './pages/StorePage';
+import CatalogPage from './pages/CatalogPage';
 import UploadPage from './pages/UploadPage';
 import UploadSingleStonePage from './pages/UploadSingleStonePage';
 import InsightsPage from './pages/InsightsPage';
@@ -47,7 +47,8 @@ function App() {
                   <Route path="/" element={<Index />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/inventory" element={<InventoryPage />} />
-                  <Route path="/store" element={<StorePage />} />
+                  <Route path="/catalog" element={<CatalogPage />} />
+                  <Route path="/store" element={<CatalogPage />} />
                   <Route path="/upload" element={<UploadPage />} />
                   <Route path="/upload/bulk" element={<BulkUploadPage />} />
                   <Route path="/upload-single-stone" element={<UploadSingleStonePage />} />
