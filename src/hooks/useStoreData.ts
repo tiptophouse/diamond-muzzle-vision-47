@@ -32,9 +32,36 @@ export function useStoreData() {
           gem360Url = item.certificateUrl;
         }
 
-        return {
+        console.log('🔍 STORE DATA: Processing item:', item.id, {
+          stock: item.stock,
+          picture: item.picture,
+          Image: item.Image,
+          'Video link': item['Video link'],
+          imageUrl: item.imageUrl
+        });
+
+        // Prioritize Image field from CSV, then picture, then imageUrl
+        let finalImageUrl = undefined;
+        if (item.Image && item.Image !== 'default' && !item.Image.includes('.html')) {
+          finalImageUrl = item.Image;
+        } else if (item.picture && item.picture !== 'default' && !item.picture.includes('.html')) {
+          finalImageUrl = item.picture;
+        } else if (item.imageUrl && item.imageUrl !== 'default' && !item.imageUrl.includes('.html')) {
+          finalImageUrl = item.imageUrl;
+        }
+
+        // Handle 360° URLs
+        let final360Url = gem360Url;
+        if (!final360Url && item['Video link'] && item['Video link'].includes('.html')) {
+          final360Url = item['Video link'];
+        }
+        if (!final360Url && item.Image && item.Image.includes('.html')) {
+          final360Url = item.Image;
+        }
+
+        const result = {
           id: String(item.id),
-          stockNumber: String(item.stock_number || item.stockNumber || 'UNKNOWN'),
+          stockNumber: String(item.stock || item.stock_number || item.stockNumber || 'UNKNOWN'),
           shape: item.shape,
           carat: Number(item.weight || item.carat) || 0,
           color: item.color,
@@ -42,13 +69,29 @@ export function useStoreData() {
           cut: item.cut || 'Excellent',
           price: Number(item.price_per_carat ? item.price_per_carat * (item.weight || item.carat) : item.price) || 0,
           status: item.status || 'Available',
-          imageUrl: item.picture || item.imageUrl || undefined,
+          imageUrl: finalImageUrl,
+          Image: item.Image,
+          picture: item.picture,
+          image: item.image,
+          'Video link': item['Video link'],
+          videoLink: item.videoLink,
+          gem360Url: final360Url,
           store_visible: item.store_visible !== false,
           certificateNumber: item.certificate_number || undefined,
           lab: item.lab || undefined,
-          gem360Url: gem360Url || undefined,
           certificateUrl: item.certificate_url || item.certificateUrl || undefined
         };
+
+        console.log('🔍 STORE DATA: Final result:', {
+          id: result.id,
+          stockNumber: result.stockNumber,
+          imageUrl: result.imageUrl,
+          gem360Url: result.gem360Url,
+          Image: result.Image,
+          'Video link': result['Video link']
+        });
+
+        return result;
       })
       .filter(diamond => diamond.store_visible && diamond.status === 'Available');
   }, []);

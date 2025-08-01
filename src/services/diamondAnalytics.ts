@@ -11,6 +11,13 @@ interface DiamondData {
   owners?: number[];
   owner_id?: number;
   status?: string;
+  picture?: string;
+  Image?: string;
+  image?: string;
+  imageUrl?: string;
+  'Video link'?: string;
+  videoLink?: string;
+  gem360Url?: string;
 }
 
 interface DashboardStats {
@@ -161,6 +168,15 @@ export function convertDiamondsToInventoryFormat(diamonds: DiamondData[], curren
       cut: 'Excellent', // Default since not in your data
       price: totalPrice,
       status: diamond.status || 'Available',
+      store_visible: true,
+      // Map image fields from CSV
+      Image: diamond.Image,
+      imageUrl: diamond.picture !== 'default' ? diamond.picture : diamond.Image,
+      picture: diamond.picture,
+      image: diamond.image,
+      'Video link': diamond['Video link'],
+      videoLink: diamond.videoLink,
+      gem360Url: diamond.gem360Url,
     };
     
     console.log('🔄 CONVERT: Converted diamond:', {
