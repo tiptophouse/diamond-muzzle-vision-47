@@ -1,3 +1,4 @@
+
 import { useState, memo, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, Eye, MessageCircle, Gem } from "lucide-react";
@@ -43,48 +44,77 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     return () => observer.disconnect();
   }, []);
 
-  // Enhanced image URL detection with better validation
-  const getImageUrl = useCallback(() => {
-    // Try multiple possible image fields in priority order
-    const possibleImageUrls = [
-      diamond.imageUrl,
-      diamond.picture,
-      diamond.Image,
-      diamond.image,
-    ];
-
-    console.log('🖼️ OptimizedDiamondCard - Image sources for', diamond.stockNumber, ':', {
+  // VERIFICATION LOGGING: Let me check what data we're getting
+  useEffect(() => {
+    console.log('🔍 DIAMOND CARD VERIFICATION for', diamond.stockNumber, ':', {
       imageUrl: diamond.imageUrl,
       picture: diamond.picture,
       Image: diamond.Image,
+      image: diamond.image,
+      'Video link': diamond['Video link'],
+      videoLink: diamond.videoLink,
+      gem360Url: diamond.gem360Url,
+      allFields: Object.keys(diamond)
+    });
+  }, [diamond]);
+
+  // Enhanced image URL detection with better validation and comprehensive logging
+  const getImageUrl = useCallback(() => {
+    console.log('🖼️ GETTING IMAGE URL for', diamond.stockNumber);
+    
+    // Try multiple possible image fields in priority order
+    const possibleImageUrls = [
+      diamond.Image,     // CSV Image field (highest priority)
+      diamond.imageUrl,  // Standard imageUrl field
+      diamond.picture,   // Alternative picture field
+      diamond.image,     // Lowercase image field
+    ];
+
+    console.log('🔍 IMAGE URL CANDIDATES:', {
+      stockNumber: diamond.stockNumber,
+      Image: diamond.Image,
+      imageUrl: diamond.imageUrl,
+      picture: diamond.picture,
       image: diamond.image
     });
 
-    for (const url of possibleImageUrls) {
+    for (let i = 0; i < possibleImageUrls.length; i++) {
+      const url = possibleImageUrls[i];
+      console.log(`🔍 CHECKING URL ${i + 1}:`, url);
+      
       if (url && typeof url === 'string' && url.trim()) {
         const cleanUrl = url.trim();
         
-        // Validate URL format - must start with http/https or //
+        // Validate URL format - must start with http/https or be a relative path
         if (cleanUrl.match(/^(https?:\/\/|\/\/)/)) {
           // Exclude 360° HTML files from regular image display
           if (!cleanUrl.includes('.html')) {
-            console.log('✅ OptimizedDiamondCard - Valid image URL found:', cleanUrl);
+            console.log('✅ VALID IMAGE URL FOUND:', cleanUrl);
             return cleanUrl;
+          } else {
+            console.log('⚠️ SKIPPING HTML URL (360° content):', cleanUrl);
           }
+        } else {
+          console.log('❌ INVALID URL FORMAT:', cleanUrl);
         }
+      } else {
+        console.log('❌ EMPTY/INVALID URL:', url);
       }
     }
     
-    console.log('❌ OptimizedDiamondCard - No valid image URL found for', diamond.stockNumber);
+    console.log('❌ NO VALID IMAGE URL FOUND for', diamond.stockNumber);
     return null;
-  }, [diamond.imageUrl, diamond.picture, diamond.Image, diamond.image, diamond.stockNumber]);
+  }, [diamond]);
 
-  // Get 360° URL - check Video link field and gem360Url
+  // Get 360° URL with logging
   const get360Url = useCallback(() => {
+    console.log('🔍 GETTING 360° URL for', diamond.stockNumber);
+    
     // Check gem360Url first
     if (diamond.gem360Url && diamond.gem360Url.trim()) {
       const url = diamond.gem360Url.trim();
       if (url.includes('.html')) {
+        console.log('✅ FOUND 360° URL in gem360Url:', url);
         return url;
       }
     }
@@ -94,18 +124,22 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     if (videoLink && typeof videoLink === 'string' && videoLink.trim()) {
       const cleanVideoUrl = videoLink.trim();
       if (cleanVideoUrl.includes('.html')) {
+        console.log('✅ FOUND 360° URL in Video link:', cleanVideoUrl);
         return cleanVideoUrl;
       }
     }
 
+    console.log('❌ NO 360° URL FOUND for', diamond.stockNumber);
     return null;
-  }, [diamond.gem360Url, diamond]);
+  }, [diamond]);
 
-  // Enhanced 360° detection - only for .html files
+  // Enhanced 360° detection
   const is360Image = useCallback(() => {
     const gem360Url = get360Url();
-    return !!gem360Url && gem360Url.includes('.html');
-  }, [get360Url]);
+    const result = !!gem360Url && gem360Url.includes('.html');
+    console.log('🔍 IS 360° IMAGE:', result, 'for', diamond.stockNumber);
+    return result;
+  }, [get360Url, diamond.stockNumber]);
 
   const handleLike = useCallback(() => {
     impactOccurred('light');
@@ -124,17 +158,18 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
   }, [impactOccurred]);
 
   const handleImageLoad = useCallback(() => {
-    console.log('✅ OptimizedDiamondCard - Image loaded successfully for', diamond.stockNumber);
+    console.log('✅ IMAGE LOADED SUCCESSFULLY for', diamond.stockNumber);
     setImageLoaded(true);
     setImageError(false);
   }, [diamond.stockNumber]);
 
   const handleImageError = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
     const target = event.currentTarget;
-    console.error('❌ OptimizedDiamondCard - Image failed to load:', {
-      stockNumber: diamond.stockNumber,
+    console.error('❌ IMAGE FAILED TO LOAD for', diamond.stockNumber, ':', {
       src: target.src,
-      error: event.type
+      error: event.type,
+      naturalWidth: target.naturalWidth,
+      naturalHeight: target.naturalHeight
     });
     setImageError(true);
     setImageLoaded(true);
@@ -151,14 +186,17 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
   const hasImage = !!imageUrl;
   const has360 = is360Image();
 
-  console.log('🔍 OptimizedDiamondCard - Final render state for', diamond.stockNumber, ':', {
+  // FINAL VERIFICATION LOG
+  console.log('🔍 FINAL RENDER STATE for', diamond.stockNumber, ':', {
     hasImage,
     has360,
     imageUrl,
     gem360Url,
     isVisible,
     imageLoaded,
-    imageError
+    imageError,
+    willShowImage: hasImage && !has360 && isVisible,
+    willShow360: has360 && isVisible
   });
 
   return (
@@ -216,8 +254,8 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
                 <p className="text-xs text-red-500 mt-1">Failed to load</p>
               )}
               {hasImage && (
-                <p className="text-xs text-muted-foreground mt-1 px-2">
-                  {imageUrl?.substring(0, 30)}...
+                <p className="text-xs text-muted-foreground mt-1 px-2 break-all">
+                  {imageUrl?.substring(0, 50)}...
                 </p>
               )}
             </div>

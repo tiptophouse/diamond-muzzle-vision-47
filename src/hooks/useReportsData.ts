@@ -1,103 +1,95 @@
 
-import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
-import { api, apiEndpoints } from "@/lib/api";
-import { convertDiamondsToInventoryFormat } from "@/services/diamondAnalytics";
-import { Diamond } from "@/components/inventory/InventoryTable";
-import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { useState, useEffect } from 'react';
+import { Diamond } from '@/components/inventory/InventoryTable';
+import { fetchInventoryData } from '@/services/inventoryDataService';
 
 export function useReportsData() {
-  const { user } = useTelegramAuth();
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
   const [allDiamonds, setAllDiamonds] = useState<Diamond[]>([]);
-  const [dataError, setDataError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchData = async () => {
-    if (!user?.id) {
-      console.log('⚠️ No authenticated user, skipping data fetch');
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setDataError(null);
-    
     try {
-      console.log('📊 Fetching inventory data for user:', user.id);
-      
-      const response = await api.get<any[]>(apiEndpoints.getAllStones(user.id));
-      
-      if (response.error) {
-        throw new Error(response.error);
-      }
-      
-      if (response.data) {
-        console.log('✅ Received diamonds from API:', response.data.length, 'total diamonds');
-        
-        const convertedDiamonds = convertDiamondsToInventoryFormat(response.data, user.id);
-        console.log('✅ Converted diamonds for display:', convertedDiamonds.length, 'diamonds for user', user.id);
-        
-        setAllDiamonds(convertedDiamonds);
-        setDiamonds(convertedDiamonds);
-        setRetryCount(0);
-        
-        if (convertedDiamonds.length > 0) {
-          const toastInstance = toast({
-            title: `${convertedDiamonds.length} diamonds`,
-            description: "Report data loaded",
-          });
-          
-          setTimeout(() => {
-            toastInstance.dismiss();
-          }, 3000);
-        }
-      } else {
-        console.warn('⚠️ No data received from API');
-        setAllDiamonds([]);
+      setLoading(true);
+      setError(null);
+
+      const result = await fetchInventoryData();
+
+      if (result.error) {
+        setError(result.error);
         setDiamonds([]);
+        setAllDiamonds([]);
+        return;
       }
-    } catch (error) {
-      console.error("❌ Failed to fetch report data", error);
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-      setDataError(errorMessage);
-      
-      toast({
-        variant: "destructive",
-        title: "Error loading data",
-        description: errorMessage,
-      });
+
+      if (result.data && result.data.length > 0) {
+        // Transform data to match Diamond interface
+        const transformedDiamonds: Diamond[] = result.data.map(item => ({
+          id: item.id || `${item.stock || item.stock_number || item.VendorStockNumber}-${Date.now()}`,
+          diamondId: item.id || item.diamond_id,
+          stockNumber: item.stock || item.stock_number || item.stockNumber || item.VendorStockNumber || '',
+          shape: item.shape || item.Shape || 'Round',
+          carat: parseFloat((item.weight || item.carat || item.Weight || 0).toString()) || 0,
+          color: (item.color || item.Color || 'D').toUpperCase(),
+          clarity: (item.clarity || item.Clarity || 'FL').toUpperCase(),
+          cut: item.cut || item.Cut || item.Make || 'Excellent',
+          price: Number(
+            item.price_per_carat ? 
+              item.price_per_carat * (item.weight || item.carat || item.Weight) : 
+              item.price || item.Price || item.RapnetAskingPrice || item.IndexAskingPrice || 0
+          ) || 0,
+          status: item.status || item.Availability || 'Available',
+          fluorescence: item.fluorescence || item.FluorescenceIntensity || undefined,
+          imageUrl: item.picture || 
+                   item.imageUrl || 
+                   item.Image || 
+                   item.image ||
+                   undefined,
+          gem360Url: item.gem360Url || 
+                     item['Video link'] || 
+                     item.videoLink ||
+                     undefined,
+          store_visible: item.store_visible !== false, // Default to true
+          certificateNumber: item.certificate_number || 
+                           item.certificateNumber || 
+                           item.CertificateID || 
+                           undefined,
+          lab: item.lab || item.Lab || undefined,
+          certificateUrl: item.certificate_url || item.certificateUrl || undefined,
+          // Add CSV-specific fields
+          Image: item.Image,
+          image: item.image,
+          picture: item.picture,
+          'Video link': item['Video link'],
+          videoLink: item.videoLink,
+        }));
+        
+        setDiamonds(transformedDiamonds);
+        setAllDiamonds(transformedDiamonds);
+      } else {
+        setDiamonds([]);
+        setAllDiamonds([]);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load reports data';
+      setError(errorMessage);
+      setDiamonds([]);
+      setAllDiamonds([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRetry = () => {
-    if (retryCount < 3) {
-      setRetryCount(prev => prev + 1);
-      console.log(`🔄 Retrying data fetch (attempt ${retryCount + 1}/3)`);
-      setTimeout(() => {
-        fetchData();
-      }, 1000 * retryCount);
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Max retries reached",
-        description: "Please check your connection and try refreshing the page.",
-      });
-    }
-  };
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   return {
-    loading,
     diamonds,
-    setDiamonds,
     allDiamonds,
-    dataError,
-    retryCount,
-    fetchData,
-    handleRetry,
+    loading,
+    error,
+    refetch: fetchData,
   };
 }
