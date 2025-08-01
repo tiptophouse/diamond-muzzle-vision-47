@@ -1,12 +1,13 @@
 
 import { useState, memo, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, Eye, MessageCircle } from "lucide-react";
+import { Heart, Eye, MessageCircle, Gem } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { toast } from 'sonner';
+import { Gem360Viewer } from "./Gem360Viewer";
 
 interface OptimizedDiamondCardProps {
   diamond: Diamond;
@@ -43,6 +44,32 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     return () => observer.disconnect();
   }, []);
 
+  // Get the best available image URL
+  const getImageUrl = useCallback(() => {
+    // Check multiple possible image fields
+    const imageUrl = diamond.imageUrl || diamond.picture;
+    console.log('🖼️ OptimizedDiamondCard - Image URL for', diamond.stockNumber, ':', imageUrl);
+    return imageUrl;
+  }, [diamond.imageUrl, diamond.picture, diamond.stockNumber]);
+
+  // Check if this is a 360° image
+  const is360Image = useCallback(() => {
+    const gem360Url = diamond.gem360Url;
+    const imageUrl = getImageUrl();
+    
+    const has360 = gem360Url || 
+      (imageUrl && (
+        imageUrl.includes('360') || 
+        imageUrl.includes('3d') || 
+        imageUrl.includes('rotate') ||
+        imageUrl.includes('my360.sela') ||
+        imageUrl.includes('gem360')
+      ));
+    
+    console.log('🔄 OptimizedDiamondCard - 360° check for', diamond.stockNumber, ':', has360, { gem360Url, imageUrl });
+    return has360;
+  }, [diamond.gem360Url, diamond.stockNumber, getImageUrl]);
+
   const handleLike = useCallback(() => {
     impactOccurred('light');
     setIsLiked(!isLiked);
@@ -60,19 +87,36 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
   }, [impactOccurred]);
 
   const handleImageLoad = useCallback(() => {
+    console.log('✅ OptimizedDiamondCard - Image loaded for', diamond.stockNumber);
     setImageLoaded(true);
-  }, []);
+  }, [diamond.stockNumber]);
 
   const handleImageError = useCallback(() => {
+    console.error('❌ OptimizedDiamondCard - Image failed to load for', diamond.stockNumber);
     setImageError(true);
     setImageLoaded(true);
-  }, []);
+  }, [diamond.stockNumber]);
 
   const formattedPrice = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 0,
   }).format(diamond.price);
+
+  const imageUrl = getImageUrl();
+  const hasImage = imageUrl && imageUrl.trim();
+  const has360 = is360Image();
+
+  console.log('🔍 OptimizedDiamondCard - Rendering diamond:', {
+    stockNumber: diamond.stockNumber,
+    hasImage,
+    has360,
+    imageUrl,
+    gem360Url: diamond.gem360Url,
+    isVisible,
+    imageLoaded,
+    imageError
+  });
 
   return (
     <div 
@@ -84,20 +128,28 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
       {/* Image Container */}
       <div className="relative aspect-square bg-muted overflow-hidden">
         {/* Loading skeleton */}
-        {!imageLoaded && (
+        {!imageLoaded && hasImage && isVisible && (
           <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10 animate-pulse">
             <div className="flex items-center justify-center h-full">
-              <div className="w-12 h-12 bg-muted-foreground/20 rounded-full flex items-center justify-center">
-                <div className="w-6 h-6 bg-muted-foreground/40 rounded-full animate-pulse"></div>
-              </div>
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
             </div>
           </div>
         )}
         
-        {diamond.imageUrl && !imageError && isVisible ? (
+        {/* 360° / 3D Image Display */}
+        {has360 && (diamond.gem360Url || hasImage) && isVisible ? (
+          <div className="relative w-full h-full">
+            <Gem360Viewer 
+              gem360Url={diamond.gem360Url || imageUrl!}
+              stockNumber={diamond.stockNumber}
+              isInline={true}
+            />
+          </div>
+        ) : hasImage && !imageError && isVisible ? (
+          /* Regular Image Display */
           <img 
             ref={imgRef}
-            src={diamond.imageUrl} 
+            src={imageUrl} 
             alt={`${diamond.carat} ct ${diamond.shape} Diamond`} 
             className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
@@ -107,13 +159,17 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
             loading="lazy"
             decoding="async"
           />
-        ) : imageError ? (
+        ) : (
+          /* No Image Placeholder */
           <div className="flex items-center justify-center h-full bg-gradient-to-br from-muted to-muted-foreground/10">
-            <div className="w-12 h-12 bg-muted-foreground/20 rounded-full flex items-center justify-center">
-              <div className="w-6 h-6 bg-muted-foreground/40 rounded-full"></div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/40 rounded-full flex items-center justify-center mx-auto mb-2">
+                <Gem className="h-8 w-8 text-primary/60" />
+              </div>
+              <p className="text-xs text-muted-foreground">No Image</p>
             </div>
           </div>
-        ) : null}
+        )}
         
         {/* Status Badge */}
         <div className="absolute top-2 left-2">
@@ -123,6 +179,15 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
             Available
           </Badge>
         </div>
+
+        {/* 360° Badge for 3D images */}
+        {has360 && (
+          <div className="absolute top-2 right-12">
+            <Badge className="text-xs font-medium border-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+              360°
+            </Badge>
+          </div>
+        )}
 
         {/* Heart Icon */}
         <button
