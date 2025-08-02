@@ -1,3 +1,4 @@
+
 import { useState, memo, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, Eye, MessageCircle, Gem, Share2 } from "lucide-react";
@@ -35,7 +36,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
         }
       },
       { 
-        rootMargin: '50px',  // Reduced from 100px for faster loading
+        rootMargin: '100px',
         threshold: 0.1 
       }
     );
@@ -47,7 +48,16 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     return () => observer.disconnect();
   }, []);
 
-  // Enhanced media detection with better 360° detection
+  // FIXED: Better image URL validation
+  const hasValidImage = !!(
+    diamond.imageUrl && 
+    diamond.imageUrl.trim() && 
+    diamond.imageUrl !== 'default' &&
+    diamond.imageUrl.startsWith('http') &&
+    diamond.imageUrl.length > 10 // Ensure it's not just a partial URL
+  );
+
+  // Enhanced 360° detection
   const has360 = !!(diamond.gem360Url && (
     diamond.gem360Url.includes('.html') ||
     diamond.gem360Url.includes('360') ||
@@ -55,12 +65,17 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     diamond.gem360Url.includes('gem360') ||
     diamond.gem360Url.includes('sarine')
   ));
-  
-  const hasImage = !!(diamond.imageUrl && 
-    diamond.imageUrl.trim() && 
-    diamond.imageUrl !== 'default' &&
-    diamond.imageUrl.startsWith('http')
-  );
+
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 DIAMOND CARD DEBUG:', {
+      stockNumber: diamond.stockNumber,
+      hasValidImage,
+      imageUrl: diamond.imageUrl,
+      has360,
+      gem360Url: diamond.gem360Url
+    });
+  }, [diamond.stockNumber, hasValidImage, diamond.imageUrl, has360, diamond.gem360Url]);
 
   const handleLike = useCallback(() => {
     impactOccurred('light');
@@ -113,9 +128,10 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
   }, [impactOccurred, diamond]);
 
   const handleImageLoad = useCallback(() => {
+    console.log('✅ IMAGE LOADED for', diamond.stockNumber);
     setImageLoaded(true);
     setImageError(false);
-  }, []);
+  }, [diamond.stockNumber]);
 
   const handleImageError = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
     console.error('❌ IMAGE FAILED for', diamond.stockNumber, ':', event.currentTarget.src);
@@ -129,125 +145,113 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     <div 
       ref={cardRef}
       id={`diamond-${diamond.stockNumber}`} 
-      className="group relative bg-card rounded-xl overflow-hidden transition-all duration-200 border border-border/50 hover:border-border hover:shadow-md"
+      className="group relative bg-white rounded-xl overflow-hidden transition-all duration-200 border border-gray-200 hover:border-gray-300 hover:shadow-lg"
       style={{ animationDelay: `${Math.min(index * 30, 200)}ms` }}
     >
-      {/* OPTIMIZED: Image Container - Removed badges, focused on image display */}
-      <div className="relative aspect-square bg-muted overflow-hidden">
-        {/* Optimized loading skeleton */}
-        {!imageLoaded && (has360 || hasImage) && isVisible && (
-          <div className="absolute inset-0 bg-gradient-to-br from-muted via-muted-foreground/5 to-muted z-10">
-            <div className="flex items-center justify-center h-full">
-              <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-            </div>
-            {/* Shimmer overlay */}
-            <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+      {/* PRIORITY 1: Always show 360° if available */}
+      {has360 && isVisible ? (
+        <div className="relative aspect-square">
+          <Gem360Viewer 
+            gem360Url={diamond.gem360Url!}
+            stockNumber={diamond.stockNumber}
+            isInline={true}
+          />
+          <div className="absolute top-2 left-2">
+            <Badge className="text-xs font-medium border-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-sm px-2 py-0.5">
+              360°
+            </Badge>
           </div>
-        )}
-        
-        {/* PRIORITY 1: 360° Viewer */}
-        {has360 && isVisible ? (
-          <div className="relative w-full h-full">
-            <Gem360Viewer 
-              gem360Url={diamond.gem360Url!}
-              stockNumber={diamond.stockNumber}
-              isInline={true}
-            />
-            <div className="absolute inset-0" onLoad={handleImageLoad} />
-            {/* Only 360° indicator - small and unobtrusive */}
-            <div className="absolute top-2 left-2">
-              <Badge className="text-xs font-medium border-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-sm px-2 py-0.5">
-                360°
-              </Badge>
-            </div>
-          </div>
-        ) : hasImage && isVisible ? (
-          /* PRIORITY 2: Regular Image Display - OPTIMIZED */
-          <div className="relative w-full h-full">
-            <img 
-              ref={imgRef}
-              src={diamond.imageUrl} 
-              alt={`${diamond.carat} ct ${diamond.shape} Diamond`} 
-              className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
-                imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'
-              }`}
-              onLoad={handleImageLoad}
-              onError={handleImageError}
-              loading="lazy"
-              decoding="async"
-              crossOrigin="anonymous"
-              referrerPolicy="no-referrer"
-              // Optimize image size for faster loading
-              style={{ 
-                maxWidth: '100%', 
-                height: 'auto',
-                objectFit: 'cover'
-              }}
-            />
-          </div>
-        ) : (
-          /* PRIORITY 3: Info Only Placeholder */
-          <div className="flex items-center justify-center h-full bg-gradient-to-br from-muted to-muted-foreground/10">
-            <div className="text-center p-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/40 rounded-full flex items-center justify-center mx-auto mb-2">
-                <Gem className="h-6 w-6 text-primary/60" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-foreground">{diamond.carat} ct</p>
-                <p className="text-xs text-muted-foreground">{diamond.shape}</p>
-                <p className="text-xs text-muted-foreground">{diamond.color} • {diamond.clarity}</p>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Status Badge - Only Available status */}
-        <div className="absolute top-2 right-12">
-          <Badge className="text-xs font-medium border-0 bg-green-500/90 text-white px-2 py-0.5">
-            Available
-          </Badge>
         </div>
+      ) : hasValidImage && isVisible ? (
+        /* PRIORITY 2: Show actual diamond image */
+        <div className="relative aspect-square bg-gray-50 overflow-hidden">
+          {/* Loading state */}
+          {!imageLoaded && (
+            <div className="absolute inset-0 bg-gray-100 flex items-center justify-center z-10">
+              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          )}
+          
+          <img 
+            ref={imgRef}
+            src={diamond.imageUrl} 
+            alt={`${diamond.carat} ct ${diamond.shape} Diamond`} 
+            className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${
+              imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'
+            }`}
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+      ) : (
+        /* PRIORITY 3: Enhanced info card when no media available */
+        <div className="aspect-square flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+          <div className="text-center p-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Gem className="h-8 w-8 text-blue-600" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-gray-900">{diamond.carat} ct</h3>
+              <p className="text-sm text-gray-600">{diamond.shape}</p>
+              <div className="flex items-center justify-center gap-2 text-xs">
+                <span className="bg-gray-200 px-2 py-1 rounded">{diamond.color}</span>
+                <span className="bg-gray-200 px-2 py-1 rounded">{diamond.clarity}</span>
+              </div>
+              <p className="text-xs text-yellow-600 font-medium">{diamond.cut}</p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Status and Action Icons */}
+      <div className="absolute top-2 right-2 flex items-center gap-1">
+        {/* Available Badge */}
+        <Badge className="text-xs font-medium border-0 bg-green-500 text-white px-2 py-0.5">
+          Available
+        </Badge>
+      </div>
 
-        {/* Action Icons - Simplified */}
-        <div className="absolute top-2 right-2 flex gap-1">
-          <button
-            onClick={handleShare}
-            className="p-1 bg-background/80 backdrop-blur-sm rounded-full transition-all duration-200 hover:bg-background/90 hover:scale-110"
-          >
-            <Share2 className="h-3 w-3 text-muted-foreground hover:text-primary" />
-          </button>
-          <button
-            onClick={handleLike}
-            className="p-1 bg-background/80 backdrop-blur-sm rounded-full transition-all duration-200 hover:bg-background/90 hover:scale-110"
-          >
-            <Heart 
-              className={`h-3 w-3 transition-colors ${
-                isLiked ? 'text-red-500 fill-red-500' : 'text-muted-foreground'
-              }`} 
-            />
-          </button>
-        </div>
+      {/* Action Icons */}
+      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <button
+          onClick={handleShare}
+          className="p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm transition-all duration-200 hover:bg-white hover:scale-110"
+        >
+          <Share2 className="h-3 w-3 text-gray-600" />
+        </button>
+        <button
+          onClick={handleLike}
+          className="p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm transition-all duration-200 hover:bg-white hover:scale-110"
+        >
+          <Heart 
+            className={`h-3 w-3 transition-colors ${
+              isLiked ? 'text-red-500 fill-red-500' : 'text-gray-600'
+            }`} 
+          />
+        </button>
       </div>
 
       {/* Content */}
-      <div className="p-3">
+      <div className="p-4 bg-white">
         {/* Title and Price */}
-        <div className="flex items-start justify-between mb-2">
+        <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-foreground text-sm leading-tight truncate">
+            <h3 className="font-semibold text-gray-900 text-sm leading-tight truncate">
               {diamond.carat} ct {diamond.shape}
             </h3>
-            <p className="text-xs text-muted-foreground mt-0.5 truncate">
+            <p className="text-xs text-gray-500 mt-1 truncate">
               {diamond.stockNumber}
             </p>
           </div>
-          <div className="ml-2 text-right">
+          <div className="ml-3 text-right">
             {priceDisplay ? (
-              <p className="text-sm font-bold text-foreground">
+              <p className="text-sm font-bold text-gray-900">
                 {priceDisplay}
               </p>
             ) : (
-              <p className="text-xs text-muted-foreground italic">
+              <p className="text-xs text-gray-500 italic">
                 Contact for Price
               </p>
             )}
@@ -256,10 +260,10 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
 
         {/* Specs */}
         <div className="flex items-center gap-1.5 mb-3">
-          <span className="bg-muted px-1.5 py-0.5 rounded text-xs font-medium text-muted-foreground">
+          <span className="bg-gray-100 px-2 py-1 rounded text-xs font-medium text-gray-700">
             {diamond.color}
           </span>
-          <span className="bg-muted px-1.5 py-0.5 rounded text-xs font-medium text-muted-foreground">
+          <span className="bg-gray-100 px-2 py-1 rounded text-xs font-medium text-gray-700">
             {diamond.clarity}
           </span>
           <span className="text-xs font-medium text-yellow-600">
@@ -268,11 +272,11 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-1.5">
+        <div className="flex gap-2">
           <Button 
             variant="outline" 
             size="sm" 
-            className="flex-1 h-8 text-xs border-border text-foreground hover:bg-muted"
+            className="flex-1 h-8 text-xs border-gray-200 text-gray-700 hover:bg-gray-50"
             onClick={handleContact}
           >
             <MessageCircle className="h-3 w-3 mr-1" />
@@ -281,7 +285,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
           <Button 
             variant="default" 
             size="sm" 
-            className="flex-1 h-8 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
+            className="flex-1 h-8 text-xs bg-blue-600 text-white hover:bg-blue-700"
             onClick={handleViewDetails}
           >
             <Eye className="h-3 w-3 mr-1" />
