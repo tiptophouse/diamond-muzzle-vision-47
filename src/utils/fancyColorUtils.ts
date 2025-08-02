@@ -26,9 +26,27 @@ const FANCY_HUES = [
   'blue', 'green', 'gray', 'black', 'white', 'champagne', 'cognac'
 ];
 
-export function detectFancyColor(colorValue: string): FancyColorInfo {
+export function detectFancyColor(colorValue: string, colorType?: string): FancyColorInfo {
   if (!colorValue) {
     return { isFancyColor: false, colorDescription: colorValue || 'Unknown' };
+  }
+
+  // If explicitly marked as fancy color type, trust that
+  if (colorType === 'Fancy') {
+    const colorLower = colorValue.toLowerCase().trim();
+    const intensity = FANCY_INTENSITIES.find(int => 
+      colorLower.includes(int.toLowerCase())
+    );
+    const hue = FANCY_HUES.find(h => 
+      colorLower.includes(h.toLowerCase())
+    );
+
+    return {
+      isFancyColor: true,
+      colorDescription: colorValue,
+      intensity: intensity ? intensity.charAt(0).toUpperCase() + intensity.slice(1) : undefined,
+      hue: hue ? hue.charAt(0).toUpperCase() + hue.slice(1) : undefined
+    };
   }
 
   const colorLower = colorValue.toLowerCase().trim();
@@ -98,8 +116,14 @@ export function formatFancyColorDescription(colorInfo: FancyColorInfo): string {
 }
 
 // Check if a diamond likely has a cut grade (only round brilliants typically get GIA cut grades)
-export function shouldShowCutGrade(shape: string, cut: string): boolean {
+export function shouldShowCutGrade(shape: string, cut: string, colorType?: string): boolean {
   if (!cut || cut.toLowerCase() === 'unknown') return false;
+  
+  // For fancy color diamonds, typically don't show cut grade unless it's round brilliant
+  if (colorType === 'Fancy') {
+    const shapeL = shape.toLowerCase();
+    return shapeL.includes('round');
+  }
   
   const shapeL = shape.toLowerCase();
   const cutL = cut.toLowerCase();

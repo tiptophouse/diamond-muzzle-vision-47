@@ -4,6 +4,7 @@ import { fetchInventoryData } from "@/services/inventoryDataService";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useInventoryDataSync } from "./inventory/useInventoryDataSync";
 import { getTelegramWebApp } from "@/utils/telegramWebApp";
+import { detectFancyColor } from "@/utils/fancyColorUtils";
 
 // Telegram memory management
 const tg = getTelegramWebApp();
@@ -118,12 +119,16 @@ export function useStoreData() {
         // Enhanced 360° URL detection
         const final360Url = detect360Url(item);
 
+        // Determine color type based on the color value
+        const colorType = item.color_type || (detectFancyColor(item.color).isFancyColor ? 'Fancy' : 'Standard');
+
         const result = {
           id: String(item.id),
           stockNumber: String(item.stock_number || item.stock || 'UNKNOWN'),
           shape: item.shape,
           carat: Number(item.weight || item.carat) || 0,
           color: item.color,
+          color_type: colorType as 'Fancy' | 'Standard',
           clarity: item.clarity,
           cut: item.cut || 'Excellent',
           polish: item.polish,

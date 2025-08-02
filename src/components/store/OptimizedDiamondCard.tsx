@@ -84,12 +84,13 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     diamond.gem360Url.includes('sarine')
   ));
 
-  // Enhanced fancy color detection
-  const colorInfo = detectFancyColor(diamond.color);
+  // Enhanced fancy color detection with color_type support
+  const colorInfo = detectFancyColor(diamond.color, diamond.color_type);
   const formattedColorDescription = formatFancyColorDescription(colorInfo);
 
-  // Determine what attributes to show based on diamond type
-  const showCutGrade = shouldShowCutGrade(diamond.shape, diamond.cut);
+  // Determine what attributes to show based on diamond type and color_type
+  const isFancyColor = diamond.color_type === 'Fancy' || colorInfo.isFancyColor;
+  const showCutGrade = shouldShowCutGrade(diamond.shape, diamond.cut, diamond.color_type);
   const polishSymmetryText = formatPolishSymmetry(diamond.polish, diamond.symmetry);
 
   // Debug logging
@@ -300,45 +301,86 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
           </div>
         </div>
 
-        {/* Enhanced Badge Section for Fancy Color vs Regular Diamonds */}
+        {/* Enhanced Badge Section - Different logic for Fancy vs Standard */}
         <div className="flex flex-col gap-2 mb-3">
-          {/* Primary Color Badge */}
-          <div className="flex items-center gap-1.5">
-            <FancyColorBadge colorInfo={colorInfo} />
-            
-            {/* Clarity - always show if available */}
-            {diamond.clarity && (
-              <Badge className="text-xs font-medium bg-gray-100 px-2 py-1 rounded text-gray-700">
-                {diamond.clarity}
-              </Badge>
-            )}
-          </div>
+          {isFancyColor ? (
+            /* FANCY COLOR DIAMOND DISPLAY */
+            <>
+              {/* Primary Color Badge for Fancy Colors */}
+              <div className="flex items-center gap-1.5">
+                <FancyColorBadge colorInfo={colorInfo} />
+              </div>
 
-          {/* Secondary Badges Row */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {/* Certification Badge */}
-            <CertificationBadge 
-              lab={diamond.lab} 
-              certificateUrl={diamond.certificateUrl}
-            />
-            
-            {/* Origin Badge */}
-            <OriginBadge 
-              isNatural={true} // Assume natural unless specified otherwise
-              // treatment={diamond.treatment} // Add this field if available
-            />
-          </div>
+              {/* Secondary Badges Row for Fancy Colors */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {/* Certification Badge */}
+                <CertificationBadge 
+                  lab={diamond.lab} 
+                  certificateUrl={diamond.certificateUrl}
+                />
+                
+                {/* Origin Badge */}
+                <OriginBadge 
+                  isNatural={true} // Assume natural unless specified otherwise
+                />
 
-          {/* Optional Polish/Symmetry for fancy colors or Cut Grade for rounds */}
-          {showCutGrade ? (
-            <div className="text-xs font-medium text-yellow-600">
-              Cut: {diamond.cut}
-            </div>
-          ) : polishSymmetryText ? (
-            <div className="text-xs text-gray-500">
-              {polishSymmetryText}
-            </div>
-          ) : null}
+                {/* Optional Clarity for Fancy Colors (if available) */}
+                {diamond.clarity && (
+                  <Badge className="text-xs font-medium bg-gray-100 px-2 py-1 rounded text-gray-700">
+                    {diamond.clarity}
+                  </Badge>
+                )}
+              </div>
+
+              {/* Polish/Symmetry or Cut Grade for Round Brilliants only */}
+              {showCutGrade ? (
+                <div className="text-xs font-medium text-yellow-600">
+                  Cut: {diamond.cut}
+                </div>
+              ) : polishSymmetryText ? (
+                <div className="text-xs text-gray-500">
+                  {polishSymmetryText}
+                </div>
+              ) : null}
+            </>
+          ) : (
+            /* STANDARD WHITE DIAMOND DISPLAY */
+            <>
+              {/* Primary Row - Color and Clarity */}
+              <div className="flex items-center gap-1.5">
+                <Badge className="text-xs font-medium bg-blue-100 text-blue-800 border-blue-300 px-2 py-1 rounded">
+                  {diamond.color}
+                </Badge>
+                
+                {diamond.clarity && (
+                  <Badge className="text-xs font-medium bg-gray-100 px-2 py-1 rounded text-gray-700">
+                    {diamond.clarity}
+                  </Badge>
+                )}
+              </div>
+
+              {/* Secondary Badges Row */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {/* Certification Badge */}
+                <CertificationBadge 
+                  lab={diamond.lab} 
+                  certificateUrl={diamond.certificateUrl}
+                />
+                
+                {/* Origin Badge */}
+                <OriginBadge 
+                  isNatural={true}
+                />
+              </div>
+
+              {/* Cut Grade for Standard Diamonds */}
+              {showCutGrade && (
+                <div className="text-xs font-medium text-yellow-600">
+                  Cut: {diamond.cut}
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         {/* Action Buttons */}

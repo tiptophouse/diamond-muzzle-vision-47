@@ -17,6 +17,7 @@ export interface Diamond {
   shape: string;
   carat: number;
   color: string;
+  color_type?: 'Fancy' | 'Standard'; // Add this field to differentiate fancy vs standard
   clarity: string;
   cut: string;
   price: number;
