@@ -1,10 +1,11 @@
 import { useState, memo, useCallback, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Heart, Eye, MessageCircle, Gem, Share2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
+import { useSecureDiamondSharing } from "@/hooks/useSecureDiamondSharing";
 import { toast } from 'sonner';
 import { Gem360Viewer } from "./Gem360Viewer";
 import { V360Viewer } from "./V360Viewer";
@@ -29,9 +30,21 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
   const [isLiked, setIsLiked] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const { impactOccurred } = useTelegramHapticFeedback();
+  const { shareWithInlineButtons, trackShareClick, isAvailable: shareAvailable } = useSecureDiamondSharing();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const cardRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+
+  // Track share clicks when user comes from shared link
+  useEffect(() => {
+    const isShared = searchParams.get('shared');
+    const sharedFrom = searchParams.get('from');
+    
+    if (isShared && sharedFrom) {
+      trackShareClick(diamond.stockNumber, parseInt(sharedFrom));
+    }
+  }, [searchParams, diamond.stockNumber, trackShareClick]);
 
   // Enhanced intersection observer for better lazy loading
   useEffect(() => {
@@ -97,18 +110,6 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
   const showCutGrade = shouldShowCutGrade(diamond.shape, diamond.cut, diamond.color_type);
   const polishSymmetryText = formatPolishSymmetry(diamond.polish, diamond.symmetry);
 
-  // Debug logging
-  useEffect(() => {
-    console.log('🔍 DIAMOND CARD DEBUG:', {
-      stockNumber: diamond.stockNumber,
-      hasValidImage,
-      imageUrl: diamond.imageUrl,
-      has360,
-      gem360Url: diamond.gem360Url,
-      isInteractive360
-    });
-  }, [diamond.stockNumber, hasValidImage, diamond.imageUrl, has360, diamond.gem360Url, isInteractive360]);
-
   const handleLike = useCallback(() => {
     impactOccurred('light');
     setIsLiked(!isLiked);
@@ -142,22 +143,20 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     }
   }, [impactOccurred, diamond]);
 
-  const handleShare = useCallback(() => {
+  // Updated secure share function using inline buttons
+  const handleShare = useCallback(async () => {
     impactOccurred('medium');
     
-    const shareUrl = `${window.location.origin}/catalog?stock=${diamond.stockNumber}`;
-    const shareText = `💎 Check out this ${diamond.carat} ct ${diamond.shape} diamond!\n${diamond.color} • ${diamond.clarity} • ${diamond.cut}\n${diamond.price > 0 ? formatCurrency(diamond.price) : 'Contact for Price'}`;
-    
-    const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
-    
-    try {
-      window.open(telegramShareUrl, '_blank');
-      toast.success("Share link opened in Telegram");
-    } catch (error) {
-      console.error('Failed to share:', error);
-      toast.error("Failed to share");
+    if (!shareAvailable) {
+      toast.error('Secure sharing requires Telegram Mini App');
+      return;
     }
-  }, [impactOccurred, diamond]);
+
+    const success = await shareWithInlineButtons(diamond);
+    if (success) {
+      console.log('✅ Diamond shared securely with inline buttons');
+    }
+  }, [impactOccurred, shareAvailable, shareWithInlineButtons, diamond]);
 
   const handleImageLoad = useCallback(() => {
     console.log('✅ IMAGE LOADED for', diamond.stockNumber);
@@ -275,8 +274,9 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
         <button
           onClick={handleShare}
           className="p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm transition-all duration-200 hover:bg-white hover:scale-110"
+          disabled={!shareAvailable}
         >
-          <Share2 className="h-3 w-3 text-gray-600" />
+          <Share2 className={`h-3 w-3 ${shareAvailable ? 'text-blue-600' : 'text-gray-400'}`} />
         </button>
         <button
           onClick={handleLike}
