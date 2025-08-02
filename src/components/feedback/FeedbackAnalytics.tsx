@@ -6,14 +6,23 @@ import { StarIcon, TrendingUp, Users, MessageSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
+interface FeedbackItem {
+  id: string;
+  rating: number | null;
+  message: string | null;
+  category: string;
+  created_at: string;
+  telegram_id: number;
+}
+
 interface FeedbackSummary {
   totalFeedback: number;
   averageRating: number;
   categoryBreakdown: Record<string, number>;
   recentFeedback: Array<{
     id: string;
-    rating: number;
-    message: string;
+    rating: number | null;
+    message: string | null;
     category: string;
     created_at: string;
     user_name: string;
@@ -32,7 +41,7 @@ export function FeedbackAnalytics() {
     try {
       setLoading(true);
       
-      // Fetch feedback data
+      // Fetch feedback data from user_feedback table
       const { data: feedbackData, error } = await supabase
         .from('user_feedback')
         .select(`
@@ -47,20 +56,21 @@ export function FeedbackAnalytics() {
 
       if (error) throw error;
 
-      const totalFeedback = feedbackData.length;
-      const ratingsOnly = feedbackData.filter(f => f.rating).map(f => f.rating);
+      const feedbackItems = feedbackData as FeedbackItem[];
+      const totalFeedback = feedbackItems.length;
+      const ratingsOnly = feedbackItems.filter(f => f.rating !== null).map(f => f.rating as number);
       const averageRating = ratingsOnly.length > 0 
         ? ratingsOnly.reduce((sum, rating) => sum + rating, 0) / ratingsOnly.length 
         : 0;
 
       // Category breakdown
-      const categoryBreakdown = feedbackData.reduce((acc, feedback) => {
+      const categoryBreakdown = feedbackItems.reduce((acc, feedback) => {
         acc[feedback.category] = (acc[feedback.category] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
       // Recent feedback (last 10)
-      const recentFeedback = feedbackData
+      const recentFeedback = feedbackItems
         .slice(0, 10)
         .map(feedback => ({
           ...feedback,
