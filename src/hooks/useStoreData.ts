@@ -59,52 +59,63 @@ export function useStoreData() {
 
   // Enhanced 360° URL detection for various formats
   const detect360Url = useCallback((item: any) => {
-    console.log('🔍 360° DETECTION for', item.stock_number || item.stock, '- checking fields:', {
+    const stockId = item.stock_number || item.stock || 'unknown';
+    console.log('🔍 360° DETECTION for', stockId, '- checking fields:', {
       gem360_url: item.gem360_url,
-      pic: item.pic,                    // YOUR CSV "Pic" field
+      pic: item.pic,                    // YOUR CSV "Pic" field  
+      Pic: item.Pic,                    // Capital P version
       picture: item.picture,
+      Picture: item.Picture,            // Capital P version
       'Video link': item['Video link'],
       videoLink: item.videoLink,
-      video_url: item.video_url,
-      allKeys: Object.keys(item)
+      video_link: item.video_link,
+      v360_url: item.v360_url,
+      // Check if ANY field contains v360.in
+      hasV360InAnyField: Object.values(item).some(val => 
+        typeof val === 'string' && val.includes('v360.in')
+      )
     });
 
     const potential360Fields = [
       item.gem360_url,        // From our new CSV mapping
       item.pic,               // YOUR CSV "Pic" field - MOST IMPORTANT!
+      item.Pic,               // Capital P version
       item.picture,           // Alternative picture field
+      item.Picture,           // Capital P version
+      item['Video link'],     // Exact CSV field name with space
+      item.videoLink,         // CamelCase version
+      item.video_link,        // Snake case version
       item.v360_url,
       item.video_url,
       item.video360_url,
       item.three_d_url,
-      item.rotation_url,
-      item['Video link'],     // CSV field name with space
-      item.videoLink,         // Camel case variant
-      item.video_link         // Snake case variant
+      item.rotation_url
     ];
     
-    for (const field of potential360Fields) {
-      if (field && typeof field === 'string' && field.trim()) {
-        const url = field.trim();
-        console.log('🔍 CHECKING FIELD:', field, '-> URL:', url);
+    for (const url of potential360Fields) {
+      if (url && typeof url === 'string' && url.trim()) {
+        const cleanUrl = url.trim();
+        console.log('🔍 Checking URL field:', cleanUrl);
         
-        // Enhanced detection for 360° formats including your examples
-        if (url.includes('v360.in') ||           // HIGHEST PRIORITY: v360.in
-            url.includes('diamondview.aspx') ||
-            url.includes('my360.sela') ||
-            url.includes('gem360') ||
-            url.includes('360') ||
-            url.includes('sarine') ||
-            url.includes('3d') ||
-            url.includes('rotate') ||
-            url.includes('.html') ||
-            url.match(/DAN\d+-\d+[A-Z]?\.jpg$/)) { // Pattern like DAN040-0016A.jpg
-          console.log('✨ DETECTED 360° URL for', item.stock_number || item.stock, ':', url);
-          return url;
+        // Enhanced 360° URL detection - PRIORITIZE v360.in!
+        if (cleanUrl.includes('v360.in') || 
+            cleanUrl.includes('gem360') || 
+            cleanUrl.includes('360view') || 
+            cleanUrl.includes('diamondview') ||
+            cleanUrl.includes('rotational') ||
+            cleanUrl.includes('interactive') ||
+            cleanUrl.includes('/360/') ||
+            cleanUrl.includes('_360.') ||
+            cleanUrl.includes('360.jpg') ||
+            cleanUrl.includes('360.mp4') ||
+            cleanUrl.includes('360.gif')) {
+          console.log('✅ 360° URL FOUND for', stockId + ':', cleanUrl);
+          return cleanUrl;
         }
       }
     }
-    console.log('❌ NO 360° URL found for', item.stock_number || item.stock);
+    
+    console.log('❌ NO 360° URL found for', stockId);
     return undefined;
   }, []);
 
@@ -221,7 +232,13 @@ export function useStoreData() {
         hasData: !!result.data,
         dataLength: result.data?.length || 0,
         error: result.error,
-        firstItem: result.data?.[0]
+        firstItem: result.data?.[0],
+        // CRITICAL: Check if v360.in URLs exist in raw data
+        hasV360InRawData: result.data ? result.data.some(item => 
+          Object.values(item).some(val => 
+            typeof val === 'string' && val.includes('v360.in')
+          )
+        ) : false
       });
 
       if (result.error) {

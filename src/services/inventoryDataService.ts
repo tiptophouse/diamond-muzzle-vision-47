@@ -52,24 +52,48 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       if (dataArray && dataArray.length > 0) {
         console.log('✅ INVENTORY SERVICE: Successfully fetched', dataArray.length, 'diamonds from FastAPI');
         
-        // CRITICAL DEBUGGING: Log exactly what we're getting from FastAPI
+        // CRITICAL DEBUGGING: Log exactly what we're getting from FastAPI  
         console.log('🚨 FASTAPI RESPONSE ANALYSIS:', {
           totalCount: dataArray.length,
           firstItem: {
             id: dataArray[0].id,
             stock: dataArray[0].stock,
+            stock_number: dataArray[0].stock_number,
+            // SEARCH FOR V360.IN URLs IN ALL POSSIBLE FIELDS
+            pic: dataArray[0].pic,
+            Pic: dataArray[0].Pic,
             picture: dataArray[0].picture,
+            Picture: dataArray[0].Picture,
             Image: dataArray[0].Image,
             image: dataArray[0].image,
             imageUrl: dataArray[0].imageUrl,
             'Video link': dataArray[0]['Video link'],
             videoLink: dataArray[0].videoLink,
+            video_link: dataArray[0].video_link,
             gem360Url: dataArray[0].gem360Url,
+            gem360_url: dataArray[0].gem360_url,
             allFields: Object.keys(dataArray[0])
           },
-          sampleItems: dataArray.slice(0, 3)
+          // Check for v360.in URLs in first 5 items
+          v360UrlsFound: dataArray.slice(0, 5).map(item => ({
+            stock: item.stock || item.stock_number,
+            hasV360InPic: item.pic?.includes('v360.in'),
+            hasV360InPicture: item.picture?.includes('v360.in'),
+            hasV360InVideoLink: item['Video link']?.includes('v360.in'),
+            picValue: item.pic,
+            pictureValue: item.picture,
+            videoLinkValue: item['Video link']
+          }))
         });
         console.log('📊 INVENTORY SERVICE: Sample diamond data:', dataArray[0]);
+        
+        // FINAL TEST: Check if ANY item has v360.in ANYWHERE
+        const anyV360 = dataArray.some(item => 
+          Object.values(item).some(val => 
+            typeof val === 'string' && val.includes('v360.in')
+          )
+        );
+        console.log('🔍 FINAL V360 CHECK: Found v360.in in any field?', anyV360);
         
         return {
           data: dataArray,
