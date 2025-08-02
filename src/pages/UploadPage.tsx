@@ -1,346 +1,447 @@
-
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import Papa from 'papaparse';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, FileText, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { api } from '@/lib/api';
-import { apiEndpoints } from '@/lib/api/endpoints';
+import { CSVReader } from 'react-papaparse';
+import * as XLSX from 'xlsx';
+import { Button } from "@/components/ui/button";
+import { UploadCloud, File, X, CheckCircle, AlertTriangle } from 'lucide-react';
+import { UploadProgress } from '@/components/upload/UploadProgress';
+import { UploadResult } from '@/components/upload/UploadResult';
+import { ProcessingSteps } from '@/components/upload/ProcessingSteps';
+import { ProcessingReport } from '@/components/upload/ProcessingReport';
+import { UploadSuccessCard } from '@/components/upload/UploadSuccessCard';
+import { useBulkUploadNotifications } from '@/hooks/useBulkUploadNotifications';
+import { useToast } from '@/components/ui/use-toast';
+import { api, apiEndpoints } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useFeedback } from '@/components/feedback/FeedbackProvider';
 
-interface DiamondData {
-  stock_number: string;
-  shape: string;
-  weight: number;
-  color: string;
-  clarity: string;
-  cut?: string;
-  polish?: string;
-  symmetry?: string;
-  price_per_carat: number;
-}
-
-interface UploadResult {
-  success: boolean;
-  message: string;
-  processedCount?: number;
-  errorCount?: number;
-  errors?: string[];
-}
-
-export default function UploadPage() {
-  const [csvData, setCsvData] = useState<DiamondData[]>([]);
+const UploadPage = () => {
+  const [file, setFile] = useState<File | null>(null);
+  const [csvData, setCsvData] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
-  const [previewData, setPreviewData] = useState<DiamondData[]>([]);
-  
+  const [uploadResult, setUploadResult] = useState<any>(null);
+  const [failedRecords, setFailedRecords] = useState<any[]>([]);
+  const [showSuccessCard, setShowSuccessCard] = useState(false);
+  const { sendBulkUploadNotification } = useBulkUploadNotifications();
   const { toast } = useToast();
   const { user } = useTelegramAuth();
-  const { trackFeatureUsage } = useFeedback();
+  const { trackAction, trackFeatureUsage } = useFeedback();
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (!file) return;
-
-    if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
-      toast({
-        title: "Invalid file type",
-        description: "Please upload a CSV file",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      if (!text) return;
-
-      Papa.parse(text, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => {
-          try {
-            const processedData = results.data.map((row: any) => ({
-              stock_number: row.stock_number || '',
-              shape: row.shape || '',
-              weight: parseFloat(row.weight) || 0,
-              color: row.color || '',
-              clarity: row.clarity || '',
-              cut: row.cut || '',
-              polish: row.polish || '',
-              symmetry: row.symmetry || '',
-              price_per_carat: parseFloat(row.price_per_carat) || 0,
-            }));
-
-            setCsvData(processedData);
-            setPreviewData(processedData.slice(0, 5));
-            setUploadResult(null);
-
-            toast({
-              title: "CSV loaded successfully",
-              description: `Found ${processedData.length} diamonds to process`,
-            });
-          } catch (error) {
-            toast({
-              title: "CSV parsing error",
-              description: "Failed to parse CSV file",
-              variant: "destructive",
-            });
-          }
-        },
-        error: (error) => {
-          toast({
-            title: "CSV parsing error",
-            description: error.message,
-            variant: "destructive",
-          });
-        }
-      });
-    };
-
-    reader.onerror = () => {
-      toast({
-        title: "File reading error",
-        description: "Failed to read the file",
-        variant: "destructive",
-      });
-    };
-
-    reader.readAsText(file);
-  }, [toast]);
+    setFile(acceptedFiles[0]);
+    setCsvData([]);
+    setUploadResult(null);
+    setFailedRecords([]);
+    setUploadProgress(0);
+  }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'text/csv': ['.csv']
+      'text/csv': ['.csv'],
+      'application/vnd.ms-excel': ['.xls'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
     },
-    maxFiles: 1
+    multiple: false,
   });
 
-  const handleUpload = async () => {
-    if (!csvData.length || !user?.id) return;
+  const handleManualUpload = async (data: any[]) => {
+    if (!user?.id) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "User not authenticated",
+      });
+      return;
+    }
 
     setUploading(true);
-    setUploadProgress(0);
+    setUploadProgress(5);
+    setUploadResult(null);
+    setFailedRecords([]);
 
     try {
-      const response = await api.uploadCsv(
-        apiEndpoints.uploadCsv(user.id),
-        csvData,
-        user.id
-      );
+      // Simulate processing steps
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setUploadProgress(20);
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setUploadProgress(30);
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setUploadProgress(70);
+
+      // Upload data to API
+      setUploadProgress(80);
+      const response = await api.uploadCsv(apiEndpoints.uploadCsv, data, user.id);
 
       if (response.error) {
         throw new Error(response.error);
       }
 
-      const result: UploadResult = {
+      setUploadProgress(90);
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      setUploadProgress(95);
+      const { processed, success, failed, errors } = response.data as any;
+
+      setUploadProgress(100);
+      setUploadResult({
         success: true,
-        message: "Upload completed successfully",
-        processedCount: csvData.length,
-        errorCount: 0,
-      };
-
-      setUploadResult(result);
-      trackFeatureUsage('csv_upload', true, { 
-        diamond_count: csvData.length,
-        file_size: csvData.length 
+        message: `Successfully processed ${processed} diamonds`,
+        processedCount: processed,
+        errors: errors,
       });
 
-      toast({
-        title: "✅ Upload successful",
-        description: `Successfully uploaded ${csvData.length} diamonds`,
+      setFailedRecords(failed);
+
+      // Send bulk upload notification
+      sendBulkUploadNotification({
+        diamondCount: processed,
+        uploadType: 'manual'
       });
 
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
-      
-      const result: UploadResult = {
+      // Track successful upload for feedback triggers
+      trackAction('successful_uploads');
+      trackFeatureUsage('bulk_upload', true, { 
+        stones_count: processed || 1,
+        upload_method: 'manual'
+      });
+
+      setShowSuccessCard(true);
+    } catch (error: any) {
+      console.error("Upload failed:", error);
+      setUploadResult({
         success: false,
-        message: errorMessage,
-        processedCount: 0,
-        errorCount: csvData.length,
-        errors: [errorMessage],
-      };
-
-      setUploadResult(result);
-      trackFeatureUsage('csv_upload', false, { 
-        diamond_count: csvData.length,
-        error: errorMessage 
+        message: error.message || "Upload failed",
       });
 
-      toast({
-        title: "❌ Upload failed",
-        description: errorMessage,
-        variant: "destructive",
+      // Track failed upload
+      trackFeatureUsage('bulk_upload', false, { 
+        error: error.message 
       });
     } finally {
       setUploading(false);
-      setUploadProgress(100);
     }
   };
 
-  const resetUpload = () => {
-    setCsvData([]);
-    setPreviewData([]);
+  const handleFileUpload = async (results: any) => {
+    if (!user?.id) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "User not authenticated",
+      });
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(5);
     setUploadResult(null);
+    setFailedRecords([]);
+
+    try {
+      // Simulate processing steps
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setUploadProgress(20);
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setUploadProgress(30);
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setUploadProgress(70);
+
+      // Upload data to API
+      setUploadProgress(80);
+      const parsedData = results.data.filter((row: any) => row.length > 0);
+      const response = await api.uploadCsv(apiEndpoints.uploadCsv, parsedData, user.id);
+
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      setUploadProgress(90);
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      setUploadProgress(95);
+      const { processed, success, failed, errors } = response.data as any;
+
+      setUploadProgress(100);
+      setUploadResult({
+        success: true,
+        message: `Successfully processed ${processed} diamonds`,
+        processedCount: processed,
+        errors: errors,
+      });
+
+      setFailedRecords(failed);
+
+      // Send bulk upload notification
+      sendBulkUploadNotification({
+        diamondCount: processed,
+        uploadType: 'csv'
+      });
+
+      // Track successful upload for feedback triggers
+      trackAction('successful_uploads');
+      trackFeatureUsage('bulk_upload', true, { 
+        stones_count: processed || 1,
+        upload_method: 'csv'
+      });
+
+      setShowSuccessCard(true);
+    } catch (error: any) {
+      console.error("Upload failed:", error);
+      setUploadResult({
+        success: false,
+        message: error.message || "Upload failed",
+      });
+
+      // Track failed upload
+      trackFeatureUsage('bulk_upload', false, { 
+        error: error.message 
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleExcelUpload = async (file: File) => {
+    if (!user?.id) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "User not authenticated",
+      });
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(5);
+    setUploadResult(null);
+    setFailedRecords([]);
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e: any) => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+        // Simulate processing steps
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setUploadProgress(20);
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setUploadProgress(30);
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setUploadProgress(70);
+
+        // Upload data to API
+        setUploadProgress(80);
+        const response = await api.uploadCsv(apiEndpoints.uploadCsv, jsonData, user.id);
+
+        if (response.error) {
+          throw new Error(response.error);
+        }
+
+        setUploadProgress(90);
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        setUploadProgress(95);
+        const { processed, success, failed, errors } = response.data as any;
+
+        setUploadProgress(100);
+        setUploadResult({
+          success: true,
+          message: `Successfully processed ${processed} diamonds`,
+          processedCount: processed,
+          errors: errors,
+        });
+
+        setFailedRecords(failed);
+
+        // Send bulk upload notification
+        sendBulkUploadNotification({
+          diamondCount: processed,
+          uploadType: 'csv'
+        });
+
+        // Track successful upload for feedback triggers
+        trackAction('successful_uploads');
+        trackFeatureUsage('bulk_upload', true, { 
+          stones_count: processed || 1,
+          upload_method: 'csv'
+        });
+
+        setShowSuccessCard(true);
+      };
+      reader.onerror = (error) => {
+        console.error("Error reading Excel file:", error);
+        setUploadResult({
+          success: false,
+          message: "Error reading Excel file",
+        });
+
+        // Track failed upload
+        trackFeatureUsage('bulk_upload', false, { 
+          error: error.message 
+        });
+      };
+      reader.onloadstart = () => setUploadProgress(10);
+      reader.onloadend = () => setUploadProgress(20);
+      reader.readAsArrayBuffer(file);
+    } catch (error: any) {
+      console.error("Upload failed:", error);
+      setUploadResult({
+        success: false,
+        message: error.message || "Upload failed",
+      });
+
+      // Track failed upload
+      trackFeatureUsage('bulk_upload', false, { 
+        error: error.message 
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setFile(null);
+    setCsvData([]);
+    setUploadResult(null);
+    setFailedRecords([]);
     setUploadProgress(0);
   };
 
+  const handleDownloadFailed = () => {
+    const csv = convertArrayToCSV(failedRecords);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('href', url);
+    a.setAttribute('download', 'failed_records.csv');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const convertArrayToCSV = (array: any[]) => {
+    const header = array.length > 0 ? Object.keys(array[0]).join(',') : '';
+    const rows = array.map(obj => Object.values(obj).join(','));
+    return `${header}\n${rows.join('\n')}`;
+  };
+
+  const handleContinue = () => {
+    setShowSuccessCard(false);
+    setFile(null);
+    setCsvData([]);
+    setUploadResult(null);
+    setFailedRecords([]);
+    setUploadProgress(0);
+  };
+
+  const handleShare = () => {
+    toast({
+      title: "שתף את ההעלאה שלך",
+      description: "שתף את ההעלאה שלך עם קהילת היהלומים",
+    });
+  };
+
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Upload className="h-5 w-5" />
-              CSV Diamond Upload
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {!csvData.length ? (
-              <div
-                {...getRootProps()}
-                className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                  isDragActive
-                    ? 'border-primary bg-primary/5'
-                    : 'border-muted-foreground/25 hover:border-primary/50'
-                }`}
-              >
-                <input {...getInputProps()} />
-                <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                {isDragActive ? (
-                  <p>Drop the CSV file here...</p>
-                ) : (
-                  <>
-                    <p className="text-lg font-medium mb-2">
-                      Drag & drop a CSV file here, or click to select
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Supported format: CSV with diamond data
-                    </p>
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                    <span>CSV loaded: {csvData.length} diamonds</span>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={resetUpload}>
-                    Upload Different File
-                  </Button>
-                </div>
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-semibold mb-4">Upload Diamonds</h1>
 
-                {/* Preview Data */}
-                {previewData.length > 0 && (
-                  <div className="border rounded-lg p-4">
-                    <h3 className="font-semibold mb-2">Preview (first 5 rows):</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b">
-                            <th className="text-left p-2">Stock #</th>
-                            <th className="text-left p-2">Shape</th>
-                            <th className="text-left p-2">Weight</th>
-                            <th className="text-left p-2">Color</th>
-                            <th className="text-left p-2">Clarity</th>
-                            <th className="text-left p-2">Price/Ct</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {previewData.map((diamond, index) => (
-                            <tr key={index} className="border-b">
-                              <td className="p-2">{diamond.stock_number}</td>
-                              <td className="p-2">{diamond.shape}</td>
-                              <td className="p-2">{diamond.weight}</td>
-                              <td className="p-2">{diamond.color}</td>
-                              <td className="p-2">{diamond.clarity}</td>
-                              <td className="p-2">${diamond.price_per_carat}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
+      {!file ? (
+        <div
+          {...getRootProps()}
+          className={`border-2 border-dashed rounded-md p-8 flex flex-col items-center justify-center ${isDragActive ? 'border-primary' : 'border-muted'
+            }`}
+        >
+          <input {...getInputProps()} />
+          <UploadCloud className="h-10 w-10 text-muted-foreground mb-2" />
+          <p className="text-muted-foreground">
+            {isDragActive
+              ? 'Drop the file here...'
+              : 'Drag and drop a CSV/XLSX file here, or click to select a file'}
+          </p>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between p-4 border rounded-md mb-4">
+          <div className="flex items-center">
+            <File className="h-4 w-4 mr-2" />
+            <p className="text-sm">{file.name}</p>
+          </div>
+          <Button variant="ghost" size="sm" onClick={handleRemoveFile}>
+            <X className="h-4 w-4 mr-2" />
+            Remove
+          </Button>
+        </div>
+      )}
 
-                {/* Upload Button */}
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleUpload}
-                    disabled={uploading || !user?.id}
-                    className="flex-1"
-                  >
-                    {uploading ? (
-                      <>Uploading... ({uploadProgress}%)</>
-                    ) : (
-                      <>Upload {csvData.length} Diamonds</>
-                    )}
-                  </Button>
-                </div>
+      {file && file.name.endsWith('.csv') && (
+        <CSVReader
+          onUploadAccepted={(results: any) => {
+            console.log('CSV Results:', results);
+            handleFileUpload(results);
+          }}
+          onError={(error: any) => {
+            console.error('CSV Error:', error);
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: "Error parsing CSV file",
+            });
+          }}
+          config={{
+            header: false,
+          }}
+        >
+          <Button>
+            Parse CSV
+          </Button>
+        </CSVReader>
+      )}
 
-                {/* Progress Bar */}
-                {uploading && (
-                  <Progress value={uploadProgress} className="w-full" />
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      {file && (file.name.endsWith('.xls') || file.name.endsWith('.xlsx')) && (
+        <Button onClick={() => handleExcelUpload(file)}>
+          Upload Excel File
+        </Button>
+      )}
 
-        {/* Upload Results */}
-        {uploadResult && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                {uploadResult.success ? (
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                ) : (
-                  <XCircle className="h-5 w-5 text-red-500" />
-                )}
-                Upload Results
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Alert variant={uploadResult.success ? "default" : "destructive"}>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  {uploadResult.message}
-                  {uploadResult.processedCount !== undefined && (
-                    <div className="mt-2">
-                      Processed: {uploadResult.processedCount} diamonds
-                      {uploadResult.errorCount !== undefined && uploadResult.errorCount > 0 && (
-                        <div>Errors: {uploadResult.errorCount}</div>
-                      )}
-                    </div>
-                  )}
-                </AlertDescription>
-              </Alert>
+      <UploadProgress progress={uploadProgress} uploading={uploading} />
+      <ProcessingSteps progress={uploadProgress} uploading={uploading} />
+      <UploadResult result={uploadResult} />
 
-              {uploadResult.errors && uploadResult.errors.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="font-semibold text-red-600">Errors:</h4>
-                  <ul className="list-disc list-inside text-sm text-red-600 mt-2">
-                    {uploadResult.errors.map((error, index) => (
-                      <li key={index}>{error}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      {uploadResult?.success && failedRecords.length > 0 && (
+        <ProcessingReport
+          report={{
+            totalProcessed: uploadResult.processedCount || 0,
+            successCount: (uploadResult.processedCount || 0) - failedRecords.length,
+            failureCount: failedRecords.length,
+            fileType: file?.name.split('.').pop() || 'CSV',
+            processingTime: 1000,
+            aiExtracted: true,
+          }}
+          onDownloadFailed={handleDownloadFailed}
+          hasFailedRecords={failedRecords.length > 0}
+        />
+      )}
+
+      {showSuccessCard && (
+        <UploadSuccessCard
+          onContinue={handleContinue}
+          onShare={handleShare}
+        />
+      )}
     </div>
   );
-}
+};
+
+export default UploadPage;
