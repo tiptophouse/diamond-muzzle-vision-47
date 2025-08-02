@@ -79,7 +79,14 @@ export function useIntelligentCsvProcessor() {
     ratio: ['ratio', 'measurements'],
     rapnet: ['rap%', 'rap_percent', 'rapnet', 'rap'],
     certificate_comment: ['certcomments', 'cert_comments', 'certificate_comment', 'comments'],
-    picture: ['pic', 'picture', 'image', 'photo']
+    picture: ['pic', 'picture', 'image', 'photo'],
+    // Enhanced 360° and video link mappings
+    gem360_url: [
+      'video link', 'videolink', 'video_link', 'gem360url', 'gem360_url', 'gem360',
+      'v360url', 'v360_url', 'v360', '360url', '360_url', '360view', '360_view',
+      'diamondview', 'diamond_view', 'interactive_view', 'rotational_view',
+      'three_d_view', '3d_view', 'viewer_url', 'viewer', 'sarine_url', 'sarine'
+    ]
   };
 
   const fuzzyMatch = (input: string, candidates: string[]): { match: string; score: number } => {
@@ -252,7 +259,9 @@ export function useIntelligentCsvProcessor() {
       culet: transformedRow.culet ?? 'NONE',
       certificate_comment: transformedRow.certificate_comment ?? 'No comments',
       rapnet: transformedRow.rapnet ?? 0,
-      picture: transformedRow.picture ?? ''
+      picture: transformedRow.picture ?? '',
+      // Add 360° URL field
+      gem360_url: transformedRow.gem360_url ?? ''
     };
 
     console.log('✅ Final diamond data:', result);
@@ -381,6 +390,23 @@ export function useIntelligentCsvProcessor() {
         };
         
         return culetMap[culetUpper] || 'NONE';
+        
+      case 'gem360_url':
+        // Handle 360° URLs - validate and clean
+        if (!strValue || strValue.length < 10) return '';
+        
+        // Ensure proper URL format
+        let url = strValue.trim();
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          return url;
+        } else if (url.startsWith('//')) {
+          return `https:${url}`;
+        } else if (url.startsWith('v360.in') || url.startsWith('www.')) {
+          return `https://${url}`;
+        } else if (url.includes('v360.in') || url.includes('diamondview') || url.includes('360')) {
+          return url.startsWith('http') ? url : `https://${url}`;
+        }
+        return url;
         
       default:
         return strValue;
