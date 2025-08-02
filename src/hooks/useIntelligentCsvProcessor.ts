@@ -218,15 +218,20 @@ export function useIntelligentCsvProcessor() {
 
     console.log('🎯 FINAL TRANSFORMED ROW:', JSON.stringify(transformedRow, null, 2));
 
+    // Determine shape first to decide on cut field inclusion
+    const shape = transformedRow.shape ?? 'round brilliant';
+    const isRound = shape.toLowerCase().includes('round') || shape.toLowerCase().includes('brilliant');
+
     // Build the final diamond data, using the correctly mapped field names
     // Use nullish coalescing (??) to only apply defaults when values are null/undefined
     const result = {
       stock: transformedRow.stock ?? `AUTO-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-      shape: transformedRow.shape ?? 'round brilliant',
+      shape: shape,
       weight: transformedRow.weight ?? 1.0,
       color: transformedRow.color ?? 'G', 
       clarity: transformedRow.clarity ?? 'VS1',
-      cut: transformedRow.cut ?? 'EXCELLENT',
+      // Only include cut for round diamonds and if it has a valid value
+      ...(isRound && transformedRow.cut ? { cut: transformedRow.cut } : {}),
       // Enhanced price handling - prioritize price_per_carat, fallback to calculated price, then default
       price_per_carat: transformedRow.price_per_carat ?? 
                       (transformedRow.price != null && transformedRow.weight != null && transformedRow.weight > 0 
@@ -296,8 +301,22 @@ export function useIntelligentCsvProcessor() {
       case 'polish':
       case 'symmetry':
         const gradeUpper = strValue.toUpperCase();
-        const validGrades = ['EXCELLENT', 'VERY GOOD', 'GOOD', 'FAIR', 'POOR'];
-        return validGrades.includes(gradeUpper) ? gradeUpper : 'EXCELLENT';
+        
+        // Map common abbreviations to full names
+        const gradeMap: { [key: string]: string } = {
+          'EX': 'EXCELLENT',
+          'EXCELLENT': 'EXCELLENT',
+          'VG': 'VERY GOOD',
+          'VERY GOOD': 'VERY GOOD',
+          'G': 'GOOD',
+          'GOOD': 'GOOD',
+          'F': 'POOR',
+          'FAIR': 'POOR',
+          'POOR': 'POOR',
+          'P': 'POOR'
+        };
+        
+        return gradeMap[gradeUpper] || 'EXCELLENT';
         
       case 'fluorescence':
         const fluorUpper = strValue.toUpperCase();
@@ -336,8 +355,32 @@ export function useIntelligentCsvProcessor() {
         
       case 'culet':
         const culetUpper = strValue.toUpperCase();
-        const validCulets = ['NONE', 'VERY SMALL', 'SMALL', 'MEDIUM', 'SLIGHTLY LARGE', 'LARGE', 'VERY LARGE'];
-        return validCulets.includes(culetUpper) ? culetUpper : 'NONE';
+        
+        // Handle percentage values for culet (convert to descriptive terms)
+        if (strValue.includes('%')) {
+          const percentage = parseFloat(strValue.replace('%', ''));
+          if (percentage === 0 || strValue.toLowerCase().includes('none')) return 'NONE';
+          if (percentage <= 2) return 'VERY SMALL';
+          if (percentage <= 4) return 'SMALL';
+          if (percentage <= 6) return 'MEDIUM';
+          if (percentage <= 8) return 'SLIGHTLY LARGE';
+          if (percentage <= 10) return 'LARGE';
+          return 'VERY LARGE';
+        }
+        
+        // Handle text values
+        const culetMap: { [key: string]: string } = {
+          'NONE': 'NONE',
+          'POINTED': 'NONE',
+          'VERY SMALL': 'VERY SMALL',
+          'SMALL': 'SMALL',
+          'MEDIUM': 'MEDIUM',
+          'SLIGHTLY LARGE': 'SLIGHTLY LARGE',
+          'LARGE': 'LARGE',
+          'VERY LARGE': 'VERY LARGE'
+        };
+        
+        return culetMap[culetUpper] || 'NONE';
         
       default:
         return strValue;
