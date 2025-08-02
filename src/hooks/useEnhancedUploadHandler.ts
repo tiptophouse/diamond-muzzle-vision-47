@@ -6,6 +6,7 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useInventoryDataSync } from './inventory/useInventoryDataSync';
 import { useIntelligentCsvProcessor } from './useIntelligentCsvProcessor';
 import { useOpenAICsvEnhancer } from './useOpenAICsvEnhancer';
+import { useBulkUploadNotifications } from './useBulkUploadNotifications';
 
 interface UploadResult {
   success: boolean;
@@ -26,6 +27,7 @@ export function useEnhancedUploadHandler() {
   const { triggerInventoryChange } = useInventoryDataSync();
   const { processIntelligentCsv } = useIntelligentCsvProcessor();
   const { enhanceDataWithOpenAI } = useOpenAICsvEnhancer();
+  const { sendBulkUploadNotification } = useBulkUploadNotifications();
 
   // Helper function to map form values to FastAPI enum values
   const mapToApiEnum = (value: any): string => {
@@ -202,9 +204,18 @@ export function useEnhancedUploadHandler() {
             successCount = validDiamonds.length;
             console.log(`✅ Successfully sent ${successCount} diamonds to FastAPI`);
             
+            // Send bulk upload notification if count > 80
+            if (successCount > 80) {
+              console.log('📢 Sending bulk upload notification to Telegram group...');
+              await sendBulkUploadNotification({
+                diamondCount: successCount,
+                uploadType: 'csv'
+              });
+            }
+            
             toast({
               title: "🎉 Upload Successful!",
-              description: `${successCount} diamonds uploaded successfully`,
+              description: `${successCount} diamonds uploaded successfully${successCount > 80 ? ' and community notified!' : ''}`,
             });
           } else {
             errors.push(`API Error: ${responseData.detail || 'Upload failed'}`);
@@ -236,7 +247,7 @@ export function useEnhancedUploadHandler() {
       const successResult: UploadResult = {
         success: successCount > 0,
         message: successCount > 0 
-          ? `✅ Successfully uploaded ${successCount} out of ${enhancedData.length} diamonds!${errors.length > 0 ? ` ${errors.length} failed.` : ''}`
+          ? `✅ Successfully uploaded ${successCount} out of ${enhancedData.length} diamonds!${errors.length > 0 ? ` ${errors.length} failed.` : ''}${successCount > 80 ? ' 📢 Community has been notified!' : ''}`
           : `❌ All ${enhancedData.length} diamonds failed to upload. Please check the errors below.`,
         processedCount: successCount,
         fieldMappings: processedCsv.fieldMappings,
@@ -257,9 +268,10 @@ export function useEnhancedUploadHandler() {
       
       // Show immediate toast message
       if (successCount > 0) {
+        const notificationMessage = successCount > 80 ? ' and community notified!' : '';
         toast({
           title: "🎉 Upload Complete!",
-          description: `${successCount} diamonds uploaded successfully${errors.length > 0 ? `, ${errors.length} failed` : ''}`,
+          description: `${successCount} diamonds uploaded successfully${errors.length > 0 ? `, ${errors.length} failed` : ''}${notificationMessage}`,
         });
       } else {
         toast({
