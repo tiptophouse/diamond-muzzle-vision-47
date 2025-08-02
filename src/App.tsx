@@ -1,3 +1,4 @@
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ThemeProvider } from "@/components/theme-provider"
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -15,11 +16,13 @@ import { FeedbackProvider } from "@/components/feedback/FeedbackProvider";
 const queryClient = new QueryClient()
 
 function App() {
+  console.log('🚀 App component initializing...');
+  
   return (
     <QueryClientProvider client={queryClient}>
-      <TelegramAuthProvider>
-        <FeedbackProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <TelegramAuthProvider>
+          <FeedbackProvider>
             <Toaster />
             <Router>
               <Routes>
@@ -31,9 +34,9 @@ function App() {
                 <Route path="/profile" element={<ProfilePage />} />
               </Routes>
             </Router>
-          </ThemeProvider>
-        </FeedbackProvider>
-      </TelegramAuthProvider>
+          </FeedbackProvider>
+        </TelegramAuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
