@@ -61,6 +61,8 @@ export function useStoreData() {
   const detect360Url = useCallback((item: any) => {
     console.log('🔍 360° DETECTION for', item.stock_number || item.stock, '- checking fields:', {
       gem360_url: item.gem360_url,
+      pic: item.pic,                    // YOUR CSV "Pic" field
+      picture: item.picture,
       'Video link': item['Video link'],
       videoLink: item.videoLink,
       video_url: item.video_url,
@@ -69,6 +71,8 @@ export function useStoreData() {
 
     const potential360Fields = [
       item.gem360_url,        // From our new CSV mapping
+      item.pic,               // YOUR CSV "Pic" field - MOST IMPORTANT!
+      item.picture,           // Alternative picture field
       item.v360_url,
       item.video_url,
       item.video360_url,

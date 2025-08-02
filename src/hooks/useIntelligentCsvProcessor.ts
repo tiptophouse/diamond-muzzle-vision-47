@@ -79,9 +79,11 @@ export function useIntelligentCsvProcessor() {
     ratio: ['ratio', 'measurements'],
     rapnet: ['rap%', 'rap_percent', 'rapnet', 'rap'],
     certificate_comment: ['certcomments', 'cert_comments', 'certificate_comment', 'comments'],
-    picture: ['pic', 'picture', 'image', 'photo'],
-    // Enhanced 360° and video link mappings
+    // IMPORTANT: Separate picture field for static images only
+    picture: ['pic_image', 'static_image', 'photo_static'],
+    // Enhanced 360° and video link mappings - ADD "Pic" field!
     gem360_url: [
+      'pic', 'picture', 'image', 'photo',                    // YOUR CSV uses "Pic" field for v360.in URLs!
       'video link', 'videolink', 'video_link', 'gem360url', 'gem360_url', 'gem360',
       'v360url', 'v360_url', 'v360', '360url', '360_url', '360view', '360_view',
       'diamondview', 'diamond_view', 'interactive_view', 'rotational_view',
