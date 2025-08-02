@@ -7,7 +7,9 @@ import { Diamond } from "@/components/inventory/InventoryTable";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Share2, ExternalLink, Camera, Award, Gem, Palette, Eye, MessageSquare, Upload, X } from "lucide-react";
+import { ArrowLeft, Share2, ExternalLink, Camera, Award, Gem, Palette, Eye, MessageSquare, Upload, X, Sparkles } from "lucide-react";
+import { V360Viewer } from "@/components/store/V360Viewer";
+import { Gem360Viewer } from "@/components/store/Gem360Viewer";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -285,20 +287,54 @@ View full details: ${currentUrl}`;
 
         <div className="container mx-auto px-4 py-8 max-w-6xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Image Section */}
+            {/* Enhanced Image/360° Section */}
             <div className="space-y-4">
               <Card className="overflow-hidden">
-                <div className="aspect-square bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center relative">
-                  {diamond.imageUrl ? (
+                <div className="aspect-square bg-gradient-to-br from-slate-100 to-slate-200 relative">
+                  {/* PRIORITY 1: Show v360.in viewer if available */}
+                  {diamond.gem360Url && diamond.gem360Url.includes('v360.in') ? (
+                    <div className="relative w-full h-full">
+                      <V360Viewer 
+                        v360Url={diamond.gem360Url}
+                        stockNumber={diamond.stockNumber}
+                        isInline={false}
+                      />
+                      <div className="absolute top-4 left-4">
+                        <Badge className="bg-gradient-to-r from-emerald-600 to-green-600 text-white border-0 px-3 py-1 text-sm font-medium flex items-center gap-2">
+                          <Sparkles className="h-4 w-4" />
+                          v360.in Interactive
+                        </Badge>
+                      </div>
+                    </div>
+                  ) : diamond.gem360Url ? (
+                    /* PRIORITY 2: Show other 360° viewers */
+                    <div className="relative w-full h-full">
+                      <Gem360Viewer 
+                        gem360Url={diamond.gem360Url}
+                        stockNumber={diamond.stockNumber}
+                        isInline={false}
+                      />
+                      <div className="absolute top-4 left-4">
+                        <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0 px-3 py-1 text-sm font-medium flex items-center gap-2">
+                          <Sparkles className="h-4 w-4" />
+                          360° Interactive
+                        </Badge>
+                      </div>
+                    </div>
+                  ) : diamond.imageUrl ? (
+                    /* PRIORITY 3: Show static image */
                     <img 
                       src={diamond.imageUrl} 
                       alt={`${diamond.shape} Diamond`}
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="text-center">
-                      <Gem className="h-24 w-24 text-slate-400 mx-auto mb-4" />
-                      <p className="text-slate-500">Diamond Image</p>
+                    /* PRIORITY 4: Placeholder */
+                    <div className="w-full h-full flex items-center justify-center text-center">
+                      <div>
+                        <Gem className="h-24 w-24 text-slate-400 mx-auto mb-4" />
+                        <p className="text-slate-500">Diamond Image</p>
+                      </div>
                     </div>
                   )}
                   
@@ -344,25 +380,42 @@ View full details: ${currentUrl}`;
                 )}
               </Card>
 
-              {/* 360 View / Certificate Links */}
-              <div className="grid grid-cols-2 gap-4">
-                {diamond.gem360Url && (
-                  <Button asChild variant="outline" className="h-12">
-                    <a href={diamond.gem360Url} target="_blank" rel="noopener noreferrer">
-                      <Eye className="h-4 w-4 mr-2" />
-                      360° View
-                    </a>
-                  </Button>
-                )}
-                {diamond.certificateUrl && (
-                  <Button asChild variant="outline" className="h-12">
-                    <a href={diamond.certificateUrl} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Certificate
-                    </a>
-                  </Button>
-                )}
-              </div>
+              {/* Enhanced Action Buttons - Only show if no 360° viewer displayed */}
+              {!diamond.gem360Url && (
+                <div className="grid grid-cols-2 gap-4">
+                  {diamond.certificateUrl && (
+                    <Button asChild variant="outline" className="h-12">
+                      <a href={diamond.certificateUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Certificate
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              )}
+              
+              {/* Additional 360° Options - Show as secondary options */}
+              {diamond.gem360Url && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">360° View Options</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button asChild variant="outline" size="sm">
+                      <a href={diamond.gem360Url} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        Open Direct
+                      </a>
+                    </Button>
+                    {diamond.certificateUrl && (
+                      <Button asChild variant="outline" size="sm">
+                        <a href={diamond.certificateUrl} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          Certificate
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Details Section */}
