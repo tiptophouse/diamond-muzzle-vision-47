@@ -1,3 +1,4 @@
+
 import {
   Table,
   TableBody,
@@ -21,6 +22,8 @@ export interface Diamond {
   price: number;
   status: string;
   fluorescence?: string;
+  polish?: string;
+  symmetry?: string;
   imageUrl?: string;
   gem360Url?: string;
   store_visible: boolean;
