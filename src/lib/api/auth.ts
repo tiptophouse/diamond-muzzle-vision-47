@@ -17,11 +17,60 @@ export interface TelegramVerificationResponse {
   };
 }
 
-// Store verification result
+// Store verification result and backend auth token
 let verificationResult: TelegramVerificationResponse | null = null;
+let backendAuthToken: string | null = null;
 
 export function getVerificationResult(): TelegramVerificationResponse | null {
   return verificationResult;
+}
+
+export function getBackendAuthToken(): string | null {
+  return backendAuthToken;
+}
+
+// Backend sign-in function
+export async function signInToBackend(initData: string): Promise<string | null> {
+  try {
+    console.log('🔐 API: Signing in to backend with initData');
+    
+    if (!initData || initData.length === 0) {
+      console.error('🔐 API: No initData provided for sign-in');
+      return null;
+    }
+
+    const response = await fetch(`${API_BASE_URL}${apiEndpoints.signIn()}`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      mode: 'cors',
+      body: JSON.stringify({
+        init_data: initData
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('🔐 API: Backend sign-in failed:', response.status, errorText);
+      return null;
+    }
+
+    const result = await response.json();
+    
+    if (result.token) {
+      backendAuthToken = result.token;
+      console.log('✅ API: Backend sign-in successful, token stored');
+      return result.token;
+    } else {
+      console.error('🔐 API: No token in sign-in response');
+      return null;
+    }
+  } catch (error) {
+    console.error('❌ API: Backend sign-in error:', error);
+    return null;
+  }
 }
 
 // Strict Telegram verification - no fallbacks
@@ -113,20 +162,21 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
 }
 
 export async function getAuthHeaders(): Promise<Record<string, string>> {
-  const backendToken = await getBackendAccessToken();
+  // Use backend auth token if available, otherwise fallback to secure config token
+  const authToken = backendAuthToken || await getBackendAccessToken();
   
   const headers: Record<string, string> = {
     "X-Client-Timestamp": Date.now().toString(),
     "X-Security-Level": "strict"
   };
   
-  if (backendToken) {
-    headers["Authorization"] = `Bearer ${backendToken}`;
+  if (authToken) {
+    headers["Authorization"] = `Bearer ${authToken}`;
   }
   
   if (verificationResult && verificationResult.success) {
-    const authToken = `telegram_verified_${verificationResult.user_id}_${Date.now()}`;
-    headers["X-Telegram-Auth"] = authToken;
+    const telegramAuth = `telegram_verified_${verificationResult.user_id}_${Date.now()}`;
+    headers["X-Telegram-Auth"] = telegramAuth;
   }
   
   return headers;

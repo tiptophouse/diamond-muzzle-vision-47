@@ -30,7 +30,8 @@ export const apiEndpoints = {
   // Payment
   paymentRequest: () => `/api/v1/payment_request`,
   
-  // Legacy endpoints (keeping for compatibility)
+  // Authentication endpoints
+  signIn: () => `/api/v1/sign-in/`,
   verifyTelegram: () => `/api/v1/verify-telegram`,
   uploadInventory: () => `/api/v1/upload-inventory`,
   soldDiamond: () => `/api/v1/sold`,

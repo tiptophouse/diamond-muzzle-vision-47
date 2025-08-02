@@ -6,5 +6,7 @@ export { setCurrentUserId, getCurrentUserId, API_BASE_URL } from './config';
 export { 
   verifyTelegramUser, 
   getVerificationResult, 
+  signInToBackend,
+  getBackendAuthToken,
   type TelegramVerificationResponse 
 } from './auth';

@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { TelegramUser } from '@/types/telegram';
-import { verifyTelegramUser } from '@/lib/api/auth';
+import { verifyTelegramUser, signInToBackend } from '@/lib/api/auth';
 
 interface AuthState {
   user: TelegramUser | null;
@@ -142,7 +142,20 @@ export function useStrictTelegramAuth(): AuthState {
 
         // Try to extract user data from initData or initDataUnsafe
         if (tg.initData && validateTelegramData(tg.initData)) {
-          // Try backend verification first
+          // Step 1: Sign in to backend to get auth token
+          try {
+            console.log('🔐 Signing in to backend first...');
+            const backendToken = await signInToBackend(tg.initData);
+            if (backendToken) {
+              console.log('✅ Backend sign-in successful, token stored');
+            } else {
+              console.warn('⚠️ Backend sign-in failed, continuing with verification...');
+            }
+          } catch (error) {
+            console.warn('⚠️ Backend sign-in error:', error);
+          }
+
+          // Step 2: Try backend verification 
           try {
             const verificationResult = await verifyTelegramUser(tg.initData);
             if (verificationResult && verificationResult.success) {
