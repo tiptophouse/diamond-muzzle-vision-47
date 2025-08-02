@@ -1,7 +1,6 @@
-
 import { useState, memo, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, Eye, MessageCircle, Gem, Share2 } from "lucide-react";
+import { Heart, Eye, MessageCircle, Gem, Share2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
@@ -36,7 +35,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
         }
       },
       { 
-        rootMargin: '100px',
+        rootMargin: '50px',
         threshold: 0.1 
       }
     );
@@ -48,22 +47,26 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     return () => observer.disconnect();
   }, []);
 
-  // FIXED: Better image URL validation
+  // Enhanced image URL validation
   const hasValidImage = !!(
     diamond.imageUrl && 
     diamond.imageUrl.trim() && 
     diamond.imageUrl !== 'default' &&
     diamond.imageUrl.startsWith('http') &&
-    diamond.imageUrl.length > 10 // Ensure it's not just a partial URL
+    diamond.imageUrl.length > 10 &&
+    diamond.imageUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i)
   );
 
-  // Enhanced 360° detection
-  const has360 = !!(diamond.gem360Url && (
-    diamond.gem360Url.includes('.html') ||
-    diamond.gem360Url.includes('360') ||
+  // Enhanced 360° detection with better validation
+  const has360 = !!(diamond.gem360Url && diamond.gem360Url.trim() && (
+    diamond.gem360Url.includes('my360.sela') ||
     diamond.gem360Url.includes('v360.in') ||
+    diamond.gem360Url.includes('diamondview.aspx') ||
     diamond.gem360Url.includes('gem360') ||
-    diamond.gem360Url.includes('sarine')
+    diamond.gem360Url.includes('360') ||
+    diamond.gem360Url.includes('sarine') ||
+    diamond.gem360Url.includes('.html') ||
+    diamond.gem360Url.match(/DAN\d+-\d+[A-Z]?\.jpg$/i)
   ));
 
   // Debug logging
@@ -157,7 +160,8 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
             isInline={true}
           />
           <div className="absolute top-2 left-2">
-            <Badge className="text-xs font-medium border-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-sm px-2 py-0.5">
+            <Badge className="text-xs font-medium border-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-sm px-2 py-0.5 flex items-center gap-1">
+              <Sparkles className="h-3 w-3" />
               360°
             </Badge>
           </div>
@@ -179,6 +183,10 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
             className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${
               imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'
             }`}
+            style={{
+              imageRendering: 'crisp-edges',
+              transform: 'translateZ(0)'
+            }}
             onLoad={handleImageLoad}
             onError={handleImageError}
             loading="lazy"
