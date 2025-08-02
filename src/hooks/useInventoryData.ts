@@ -41,7 +41,7 @@ export function useInventoryData() {
     return shapeMap[normalized] || apiShape.charAt(0).toUpperCase() + apiShape.slice(1).toLowerCase();
   };
 
-  // Enhanced image URL processing
+  // Enhanced image URL processing - separate from 360° URLs
   const processImageUrl = useCallback((imageUrl: string | undefined): string | undefined => {
     if (!imageUrl || typeof imageUrl !== 'string') {
       return undefined;
@@ -58,7 +58,7 @@ export function useInventoryData() {
       return undefined;
     }
 
-    // Skip HTML viewers and non-image URLs
+    // Skip 360° viewers (these should go to gem360Url field instead)
     if (trimmedUrl.includes('.html') ||
         trimmedUrl.includes('diamondview.aspx') ||
         trimmedUrl.includes('v360.in') ||
@@ -74,6 +74,45 @@ export function useInventoryData() {
     // Must end with valid image extension
     if (!trimmedUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i)) {
       return undefined;
+    }
+
+    return trimmedUrl;
+  }, []);
+
+  // Enhanced 360° URL detection and processing
+  const detect360Url = useCallback((url: string | undefined): string | undefined => {
+    if (!url || typeof url !== 'string') {
+      return undefined;
+    }
+
+    const trimmedUrl = url.trim();
+    
+    // Skip invalid or placeholder values
+    if (!trimmedUrl || 
+        trimmedUrl === 'default' || 
+        trimmedUrl === 'null' || 
+        trimmedUrl === 'undefined' ||
+        trimmedUrl.length < 10) {
+      return undefined;
+    }
+
+    // Check for 360° indicators
+    const is360Url = trimmedUrl.includes('v360.in') ||
+                     trimmedUrl.includes('diamondview.aspx') ||
+                     trimmedUrl.includes('my360.sela') ||
+                     trimmedUrl.includes('gem360') ||
+                     trimmedUrl.includes('sarine') ||
+                     trimmedUrl.includes('360') ||
+                     trimmedUrl.includes('.html') ||
+                     trimmedUrl.match(/DAN\d+-\d+[A-Z]?\.jpg$/i);
+
+    if (!is360Url) {
+      return undefined;
+    }
+
+    // Ensure proper protocol
+    if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
+      return `https://${trimmedUrl}`;
     }
 
     return trimmedUrl;
@@ -138,10 +177,12 @@ export function useInventoryData() {
             status: item.status || item.Availability || 'Available',
             fluorescence: item.fluorescence || item.FluorescenceIntensity || undefined,
             imageUrl: finalImageUrl,
-            // Map gem360Url from Video link field in CSV
-            gem360Url: item.gem360Url || 
-                       item['Video link'] || 
-                       item.videoLink ||
+            // Enhanced 360° URL detection from multiple fields
+            gem360Url: detect360Url(item.gem360Url) || 
+                       detect360Url(item['Video link']) || 
+                       detect360Url(item.videoLink) ||
+                       detect360Url(item.video_url) ||
+                       detect360Url(item.v360_url) ||
                        undefined,
             store_visible: item.store_visible !== false,
             certificateNumber: item.certificate_number || 
@@ -177,7 +218,7 @@ export function useInventoryData() {
     } finally {
       setLoading(false);
     }
-  }, [processImageUrl]);
+  }, [processImageUrl, detect360Url]);
 
   const handleRefresh = useCallback(() => {
     console.log('🔄 INVENTORY HOOK: Manual refresh triggered');

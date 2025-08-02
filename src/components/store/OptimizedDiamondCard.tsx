@@ -7,6 +7,7 @@ import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { toast } from 'sonner';
 import { Gem360Viewer } from "./Gem360Viewer";
+import { V360Viewer } from "./V360Viewer";
 import { formatCurrency } from "@/utils/numberUtils";
 import { 
   detectFancyColor, 
@@ -76,6 +77,9 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     diamond.gem360Url.match(/DAN\d+-\d+[A-Z]?\.jpg$/i) // Static 360° images (lower priority)
   ));
 
+  // Determine if it's v360.in specifically (highest priority)
+  const isV360 = !!(diamond.gem360Url && diamond.gem360Url.includes('v360.in'));
+  
   // Determine if it's an interactive 360° viewer (higher priority)
   const isInteractive360 = !!(diamond.gem360Url && (
     diamond.gem360Url.includes('v360.in') ||
@@ -176,22 +180,32 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
       className="group relative bg-white rounded-xl overflow-hidden transition-all duration-200 border border-gray-200 hover:border-gray-300 hover:shadow-lg"
       style={{ animationDelay: `${Math.min(index * 30, 200)}ms` }}
     >
-      {/* PRIORITY 1: Always show 360° if available, prioritizing interactive viewers */}
+      {/* PRIORITY 1: Always show 360° if available, prioritizing v360.in */}
       {has360 && isVisible ? (
         <div className="relative aspect-square">
-          <Gem360Viewer 
-            gem360Url={diamond.gem360Url!}
-            stockNumber={diamond.stockNumber}
-            isInline={true}
-          />
+          {isV360 ? (
+            <V360Viewer 
+              v360Url={diamond.gem360Url!}
+              stockNumber={diamond.stockNumber}
+              isInline={true}
+            />
+          ) : (
+            <Gem360Viewer 
+              gem360Url={diamond.gem360Url!}
+              stockNumber={diamond.stockNumber}
+              isInline={true}
+            />
+          )}
           <div className="absolute top-2 left-2">
             <Badge className={`text-xs font-medium border-0 text-white shadow-sm px-2 py-0.5 flex items-center gap-1 ${
-              isInteractive360 
-                ? 'bg-gradient-to-r from-green-600 to-emerald-600' 
-                : 'bg-gradient-to-r from-purple-600 to-pink-600'
+              isV360 
+                ? 'bg-gradient-to-r from-emerald-600 to-green-600' 
+                : isInteractive360 
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600' 
+                  : 'bg-gradient-to-r from-purple-600 to-pink-600'
             }`}>
               <Sparkles className="h-3 w-3" />
-              {isInteractive360 ? 'Interactive 360°' : '360°'}
+              {isV360 ? 'v360.in' : isInteractive360 ? 'Interactive 360°' : '360°'}
             </Badge>
           </div>
         </div>
