@@ -8,6 +8,13 @@ import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { toast } from 'sonner';
 import { Gem360Viewer } from "./Gem360Viewer";
 import { formatCurrency } from "@/utils/numberUtils";
+import { 
+  detectFancyColor, 
+  formatFancyColorDescription,
+  shouldShowCutGrade,
+  formatPolishSymmetry 
+} from "@/utils/fancyColorUtils";
+import { FancyColorBadge, CertificationBadge, OriginBadge } from "./FancyColorBadge";
 
 interface OptimizedDiamondCardProps {
   diamond: Diamond;
@@ -76,6 +83,14 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     diamond.gem360Url.includes('.html') ||
     diamond.gem360Url.includes('sarine')
   ));
+
+  // Enhanced fancy color detection
+  const colorInfo = detectFancyColor(diamond.color);
+  const formattedColorDescription = formatFancyColorDescription(colorInfo);
+
+  // Determine what attributes to show based on diamond type
+  const showCutGrade = shouldShowCutGrade(diamond.shape, diamond.cut);
+  const polishSymmetryText = formatPolishSymmetry(diamond.polish, diamond.symmetry);
 
   // Debug logging
   useEffect(() => {
@@ -217,10 +232,14 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
               <h3 className="text-lg font-semibold text-gray-900">{diamond.carat} ct</h3>
               <p className="text-sm text-gray-600">{diamond.shape}</p>
               <div className="flex items-center justify-center gap-2 text-xs">
-                <span className="bg-gray-200 px-2 py-1 rounded">{diamond.color}</span>
-                <span className="bg-gray-200 px-2 py-1 rounded">{diamond.clarity}</span>
+                <FancyColorBadge colorInfo={colorInfo} />
+                {diamond.clarity && (
+                  <span className="bg-gray-200 px-2 py-1 rounded">{diamond.clarity}</span>
+                )}
               </div>
-              <p className="text-xs text-yellow-600 font-medium">{diamond.cut}</p>
+              {showCutGrade && (
+                <p className="text-xs text-yellow-600 font-medium">{diamond.cut}</p>
+              )}
             </div>
           </div>
         </div>
@@ -281,17 +300,45 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
           </div>
         </div>
 
-        {/* Specs */}
-        <div className="flex items-center gap-1.5 mb-3">
-          <span className="bg-gray-100 px-2 py-1 rounded text-xs font-medium text-gray-700">
-            {diamond.color}
-          </span>
-          <span className="bg-gray-100 px-2 py-1 rounded text-xs font-medium text-gray-700">
-            {diamond.clarity}
-          </span>
-          <span className="text-xs font-medium text-yellow-600">
-            {diamond.cut}
-          </span>
+        {/* Enhanced Badge Section for Fancy Color vs Regular Diamonds */}
+        <div className="flex flex-col gap-2 mb-3">
+          {/* Primary Color Badge */}
+          <div className="flex items-center gap-1.5">
+            <FancyColorBadge colorInfo={colorInfo} />
+            
+            {/* Clarity - always show if available */}
+            {diamond.clarity && (
+              <Badge className="text-xs font-medium bg-gray-100 px-2 py-1 rounded text-gray-700">
+                {diamond.clarity}
+              </Badge>
+            )}
+          </div>
+
+          {/* Secondary Badges Row */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {/* Certification Badge */}
+            <CertificationBadge 
+              lab={diamond.lab} 
+              certificateUrl={diamond.certificateUrl}
+            />
+            
+            {/* Origin Badge */}
+            <OriginBadge 
+              isNatural={true} // Assume natural unless specified otherwise
+              // treatment={diamond.treatment} // Add this field if available
+            />
+          </div>
+
+          {/* Optional Polish/Symmetry for fancy colors or Cut Grade for rounds */}
+          {showCutGrade ? (
+            <div className="text-xs font-medium text-yellow-600">
+              Cut: {diamond.cut}
+            </div>
+          ) : polishSymmetryText ? (
+            <div className="text-xs text-gray-500">
+              {polishSymmetryText}
+            </div>
+          ) : null}
         </div>
 
         {/* Action Buttons */}
