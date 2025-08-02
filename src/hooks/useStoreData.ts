@@ -59,6 +59,14 @@ export function useStoreData() {
 
   // Enhanced 360° URL detection for various formats
   const detect360Url = useCallback((item: any) => {
+    console.log('🔍 360° DETECTION for', item.stock_number || item.stock, '- checking fields:', {
+      gem360_url: item.gem360_url,
+      'Video link': item['Video link'],
+      videoLink: item.videoLink,
+      video_url: item.video_url,
+      allKeys: Object.keys(item)
+    });
+
     const potential360Fields = [
       item.gem360_url,        // From our new CSV mapping
       item.v360_url,
@@ -74,6 +82,8 @@ export function useStoreData() {
     for (const field of potential360Fields) {
       if (field && typeof field === 'string' && field.trim()) {
         const url = field.trim();
+        console.log('🔍 CHECKING FIELD:', field, '-> URL:', url);
+        
         // Enhanced detection for 360° formats including your examples
         if (url.includes('v360.in') ||           // HIGHEST PRIORITY: v360.in
             url.includes('diamondview.aspx') ||
@@ -90,6 +100,7 @@ export function useStoreData() {
         }
       }
     }
+    console.log('❌ NO 360° URL found for', item.stock_number || item.stock);
     return undefined;
   }, []);
 
