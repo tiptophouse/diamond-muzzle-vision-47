@@ -59,63 +59,34 @@ export function useStoreData() {
 
   // Enhanced 360° URL detection for various formats
   const detect360Url = useCallback((item: any) => {
-    const stockId = item.stock_number || item.stock || 'unknown';
-    console.log('🔍 360° DETECTION for', stockId, '- checking fields:', {
-      gem360_url: item.gem360_url,
-      pic: item.pic,                    // YOUR CSV "Pic" field  
-      Pic: item.Pic,                    // Capital P version
-      picture: item.picture,
-      Picture: item.Picture,            // Capital P version
-      'Video link': item['Video link'],
-      videoLink: item.videoLink,
-      video_link: item.video_link,
-      v360_url: item.v360_url,
-      // Check if ANY field contains v360.in
-      hasV360InAnyField: Object.values(item).some(val => 
-        typeof val === 'string' && val.includes('v360.in')
-      )
-    });
-
     const potential360Fields = [
-      item.gem360_url,        // From our new CSV mapping
-      item.pic,               // YOUR CSV "Pic" field - MOST IMPORTANT!
-      item.Pic,               // Capital P version
-      item.picture,           // Alternative picture field
-      item.Picture,           // Capital P version
-      item['Video link'],     // Exact CSV field name with space
-      item.videoLink,         // CamelCase version
-      item.video_link,        // Snake case version
       item.v360_url,
+      item.gem360_url,
       item.video_url,
       item.video360_url,
       item.three_d_url,
       item.rotation_url
     ];
     
-    for (const url of potential360Fields) {
-      if (url && typeof url === 'string' && url.trim()) {
-        const cleanUrl = url.trim();
-        console.log('🔍 Checking URL field:', cleanUrl);
-        
-        // Enhanced 360° URL detection - PRIORITIZE v360.in!
-        if (cleanUrl.includes('v360.in') || 
-            cleanUrl.includes('gem360') || 
-            cleanUrl.includes('360view') || 
-            cleanUrl.includes('diamondview') ||
-            cleanUrl.includes('rotational') ||
-            cleanUrl.includes('interactive') ||
-            cleanUrl.includes('/360/') ||
-            cleanUrl.includes('_360.') ||
-            cleanUrl.includes('360.jpg') ||
-            cleanUrl.includes('360.mp4') ||
-            cleanUrl.includes('360.gif')) {
-          console.log('✅ 360° URL FOUND for', stockId + ':', cleanUrl);
-          return cleanUrl;
+    for (const field of potential360Fields) {
+      if (field && typeof field === 'string' && field.trim()) {
+        const url = field.trim();
+        // Enhanced detection for 360° formats including your examples
+        if (url.includes('my360.sela') ||
+            url.includes('v360.in') ||
+            url.includes('diamondview.aspx') ||
+            url.includes('gem360') ||
+            url.includes('360') ||
+            url.includes('sarine') ||
+            url.includes('3d') ||
+            url.includes('rotate') ||
+            url.includes('.html') ||
+            url.match(/DAN\d+-\d+[A-Z]?\.jpg$/)) { // Pattern like DAN040-0016A.jpg
+          console.log('✨ DETECTED 360° URL for', item.stock_number, ':', url);
+          return url;
         }
       }
     }
-    
-    console.log('❌ NO 360° URL found for', stockId);
     return undefined;
   }, []);
 
@@ -184,33 +155,7 @@ export function useStoreData() {
 
         return result;
       })
-      .filter(diamond => diamond.store_visible && diamond.status === 'Available')
-      .sort((a, b) => {
-        // PRIORITY SORTING: v360.in first, then other 360°, then images, then info-only
-        const aIsV360 = !!(a.gem360Url && a.gem360Url.includes('v360.in'));
-        const bIsV360 = !!(b.gem360Url && b.gem360Url.includes('v360.in'));
-        
-        const aHas360 = !!a.gem360Url;
-        const bHas360 = !!b.gem360Url;
-        
-        const aHasImage = !!a.imageUrl;
-        const bHasImage = !!b.imageUrl;
-        
-        // Priority 1: v360.in diamonds first
-        if (aIsV360 && !bIsV360) return -1;
-        if (!aIsV360 && bIsV360) return 1;
-        
-        // Priority 2: Other 360° diamonds
-        if (aHas360 && !bHas360) return -1;
-        if (!aHas360 && bHas360) return 1;
-        
-        // Priority 3: Diamonds with images
-        if (aHasImage && !bHasImage) return -1;
-        if (!aHasImage && bHasImage) return 1;
-        
-        // Priority 4: Sort by price (highest first) within same priority level
-        return (b.price || 0) - (a.price || 0);
-      });
+      .filter(diamond => diamond.store_visible && diamond.status === 'Available');
   }, [processImageUrl, detect360Url]);
 
   const fetchStoreData = useCallback(async (useCache = true) => {
@@ -232,13 +177,7 @@ export function useStoreData() {
         hasData: !!result.data,
         dataLength: result.data?.length || 0,
         error: result.error,
-        firstItem: result.data?.[0],
-        // CRITICAL: Check if v360.in URLs exist in raw data
-        hasV360InRawData: result.data ? result.data.some(item => 
-          Object.values(item).some(val => 
-            typeof val === 'string' && val.includes('v360.in')
-          )
-        ) : false
+        firstItem: result.data?.[0]
       });
 
       if (result.error) {

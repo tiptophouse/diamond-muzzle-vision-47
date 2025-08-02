@@ -1,447 +1,173 @@
-import React, { useState, useCallback } from 'react';
-import { useDropzone } from 'react-dropzone';
-import { CSVReader } from 'react-papaparse';
-import * as XLSX from 'xlsx';
+import { TelegramLayout } from "@/components/layout/TelegramLayout";
+import { UploadForm } from "@/components/upload/UploadForm";
 import { Button } from "@/components/ui/button";
-import { UploadCloud, File, X, CheckCircle, AlertTriangle } from 'lucide-react';
-import { UploadProgress } from '@/components/upload/UploadProgress';
-import { UploadResult } from '@/components/upload/UploadResult';
-import { ProcessingSteps } from '@/components/upload/ProcessingSteps';
-import { ProcessingReport } from '@/components/upload/ProcessingReport';
-import { UploadSuccessCard } from '@/components/upload/UploadSuccessCard';
-import { useBulkUploadNotifications } from '@/hooks/useBulkUploadNotifications';
-import { useToast } from '@/components/ui/use-toast';
-import { api, apiEndpoints } from '@/lib/api';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { useFeedback } from '@/components/feedback/FeedbackProvider';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Link } from "react-router-dom";
+import { Upload, FileText, Camera, Zap } from "lucide-react";
+import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
+import { useState } from "react";
 
-const UploadPage = () => {
-  const [file, setFile] = useState<File | null>(null);
-  const [csvData, setCsvData] = useState<any[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadResult, setUploadResult] = useState<any>(null);
-  const [failedRecords, setFailedRecords] = useState<any[]>([]);
-  const [showSuccessCard, setShowSuccessCard] = useState(false);
-  const { sendBulkUploadNotification } = useBulkUploadNotifications();
-  const { toast } = useToast();
-  const { user } = useTelegramAuth();
-  const { trackAction, trackFeatureUsage } = useFeedback();
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    setFile(acceptedFiles[0]);
-    setCsvData([]);
-    setUploadResult(null);
-    setFailedRecords([]);
-    setUploadProgress(0);
-  }, []);
+export default function UploadPage() {
+  const { hapticFeedback } = useTelegramWebApp();
+  const [language] = useState<'he' | 'en'>('he'); // Default to Hebrew
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'text/csv': ['.csv'],
-      'application/vnd.ms-excel': ['.xls'],
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+  const text = {
+    he: {
+      title: "העלאת יהלומים למלאי",
+      subtitle: "העלו את נתוני המלאי שלכם באמצעות קבצי CSV או הוסיפו יהלומים בנפרד",
+      uploadSingle: "העלאת יהלום בודד",
+      uploadSingleDesc: "הוסיפו יהלומים בודדים עם מידע מפורט וסריקת תעודות",
+      scanCertificate: "סרקו תעודת GIA",
+      scanDesc: "הדרך הכי מהירה להוסיף יהלום - סרקו את התעודה להזנת נתונים מיידית",
+      startScan: "התחלת סריקת תעודה",
+      bulkUpload: "העלאה מרובה CSV",
+      bulkDesc: "העלו מספר יהלומים בבת אחת באמצעות קובץ CSV",
+      stepByStep: "הוראות שלב אחר שלב:",
+      step1: "1. לחצו על 'התחלת סריקת תעודה'",
+      step2: "2. כוונו את המצלמה לתעודת ה-GIA",
+      step3: "3. המתינו לזיהוי אוטומטי של הנתונים",
+      step4: "4. בדקו ושמרו את הפרטים"
     },
-    multiple: false,
-  });
-
-  const handleManualUpload = async (data: any[]) => {
-    if (!user?.id) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "User not authenticated",
-      });
-      return;
-    }
-
-    setUploading(true);
-    setUploadProgress(5);
-    setUploadResult(null);
-    setFailedRecords([]);
-
-    try {
-      // Simulate processing steps
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setUploadProgress(20);
-
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setUploadProgress(30);
-
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setUploadProgress(70);
-
-      // Upload data to API
-      setUploadProgress(80);
-      const response = await api.uploadCsv(apiEndpoints.uploadCsv, data, user.id);
-
-      if (response.error) {
-        throw new Error(response.error);
-      }
-
-      setUploadProgress(90);
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      setUploadProgress(95);
-      const { processed, success, failed, errors } = response.data as any;
-
-      setUploadProgress(100);
-      setUploadResult({
-        success: true,
-        message: `Successfully processed ${processed} diamonds`,
-        processedCount: processed,
-        errors: errors,
-      });
-
-      setFailedRecords(failed);
-
-      // Send bulk upload notification
-      sendBulkUploadNotification({
-        diamondCount: processed,
-        uploadType: 'manual'
-      });
-
-      // Track successful upload for feedback triggers
-      trackAction('successful_uploads');
-      trackFeatureUsage('bulk_upload', true, { 
-        stones_count: processed || 1,
-        upload_method: 'manual'
-      });
-
-      setShowSuccessCard(true);
-    } catch (error: any) {
-      console.error("Upload failed:", error);
-      setUploadResult({
-        success: false,
-        message: error.message || "Upload failed",
-      });
-
-      // Track failed upload
-      trackFeatureUsage('bulk_upload', false, { 
-        error: error.message 
-      });
-    } finally {
-      setUploading(false);
+    en: {
+      title: "Upload Inventory",
+      subtitle: "Upload your inventory data using CSV files or add individual diamonds",
+      uploadSingle: "Upload Single Diamond",
+      uploadSingleDesc: "Add individual diamonds with detailed information and certificate scanning",
+      scanCertificate: "Scan GIA Certificate",
+      scanDesc: "Fastest way to add a diamond - scan your certificate for instant data entry",
+      startScan: "Start Certificate Scan",
+      bulkUpload: "Bulk CSV Upload",
+      bulkDesc: "Upload multiple diamonds at once using a CSV file",
+      stepByStep: "Step by step instructions:",
+      step1: "1. Click 'Start Certificate Scan'",
+      step2: "2. Point camera at GIA certificate",
+      step3: "3. Wait for automatic data recognition",
+      step4: "4. Review and save details"
     }
   };
 
-  const handleFileUpload = async (results: any) => {
-    if (!user?.id) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "User not authenticated",
-      });
-      return;
-    }
-
-    setUploading(true);
-    setUploadProgress(5);
-    setUploadResult(null);
-    setFailedRecords([]);
-
-    try {
-      // Simulate processing steps
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setUploadProgress(20);
-
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setUploadProgress(30);
-
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setUploadProgress(70);
-
-      // Upload data to API
-      setUploadProgress(80);
-      const parsedData = results.data.filter((row: any) => row.length > 0);
-      const response = await api.uploadCsv(apiEndpoints.uploadCsv, parsedData, user.id);
-
-      if (response.error) {
-        throw new Error(response.error);
-      }
-
-      setUploadProgress(90);
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      setUploadProgress(95);
-      const { processed, success, failed, errors } = response.data as any;
-
-      setUploadProgress(100);
-      setUploadResult({
-        success: true,
-        message: `Successfully processed ${processed} diamonds`,
-        processedCount: processed,
-        errors: errors,
-      });
-
-      setFailedRecords(failed);
-
-      // Send bulk upload notification
-      sendBulkUploadNotification({
-        diamondCount: processed,
-        uploadType: 'csv'
-      });
-
-      // Track successful upload for feedback triggers
-      trackAction('successful_uploads');
-      trackFeatureUsage('bulk_upload', true, { 
-        stones_count: processed || 1,
-        upload_method: 'csv'
-      });
-
-      setShowSuccessCard(true);
-    } catch (error: any) {
-      console.error("Upload failed:", error);
-      setUploadResult({
-        success: false,
-        message: error.message || "Upload failed",
-      });
-
-      // Track failed upload
-      trackFeatureUsage('bulk_upload', false, { 
-        error: error.message 
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleExcelUpload = async (file: File) => {
-    if (!user?.id) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "User not authenticated",
-      });
-      return;
-    }
-
-    setUploading(true);
-    setUploadProgress(5);
-    setUploadResult(null);
-    setFailedRecords([]);
-
-    try {
-      const reader = new FileReader();
-      reader.onload = async (e: any) => {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-        // Simulate processing steps
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setUploadProgress(20);
-
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setUploadProgress(30);
-
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setUploadProgress(70);
-
-        // Upload data to API
-        setUploadProgress(80);
-        const response = await api.uploadCsv(apiEndpoints.uploadCsv, jsonData, user.id);
-
-        if (response.error) {
-          throw new Error(response.error);
-        }
-
-        setUploadProgress(90);
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        setUploadProgress(95);
-        const { processed, success, failed, errors } = response.data as any;
-
-        setUploadProgress(100);
-        setUploadResult({
-          success: true,
-          message: `Successfully processed ${processed} diamonds`,
-          processedCount: processed,
-          errors: errors,
-        });
-
-        setFailedRecords(failed);
-
-        // Send bulk upload notification
-        sendBulkUploadNotification({
-          diamondCount: processed,
-          uploadType: 'csv'
-        });
-
-        // Track successful upload for feedback triggers
-        trackAction('successful_uploads');
-        trackFeatureUsage('bulk_upload', true, { 
-          stones_count: processed || 1,
-          upload_method: 'csv'
-        });
-
-        setShowSuccessCard(true);
-      };
-      reader.onerror = (error) => {
-        console.error("Error reading Excel file:", error);
-        setUploadResult({
-          success: false,
-          message: "Error reading Excel file",
-        });
-
-        // Track failed upload
-        trackFeatureUsage('bulk_upload', false, { 
-          error: error.message 
-        });
-      };
-      reader.onloadstart = () => setUploadProgress(10);
-      reader.onloadend = () => setUploadProgress(20);
-      reader.readAsArrayBuffer(file);
-    } catch (error: any) {
-      console.error("Upload failed:", error);
-      setUploadResult({
-        success: false,
-        message: error.message || "Upload failed",
-      });
-
-      // Track failed upload
-      trackFeatureUsage('bulk_upload', false, { 
-        error: error.message 
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleRemoveFile = () => {
-    setFile(null);
-    setCsvData([]);
-    setUploadResult(null);
-    setFailedRecords([]);
-    setUploadProgress(0);
-  };
-
-  const handleDownloadFailed = () => {
-    const csv = convertArrayToCSV(failedRecords);
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.setAttribute('href', url);
-    a.setAttribute('download', 'failed_records.csv');
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  };
-
-  const convertArrayToCSV = (array: any[]) => {
-    const header = array.length > 0 ? Object.keys(array[0]).join(',') : '';
-    const rows = array.map(obj => Object.values(obj).join(','));
-    return `${header}\n${rows.join('\n')}`;
-  };
-
-  const handleContinue = () => {
-    setShowSuccessCard(false);
-    setFile(null);
-    setCsvData([]);
-    setUploadResult(null);
-    setFailedRecords([]);
-    setUploadProgress(0);
-  };
-
-  const handleShare = () => {
-    toast({
-      title: "שתף את ההעלאה שלך",
-      description: "שתף את ההעלאה שלך עם קהילת היהלומים",
-    });
-  };
+  const t = text[language];
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-semibold mb-4">Upload Diamonds</h1>
-
-      {!file ? (
-        <div
-          {...getRootProps()}
-          className={`border-2 border-dashed rounded-md p-8 flex flex-col items-center justify-center ${isDragActive ? 'border-primary' : 'border-muted'
-            }`}
-        >
-          <input {...getInputProps()} />
-          <UploadCloud className="h-10 w-10 text-muted-foreground mb-2" />
-          <p className="text-muted-foreground">
-            {isDragActive
-              ? 'Drop the file here...'
-              : 'Drag and drop a CSV/XLSX file here, or click to select a file'}
+    <TelegramLayout>
+      <div className="space-y-6 px-4 py-6">
+        {/* Header with clear instructions */}
+        <div className="text-center space-y-4">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-primary-glow to-primary-dark bg-clip-text text-transparent">
+            {t.title}
+          </h1>
+          <p className="text-muted-foreground text-lg leading-relaxed">
+            {t.subtitle}
           </p>
+          
+          {/* Clear step-by-step guide */}
+          <Card className="border-accent/20 bg-gradient-to-r from-accent/5 to-accent/10">
+            <CardContent className="pt-6">
+              <h3 className="font-semibold text-accent mb-4 flex items-center gap-2">
+                <Zap className="h-5 w-5" />
+                {t.stepByStep}
+              </h3>
+              <div className="text-right space-y-2 text-sm text-muted-foreground">
+                <div>{t.step1}</div>
+                <div>{t.step2}</div>
+                <div>{t.step3}</div>
+                <div>{t.step4}</div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      ) : (
-        <div className="flex items-center justify-between p-4 border rounded-md mb-4">
-          <div className="flex items-center">
-            <File className="h-4 w-4 mr-2" />
-            <p className="text-sm">{file.name}</p>
-          </div>
-          <Button variant="ghost" size="sm" onClick={handleRemoveFile}>
-            <X className="h-4 w-4 mr-2" />
-            Remove
-          </Button>
-        </div>
-      )}
+        
+        {/* PRIMARY: Single Diamond Upload Card with BLINKING animation */}
+        <Card className="border-primary/50 bg-gradient-to-br from-primary/10 via-primary/5 to-primary/15 hover:border-primary/60 transition-all duration-300 shadow-premium relative overflow-hidden">
+          {/* Pulsing background animation */}
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 animate-pulse opacity-60"></div>
+          
+          <CardHeader className="pb-4 relative z-10">
+            <CardTitle className="flex items-center gap-4 text-primary text-xl">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/30 shadow-lg animate-scale-in">
+                <Camera className="h-7 w-7 animate-pulse" />
+              </div>
+              {t.scanCertificate}
+            </CardTitle>
+            <p className="text-base text-muted-foreground leading-relaxed font-medium">
+              {t.scanDesc}
+            </p>
+          </CardHeader>
+          <CardContent className="relative z-10">
+            <Link to="/upload-single-stone?action=scan">
+              <Button
+                onClick={() => hapticFeedback.impact('heavy')}
+                data-tutorial="upload-single-diamond"
+                variant="diamond"
+                size="lg"
+                className="w-full h-16 text-lg font-bold animate-pulse hover:animate-none shadow-premium relative overflow-hidden"
+              >
+                {/* Button glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -skew-x-12 animate-[shimmer_2s_infinite]"></div>
+                <Camera className="h-6 w-6 mr-3" />
+                {t.startScan}
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
 
-      {file && file.name.endsWith('.csv') && (
-        <CSVReader
-          onUploadAccepted={(results: any) => {
-            console.log('CSV Results:', results);
-            handleFileUpload(results);
-          }}
-          onError={(error: any) => {
-            console.error('CSV Error:', error);
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description: "Error parsing CSV file",
-            });
-          }}
-          config={{
-            header: false,
-          }}
-        >
-          <Button>
-            Parse CSV
-          </Button>
-        </CSVReader>
-      )}
+        {/* Secondary Upload Card */}
+        <Card className="border-muted/30 bg-gradient-to-br from-muted/5 to-muted/10 hover:border-muted/40 transition-all duration-300">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-4 text-lg">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-muted/10 to-muted/20 shadow-md">
+                <Upload className="h-6 w-6" />
+              </div>
+              {t.uploadSingle}
+            </CardTitle>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {t.uploadSingleDesc}
+            </p>
+          </CardHeader>
+          <CardContent>
+            <Link to="/upload-single-stone">
+              <Button
+                onClick={() => hapticFeedback.impact('medium')}
+                variant="outline"
+                size="lg"
+                className="w-full"
+              >
+                <Upload className="h-5 w-5 mr-2" />
+                {t.uploadSingle}
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
 
-      {file && (file.name.endsWith('.xls') || file.name.endsWith('.xlsx')) && (
-        <Button onClick={() => handleExcelUpload(file)}>
-          Upload Excel File
-        </Button>
-      )}
-
-      <UploadProgress progress={uploadProgress} uploading={uploading} />
-      <ProcessingSteps progress={uploadProgress} uploading={uploading} />
-      <UploadResult result={uploadResult} />
-
-      {uploadResult?.success && failedRecords.length > 0 && (
-        <ProcessingReport
-          report={{
-            totalProcessed: uploadResult.processedCount || 0,
-            successCount: (uploadResult.processedCount || 0) - failedRecords.length,
-            failureCount: failedRecords.length,
-            fileType: file?.name.split('.').pop() || 'CSV',
-            processingTime: 1000,
-            aiExtracted: true,
-          }}
-          onDownloadFailed={handleDownloadFailed}
-          hasFailedRecords={failedRecords.length > 0}
-        />
-      )}
-
-      {showSuccessCard && (
-        <UploadSuccessCard
-          onContinue={handleContinue}
-          onShare={handleShare}
-        />
-      )}
-    </div>
+        {/* Bulk Upload Card */}
+        <Card className="hover:shadow-lg transition-all duration-300">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-muted to-muted/80 shadow-md">
+                <FileText className="h-6 w-6" />
+              </div>
+              {t.bulkUpload}
+            </CardTitle>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {t.bulkDesc}
+            </p>
+          </CardHeader>
+          <CardContent>
+            <Link to="/upload/bulk">
+              <Button
+                onClick={() => hapticFeedback.impact('medium')}
+                variant="outline"
+                size="lg"
+                className="w-full"
+              >
+                <FileText className="h-5 w-5 mr-2" />
+                {t.bulkUpload}
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    </TelegramLayout>
   );
-};
-
-export default UploadPage;
+}

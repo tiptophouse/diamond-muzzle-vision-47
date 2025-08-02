@@ -72,10 +72,10 @@ export function WelcomeMessageSender() {
     try {
       await sendBulkWelcomeMessages(recentUsers);
     } catch (error) {
-      console.error('Error sending comprehensive welcome messages:', error);
+      console.error('Error sending welcome messages:', error);
       toast({
         title: 'Error',
-        description: 'Failed to send comprehensive welcome messages',
+        description: 'Failed to send welcome messages',
         variant: 'destructive',
       });
     } finally {
@@ -89,14 +89,14 @@ export function WelcomeMessageSender() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
-            Comprehensive Diamond Muzzle Welcome Campaign
+            Welcome Message Campaign
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">
-                Send the comprehensive Hebrew welcome message explaining all Diamond Muzzle features and benefits
+                Send comprehensive welcome messages to new users explaining all platform features
               </p>
               <div className="mt-2">
                 <Badge variant="outline" className="mr-2">
@@ -129,52 +129,21 @@ export function WelcomeMessageSender() {
                 ) : (
                   <Send className="h-4 w-4 mr-2" />
                 )}
-                Send Comprehensive Messages
+                Send Welcome Messages
               </Button>
             </div>
           </div>
 
-          {/* Comprehensive message preview */}
+          {/* Welcome message preview */}
           <div className="bg-muted p-4 rounded-lg">
-            <h4 className="font-semibold mb-2">Comprehensive Message Preview:</h4>
-            <div className="text-sm space-y-2 max-h-60 overflow-y-auto">
+            <h4 className="font-semibold mb-2">Message Preview (Hebrew):</h4>
+            <div className="text-sm space-y-2">
               <p><strong>🎉 ברוכים הבאים ל-Diamond Muzzle, [שם המשתמש]!</strong></p>
-              <p><strong>💎 הצטרפת לפלטפורמת המסחר ביהלומים המתקדמת בעולם!</strong></p>
-              
-              <div className="space-y-1 text-xs">
-                <p><strong>🔍 ניטור קבוצות חכם 24/7</strong></p>
-                <p>• אנחנו מאזינים לכל קבוצות היהלומים בזמן אמת</p>
-                <p>• קבל התראות מיידיות כשמישהו מחפש בדיוק את האבנים שלך</p>
-                
-                <p><strong>📊 ניהול מלאי מתקדם</strong></p>
-                <p>• העלאת יהלומים קלה ומהירה מתעודות GIA</p>
-                <p>• חזית חנות מקצועית לאוסף שלך</p>
-                
-                <p><strong>🤖 בינה מלאכותית מתקדמת</strong></p>
-                <p>• צ'אט חכם עם המלאי שלך - שאל שאלות וקבל תשובות מיידיות</p>
-                <p>• התאמות אוטומטיות בין ביקוש להיצע</p>
-                
-                <p><strong>💰 כלי צמיחה עסקית</strong></p>
-                <p>• שיתוף מקצועי של יהלומים ברשתות החברתיות</p>
-                <p>• ניהול לידים ולקוחות פוטנציאליים</p>
-                
-                <p><strong>🌐 קהילה גלובלית</strong></p>
-                <p>• חיבור לקונים ברחבי העולם</p>
-                <p>• פלטפורמה רב-לשונית</p>
-                
-                <p><strong>⭐ התחל עכשיו ב-3 צעדים פשוטים:</strong></p>
-                <p>1️⃣ העלה את היהלומים הראשונים מתעודה</p>
-                <p>2️⃣ הגדר את החנות המקצועית שלך</p>
-                <p>3️⃣ התחל לקבל לידים והתאמות אוטומטיות</p>
-                
-                <p><strong>🚀 מוכן לשנות את עסק היהלומים שלך לנצח?</strong></p>
-              </div>
-              
-              <div className="mt-3 pt-3 border-t">
-                <p className="text-xs text-muted-foreground">
-                  <strong>4 Interactive Buttons:</strong> העלאה מתעודה | צ'אט עם AI | דשבורד | חנות
-                </p>
-              </div>
+              <p>💎 הצטרפת לפלטפורמת המסחר ביהלומים המתקדמת ביותר!</p>
+              <p><strong>🔍 ניטור קבוצות חכם</strong> - אנחנו מאזינים לקבוצות יהלומים 24/7</p>
+              <p><strong>📊 ניהול מלאי חכם</strong> - העלה את היהלומים שלך בקלות</p>
+              <p><strong>🚀 התאמה אוטומטית</strong> - קבל התראות כשיש ביקוש לאבנים שלך</p>
+              <p className="text-muted-foreground">+ תכונות נוספות ולחצנים אינטראקטיביים</p>
             </div>
           </div>
 

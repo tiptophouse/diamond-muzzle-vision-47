@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { toast } from 'sonner';
-import { TiltControlled360Viewer } from "./TiltControlled360Viewer";
+import { Gem360Viewer } from "./Gem360Viewer";
+import { V360Viewer } from "./V360Viewer";
 import { formatCurrency } from "@/utils/numberUtils";
 import { 
   detectFancyColor, 
@@ -179,15 +180,22 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
       className="group relative bg-white rounded-xl overflow-hidden transition-all duration-200 border border-gray-200 hover:border-gray-300 hover:shadow-lg"
       style={{ animationDelay: `${Math.min(index * 30, 200)}ms` }}
     >
-      {/* PRIORITY 1: Enhanced 360° with tilt control */}
+      {/* PRIORITY 1: Always show 360° if available, prioritizing v360.in */}
       {has360 && isVisible ? (
         <div className="relative aspect-square">
-          <TiltControlled360Viewer
-            v360Url={diamond.gem360Url!}
-            stockNumber={diamond.stockNumber}
-            isInline={true}
-            className="w-full h-full"
-          />
+          {isV360 ? (
+            <V360Viewer 
+              v360Url={diamond.gem360Url!}
+              stockNumber={diamond.stockNumber}
+              isInline={true}
+            />
+          ) : (
+            <Gem360Viewer 
+              gem360Url={diamond.gem360Url!}
+              stockNumber={diamond.stockNumber}
+              isInline={true}
+            />
+          )}
           <div className="absolute top-2 left-2">
             <Badge className={`text-xs font-medium border-0 text-white shadow-sm px-2 py-0.5 flex items-center gap-1 ${
               isV360 
@@ -197,7 +205,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
                   : 'bg-gradient-to-r from-purple-600 to-pink-600'
             }`}>
               <Sparkles className="h-3 w-3" />
-              {isV360 ? 'Tilt v360.in' : isInteractive360 ? 'Tilt 360°' : '360°'}
+              {isV360 ? 'v360.in' : isInteractive360 ? 'Interactive 360°' : '360°'}
             </Badge>
           </div>
         </div>

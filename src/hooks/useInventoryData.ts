@@ -177,15 +177,11 @@ export function useInventoryData() {
             status: item.status || item.Availability || 'Available',
             fluorescence: item.fluorescence || item.FluorescenceIntensity || undefined,
             imageUrl: finalImageUrl,
-            // Enhanced 360° URL detection - CRITICAL: Check ALL possible field names!
-            gem360Url: detect360Url(item.gem360_url) || 
-                       detect360Url(item.pic) ||           // YOUR CSV "Pic" field!
-                       detect360Url(item.Pic) ||           // Capital P version
-                       detect360Url(item.picture) ||       // Alternative
-                       detect360Url(item.Picture) ||       // Capital P alternative
-                       detect360Url(item['Video link']) || // Exact CSV field name  
+            // Enhanced 360° URL detection from multiple fields
+            gem360Url: detect360Url(item.gem360Url) || 
+                       detect360Url(item['Video link']) || 
                        detect360Url(item.videoLink) ||
-                       detect360Url(item.video_link) ||
+                       detect360Url(item.video_url) ||
                        detect360Url(item.v360_url) ||
                        undefined,
             store_visible: item.store_visible !== false,
