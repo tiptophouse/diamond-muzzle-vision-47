@@ -57,16 +57,24 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     diamond.imageUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i)
   );
 
-  // Enhanced 360° detection with better validation
+  // Enhanced 360° detection - prioritize interactive viewers over static images
   const has360 = !!(diamond.gem360Url && diamond.gem360Url.trim() && (
-    diamond.gem360Url.includes('my360.sela') ||
+    diamond.gem360Url.includes('v360.in') ||         // Interactive viewers (highest priority)
+    diamond.gem360Url.includes('diamondview.aspx') ||
+    diamond.gem360Url.includes('my360.sela') ||      // 360° platforms
+    diamond.gem360Url.includes('gem360') ||
+    diamond.gem360Url.includes('sarine') ||
+    diamond.gem360Url.includes('360') ||
+    diamond.gem360Url.includes('.html') ||
+    diamond.gem360Url.match(/DAN\d+-\d+[A-Z]?\.jpg$/i) // Static 360° images (lower priority)
+  ));
+
+  // Determine if it's an interactive 360° viewer (higher priority)
+  const isInteractive360 = !!(diamond.gem360Url && (
     diamond.gem360Url.includes('v360.in') ||
     diamond.gem360Url.includes('diamondview.aspx') ||
-    diamond.gem360Url.includes('gem360') ||
-    diamond.gem360Url.includes('360') ||
-    diamond.gem360Url.includes('sarine') ||
     diamond.gem360Url.includes('.html') ||
-    diamond.gem360Url.match(/DAN\d+-\d+[A-Z]?\.jpg$/i)
+    diamond.gem360Url.includes('sarine')
   ));
 
   // Debug logging
@@ -76,9 +84,10 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
       hasValidImage,
       imageUrl: diamond.imageUrl,
       has360,
-      gem360Url: diamond.gem360Url
+      gem360Url: diamond.gem360Url,
+      isInteractive360
     });
-  }, [diamond.stockNumber, hasValidImage, diamond.imageUrl, has360, diamond.gem360Url]);
+  }, [diamond.stockNumber, hasValidImage, diamond.imageUrl, has360, diamond.gem360Url, isInteractive360]);
 
   const handleLike = useCallback(() => {
     impactOccurred('light');
@@ -151,7 +160,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
       className="group relative bg-white rounded-xl overflow-hidden transition-all duration-200 border border-gray-200 hover:border-gray-300 hover:shadow-lg"
       style={{ animationDelay: `${Math.min(index * 30, 200)}ms` }}
     >
-      {/* PRIORITY 1: Always show 360° if available */}
+      {/* PRIORITY 1: Always show 360° if available, prioritizing interactive viewers */}
       {has360 && isVisible ? (
         <div className="relative aspect-square">
           <Gem360Viewer 
@@ -160,14 +169,18 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
             isInline={true}
           />
           <div className="absolute top-2 left-2">
-            <Badge className="text-xs font-medium border-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-sm px-2 py-0.5 flex items-center gap-1">
+            <Badge className={`text-xs font-medium border-0 text-white shadow-sm px-2 py-0.5 flex items-center gap-1 ${
+              isInteractive360 
+                ? 'bg-gradient-to-r from-green-600 to-emerald-600' 
+                : 'bg-gradient-to-r from-purple-600 to-pink-600'
+            }`}>
               <Sparkles className="h-3 w-3" />
-              360°
+              {isInteractive360 ? 'Interactive 360°' : '360°'}
             </Badge>
           </div>
         </div>
       ) : hasValidImage && isVisible ? (
-        /* PRIORITY 2: Show actual diamond image */
+        /* PRIORITY 2: Show actual diamond image only if no 360° available */
         <div className="relative aspect-square bg-gray-50 overflow-hidden">
           {/* Loading state */}
           {!imageLoaded && (
@@ -215,10 +228,12 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
       
       {/* Status and Action Icons */}
       <div className="absolute top-2 right-2 flex items-center gap-1">
-        {/* Available Badge */}
-        <Badge className="text-xs font-medium border-0 bg-green-500 text-white px-2 py-0.5">
-          Available
-        </Badge>
+        {/* Available Badge - only show if no 360° badge */}
+        {!has360 && (
+          <Badge className="text-xs font-medium border-0 bg-green-500 text-white px-2 py-0.5">
+            Available
+          </Badge>
+        )}
       </div>
 
       {/* Action Icons */}
