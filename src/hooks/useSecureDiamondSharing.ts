@@ -11,7 +11,7 @@ export function useSecureDiamondSharing() {
   const { sendData } = useTelegramSendData();
 
   const createSecureShareData = useCallback((diamond: Diamond) => {
-    // Create secure data payload that only works in Telegram
+    // Create secure data payload that only works in Telegram for registered users
     return {
       type: 'diamond_share',
       diamond: {
@@ -28,9 +28,38 @@ export function useSecureDiamondSharing() {
       },
       sharedBy: user?.id,
       timestamp: Date.now(),
-      miniAppUrl: window.location.origin
+      miniAppUrl: window.location.origin,
+      requiresRegistration: true
     };
   }, [user]);
+
+  const verifyUserRegistration = useCallback(async (telegramId: number): Promise<boolean> => {
+    try {
+      // Check if user exists in user_profiles (meaning they've registered and clicked start)
+      const { data: userProfile, error } = await supabase
+        .from('user_profiles')
+        .select('telegram_id, status, created_at')
+        .eq('telegram_id', telegramId)
+        .single();
+
+      if (error || !userProfile) {
+        console.log('❌ User not found in database - not registered:', telegramId);
+        return false;
+      }
+
+      // Additional check: user must be active and have been created (registered)
+      if (userProfile.status !== 'active') {
+        console.log('❌ User account is not active:', telegramId);
+        return false;
+      }
+
+      console.log('✅ User is registered and active:', telegramId);
+      return true;
+    } catch (error) {
+      console.error('❌ Error verifying user registration:', error);
+      return false;
+    }
+  }, []);
 
   const trackShareClick = useCallback(async (diamondId: string, sharedBy: number) => {
     try {
@@ -41,7 +70,8 @@ export function useSecureDiamondSharing() {
         viewer_user_agent: navigator.userAgent,
         device_type: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop',
         session_id: crypto.randomUUID(),
-        shared_click: true
+        shared_click: true,
+        access_via_share: true
       });
       
       console.log('✅ Share click tracked for diamond:', diamondId);
@@ -52,16 +82,16 @@ export function useSecureDiamondSharing() {
 
   const shareWithInlineButtons = useCallback(async (diamond: Diamond) => {
     if (!webApp || !user) {
-      toast.error('Telegram Mini App required for sharing');
+      toast.error('🔒 Telegram Mini App required for sharing');
       return false;
     }
 
     try {
       const shareData = createSecureShareData(diamond);
       
-      // Create the share message with inline buttons
+      // Create the share message with inline buttons for registered users only
       const shareMessage = {
-        action: 'share_diamond_with_buttons',
+        action: 'share_diamond_with_registration_check',
         data: {
           diamond: shareData.diamond,
           message: `💎 *${diamond.carat} ct ${diamond.shape} Diamond*\n\n` +
@@ -69,21 +99,22 @@ export function useSecureDiamondSharing() {
                   `💎 Clarity: ${diamond.clarity}\n` +
                   `✂️ Cut: ${diamond.cut}\n` +
                   `💰 Price: $${diamond.price?.toLocaleString() || 'Contact for Price'}\n\n` +
-                  `Stock: ${diamond.stockNumber}`,
+                  `Stock: ${diamond.stockNumber}\n\n` +
+                  `⚠️ *Registration Required*: You must be registered in our Telegram Mini App to view this diamond.`,
           inline_keyboard: [
             [
               {
-                text: '👀 View Details',
+                text: '💎 View Diamond (Registered Users Only)',
                 web_app: {
-                  url: `${window.location.origin}/diamond/${diamond.id}?shared=true&from=${user.id}`
+                  url: `${window.location.origin}/diamond/${diamond.id}?shared=true&from=${user.id}&verify=true`
                 }
               }
             ],
             [
               {
-                text: '🏪 Browse More Diamonds',
+                text: '📝 Register & Start Mini App',
                 web_app: {
-                  url: `${window.location.origin}/store?shared=true&from=${user.id}`
+                  url: `${window.location.origin}/?register=true&from=${user.id}`
                 }
               }
             ],
@@ -95,7 +126,8 @@ export function useSecureDiamondSharing() {
             ]
           ]
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        requiresRegistration: true
       };
 
       // Send via Telegram WebApp
@@ -108,10 +140,11 @@ export function useSecureDiamondSharing() {
           owner_telegram_id: user.id,
           viewer_telegram_id: null, // Will be filled when someone clicks
           action_type: 'share_initiated',
-          session_id: crypto.randomUUID()
+          session_id: crypto.randomUUID(),
+          access_via_share: true
         });
 
-        toast.success('💎 Diamond shared with inline buttons!');
+        toast.success('💎 Diamond shared with registration verification!');
         return true;
       } else {
         throw new Error('Failed to send share data');
@@ -126,6 +159,7 @@ export function useSecureDiamondSharing() {
   return {
     shareWithInlineButtons,
     trackShareClick,
+    verifyUserRegistration,
     isAvailable: !!(webApp && user)
   };
 }

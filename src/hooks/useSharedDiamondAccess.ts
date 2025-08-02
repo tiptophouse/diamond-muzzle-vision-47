@@ -1,17 +1,48 @@
 
 import { useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTelegramWebApp } from './useTelegramWebApp';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export function useSharedDiamondAccess() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { user, webApp } = useTelegramWebApp();
+
+  const validateUserRegistration = useCallback(async (telegramId: number): Promise<boolean> => {
+    try {
+      console.log('🔍 Checking registration for user:', telegramId);
+      
+      // Check if user exists in user_profiles and is active
+      const { data: userProfile, error } = await supabase
+        .from('user_profiles')
+        .select('telegram_id, status, created_at, first_name')
+        .eq('telegram_id', telegramId)
+        .single();
+
+      if (error || !userProfile) {
+        console.log('❌ User not registered in database:', telegramId);
+        return false;
+      }
+
+      if (userProfile.status !== 'active') {
+        console.log('❌ User account is not active:', userProfile.status);
+        return false;
+      }
+
+      console.log('✅ User is registered and active:', userProfile.first_name);
+      return true;
+    } catch (error) {
+      console.error('❌ Error validating user registration:', error);
+      return false;
+    }
+  }, []);
 
   const validateAndTrackAccess = useCallback(async (diamondId: string) => {
     const isShared = searchParams.get('shared');
     const sharedFrom = searchParams.get('from');
+    const requiresVerification = searchParams.get('verify');
 
     if (!isShared || !sharedFrom) return true;
 
@@ -19,6 +50,22 @@ export function useSharedDiamondAccess() {
     if (!webApp || !user) {
       toast.error('🔒 Shared diamonds can only be viewed in Telegram Mini App');
       return false;
+    }
+
+    // If verification is required, check if user is registered
+    if (requiresVerification === 'true') {
+      console.log('🔐 Registration verification required for access');
+      
+      const isRegistered = await validateUserRegistration(user.id);
+      
+      if (!isRegistered) {
+        toast.error('📝 You must be registered in our Mini App to view this diamond. Please click "Start" first!');
+        // Redirect to registration/start page
+        navigate('/?register=true&required=diamond_access');
+        return false;
+      }
+      
+      console.log('✅ Registration verified - allowing access');
     }
 
     try {
@@ -38,28 +85,35 @@ export function useSharedDiamondAccess() {
       const newSearchParams = new URLSearchParams(searchParams);
       newSearchParams.delete('shared');
       newSearchParams.delete('from');
+      newSearchParams.delete('verify');
       setSearchParams(newSearchParams, { replace: true });
 
-      console.log('✅ Shared diamond access tracked');
+      console.log('✅ Registered user diamond access tracked');
       return true;
     } catch (error) {
-      console.error('❌ Failed to track shared diamond access:', error);
+      console.error('❌ Failed to track diamond access:', error);
       return true; // Don't block access on tracking errors
     }
-  }, [searchParams, setSearchParams, webApp, user]);
+  }, [searchParams, setSearchParams, webApp, user, validateUserRegistration, navigate]);
 
   const sendAccessNotification = useCallback(async (diamondId: string, ownerTelegramId: number) => {
     if (!user) return;
 
     try {
-      // Notify the diamond owner about the view
+      // Only send notification if user is registered
+      const isRegistered = await validateUserRegistration(user.id);
+      if (!isRegistered) return;
+
+      // Notify the diamond owner about the registered user view
       const notificationMessage = {
-        action: 'shared_diamond_viewed',
+        action: 'registered_user_viewed_diamond',
         data: {
           diamondId,
           viewerName: user.first_name,
           viewerUsername: user.username,
-          timestamp: Date.now()
+          viewerTelegramId: user.id,
+          timestamp: Date.now(),
+          isRegisteredUser: true
         }
       };
 
@@ -67,11 +121,12 @@ export function useSharedDiamondAccess() {
     } catch (error) {
       console.error('❌ Failed to send access notification:', error);
     }
-  }, [user, webApp]);
+  }, [user, webApp, validateUserRegistration]);
 
   return {
     validateAndTrackAccess,
     sendAccessNotification,
+    validateUserRegistration,
     isSecureAccess: !!(webApp && user)
   };
 }
