@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -83,7 +84,7 @@ serve(async (req) => {
 
     for (const [ownerId, diamonds] of ownerGroups) {
       try {
-        // Calculate match scores (simple scoring based on criteria matches)
+        // Calculate match scores and sort diamonds
         const diamondsWithScores = diamonds.map(diamond => {
           let score = 0
           let criteria = 0
@@ -117,26 +118,98 @@ serve(async (req) => {
         // Sort by match score
         diamondsWithScores.sort((a, b) => b.match_score - a.match_score)
 
+        // Create dynamic message with individual diamond links
         const searcherInfo = searcherName ? ` (${searcherName})` : ''
-        const message = `🔍 לקוח חיפש יהלומים והמערכת מצאה ${diamonds.length} התאמות במלאי שלך!
+        const baseUrl = 'https://miniapp.mazalbot.com'
+        
+        // Create search criteria display
+        const criteriaText = [
+          searchCriteria.shape ? `צורה: ${searchCriteria.shape}` : '',
+          searchCriteria.color ? `צבע: ${searchCriteria.color}` : '',
+          searchCriteria.clarity ? `בהירות: ${searchCriteria.clarity}` : '',
+          (searchCriteria.weight_min || searchCriteria.weight_max) ? 
+            `משקל: ${searchCriteria.weight_min || 0}-${searchCriteria.weight_max || '∞'} קרט` : ''
+        ].filter(Boolean).join('\n• ')
 
-📋 קריטריוני החיפוש:
-${searchCriteria.shape ? `• צורה: ${searchCriteria.shape}` : ''}
-${searchCriteria.color ? `• צבע: ${searchCriteria.color}` : ''}
-${searchCriteria.clarity ? `• בהירות: ${searchCriteria.clarity}` : ''}
-${searchCriteria.weight_min || searchCriteria.weight_max ? `• משקל: ${searchCriteria.weight_min || 0}-${searchCriteria.weight_max || '∞'} קרט` : ''}
+        // Create individual diamond cards with share buttons
+        const diamondButtons = diamondsWithScores.slice(0, 5).map(diamond => {
+          const price = diamond.price_per_carat ? (diamond.price_per_carat * diamond.weight) : 'צור קשר'
+          const matchPercent = Math.round(diamond.match_score * 100)
+          
+          // Create secure share link for this specific diamond
+          const shareData = {
+            stockNumber: diamond.stock_number,
+            ownerId: ownerId,
+            timestamp: Date.now()
+          }
+          const encryptedData = btoa(JSON.stringify(shareData))
+          
+          return [
+            {
+              text: `💎 ${diamond.shape} ${diamond.weight}ct ${diamond.color} ${diamond.clarity}`,
+              callback_data: `view_diamond_${diamond.stock_number}`
+            },
+            {
+              text: `💰 $${typeof price === 'number' ? price.toLocaleString() : price} | 📊 ${matchPercent}% התאמה`,
+              callback_data: `diamond_info_${diamond.stock_number}`
+            },
+            {
+              text: `🔗 שתף עם לקוח`,
+              web_app: {
+                url: `${baseUrl}/secure-diamond/${encryptedData}`
+              }
+            },
+            {
+              text: `📞 יצירת קשר עם ${searcherName || 'הלקוח'}`,
+              callback_data: `contact_client_${searcherTelegramId}_${diamond.stock_number}`
+            }
+          ]
+        }).flat()
 
-💎 המוצרים שלך שמתאימים:
-${diamondsWithScores.slice(0, 3).map(d => `• ${d.stock_number} - ${d.shape} ${d.weight}ct ${d.color} ${d.clarity} (התאמה: ${Math.round(d.match_score * 100)}%)`).join('\n')}
-${diamonds.length > 3 ? `\nועוד ${diamonds.length - 3} התאמות נוספות...` : ''}
+        // Create the main message
+        const message = `🔍 *חיפוש יהלומים - ${diamonds.length} התאמות נמצאו!*
 
-💰 זו הזדמנות מעולה ליצור קשר עם הלקוח${searcherInfo}!`
+👤 *הלקוח${searcherInfo} מחפש:*
+• ${criteriaText}
+
+💎 *היהלומים שלך שמתאימים:*
+
+_בחר יהלום לצפייה או שיתוף עם הלקוח_`
+
+        // Create inline keyboard with diamond options
+        const inline_keyboard = []
+        
+        // Add diamond buttons in groups of 4 per row for better mobile display
+        for (let i = 0; i < diamondButtons.length; i += 4) {
+          inline_keyboard.push(diamondButtons.slice(i, i + 4))
+        }
+        
+        // Add action buttons
+        inline_keyboard.push([
+          {
+            text: `📊 צפה בכל ה-${diamonds.length} התאמות`,
+            web_app: {
+              url: `${baseUrl}/store?search=${encodeURIComponent(JSON.stringify(searchCriteria))}`
+            }
+          }
+        ])
+        
+        inline_keyboard.push([
+          {
+            text: `📞 צור קשר עם הלקוח`,
+            callback_data: `contact_searcher_${searcherTelegramId}`
+          },
+          {
+            text: `📝 שלח הצעת מחיר`,
+            callback_data: `send_quote_${searcherTelegramId}`
+          }
+        ])
 
         const { data: notification, error: notificationError } = await supabaseClient
           .from('notifications')
           .insert({
             telegram_id: ownerId,
-            message_type: 'diamond_match',
+            message_type: 'dynamic_diamond_match',
             message_content: message,
             metadata: {
               search_criteria: searchCriteria,
@@ -146,7 +219,8 @@ ${diamonds.length > 3 ? `\nועוד ${diamonds.length - 3} התאמות נוספ
                 telegram_id: searcherTelegramId,
                 name: searcherName
               },
-              source: 'diamond_search'
+              inline_keyboard: inline_keyboard,
+              source: 'diamond_search_v2'
             },
             status: 'sent'
           })
@@ -155,7 +229,7 @@ ${diamonds.length > 3 ? `\nועוד ${diamonds.length - 3} התאמות נוספ
           console.error('Error creating notification:', notificationError)
         } else {
           notifications.push(notification)
-          console.log(`✅ Notification sent to user ${ownerId} for ${diamonds.length} matches`)
+          console.log(`✅ Dynamic notification sent to user ${ownerId} for ${diamonds.length} matches`)
         }
       } catch (error) {
         console.error(`Error processing notification for owner ${ownerId}:`, error)
@@ -164,7 +238,7 @@ ${diamonds.length > 3 ? `\nועוד ${diamonds.length - 3} התאמות נוספ
 
     return new Response(
       JSON.stringify({ 
-        message: 'Diamond search processed successfully',
+        message: 'Dynamic diamond search processed successfully',
         totalMatches: matchingDiamonds.length,
         ownersNotified: ownerGroups.size,
         notifications: notifications.length
