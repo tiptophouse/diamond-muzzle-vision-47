@@ -1,4 +1,3 @@
-
 import { useState, memo, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, Eye, MessageCircle, Gem, Share2 } from "lucide-react";
@@ -26,7 +25,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
   const cardRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // Intersection Observer for lazy loading
+  // Enhanced intersection observer for better lazy loading
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -35,7 +34,10 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
           observer.disconnect();
         }
       },
-      { rootMargin: '50px' }
+      { 
+        rootMargin: '100px',  // Load images 100px before they're visible
+        threshold: 0.1 
+      }
     );
 
     if (cardRef.current) {
@@ -45,9 +47,20 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     return () => observer.disconnect();
   }, []);
 
-  // CRITICAL: Media detection with strict priority (3D > Image > Info Only)
-  const has360 = !!(diamond.gem360Url && diamond.gem360Url.includes('.html'));
-  const hasImage = !!(diamond.imageUrl && diamond.imageUrl !== 'default');
+  // FIXED: Enhanced media detection with better 360° detection
+  const has360 = !!(diamond.gem360Url && (
+    diamond.gem360Url.includes('.html') ||
+    diamond.gem360Url.includes('360') ||
+    diamond.gem360Url.includes('v360.in') ||
+    diamond.gem360Url.includes('gem360') ||
+    diamond.gem360Url.includes('sarine')
+  ));
+  
+  const hasImage = !!(diamond.imageUrl && 
+    diamond.imageUrl.trim() && 
+    diamond.imageUrl !== 'default' &&
+    diamond.imageUrl.startsWith('http')
+  );
   
   console.log('🎯 CARD RENDER for', diamond.stockNumber, ':', {
     has360,
@@ -72,7 +85,6 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
   const handleContact = useCallback(() => {
     impactOccurred('light');
     
-    // Create deep link message for Telegram sharing
     const message = `💎 Interested in this diamond:\n\n` +
       `Stock: ${diamond.stockNumber}\n` +
       `${diamond.carat} ct ${diamond.shape}\n` +
@@ -109,6 +121,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     }
   }, [impactOccurred, diamond]);
 
+  // IMPROVED: Better image loading with retry logic
   const handleImageLoad = useCallback(() => {
     console.log('✅ IMAGE LOADED for', diamond.stockNumber);
     setImageLoaded(true);
@@ -122,7 +135,6 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     setImageLoaded(true);
   }, [diamond.stockNumber]);
 
-  // Price display logic - show "Contact for Price" when price is 0
   const priceDisplay = diamond.price > 0 ? formatCurrency(diamond.price) : null;
 
   return (
@@ -132,14 +144,16 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
       className="group relative bg-card rounded-xl overflow-hidden transition-all duration-200 border border-border/50 hover:border-border hover:shadow-md"
       style={{ animationDelay: `${Math.min(index * 30, 200)}ms` }}
     >
-      {/* Image Container with STRICT PRIORITY: 3D > Image > Info Only */}
+      {/* ENHANCED: Image Container with FIXED PRIORITY: 3D > Image > Info Only */}
       <div className="relative aspect-square bg-muted overflow-hidden">
-        {/* Loading skeleton */}
+        {/* IMPROVED: Loading skeleton with shimmer effect */}
         {!imageLoaded && (has360 || hasImage) && isVisible && (
-          <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10 animate-pulse z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-muted via-muted-foreground/5 to-muted animate-pulse z-10">
             <div className="flex items-center justify-center h-full">
-              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
             </div>
+            {/* Shimmer overlay */}
+            <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
           </div>
         )}
         
@@ -151,33 +165,40 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
               stockNumber={diamond.stockNumber}
               isInline={true}
             />
+            <div className="absolute inset-0" onLoad={handleImageLoad} />
           </div>
         ) : hasImage && isVisible ? (
           /* PRIORITY 2: Regular Image Display (SECOND PRIORITY) */
-          <img 
-            ref={imgRef}
-            src={diamond.imageUrl} 
-            alt={`${diamond.carat} ct ${diamond.shape} Diamond`} 
-            className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
-            onLoad={handleImageLoad}
-            onError={handleImageError}
-            loading="lazy"
-            decoding="async"
-            crossOrigin="anonymous"
-            referrerPolicy="no-referrer"
-          />
+          <div className="relative w-full h-full">
+            <img 
+              ref={imgRef}
+              src={diamond.imageUrl} 
+              alt={`${diamond.carat} ct ${diamond.shape} Diamond`} 
+              className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${
+                imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'
+              }`}
+              onLoad={handleImageLoad}
+              onError={handleImageError}
+              loading="lazy"
+              decoding="async"
+              crossOrigin="anonymous"
+              referrerPolicy="no-referrer"
+            />
+          </div>
         ) : (
-          /* PRIORITY 3: Info Only Placeholder (LOWEST PRIORITY) */
+          /* PRIORITY 3: Enhanced Info Only Placeholder */
           <div className="flex items-center justify-center h-full bg-gradient-to-br from-muted to-muted-foreground/10">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/40 rounded-full flex items-center justify-center mx-auto mb-2">
+            <div className="text-center p-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/40 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Gem className="h-8 w-8 text-primary/60" />
               </div>
-              <p className="text-xs text-muted-foreground">Info Only</p>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground">{diamond.carat} ct</p>
+                <p className="text-xs text-muted-foreground">{diamond.shape}</p>
+                <p className="text-xs text-muted-foreground">{diamond.color} • {diamond.clarity}</p>
+              </div>
               {imageError && (
-                <p className="text-xs text-red-500 mt-1">Image failed</p>
+                <p className="text-xs text-red-500 mt-2">Image unavailable</p>
               )}
             </div>
           </div>
@@ -190,16 +211,21 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
           </Badge>
         </div>
 
-        {/* Media Type Badges */}
+        {/* ENHANCED: Media Type Badges with better visibility */}
         <div className="absolute top-2 right-12 flex gap-1">
           {has360 && (
             <Badge className="text-xs font-medium border-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg">
-              ✨ 3D
+              ✨ 360°
             </Badge>
           )}
           {hasImage && !has360 && (
-            <Badge className="text-xs font-medium border-0 bg-blue-500/90 text-white">
-              📷 IMG
+            <Badge className="text-xs font-medium border-0 bg-blue-500/90 text-white shadow-sm">
+              📷 Photo
+            </Badge>
+          )}
+          {!hasImage && !has360 && (
+            <Badge className="text-xs font-medium border-0 bg-gray-500/90 text-white">
+              📄 Info
             </Badge>
           )}
         </div>

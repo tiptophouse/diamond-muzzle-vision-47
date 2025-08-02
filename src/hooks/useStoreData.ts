@@ -17,21 +17,21 @@ export function useStoreData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Direct and simple data transformation focused on getting images to display
+  // Direct data transformation with correct database field mapping
   const transformData = useCallback((rawData: any[]): Diamond[] => {
     console.log('🔧 TRANSFORM DATA: Processing', rawData.length, 'items from FastAPI');
     
     return rawData
       .map(item => {
-        // Get the primary image URL - check all possible fields
+        // CRITICAL FIX: Map correct database fields for images
         let finalImageUrl = undefined;
         
-        // Priority order: Image (CSV) > picture > imageUrl > image
+        // CORRECTED Priority order based on actual database schema:
+        // 1. picture (main image field)
+        // 2. certificate_image_url (fallback image)
         const imageFields = [
-          item.Image,        // CSV Image field
-          item.picture,      // FastAPI picture field  
-          item.imageUrl,     // Standard imageUrl field
-          item.image         // Generic image field
+          item.picture,           // Primary image field in database
+          item.certificate_image_url, // Certificate image as fallback
         ];
         
         for (const imageField of imageFields) {
@@ -42,33 +42,41 @@ export function useStoreData() {
               !imageField.includes('.html') &&
               (imageField.startsWith('http') || imageField.startsWith('//'))) {
             finalImageUrl = imageField.trim();
-            console.log('✅ FOUND IMAGE URL for', item.stock, ':', finalImageUrl);
+            console.log('✅ FOUND IMAGE URL for', item.stock_number, ':', finalImageUrl);
             break;
           }
         }
         
-        // Get 360° URL
+        // FIXED: Get 360° URL from correct database field
         let final360Url = undefined;
+        
+        // CORRECTED: Use actual database field names
         const video360Fields = [
-          item.gem360Url,
-          item['Video link'],
-          item.videoLink
+          item.v360_url,          // Actual database field for 360° videos
+          item.gem360_url,        // Alternative field
+          item.video_url,         // Generic video field
         ];
         
         for (const videoField of video360Fields) {
           if (videoField && 
               typeof videoField === 'string' && 
-              videoField.trim() && 
-              videoField.includes('.html')) {
-            final360Url = videoField.trim();
-            console.log('✅ FOUND 360° URL for', item.stock, ':', final360Url);
-            break;
+              videoField.trim()) {
+            // Support various 360° formats
+            if (videoField.includes('.html') || 
+                videoField.includes('360') || 
+                videoField.includes('v360.in') ||
+                videoField.includes('gem360') ||
+                videoField.includes('sarine')) {
+              final360Url = videoField.trim();
+              console.log('✅ FOUND 360° URL for', item.stock_number, ':', final360Url);
+              break;
+            }
           }
         }
 
         const result = {
           id: String(item.id),
-          stockNumber: String(item.stock || item.stock_number || item.stockNumber || 'UNKNOWN'),
+          stockNumber: String(item.stock_number || item.stock || 'UNKNOWN'),
           shape: item.shape,
           carat: Number(item.weight || item.carat) || 0,
           color: item.color,
@@ -76,26 +84,31 @@ export function useStoreData() {
           cut: item.cut || 'Excellent',
           price: Number(item.price_per_carat ? item.price_per_carat * (item.weight || item.carat) : item.price) || 0,
           status: item.status || 'Available',
-          imageUrl: finalImageUrl, // This is what the store will use
-          gem360Url: final360Url,  // This is what the store will use for 360°
+          imageUrl: finalImageUrl,     // FIXED: Properly mapped image URL
+          gem360Url: final360Url,      // FIXED: Properly mapped 360° URL
           store_visible: item.store_visible !== false,
           certificateNumber: item.certificate_number || undefined,
           lab: item.lab || undefined,
-          certificateUrl: item.certificate_url || item.certificateUrl || undefined,
-          // Keep original fields for debugging
-          Image: item.Image,
-          picture: item.picture,
-          image: item.image,
-          'Video link': item['Video link'],
-          videoLink: item.videoLink
+          certificateUrl: item.certificate_url || undefined,
+          // Keep debug fields for troubleshooting
+          _debug: {
+            originalPicture: item.picture,
+            originalV360: item.v360_url,
+            originalCertImage: item.certificate_image_url
+          }
         };
 
-        // Log the final result for each diamond
+        // Enhanced logging for debugging
         console.log('🔧 FINAL TRANSFORM for', result.stockNumber, ':', {
-          finalImageUrl: result.imageUrl,
-          final360Url: result.gem360Url,
-          originalImage: item.Image,
-          originalPicture: item.picture
+          hasImage: !!result.imageUrl,
+          has360: !!result.gem360Url,
+          imageUrl: result.imageUrl,
+          gem360Url: result.gem360Url,
+          originalFields: {
+            picture: item.picture,
+            v360_url: item.v360_url,
+            certificate_image_url: item.certificate_image_url
+          }
         });
 
         return result;
@@ -118,22 +131,23 @@ export function useStoreData() {
 
       const result = await fetchInventoryData();
       
-      // Log what we got from the API
+      // Enhanced logging to debug API response
       console.log('🚨 RAW API RESPONSE:', {
         hasData: !!result.data,
         dataLength: result.data?.length || 0,
         error: result.error,
         firstItem: result.data?.[0] ? {
           id: result.data[0].id,
-          stock: result.data[0].stock,
+          stock_number: result.data[0].stock_number,
           picture: result.data[0].picture,
-          Image: result.data[0].Image,
-          image: result.data[0].image,
-          imageUrl: result.data[0].imageUrl,
-          'Video link': result.data[0]['Video link'],
-          videoLink: result.data[0].videoLink,
-          gem360Url: result.data[0].gem360Url,
-          allKeys: Object.keys(result.data[0])
+          v360_url: result.data[0].v360_url,
+          certificate_image_url: result.data[0].certificate_image_url,
+          allKeys: Object.keys(result.data[0]).filter(key => 
+            key.includes('picture') || 
+            key.includes('image') || 
+            key.includes('360') || 
+            key.includes('video')
+          )
         } : null
       });
 
@@ -146,15 +160,20 @@ export function useStoreData() {
       if (result.data && result.data.length > 0) {
         const transformedDiamonds = transformData(result.data);
         
-        // Log how many diamonds have images after transformation
+        // ENHANCED: Log transformation results
         const diamondsWithImages = transformedDiamonds.filter(d => d.imageUrl);
+        const diamondsWith360 = transformedDiamonds.filter(d => d.gem360Url);
+        
         console.log('🖼️ TRANSFORM SUMMARY:', {
           totalDiamonds: transformedDiamonds.length,
           diamondsWithImages: diamondsWithImages.length,
-          diamondsWith360: transformedDiamonds.filter(d => d.gem360Url).length,
-          sampleImageUrls: diamondsWithImages.slice(0, 3).map(d => ({ 
-            stock: d.stockNumber, 
-            imageUrl: d.imageUrl 
+          diamondsWith360: diamondsWith360.length,
+          sampleResults: transformedDiamonds.slice(0, 3).map(d => ({
+            stock: d.stockNumber,
+            hasImage: !!d.imageUrl,
+            has360: !!d.gem360Url,
+            imageUrl: d.imageUrl?.substring(0, 50) + '...',
+            gem360Url: d.gem360Url?.substring(0, 50) + '...'
           }))
         });
         
@@ -180,7 +199,6 @@ export function useStoreData() {
   // Telegram memory optimization
   useEffect(() => {
     if (tg) {
-      // Clear memory when component unmounts
       return () => {
         try {
           if ('gc' in window && typeof window.gc === 'function') {
@@ -206,11 +224,9 @@ export function useStoreData() {
     }
   }, [user, authLoading, fetchStoreData]);
 
-  // Subscribe to inventory changes
   useEffect(() => {
     return subscribeToInventoryChanges(() => {
       if (user && !authLoading) {
-        // Clear cache and force refresh
         dataCache = null;
         fetchStoreData(false);
       }
@@ -218,7 +234,6 @@ export function useStoreData() {
   }, [user, authLoading, subscribeToInventoryChanges, fetchStoreData]);
 
   const refetch = useCallback(() => {
-    // Clear cache and force refresh
     dataCache = null;
     return fetchStoreData(false);
   }, [fetchStoreData]);
