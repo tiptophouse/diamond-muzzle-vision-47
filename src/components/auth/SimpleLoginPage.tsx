@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Lock, User, Eye, EyeOff } from 'lucide-react';
+import { Lock, User, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface SimpleLoginPageProps {
@@ -23,21 +22,27 @@ export function SimpleLoginPage({ onLogin }: SimpleLoginPageProps) {
 
     try {
       console.log('🔐 Attempting login with:', { username, passwordLength: password.length });
+      
+      // Small delay to show loading state
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const success = onLogin(username, password);
       
       if (!success) {
         toast({
           title: "Login Failed",
-          description: "Invalid username or password. Please try again.",
+          description: "Invalid username or password. Please check your credentials and try again.",
           variant: "destructive"
         });
+        setIsLoading(false);
       } else {
         toast({
           title: "Welcome!",
-          description: "Successfully logged in to development panel.",
+          description: "Successfully logged in. Redirecting to dashboard...",
           variant: "default"
         });
-        console.log('✅ Login successful, should redirect to dashboard');
+        console.log('✅ Login successful, authentication should be complete');
+        // Keep loading state as the user should be redirected
       }
     } catch (error) {
       console.error('❌ Login error:', error);
@@ -46,7 +51,6 @@ export function SimpleLoginPage({ onLogin }: SimpleLoginPageProps) {
         description: "An error occurred during login. Please try again.",
         variant: "destructive"
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -59,14 +63,26 @@ export function SimpleLoginPage({ onLogin }: SimpleLoginPageProps) {
             <Lock className="h-8 w-8 text-blue-600" />
           </div>
           <CardTitle className="text-2xl font-bold text-gray-900">
-            Development Access
+            Admin Access Required
           </CardTitle>
           <p className="text-gray-600 text-sm">
-            Enter your development credentials to continue
+            Please sign in with your administrator credentials
           </p>
         </CardHeader>
         
         <CardContent className="space-y-6">
+          {/* Credentials Helper */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-blue-800 mb-1">Admin Credentials:</p>
+                <p className="text-blue-700">Username: <code className="bg-blue-100 px-1 rounded">ormoshe35@</code></p>
+                <p className="text-blue-700">Password: <code className="bg-blue-100 px-1 rounded">admin123456</code></p>
+              </div>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="username" className="text-sm font-medium text-gray-700">
@@ -79,7 +95,7 @@ export function SimpleLoginPage({ onLogin }: SimpleLoginPageProps) {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter username"
+                  placeholder="Enter username (ormoshe35@)"
                   className="pl-10 bg-white border-gray-300 text-gray-900 placeholder-gray-500"
                   required
                   disabled={isLoading}
@@ -127,16 +143,16 @@ export function SimpleLoginPage({ onLogin }: SimpleLoginPageProps) {
                   <span className="text-white">Signing in...</span>
                 </div>
               ) : (
-                <span className="text-white font-medium">Sign In</span>
+                <span className="text-white font-medium">Sign In to Admin Dashboard</span>
               )}
             </Button>
           </form>
           
           <div className="mt-6 pt-4 border-t border-gray-200">
             <p className="text-xs text-gray-500 text-center">
-              This is a secure development login for project maintenance.
+              This is the secure development access for BrilliantBot admin panel.
               <br />
-              Contact the administrator if you need access.
+              After login, you'll have full administrator privileges.
             </p>
           </div>
         </CardContent>

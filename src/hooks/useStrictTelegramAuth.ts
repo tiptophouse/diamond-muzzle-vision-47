@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { TelegramUser } from '@/types/telegram';
 import { verifyTelegramUser, signInToBackend } from '@/lib/api/auth';
@@ -130,14 +129,14 @@ export function useStrictTelegramAuth(): AuthState & {
   };
 
   const handleAdminLogin = (username: string, password: string): boolean => {
-    console.log('🔐 Attempting admin login with:', { username, passwordLength: password.length });
+    console.log('🔐 Admin login attempt:', { username, passwordLength: password.length });
     
     if (username.trim() === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-      console.log('✅ Admin credentials valid, setting up your real user profile');
+      console.log('✅ Admin credentials valid - setting up admin user');
       
       const adminUser = createAdminUser();
 
-      console.log('📝 Updating auth state for admin user with your real Telegram ID');
+      // Immediately update state for admin access
       updateState({
         user: adminUser,
         isAuthenticated: true,
@@ -148,49 +147,59 @@ export function useStrictTelegramAuth(): AuthState & {
         isTelegramEnvironment: false
       });
 
-      // Set your real user ID in the API system
+      // Set user ID in API system
       setCurrentUserId(ADMIN_TELEGRAM_ID);
 
-      // Store admin session for persistence
+      // Store admin session
       try {
         localStorage.setItem('admin_session', JSON.stringify({
           user: adminUser,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          authenticated: true
         }));
-        console.log('💾 Admin session stored with your real user ID');
+        console.log('💾 Admin session stored successfully');
       } catch (storageError) {
         console.warn('⚠️ Failed to store admin session:', storageError);
       }
 
+      console.log('✅ Admin login successful - user should have access now');
       return true;
     }
 
     console.log('❌ Admin login failed - invalid credentials');
+    updateState({
+      error: 'Invalid username or password'
+    });
     return false;
   };
 
   const checkExistingAdminSession = (): TelegramUser | null => {
     try {
       const sessionData = localStorage.getItem('admin_session');
-      if (!sessionData) return null;
+      if (!sessionData) {
+        console.log('🔍 No existing admin session found');
+        return null;
+      }
 
       const session = JSON.parse(sessionData);
       const sessionAge = Date.now() - session.timestamp;
       const maxAge = 24 * 60 * 60 * 1000; // 24 hours
 
       if (sessionAge > maxAge) {
+        console.log('⏰ Admin session expired, clearing...');
         localStorage.removeItem('admin_session');
         return null;
       }
 
-      // Make sure we set the user ID in the API system
-      if (session.user?.id) {
+      if (session.user?.id && session.authenticated) {
+        console.log('✅ Found valid admin session for user:', session.user.id);
         setCurrentUserId(session.user.id);
+        return session.user;
       }
 
-      return session.user;
+      return null;
     } catch (error) {
-      console.error('Error checking admin session:', error);
+      console.error('❌ Error checking admin session:', error);
       localStorage.removeItem('admin_session');
       return null;
     }
@@ -201,13 +210,13 @@ export function useStrictTelegramAuth(): AuthState & {
       return;
     }
 
-    console.log('🔐 Starting strict Telegram-only authentication...');
+    console.log('🔐 Starting authentication process...');
     
     try {
-      // Check for existing admin session first
+      // First check for existing admin session
       const existingAdminUser = checkExistingAdminSession();
       if (existingAdminUser) {
-        console.log('✅ Found valid admin session with your real user ID');
+        console.log('✅ Using existing admin session');
         updateState({
           user: existingAdminUser,
           isAuthenticated: true,
@@ -221,7 +230,7 @@ export function useStrictTelegramAuth(): AuthState & {
         return;
       }
 
-      // Check if in genuine Telegram environment
+      // Check if in Telegram environment
       const isGenuineTelegram = isGenuineTelegramEnvironment();
       updateState({ isTelegramEnvironment: isGenuineTelegram });
 
@@ -234,7 +243,7 @@ export function useStrictTelegramAuth(): AuthState & {
         try {
           if (typeof tg.ready === 'function') tg.ready();
           if (typeof tg.expand === 'function') tg.expand();
-          console.log('✅ Telegram WebApp ready() and expand() called');
+          console.log('✅ Telegram WebApp initialized');
         } catch (error) {
           console.warn('⚠️ Telegram WebApp initialization warning:', error);
         }
@@ -309,16 +318,17 @@ export function useStrictTelegramAuth(): AuthState & {
         });
       } else {
         // Not in Telegram environment or no valid auth - require admin login
-        console.log('❌ No valid authentication - requiring admin login');
+        console.log('🔑 No valid authentication found - showing admin login');
         updateState({
           isLoading: false,
           accessDeniedReason: 'login_required',
-          needsLogin: true
+          needsLogin: true,
+          error: null
         });
       }
       
     } catch (error) {
-      console.error('❌ Strict authentication error:', error);
+      console.error('❌ Authentication error:', error);
       updateState({
         isLoading: false,
         accessDeniedReason: 'system_error',
@@ -336,11 +346,11 @@ export function useStrictTelegramAuth(): AuthState & {
     // Timeout for authentication
     const timeoutId = setTimeout(() => {
       if (state.isLoading && mountedRef.current && !initializedRef.current) {
-        console.warn('⚠️ Authentication timeout');
+        console.warn('⚠️ Authentication timeout - showing login');
         updateState({
           isLoading: false,
           accessDeniedReason: 'timeout',
-          error: 'Authentication timeout - please try again',
+          error: null,
           needsLogin: true
         });
         initializedRef.current = true;
