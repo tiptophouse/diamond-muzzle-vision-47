@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { TelegramUser } from '@/types/telegram';
 import { verifyTelegramUser, signInToBackend } from '@/lib/api/auth';
@@ -13,9 +12,9 @@ interface AuthState {
   needsLogin: boolean;
 }
 
-// Secure admin credentials (in production, this should be environment variables)
+// Admin credentials for development access
 const ADMIN_USERNAME = 'ormoshe35@';
-const ADMIN_PASSWORD = 'admin123'; // You should change this to your preferred password
+const ADMIN_PASSWORD = 'admin123456'; // Updated password
 const ADMIN_TELEGRAM_ID = 2138564172;
 
 export function useStrictTelegramAuth(): AuthState & { 
@@ -119,7 +118,9 @@ export function useStrictTelegramAuth(): AuthState & {
   };
 
   const handleAdminLogin = (username: string, password: string): boolean => {
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    console.log('🔐 Attempting admin login with:', { username, passwordLength: password.length });
+    
+    if (username.trim() === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
       console.log('✅ Admin login successful');
       
       const adminUser: TelegramUser = {
@@ -149,6 +150,8 @@ export function useStrictTelegramAuth(): AuthState & {
     }
 
     console.log('❌ Admin login failed - invalid credentials');
+    console.log('Expected:', { username: ADMIN_USERNAME, password: 'admin123456' });
+    console.log('Received:', { username: username.trim(), password });
     return false;
   };
 

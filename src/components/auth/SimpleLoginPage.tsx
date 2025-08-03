@@ -33,7 +33,7 @@ export function SimpleLoginPage({ onLogin }: SimpleLoginPageProps) {
       } else {
         toast({
           title: "Welcome!",
-          description: "Successfully logged in to admin panel.",
+          description: "Successfully logged in to development panel.",
           variant: "default"
         });
       }
@@ -50,20 +50,20 @@ export function SimpleLoginPage({ onLogin }: SimpleLoginPageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md bg-white shadow-xl">
         <CardHeader className="text-center">
           <div className="bg-blue-50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
             <Lock className="h-8 w-8 text-blue-600" />
           </div>
           <CardTitle className="text-2xl font-bold text-gray-900">
-            Admin Access
+            Development Access
           </CardTitle>
           <p className="text-gray-600 text-sm">
-            Enter your credentials to access the admin panel
+            Enter your development credentials to continue working on this project
           </p>
         </CardHeader>
         
-        <CardContent>
+        <CardContent className="space-y-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="username" className="text-sm font-medium text-gray-700">
@@ -77,7 +77,7 @@ export function SimpleLoginPage({ onLogin }: SimpleLoginPageProps) {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter username"
-                  className="pl-10"
+                  className="pl-10 bg-white border-gray-300 text-gray-900 placeholder-gray-500"
                   required
                   disabled={isLoading}
                 />
@@ -96,14 +96,14 @@ export function SimpleLoginPage({ onLogin }: SimpleLoginPageProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
-                  className="pl-10 pr-10"
+                  className="pl-10 pr-10 bg-white border-gray-300 text-gray-900 placeholder-gray-500"
                   required
                   disabled={isLoading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   disabled={isLoading}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -113,25 +113,34 @@ export function SimpleLoginPage({ onLogin }: SimpleLoginPageProps) {
             
             <Button
               type="submit"
-              className="w-full"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isLoading || !username || !password}
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                  Signing in...
+                  <span className="text-white">Signing in...</span>
                 </div>
               ) : (
-                'Sign In'
+                <span className="text-white font-medium">Sign In</span>
               )}
             </Button>
           </form>
           
           <div className="mt-6 pt-4 border-t border-gray-200">
+            <div className="bg-blue-50 rounded-lg p-3 mb-3">
+              <p className="text-xs text-blue-700 text-center font-medium">
+                Development Credentials
+              </p>
+              <p className="text-xs text-blue-600 text-center mt-1">
+                Username: ormoshe35@<br/>
+                Password: admin123456
+              </p>
+            </div>
             <p className="text-xs text-gray-500 text-center">
-              This is a secure admin login for development access.
+              This is a development login for project maintenance.
               <br />
-              Contact administrator if you need assistance.
+              Normal users authenticate through Telegram initData.
             </p>
           </div>
         </CardContent>
