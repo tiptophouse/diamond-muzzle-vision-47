@@ -21,16 +21,7 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
   const { user, isTelegramEnvironment } = useTelegramAuth();
   const navigate = useNavigate();
   
-  // Only show admin controls if:
-  // 1. User is authenticated through Telegram
-  // 2. User ID matches the admin ID
-  // 3. We're in a Telegram environment (for security)
   const isAdmin = user?.id === ADMIN_TELEGRAM_ID && isTelegramEnvironment;
-
-  console.log('👤 Current user ID:', user?.id);
-  console.log('🔐 Admin ID:', ADMIN_TELEGRAM_ID);
-  console.log('📱 Telegram Environment:', isTelegramEnvironment);
-  console.log('👑 Is Admin:', isAdmin);
 
   // Enhanced Gem360 URL detection - check all possible sources
   const getGem360Url = () => {
@@ -67,12 +58,11 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
     : `https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop&crop=center`;
 
   const handleDelete = () => {
-    // Trigger refetch of data
     if (onUpdate) onUpdate();
   };
 
   const handleShare = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click
+    e.stopPropagation();
     
     // Build URL with diamond parameters
     const params = new URLSearchParams({
@@ -167,16 +157,17 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
           </>
         )}
         
-        {/* Share Button - Always visible in bottom-right */}
+        {/* Share Button - Always visible in bottom-right with fixed styling */}
         <div className="absolute bottom-3 right-3 opacity-100 transition-opacity">
           <Button
             size="icon"
             variant="secondary"
-            className="w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-600 shadow-sm"
+            className="min-w-[36px] min-h-[36px] w-9 h-9 rounded-full bg-white/90 hover:bg-white text-gray-600 shadow-sm border-0 p-2 touch-target"
             onClick={handleShare}
             title="Share this diamond"
+            aria-label="Share this diamond"
           >
-            <Share className="h-4 w-4" />
+            <Share className="h-4 w-4 flex-shrink-0" />
           </Button>
         </div>
 
