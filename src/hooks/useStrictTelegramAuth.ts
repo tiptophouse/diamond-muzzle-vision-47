@@ -14,7 +14,7 @@ interface AuthState {
 
 // Admin credentials for development access
 const ADMIN_USERNAME = 'ormoshe35@';
-const ADMIN_PASSWORD = 'admin123456'; // Updated password
+const ADMIN_PASSWORD = 'admin123456';
 const ADMIN_TELEGRAM_ID = 2138564172;
 
 export function useStrictTelegramAuth(): AuthState & { 
@@ -121,37 +121,42 @@ export function useStrictTelegramAuth(): AuthState & {
     console.log('🔐 Attempting admin login with:', { username, passwordLength: password.length });
     
     if (username.trim() === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-      console.log('✅ Admin login successful');
+      console.log('✅ Admin credentials valid, setting up admin user');
       
       const adminUser: TelegramUser = {
         id: ADMIN_TELEGRAM_ID,
         first_name: "Admin",
-        last_name: "User",
+        last_name: "Developer",
         username: "admin",
         language_code: "en"
       };
 
+      console.log('📝 Updating auth state for admin user');
       updateState({
         user: adminUser,
         isAuthenticated: true,
         isLoading: false,
         error: null,
         needsLogin: false,
-        accessDeniedReason: null
+        accessDeniedReason: null,
+        isTelegramEnvironment: false
       });
 
-      // Store admin session in localStorage for persistence
-      localStorage.setItem('admin_session', JSON.stringify({
-        user: adminUser,
-        timestamp: Date.now()
-      }));
+      // Store admin session for persistence
+      try {
+        localStorage.setItem('admin_session', JSON.stringify({
+          user: adminUser,
+          timestamp: Date.now()
+        }));
+        console.log('💾 Admin session stored in localStorage');
+      } catch (storageError) {
+        console.warn('⚠️ Failed to store admin session:', storageError);
+      }
 
       return true;
     }
 
     console.log('❌ Admin login failed - invalid credentials');
-    console.log('Expected:', { username: ADMIN_USERNAME, password: 'admin123456' });
-    console.log('Received:', { username: username.trim(), password });
     return false;
   };
 
@@ -185,6 +190,23 @@ export function useStrictTelegramAuth(): AuthState & {
     console.log('🔐 Starting strict Telegram-only authentication...');
     
     try {
+      // Check for existing admin session first
+      const existingAdminUser = checkExistingAdminSession();
+      if (existingAdminUser) {
+        console.log('✅ Found valid admin session');
+        updateState({
+          user: existingAdminUser,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+          needsLogin: false,
+          accessDeniedReason: null,
+          isTelegramEnvironment: false
+        });
+        initializedRef.current = true;
+        return;
+      }
+
       // Check if in genuine Telegram environment
       const isGenuineTelegram = isGenuineTelegramEnvironment();
       updateState({ isTelegramEnvironment: isGenuineTelegram });
@@ -260,24 +282,6 @@ export function useStrictTelegramAuth(): AuthState & {
             console.log('✅ Client-side authentication successful');
           }
         }
-      } else {
-        // Not in Telegram environment - check for existing admin session
-        console.log('🔍 Not in Telegram environment, checking for admin session...');
-        const existingAdminUser = checkExistingAdminSession();
-        
-        if (existingAdminUser) {
-          console.log('✅ Found valid admin session');
-          authenticatedUser = existingAdminUser;
-        } else {
-          console.log('❌ No valid admin session - login required');
-          updateState({
-            isLoading: false,
-            needsLogin: true,
-            accessDeniedReason: 'login_required'
-          });
-          initializedRef.current = true;
-          return;
-        }
       }
 
       if (authenticatedUser) {
@@ -290,11 +294,12 @@ export function useStrictTelegramAuth(): AuthState & {
           needsLogin: false
         });
       } else {
+        // Not in Telegram environment or no valid auth - require admin login
+        console.log('❌ No valid authentication - requiring admin login');
         updateState({
           isLoading: false,
-          accessDeniedReason: 'no_valid_auth',
-          error: 'No valid authentication method found',
-          needsLogin: !isGenuineTelegram
+          accessDeniedReason: 'login_required',
+          needsLogin: true
         });
       }
       

@@ -22,6 +22,7 @@ export function SimpleLoginPage({ onLogin }: SimpleLoginPageProps) {
     setIsLoading(true);
 
     try {
+      console.log('🔐 Attempting login with:', { username, passwordLength: password.length });
       const success = onLogin(username, password);
       
       if (!success) {
@@ -36,8 +37,10 @@ export function SimpleLoginPage({ onLogin }: SimpleLoginPageProps) {
           description: "Successfully logged in to development panel.",
           variant: "default"
         });
+        console.log('✅ Login successful, should redirect to dashboard');
       }
     } catch (error) {
+      console.error('❌ Login error:', error);
       toast({
         title: "Error",
         description: "An error occurred during login. Please try again.",
@@ -59,7 +62,7 @@ export function SimpleLoginPage({ onLogin }: SimpleLoginPageProps) {
             Development Access
           </CardTitle>
           <p className="text-gray-600 text-sm">
-            Enter your development credentials to continue working on this project
+            Enter your development credentials to continue
           </p>
         </CardHeader>
         
@@ -80,6 +83,7 @@ export function SimpleLoginPage({ onLogin }: SimpleLoginPageProps) {
                   className="pl-10 bg-white border-gray-300 text-gray-900 placeholder-gray-500"
                   required
                   disabled={isLoading}
+                  autoComplete="username"
                 />
               </div>
             </div>
@@ -99,6 +103,7 @@ export function SimpleLoginPage({ onLogin }: SimpleLoginPageProps) {
                   className="pl-10 pr-10 bg-white border-gray-300 text-gray-900 placeholder-gray-500"
                   required
                   disabled={isLoading}
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
@@ -128,19 +133,10 @@ export function SimpleLoginPage({ onLogin }: SimpleLoginPageProps) {
           </form>
           
           <div className="mt-6 pt-4 border-t border-gray-200">
-            <div className="bg-blue-50 rounded-lg p-3 mb-3">
-              <p className="text-xs text-blue-700 text-center font-medium">
-                Development Credentials
-              </p>
-              <p className="text-xs text-blue-600 text-center mt-1">
-                Username: ormoshe35@<br/>
-                Password: admin123456
-              </p>
-            </div>
             <p className="text-xs text-gray-500 text-center">
-              This is a development login for project maintenance.
+              This is a secure development login for project maintenance.
               <br />
-              Normal users authenticate through Telegram initData.
+              Contact the administrator if you need access.
             </p>
           </div>
         </CardContent>
