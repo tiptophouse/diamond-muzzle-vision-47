@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { TelegramUser } from '@/types/telegram';
-import { verifyTelegramUser, signInToBackend } from '@/lib/api/auth';
+import { verifyTelegramUser, signInToBackend, setCurrentUserId } from '@/lib/api/auth';
 
 interface AuthState {
   user: TelegramUser | null;
@@ -37,6 +37,16 @@ export function useStrictTelegramAuth(): AuthState & {
     if (mountedRef.current) {
       setState(prev => ({ ...prev, ...updates }));
     }
+  };
+
+  const createAdminUser = (): TelegramUser => {
+    return {
+      id: ADMIN_TELEGRAM_ID,
+      first_name: "Or",
+      last_name: "Moshe",
+      username: "ormoshe35",
+      language_code: "en"
+    };
   };
 
   const isGenuineTelegramEnvironment = (): boolean => {
@@ -121,17 +131,11 @@ export function useStrictTelegramAuth(): AuthState & {
     console.log('🔐 Attempting admin login with:', { username, passwordLength: password.length });
     
     if (username.trim() === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-      console.log('✅ Admin credentials valid, setting up admin user');
+      console.log('✅ Admin credentials valid, setting up your real user profile');
       
-      const adminUser: TelegramUser = {
-        id: ADMIN_TELEGRAM_ID,
-        first_name: "Admin",
-        last_name: "Developer",
-        username: "admin",
-        language_code: "en"
-      };
+      const adminUser = createAdminUser();
 
-      console.log('📝 Updating auth state for admin user');
+      console.log('📝 Updating auth state for admin user with your real Telegram ID');
       updateState({
         user: adminUser,
         isAuthenticated: true,
@@ -142,13 +146,16 @@ export function useStrictTelegramAuth(): AuthState & {
         isTelegramEnvironment: false
       });
 
+      // Set your real user ID in the API system
+      setCurrentUserId(ADMIN_TELEGRAM_ID);
+
       // Store admin session for persistence
       try {
         localStorage.setItem('admin_session', JSON.stringify({
           user: adminUser,
           timestamp: Date.now()
         }));
-        console.log('💾 Admin session stored in localStorage');
+        console.log('💾 Admin session stored with your real user ID');
       } catch (storageError) {
         console.warn('⚠️ Failed to store admin session:', storageError);
       }
@@ -174,6 +181,11 @@ export function useStrictTelegramAuth(): AuthState & {
         return null;
       }
 
+      // Make sure we set the user ID in the API system
+      if (session.user?.id) {
+        setCurrentUserId(session.user.id);
+      }
+
       return session.user;
     } catch (error) {
       console.error('Error checking admin session:', error);
@@ -193,7 +205,7 @@ export function useStrictTelegramAuth(): AuthState & {
       // Check for existing admin session first
       const existingAdminUser = checkExistingAdminSession();
       if (existingAdminUser) {
-        console.log('✅ Found valid admin session');
+        console.log('✅ Found valid admin session with your real user ID');
         updateState({
           user: existingAdminUser,
           isAuthenticated: true,
@@ -225,26 +237,9 @@ export function useStrictTelegramAuth(): AuthState & {
           console.warn('⚠️ Telegram WebApp initialization warning:', error);
         }
 
-        console.log('🔍 InitData available:', !!tg.initData);
-        console.log('🔍 InitData length:', tg.initData?.length || 0);
-        console.log('🔍 InitDataUnsafe:', tg.initDataUnsafe);
-
         // Try to extract user data from initData or initDataUnsafe
         if (tg.initData && validateTelegramData(tg.initData)) {
-          // Step 1: Sign in to backend to get auth token
-          try {
-            console.log('🔐 Signing in to backend first...');
-            const backendToken = await signInToBackend(tg.initData);
-            if (backendToken) {
-              console.log('✅ Backend sign-in successful, token stored');
-            } else {
-              console.warn('⚠️ Backend sign-in failed, continuing with verification...');
-            }
-          } catch (error) {
-            console.warn('⚠️ Backend sign-in error:', error);
-          }
-
-          // Step 2: Try backend verification 
+          // Try backend verification first
           try {
             const verificationResult = await verifyTelegramUser(tg.initData);
             if (verificationResult && verificationResult.success) {
@@ -258,6 +253,8 @@ export function useStrictTelegramAuth(): AuthState & {
                 photo_url: verificationResult.user_data?.photo_url,
                 phone_number: verificationResult.user_data?.phone_number
               };
+              
+              setCurrentUserId(verificationResult.user_id);
               console.log('✅ Backend verification successful');
             }
           } catch (error) {
@@ -279,6 +276,8 @@ export function useStrictTelegramAuth(): AuthState & {
               photo_url: unsafeUser.photo_url,
               phone_number: (unsafeUser as any).phone_number
             };
+            
+            setCurrentUserId(unsafeUser.id);
             console.log('✅ Client-side authentication successful');
           }
         }
