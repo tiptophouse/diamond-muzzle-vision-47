@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext } from 'react';
 import { useStrictTelegramAuth } from '@/hooks/useStrictTelegramAuth';
 import { TelegramUser } from '@/types/telegram';
@@ -8,6 +9,7 @@ interface AuthContextProps {
   error: string | null;
   isTelegramEnvironment: boolean;
   isAuthenticated: boolean;
+  handleAdminLogin: (username: string, password: string) => boolean;
 }
 
 const TelegramAuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -29,5 +31,3 @@ export function TelegramAuthProvider({ children }: { children: React.ReactNode }
     </TelegramAuthContext.Provider>
   );
 }
-
-export { useTelegramAuth };
