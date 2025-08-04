@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 import { useTelegramMainButton } from "@/hooks/useTelegramMainButton";
-import { useTelegramAuth } from "@/hooks/useTelegramAuth";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { BulkFileUploadArea } from "./BulkFileUploadArea";
 import { CsvValidationResults } from "./CsvValidationResults";
 import { BulkUploadProgress } from "./BulkUploadProgress";
@@ -20,7 +20,7 @@ export function BulkUploadForm() {
   const { user } = useTelegramAuth();
   const { processedData, validationResults, processFile, resetProcessor, downloadFailedRecords } = useBulkCsvProcessor();
 
-  // All required fields for the API - every field must be present
+  // All required fields for the FastAPI batch endpoint
   const requiredFields = [
     'stock', 'shape', 'weight', 'color', 'clarity', 'lab', 'certificate_number',
     'length', 'width', 'depth', 'ratio', 'cut', 'polish', 'symmetry', 
@@ -32,7 +32,7 @@ export function BulkUploadForm() {
     if (!processedData?.validRows.length) {
       toast({
         title: "❌ No Valid Data",
-        description: "No valid diamonds found. Please check your file contains the 7 mandatory fields.",
+        description: "No valid diamonds found. Please check your file contains all mandatory fields.",
         variant: "destructive",
       });
       return;
@@ -51,16 +51,16 @@ export function BulkUploadForm() {
     hapticFeedback.impact('heavy');
 
     try {
-      console.log(`📤 Uploading ${processedData.validRows.length} diamonds for user ${user.id}`);
+      console.log(`📤 Uploading ${processedData.validRows.length} diamonds for user ${user.id} via FastAPI batch endpoint`);
 
-      // Build JSON payload with all valid diamonds
+      // Build JSON payload with all valid diamonds for FastAPI batch endpoint
       const payload = {
         diamonds: processedData.validRows
       };
 
-      console.log('📤 Sending diamonds to batch API:', payload);
+      console.log('📤 Sending diamonds to FastAPI batch endpoint:', payload);
 
-      // Send POST request to the FastAPI endpoint with the actual user ID
+      // Send POST request to the FastAPI batch endpoint
       const response = await fetch(
         `https://api.mazalbot.com/api/v1/diamonds/batch?user_id=${user.id}`,
         {
@@ -76,27 +76,33 @@ export function BulkUploadForm() {
       const result = await response.json();
 
       if (!response.ok) {
-        console.error('❌ API Error:', result);
+        console.error('❌ FastAPI Batch Error:', result);
         throw new Error(`Upload failed: ${result.detail || result.message || 'Unknown error'}`);
       }
 
-      console.log('✅ Batch upload result:', result);
+      console.log('✅ FastAPI batch upload result:', result);
 
       hapticFeedback.notification('success');
       toast({
-        title: "✅ Upload Successful!",
-        description: `Successfully uploaded ${processedData.validRows.length} diamonds. ${processedData.failedRows.length} rows were skipped due to missing mandatory fields.`,
+        title: "✅ Bulk Upload Successful!",
+        description: `Successfully uploaded ${processedData.validRows.length} diamonds via FastAPI. ${processedData.failedRows.length} rows were skipped due to missing mandatory fields.`,
       });
       
-      // Reset form
+      // Reset form after successful upload
       setSelectedFile(null);
       resetProcessor();
+
+      // Refresh the page to show new diamonds
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+      
     } catch (error) {
-      console.error('❌ Batch upload failed:', error);
+      console.error('❌ FastAPI batch upload failed:', error);
       hapticFeedback.notification('error');
       toast({
         title: "❌ Upload Failed",
-        description: error instanceof Error ? error.message : "Failed to upload diamonds",
+        description: error instanceof Error ? error.message : "Failed to upload diamonds via FastAPI",
         variant: "destructive",
       });
     } finally {
@@ -193,7 +199,7 @@ export function BulkUploadForm() {
               className="w-full"
               size="lg"
             >
-              Upload {processedData.validRows.length} Diamonds
+              Upload {processedData.validRows.length} Diamonds to FastAPI
             </Button>
           </CardContent>
         </Card>

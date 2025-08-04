@@ -8,7 +8,7 @@ import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { SingleStoneForm } from '@/components/upload/SingleStoneForm';
 import { CertificateScanArea } from '@/components/upload/CertificateScanArea';
-import { UploadForm } from '@/components/upload/UploadForm';
+import { BulkUploadForm } from '@/components/upload/BulkUploadForm';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { useInventoryCrud } from '@/hooks/useInventoryCrud';
 
@@ -75,6 +75,24 @@ export default function UploadPage() {
     );
   }
 
+  // Show bulk upload form when action=bulk
+  if (action === 'bulk') {
+    return (
+      <div className="min-h-screen bg-background p-4">
+        <div className="max-w-2xl mx-auto space-y-6">
+          <div className="text-center space-y-2">
+            <h1 className="text-2xl font-bold text-foreground">Bulk Upload</h1>
+            <p className="text-muted-foreground">
+              Upload multiple diamonds using CSV or Excel files
+            </p>
+          </div>
+          
+          <BulkUploadForm />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto p-4 space-y-6">
@@ -113,21 +131,22 @@ export default function UploadPage() {
             </CardContent>
           </Card>
 
-          {/* Bulk Upload */}
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow opacity-60">
+          {/* Bulk Upload - Now Enabled */}
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" 
+                onClick={() => navigate('/upload?action=bulk')}>
             <CardContent className="p-6 text-center space-y-4">
-              <div className="w-12 h-12 bg-muted/20 rounded-full flex items-center justify-center mx-auto">
-                <FileText className="h-6 w-6 text-muted-foreground" />
+              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                <FileText className="h-6 w-6 text-primary" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Bulk Upload</h3>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Upload CSV/Excel files - Coming Soon
+                  Upload CSV/Excel files with multiple diamonds
                 </p>
               </div>
-              <Button variant="outline" disabled className="w-full">
+              <Button variant="outline" className="w-full">
                 <Upload className="w-4 h-4 mr-2" />
-                Coming Soon
+                Upload CSV/Excel
               </Button>
             </CardContent>
           </Card>
@@ -142,7 +161,8 @@ export default function UploadPage() {
             <div className="space-y-2 text-sm text-muted-foreground">
               <p>• Use single diamond upload for precise control and AI assistance</p>
               <p>• Scan GIA/GCAL certificates for instant data extraction</p>
-              <p>• All uploads sync instantly across dashboard and store</p>
+              <p>• Use bulk upload for CSV/Excel files with multiple diamonds</p>
+              <p>• All uploads sync instantly across dashboard and store using FastAPI</p>
             </div>
           </CardContent>
         </Card>
