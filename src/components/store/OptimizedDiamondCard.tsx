@@ -1,3 +1,4 @@
+
 import { useState, memo, useCallback, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Heart, Eye, MessageCircle, Gem, Share2, Sparkles } from "lucide-react";
@@ -191,7 +192,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
   // Log media availability for debugging
   console.log(`🔍 MEDIA CHECK for ${diamond.stockNumber}:`, {
     has360,
-    hasValidImage,
+    hasAnyImage,
     isV360,
     gem360Url: diamond.gem360Url,
     imageUrl: diamond.imageUrl
