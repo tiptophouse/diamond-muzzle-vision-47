@@ -68,17 +68,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     return () => observer.disconnect();
   }, []);
 
-  // Enhanced image URL validation
-  const hasValidImage = !!(
-    diamond.imageUrl && 
-    diamond.imageUrl.trim() && 
-    diamond.imageUrl !== 'default' &&
-    diamond.imageUrl.startsWith('http') &&
-    diamond.imageUrl.length > 10 &&
-    diamond.imageUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i)
-  );
-
-  // Enhanced 360° detection - prioritize interactive viewers over static images
+  // PRIORITY 1: Enhanced 360° detection - highest priority for 3D viewers
   const has360 = !!(diamond.gem360Url && diamond.gem360Url.trim() && (
     diamond.gem360Url.includes('v360.in') ||         // Interactive viewers (highest priority)
     diamond.gem360Url.includes('diamondview.aspx') ||
@@ -87,8 +77,22 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     diamond.gem360Url.includes('sarine') ||
     diamond.gem360Url.includes('360') ||
     diamond.gem360Url.includes('.html') ||
-    diamond.gem360Url.match(/DAN\d+-\d+[A-Z]?\.jpg$/i) // Static 360° images (lower priority)
+    diamond.gem360Url.match(/DAN\d+-\d+[A-Z]?\.jpg$/i) // Static 360° images
   ));
+
+  // PRIORITY 2: Enhanced image URL validation - only for actual diamond photos
+  const hasValidImage = !!(
+    diamond.imageUrl && 
+    diamond.imageUrl.trim() && 
+    diamond.imageUrl !== 'default' &&
+    diamond.imageUrl.startsWith('http') &&
+    diamond.imageUrl.length > 10 &&
+    diamond.imageUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i) &&
+    !diamond.imageUrl.includes('.html') &&
+    !diamond.imageUrl.includes('diamondview.aspx') &&
+    !diamond.imageUrl.includes('v360.in') &&
+    !diamond.imageUrl.includes('sarine')
+  );
 
   // Determine if it's v360.in specifically (highest priority)
   const isV360 = !!(diamond.gem360Url && diamond.gem360Url.includes('v360.in'));
@@ -172,6 +176,15 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
 
   const priceDisplay = diamond.price > 0 ? formatCurrency(diamond.price) : null;
 
+  // Log media availability for debugging
+  console.log(`🔍 MEDIA CHECK for ${diamond.stockNumber}:`, {
+    has360,
+    hasValidImage,
+    isV360,
+    gem360Url: diamond.gem360Url,
+    imageUrl: diamond.imageUrl
+  });
+
   return (
     <div 
       ref={cardRef}
@@ -179,9 +192,10 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
       className="group relative bg-white rounded-xl overflow-hidden transition-all duration-200 border border-gray-200 hover:border-gray-300 hover:shadow-lg"
       style={{ animationDelay: `${Math.min(index * 30, 200)}ms` }}
     >
-      {/* PRIORITY 1: Always show 360° if available, prioritizing v360.in */}
+      {/* PRIORITY 1: Always show 360° if available (highest priority) */}
       {has360 && isVisible ? (
         <div className="relative aspect-square">
+          {console.log(`✨ SHOWING 3D VIEWER for ${diamond.stockNumber}:`, diamond.gem360Url)}
           {isV360 ? (
             <V360Viewer 
               v360Url={diamond.gem360Url!}
@@ -211,6 +225,8 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
       ) : hasValidImage && isVisible ? (
         /* PRIORITY 2: Show actual diamond image only if no 360° available */
         <div className="relative aspect-square bg-gray-50 overflow-hidden">
+          {console.log(`📸 SHOWING IMAGE for ${diamond.stockNumber}:`, diamond.imageUrl)}
+          
           {/* Loading state */}
           {!imageLoaded && (
             <div className="absolute inset-0 bg-gray-100 flex items-center justify-center z-10">
@@ -234,10 +250,17 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
             loading="lazy"
             decoding="async"
           />
+          
+          <div className="absolute top-2 left-2">
+            <Badge className="text-xs font-medium border-0 bg-blue-500 text-white px-2 py-0.5">
+              Diamond Image
+            </Badge>
+          </div>
         </div>
       ) : (
         /* PRIORITY 3: Enhanced info card when no media available */
         <div className="aspect-square flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+          {console.log(`ℹ️ SHOWING INFO CARD for ${diamond.stockNumber} (no media)`)}
           <div className="text-center p-6">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-4">
               <Gem className="h-8 w-8 text-blue-600" />
@@ -254,6 +277,11 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
               {showCutGrade && (
                 <p className="text-xs text-yellow-600 font-medium">{diamond.cut}</p>
               )}
+            </div>
+            <div className="absolute top-2 left-2">
+              <Badge className="text-xs font-medium border-0 bg-gray-400 text-white px-2 py-0.5">
+                Diamond Info
+              </Badge>
             </div>
           </div>
         </div>
