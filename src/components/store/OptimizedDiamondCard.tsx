@@ -1,3 +1,4 @@
+
 import { useState, memo, useCallback, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Heart, Eye, MessageCircle, Gem, Share2, Sparkles } from "lucide-react";
@@ -195,7 +196,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
       {/* PRIORITY 1: Always show 360° if available (highest priority) */}
       {has360 && isVisible ? (
         <div className="relative aspect-square">
-          {console.log(`✨ SHOWING 3D VIEWER for ${diamond.stockNumber}:`, diamond.gem360Url)}
+          {/* Removed console.log from JSX - logs are now in the console.log above */}
           {isV360 ? (
             <V360Viewer 
               v360Url={diamond.gem360Url!}
@@ -225,7 +226,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
       ) : hasValidImage && isVisible ? (
         /* PRIORITY 2: Show actual diamond image only if no 360° available */
         <div className="relative aspect-square bg-gray-50 overflow-hidden">
-          {console.log(`📸 SHOWING IMAGE for ${diamond.stockNumber}:`, diamond.imageUrl)}
+          {/* Removed console.log from JSX - logs are now in the console.log above */}
           
           {/* Loading state */}
           {!imageLoaded && (
@@ -260,7 +261,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
       ) : (
         /* PRIORITY 3: Enhanced info card when no media available */
         <div className="aspect-square flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-          {console.log(`ℹ️ SHOWING INFO CARD for ${diamond.stockNumber} (no media)`)}
+          {/* Removed console.log from JSX - logs are now in the console.log above */}
           <div className="text-center p-6">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-4">
               <Gem className="h-8 w-8 text-blue-600" />

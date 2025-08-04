@@ -135,7 +135,7 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
         {/* PRIORITY 1: 3D/360° viewer (highest priority) */}
         {has360 ? (
           <div className="w-full h-full">
-            {console.log(`✨ PROFESSIONAL: SHOWING 3D VIEWER for ${diamond.stockNumber}`)}
+            {/* Removed console.log from JSX */}
             {isV360 ? (
               <V360Viewer 
                 v360Url={diamond.gem360Url!}
@@ -153,7 +153,7 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
         ) : hasValidImage ? (
           /* PRIORITY 2: Show regular diamond image */
           <div className="w-full h-full">
-            {console.log(`📸 PROFESSIONAL: SHOWING IMAGE for ${diamond.stockNumber}`)}
+            {/* Removed console.log from JSX */}
             {!imageError ? (
               <img
                 src={diamond.imageUrl}
@@ -175,7 +175,7 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
         ) : (
           /* PRIORITY 3: Info card when no media available */
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-            {console.log(`ℹ️ PROFESSIONAL: SHOWING INFO CARD for ${diamond.stockNumber}`)}
+            {/* Removed console.log from JSX */}
             <div className="text-center p-6">
               <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Gem className="h-8 w-8 text-blue-600" />

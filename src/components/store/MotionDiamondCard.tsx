@@ -134,7 +134,7 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
         {/* PRIORITY 1: 3D/360° viewer (highest priority) */}
         {has360 ? (
           <div className="w-full h-full">
-            {console.log(`✨ MOTION: SHOWING 3D VIEWER for ${diamond.stockNumber}`)}
+            {/* Removed console.log from JSX */}
             {isV360 ? (
               <V360Viewer 
                 v360Url={diamond.gem360Url!}
@@ -152,7 +152,7 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
         ) : hasValidImage ? (
           /* PRIORITY 2: Show regular diamond image */
           <div className="w-full h-full">
-            {console.log(`📸 MOTION: SHOWING IMAGE for ${diamond.stockNumber}`)}
+            {/* Removed console.log from JSX */}
             {!imageError ? (
               <img
                 src={diamond.imageUrl}
@@ -180,7 +180,7 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
         ) : (
           /* PRIORITY 3: Info card with motion when no media available */
           <div className="flex items-center justify-center h-full">
-            {console.log(`ℹ️ MOTION: SHOWING INFO CARD for ${diamond.stockNumber}`)}
+            {/* Removed console.log from JSX */}
             <div className="relative">
               <div 
                 className={`w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-lg transition-transform duration-200 ease-out ${
