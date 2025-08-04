@@ -1,4 +1,3 @@
-
 import { useState, memo, useCallback, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Heart, Eye, MessageCircle, Gem, Share2, Sparkles } from "lucide-react";
@@ -18,6 +17,7 @@ import {
   formatPolishSymmetry 
 } from "@/utils/fancyColorUtils";
 import { FancyColorBadge, CertificationBadge, OriginBadge } from "./FancyColorBadge";
+import { DualImageDisplay } from "./DualImageDisplay";
 
 interface OptimizedDiamondCardProps {
   diamond: Diamond;
@@ -82,7 +82,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
   ));
 
   // PRIORITY 2: Enhanced image URL validation - only for actual diamond photos
-  const hasValidImage = !!(
+  const hasValidDiamondImage = !!(
     diamond.imageUrl && 
     diamond.imageUrl.trim() && 
     diamond.imageUrl !== 'default' &&
@@ -94,6 +94,17 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     !diamond.imageUrl.includes('v360.in') &&
     !diamond.imageUrl.includes('sarine')
   );
+
+  const hasValidCertificateImage = !!(
+    diamond.certificateImageUrl && 
+    diamond.certificateImageUrl.trim() && 
+    diamond.certificateImageUrl !== 'default' &&
+    diamond.certificateImageUrl.startsWith('http') &&
+    diamond.certificateImageUrl.length > 10 &&
+    diamond.certificateImageUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i)
+  );
+
+  const hasAnyImage = hasValidDiamondImage || hasValidCertificateImage;
 
   // Determine if it's v360.in specifically (highest priority)
   const isV360 = !!(diamond.gem360Url && diamond.gem360Url.includes('v360.in'));
@@ -223,45 +234,17 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
             </Badge>
           </div>
         </div>
-      ) : hasValidImage && isVisible ? (
-        /* PRIORITY 2: Show actual diamond image only if no 360° available */
-        <div className="relative aspect-square bg-gray-50 overflow-hidden">
-          {/* Removed console.log from JSX - logs are now in the console.log above */}
-          
-          {/* Loading state */}
-          {!imageLoaded && (
-            <div className="absolute inset-0 bg-gray-100 flex items-center justify-center z-10">
-              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          )}
-          
-          <img 
-            ref={imgRef}
-            src={diamond.imageUrl} 
-            alt={`${diamond.carat} ct ${diamond.shape} Diamond`} 
-            className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${
-              imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'
-            }`}
-            style={{
-              imageRendering: 'crisp-edges',
-              transform: 'translateZ(0)'
-            }}
-            onLoad={handleImageLoad}
-            onError={handleImageError}
-            loading="lazy"
-            decoding="async"
-          />
-          
-          <div className="absolute top-2 left-2">
-            <Badge className="text-xs font-medium border-0 bg-blue-500 text-white px-2 py-0.5">
-              Diamond Image
-            </Badge>
-          </div>
-        </div>
+      ) : hasAnyImage && isVisible ? (
+        /* PRIORITY 2: Show diamond and/or certificate images */
+        <DualImageDisplay
+          diamondImage={diamond.imageUrl}
+          certificateImage={diamond.certificateImageUrl}
+          stockNumber={diamond.stockNumber}
+          className="group-hover:scale-105 transition-transform duration-300"
+        />
       ) : (
         /* PRIORITY 3: Enhanced info card when no media available */
         <div className="aspect-square flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-          {/* Removed console.log from JSX - logs are now in the console.log above */}
           <div className="text-center p-6">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-4">
               <Gem className="h-8 w-8 text-blue-600" />

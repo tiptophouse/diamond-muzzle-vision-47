@@ -118,6 +118,38 @@ export function useInventoryData() {
     return trimmedUrl;
   }, []);
 
+  // Enhanced certificate image processing
+  const processCertificateImage = useCallback((certificateUrl: string | undefined): string | undefined => {
+    if (!certificateUrl || typeof certificateUrl !== 'string') {
+      return undefined;
+    }
+
+    const trimmedUrl = certificateUrl.trim();
+    
+    // Skip invalid or placeholder values
+    if (!trimmedUrl || 
+        trimmedUrl === 'default' || 
+        trimmedUrl === 'null' || 
+        trimmedUrl === 'undefined' ||
+        trimmedUrl.length < 10) {
+      return undefined;
+    }
+
+    // Must be a valid HTTP/HTTPS URL
+    if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
+      return undefined;
+    }
+
+    // Check for certificate image patterns
+    const isCertificateImage = trimmedUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i) &&
+      (trimmedUrl.toLowerCase().includes('certificate') ||
+       trimmedUrl.toLowerCase().includes('cert') ||
+       trimmedUrl.toLowerCase().includes('gia') ||
+       trimmedUrl.toLowerCase().includes('lab'));
+
+    return isCertificateImage ? trimmedUrl : undefined;
+  }, []);
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
@@ -145,7 +177,7 @@ export function useInventoryData() {
             item.picture,
             item.image_url,
             item.imageUrl,
-            item.Image, // CSV field
+            item.Image,
             item.image,
           ];
           
@@ -154,6 +186,24 @@ export function useInventoryData() {
             const processedUrl = processImageUrl(imageField);
             if (processedUrl) {
               finalImageUrl = processedUrl;
+              break;
+            }
+          }
+
+          // Enhanced certificate image detection
+          let finalCertificateImageUrl = undefined;
+          const certificateImageFields = [
+            item.certificate_image_url,
+            item.certificateImageUrl,
+            item.gia_report_image,
+            item.lab_report_image,
+          ];
+          
+          // Process certificate image fields
+          for (const certField of certificateImageFields) {
+            const processedCertUrl = processCertificateImage(certField);
+            if (processedCertUrl) {
+              finalCertificateImageUrl = processedCertUrl;
               break;
             }
           }
@@ -177,6 +227,7 @@ export function useInventoryData() {
             status: item.status || item.Availability || 'Available',
             fluorescence: item.fluorescence || item.FluorescenceIntensity || undefined,
             imageUrl: finalImageUrl,
+            certificateImageUrl: finalCertificateImageUrl,
             // Enhanced 360° URL detection from multiple fields
             gem360Url: detect360Url(item.gem360Url) || 
                        detect360Url(item['Video link']) || 
@@ -194,10 +245,11 @@ export function useInventoryData() {
           };
         });
 
-        console.log('📥 INVENTORY HOOK: Transformed diamonds with image URLs:', 
+        console.log('📥 INVENTORY HOOK: Transformed diamonds with images:', 
           transformedDiamonds.map(d => ({ 
             stock: d.stockNumber, 
             imageUrl: d.imageUrl,
+            certificateImageUrl: d.certificateImageUrl,
             gem360Url: d.gem360Url 
           }))
         );
@@ -218,7 +270,7 @@ export function useInventoryData() {
     } finally {
       setLoading(false);
     }
-  }, [processImageUrl, detect360Url]);
+  }, [processImageUrl, detect360Url, processCertificateImage]);
 
   const handleRefresh = useCallback(() => {
     console.log('🔄 INVENTORY HOOK: Manual refresh triggered');
