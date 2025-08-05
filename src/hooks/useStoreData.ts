@@ -18,7 +18,7 @@ export function useStoreData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Enhanced image URL validation and processing
+  // Relaxed image URL validation for better compatibility
   const processImageUrl = useCallback((imageUrl: string | undefined): string | undefined => {
     if (!imageUrl || typeof imageUrl !== 'string') {
       return undefined;
@@ -35,7 +35,7 @@ export function useStoreData() {
       return undefined;
     }
 
-    // Skip HTML viewers and non-image URLs
+    // Skip HTML viewers and 360° URLs (these go to gem360Url instead)
     if (trimmedUrl.includes('.html') ||
         trimmedUrl.includes('diamondview.aspx') ||
         trimmedUrl.includes('v360.in') ||
@@ -48,13 +48,19 @@ export function useStoreData() {
       return undefined;
     }
 
-    // Must end with valid image extension
-    if (!trimmedUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i)) {
-      return undefined;
+    // Accept common image extensions OR unsplash/image URLs
+    const hasImageExtension = trimmedUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i);
+    const isImageUrl = trimmedUrl.includes('unsplash.com') || 
+                      trimmedUrl.includes('/image') ||
+                      trimmedUrl.includes('w=') || // Unsplash width parameter
+                      trimmedUrl.includes('h='); // Unsplash height parameter
+
+    if (hasImageExtension || isImageUrl) {
+      console.log('✅ VALID IMAGE URL processed:', trimmedUrl);
+      return trimmedUrl;
     }
 
-    console.log('✅ VALID IMAGE URL processed:', trimmedUrl);
-    return trimmedUrl;
+    return undefined;
   }, []);
 
   // Enhanced 360° URL detection for various formats
@@ -99,12 +105,20 @@ export function useStoreData() {
         // Enhanced image URL detection with multiple fallbacks
         let finalImageUrl = undefined;
         const imageFields = [
-          item.picture,
-          item.image_url,
-          item.imageUrl,
-          item.Image, // CSV field
-          item.image,
+          item.picture,          // Primary field from FastAPI
+          item.imageUrl,         // Alternative field
+          item.image_url,        // Snake case variant
+          item.Image,            // CSV field
+          item.image,            // Generic field
         ];
+        
+        console.log('🔍 IMAGE SEARCH for', item.stock_number || item.stock || 'unknown', ':', {
+          picture: item.picture,
+          imageUrl: item.imageUrl,
+          image_url: item.image_url,
+          Image: item.Image,
+          image: item.image
+        });
         
         // Process each potential image field
         for (const imageField of imageFields) {

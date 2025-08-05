@@ -99,7 +99,7 @@ export default function UploadPage() {
               <Button
                 onClick={() => hapticFeedback.impact('heavy')}
                 data-tutorial="upload-single-diamond"
-                variant="diamond"
+                variant="default"
                 size="lg"
                 className="w-full h-16 text-lg font-bold animate-pulse hover:animate-none shadow-premium relative overflow-hidden"
               >
