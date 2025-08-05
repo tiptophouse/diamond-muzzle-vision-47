@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { fetchInventoryData } from "@/services/inventoryDataService";
@@ -18,7 +19,7 @@ export function useStoreData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Enhanced image URL validation and processing
+  // FIXED: Simplified and more permissive image URL validation
   const processImageUrl = useCallback((imageUrl: string | undefined): string | undefined => {
     if (!imageUrl || typeof imageUrl !== 'string') {
       return undefined;
@@ -26,38 +27,25 @@ export function useStoreData() {
 
     const trimmedUrl = imageUrl.trim();
     
-    // Skip invalid or placeholder values
+    // Skip obvious invalid values
     if (!trimmedUrl || 
         trimmedUrl === 'default' || 
         trimmedUrl === 'null' || 
         trimmedUrl === 'undefined' ||
-        trimmedUrl.length < 10) {
+        trimmedUrl.length < 5) {
       return undefined;
     }
 
-    // Skip HTML viewers and non-image URLs
-    if (trimmedUrl.includes('.html') ||
-        trimmedUrl.includes('diamondview.aspx') ||
-        trimmedUrl.includes('v360.in') ||
-        trimmedUrl.includes('sarine')) {
-      return undefined;
+    // FIXED: Accept any HTTP/HTTPS URL - don't be too strict about extensions
+    if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+      console.log('✅ VALID IMAGE URL accepted:', trimmedUrl);
+      return trimmedUrl;
     }
 
-    // Must be a valid HTTP/HTTPS URL
-    if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
-      return undefined;
-    }
-
-    // Must end with valid image extension
-    if (!trimmedUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i)) {
-      return undefined;
-    }
-
-    console.log('✅ VALID IMAGE URL processed:', trimmedUrl);
-    return trimmedUrl;
+    return undefined;
   }, []);
 
-  // Enhanced certificate image processing
+  // FIXED: More permissive certificate image processing
   const processCertificateImage = useCallback((certificateUrl: string | undefined): string | undefined => {
     if (!certificateUrl || typeof certificateUrl !== 'string') {
       return undefined;
@@ -65,29 +53,16 @@ export function useStoreData() {
 
     const trimmedUrl = certificateUrl.trim();
     
-    // Skip invalid or placeholder values
     if (!trimmedUrl || 
         trimmedUrl === 'default' || 
         trimmedUrl === 'null' || 
         trimmedUrl === 'undefined' ||
-        trimmedUrl.length < 10) {
+        trimmedUrl.length < 5) {
       return undefined;
     }
 
-    // Must be a valid HTTP/HTTPS URL
-    if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
-      return undefined;
-    }
-
-    // Check for certificate image patterns or image extensions
-    const isCertificateImage = trimmedUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i) &&
-      (trimmedUrl.toLowerCase().includes('certificate') ||
-       trimmedUrl.toLowerCase().includes('cert') ||
-       trimmedUrl.toLowerCase().includes('gia') ||
-       trimmedUrl.toLowerCase().includes('lab'));
-
-    if (isCertificateImage) {
-      console.log('✅ VALID CERTIFICATE IMAGE processed:', trimmedUrl);
+    if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+      console.log('✅ VALID CERTIFICATE IMAGE accepted:', trimmedUrl);
       return trimmedUrl;
     }
 
@@ -97,29 +72,22 @@ export function useStoreData() {
   // Enhanced 360° URL detection for various formats
   const detect360Url = useCallback((item: any) => {
     const potential360Fields = [
-      item.v360_url,
+      item.gem360Url,
       item.gem360_url,
+      item.v360_url,
       item.video_url,
       item.video360_url,
       item.three_d_url,
-      item.rotation_url
+      item.rotation_url,
+      item['Video link'],
+      item.videoLink
     ];
     
     for (const field of potential360Fields) {
       if (field && typeof field === 'string' && field.trim()) {
         const url = field.trim();
-        // Enhanced detection for 360° formats including your examples
-        if (url.includes('my360.sela') ||
-            url.includes('v360.in') ||
-            url.includes('diamondview.aspx') ||
-            url.includes('gem360') ||
-            url.includes('360') ||
-            url.includes('sarine') ||
-            url.includes('3d') ||
-            url.includes('rotate') ||
-            url.includes('.html') ||
-            url.match(/DAN\d+-\d+[A-Z]?\.jpg$/)) { // Pattern like DAN040-0016A.jpg
-          console.log('✨ DETECTED 360° URL for', item.stock_number, ':', url);
+        if (url !== 'default' && url !== 'null' && url.length > 5) {
+          console.log('✨ DETECTED 360° URL for', item.stock_number || item.stock, ':', url);
           return url;
         }
       }
@@ -127,23 +95,24 @@ export function useStoreData() {
     return undefined;
   }, []);
 
-  // Enhanced data transformation with certificate image processing
+  // FIXED: More comprehensive data transformation with better field mapping
   const transformData = useCallback((rawData: any[]): Diamond[] => {
     console.log('🔧 TRANSFORM DATA: Processing', rawData.length, 'items from FastAPI');
     
     return rawData
       .map(item => {
-        // Enhanced image URL detection with multiple fallbacks
+        console.log('🔍 PROCESSING ITEM:', item.stock_number || item.stock, 'with picture:', item.picture);
+        
+        // FIXED: Try multiple image fields in order of priority
         let finalImageUrl = undefined;
         const imageFields = [
-          item.picture,
+          item.picture,           // Your API uses 'picture' field
           item.image_url,
           item.imageUrl,
           item.Image,
           item.image,
         ];
         
-        // Process each potential image field
         for (const imageField of imageFields) {
           const processedUrl = processImageUrl(imageField);
           if (processedUrl) {
@@ -153,23 +122,21 @@ export function useStoreData() {
           }
         }
         
-        // Enhanced certificate image detection
+        // Certificate image detection
         let finalCertificateImageUrl = undefined;
         const certificateImageFields = [
           item.certificate_image_url,
           item.certificateImageUrl,
-          item.certificate_url, // Sometimes certificate_url points to an image
+          item.certificate_url,
           item.certificateUrl,
           item.gia_report_image,
           item.lab_report_image,
         ];
         
-        // Process certificate image fields
         for (const certField of certificateImageFields) {
           const processedCertUrl = processCertificateImage(certField);
           if (processedCertUrl) {
             finalCertificateImageUrl = processedCertUrl;
-            console.log('✅ FOUND VALID CERTIFICATE IMAGE for', item.stock_number || item.stock, ':', finalCertificateImageUrl);
             break;
           }
         }
@@ -177,7 +144,7 @@ export function useStoreData() {
         // Enhanced 360° URL detection
         const final360Url = detect360Url(item);
 
-        // Determine color type based on the color value
+        // Determine color type
         const colorType = item.color_type || (detectFancyColor(item.color).isFancyColor ? 'Fancy' : 'Standard');
 
         const result = {
@@ -196,20 +163,18 @@ export function useStoreData() {
           imageUrl: finalImageUrl,
           gem360Url: final360Url,
           certificateUrl: item.certificate_url || item.certificateUrl || undefined,
-          certificateImageUrl: finalCertificateImageUrl, // New field
+          certificateImageUrl: finalCertificateImageUrl,
           store_visible: item.store_visible !== false,
           certificateNumber: item.certificate_number || undefined,
           lab: item.lab || undefined,
         };
 
-        // Enhanced logging for debugging
         console.log('🔧 FINAL TRANSFORM for', result.stockNumber, ':', {
           hasImage: !!result.imageUrl,
           has360: !!result.gem360Url,
           hasCertificateImage: !!result.certificateImageUrl,
           imageUrl: result.imageUrl,
-          gem360Url: result.gem360Url,
-          certificateImageUrl: result.certificateImageUrl,
+          originalPicture: item.picture
         });
 
         return result;
@@ -236,7 +201,8 @@ export function useStoreData() {
         hasData: !!result.data,
         dataLength: result.data?.length || 0,
         error: result.error,
-        firstItem: result.data?.[0]
+        firstItem: result.data?.[0],
+        firstItemPicture: result.data?.[0]?.picture
       });
 
       if (result.error) {
@@ -255,6 +221,7 @@ export function useStoreData() {
           totalDiamonds: transformedDiamonds.length,
           diamondsWithImages: diamondsWithImages.length,
           diamondsWith360: diamondsWith360.length,
+          sampleImageUrls: diamondsWithImages.slice(0, 3).map(d => ({ stock: d.stockNumber, url: d.imageUrl }))
         });
         
         // Update cache

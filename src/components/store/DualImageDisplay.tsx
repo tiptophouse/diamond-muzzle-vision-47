@@ -20,13 +20,14 @@ export function DualImageDisplay({
   const [currentImage, setCurrentImage] = useState<'diamond' | 'certificate'>('diamond');
   const [imageError, setImageError] = useState<Record<string, boolean>>({});
   
+  // FIXED: More permissive image validation
   const hasValidDiamondImage = !!(
     diamondImage && 
     diamondImage.trim() && 
     diamondImage !== 'default' &&
-    diamondImage.startsWith('http') &&
-    diamondImage.length > 10 &&
-    diamondImage.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i) &&
+    diamondImage !== 'null' &&
+    diamondImage.length > 5 &&
+    (diamondImage.startsWith('http://') || diamondImage.startsWith('https://')) &&
     !imageError[diamondImage]
   );
 
@@ -34,16 +35,22 @@ export function DualImageDisplay({
     certificateImage && 
     certificateImage.trim() && 
     certificateImage !== 'default' &&
-    certificateImage.startsWith('http') &&
-    certificateImage.length > 10 &&
-    (certificateImage.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i) || 
-     certificateImage.includes('certificate') ||
-     certificateImage.includes('cert')) &&
+    certificateImage !== 'null' &&
+    certificateImage.length > 5 &&
+    (certificateImage.startsWith('http://') || certificateImage.startsWith('https://')) &&
     !imageError[certificateImage]
   );
 
   const totalImages = (hasValidDiamondImage ? 1 : 0) + (hasValidCertificateImage ? 1 : 0);
   
+  console.log('🖼️ DUAL IMAGE CHECK for', stockNumber, ':', {
+    diamondImage,
+    certificateImage,
+    hasValidDiamondImage,
+    hasValidCertificateImage,
+    totalImages
+  });
+
   if (totalImages === 0) {
     return null; // No images to display
   }
@@ -59,7 +66,13 @@ export function DualImageDisplay({
           src={imageToShow}
           alt={`${imageType === 'diamond' ? 'Diamond' : 'Certificate'} ${stockNumber}`}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          onError={() => setImageError(prev => ({ ...prev, [imageToShow!]: true }))}
+          onError={(e) => {
+            console.error('❌ IMAGE ERROR for', stockNumber, ':', e.currentTarget.src);
+            setImageError(prev => ({ ...prev, [imageToShow!]: true }));
+          }}
+          onLoad={() => {
+            console.log('✅ IMAGE LOADED for', stockNumber, ':', imageToShow);
+          }}
         />
         <div className="absolute top-2 left-2">
           <Badge className={`text-xs font-medium border-0 text-white px-2 py-0.5 ${
@@ -103,7 +116,13 @@ export function DualImageDisplay({
           src={currentImageUrl}
           alt={`${currentImage === 'diamond' ? 'Diamond' : 'Certificate'} ${stockNumber}`}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          onError={() => setImageError(prev => ({ ...prev, [currentImageUrl]: true }))}
+          onError={(e) => {
+            console.error('❌ CAROUSEL IMAGE ERROR for', stockNumber, ':', e.currentTarget.src);
+            setImageError(prev => ({ ...prev, [currentImageUrl]: true }));
+          }}
+          onLoad={() => {
+            console.log('✅ CAROUSEL IMAGE LOADED for', stockNumber, ':', currentImageUrl);
+          }}
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-gray-100">

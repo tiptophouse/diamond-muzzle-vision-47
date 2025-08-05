@@ -1,4 +1,3 @@
-
 import { useState, memo, useCallback, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Heart, Eye, MessageCircle, Gem, Share2, Sparkles } from "lucide-react";
@@ -70,47 +69,48 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     return () => observer.disconnect();
   }, []);
 
-  // PRIORITY 1: Enhanced 360° detection - highest priority for 3D viewers
-  const has360 = !!(diamond.gem360Url && diamond.gem360Url.trim() && (
-    diamond.gem360Url.includes('v360.in') ||         // Interactive viewers (highest priority)
-    diamond.gem360Url.includes('diamondview.aspx') ||
-    diamond.gem360Url.includes('my360.sela') ||      // 360° platforms
-    diamond.gem360Url.includes('gem360') ||
-    diamond.gem360Url.includes('sarine') ||
-    diamond.gem360Url.includes('360') ||
-    diamond.gem360Url.includes('.html') ||
-    diamond.gem360Url.match(/DAN\d+-\d+[A-Z]?\.jpg$/i) // Static 360° images
-  ));
+  // FIXED: More permissive 360° detection
+  const has360 = !!(diamond.gem360Url && 
+    diamond.gem360Url.trim() && 
+    diamond.gem360Url !== 'default' && 
+    diamond.gem360Url !== 'null' &&
+    diamond.gem360Url.length > 5);
 
-  // PRIORITY 2: Enhanced image URL validation - only for actual diamond photos
+  // FIXED: More permissive image URL validation
   const hasValidDiamondImage = !!(
     diamond.imageUrl && 
     diamond.imageUrl.trim() && 
     diamond.imageUrl !== 'default' &&
-    diamond.imageUrl.startsWith('http') &&
-    diamond.imageUrl.length > 10 &&
-    diamond.imageUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i) &&
-    !diamond.imageUrl.includes('.html') &&
-    !diamond.imageUrl.includes('diamondview.aspx') &&
-    !diamond.imageUrl.includes('v360.in') &&
-    !diamond.imageUrl.includes('sarine')
+    diamond.imageUrl !== 'null' &&
+    diamond.imageUrl.length > 5 &&
+    (diamond.imageUrl.startsWith('http://') || diamond.imageUrl.startsWith('https://'))
   );
 
   const hasValidCertificateImage = !!(
     diamond.certificateImageUrl && 
     diamond.certificateImageUrl.trim() && 
     diamond.certificateImageUrl !== 'default' &&
-    diamond.certificateImageUrl.startsWith('http') &&
-    diamond.certificateImageUrl.length > 10 &&
-    diamond.certificateImageUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i)
+    diamond.certificateImageUrl !== 'null' &&
+    diamond.certificateImageUrl.length > 5 &&
+    (diamond.certificateImageUrl.startsWith('http://') || diamond.certificateImageUrl.startsWith('https://'))
   );
 
   const hasAnyImage = hasValidDiamondImage || hasValidCertificateImage;
 
-  // Determine if it's v360.in specifically (highest priority)
+  // Log media availability for debugging
+  console.log(`🔍 MEDIA CHECK for ${diamond.stockNumber}:`, {
+    has360,
+    hasAnyImage,
+    hasValidDiamondImage,
+    hasValidCertificateImage,
+    imageUrl: diamond.imageUrl,
+    gem360Url: diamond.gem360Url
+  });
+
+  // Determine if it's v360.in specifically
   const isV360 = !!(diamond.gem360Url && diamond.gem360Url.includes('v360.in'));
   
-  // Determine if it's an interactive 360° viewer (higher priority)
+  // Determine if it's an interactive 360° viewer
   const isInteractive360 = !!(diamond.gem360Url && (
     diamond.gem360Url.includes('v360.in') ||
     diamond.gem360Url.includes('diamondview.aspx') ||
@@ -189,15 +189,6 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
 
   const priceDisplay = diamond.price > 0 ? formatCurrency(diamond.price) : null;
 
-  // Log media availability for debugging
-  console.log(`🔍 MEDIA CHECK for ${diamond.stockNumber}:`, {
-    has360,
-    hasAnyImage,
-    isV360,
-    gem360Url: diamond.gem360Url,
-    imageUrl: diamond.imageUrl
-  });
-
   return (
     <div 
       ref={cardRef}
@@ -208,7 +199,6 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
       {/* PRIORITY 1: Always show 360° if available (highest priority) */}
       {has360 && isVisible ? (
         <div className="relative aspect-square">
-          {/* Removed console.log from JSX - logs are now in the console.log above */}
           {isV360 ? (
             <V360Viewer 
               v360Url={diamond.gem360Url!}
