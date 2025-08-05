@@ -87,7 +87,6 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
     }
   };
 
-  // Show 3D viewer if available
   const hasGem360 = diamond.gem360Url && diamond.gem360Url.includes('gem360');
 
   return (
@@ -221,23 +220,23 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Fixed Action Buttons with proper Telegram styling */}
         <div className="flex gap-2">
           <Button 
             onClick={handleViewDetails}
             variant="outline"
-            className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50"
+            className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50 min-h-[44px] touch-target bg-white"
           >
-            <Eye className="h-4 w-4 mr-2" />
-            View Details
+            <Eye className="h-4 w-4 mr-2 flex-shrink-0" />
+            <span className="text-sm font-medium">View Details</span>
           </Button>
           
           <Button 
             onClick={handleContactOwner}
-            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 min-h-[44px] touch-target"
           >
-            <MessageCircle className="h-4 w-4 mr-2" />
-            Contact
+            <MessageCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+            <span className="text-sm font-medium">Contact</span>
           </Button>
         </div>
       </div>

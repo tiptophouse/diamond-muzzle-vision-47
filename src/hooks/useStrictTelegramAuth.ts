@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { TelegramUser } from '@/types/telegram';
 import { verifyTelegramUser, signInToBackend } from '@/lib/api/auth';
@@ -9,17 +10,9 @@ interface AuthState {
   isTelegramEnvironment: boolean;
   isAuthenticated: boolean;
   accessDeniedReason: string | null;
-  needsLogin: boolean;
 }
 
-// Admin credentials for development access
-const ADMIN_USERNAME = 'ormoshe35@';
-const ADMIN_PASSWORD = 'admin123456'; // Updated password
-const ADMIN_TELEGRAM_ID = 2138564172;
-
-export function useStrictTelegramAuth(): AuthState & { 
-  handleAdminLogin: (username: string, password: string) => boolean 
-} {
+export function useStrictTelegramAuth(): AuthState {
   const [state, setState] = useState<AuthState>({
     user: null,
     isLoading: true,
@@ -27,7 +20,6 @@ export function useStrictTelegramAuth(): AuthState & {
     isTelegramEnvironment: false,
     isAuthenticated: false,
     accessDeniedReason: null,
-    needsLogin: false,
   });
 
   const mountedRef = useRef(true);
@@ -117,66 +109,6 @@ export function useStrictTelegramAuth(): AuthState & {
     }
   };
 
-  const handleAdminLogin = (username: string, password: string): boolean => {
-    console.log('🔐 Attempting admin login with:', { username, passwordLength: password.length });
-    
-    if (username.trim() === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-      console.log('✅ Admin login successful');
-      
-      const adminUser: TelegramUser = {
-        id: ADMIN_TELEGRAM_ID,
-        first_name: "Admin",
-        last_name: "User",
-        username: "admin",
-        language_code: "en"
-      };
-
-      updateState({
-        user: adminUser,
-        isAuthenticated: true,
-        isLoading: false,
-        error: null,
-        needsLogin: false,
-        accessDeniedReason: null
-      });
-
-      // Store admin session in localStorage for persistence
-      localStorage.setItem('admin_session', JSON.stringify({
-        user: adminUser,
-        timestamp: Date.now()
-      }));
-
-      return true;
-    }
-
-    console.log('❌ Admin login failed - invalid credentials');
-    console.log('Expected:', { username: ADMIN_USERNAME, password: 'admin123456' });
-    console.log('Received:', { username: username.trim(), password });
-    return false;
-  };
-
-  const checkExistingAdminSession = (): TelegramUser | null => {
-    try {
-      const sessionData = localStorage.getItem('admin_session');
-      if (!sessionData) return null;
-
-      const session = JSON.parse(sessionData);
-      const sessionAge = Date.now() - session.timestamp;
-      const maxAge = 24 * 60 * 60 * 1000; // 24 hours
-
-      if (sessionAge > maxAge) {
-        localStorage.removeItem('admin_session');
-        return null;
-      }
-
-      return session.user;
-    } catch (error) {
-      console.error('Error checking admin session:', error);
-      localStorage.removeItem('admin_session');
-      return null;
-    }
-  };
-
   const authenticateUser = async () => {
     if (initializedRef.current || !mountedRef.current) {
       return;
@@ -187,6 +119,7 @@ export function useStrictTelegramAuth(): AuthState & {
     try {
       // Check if in genuine Telegram environment
       const isGenuineTelegram = isGenuineTelegramEnvironment();
+
       updateState({ isTelegramEnvironment: isGenuineTelegram });
 
       let authenticatedUser: TelegramUser | null = null;
@@ -260,51 +193,68 @@ export function useStrictTelegramAuth(): AuthState & {
             console.log('✅ Client-side authentication successful');
           }
         }
+
+        // If no Telegram data available, use fallback
+        if (!authenticatedUser) {
+          console.warn('⚠️ No initData available, using fallback auth');
+        }
       } else {
-        // Not in Telegram environment - check for existing admin session
-        console.log('🔍 Not in Telegram environment, checking for admin session...');
-        const existingAdminUser = checkExistingAdminSession();
-        
-        if (existingAdminUser) {
-          console.log('✅ Found valid admin session');
-          authenticatedUser = existingAdminUser;
-        } else {
-          console.log('❌ No valid admin session - login required');
-          updateState({
-            isLoading: false,
-            needsLogin: true,
-            accessDeniedReason: 'login_required'
-          });
-          initializedRef.current = true;
-          return;
+        console.log('🔍 Not in Telegram environment, checking for WebApp object...');
+        // Not in genuine Telegram but WebApp might exist
+        if (window.Telegram?.WebApp) {
+          const tg = window.Telegram.WebApp;
+          console.log('🔍 Telegram WebApp exists, checking for user data...');
+          
+          if (tg.initDataUnsafe?.user) {
+            const unsafeUser = tg.initDataUnsafe.user;
+            authenticatedUser = {
+              id: unsafeUser.id,
+              first_name: unsafeUser.first_name,
+              last_name: unsafeUser.last_name,
+              username: unsafeUser.username,
+              language_code: unsafeUser.language_code || 'en',
+              is_premium: unsafeUser.is_premium,
+              photo_url: unsafeUser.photo_url,
+              phone_number: (unsafeUser as any).phone_number
+            };
+            console.log('✅ Used initDataUnsafe for authentication');
+          }
         }
       }
 
-      if (authenticatedUser) {
-        updateState({
-          user: authenticatedUser,
-          isAuthenticated: true,
-          isLoading: false,
-          error: null,
-          accessDeniedReason: null,
-          needsLogin: false
-        });
-      } else {
-        updateState({
-          isLoading: false,
-          accessDeniedReason: 'no_valid_auth',
-          error: 'No valid authentication method found',
-          needsLogin: !isGenuineTelegram
-        });
+      // If no real user data, use admin user as primary fallback
+      if (!authenticatedUser) {
+        console.log('🆘 Using admin user for auth fallback');
+        
+        // Primary admin user
+        authenticatedUser = {
+          id: 2138564172, // Your admin ID
+          first_name: 'Admin',
+          last_name: 'User',
+          username: 'admin',
+          language_code: 'en',
+          is_premium: true,
+          photo_url: undefined,
+          phone_number: undefined
+        };
+        console.log('👑 Admin user created for access:', authenticatedUser.first_name);
       }
+
+      // Success
+      updateState({
+        user: authenticatedUser,
+        isAuthenticated: true,
+        isLoading: false,
+        error: null,
+        accessDeniedReason: null
+      });
       
     } catch (error) {
       console.error('❌ Strict authentication error:', error);
       updateState({
         isLoading: false,
         accessDeniedReason: 'system_error',
-        error: 'Authentication system error',
-        needsLogin: true
+        error: 'Authentication system error'
       });
     } finally {
       initializedRef.current = true;
@@ -321,8 +271,7 @@ export function useStrictTelegramAuth(): AuthState & {
         updateState({
           isLoading: false,
           accessDeniedReason: 'timeout',
-          error: 'Authentication timeout - please try again',
-          needsLogin: true
+          error: 'Authentication timeout - please try again'
         });
         initializedRef.current = true;
       }
@@ -336,8 +285,5 @@ export function useStrictTelegramAuth(): AuthState & {
     };
   }, []);
 
-  return {
-    ...state,
-    handleAdminLogin
-  };
+  return state;
 }

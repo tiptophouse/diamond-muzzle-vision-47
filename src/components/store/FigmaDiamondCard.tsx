@@ -1,3 +1,4 @@
+
 import { useState, memo, useCallback, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, Eye, MessageCircle } from "lucide-react";
@@ -37,7 +38,6 @@ function FigmaDiamondCard({
 
   const handleViewDetails = useCallback(() => {
     impactOccurred('light');
-    // Use unique diamond ID instead of stock number to avoid duplicate stock number issues
     navigate(`/diamond/${diamond.id}`);
   }, [impactOccurred, navigate, diamond.id]);
 
@@ -76,14 +76,12 @@ function FigmaDiamondCard({
 
   const isAvailable = useMemo(() => diamond.status === "Available", [diamond.status]);
 
-  // Calculate rotation based on device tilt for diamond image - memoized for performance
   const imageTransform = useMemo(() => {
     return diamond.imageUrl && !imageError 
       ? `perspective(1000px) rotateX(${orientationData.beta * 0.2}deg) rotateY(${orientationData.gamma * 0.2}deg)`
       : undefined;
   }, [diamond.imageUrl, imageError, orientationData.beta, orientationData.gamma]);
 
-  // Memoized price formatting
   const formattedPrice = useMemo(() => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -150,7 +148,8 @@ function FigmaDiamondCard({
         {/* Heart Icon */}
         <button
           onClick={handleLike}
-          className="absolute top-3 right-3 p-2 bg-background/80 backdrop-blur-sm rounded-full transition-all duration-200 hover:bg-background/90 hover:scale-110"
+          className="absolute top-3 right-3 p-2 bg-background/80 backdrop-blur-sm rounded-full transition-all duration-200 hover:bg-background/90 hover:scale-110 touch-target min-w-[44px] min-h-[44px] flex items-center justify-center"
+          aria-label={isLiked ? "Remove from favorites" : "Add to favorites"}
         >
           <Heart 
             className={`h-4 w-4 transition-colors ${
@@ -190,25 +189,25 @@ function FigmaDiamondCard({
           </span>
         </div>
 
-        {/* Action Buttons */}
+        {/* Fixed Action Buttons with proper Telegram styling */}
         <div className="flex gap-2">
           <Button 
             variant="outline" 
             size="sm" 
-            className="flex-1 h-10 border-border text-foreground hover:bg-muted"
+            className="flex-1 min-h-[44px] px-4 py-3 border-border text-foreground hover:bg-muted touch-target bg-background"
             onClick={handleContact}
           >
-            <MessageCircle className="h-4 w-4 mr-1" />
-            Contact
+            <MessageCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+            <span className="text-sm font-medium">Contact</span>
           </Button>
           <Button 
             variant="default" 
             size="sm" 
-            className="flex-1 h-10 bg-primary text-primary-foreground hover:bg-primary/90"
+            className="flex-1 min-h-[44px] px-4 py-3 bg-primary text-primary-foreground hover:bg-primary/90 touch-target"
             onClick={handleViewDetails}
           >
-            <Eye className="h-4 w-4 mr-1" />
-            Details
+            <Eye className="h-4 w-4 mr-2 flex-shrink-0" />
+            <span className="text-sm font-medium">Details</span>
           </Button>
         </div>
       </div>
