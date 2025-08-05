@@ -35,7 +35,6 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const cardRef = useRef<HTMLDivElement>(null);
-  const imgRef = useRef<HTMLImageElement>(null);
 
   // Track share clicks when user comes from shared link
   useEffect(() => {
@@ -69,21 +68,20 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     return () => observer.disconnect();
   }, []);
 
-  // FIXED: More permissive 360° detection
+  // SIMPLIFIED: More permissive 360° detection
   const has360 = !!(diamond.gem360Url && 
     diamond.gem360Url.trim() && 
     diamond.gem360Url !== 'default' && 
     diamond.gem360Url !== 'null' &&
-    diamond.gem360Url.length > 5);
+    diamond.gem360Url.length > 4);
 
-  // FIXED: More permissive image URL validation
+  // SIMPLIFIED: Much more permissive image URL validation
   const hasValidDiamondImage = !!(
     diamond.imageUrl && 
     diamond.imageUrl.trim() && 
     diamond.imageUrl !== 'default' &&
     diamond.imageUrl !== 'null' &&
-    diamond.imageUrl.length > 5 &&
-    (diamond.imageUrl.startsWith('http://') || diamond.imageUrl.startsWith('https://'))
+    diamond.imageUrl.length > 4
   );
 
   const hasValidCertificateImage = !!(
@@ -91,20 +89,20 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     diamond.certificateImageUrl.trim() && 
     diamond.certificateImageUrl !== 'default' &&
     diamond.certificateImageUrl !== 'null' &&
-    diamond.certificateImageUrl.length > 5 &&
-    (diamond.certificateImageUrl.startsWith('http://') || diamond.certificateImageUrl.startsWith('https://'))
+    diamond.certificateImageUrl.length > 4
   );
 
   const hasAnyImage = hasValidDiamondImage || hasValidCertificateImage;
 
-  // Log media availability for debugging
+  // Enhanced logging for debugging
   console.log(`🔍 MEDIA CHECK for ${diamond.stockNumber}:`, {
     has360,
     hasAnyImage,
     hasValidDiamondImage,
     hasValidCertificateImage,
     imageUrl: diamond.imageUrl,
-    gem360Url: diamond.gem360Url
+    gem360Url: diamond.gem360Url,
+    isVisible
   });
 
   // Determine if it's v360.in specifically
@@ -118,11 +116,8 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     diamond.gem360Url.includes('sarine')
   ));
 
-  // Enhanced fancy color detection with color_type support
   const colorInfo = detectFancyColor(diamond.color, diamond.color_type);
   const formattedColorDescription = formatFancyColorDescription(colorInfo);
-
-  // Determine what attributes to show based on diamond type and color_type
   const isFancyColor = diamond.color_type === 'Fancy' || colorInfo.isFancyColor;
   const showCutGrade = shouldShowCutGrade(diamond.shape, diamond.cut, diamond.color_type);
   const polishSymmetryText = formatPolishSymmetry(diamond.polish, diamond.symmetry);
@@ -160,7 +155,6 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     }
   }, [impactOccurred, diamond]);
 
-  // Updated secure share function using inline buttons
   const handleShare = useCallback(async () => {
     impactOccurred('medium');
     
@@ -174,18 +168,6 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
       console.log('✅ Diamond shared securely with inline buttons');
     }
   }, [impactOccurred, shareAvailable, shareWithInlineButtons, diamond]);
-
-  const handleImageLoad = useCallback(() => {
-    console.log('✅ IMAGE LOADED for', diamond.stockNumber);
-    setImageLoaded(true);
-    setImageError(false);
-  }, [diamond.stockNumber]);
-
-  const handleImageError = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
-    console.error('❌ IMAGE FAILED for', diamond.stockNumber, ':', event.currentTarget.src);
-    setImageError(true);
-    setImageLoaded(true);
-  }, [diamond.stockNumber]);
 
   const priceDisplay = diamond.price > 0 ? formatCurrency(diamond.price) : null;
 

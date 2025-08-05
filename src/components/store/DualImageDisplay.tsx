@@ -20,14 +20,13 @@ export function DualImageDisplay({
   const [currentImage, setCurrentImage] = useState<'diamond' | 'certificate'>('diamond');
   const [imageError, setImageError] = useState<Record<string, boolean>>({});
   
-  // FIXED: More permissive image validation
+  // MUCH MORE PERMISSIVE: Accept any reasonable URL
   const hasValidDiamondImage = !!(
     diamondImage && 
     diamondImage.trim() && 
     diamondImage !== 'default' &&
     diamondImage !== 'null' &&
-    diamondImage.length > 5 &&
-    (diamondImage.startsWith('http://') || diamondImage.startsWith('https://')) &&
+    diamondImage.length > 4 &&
     !imageError[diamondImage]
   );
 
@@ -36,8 +35,7 @@ export function DualImageDisplay({
     certificateImage.trim() && 
     certificateImage !== 'default' &&
     certificateImage !== 'null' &&
-    certificateImage.length > 5 &&
-    (certificateImage.startsWith('http://') || certificateImage.startsWith('https://')) &&
+    certificateImage.length > 4 &&
     !imageError[certificateImage]
   );
 
@@ -48,7 +46,8 @@ export function DualImageDisplay({
     certificateImage,
     hasValidDiamondImage,
     hasValidCertificateImage,
-    totalImages
+    totalImages,
+    imageErrors: imageError
   });
 
   if (totalImages === 0) {
@@ -67,12 +66,13 @@ export function DualImageDisplay({
           alt={`${imageType === 'diamond' ? 'Diamond' : 'Certificate'} ${stockNumber}`}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           onError={(e) => {
-            console.error('❌ IMAGE ERROR for', stockNumber, ':', e.currentTarget.src);
+            console.error('❌ SINGLE IMAGE ERROR for', stockNumber, ':', e.currentTarget.src);
             setImageError(prev => ({ ...prev, [imageToShow!]: true }));
           }}
           onLoad={() => {
-            console.log('✅ IMAGE LOADED for', stockNumber, ':', imageToShow);
+            console.log('✅ SINGLE IMAGE LOADED for', stockNumber, ':', imageToShow);
           }}
+          loading="eager"
         />
         <div className="absolute top-2 left-2">
           <Badge className={`text-xs font-medium border-0 text-white px-2 py-0.5 ${
@@ -123,6 +123,7 @@ export function DualImageDisplay({
           onLoad={() => {
             console.log('✅ CAROUSEL IMAGE LOADED for', stockNumber, ':', currentImageUrl);
           }}
+          loading="eager"
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-gray-100">
@@ -134,7 +135,7 @@ export function DualImageDisplay({
                 <FileImage className="h-8 w-8 text-gray-400" />
               )}
             </div>
-            <p className="text-sm text-gray-500">Image Error</p>
+            <p className="text-sm text-gray-500">Image Loading...</p>
           </div>
         </div>
       )}
