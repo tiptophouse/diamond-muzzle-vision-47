@@ -1,14 +1,12 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, Eye, Share, Edit, Upload, Gem } from "lucide-react";
+import { Heart, Eye, Share, Edit, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { AdminStoreControls } from "./AdminStoreControls";
 import { Gem360Viewer } from "./Gem360Viewer";
-import { V360Viewer } from "./V360Viewer";
 
 const ADMIN_TELEGRAM_ID = 2138564172;
 
@@ -23,48 +21,58 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
   const { user, isTelegramEnvironment } = useTelegramAuth();
   const navigate = useNavigate();
   
+  // Only show admin controls if:
+  // 1. User is authenticated through Telegram
+  // 2. User ID matches the admin ID
+  // 3. We're in a Telegram environment (for security)
   const isAdmin = user?.id === ADMIN_TELEGRAM_ID && isTelegramEnvironment;
 
-  // PRIORITY 1: Enhanced 360° detection - highest priority for 3D viewers
-  const has360 = !!(diamond.gem360Url && diamond.gem360Url.trim() && (
-    diamond.gem360Url.includes('v360.in') ||
-    diamond.gem360Url.includes('diamondview.aspx') ||
-    diamond.gem360Url.includes('my360.sela') ||
-    diamond.gem360Url.includes('gem360') ||
-    diamond.gem360Url.includes('sarine') ||
-    diamond.gem360Url.includes('360') ||
-    diamond.gem360Url.includes('.html') ||
-    diamond.gem360Url.match(/DAN\d+-\d+[A-Z]?\.jpg$/i)
-  ));
+  console.log('👤 Current user ID:', user?.id);
+  console.log('🔐 Admin ID:', ADMIN_TELEGRAM_ID);
+  console.log('📱 Telegram Environment:', isTelegramEnvironment);
+  console.log('👑 Is Admin:', isAdmin);
 
-  // PRIORITY 2: Enhanced image validation - only for actual diamond photos
-  const hasValidImage = !!(
-    diamond.imageUrl && 
-    diamond.imageUrl.trim() && 
-    diamond.imageUrl !== 'default' &&
-    diamond.imageUrl.startsWith('http') &&
-    diamond.imageUrl.length > 10 &&
-    diamond.imageUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i) &&
-    !diamond.imageUrl.includes('.html') &&
-    !diamond.imageUrl.includes('diamondview.aspx') &&
-    !diamond.imageUrl.includes('v360.in') &&
-    !diamond.imageUrl.includes('sarine')
-  );
+  // Enhanced Gem360 URL detection - check all possible sources
+  const getGem360Url = () => {
+    // Priority order: dedicated gem360Url field, then certificateUrl, then imageUrl
+    const sources = [
+      diamond.gem360Url,
+      diamond.certificateUrl,
+      diamond.imageUrl
+    ];
 
-  const isV360 = !!(diamond.gem360Url && diamond.gem360Url.includes('v360.in'));
+    for (const url of sources) {
+      if (url && url.includes('gem360')) {
+        console.log('🔍 Found Gem360 URL in source:', url);
+        return url;
+      }
+    }
 
-  console.log('🔍 Professional Card Media Check:', diamond.stockNumber);
-  console.log('🔍 has360:', has360);
-  console.log('🔍 hasValidImage:', hasValidImage);
-  console.log('🔍 gem360Url:', diamond.gem360Url);
-  console.log('🔍 imageUrl:', diamond.imageUrl);
+    return null;
+  };
+
+  const gem360Url = getGem360Url();
+  const hasGem360View = !!gem360Url;
+
+  console.log('🔍 Diamond:', diamond.stockNumber);
+  console.log('🔍 gem360Url field:', diamond.gem360Url);
+  console.log('🔍 certificateUrl field:', diamond.certificateUrl);
+  console.log('🔍 imageUrl field:', diamond.imageUrl);
+  console.log('🔍 Final gem360Url:', gem360Url);
+  console.log('🔍 hasGem360View:', hasGem360View);
+
+  // Priority: show actual diamond image from CSV, then fallback
+  const diamondImageUrl = diamond.imageUrl && !diamond.imageUrl.includes('gem360')
+    ? diamond.imageUrl 
+    : `https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop&crop=center`;
 
   const handleDelete = () => {
+    // Trigger refetch of data
     if (onUpdate) onUpdate();
   };
 
   const handleShare = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+    e.stopPropagation(); // Prevent card click
     
     // Build URL with diamond parameters
     const params = new URLSearchParams({
@@ -130,80 +138,45 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
         </>
       )}
 
-      {/* Media Container with Priority System */}
+      {/* Image/3D Viewer Container */}
       <div className="relative aspect-square bg-gray-50 overflow-hidden">
-        {/* PRIORITY 1: 3D/360° viewer (highest priority) */}
-        {has360 ? (
-          <div className="w-full h-full">
-            {/* Removed console.log from JSX */}
-            {isV360 ? (
-              <V360Viewer 
-                v360Url={diamond.gem360Url!}
-                stockNumber={diamond.stockNumber}
-                isInline={true}
-              />
-            ) : (
-              <Gem360Viewer 
-                gem360Url={diamond.gem360Url!}
-                stockNumber={diamond.stockNumber}
-                isInline={true}
-              />
-            )}
-          </div>
-        ) : hasValidImage ? (
-          /* PRIORITY 2: Show regular diamond image */
-          <div className="w-full h-full">
-            {/* Removed console.log from JSX */}
+        {hasGem360View ? (
+          // Show 3D Gem360 viewer
+          <Gem360Viewer 
+            gem360Url={gem360Url!}
+            stockNumber={diamond.stockNumber}
+            isInline={true}
+          />
+        ) : (
+          // Show regular image
+          <>
             {!imageError ? (
               <img
-                src={diamond.imageUrl}
+                src={diamondImageUrl}
                 alt={`${diamond.shape} Diamond`}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 onError={() => setImageError(true)}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <Gem className="h-8 w-8 text-blue-600" />
-                  </div>
-                  <p className="text-sm text-gray-600">Image Error</p>
+                <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-200 to-purple-200 rounded-full"></div>
                 </div>
               </div>
             )}
-          </div>
-        ) : (
-          /* PRIORITY 3: Info card when no media available */
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-            {/* Removed console.log from JSX */}
-            <div className="text-center p-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Gem className="h-8 w-8 text-blue-600" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold text-gray-900">{diamond.carat} ct</h3>
-                <p className="text-sm text-gray-600">{diamond.shape}</p>
-                <div className="flex items-center justify-center gap-2 text-xs">
-                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">{diamond.color}</span>
-                  <span className="bg-gray-200 px-2 py-1 rounded">{diamond.clarity}</span>
-                </div>
-                <p className="text-xs text-yellow-600 font-medium">{diamond.cut}</p>
-              </div>
-            </div>
-          </div>
+          </>
         )}
         
-        {/* Share Button - Always visible in bottom-right with fixed styling */}
+        {/* Share Button - Always visible in bottom-right */}
         <div className="absolute bottom-3 right-3 opacity-100 transition-opacity">
           <Button
             size="icon"
             variant="secondary"
-            className="min-w-[36px] min-h-[36px] w-9 h-9 rounded-full bg-white/90 hover:bg-white text-gray-600 shadow-sm border-0 p-2 touch-target"
+            className="w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-600 shadow-sm"
             onClick={handleShare}
             title="Share this diamond"
-            aria-label="Share this diamond"
           >
-            <Share className="h-4 w-4 flex-shrink-0" />
+            <Share className="h-4 w-4" />
           </Button>
         </div>
 
@@ -255,8 +228,8 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
           Stock #{diamond.stockNumber}
         </div>
 
-        {/* Media Status Badge */}
-        {has360 && (
+        {/* 3D View Badge */}
+        {hasGem360View && (
           <div className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">
             ✨ Interactive 3D view available above
           </div>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { MessageCircle, Gem, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,6 @@ import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useTelegramAccelerometer } from "@/hooks/useTelegramAccelerometer";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { Gem360Viewer } from "./Gem360Viewer";
-import { V360Viewer } from "./V360Viewer";
 
 interface MotionDiamondCardProps {
   diamond: Diamond;
@@ -24,34 +22,6 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
   const { accelerometerData, orientationData, isSupported, startAccelerometer, stopAccelerometer } = useTelegramAccelerometer(isMotionMode, 60);
   const { impactOccurred, selectionChanged } = useTelegramHapticFeedback();
   const cardRef = useRef<HTMLDivElement>(null);
-
-  // PRIORITY 1: Enhanced 360° detection - highest priority for 3D viewers
-  const has360 = !!(diamond.gem360Url && diamond.gem360Url.trim() && (
-    diamond.gem360Url.includes('v360.in') ||
-    diamond.gem360Url.includes('diamondview.aspx') ||
-    diamond.gem360Url.includes('my360.sela') ||
-    diamond.gem360Url.includes('gem360') ||
-    diamond.gem360Url.includes('sarine') ||
-    diamond.gem360Url.includes('360') ||
-    diamond.gem360Url.includes('.html') ||
-    diamond.gem360Url.match(/DAN\d+-\d+[A-Z]?\.jpg$/i)
-  ));
-
-  // PRIORITY 2: Enhanced image validation - only for actual diamond photos
-  const hasValidImage = !!(
-    diamond.imageUrl && 
-    diamond.imageUrl.trim() && 
-    diamond.imageUrl !== 'default' &&
-    diamond.imageUrl.startsWith('http') &&
-    diamond.imageUrl.length > 10 &&
-    diamond.imageUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i) &&
-    !diamond.imageUrl.includes('.html') &&
-    !diamond.imageUrl.includes('diamondview.aspx') &&
-    !diamond.imageUrl.includes('v360.in') &&
-    !diamond.imageUrl.includes('sarine')
-  );
-
-  const isV360 = !!(diamond.gem360Url && diamond.gem360Url.includes('v360.in'));
 
   // Calculate diamond image rotation based on device tilt
   const getDiamondImageTransform = () => {
@@ -117,7 +87,8 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
     }
   };
 
-  console.log('🔍 Motion Card Media Check:', diamond.stockNumber, { has360, hasValidImage });
+  // Show 3D viewer if available
+  const hasGem360 = diamond.gem360Url && diamond.gem360Url.includes('gem360');
 
   return (
     <div 
@@ -129,58 +100,32 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
         animationDelay: `${index * 100}ms`
       }}
     >
-      {/* Media Container with Priority System */}
+      {/* Image Container */}
       <div className="relative h-48 bg-gradient-to-br from-slate-50 to-slate-100 rounded-t-xl overflow-hidden">
-        {/* PRIORITY 1: 3D/360° viewer (highest priority) */}
-        {has360 ? (
+        {hasGem360 ? (
+          // Show interactive 3D viewer
           <div className="w-full h-full">
-            {/* Removed console.log from JSX */}
-            {isV360 ? (
-              <V360Viewer 
-                v360Url={diamond.gem360Url!}
-                stockNumber={diamond.stockNumber}
-                isInline={true}
-              />
-            ) : (
-              <Gem360Viewer 
-                gem360Url={diamond.gem360Url!}
-                stockNumber={diamond.stockNumber}
-                isInline={true}
-              />
-            )}
+            <Gem360Viewer 
+              gem360Url={diamond.gem360Url!}
+              stockNumber={diamond.stockNumber}
+              isInline={true}
+            />
           </div>
-        ) : hasValidImage ? (
-          /* PRIORITY 2: Show regular diamond image */
-          <div className="w-full h-full">
-            {/* Removed console.log from JSX */}
-            {!imageError ? (
-              <img
-                src={diamond.imageUrl}
-                alt={`Diamond ${diamond.stockNumber}`}
-                className={`w-full h-full object-cover transition-transform duration-200 ease-out ${
-                  isMotionMode ? 'scale-105' : 'group-hover:scale-105'
-                }`}
-                style={{
-                  transform: isMotionMode ? getDiamondImageTransform() : '',
-                  transformStyle: 'preserve-3d'
-                }}
-                onError={() => setImageError(true)}
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <Gem className="h-8 w-8 text-blue-600" />
-                  </div>
-                  <p className="text-sm text-gray-600">Image Error</p>
-                </div>
-              </div>
-            )}
-          </div>
+        ) : diamond.imageUrl && !imageError ? (
+          <img
+            src={diamond.imageUrl}
+            alt={`Diamond ${diamond.stockNumber}`}
+            className={`w-full h-full object-cover transition-transform duration-200 ease-out ${
+              isMotionMode ? 'scale-105' : 'group-hover:scale-105'
+            }`}
+            style={{
+              transform: isMotionMode ? getDiamondImageTransform() : '',
+              transformStyle: 'preserve-3d'
+            }}
+            onError={() => setImageError(true)}
+          />
         ) : (
-          /* PRIORITY 3: Info card with motion when no media available */
           <div className="flex items-center justify-center h-full">
-            {/* Removed console.log from JSX */}
             <div className="relative">
               <div 
                 className={`w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-lg transition-transform duration-200 ease-out ${
@@ -233,7 +178,7 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
         )}
 
         {/* 3D Badge */}
-        {has360 && (
+        {hasGem360 && (
           <div className="absolute bottom-3 left-3">
             <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1">
               ✨ 3D
@@ -276,23 +221,23 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
           </div>
         </div>
 
-        {/* Fixed Action Buttons with proper Telegram styling */}
+        {/* Action Buttons */}
         <div className="flex gap-2">
           <Button 
             onClick={handleViewDetails}
             variant="outline"
-            className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50 min-h-[44px] touch-target bg-white flex items-center justify-center gap-2"
+            className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50"
           >
-            <Eye className="h-4 w-4 flex-shrink-0" />
-            <span className="text-sm font-medium">View Details</span>
+            <Eye className="h-4 w-4 mr-2" />
+            View Details
           </Button>
           
           <Button 
             onClick={handleContactOwner}
-            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 min-h-[44px] touch-target flex items-center justify-center gap-2"
+            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
           >
-            <MessageCircle className="h-4 w-4 flex-shrink-0" />
-            <span className="text-sm font-medium">Contact</span>
+            <MessageCircle className="h-4 w-4 mr-2" />
+            Contact
           </Button>
         </div>
       </div>
