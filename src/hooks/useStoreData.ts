@@ -63,7 +63,7 @@ export function useStoreData() {
     return undefined;
   }, []);
 
-  // Enhanced 360° URL detection for various formats
+  // PHASE 2: Enhanced 360° URL detection for ALL possible 3D/360° field names
   const detect360Url = useCallback((item: any) => {
     const potential360Fields = [
       item.v360_url,
@@ -71,7 +71,26 @@ export function useStoreData() {
       item.video_url,
       item.video360_url,
       item.three_d_url,
-      item.rotation_url
+      item.rotation_url,
+      item['Video link'],        // Spaced field name from CSV
+      item.videoLink,            // Camel case video
+      item.video_link,           // Snake case video
+      item.view360_url,          // View 360 URL
+      item.view360Url,           // Camel case view 360
+      item.viewer_url,           // Viewer URL
+      item.viewerUrl,            // Camel case viewer
+      item.threed_url,           // 3D URL
+      item.threedUrl,            // Camel case 3D
+      item['3d_url'],            // 3D with number
+      item['3dUrl'],             // Camel case 3D with number
+      item.sarine_url,           // Sarine URL
+      item.sarineUrl,            // Camel case Sarine
+      item.diamond_viewer,       // Diamond viewer
+      item.diamondViewer,        // Camel case diamond viewer
+      item.interactive_view,     // Interactive view
+      item.interactiveView,      // Camel case interactive
+      item.certificate_url,      // Sometimes certificates have 360° views
+      item.certificateUrl,       // Camel case certificate
     ];
     
     for (const field of potential360Fields) {
@@ -102,14 +121,28 @@ export function useStoreData() {
     
     return rawData
       .map(item => {
-        // Enhanced image URL detection with multiple fallbacks
+  // PHASE 1: Enhanced image URL detection with ALL possible field names
         let finalImageUrl = undefined;
         const imageFields = [
           item.picture,          // Primary field from FastAPI
           item.imageUrl,         // Alternative field
           item.image_url,        // Snake case variant
-          item.Image,            // CSV field
+          item.Image,            // CSV field (capitalized)
           item.image,            // Generic field
+          item.photo_url,        // Photo URL variant
+          item.photoUrl,         // Camel case photo
+          item.diamond_image,    // Specific diamond image
+          item.diamondImage,     // Camel case diamond image
+          item.media_url,        // Media URL
+          item.mediaUrl,         // Camel case media
+          item.img_url,          // Image URL variant
+          item.imgUrl,           // Camel case img
+          item.photo,            // Simple photo field
+          item.img,              // Simple img field
+          item.thumbnail_url,    // Thumbnail URL
+          item.thumbnailUrl,     // Camel case thumbnail
+          item.product_image,    // Product image
+          item.productImage,     // Camel case product image
         ];
         
         console.log('🔍 IMAGE SEARCH for', item.stock_number || item.stock || 'unknown', ':', {
@@ -130,8 +163,22 @@ export function useStoreData() {
           }
         }
         
-        // Enhanced 360° URL detection
+        // PHASE 2: Enhanced 360° URL detection with priority logging
         const final360Url = detect360Url(item);
+        
+        // PHASE 3: Generate fallback placeholder if no media available
+        let fallbackImageUrl = finalImageUrl;
+        if (!finalImageUrl && !final360Url) {
+          // Generate a placeholder image with diamond info
+          const placeholderParams = new URLSearchParams({
+            text: `${item.carat || '?'}ct ${item.shape || 'Diamond'}`,
+            color: item.color || 'D',
+            clarity: item.clarity || 'FL',
+            stock: item.stock_number || item.stock || 'N/A'
+          });
+          fallbackImageUrl = `https://via.placeholder.com/400x300/f8fafc/64748b?text=${encodeURIComponent(`${item.carat || '?'}ct ${item.shape || 'Diamond'}`)}`;
+          console.log('🎨 GENERATED FALLBACK for', item.stock_number || item.stock, ':', fallbackImageUrl);
+        }
 
         // Determine color type based on the color value
         const colorType = item.color_type || (detectFancyColor(item.color).isFancyColor ? 'Fancy' : 'Standard');
@@ -149,7 +196,7 @@ export function useStoreData() {
           symmetry: item.symmetry,
           price: Number(item.price_per_carat ? item.price_per_carat * (item.weight || item.carat) : item.price) || 0,
           status: item.status || 'Available',
-          imageUrl: finalImageUrl,
+          imageUrl: fallbackImageUrl,
           gem360Url: final360Url,
           store_visible: item.store_visible !== false,
           certificateNumber: item.certificate_number || undefined,

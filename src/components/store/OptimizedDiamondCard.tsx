@@ -17,6 +17,7 @@ import {
   formatPolishSymmetry 
 } from "@/utils/fancyColorUtils";
 import { FancyColorBadge, CertificationBadge, OriginBadge } from "./FancyColorBadge";
+import { MediaPriorityBadge } from "./MediaPriorityBadge";
 
 interface OptimizedDiamondCardProps {
   diamond: Diamond;
@@ -68,14 +69,19 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     return () => observer.disconnect();
   }, []);
 
-  // Enhanced image URL validation
+  // PHASE 1: Enhanced image URL validation with more flexible detection
   const hasValidImage = !!(
     diamond.imageUrl && 
     diamond.imageUrl.trim() && 
     diamond.imageUrl !== 'default' &&
     diamond.imageUrl.startsWith('http') &&
     diamond.imageUrl.length > 10 &&
-    diamond.imageUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i)
+    (diamond.imageUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i) ||
+     diamond.imageUrl.includes('placeholder') ||
+     diamond.imageUrl.includes('unsplash') ||
+     diamond.imageUrl.includes('/image') ||
+     diamond.imageUrl.includes('w=') ||
+     diamond.imageUrl.includes('h='))
   );
 
   // Enhanced 360° detection - prioritize interactive viewers over static images
@@ -196,16 +202,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
             />
           )}
           <div className="absolute top-2 left-2">
-            <Badge className={`text-xs font-medium border-0 text-white shadow-sm px-2 py-0.5 flex items-center gap-1 ${
-              isV360 
-                ? 'bg-gradient-to-r from-emerald-600 to-green-600' 
-                : isInteractive360 
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600' 
-                  : 'bg-gradient-to-r from-purple-600 to-pink-600'
-            }`}>
-              <Sparkles className="h-3 w-3" />
-              {isV360 ? 'v360.in' : isInteractive360 ? 'Interactive 360°' : '360°'}
-            </Badge>
+            <MediaPriorityBadge hasGem360={true} hasImage={false} />
           </div>
         </div>
       ) : hasValidImage && isVisible ? (
@@ -234,6 +231,11 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
             loading="lazy"
             decoding="async"
           />
+          
+          {/* Image media badge */}
+          <div className="absolute top-2 left-2">
+            <MediaPriorityBadge hasGem360={false} hasImage={true} />
+          </div>
         </div>
       ) : (
         /* PRIORITY 3: Enhanced info card when no media available */
@@ -255,18 +257,20 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
                 <p className="text-xs text-yellow-600 font-medium">{diamond.cut}</p>
               )}
             </div>
+            
+            {/* Info-only media badge */}
+            <div className="absolute top-2 left-2">
+              <MediaPriorityBadge hasGem360={false} hasImage={false} />
+            </div>
           </div>
         </div>
       )}
       
-      {/* Status and Action Icons */}
-      <div className="absolute top-2 right-2 flex items-center gap-1">
-        {/* Available Badge - only show if no 360° badge */}
-        {!has360 && (
-          <Badge className="text-xs font-medium border-0 bg-green-500 text-white px-2 py-0.5">
-            Available
-          </Badge>
-        )}
+      {/* Status Badge */}
+      <div className="absolute top-2 right-2">
+        <Badge className="text-xs font-medium border-0 bg-green-500 text-white px-2 py-0.5">
+          Available
+        </Badge>
       </div>
 
       {/* Action Icons */}

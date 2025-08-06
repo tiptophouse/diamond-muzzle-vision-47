@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useMemo, memo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
+import { EnhancedStoreGrid } from "@/components/store/EnhancedStoreGrid";
 import { OptimizedDiamondCard } from "@/components/store/OptimizedDiamondCard";
 import { DiamondCardSkeleton } from "@/components/store/DiamondCardSkeleton";
 import { MobilePullToRefresh } from "@/components/mobile/MobilePullToRefresh";
@@ -380,9 +381,30 @@ function CatalogPage() {
           </div>
         </div>
 
-        {/* Diamond Grid */}
+        {/* Enhanced Diamond Grid with Media Priority */}
         <div className="py-3">
-          {renderCatalogContent}
+          <EnhancedStoreGrid
+            diamonds={finalFilteredDiamonds}
+            loading={loading && currentPage === 1}
+            error={error}
+            onUpdate={refetch}
+          />
+          
+          {/* Loading indicator for infinite scroll */}
+          {loading && currentPage > 1 && (
+            <div className="flex justify-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            </div>
+          )}
+          
+          {/* Load more info */}
+          {paginatedDiamonds.length < sortedDiamonds.length && !loading && (
+            <div className="text-center py-4 px-4">
+              <p className="text-sm text-muted-foreground">
+                Showing {paginatedDiamonds.length} of {sortedDiamonds.length} diamonds
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Floating Action Button */}

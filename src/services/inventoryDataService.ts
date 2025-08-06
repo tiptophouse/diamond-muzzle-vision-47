@@ -52,22 +52,44 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       if (dataArray && dataArray.length > 0) {
         console.log('✅ INVENTORY SERVICE: Successfully fetched', dataArray.length, 'diamonds from FastAPI');
         
-        // CRITICAL DEBUGGING: Log exactly what we're getting from FastAPI
+        // PHASE 4: Critical debugging - Log EXACTLY what FastAPI is sending
         console.log('🚨 FASTAPI RESPONSE ANALYSIS:', {
           totalCount: dataArray.length,
           firstItem: {
             id: dataArray[0].id,
+            stock_number: dataArray[0].stock_number,
             stock: dataArray[0].stock,
             picture: dataArray[0].picture,
             Image: dataArray[0].Image,
             image: dataArray[0].image,
             imageUrl: dataArray[0].imageUrl,
+            photo_url: dataArray[0].photo_url,
+            diamond_image: dataArray[0].diamond_image,
             'Video link': dataArray[0]['Video link'],
             videoLink: dataArray[0].videoLink,
+            video_url: dataArray[0].video_url,
             gem360Url: dataArray[0].gem360Url,
-            allFields: Object.keys(dataArray[0])
+            v360_url: dataArray[0].v360_url,
+            allFields: Object.keys(dataArray[0]).sort()
           },
-          sampleItems: dataArray.slice(0, 3)
+          imageFieldsFound: Object.keys(dataArray[0]).filter(key => 
+            key.toLowerCase().includes('image') || 
+            key.toLowerCase().includes('picture') || 
+            key.toLowerCase().includes('photo') ||
+            key.toLowerCase().includes('img')
+          ),
+          videoFieldsFound: Object.keys(dataArray[0]).filter(key => 
+            key.toLowerCase().includes('video') || 
+            key.toLowerCase().includes('360') || 
+            key.toLowerCase().includes('3d') ||
+            key.toLowerCase().includes('viewer')
+          ),
+          sampleImageValues: {
+            picture: dataArray[0].picture,
+            Image: dataArray[0].Image,
+            imageUrl: dataArray[0].imageUrl,
+            photo_url: dataArray[0].photo_url
+          }
         });
         console.log('📊 INVENTORY SERVICE: Sample diamond data:', dataArray[0]);
         
