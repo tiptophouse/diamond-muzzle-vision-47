@@ -6,6 +6,7 @@ import { AdminUserManager } from '@/components/admin/AdminUserManager';
 import { NotificationCenter } from '@/components/admin/NotificationCenter';
 import { NotificationSender } from '@/components/admin/NotificationSender';
 import { UploadReminderNotifier } from '@/components/admin/UploadReminderNotifier';
+import { GroupCTASender } from '@/components/admin/GroupCTASender';
 import { PaymentManagement } from '@/components/admin/PaymentManagement';
 import { SessionUsersDisplay } from '@/components/admin/SessionUsersDisplay';
 import { UserUploadAnalysis } from '@/components/admin/UserUploadAnalysis';
@@ -13,7 +14,7 @@ import { UserDiamondCounts } from '@/components/admin/UserDiamondCounts';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { Users, Settings, MessageSquare, CreditCard, Upload, BarChart3, Diamond } from 'lucide-react';
+import { Users, Settings, MessageSquare, CreditCard, Upload, BarChart3, Diamond, Send } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -215,7 +216,7 @@ export default function Admin() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <Tabs defaultValue="diamond-counts" className="w-full">
           <div className="overflow-x-auto mb-6">
-            <TabsList className="grid grid-cols-7 bg-white border border-gray-200 rounded-lg p-1 min-w-fit w-full">
+            <TabsList className="grid grid-cols-8 bg-white border border-gray-200 rounded-lg p-1 min-w-fit w-full">
               <TabsTrigger 
                 value="diamond-counts" 
                 className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
@@ -255,6 +256,14 @@ export default function Admin() {
                 <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                 <span className="hidden xs:inline sm:inline">Payments</span>
                 <span className="xs:hidden sm:hidden">Pay</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="group-cta" 
+                className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
+              >
+                <Send className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="hidden xs:inline sm:inline">Group CTA</span>
+                <span className="xs:hidden sm:hidden">CTA</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="notifications" 
@@ -301,6 +310,12 @@ export default function Admin() {
             <TabsContent value="payments" className="space-y-0">
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <PaymentManagement />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="group-cta" className="space-y-0">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <GroupCTASender />
               </div>
             </TabsContent>
 
