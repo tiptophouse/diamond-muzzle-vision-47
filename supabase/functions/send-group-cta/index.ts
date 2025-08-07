@@ -15,8 +15,8 @@ serve(async (req) => {
   }
 
   try {
-    const { message, buttonText, groupId } = await req.json();
-    console.log('📥 Request data:', { message: !!message, buttonText, groupId });
+    const { message, buttonText, groupId, botUsername: providedBotUsername } = await req.json();
+    console.log('📥 Request data:', { message: !!message, buttonText, groupId, botUsername: providedBotUsername });
 
     const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
     if (!botToken) {
@@ -27,7 +27,7 @@ serve(async (req) => {
       );
     }
 
-    const botUsername = Deno.env.get('TELEGRAM_BOT_USERNAME') || 'BrilliantBot_bot';
+    const botUsername = providedBotUsername || Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot';
     
     // Default message if not provided
     const defaultMessage = `💎 **שדרגו את הפעילות שלכם ביהלומים!**

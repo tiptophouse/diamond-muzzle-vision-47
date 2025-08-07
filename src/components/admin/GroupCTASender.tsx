@@ -21,14 +21,16 @@ export function GroupCTASender() {
 
 ⚡ **התחילו עכשיו - לחצו על הכפתור למטה!**`,
     buttonText: '🚀 התחל עם BrilliantBot',
-    groupId: '-1001009290613'
+    groupId: '-1001009290613',
+    botUsername: 'diamondmazalbot'
   });
 
   const handleSend = async () => {
     const success = await sendGroupCTA({
       message: formData.message,
       buttonText: formData.buttonText,
-      groupId: formData.groupId
+      groupId: formData.groupId,
+      botUsername: formData.botUsername?.replace('@','')
     });
 
     if (success) {
@@ -57,6 +59,17 @@ export function GroupCTASender() {
             onChange={(e) => setFormData(prev => ({ ...prev, groupId: e.target.value }))}
             placeholder="Enter group ID (e.g., -1001009290613)"
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="botUsername">Bot Username</Label>
+          <Input
+            id="botUsername"
+            value={formData.botUsername}
+            onChange={(e) => setFormData(prev => ({ ...prev, botUsername: e.target.value.replace('@','') }))}
+            placeholder="e.g., diamondmazalbot (without @)"
+          />
+          <p className="text-xs text-muted-foreground">Will open t.me/{formData.botUsername}?start=group_activation</p>
         </div>
 
         <div className="space-y-2">
@@ -89,6 +102,7 @@ export function GroupCTASender() {
           <h4 className="font-semibold mb-2">Preview:</h4>
           <div className="text-sm space-y-2">
             <p><strong>Group ID:</strong> {formData.groupId}</p>
+            <p><strong>Bot:</strong> @{formData.botUsername}</p>
             <p><strong>Button:</strong> {formData.buttonText}</p>
             <div className="bg-background p-3 rounded border">
               <pre className="whitespace-pre-wrap text-right text-sm">{formData.message}</pre>

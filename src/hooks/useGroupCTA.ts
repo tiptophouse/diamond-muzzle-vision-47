@@ -7,6 +7,7 @@ interface GroupCTAOptions {
   message?: string;
   buttonText?: string;
   groupId?: string | number;
+  botUsername?: string;
 }
 
 export function useGroupCTA() {
@@ -22,7 +23,8 @@ export function useGroupCTA() {
         body: {
           message: options.message,
           buttonText: options.buttonText,
-          groupId: options.groupId || -1001009290613
+          groupId: options.groupId || -1001009290613,
+          botUsername: options.botUsername
         }
       });
 
