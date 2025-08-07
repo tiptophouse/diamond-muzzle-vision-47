@@ -27,7 +27,7 @@ serve(async (req) => {
       );
     }
 
-    const botUsername = Deno.env.get('TELEGRAM_BOT_USERNAME') || 'BrilliantBot';
+    const botUsername = Deno.env.get('TELEGRAM_BOT_USERNAME') || 'BrilliantBot_bot';
     
     // Default message if not provided
     const defaultMessage = `💎 **שדרגו את הפעילות שלכם ביהלומים!**
