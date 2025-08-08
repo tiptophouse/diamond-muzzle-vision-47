@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Home, Package, Store, MessageCircle, TrendingUp, Bell, Settings, Shield } from 'lucide-react';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
-import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { useGroupCTATracking } from '@/hooks/useGroupCTATracking';
 import { TelegramWebApp } from '@/types/telegram';
 import { FloatingFirstUploadCTA } from '@/components/upload/FloatingFirstUploadCTA';
+import { telegramNavigation, PAGE_CONFIGS } from '@/utils/telegramNavigation';
 interface TelegramLayoutProps {
   children: React.ReactNode;
 }
@@ -68,10 +68,7 @@ export function TelegramLayout({
   // Initialize CTA tracking
   useGroupCTATracking();
   
-  // Disable back button for store page when accessed publicly (security)
-  const isStoreRoute = location.pathname === '/store';
-  const isMainRoute = tabs.some(tab => tab.path === location.pathname);
-  useTelegramBackButton(!isMainRoute && !isStoreRoute);
+  // Navigation will be handled by the navigation manager in useEffect
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
       const telegramApp = window.Telegram.WebApp;
@@ -179,36 +176,64 @@ export function TelegramLayout({
         (telegramApp as any).onEvent?.('safeAreaChanged', handleSafeAreaChanged);
 
         // Configure MainButton based on current route
-        const configureMainButton = () => {
-          const button = (telegramApp as any).MainButton;
-          if (button) {
-            switch (location.pathname) {
-              case '/inventory':
-                button.setText('Add Diamond');
-                button.color = '#059669';
-                button.show();
-                button.onClick(() => navigate('/upload'));
-                break;
-              case '/store':
-                button.hide(); // Controlled by individual diamond cards
-                break;
-              case '/settings':
-                button.setText('Save Settings');
-                button.color = '#3b82f6';
-                button.show();
-                break;
-              default:
-                button.hide();
-            }
+        const configureNavigation = () => {
+          switch (location.pathname) {
+            case '/inventory':
+              telegramNavigation.configurePage({
+                ...PAGE_CONFIGS.INVENTORY,
+                onMainButtonClick: () => {
+                  telegramNavigation.impactFeedback('medium');
+                  navigate('/upload-single-stone');
+                }
+              });
+              break;
+            case '/store':
+            case '/catalog':
+              telegramNavigation.configurePage(PAGE_CONFIGS.STORE);
+              break;
+            case '/upload-single-stone':
+            case '/upload':
+              telegramNavigation.configurePage({
+                ...PAGE_CONFIGS.UPLOAD,
+                onBackButtonClick: () => {
+                  telegramNavigation.impactFeedback('light');
+                  navigate(-1);
+                }
+              });
+              break;
+            case '/settings':
+              telegramNavigation.configurePage({
+                ...PAGE_CONFIGS.SETTINGS,
+                onBackButtonClick: () => {
+                  telegramNavigation.impactFeedback('light');
+                  navigate(-1);
+                }
+              });
+              break;
+            default:
+              if (location.pathname.startsWith('/diamond/')) {
+                telegramNavigation.configurePage({
+                  ...PAGE_CONFIGS.DIAMOND_DETAIL,
+                  onBackButtonClick: () => {
+                    telegramNavigation.impactFeedback('medium');
+                    navigate(-1);
+                  }
+                });
+              } else {
+                telegramNavigation.configurePage({
+                  enableBackButton: false,
+                  showMainButton: false
+                });
+              }
           }
         };
-        configureMainButton();
+        configureNavigation();
         return () => {
           // Cleanup event listeners
           (telegramApp as any).offEvent?.('viewportChanged', handleViewportChanged);
           (telegramApp as any).offEvent?.('themeChanged', handleThemeChanged);
           (telegramApp as any).offEvent?.('safeAreaChanged', handleSafeAreaChanged);
-          (telegramApp as any).MainButton?.hide();
+          telegramNavigation.cleanup();
         };
       } catch (error) {
         console.warn('⚠️ Telegram WebApp setup error:', error);
@@ -217,9 +242,7 @@ export function TelegramLayout({
   }, [location.pathname, navigate]);
   const handleTabClick = (path: string) => {
     // Add haptic feedback
-    if ((tg as any)?.HapticFeedback) {
-      (tg as any).HapticFeedback.selectionChanged();
-    }
+    telegramNavigation.selectionFeedback();
     navigate(path);
   };
   const isActiveTab = (path: string) => {

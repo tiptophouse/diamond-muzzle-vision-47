@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { telegramNavigation, PAGE_CONFIGS } from "@/utils/telegramNavigation";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +23,21 @@ function DiamondDetailPage() {
   const [isContactLoading, setIsContactLoading] = useState(false);
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [showImageUpload, setShowImageUpload] = useState(false);
+
+  // Configure Telegram navigation for diamond detail page
+  useEffect(() => {
+    telegramNavigation.configurePage({
+      ...PAGE_CONFIGS.DIAMOND_DETAIL,
+      onBackButtonClick: () => {
+        telegramNavigation.impactFeedback('medium');
+        navigate(-1);
+      }
+    });
+
+    return () => {
+      telegramNavigation.cleanup();
+    };
+  }, [navigate]);
 
   // Memoized admin check
   const isAdmin = useMemo(() => user?.id === 2138564172, [user?.id]);
@@ -276,12 +292,24 @@ View full details: ${currentUrl}`;
         {/* Header */}
         <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b">
           <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-            <Link to="/store">
-              <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Store
-              </Button>
-            </Link>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="flex items-center gap-2"
+              onClick={() => navigate(-1)}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="flex items-center gap-2"
+              onClick={handleShare}
+            >
+              <Share2 className="h-4 w-4" />
+              Share
+            </Button>
           </div>
         </div>
 
