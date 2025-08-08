@@ -116,13 +116,22 @@ export function AdminUserCard({
               <span className="font-semibold text-gray-900 text-sm sm:text-base">
                 {getDisplayName()}
               </span>
-              {countryCode && (
-                <span className="text-lg" title={countryName || countryCode} aria-label={countryName || countryCode}>
-                  {String.fromCodePoint(
-                    0x1F1E6 + (countryCode.toUpperCase().charCodeAt(0) - 65),
-                    0x1F1E6 + (countryCode.toUpperCase().charCodeAt(1) - 65)
+              {(countryCode || countryName) && (
+                <div className="flex items-center gap-1" title={countryName || countryCode}>
+                  {countryCode && (
+                    <span className="text-lg">
+                      {String.fromCodePoint(
+                        0x1F1E6 + (countryCode.toUpperCase().charCodeAt(0) - 65),
+                        0x1F1E6 + (countryCode.toUpperCase().charCodeAt(1) - 65)
+                      )}
+                    </span>
                   )}
-                </span>
+                  {countryName && (
+                    <span className="text-xs text-gray-600 hidden sm:inline">
+                      {countryName}
+                    </span>
+                  )}
+                </div>
               )}
               {!isRealUserData() && <AlertCircle className="h-4 w-4 text-orange-500" />}
               {user.is_premium && <Star className="h-4 w-4 text-yellow-500" />}
