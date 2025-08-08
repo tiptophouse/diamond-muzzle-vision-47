@@ -80,6 +80,26 @@ serve(async (req) => {
 
     const message = update.message;
     const chatId = message.chat.id.toString();
+
+    // Handle private '/start' deep-link clicks to track CTA
+    if (message.chat.type === 'private' && message.text?.startsWith('/start')) {
+      const parts = message.text.split(' ');
+      const startParam = parts[1] || '';
+      const { error: insertError } = await supabase
+        .from('group_cta_clicks')
+        .insert([{
+          telegram_id: message.from.id,
+          start_parameter: startParam || 'start',
+          source_group_id: null,
+          user_agent: 'TelegramBot'
+        }]);
+      if (insertError) {
+        console.error('❌ Error inserting CTA click:', insertError);
+      } else {
+        console.log('✅ Tracked CTA click from start parameter:', startParam);
+      }
+      return new Response('OK', { status: 200, headers: corsHeaders });
+    }
     
     // Only process messages from the B2B group
     if (b2bGroupId && chatId !== b2bGroupId) {

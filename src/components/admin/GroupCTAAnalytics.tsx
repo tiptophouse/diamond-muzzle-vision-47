@@ -21,31 +21,16 @@ export function GroupCTAAnalytics() {
   const fetchAnalytics = async () => {
     setIsLoading(true);
     try {
-      const fromDate = new Date();
-      fromDate.setDate(fromDate.getDate() - daysFilter);
-
-      const { data, error } = await supabase
-        .from('group_cta_clicks')
-        .select('*')
-        .gte('clicked_at', fromDate.toISOString())
-        .order('clicked_at', { ascending: false });
+      const { data, error } = await supabase.functions.invoke('get-group-cta-analytics', {
+        body: { days: daysFilter },
+      });
 
       if (error) throw error;
 
-      const analytics: CTAAnalytics = {
-        totalClicks: data?.length || 0,
-        clicksByDay: data?.reduce((acc: any, click) => {
-          const day = format(new Date(click.clicked_at), 'MMM dd');
-          acc[day] = (acc[day] || 0) + 1;
-          return acc;
-        }, {}),
-        uniqueUsers: [...new Set(data?.map(click => click.telegram_id))].length,
-        data: data || []
-      };
-
-      setAnalytics(analytics);
+      setAnalytics(data as CTAAnalytics);
     } catch (err) {
       console.error('Error fetching CTA analytics:', err);
+      setAnalytics({ totalClicks: 0, clicksByDay: {}, uniqueUsers: 0, data: [] });
     } finally {
       setIsLoading(false);
     }
