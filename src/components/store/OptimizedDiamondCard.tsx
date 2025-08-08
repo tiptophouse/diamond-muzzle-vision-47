@@ -75,13 +75,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     diamond.imageUrl.trim() && 
     diamond.imageUrl !== 'default' &&
     diamond.imageUrl.startsWith('http') &&
-    diamond.imageUrl.length > 10 &&
-    (diamond.imageUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i) ||
-     diamond.imageUrl.includes('placeholder') ||
-     diamond.imageUrl.includes('unsplash') ||
-     diamond.imageUrl.includes('/image') ||
-     diamond.imageUrl.includes('w=') ||
-     diamond.imageUrl.includes('h='))
+    diamond.imageUrl.length > 10
   );
 
   // Enhanced 360° detection - prioritize interactive viewers over static images
