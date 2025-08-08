@@ -68,10 +68,10 @@ export function AdminGuard({ children }: AdminGuardProps) {
             You must be logged in to access the admin panel.
           </p>
           <button
-            onClick={() => window.location.hash = '#/dashboard'}
+            onClick={() => navigate('/login')}
             className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors w-full"
           >
-            Return to Dashboard
+            Go to Login
           </button>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TelegramAuthProvider } from './context/TelegramAuthContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
+import { HelmetProvider } from 'react-helmet-async';
 import Index from './pages/Index';
 import Dashboard from './pages/Dashboard';
 import InventoryPage from './pages/InventoryPage';
@@ -25,6 +26,7 @@ import DiamondSwipe from './pages/DiamondSwipe';
 import NotFound from './pages/NotFound';
 import StandardizeCsvPage from './pages/StandardizeCsvPage';
 import BulkUploadPage from './pages/BulkUploadPage';
+import LoginPage from './pages/LoginPage';
 
 function App() {
   const queryClient = new QueryClient({
@@ -40,35 +42,38 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TelegramAuthProvider>
         <Router>
-          <TutorialProvider>
-            <InteractiveWizardProvider>
-              <div className="min-h-screen bg-background">
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/inventory" element={<InventoryPage />} />
-                  <Route path="/catalog" element={<CatalogPage />} />
-                  <Route path="/store" element={<CatalogPage />} />
-                  <Route path="/upload" element={<UploadPage />} />
-                  <Route path="/upload/bulk" element={<BulkUploadPage />} />
-                  <Route path="/upload-single-stone" element={<UploadSingleStonePage />} />
-                  <Route path="/insights" element={<InsightsPage />} />
-                  <Route path="/chat" element={<ChatPage />} />
-                  <Route path="/notifications" element={<NotificationsPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  <Route path="/settings" element={<SettingsPage />} />
-                  <Route path="/wishlist" element={<WishlistPage />} />
-                  <Route path="/admin" element={<Admin />} />
-                  <Route path="/admin/analytics" element={<AdminAnalytics />} />
-                  <Route path="/diamond/:stockNumber" element={<DiamondDetailPage />} />
-                  <Route path="/secure-diamond/:encryptedData" element={<SecureDiamondPage />} />
-                  <Route path="/swipe" element={<DiamondSwipe />} />
-                  <Route path="/standardize-csv" element={<StandardizeCsvPage />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </div>
-            </InteractiveWizardProvider>
-          </TutorialProvider>
+          <HelmetProvider>
+            <TutorialProvider>
+              <InteractiveWizardProvider>
+                <div className="min-h-screen bg-background">
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/inventory" element={<InventoryPage />} />
+                    <Route path="/catalog" element={<CatalogPage />} />
+                    <Route path="/store" element={<CatalogPage />} />
+                    <Route path="/upload" element={<UploadPage />} />
+                    <Route path="/upload/bulk" element={<BulkUploadPage />} />
+                    <Route path="/upload-single-stone" element={<UploadSingleStonePage />} />
+                    <Route path="/insights" element={<InsightsPage />} />
+                    <Route path="/chat" element={<ChatPage />} />
+                    <Route path="/notifications" element={<NotificationsPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/wishlist" element={<WishlistPage />} />
+                    <Route path="/admin" element={<Admin />} />
+                    <Route path="/admin/analytics" element={<AdminAnalytics />} />
+                    <Route path="/diamond/:stockNumber" element={<DiamondDetailPage />} />
+                    <Route path="/secure-diamond/:encryptedData" element={<SecureDiamondPage />} />
+                    <Route path="/swipe" element={<DiamondSwipe />} />
+                    <Route path="/standardize-csv" element={<StandardizeCsvPage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </div>
+              </InteractiveWizardProvider>
+            </TutorialProvider>
+          </HelmetProvider>
         </Router>
       </TelegramAuthProvider>
     </QueryClientProvider>
