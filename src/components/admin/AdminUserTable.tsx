@@ -3,6 +3,7 @@ import React from 'react';
 import { Users } from 'lucide-react';
 import { AdminUserSearch } from './AdminUserSearch';
 import { AdminUserCard } from './AdminUserCard';
+import { useUsersCountry } from '@/hooks/useUsersCountry';
 
 interface AdminUserTableProps {
   filteredUsers: any[];
@@ -27,6 +28,8 @@ export function AdminUserTable({
   onToggleBlock, 
   onDeleteUser 
 }: AdminUserTableProps) {
+  const telegramIds = filteredUsers.map(u => u.telegram_id).filter(Boolean);
+  const { countries } = useUsersCountry(telegramIds);
   return (
     <div className="bg-gray-50 border border-gray-200">
       <div className="p-6 border-b border-gray-300 bg-white">
@@ -49,6 +52,7 @@ export function AdminUserTable({
         {filteredUsers.map((user) => {
           const blocked = isUserBlocked(user.telegram_id);
           const engagementScore = getUserEngagementScore(user);
+          const country = countries[user.telegram_id];
           
           return (
             <AdminUserCard
@@ -60,6 +64,8 @@ export function AdminUserTable({
               onEditUser={onEditUser}
               onToggleBlock={onToggleBlock}
               onDeleteUser={onDeleteUser}
+              countryCode={country?.country_code}
+              countryName={country?.country_name}
             />
           );
         })}

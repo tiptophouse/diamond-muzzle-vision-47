@@ -101,7 +101,7 @@ export function GroupCTAAnalytics() {
           
           <div className="bg-secondary/10 p-4 rounded-lg">
             <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-secondary" />
+              <Users className="h-5 w-5" />
               <span className="text-sm font-medium">Unique Users</span>
             </div>
             <p className="text-2xl font-bold mt-1">{analytics?.uniqueUsers || 0}</p>

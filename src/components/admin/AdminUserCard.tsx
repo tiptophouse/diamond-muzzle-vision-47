@@ -2,7 +2,7 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Star, Phone, Shield, AlertCircle } from 'lucide-react';
+import { Star, Phone, Shield, AlertCircle, Globe } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { AdminUserActions } from './AdminUserActions';
 
@@ -14,6 +14,8 @@ interface AdminUserCardProps {
   onEditUser: (user: any) => void;
   onToggleBlock: (user: any) => void;
   onDeleteUser: (user: any) => void;
+  countryCode?: string | null;
+  countryName?: string | null;
 }
 
 export function AdminUserCard({ 
@@ -23,7 +25,9 @@ export function AdminUserCard({
   onViewUser, 
   onEditUser, 
   onToggleBlock, 
-  onDeleteUser 
+  onDeleteUser,
+  countryCode,
+  countryName
 }: AdminUserCardProps) {
   // Get the real display name from actual data
   const getDisplayName = () => {
@@ -112,6 +116,14 @@ export function AdminUserCard({
               <span className="font-semibold text-gray-900 text-sm sm:text-base">
                 {getDisplayName()}
               </span>
+              {countryCode && (
+                <span className="text-lg" title={countryName || countryCode} aria-label={countryName || countryCode}>
+                  {String.fromCodePoint(
+                    0x1F1E6 + (countryCode.toUpperCase().charCodeAt(0) - 65),
+                    0x1F1E6 + (countryCode.toUpperCase().charCodeAt(1) - 65)
+                  )}
+                </span>
+              )}
               {!isRealUserData() && <AlertCircle className="h-4 w-4 text-orange-500" />}
               {user.is_premium && <Star className="h-4 w-4 text-yellow-500" />}
               {user.phone_number && <Phone className="h-4 w-4 text-green-500" />}
