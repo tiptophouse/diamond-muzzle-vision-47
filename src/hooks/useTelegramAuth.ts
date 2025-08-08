@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { verifyTelegramUser, setCurrentUserId } from '@/lib/api';
+import { supabase } from '@/integrations/supabase/client';
 import { TelegramUser } from '@/types/telegram';
 
 export function useTelegramAuth() {
@@ -12,6 +13,36 @@ export function useTelegramAuth() {
   
   const mountedRef = useRef(true);
   const initializedRef = useRef(false);
+
+  // Function to log user login with IP address
+  const logUserLogin = async (user: TelegramUser, tg?: any) => {
+    try {
+      console.log('📝 Logging user login for:', user.first_name, user.id);
+      
+      const loginData = {
+        telegram_id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        username: user.username,
+        language_code: user.language_code,
+        is_premium: tg?.initDataUnsafe?.user?.is_premium || false,
+        photo_url: tg?.initDataUnsafe?.user?.photo_url,
+        init_data_hash: tg?.initData ? btoa(tg.initData.substring(0, 50)) : undefined
+      };
+
+      const { data, error } = await supabase.functions.invoke('log-user-login', {
+        body: loginData
+      });
+
+      if (error) {
+        console.error('❌ Failed to log user login:', error);
+      } else {
+        console.log('✅ User login logged successfully:', data);
+      }
+    } catch (error) {
+      console.error('❌ Error logging user login:', error);
+    }
+  };
 
   const initializeAuth = async () => {
     if (initializedRef.current || !mountedRef.current) {
@@ -68,6 +99,9 @@ export function useTelegramAuth() {
             setCurrentUserId(verificationResult.user_id);
             setIsAuthenticated(true);
             setError(null);
+            
+            // Log the login with IP address
+            await logUserLogin(verifiedUser, tg);
           } else {
             console.error('❌ Backend verification failed, falling back...');
             // Fall back to using initDataUnsafe or hardcoded user
@@ -92,6 +126,9 @@ export function useTelegramAuth() {
         setCurrentUserId(devUser.id);
         setIsAuthenticated(true);
         setError(null);
+        
+        // Log the login with IP address
+        await logUserLogin(devUser);
       }
     } catch (err) {
       console.error('❌ Auth initialization error:', err);
@@ -108,6 +145,9 @@ export function useTelegramAuth() {
       setCurrentUserId(fallbackUser.id);
       setIsAuthenticated(true);
       setError('Using fallback authentication');
+      
+      // Log the fallback login with IP address
+      logUserLogin(fallbackUser).catch(console.error);
     } finally {
       setIsLoading(false);
       initializedRef.current = true;
@@ -132,6 +172,9 @@ export function useTelegramAuth() {
       setCurrentUserId(fallbackUser.id);
       setIsAuthenticated(true);
       setError(null);
+      
+      // Log the login with IP address
+      await logUserLogin(fallbackUser, tg);
     } else {
       // Use your specific user ID as ultimate fallback
       console.log('🆘 Using hardcoded user ID for auth');
@@ -147,6 +190,9 @@ export function useTelegramAuth() {
       setCurrentUserId(hardcodedUser.id);
       setIsAuthenticated(true);
       setError(null);
+      
+      // Log the login with IP address  
+      await logUserLogin(hardcodedUser);
     }
   };
 
@@ -170,6 +216,9 @@ export function useTelegramAuth() {
         setError('Authentication timeout - using emergency user');
         setIsLoading(false);
         initializedRef.current = true;
+        
+        // Log the emergency login with IP address
+        logUserLogin(emergencyUser).catch(console.error);
       }
     }, 5000);
 
