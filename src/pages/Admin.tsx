@@ -7,6 +7,7 @@ import { NotificationCenter } from '@/components/admin/NotificationCenter';
 import { NotificationSender } from '@/components/admin/NotificationSender';
 import { UploadReminderNotifier } from '@/components/admin/UploadReminderNotifier';
 import { GroupCTASender } from '@/components/admin/GroupCTASender';
+import { GroupCTAAnalytics } from '@/components/admin/GroupCTAAnalytics';
 import { PaymentManagement } from '@/components/admin/PaymentManagement';
 import { SessionUsersDisplay } from '@/components/admin/SessionUsersDisplay';
 import { UserUploadAnalysis } from '@/components/admin/UserUploadAnalysis';
@@ -315,7 +316,8 @@ export default function Admin() {
 
             <TabsContent value="group-cta" className="space-y-0">
               <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <GroupCTASender />
+            <GroupCTASender />
+            <GroupCTAAnalytics />
               </div>
             </TabsContent>
 

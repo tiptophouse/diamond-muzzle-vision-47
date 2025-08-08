@@ -454,9 +454,40 @@ export type Database = {
         }
         Relationships: []
       }
+      group_cta_clicks: {
+        Row: {
+          clicked_at: string | null
+          created_at: string | null
+          id: string
+          source_group_id: number | null
+          start_parameter: string
+          telegram_id: number
+          user_agent: string | null
+        }
+        Insert: {
+          clicked_at?: string | null
+          created_at?: string | null
+          id?: string
+          source_group_id?: number | null
+          start_parameter: string
+          telegram_id: number
+          user_agent?: string | null
+        }
+        Update: {
+          clicked_at?: string | null
+          created_at?: string | null
+          id?: string
+          source_group_id?: number | null
+          start_parameter?: string
+          telegram_id?: number
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       inventory: {
         Row: {
           certificate_comment: string | null
+          certificate_image_url: string | null
           certificate_number: number | null
           certificate_url: string | null
           clarity: string
@@ -468,6 +499,8 @@ export type Database = {
           depth: number | null
           depth_percentage: number | null
           fluorescence: string | null
+          gem360_url: string | null
+          gia_report_pdf: string | null
           gridle: string | null
           id: string
           lab: string | null
@@ -485,11 +518,14 @@ export type Database = {
           table_percentage: number | null
           updated_at: string
           user_id: number
+          v360_url: string | null
+          video_url: string | null
           weight: number
           width: number | null
         }
         Insert: {
           certificate_comment?: string | null
+          certificate_image_url?: string | null
           certificate_number?: number | null
           certificate_url?: string | null
           clarity: string
@@ -501,6 +537,8 @@ export type Database = {
           depth?: number | null
           depth_percentage?: number | null
           fluorescence?: string | null
+          gem360_url?: string | null
+          gia_report_pdf?: string | null
           gridle?: string | null
           id?: string
           lab?: string | null
@@ -518,11 +556,14 @@ export type Database = {
           table_percentage?: number | null
           updated_at?: string
           user_id: number
+          v360_url?: string | null
+          video_url?: string | null
           weight: number
           width?: number | null
         }
         Update: {
           certificate_comment?: string | null
+          certificate_image_url?: string | null
           certificate_number?: number | null
           certificate_url?: string | null
           clarity?: string
@@ -534,6 +575,8 @@ export type Database = {
           depth?: number | null
           depth_percentage?: number | null
           fluorescence?: string | null
+          gem360_url?: string | null
+          gia_report_pdf?: string | null
           gridle?: string | null
           id?: string
           lab?: string | null
@@ -551,6 +594,8 @@ export type Database = {
           table_percentage?: number | null
           updated_at?: string
           user_id?: number
+          v360_url?: string | null
+          video_url?: string | null
           weight?: number
           width?: number | null
         }
@@ -1007,6 +1052,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_feedback: {
+        Row: {
+          category: string
+          created_at: string | null
+          feedback_type: string
+          id: string
+          message: string | null
+          metadata: Json | null
+          rating: number | null
+          telegram_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          feedback_type: string
+          id?: string
+          message?: string | null
+          metadata?: Json | null
+          rating?: number | null
+          telegram_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          feedback_type?: string
+          id?: string
+          message?: string | null
+          metadata?: Json | null
+          rating?: number | null
+          telegram_id?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_logins: {
         Row: {
           created_at: string
@@ -1337,6 +1418,10 @@ export type Database = {
         Returns: number
       }
       expire_keshett_agreements: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      get_public_diamond_count: {
         Args: Record<PropertyKey, never>
         Returns: number
       }

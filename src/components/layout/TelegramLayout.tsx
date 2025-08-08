@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Home, Package, Store, MessageCircle, TrendingUp, Bell, Settings, Shield } from 'lucide-react';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
+import { useGroupCTATracking } from '@/hooks/useGroupCTATracking';
 import { TelegramWebApp } from '@/types/telegram';
 import { FloatingFirstUploadCTA } from '@/components/upload/FloatingFirstUploadCTA';
 interface TelegramLayoutProps {
@@ -64,6 +65,9 @@ export function TelegramLayout({
   // Simple admin check - you can enhance this based on your needs
   const isAdmin = user?.id === 2138564172 || user?.username === 'admin';
 
+  // Initialize CTA tracking
+  useGroupCTATracking();
+  
   // Disable back button for store page when accessed publicly (security)
   const isStoreRoute = location.pathname === '/store';
   const isMainRoute = tabs.some(tab => tab.path === location.pathname);
