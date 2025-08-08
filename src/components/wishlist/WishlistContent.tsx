@@ -131,8 +131,7 @@ export function WishlistContent() {
           <h2 className="text-xl font-semibold text-gray-600 mb-2">Your wishlist is empty</h2>
           <p className="text-gray-500 mb-6">Start browsing diamonds and add them to your wishlist</p>
           <Button 
-            onClick={() => window.location.href = '/store'}
-            className="bg-blue-600 hover:bg-blue-700"
+            onClick={() => window.location.href = '/catalog'}
           >
             Browse Diamonds
           </Button>

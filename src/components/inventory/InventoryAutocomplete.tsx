@@ -166,8 +166,8 @@ export function InventoryAutocomplete({
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           ref={inputRef}
-          placeholder="Search by stock number, shape, color, clarity..."
-          className="pl-8"
+          placeholder="Search stock, shape, color..."
+          className="pl-8 pr-8"
           value={searchQuery}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
@@ -175,6 +175,15 @@ export function InventoryAutocomplete({
           onBlur={handleInputBlur}
           autoComplete="off"
         />
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={() => onSearchChange('')}
+            className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            ×
+          </button>
+        )}
       </form>
 
       {isOpen && suggestions.length > 0 && (

@@ -43,6 +43,7 @@ export function InventoryPagination({ currentPage, totalPages, onPageChange }: I
                   e.preventDefault();
                   onPageChange(pageNum);
                 }}
+                className={currentPage === pageNum ? "bg-primary text-primary-foreground" : ""}
               >
                 {pageNum}
               </PaginationLink>

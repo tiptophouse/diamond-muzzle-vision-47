@@ -291,7 +291,7 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
             </div>
           </div>
           
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end">
             <Button 
               variant="outline" 
               type="button"
@@ -300,16 +300,7 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
                 setIsOpen(false);
               }}
             >
-              Cancel
-            </Button>
-            <Button 
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                applyFilters();
-              }}
-            >
-              Apply Filters
+              Close
             </Button>
           </div>
         </div>
