@@ -78,6 +78,56 @@ img {
   }
 }
 
+/* iOS specific fixes for Telegram WebApp */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari specific styles */
+  body {
+    position: fixed;
+    overflow: hidden;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for iOS */
+  }
+  
+  /* Fix for iOS back button jumping */
+  .tg-viewport {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  /* Prevent text jumping on iOS */
+  * {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Fix for viewport meta tag issues on iOS */
+  html {
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  
+  /* Smooth scroll fix for iOS */
+  .smooth-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Safe area handling for iOS */
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 16px);
+  }
+  
+  .pt-safe {
+    padding-top: max(env(safe-area-inset-top), 16px);
+  }
+}
+
 /* Ensure light theme always */
 .dark {
   --background: 0 0% 100%;

@@ -113,12 +113,23 @@ export function TelegramLayout({
           }
         }
 
-        // Enhanced viewport handling with safe areas
+        // Enhanced viewport handling with safe areas - iOS specific fixes
         const handleViewportChanged = (data?: any) => {
           const height = (telegramApp as any).viewportHeight || window.innerHeight;
           const stableHeight = (telegramApp as any).viewportStableHeight || height;
-          document.documentElement.style.setProperty('--tg-viewport-height', `${height}px`);
-          document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableHeight}px`);
+          
+          // iOS specific viewport handling
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+          if (isIOS) {
+            // Use stable height for iOS to prevent jumping
+            document.documentElement.style.setProperty('--tg-viewport-height', `${stableHeight}px`);
+            document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableHeight}px`);
+            // Fix body height on iOS
+            document.body.style.height = `${stableHeight}px`;
+          } else {
+            document.documentElement.style.setProperty('--tg-viewport-height', `${height}px`);
+            document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableHeight}px`);
+          }
 
           // Handle safe area insets if available
           if ((telegramApp as any).safeAreaInset) {
