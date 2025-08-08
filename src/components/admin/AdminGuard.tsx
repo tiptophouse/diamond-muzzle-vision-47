@@ -5,6 +5,7 @@ import { Shield, AlertTriangle, Settings, Crown, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { getAdminTelegramId } from '@/lib/api/secureConfig';
+import { useSupabaseSession } from '@/hooks/useSupabaseSession';
 
 interface AdminGuardProps {
   children: ReactNode;
@@ -15,6 +16,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
   const navigate = useNavigate();
   const [adminTelegramId, setAdminTelegramId] = useState<number | null>(null);
   const [isLoadingAdmin, setIsLoadingAdmin] = useState(true);
+  const { session, isLoading: isSessionLoading } = useSupabaseSession();
 
   useEffect(() => {
     const loadAdminConfig = async () => {
@@ -35,11 +37,11 @@ export function AdminGuard({ children }: AdminGuardProps) {
   console.log('🔍 AdminGuard - Current user:', user);
   console.log('🔍 AdminGuard - User ID:', user?.id);
   console.log('🔍 AdminGuard - Admin ID:', adminTelegramId);
-  console.log('🔍 AdminGuard - Is Loading:', isLoading || isLoadingAdmin);
-  console.log('🔍 AdminGuard - Is Authenticated:', isAuthenticated);
+console.log('🔍 AdminGuard - Is Loading:', isLoading || isLoadingAdmin || isSessionLoading);
+console.log('🔍 AdminGuard - Has Supabase session:', !!session);
 
-  if (isLoading || isLoadingAdmin) {
-    console.log('⏳ AdminGuard - Still loading...');
+if (isLoading || isLoadingAdmin || isSessionLoading) {
+  console.log('⏳ AdminGuard - Still loading...');
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
@@ -54,7 +56,31 @@ export function AdminGuard({ children }: AdminGuardProps) {
     );
   }
 
-  // Check if user is authenticated first
+  // Enforce password login via Supabase before Telegram checks
+  if (!session) {
+    console.log('❌ AdminGuard - No Supabase session. Redirecting to login.');
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
+          <div className="bg-red-50 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle className="h-10 w-10 text-red-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Login Required</h2>
+          <p className="text-gray-600 mb-6">
+            Please login with your admin credentials to continue.
+          </p>
+          <button
+            onClick={() => navigate('/login')}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors w-full"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if user is authenticated in Telegram next
   if (!isAuthenticated || !user) {
     console.log('❌ AdminGuard - User not authenticated');
     return (
