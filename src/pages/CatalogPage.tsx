@@ -16,10 +16,11 @@ import { Diamond } from "@/components/inventory/InventoryTable";
 import { TelegramStoreFilters } from "@/components/store/TelegramStoreFilters";
 import { TelegramSortSheet } from "@/components/store/TelegramSortSheet";
 import { getTelegramWebApp } from "@/utils/telegramWebApp";
+import { InventoryPagination } from "@/components/inventory/InventoryPagination";
 
 // Telegram memory management
 const tg = getTelegramWebApp();
-const ITEMS_PER_PAGE = 6; // Reduced for better performance
+const ITEMS_PER_PAGE = 24; // Show more items per page
 const SKELETON_COUNT = 3; // Fewer skeletons
 
 function CatalogPage() {
@@ -32,9 +33,6 @@ function CatalogPage() {
   const [searchParams] = useSearchParams();
   const stockNumber = searchParams.get('stock');
   const { selectionChanged, impactOccurred } = useTelegramHapticFeedback();
-  const observerRef = useRef<IntersectionObserver>();
-  const loadingRef = useRef<HTMLDivElement>(null);
-  
   const navigate = useNavigate();
 
   // Telegram memory optimization
@@ -136,24 +134,15 @@ function CatalogPage() {
     return diamonds;
   }, [filteredDiamonds, sortBy, getMediaPriority]);
 
-  // Paginated diamonds for performance
+  // Pagination - page size and slicing
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(sortedDiamonds.length / ITEMS_PER_PAGE)), [sortedDiamonds.length]);
   const paginatedDiamonds = useMemo(() => {
-    return sortedDiamonds.slice(0, currentPage * ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return sortedDiamonds.slice(startIndex, endIndex);
   }, [sortedDiamonds, currentPage]);
 
   // Infinite scroll with intersection observer
-  const lastDiamondElementRef = useCallback((node: HTMLDivElement) => {
-    if (loading) return;
-    if (observerRef.current) observerRef.current.disconnect();
-    
-    observerRef.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && paginatedDiamonds.length < sortedDiamonds.length) {
-        setCurrentPage(prevPage => prevPage + 1);
-      }
-    }, { rootMargin: '100px' });
-    
-    if (node) observerRef.current.observe(node);
-  }, [loading, paginatedDiamonds.length, sortedDiamonds.length]);
 
   // Filter to specific diamond if URL parameters are provided
   const finalFilteredDiamonds = useMemo(() => {
@@ -279,42 +268,23 @@ function CatalogPage() {
     return (
       <>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4">
-          {finalFilteredDiamonds.map((diamond, index) => {
-            const isLast = index === finalFilteredDiamonds.length - 1;
-            return (
-              <div
-                key={diamond.id}
-                ref={isLast ? lastDiamondElementRef : undefined}
-                id={`diamond-${diamond.stockNumber}`}
-              >
-                <OptimizedDiamondCard 
-                  diamond={diamond}
-                  index={index}
-                  onUpdate={refetch}
-                />
-              </div>
-            );
-          })}
+          {finalFilteredDiamonds.map((diamond, index) => (
+            <div
+              key={diamond.id}
+              id={`diamond-${diamond.stockNumber}`}
+            >
+              <OptimizedDiamondCard 
+                diamond={diamond}
+                index={index}
+                onUpdate={refetch}
+              />
+            </div>
+          ))}
         </div>
         
-        {/* Loading indicator for infinite scroll */}
-        {loading && currentPage > 1 && (
-          <div className="flex justify-center py-4">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-          </div>
-        )}
-        
-        {/* Load more info */}
-        {paginatedDiamonds.length < sortedDiamonds.length && !loading && (
-          <div className="text-center py-4 px-4">
-            <p className="text-sm text-muted-foreground">
-              Showing {paginatedDiamonds.length} of {sortedDiamonds.length} diamonds
-            </p>
-          </div>
-        )}
       </>
     );
-  }, [loading, currentPage, error, finalFilteredDiamonds, lastDiamondElementRef, refetch, paginatedDiamonds.length, sortedDiamonds.length]);
+  }, [loading, currentPage, error, finalFilteredDiamonds, refetch, paginatedDiamonds.length, sortedDiamonds.length]);
 
   return (
     <MobilePullToRefresh onRefresh={handleRefresh} enabled={!loading}>
@@ -329,7 +299,7 @@ function CatalogPage() {
                   Diamond Catalog
                 </h1>
                 <div className="text-xs text-muted-foreground space-y-1">
-                  <p>{finalFilteredDiamonds.length} available • Priority: 3D → Image → Info</p>
+                  <p>{sortedDiamonds.length} available • Priority: 3D → Image → Info</p>
                   <div className="flex items-center gap-3 text-xs">
                     {mediaCounts.with3D > 0 && (
                       <span className="flex items-center gap-1">
@@ -390,21 +360,13 @@ function CatalogPage() {
             onUpdate={refetch}
           />
           
-          {/* Loading indicator for infinite scroll */}
-          {loading && currentPage > 1 && (
-            <div className="flex justify-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-            </div>
-          )}
-          
-          {/* Load more info */}
-          {paginatedDiamonds.length < sortedDiamonds.length && !loading && (
-            <div className="text-center py-4 px-4">
-              <p className="text-sm text-muted-foreground">
-                Showing {paginatedDiamonds.length} of {sortedDiamonds.length} diamonds
-              </p>
-            </div>
-          )}
+          <div className="px-4 py-4">
+            <InventoryPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
         </div>
 
         {/* Floating Action Button */}
