@@ -5,7 +5,7 @@ import { DataDrivenDashboard } from '@/components/dashboard/DataDrivenDashboard'
 import { DashboardLoading } from '@/components/dashboard/DashboardLoading';
 import { SecurityMonitor } from '@/components/auth/SecurityMonitor';
 import { getVerificationResult } from '@/lib/api';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -14,6 +14,7 @@ export default function Dashboard() {
   const { loading, allDiamonds, fetchData } = useInventoryData();
   const verificationResult = getVerificationResult();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   // Check for upload success notification
@@ -35,6 +36,26 @@ export default function Dashboard() {
       fetchData();
     }
   }, [searchParams, setSearchParams, toast, fetchData]);
+
+  // First-time redirect for new users without inventory
+  useEffect(() => {
+    if (authLoading || loading) return;
+    if (!isAuthenticated || !user) return;
+
+    const visitKey = `visited_dashboard_${user.id}`;
+    const hasVisited = localStorage.getItem(visitKey);
+
+    if (!hasVisited && allDiamonds.length === 0) {
+      localStorage.setItem(visitKey, '1');
+      toast({
+        title: 'ברוכים הבאים! 👋',
+        description: 'בואו נעלה את היהלום הראשון שלכם כדי לפתוח הזדמנויות חדשות.',
+        duration: 4000,
+      });
+      navigate('/upload-single-stone?from=dashboard_first_time');
+      return;
+    }
+  }, [authLoading, loading, isAuthenticated, user, allDiamonds.length, navigate, toast]);
 
   console.log('🔍 DASHBOARD DEBUG:');
   console.log('- Auth loading:', authLoading);
