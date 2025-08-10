@@ -64,15 +64,15 @@ export function useGroupCTATracking() {
     }
   };
 
-  // Auto-track if user comes from group_activation or dashboard_direct
+  // Auto-track if user comes from group_activation
   useEffect(() => {
     if (!user?.id) return;
 
     const urlParams = new URLSearchParams(window.location.search);
     const startParam = urlParams.get('start');
     
-    if (startParam === 'group_activation' || startParam === 'dashboard_direct') {
-      trackCTAClick(startParam);
+    if (startParam === 'group_activation') {
+      trackCTAClick('group_activation');
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
