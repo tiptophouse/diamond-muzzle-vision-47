@@ -11,16 +11,15 @@ export function GroupCTASender() {
   const { sendGroupCTA, isLoading } = useGroupCTA();
   
   const [formData, setFormData] = useState({
-    message: `💎 **שדרגו את הפעילות שלכם ביהלומים!**
+    message: `💎 **BrilliantBot – מציף הזדמנויות שמוכרות**
 
-🤖 BrilliantBot כאן כדי לעזור לכם:
-• ✨ התאמות חכמות של יהלומים
-• 📊 ניתוחי שוק בזמן אמת  
-• 🔍 חיפוש מתקדם במלאי
-• 💰 הזדמנויות השקעה
+• ⚡ התאמות מיידיות בין מלאי לביקוש חם
+• 🔔 התראות בזמן אמת על לידים ועסקאות
+• 🔐 שיתוף מאובטח ללקוחות בלחיצה
+• 📊 דשבורד חכם שמראה מה למכור היום
 
-⚡ **התחילו עכשיו - לחצו על הכפתור למטה!**`,
-    buttonText: '🚀 התחל עם BrilliantBot',
+⏱️ תוך 60 שניות אתם באוויר. לחצו על Start או פתחו את הדשבורד:`,
+    buttonText: '🚀 התחל עכשיו',
     groupId: '-1001009290613',
     botUsername: 'diamondmazalbot'
   });
