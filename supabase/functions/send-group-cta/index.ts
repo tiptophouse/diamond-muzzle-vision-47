@@ -28,20 +28,20 @@ serve(async (req) => {
     }
 
     const botUsername = providedBotUsername || Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot';
-    const baseUrl = Deno.env.get('WEB_APP_URL') || 'https://miniapp.mazalbot.com';
     
-    // High-converting default message if not provided (Hebrew)
-    const defaultMessage = `💎 **BrilliantBot – מציף הזדמנויות שמוכרות**
+    // Default message if not provided
+    const defaultMessage = `💎 **שדרגו את הפעילות שלכם ביהלומים!**
 
-• ⚡ התאמות מיידיות בין מלאי לביקוש חם
-• 🔔 התראות בזמן אמת על לידים ועסקאות
-• 🔐 שיתוף מאובטח ללקוחות בלחיצה
-• 📊 דשבורד חכם שמראה מה למכור היום
+🤖 BrilliantBot כאן כדי לעזור לכם:
+• ✨ התאמות חכמות של יהלומים
+• 📊 ניתוחי שוק בזמן אמת  
+• 🔍 חיפוש מתקדם במלאי
+• 💰 הזדמনויות השקעה
 
-⏱️ תוך 60 שניות אתם באוויר. לחצו על Start או פתחו את הדשבורד:`;
+⚡ **התחילו עכשיו - לחצו על הכפתור למטה!**`;
 
     const finalMessage = message || defaultMessage;
-    const finalButtonText = buttonText || '🚀 התחל עכשיו';
+    const finalButtonText = buttonText || '🚀 התחל עם BrilliantBot';
 
     console.log('📤 Sending CTA message to group...');
     const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
@@ -53,24 +53,14 @@ serve(async (req) => {
         chat_id: groupId || -1001009290613,
         text: finalMessage,
         parse_mode: 'Markdown',
-            reply_markup: {
-              inline_keyboard: [
-                [
-                  {
-                    text: finalButtonText,
-                    url: `https://t.me/${botUsername}?start=group_activation`
-                  }
-                ],
-                [
-                  {
-                    text: '📊 פתח דשבורד',
-                    web_app: {
-                      url: `${baseUrl}/dashboard?src=group_cta`
-                    }
-                  }
-                ]
-              ]
+        reply_markup: {
+          inline_keyboard: [[
+            {
+              text: finalButtonText,
+              url: `https://t.me/${botUsername}?start=group_activation`
             }
+          ]]
+        }
       }),
     });
 
