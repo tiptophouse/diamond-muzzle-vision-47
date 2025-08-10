@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import WebApp from '@twa-dev/sdk';
 
 interface TelegramWebApp {
@@ -85,6 +85,10 @@ export function useTelegramWebApp() {
   const [user, setUser] = useState<any>(null);
   const [isReady, setIsReady] = useState(false);
 
+  // Track Telegram button handlers to avoid duplicate registrations
+  const mainButtonHandlerRef = useRef<(() => void) | null>(null);
+  const backButtonHandlerRef = useRef<(() => void) | null>(null);
+
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
       const tg = window.Telegram.WebApp as TelegramWebApp;
@@ -161,6 +165,14 @@ export function useTelegramWebApp() {
   const mainButton = {
     show: (text: string, onClick: () => void, color = '#007AFF') => {
       if (webApp?.MainButton) {
+        // Detach previous handler if exists
+        if (mainButtonHandlerRef.current) {
+          try {
+            webApp.MainButton.offClick(mainButtonHandlerRef.current);
+          } catch {}
+        }
+        mainButtonHandlerRef.current = onClick;
+
         webApp.MainButton.setText(text);
         webApp.MainButton.color = color;
         webApp.MainButton.onClick(onClick);
@@ -168,7 +180,15 @@ export function useTelegramWebApp() {
       }
     },
     hide: () => {
-      webApp?.MainButton?.hide();
+      if (webApp?.MainButton) {
+        if (mainButtonHandlerRef.current) {
+          try {
+            webApp.MainButton.offClick(mainButtonHandlerRef.current);
+          } catch {}
+          mainButtonHandlerRef.current = null;
+        }
+        webApp.MainButton.hide();
+      }
     },
     setText: (text: string) => {
       webApp?.MainButton?.setText(text);
@@ -184,12 +204,28 @@ export function useTelegramWebApp() {
   const backButton = {
     show: (onClick: () => void) => {
       if (webApp?.BackButton) {
+        // Detach previous handler if exists
+        if (backButtonHandlerRef.current) {
+          try {
+            webApp.BackButton.offClick(backButtonHandlerRef.current);
+          } catch {}
+        }
+        backButtonHandlerRef.current = onClick;
+
         webApp.BackButton.onClick(onClick);
         webApp.BackButton.show();
       }
     },
     hide: () => {
-      webApp?.BackButton?.hide();
+      if (webApp?.BackButton) {
+        if (backButtonHandlerRef.current) {
+          try {
+            webApp.BackButton.offClick(backButtonHandlerRef.current);
+          } catch {}
+          backButtonHandlerRef.current = null;
+        }
+        webApp.BackButton.hide();
+      }
     }
   };
 

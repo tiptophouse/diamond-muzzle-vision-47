@@ -46,6 +46,14 @@ export class TelegramNavigationManager {
   showBackButton(callback?: () => void) {
     if (!this.tg?.BackButton) return;
 
+    // Detach previous handler if any
+    if (this.backButtonCallback && this.tg.BackButton.offClick) {
+      try {
+        this.tg.BackButton.offClick(this.backButtonCallback);
+      } catch {}
+      this.backButtonCallback = null;
+    }
+
     if (callback) {
       this.backButtonCallback = callback;
       this.tg.BackButton.onClick(this.backButtonCallback);
@@ -57,8 +65,10 @@ export class TelegramNavigationManager {
   hideBackButton() {
     if (!this.tg?.BackButton) return;
     
-    if (this.backButtonCallback) {
-      // Clear existing callback
+    if (this.backButtonCallback && this.tg.BackButton.offClick) {
+      try {
+        this.tg.BackButton.offClick(this.backButtonCallback);
+      } catch {}
       this.backButtonCallback = null;
     }
     
@@ -72,6 +82,14 @@ export class TelegramNavigationManager {
     onClick?: () => void;
   }) {
     if (!this.tg?.MainButton) return;
+
+    // Detach previous handler if any
+    if (this.mainButtonCallback && this.tg.MainButton.offClick) {
+      try {
+        this.tg.MainButton.offClick(this.mainButtonCallback);
+      } catch {}
+      this.mainButtonCallback = null;
+    }
 
     this.tg.MainButton.setText(options.text);
     
@@ -90,8 +108,10 @@ export class TelegramNavigationManager {
   hideMainButton() {
     if (!this.tg?.MainButton) return;
     
-    if (this.mainButtonCallback) {
-      // Clear existing callback
+    if (this.mainButtonCallback && this.tg.MainButton.offClick) {
+      try {
+        this.tg.MainButton.offClick(this.mainButtonCallback);
+      } catch {}
       this.mainButtonCallback = null;
     }
     
