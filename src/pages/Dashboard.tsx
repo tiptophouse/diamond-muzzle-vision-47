@@ -37,15 +37,18 @@ export default function Dashboard() {
     }
   }, [searchParams, setSearchParams, toast, fetchData]);
 
-  // First-time redirect for new users without inventory
+  // First-time redirect for new users without inventory (unless coming from group CTA dashboard button)
   useEffect(() => {
     if (authLoading || loading) return;
     if (!isAuthenticated || !user) return;
 
     const visitKey = `visited_dashboard_${user.id}`;
     const hasVisited = localStorage.getItem(visitKey);
+    
+    // Check if user came directly from group CTA dashboard button
+    const dashboardDirect = searchParams.get('start') === 'dashboard_direct';
 
-    if (!hasVisited && allDiamonds.length === 0) {
+    if (!hasVisited && allDiamonds.length === 0 && !dashboardDirect) {
       localStorage.setItem(visitKey, '1');
       toast({
         title: 'ברוכים הבאים! 👋',
@@ -55,7 +58,14 @@ export default function Dashboard() {
       navigate('/upload-single-stone?from=dashboard_first_time');
       return;
     }
-  }, [authLoading, loading, isAuthenticated, user, allDiamonds.length, navigate, toast]);
+    
+    // Clear start parameter if it exists
+    if (dashboardDirect) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('start');
+      setSearchParams(newParams);
+    }
+  }, [authLoading, loading, isAuthenticated, user, allDiamonds.length, navigate, toast, searchParams, setSearchParams]);
 
   console.log('🔍 DASHBOARD DEBUG:');
   console.log('- Auth loading:', authLoading);

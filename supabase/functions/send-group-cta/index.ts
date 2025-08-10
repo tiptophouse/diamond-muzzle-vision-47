@@ -53,24 +53,20 @@ serve(async (req) => {
         chat_id: groupId || -1001009290613,
         text: finalMessage,
         parse_mode: 'Markdown',
-            reply_markup: {
-              inline_keyboard: [
-                [
-                  {
-                    text: finalButtonText,
-                    url: `https://t.me/${botUsername}?start=group_activation`
-                  }
-                ],
-                [
-                  {
-                    text: '📊 פתח דשבורד',
-                    web_app: {
-                      url: `${baseUrl}/dashboard?src=group_cta`
-                    }
-                  }
-                ]
-              ]
-            }
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: finalButtonText,
+                url: `https://t.me/${botUsername}?start=group_activation`
+              },
+              {
+                text: '📊 פתח דשבורד',
+                url: `https://t.me/${botUsername}?start=dashboard_direct`
+              }
+            ]
+          ]
+        }
       }),
     });
 
