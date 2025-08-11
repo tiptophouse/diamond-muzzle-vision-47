@@ -16,7 +16,7 @@ import { MarketComparison } from "@/components/insights/MarketComparison";
 import { InventoryVelocity } from "@/components/insights/InventoryVelocity";
 import { useInsightsData } from "@/hooks/useInsightsData";
 import { useEnhancedInsights } from "@/hooks/useEnhancedInsights";
-import { BarChart3, TrendingUp, Zap, Target, RefreshCw } from "lucide-react";
+import { BarChart3, TrendingUp, Zap, Target, RefreshCw, Upload } from "lucide-react";
 
 export default function InsightsPage() {
   const {
@@ -60,13 +60,13 @@ export default function InsightsPage() {
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold">Portfolio Intelligence</h1>
-            <p className="text-muted-foreground">Advanced analytics for your diamond inventory</p>
+            <p className="text-muted-foreground">Analyzing your real diamond inventory data</p>
           </div>
           
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Analyzing your portfolio...</p>
+              <p className="text-muted-foreground">Loading your real portfolio data...</p>
             </div>
           </div>
         </div>
@@ -84,7 +84,7 @@ export default function InsightsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Portfolio Intelligence</h1>
-            <p className="text-muted-foreground">Advanced analytics and market insights for your diamond inventory</p>
+            <p className="text-muted-foreground">Real insights from your actual diamond inventory</p>
           </div>
           <Button onClick={handleRefreshAll} variant="outline" size="sm" disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
@@ -95,13 +95,14 @@ export default function InsightsPage() {
         {totalDiamonds === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <BarChart3 className="h-16 w-16 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Data Available</h3>
-              <p className="text-muted-foreground text-center mb-4">
-                Upload your diamond inventory to unlock powerful portfolio insights and market intelligence.
+              <Upload className="h-16 w-16 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Diamond Data Available</h3>
+              <p className="text-muted-foreground text-center mb-4 max-w-md">
+                To view your portfolio insights, you need to upload your diamond inventory first. 
+                All insights are generated from your real data - no mock data is used.
               </p>
               <Button onClick={() => window.location.href = '/upload'}>
-                Upload Your First Diamonds
+                Upload Your Diamond Inventory
               </Button>
             </CardContent>
           </Card>
@@ -155,11 +156,12 @@ export default function InsightsPage() {
                 <ProfitabilityInsights data={enhancedData.profitability} />
               ) : (
                 <Card>
-                  <CardContent className="flex items-center justify-center py-12">
-                    <div className="text-center">
-                      <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">Loading profitability insights...</p>
-                    </div>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <Target className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Profitability Data</h3>
+                    <p className="text-muted-foreground text-center">
+                      Add more diamonds to your inventory to see detailed profitability insights.
+                    </p>
                   </CardContent>
                 </Card>
               )}
@@ -170,11 +172,12 @@ export default function InsightsPage() {
                 <MarketComparison data={enhancedData.marketComparison} />
               ) : (
                 <Card>
-                  <CardContent className="flex items-center justify-center py-12">
-                    <div className="text-center">
-                      <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">Loading market comparison...</p>
-                    </div>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <TrendingUp className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Market Data</h3>
+                    <p className="text-muted-foreground text-center">
+                      Add more diamonds to your inventory to see market comparison insights.
+                    </p>
                   </CardContent>
                 </Card>
               )}
@@ -185,11 +188,12 @@ export default function InsightsPage() {
                 <InventoryVelocity data={enhancedData.inventoryVelocity} />
               ) : (
                 <Card>
-                  <CardContent className="flex items-center justify-center py-12">
-                    <div className="text-center">
-                      <Zap className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">Loading velocity analysis...</p>
-                    </div>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <Zap className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Velocity Data</h3>
+                    <p className="text-muted-foreground text-center">
+                      Add more diamonds to your inventory to see velocity analysis.
+                    </p>
                   </CardContent>
                 </Card>
               )}

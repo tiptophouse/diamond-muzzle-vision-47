@@ -37,6 +37,18 @@ interface PersonalInsight {
   portfolioGrowth: number;
 }
 
+interface Diamond {
+  id: string;
+  shape: string;
+  weight: number;
+  color: string;
+  clarity: string;
+  price_per_carat: number;
+  created_at: string;
+  owners?: number[];
+  owner_id?: number;
+}
+
 export function useInsightsData() {
   const { toast } = useToast();
   const { user, isAuthenticated } = useTelegramAuth();
@@ -63,25 +75,12 @@ export function useInsightsData() {
           totalViews: shareAnalytics.length
         };
         setGroupInsights(insights);
+      } else {
+        setGroupInsights(null);
       }
     } catch (error) {
       console.error('Failed to fetch group insights:', error);
-    }
-  };
-
-  const fetchDemandInsights = async () => {
-    try {
-      // Simulate demand data based on group analytics and user searches
-      const mockDemandData: DemandInsight[] = [
-        { shape: 'round brilliant', color: 'G', clarity: 'VS1', demandLevel: 'high', searchCount: 156, avgPrice: 4500 },
-        { shape: 'princess', color: 'F', clarity: 'VS2', demandLevel: 'high', searchCount: 89, avgPrice: 3800 },
-        { shape: 'emerald', color: 'H', clarity: 'SI1', demandLevel: 'medium', searchCount: 45, avgPrice: 3200 },
-        { shape: 'oval', color: 'E', clarity: 'VVS2', demandLevel: 'medium', searchCount: 67, avgPrice: 5200 },
-        { shape: 'cushion', color: 'I', clarity: 'SI2', demandLevel: 'low', searchCount: 23, avgPrice: 2800 }
-      ];
-      setDemandInsights(mockDemandData);
-    } catch (error) {
-      console.error('Failed to fetch demand insights:', error);
+      setGroupInsights(null);
     }
   };
 
@@ -90,19 +89,31 @@ export function useInsightsData() {
     
     setLoading(true);
     try {
-      console.log('Fetching comprehensive insights for user:', user.id);
+      console.log('Fetching real insights for user:', user.id);
       
       // Get user's diamonds
-      const response = await api.get<any[]>(apiEndpoints.getAllStones(user.id));
+      const response = await api.get<Diamond[]>(apiEndpoints.getAllStones(user.id));
       
-      if (response.data) {
+      if (response.data && response.data.length > 0) {
         const diamonds = response.data.filter(d => 
           d.owners?.includes(user.id) || d.owner_id === user.id
         );
         
+        if (diamonds.length === 0) {
+          setTotalDiamonds(0);
+          setMarketTrends([]);
+          setDemandInsights([]);
+          setPersonalInsights(null);
+          toast({
+            title: "No diamonds found",
+            description: "Upload your inventory to see insights.",
+          });
+          return;
+        }
+        
         setTotalDiamonds(diamonds.length);
         
-        // Calculate enhanced market trends by shape with growth simulation
+        // Calculate real market trends by shape
         const shapeMap = new Map<string, number>();
         diamonds.forEach(diamond => {
           if (diamond.shape) {
@@ -115,37 +126,60 @@ export function useInsightsData() {
             category,
             count,
             percentage: Math.round((count / diamonds.length) * 100),
-            change: Math.floor(Math.random() * 20) - 10 // Simulate market change
+            change: 0 // Would need historical data for real change
           }))
           .sort((a, b) => b.count - a.count);
         
         setMarketTrends(trends);
 
-        // Calculate personal insights
+        // Generate real demand insights from actual inventory
+        const demandData: DemandInsight[] = trends.slice(0, 5).map(trend => {
+          const shapeDiamonds = diamonds.filter(d => d.shape === trend.category);
+          const avgPrice = shapeDiamonds.reduce((sum, d) => sum + (d.price_per_carat || 0), 0) / shapeDiamonds.length;
+          const mostCommonColor = getMostFrequent(shapeDiamonds, 'color') || 'G';
+          const mostCommonClarity = getMostFrequent(shapeDiamonds, 'clarity') || 'VS1';
+          
+          return {
+            shape: trend.category,
+            color: mostCommonColor,
+            clarity: mostCommonClarity,
+            demandLevel: trend.percentage > 30 ? 'high' : trend.percentage > 15 ? 'medium' : 'low',
+            searchCount: 0, // Would need actual search data
+            avgPrice
+          };
+        });
+        
+        setDemandInsights(demandData);
+
+        // Calculate real personal insights
         if (diamonds.length > 0) {
-          const totalValue = diamonds.reduce((sum, d) => sum + (d.price_per_carat * d.weight), 0);
-          const avgPricePerCarat = diamonds.reduce((sum, d) => sum + d.price_per_carat, 0) / diamonds.length;
+          const totalValue = diamonds.reduce((sum, d) => sum + ((d.price_per_carat || 0) * (d.weight || 0)), 0);
+          const avgPricePerCarat = diamonds.reduce((sum, d) => sum + (d.price_per_carat || 0), 0) / diamonds.length;
           
           const personalInsight: PersonalInsight = {
             inventoryValue: totalValue,
             mostProfitableShape: trends[0]?.category || 'round brilliant',
             leastProfitableShape: trends[trends.length - 1]?.category || 'cushion',
             avgPricePerCarat,
-            portfolioGrowth: Math.floor(Math.random() * 15) + 5 // Simulate growth
+            portfolioGrowth: 0 // Would need historical data for real growth
           };
           setPersonalInsights(personalInsight);
         }
 
-        // Fetch additional insights
-        await Promise.all([
-          fetchGroupInsights(),
-          fetchDemandInsights()
-        ]);
+        // Fetch group insights
+        await fetchGroupInsights();
         
         toast({
-          title: "Advanced insights loaded",
-          description: `Analyzed ${diamonds.length} diamonds with market and group data.`,
+          title: "Insights loaded",
+          description: `Analyzed ${diamonds.length} diamonds from your real inventory.`,
         });
+      } else {
+        console.log('No diamonds found for user');
+        setTotalDiamonds(0);
+        setMarketTrends([]);
+        setDemandInsights([]);
+        setPersonalInsights(null);
+        setGroupInsights(null);
       }
     } catch (error) {
       console.error("Failed to fetch insights", error);
@@ -154,23 +188,43 @@ export function useInsightsData() {
         title: "Error",
         description: "Failed to load insights. Please try again.",
       });
+      setTotalDiamonds(0);
+      setMarketTrends([]);
+      setDemandInsights([]);
+      setPersonalInsights(null);
+      setGroupInsights(null);
     } finally {
       setLoading(false);
     }
   };
 
   const getMostFrequent = (arr: any[], key: string) => {
+    if (!arr || arr.length === 0) return null;
+    
     const freq = arr.reduce((acc, item) => {
       const val = item[key];
-      acc[val] = (acc[val] || 0) + 1;
+      if (val) {
+        acc[val] = (acc[val] || 0) + 1;
+      }
       return acc;
     }, {});
-    return Object.keys(freq).reduce((a, b) => freq[a] > freq[b] ? a : b);
+    
+    const entries = Object.entries(freq);
+    if (entries.length === 0) return null;
+    
+    return entries.reduce((a, b) => freq[a[0]] > freq[b[0]] ? a : b)[0];
   };
 
   useEffect(() => {
     if (isAuthenticated && user) {
       fetchRealInsights();
+    } else {
+      setLoading(false);
+      setTotalDiamonds(0);
+      setMarketTrends([]);
+      setDemandInsights([]);
+      setPersonalInsights(null);
+      setGroupInsights(null);
     }
   }, [isAuthenticated, user]);
 

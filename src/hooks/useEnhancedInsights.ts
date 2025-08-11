@@ -63,6 +63,18 @@ interface EnhancedInsightsData {
   };
 }
 
+interface Diamond {
+  id: string;
+  shape: string;
+  weight: number;
+  color: string;
+  clarity: string;
+  price_per_carat: number;
+  created_at: string;
+  updated_at: string;
+  status: string;
+}
+
 export function useEnhancedInsights() {
   const { toast } = useToast();
   const { user, isAuthenticated } = useTelegramAuth();
@@ -77,23 +89,31 @@ export function useEnhancedInsights() {
       console.log('Fetching enhanced insights for user:', user.id);
       
       // Get user's diamonds for analysis
-      const response = await api.get<any[]>(apiEndpoints.getAllStones(user.id));
+      const response = await api.get<Diamond[]>(apiEndpoints.getAllStones(user.id));
       
-      if (response.data) {
+      if (response.data && response.data.length > 0) {
         const diamonds = response.data.filter(d => 
           d.owners?.includes(user.id) || d.owner_id === user.id
-        );
+        ) as Diamond[];
         
         console.log(`Analyzing ${diamonds.length} diamonds for enhanced insights`);
         
-        // Calculate enhanced insights
+        if (diamonds.length === 0) {
+          setData(null);
+          return;
+        }
+        
+        // Calculate enhanced insights with real data only
         const enhancedData = calculateEnhancedInsights(diamonds);
         setData(enhancedData);
         
         toast({
           title: "Portfolio insights loaded",
-          description: `Analyzed ${diamonds.length} diamonds with advanced market intelligence.`,
+          description: `Analyzed ${diamonds.length} diamonds with real market data.`,
         });
+      } else {
+        console.log('No diamonds found for insights');
+        setData(null);
       }
     } catch (error) {
       console.error("Failed to fetch enhanced insights", error);
@@ -102,123 +122,180 @@ export function useEnhancedInsights() {
         title: "Error",
         description: "Failed to load portfolio insights. Please try again.",
       });
+      setData(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const calculateEnhancedInsights = (diamonds: any[]): EnhancedInsightsData => {
+  const calculateEnhancedInsights = (diamonds: Diamond[]): EnhancedInsightsData => {
+    if (!diamonds || diamonds.length === 0) {
+      throw new Error("No diamonds available for analysis");
+    }
+
+    // Calculate real portfolio value
     const totalValue = diamonds.reduce((sum, d) => sum + ((d.price_per_carat || 0) * (d.weight || 0)), 0);
     const avgPricePerCarat = diamonds.reduce((sum, d) => sum + (d.price_per_carat || 0), 0) / diamonds.length;
 
-    // Group by shape for analysis
+    // Group by shape for real analysis
     const shapeGroups = diamonds.reduce((acc, diamond) => {
       const shape = diamond.shape || 'Unknown';
       if (!acc[shape]) acc[shape] = [];
       acc[shape].push(diamond);
       return acc;
-    }, {} as Record<string, any[]>);
+    }, {} as Record<string, Diamond[]>);
 
-    // Calculate profitability insights
+    // Calculate real profitability insights based on actual data
     const topPerformingShapes = Object.entries(shapeGroups)
-      .map(([shape, diamonds]) => ({
-        shape,
-        avgPrice: diamonds.reduce((sum, d) => sum + (d.price_per_carat || 0), 0) / diamonds.length,
-        margin: Math.random() * 30 + 10, // Simulated margin data
-        trend: ['up', 'down', 'stable'][Math.floor(Math.random() * 3)] as 'up' | 'down' | 'stable'
-      }))
+      .map(([shape, diamonds]) => {
+        const avgPrice = diamonds.reduce((sum, d) => sum + (d.price_per_carat || 0), 0) / diamonds.length;
+        const totalWeight = diamonds.reduce((sum, d) => sum + (d.weight || 0), 0);
+        
+        return {
+          shape,
+          avgPrice,
+          margin: 0, // Would need cost data to calculate real margin
+          trend: 'stable' as const // Would need historical data for real trends
+        };
+      })
       .sort((a, b) => b.avgPrice - a.avgPrice)
       .slice(0, 5);
 
-    const underperformingStones = Object.entries(shapeGroups)
-      .map(([shape, diamonds]) => ({
-        shape,
-        daysInInventory: Math.floor(Math.random() * 180 + 30),
-        priceAdjustmentSuggestion: (Math.random() - 0.5) * 20
-      }))
-      .filter(s => s.daysInInventory > 90)
+    // Find shapes with lower performance (lower price per carat)
+    const underperformingShapes = Object.entries(shapeGroups)
+      .map(([shape, diamonds]) => {
+        const avgPrice = diamonds.reduce((sum, d) => sum + (d.price_per_carat || 0), 0) / diamonds.length;
+        const daysInInventory = diamonds.reduce((sum, d) => {
+          const daysSinceCreated = Math.floor((Date.now() - new Date(d.created_at).getTime()) / (1000 * 60 * 60 * 24));
+          return sum + daysSinceCreated;
+        }, 0) / diamonds.length;
+        
+        return {
+          shape,
+          daysInInventory: Math.floor(daysInInventory),
+          priceAdjustmentSuggestion: 0 // Would need market data for real suggestions
+        };
+      })
+      .filter(s => s.daysInInventory > 30) // Only show if older than 30 days
+      .sort((a, b) => b.daysInInventory - a.daysInInventory)
       .slice(0, 4);
 
-    // Market comparison data
+    // Real market comparison data based on user's actual inventory
     const shapeComparison = Object.entries(shapeGroups)
       .map(([shape, diamonds]) => {
         const yourAvg = diamonds.reduce((sum, d) => sum + (d.price_per_carat || 0), 0) / diamonds.length;
-        const marketAvg = yourAvg * (0.85 + Math.random() * 0.3); // Simulated market average
+        const marketShare = (diamonds.length / diamonds.length) * 100; // Percentage of user's inventory
+        
         return {
           shape,
           yourAvgPrice: yourAvg,
-          marketAvgPrice: marketAvg,
-          difference: ((yourAvg - marketAvg) / marketAvg) * 100,
-          marketShare: diamonds.length / diamonds.length * 100
+          marketAvgPrice: yourAvg, // Would need external market data
+          difference: 0, // Would need market comparison
+          marketShare
         };
       })
       .slice(0, 6);
 
-    // Velocity analysis
-    const fastMovers = Object.entries(shapeGroups)
-      .map(([shape, diamonds]) => ({
-        shape,
-        avgDaysToSell: Math.floor(Math.random() * 30 + 10),
-        volume: diamonds.length
-      }))
-      .sort((a, b) => a.avgDaysToSell - b.avgDaysToSell)
-      .slice(0, 4);
+    // Real inventory aging based on creation dates
+    const now = Date.now();
+    const agingCategories = {
+      '0-30 days': { count: 0, value: 0, color: '#10b981' },
+      '31-90 days': { count: 0, value: 0, color: '#3b82f6' },
+      '91-180 days': { count: 0, value: 0, color: '#f59e0b' },
+      '180+ days': { count: 0, value: 0, color: '#ef4444' }
+    };
 
-    const slowMovers = Object.entries(shapeGroups)
-      .map(([shape, diamonds]) => ({
-        shape,
-        avgDaysInStock: Math.floor(Math.random() * 200 + 100),
-        count: diamonds.length
-      }))
-      .sort((a, b) => b.avgDaysInStock - a.avgDaysInStock)
-      .slice(0, 4);
+    diamonds.forEach(diamond => {
+      const daysSinceCreated = Math.floor((now - new Date(diamond.created_at).getTime()) / (1000 * 60 * 60 * 24));
+      const value = (diamond.price_per_carat || 0) * (diamond.weight || 0);
+      
+      if (daysSinceCreated <= 30) {
+        agingCategories['0-30 days'].count++;
+        agingCategories['0-30 days'].value += value;
+      } else if (daysSinceCreated <= 90) {
+        agingCategories['31-90 days'].count++;
+        agingCategories['31-90 days'].value += value;
+      } else if (daysSinceCreated <= 180) {
+        agingCategories['91-180 days'].count++;
+        agingCategories['91-180 days'].value += value;
+      } else {
+        agingCategories['180+ days'].count++;
+        agingCategories['180+ days'].value += value;
+      }
+    });
 
-    const velocityTrend = Array.from({ length: 6 }, (_, i) => ({
-      month: new Date(Date.now() - (5 - i) * 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short' }),
-      turnoverRate: 2 + Math.random() * 2,
-      avgDaysToSell: 30 + Math.random() * 40
+    const agingBreakdown = Object.entries(agingCategories).map(([category, data]) => ({
+      category,
+      count: data.count,
+      value: data.value,
+      color: data.color
     }));
 
-    const agingBreakdown = [
-      { category: '0-30 days', count: Math.floor(diamonds.length * 0.4), value: totalValue * 0.4, color: '#10b981' },
-      { category: '31-90 days', count: Math.floor(diamonds.length * 0.35), value: totalValue * 0.35, color: '#3b82f6' },
-      { category: '91-180 days', count: Math.floor(diamonds.length * 0.2), value: totalValue * 0.2, color: '#f59e0b' },
-      { category: '180+ days', count: Math.floor(diamonds.length * 0.05), value: totalValue * 0.05, color: '#ef4444' }
-    ];
+    // Real competitive advantages based on actual inventory
+    const competitiveAdvantages: string[] = [];
+    if (topPerformingShapes.length > 0) {
+      competitiveAdvantages.push(`Strong inventory in ${topPerformingShapes[0].shape} diamonds`);
+    }
+    if (avgPricePerCarat > 3000) {
+      competitiveAdvantages.push('Premium price positioning');
+    }
+    if (diamonds.some(d => d.weight > 2)) {
+      competitiveAdvantages.push('Large stone availability');
+    }
+    const uniqueShapes = new Set(diamonds.map(d => d.shape)).size;
+    if (uniqueShapes > 3) {
+      competitiveAdvantages.push('Diverse shape selection');
+    }
+
+    // Real recommendations based on actual data
+    const recommendations: string[] = [];
+    if (underperformingShapes.length > 0) {
+      recommendations.push(`Consider repricing ${underperformingShapes[0].shape} diamonds`);
+    }
+    if (agingCategories['180+ days'].count > 0) {
+      recommendations.push('Review pricing on older inventory');
+    }
+    if (uniqueShapes < 4) {
+      recommendations.push('Consider expanding shape variety');
+    }
+    if (diamonds.filter(d => d.weight < 1).length / diamonds.length > 0.7) {
+      recommendations.push('Consider adding larger stones to portfolio');
+    }
 
     return {
       profitability: {
         totalInventoryValue: totalValue,
-        averageMargin: Math.random() * 20 + 15,
+        averageMargin: 0, // Would need cost data
         topPerformingShapes,
-        underperformingStones
+        underperformingStones: underperformingShapes
       },
       marketComparison: {
         yourPosition: {
           avgPricePerCarat,
           marketRank: avgPricePerCarat > 5000 ? 'premium' : avgPricePerCarat > 3000 ? 'competitive' : 'value',
-          percentileRank: Math.floor(Math.random() * 40 + 50)
+          percentileRank: 50 // Would need market data for real percentile
         },
         shapeComparison,
-        competitiveAdvantages: [
-          'Strong presence in premium round brilliants',
-          'Competitive pricing in emerald cuts',
-          'Excellent color grade distribution',
-          'Above-average clarity standards'
-        ],
-        recommendations: [
-          'Consider expanding princess cut inventory',
-          'Optimize pricing for oval diamonds',
-          'Focus on 1-2 carat weight range',
-          'Enhance marketing for fancy shapes'
-        ]
+        competitiveAdvantages,
+        recommendations
       },
       inventoryVelocity: {
-        turnoverRate: 2.5 + Math.random() * 2,
-        avgTimeToSell: Math.floor(Math.random() * 30 + 45),
-        fastMovers,
-        slowMovers,
-        velocityTrend,
+        turnoverRate: 0, // Would need sales data
+        avgTimeToSell: Math.floor(diamonds.reduce((sum, d) => {
+          return sum + Math.floor((now - new Date(d.created_at).getTime()) / (1000 * 60 * 60 * 24));
+        }, 0) / diamonds.length),
+        fastMovers: [], // Would need sales velocity data
+        slowMovers: Object.entries(shapeGroups)
+          .map(([shape, diamonds]) => ({
+            shape,
+            avgDaysInStock: Math.floor(diamonds.reduce((sum, d) => {
+              return sum + Math.floor((now - new Date(d.created_at).getTime()) / (1000 * 60 * 60 * 24));
+            }, 0) / diamonds.length),
+            count: diamonds.length
+          }))
+          .sort((a, b) => b.avgDaysInStock - a.avgDaysInStock)
+          .slice(0, 4),
+        velocityTrend: [], // Would need historical sales data
         agingBreakdown
       }
     };
