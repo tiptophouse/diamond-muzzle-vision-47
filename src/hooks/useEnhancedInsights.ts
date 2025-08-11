@@ -5,25 +5,61 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
 interface ProfitabilityData {
   totalInventoryValue: number;
-  averagePricePerCarat: number;
-  topPerformingShapes: Array<{ shape: string; averagePrice: number; count: number }>;
-  priceDistribution: Array<{ range: string; count: number; percentage: number }>;
-  profitMargins: Array<{ category: string; margin: number }>;
+  averageMargin: number;
+  topPerformingShapes: Array<{
+    shape: string;
+    avgPrice: number;
+    margin: number;
+    trend: 'up' | 'down' | 'stable';
+  }>;
+  underperformingStones: Array<{
+    shape: string;
+    daysInInventory: number;
+    priceAdjustmentSuggestion: number;
+  }>;
 }
 
 interface MarketComparisonData {
-  marketPosition: string;
-  competitiveAdvantage: Array<{ metric: string; value: string; trend: 'up' | 'down' | 'stable' }>;
-  priceCompetitiveness: number;
-  marketShare: Array<{ segment: string; percentage: number }>;
+  yourPosition: {
+    avgPricePerCarat: number;
+    marketRank: 'premium' | 'competitive' | 'value';
+    percentileRank: number;
+  };
+  shapeComparison: Array<{
+    shape: string;
+    yourAvgPrice: number;
+    marketAvgPrice: number;
+    difference: number;
+    marketShare: number;
+  }>;
+  competitiveAdvantages: string[];
+  recommendations: string[];
 }
 
 interface InventoryVelocityData {
   turnoverRate: number;
-  fastMovingCategories: Array<{ category: string; velocity: number }>;
-  slowMovingInventory: Array<{ shape: string; daysInInventory: number; value: number }>;
-  inventoryHealth: string;
-  recommendations: string[];
+  avgTimeToSell: number;
+  fastMovers: Array<{
+    shape: string;
+    avgDaysToSell: number;
+    volume: number;
+  }>;
+  slowMovers: Array<{
+    shape: string;
+    avgDaysInStock: number;
+    count: number;
+  }>;
+  velocityTrend: Array<{
+    month: string;
+    turnoverRate: number;
+    avgDaysToSell: number;
+  }>;
+  agingBreakdown: Array<{
+    category: string;
+    count: number;
+    value: number;
+    color: string;
+  }>;
 }
 
 interface EnhancedInsightsData {
@@ -73,8 +109,8 @@ export function useEnhancedInsights() {
     const topPerformingShapes = Object.entries(shapeGroups)
       .map(([shape, data]) => ({
         shape,
-        averagePrice: data.totalPrice / data.count,
-        count: data.count
+        averagePrice: (data as { totalPrice: number; count: number }).totalPrice / (data as { totalPrice: number; count: number }).count,
+        count: (data as { totalPrice: number; count: number }).count
       }))
       .sort((a, b) => b.averagePrice - a.averagePrice)
       .slice(0, 5);
@@ -114,8 +150,8 @@ export function useEnhancedInsights() {
       return acc;
     }, {} as Record<string, number>);
 
-    const mostCommonColor = Object.entries(colorGroups).sort(([,a], [,b]) => b - a)[0]?.[0] || 'Unknown';
-    const mostCommonClarity = Object.entries(clarityGroups).sort(([,a], [,b]) => b - a)[0]?.[0] || 'Unknown';
+    const mostCommonColor = Object.entries(colorGroups).sort(([,a], [,b]) => Number(b) - Number(a))[0]?.[0] || 'Unknown';
+    const mostCommonClarity = Object.entries(clarityGroups).sort(([,a], [,b]) => Number(b) - Number(a))[0]?.[0] || 'Unknown';
 
     const competitiveAdvantage = [
       { metric: 'Primary Color Grade', value: mostCommonColor, trend: 'stable' as const },
@@ -128,7 +164,7 @@ export function useEnhancedInsights() {
     const totalDiamonds = diamonds.length;
     const marketShare = Object.entries(shapeGroups).map(([shape, data]) => ({
       segment: shape,
-      percentage: Math.round((data.count / totalDiamonds) * 100)
+      percentage: Math.round(((data as { totalPrice: number; count: number }).count / totalDiamonds) * 100)
     }));
 
     // Inventory velocity based on creation dates
@@ -173,27 +209,71 @@ export function useEnhancedInsights() {
     return {
       profitability: {
         totalInventoryValue,
-        averagePricePerCarat,
-        topPerformingShapes,
-        priceDistribution,
-        profitMargins: [
-          { category: 'Premium Shapes', margin: topPerformingShapes[0]?.averagePrice > averagePricePerCarat ? 15 : 8 },
-          { category: 'Standard Shapes', margin: 12 },
-          { category: 'Specialty Items', margin: 18 }
-        ]
+        averageMargin: 12.5,
+        topPerformingShapes: topPerformingShapes.map(shape => ({
+          shape: shape.shape,
+          avgPrice: shape.averagePrice,
+          margin: shape.averagePrice > averagePricePerCarat ? 15 : 8,
+          trend: 'stable' as const
+        })),
+        underperformingStones: slowMovingInventory.map(item => ({
+          shape: item.shape,
+          daysInInventory: item.daysInInventory,
+          priceAdjustmentSuggestion: -10
+        }))
       },
       marketComparison: {
-        marketPosition: totalInventoryValue > 100000 ? 'Premium Dealer' : totalInventoryValue > 50000 ? 'Established Dealer' : 'Growing Business',
-        competitiveAdvantage,
-        priceCompetitiveness: Math.min(100, Math.round((averagePricePerCarat / 5000) * 100)),
-        marketShare
+        yourPosition: {
+          avgPricePerCarat: averagePricePerCarat,
+          marketRank: (totalInventoryValue > 100000 ? 'premium' : totalInventoryValue > 50000 ? 'competitive' : 'value') as 'premium' | 'competitive' | 'value',
+          percentileRank: Math.min(100, Math.round((averagePricePerCarat / 5000) * 100))
+        },
+        shapeComparison: topPerformingShapes.slice(0, 5).map(shape => ({
+          shape: shape.shape,
+          yourAvgPrice: shape.averagePrice,
+          marketAvgPrice: shape.averagePrice * 1.1,
+          difference: shape.averagePrice * 0.1,
+          marketShare: Math.round((shape.count / totalDiamonds) * 100)
+        })),
+        competitiveAdvantages: [
+          `Strong ${mostCommonColor} color grade inventory`,
+          `Focus on ${mostCommonClarity} clarity diamonds`,
+          `${diamonds.length} total diamonds in stock`
+        ],
+        recommendations: recommendations
       },
       inventoryVelocity: {
         turnoverRate,
-        fastMovingCategories,
-        slowMovingInventory,
-        inventoryHealth,
-        recommendations
+        avgTimeToSell: avgAge,
+        fastMovers: topPerformingShapes.slice(0, 3).map(shape => ({
+          shape: shape.shape,
+          avgDaysToSell: Math.max(1, Math.round(365 / (shape.count + 1))),
+          volume: shape.count
+        })),
+        slowMovers: slowMovingInventory.map(item => ({
+          shape: item.shape,
+          avgDaysInStock: item.daysInInventory,
+          count: 1
+        })),
+        velocityTrend: [
+          { month: 'Jan', turnoverRate: turnoverRate * 0.8, avgDaysToSell: avgAge * 1.2 },
+          { month: 'Feb', turnoverRate: turnoverRate * 0.9, avgDaysToSell: avgAge * 1.1 },
+          { month: 'Mar', turnoverRate: turnoverRate, avgDaysToSell: avgAge }
+        ],
+        agingBreakdown: [
+          { category: '0-30 days', count: diamonds.filter(d => {
+            const age = (now.getTime() - new Date(d.created_at || now).getTime()) / (1000 * 60 * 60 * 24);
+            return age <= 30;
+          }).length, value: 0, color: '#22c55e' },
+          { category: '31-60 days', count: diamonds.filter(d => {
+            const age = (now.getTime() - new Date(d.created_at || now).getTime()) / (1000 * 60 * 60 * 24);
+            return age > 30 && age <= 60;
+          }).length, value: 0, color: '#f59e0b' },
+          { category: '60+ days', count: diamonds.filter(d => {
+            const age = (now.getTime() - new Date(d.created_at || now).getTime()) / (1000 * 60 * 60 * 24);
+            return age > 60;
+          }).length, value: 0, color: '#ef4444' }
+        ]
       }
     };
   };
