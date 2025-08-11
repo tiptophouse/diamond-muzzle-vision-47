@@ -120,7 +120,7 @@ export function useEnhancedInsights() {
     const topPerformingShapes = Object.entries(shapeGroups)
       .map(([shape, data]) => ({
         shape,
-        avgPrice: data.totalPrice / data.count,
+        avgPrice: data.count > 0 ? data.totalPrice / data.count : 0,
         margin: 15, // Base margin
         trend: 'stable' as const
       }))
