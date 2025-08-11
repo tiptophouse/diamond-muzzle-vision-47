@@ -100,19 +100,26 @@ export function useEnhancedInsights() {
 
     // Calculate real profitability data
     const totalInventoryValue = diamonds.reduce((sum, d) => {
-      const price = (Number(d.price_per_carat) || 0) * (Number(d.weight) || Number(d.carat) || 0);
+      const pricePerCarat = Number(d.price_per_carat) || 0;
+      const weight = Number(d.weight) || Number(d.carat) || 0;
+      const price = pricePerCarat * weight;
       return sum + (isNaN(price) ? 0 : price);
     }, 0);
 
-    const averagePricePerCarat = diamonds.reduce((sum, d) => sum + (Number(d.price_per_carat) || 0), 0) / diamonds.length;
+    const averagePricePerCarat = diamonds.reduce((sum, d) => {
+      const pricePerCarat = Number(d.price_per_carat) || 0;
+      return sum + pricePerCarat;
+    }, 0) / diamonds.length;
 
     // Group by shape for top performing analysis - properly typed
     const shapeGroups: Record<string, ShapeGroupData> = diamonds.reduce((acc, d) => {
       const shape = d.shape || 'Unknown';
+      const pricePerCarat = Number(d.price_per_carat) || 0;
+      
       if (!acc[shape]) {
         acc[shape] = { totalPrice: 0, count: 0 };
       }
-      acc[shape].totalPrice += (Number(d.price_per_carat) || 0);
+      acc[shape].totalPrice += pricePerCarat;
       acc[shape].count += 1;
       return acc;
     }, {} as Record<string, ShapeGroupData>);
@@ -138,7 +145,9 @@ export function useEnhancedInsights() {
 
     const priceDistribution = priceRanges.map(range => {
       const count = diamonds.filter(d => {
-        const price = (Number(d.price_per_carat) || 0) * (Number(d.weight) || Number(d.carat) || 0);
+        const pricePerCarat = Number(d.price_per_carat) || 0;
+        const weight = Number(d.weight) || Number(d.carat) || 0;
+        const price = pricePerCarat * weight;
         return price >= range.min && price < range.max;
       }).length;
       
@@ -242,11 +251,26 @@ export function useEnhancedInsights() {
       { month: 'Current', turnoverRate, avgDaysToSell: avgTimeToSell }
     ];
 
-    // Aging breakdown
+    // Aging breakdown - ensuring all values are numbers
     const agingBreakdown = [
-      { category: '0-30 days', count: Math.floor(diamonds.length * 0.4), value: Math.floor(totalInventoryValue * 0.4), color: '#10b981' },
-      { category: '31-60 days', count: Math.floor(diamonds.length * 0.3), value: Math.floor(totalInventoryValue * 0.3), color: '#3b82f6' },
-      { category: '60+ days', count: Math.floor(diamonds.length * 0.3), value: Math.floor(totalInventoryValue * 0.3), color: '#ef4444' }
+      { 
+        category: '0-30 days', 
+        count: Math.floor(totalDiamonds * 0.4), 
+        value: Math.floor(totalInventoryValue * 0.4), 
+        color: '#10b981' 
+      },
+      { 
+        category: '31-60 days', 
+        count: Math.floor(totalDiamonds * 0.3), 
+        value: Math.floor(totalInventoryValue * 0.3), 
+        color: '#3b82f6' 
+      },
+      { 
+        category: '60+ days', 
+        count: Math.floor(totalDiamonds * 0.3), 
+        value: Math.floor(totalInventoryValue * 0.3), 
+        color: '#ef4444' 
+      }
     ];
 
     const inventoryHealth = avgAge < 30 ? 'Excellent' : avgAge < 60 ? 'Good' : avgAge < 90 ? 'Fair' : 'Needs Attention';
@@ -307,7 +331,9 @@ export function useEnhancedInsights() {
           .map(d => {
             const createdAt = new Date(d.created_at || now);
             const daysInInventory = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
-            const value = (Number(d.price_per_carat) || 0) * (Number(d.weight) || Number(d.carat) || 0);
+            const pricePerCarat = Number(d.price_per_carat) || 0;
+            const weight = Number(d.weight) || Number(d.carat) || 0;
+            const value = pricePerCarat * weight;
             return {
               shape: d.shape || 'Unknown',
               daysInInventory,
