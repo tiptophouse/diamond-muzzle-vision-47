@@ -106,8 +106,8 @@ export function useEnhancedInsights() {
 
     const averagePricePerCarat = diamonds.reduce((sum, d) => sum + (Number(d.price_per_carat) || 0), 0) / diamonds.length;
 
-    // Group by shape for top performing analysis
-    const shapeGroups = diamonds.reduce((acc, d) => {
+    // Group by shape for top performing analysis - properly typed
+    const shapeGroups: Record<string, ShapeGroupData> = diamonds.reduce((acc, d) => {
       const shape = d.shape || 'Unknown';
       if (!acc[shape]) {
         acc[shape] = { totalPrice: 0, count: 0 };
@@ -194,7 +194,7 @@ export function useEnhancedInsights() {
       { metric: 'Average Carat', value: `${(diamonds.reduce((sum, d) => sum + (Number(d.weight) || Number(d.carat) || 0), 0) / diamonds.length).toFixed(2)}ct`, trend: 'stable' as const }
     ];
 
-    // Calculate market share by shape
+    // Calculate market share by shape - properly typed
     const totalDiamonds = diamonds.length;
     const marketShare = Object.entries(shapeGroups).map(([shape, data]) => ({
       segment: shape,
