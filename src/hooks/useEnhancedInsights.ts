@@ -7,7 +7,7 @@ interface ProfitabilityData {
   totalInventoryValue: number;
   averagePricePerCarat: number;
   averageMargin: number;
-  topPerformingShapes: Array<{ shape: string; averagePrice: number; count: number }>;
+  topPerformingShapes: Array<{ shape: string; avgPrice: number; margin: number; trend: 'up' | 'down' | 'stable' }>;
   priceDistribution: Array<{ range: string; count: number; percentage: number }>;
   profitMargins: Array<{ category: string; margin: number }>;
   underperformingStones: Array<{
@@ -74,6 +74,11 @@ interface EnhancedInsightsData {
   inventoryVelocity: InventoryVelocityData | null;
 }
 
+interface ShapeGroupData {
+  totalPrice: number;
+  count: number;
+}
+
 export function useEnhancedInsights() {
   const [data, setData] = useState<EnhancedInsightsData>({
     profitability: null,
@@ -95,11 +100,11 @@ export function useEnhancedInsights() {
 
     // Calculate real profitability data
     const totalInventoryValue = diamonds.reduce((sum, d) => {
-      const price = (d.price_per_carat || 0) * (d.weight || d.carat || 0);
+      const price = (Number(d.price_per_carat) || 0) * (Number(d.weight) || Number(d.carat) || 0);
       return sum + (isNaN(price) ? 0 : price);
     }, 0);
 
-    const averagePricePerCarat = diamonds.reduce((sum, d) => sum + (d.price_per_carat || 0), 0) / diamonds.length;
+    const averagePricePerCarat = diamonds.reduce((sum, d) => sum + (Number(d.price_per_carat) || 0), 0) / diamonds.length;
 
     // Group by shape for top performing analysis
     const shapeGroups = diamonds.reduce((acc, d) => {
@@ -107,18 +112,19 @@ export function useEnhancedInsights() {
       if (!acc[shape]) {
         acc[shape] = { totalPrice: 0, count: 0 };
       }
-      acc[shape].totalPrice += (d.price_per_carat || 0);
+      acc[shape].totalPrice += (Number(d.price_per_carat) || 0);
       acc[shape].count += 1;
       return acc;
-    }, {} as Record<string, { totalPrice: number; count: number }>);
+    }, {} as Record<string, ShapeGroupData>);
 
     const topPerformingShapes = Object.entries(shapeGroups)
       .map(([shape, data]) => ({
         shape,
-        averagePrice: data.totalPrice / data.count,
-        count: data.count
+        avgPrice: data.totalPrice / data.count,
+        margin: 15, // Base margin
+        trend: 'stable' as const
       }))
-      .sort((a, b) => b.averagePrice - a.averagePrice)
+      .sort((a, b) => b.avgPrice - a.avgPrice)
       .slice(0, 5);
 
     // Price distribution analysis
@@ -132,7 +138,7 @@ export function useEnhancedInsights() {
 
     const priceDistribution = priceRanges.map(range => {
       const count = diamonds.filter(d => {
-        const price = (d.price_per_carat || 0) * (d.weight || d.carat || 0);
+        const price = (Number(d.price_per_carat) || 0) * (Number(d.weight) || Number(d.carat) || 0);
         return price >= range.min && price < range.max;
       }).length;
       
@@ -185,7 +191,7 @@ export function useEnhancedInsights() {
       { metric: 'Primary Color Grade', value: mostCommonColor, trend: 'stable' as const },
       { metric: 'Primary Clarity Grade', value: mostCommonClarity, trend: 'stable' as const },
       { metric: 'Inventory Size', value: `${diamonds.length} diamonds`, trend: 'up' as const },
-      { metric: 'Average Carat', value: `${(diamonds.reduce((sum, d) => sum + (d.weight || d.carat || 0), 0) / diamonds.length).toFixed(2)}ct`, trend: 'stable' as const }
+      { metric: 'Average Carat', value: `${(diamonds.reduce((sum, d) => sum + (Number(d.weight) || Number(d.carat) || 0), 0) / diamonds.length).toFixed(2)}ct`, trend: 'stable' as const }
     ];
 
     // Calculate market share by shape
@@ -203,10 +209,10 @@ export function useEnhancedInsights() {
     // Shape comparison with market averages
     const shapeComparison = topPerformingShapes.map(shape => ({
       shape: shape.shape,
-      yourAvgPrice: shape.averagePrice,
-      marketAvgPrice: shape.averagePrice * 0.9, // Simplified market average
+      yourAvgPrice: shape.avgPrice,
+      marketAvgPrice: shape.avgPrice * 0.9, // Simplified market average
       difference: 10, // Simplified difference percentage
-      marketShare: Math.round((shape.count / totalDiamonds) * 100)
+      marketShare: Math.round((shapeGroups[shape.shape]?.count || 0) / totalDiamonds * 100)
     }));
 
     // Inventory velocity based on creation dates
@@ -222,18 +228,18 @@ export function useEnhancedInsights() {
     const fastMovers = topPerformingShapes.slice(0, 3).map(shape => ({
       shape: shape.shape,
       avgDaysToSell: 30,
-      volume: shape.count
+      volume: shapeGroups[shape.shape]?.count || 0
     }));
 
     const slowMovers = topPerformingShapes.slice(-2).map(shape => ({
       shape: shape.shape,
       avgDaysInStock: Math.round(avgAge),
-      count: shape.count
+      count: shapeGroups[shape.shape]?.count || 0
     }));
 
     // Velocity trend (simplified with current month)
     const velocityTrend = [
-      { month: 'Current', turnoverRate, avgDaysToSell }
+      { month: 'Current', turnoverRate, avgDaysToSell: avgTimeToSell }
     ];
 
     // Aging breakdown
@@ -260,7 +266,7 @@ export function useEnhancedInsights() {
         topPerformingShapes,
         priceDistribution,
         profitMargins: [
-          { category: 'Premium Shapes', margin: topPerformingShapes[0]?.averagePrice > averagePricePerCarat ? 15 : 8 },
+          { category: 'Premium Shapes', margin: topPerformingShapes[0]?.avgPrice > averagePricePerCarat ? 15 : 8 },
           { category: 'Standard Shapes', margin: 12 },
           { category: 'Specialty Items', margin: 18 }
         ],
@@ -295,13 +301,13 @@ export function useEnhancedInsights() {
         avgTimeToSell,
         fastMovingCategories: topPerformingShapes.slice(0, 3).map(shape => ({
           category: shape.shape,
-          velocity: Math.round(shape.averagePrice / 1000)
+          velocity: Math.round(shape.avgPrice / 1000)
         })),
         slowMovingInventory: diamonds
           .map(d => {
             const createdAt = new Date(d.created_at || now);
             const daysInInventory = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
-            const value = (d.price_per_carat || 0) * (d.weight || d.carat || 0);
+            const value = (Number(d.price_per_carat) || 0) * (Number(d.weight) || Number(d.carat) || 0);
             return {
               shape: d.shape || 'Unknown',
               daysInInventory,
