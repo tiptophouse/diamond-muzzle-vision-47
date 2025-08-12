@@ -74,12 +74,6 @@ interface EnhancedInsightsData {
   inventoryVelocity: InventoryVelocityData | null;
 }
 
-// Define the shape group type for better type safety
-interface ShapeGroupData {
-  totalPrice: number;
-  count: number;
-}
-
 export function useEnhancedInsights() {
   const [data, setData] = useState<EnhancedInsightsData>({
     profitability: null,
@@ -116,7 +110,7 @@ export function useEnhancedInsights() {
       acc[shape].totalPrice += (d.price_per_carat || 0);
       acc[shape].count += 1;
       return acc;
-    }, {} as Record<string, ShapeGroupData>);
+    }, {} as Record<string, { totalPrice: number; count: number }>);
 
     const topPerformingShapes = Object.entries(shapeGroups)
       .map(([shape, data]) => ({
@@ -185,8 +179,8 @@ export function useEnhancedInsights() {
       return acc;
     }, {} as Record<string, number>);
 
-    const mostCommonColor = Object.entries(colorGroups).sort(([,a], [,b]) => b - a)[0]?.[0] || 'Unknown';
-    const mostCommonClarity = Object.entries(clarityGroups).sort(([,a], [,b]) => b - a)[0]?.[0] || 'Unknown';
+    const mostCommonColor = Object.entries(colorGroups).sort(([,a], [,b]) => (b as number) - (a as number))[0]?.[0] || 'Unknown';
+    const mostCommonClarity = Object.entries(clarityGroups).sort(([,a], [,b]) => (b as number) - (a as number))[0]?.[0] || 'Unknown';
 
     const competitiveAdvantage = [
       { metric: 'Primary Color Grade', value: mostCommonColor, trend: 'stable' as const },
