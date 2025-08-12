@@ -39,8 +39,6 @@ export function useStoreData() {
     if (trimmedUrl.includes('.html') ||
         trimmedUrl.includes('diamondview.aspx') ||
         trimmedUrl.includes('v360.in') ||
-        trimmedUrl.includes('my360.fab') ||
-        trimmedUrl.includes('my360.sela') ||
         trimmedUrl.includes('sarine')) {
       return undefined;
     }
@@ -65,7 +63,7 @@ export function useStoreData() {
     return undefined;
   }, []);
 
-  // Enhanced 360° URL detection for ALL possible 3D/360° field names including my360.fab
+  // PHASE 2: Enhanced 360° URL detection for ALL possible 3D/360° field names
   const detect360Url = useCallback((item: any) => {
     const potential360Fields = [
       item.v360_url,
@@ -98,9 +96,8 @@ export function useStoreData() {
     for (const field of potential360Fields) {
       if (field && typeof field === 'string' && field.trim()) {
         const url = field.trim();
-        // Enhanced detection for 360° formats including my360.fab and other S3 hosted viewers
+        // Enhanced detection for 360° formats including your examples
         if (url.includes('my360.sela') ||
-            url.includes('my360.fab') ||     // Added support for my360.fab
             url.includes('v360.in') ||
             url.includes('diamondview.aspx') ||
             url.includes('gem360') ||
@@ -108,7 +105,7 @@ export function useStoreData() {
             url.includes('sarine') ||
             url.includes('3d') ||
             url.includes('rotate') ||
-            url.includes('.html') ||         // HTML viewers are typically 360°
+            url.includes('.html') ||
             url.match(/DAN\d+-\d+[A-Z]?\.jpg$/)) { // Pattern like DAN040-0016A.jpg
           console.log('✨ DETECTED 360° URL for', item.stock_number, ':', url);
           return url;
@@ -124,7 +121,7 @@ export function useStoreData() {
     
     return rawData
       .map(item => {
-        // PHASE 1: Enhanced image URL detection with ALL possible field names
+  // PHASE 1: Enhanced image URL detection with ALL possible field names
         let finalImageUrl = undefined;
         const imageFields = [
           item.picture,          // Primary field from FastAPI

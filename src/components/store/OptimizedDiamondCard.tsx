@@ -78,12 +78,11 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     diamond.imageUrl.length > 10
   );
 
-  // Enhanced 360° detection - prioritize interactive viewers over static images, including my360.fab
+  // Enhanced 360° detection - prioritize interactive viewers over static images
   const has360 = !!(diamond.gem360Url && diamond.gem360Url.trim() && (
     diamond.gem360Url.includes('v360.in') ||         // Interactive viewers (highest priority)
     diamond.gem360Url.includes('diamondview.aspx') ||
     diamond.gem360Url.includes('my360.sela') ||      // 360° platforms
-    diamond.gem360Url.includes('my360.fab') ||       // Added support for my360.fab
     diamond.gem360Url.includes('gem360') ||
     diamond.gem360Url.includes('sarine') ||
     diamond.gem360Url.includes('360') ||
@@ -94,14 +93,10 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
   // Determine if it's v360.in specifically (highest priority)
   const isV360 = !!(diamond.gem360Url && diamond.gem360Url.includes('v360.in'));
   
-  // Determine if it's my360.fab (high priority)
-  const isMy360Fab = !!(diamond.gem360Url && diamond.gem360Url.includes('my360.fab'));
-  
   // Determine if it's an interactive 360° viewer (higher priority)
   const isInteractive360 = !!(diamond.gem360Url && (
     diamond.gem360Url.includes('v360.in') ||
     diamond.gem360Url.includes('diamondview.aspx') ||
-    diamond.gem360Url.includes('my360.fab') ||      // Added my360.fab as interactive
     diamond.gem360Url.includes('.html') ||
     diamond.gem360Url.includes('sarine')
   ));
@@ -184,19 +179,12 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
       className="group relative bg-white rounded-xl overflow-hidden transition-all duration-200 border border-gray-200 hover:border-gray-300 hover:shadow-lg"
       style={{ animationDelay: `${Math.min(index * 30, 200)}ms` }}
     >
-      {/* PRIORITY 1: Always show 360° if available, prioritizing v360.in, then my360.fab */}
+      {/* PRIORITY 1: Always show 360° if available, prioritizing v360.in */}
       {has360 && isVisible ? (
         <div className="relative aspect-square">
           {isV360 ? (
             <V360Viewer 
               v360Url={diamond.gem360Url!}
-              stockNumber={diamond.stockNumber}
-              isInline={true}
-            />
-          ) : isMy360Fab ? (
-            /* Use Gem360Viewer for my360.fab HTML viewers */
-            <Gem360Viewer 
-              gem360Url={diamond.gem360Url!}
               stockNumber={diamond.stockNumber}
               isInline={true}
             />
