@@ -18,7 +18,74 @@ export function useStoreData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Relaxed image URL validation for better compatibility
+  // Enhanced 360° URL detection with priority for my360.fab and HTML viewers
+  const detect360Url = useCallback((item: any): string | undefined => {
+    // All possible fields that might contain 360° URLs
+    const potential360Fields = [
+      item.picture,           // Primary field that might contain 360° URLs
+      item.image_url,         // Secondary image field
+      item.imageUrl,          // Camel case image field
+      item.img_url,           // Image URL variant
+      item.imgUrl,            // Camel case img field
+      item.v360_url,          // Dedicated 360° field
+      item.gem360_url,        // Gem 360° field
+      item.video_url,         // Video field (might be 360°)
+      item.video360_url,      // Video 360° field
+      item.three_d_url,       // 3D URL field
+      item.rotation_url,      // Rotation URL field
+      item['Video link'],     // Spaced field name from CSV
+      item.videoLink,         // Camel case video
+      item.video_link,        // Snake case video
+      item.view360_url,       // View 360 URL
+      item.view360Url,        // Camel case view 360
+      item.viewer_url,        // Viewer URL
+      item.viewerUrl,         // Camel case viewer
+      item.threed_url,        // 3D URL
+      item.threedUrl,         // Camel case 3D
+      item['3d_url'],         // 3D with number
+      item['3dUrl'],          // Camel case 3D with number
+      item.sarine_url,        // Sarine URL
+      item.sarineUrl,         // Camel case Sarine
+      item.diamond_viewer,    // Diamond viewer
+      item.diamondViewer,     // Camel case diamond viewer
+      item.interactive_view,  // Interactive view
+      item.interactiveView,   // Camel case interactive
+    ];
+    
+    for (const field of potential360Fields) {
+      if (field && typeof field === 'string' && field.trim()) {
+        const url = field.trim();
+        
+        // Enhanced detection patterns for 360° formats
+        const is360Url = 
+          url.includes('my360.fab') ||          // Your specific provider
+          url.includes('my360.sela') ||         // Another 360° provider
+          url.includes('v360.in') ||            // v360 platform
+          url.includes('diamondview.aspx') ||   // Diamond view platform
+          url.includes('gem360') ||             // Gem360 platform
+          url.includes('sarine') ||             // Sarine platform
+          url.includes('360') ||                // Generic 360° indicator
+          url.includes('3d') ||                 // 3D indicator
+          url.includes('rotate') ||             // Rotation indicator
+          url.includes('.html') ||              // HTML viewers (like your example)
+          url.match(/DAN\d+-\d+[A-Z]?\.jpg$/i); // Pattern like DAN040-0016A.jpg
+
+        if (is360Url) {
+          // Ensure proper protocol
+          let processedUrl = url;
+          if (!processedUrl.startsWith('http://') && !processedUrl.startsWith('https://')) {
+            processedUrl = `https://${processedUrl}`;
+          }
+          
+          console.log('✨ DETECTED 360° URL for', item.stock_number || item.stock || 'unknown', ':', processedUrl);
+          return processedUrl;
+        }
+      }
+    }
+    return undefined;
+  }, []);
+
+  // Regular image URL processing - exclude 360° URLs
   const processImageUrl = useCallback((imageUrl: string | undefined): string | undefined => {
     if (!imageUrl || typeof imageUrl !== 'string') {
       return undefined;
@@ -35,11 +102,17 @@ export function useStoreData() {
       return undefined;
     }
 
-    // Skip HTML viewers and 360° URLs (these go to gem360Url instead)
+    // Skip 360° viewers - these should go to gem360Url instead
     if (trimmedUrl.includes('.html') ||
         trimmedUrl.includes('diamondview.aspx') ||
         trimmedUrl.includes('v360.in') ||
-        trimmedUrl.includes('sarine')) {
+        trimmedUrl.includes('my360.fab') ||
+        trimmedUrl.includes('my360.sela') ||
+        trimmedUrl.includes('sarine') ||
+        trimmedUrl.includes('360') ||
+        trimmedUrl.includes('3d') ||
+        trimmedUrl.includes('rotate')) {
+      console.log('🔄 SKIPPING 360° URL in image field:', trimmedUrl);
       return undefined;
     }
 
@@ -48,14 +121,14 @@ export function useStoreData() {
       return undefined;
     }
 
-    // Accept common image extensions OR unsplash/image URLs
+    // Accept common image extensions OR image service URLs
     const hasImageExtension = trimmedUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i);
-    const isImageUrl = trimmedUrl.includes('unsplash.com') || 
-                      trimmedUrl.includes('/image') ||
-                      trimmedUrl.includes('w=') || // Unsplash width parameter
-                      trimmedUrl.includes('h='); // Unsplash height parameter
+    const isImageServiceUrl = trimmedUrl.includes('unsplash.com') || 
+                             trimmedUrl.includes('/image') ||
+                             trimmedUrl.includes('w=') || // Width parameter
+                             trimmedUrl.includes('h=');   // Height parameter
 
-    if (hasImageExtension || isImageUrl) {
+    if (hasImageExtension || isImageServiceUrl) {
       console.log('✅ VALID IMAGE URL processed:', trimmedUrl);
       return trimmedUrl;
     }
@@ -63,65 +136,16 @@ export function useStoreData() {
     return undefined;
   }, []);
 
-  // PHASE 2: Enhanced 360° URL detection for ALL possible 3D/360° field names
-  const detect360Url = useCallback((item: any) => {
-    const potential360Fields = [
-      item.v360_url,
-      item.gem360_url,
-      item.video_url,
-      item.video360_url,
-      item.three_d_url,
-      item.rotation_url,
-      item['Video link'],        // Spaced field name from CSV
-      item.videoLink,            // Camel case video
-      item.video_link,           // Snake case video
-      item.view360_url,          // View 360 URL
-      item.view360Url,           // Camel case view 360
-      item.viewer_url,           // Viewer URL
-      item.viewerUrl,            // Camel case viewer
-      item.threed_url,           // 3D URL
-      item.threedUrl,            // Camel case 3D
-      item['3d_url'],            // 3D with number
-      item['3dUrl'],             // Camel case 3D with number
-      item.sarine_url,           // Sarine URL
-      item.sarineUrl,            // Camel case Sarine
-      item.diamond_viewer,       // Diamond viewer
-      item.diamondViewer,        // Camel case diamond viewer
-      item.interactive_view,     // Interactive view
-      item.interactiveView,      // Camel case interactive
-      item.certificate_url,      // Sometimes certificates have 360° views
-      item.certificateUrl,       // Camel case certificate
-    ];
-    
-    for (const field of potential360Fields) {
-      if (field && typeof field === 'string' && field.trim()) {
-        const url = field.trim();
-        // Enhanced detection for 360° formats including your examples
-        if (url.includes('my360.sela') ||
-            url.includes('v360.in') ||
-            url.includes('diamondview.aspx') ||
-            url.includes('gem360') ||
-            url.includes('360') ||
-            url.includes('sarine') ||
-            url.includes('3d') ||
-            url.includes('rotate') ||
-            url.includes('.html') ||
-            url.match(/DAN\d+-\d+[A-Z]?\.jpg$/)) { // Pattern like DAN040-0016A.jpg
-          console.log('✨ DETECTED 360° URL for', item.stock_number, ':', url);
-          return url;
-        }
-      }
-    }
-    return undefined;
-  }, []);
-
-  // Direct data transformation with enhanced image processing
+  // Direct data transformation with enhanced media processing
   const transformData = useCallback((rawData: any[]): Diamond[] => {
     console.log('🔧 TRANSFORM DATA: Processing', rawData.length, 'items from FastAPI');
     
     return rawData
       .map(item => {
-  // PHASE 1: Enhanced image URL detection with ALL possible field names
+        // PHASE 1: Detect 360° URLs first (highest priority)
+        const final360Url = detect360Url(item);
+        
+        // PHASE 2: Process regular image URLs (excluding 360° URLs)
         let finalImageUrl = undefined;
         const imageFields = [
           item.picture,          // Primary field from FastAPI
@@ -145,15 +169,15 @@ export function useStoreData() {
           item.productImage,     // Camel case product image
         ];
         
-        console.log('🔍 IMAGE SEARCH for', item.stock_number || item.stock || 'unknown', ':', {
+        console.log('🔍 MEDIA SEARCH for', item.stock_number || item.stock || 'unknown', ':', {
+          has360: !!final360Url,
+          gem360Url: final360Url,
           picture: item.picture,
           imageUrl: item.imageUrl,
           image_url: item.image_url,
-          Image: item.Image,
-          image: item.image
         });
         
-        // Process each potential image field
+        // Process each potential image field (only if no 360° URL found or for additional images)
         for (const imageField of imageFields) {
           const processedUrl = processImageUrl(imageField);
           if (processedUrl) {
@@ -163,21 +187,15 @@ export function useStoreData() {
           }
         }
         
-        // PHASE 2: Enhanced 360° URL detection with priority logging
-        const final360Url = detect360Url(item);
-        
         // PHASE 3: Generate fallback placeholder if no media available
         let fallbackImageUrl = finalImageUrl;
         if (!finalImageUrl && !final360Url) {
           // Generate a placeholder image with diamond info
-          const placeholderParams = new URLSearchParams({
-            text: `${item.carat || '?'}ct ${item.shape || 'Diamond'}`,
-            color: item.color || 'D',
-            clarity: item.clarity || 'FL',
-            stock: item.stock_number || item.stock || 'N/A'
-          });
-          fallbackImageUrl = `https://via.placeholder.com/400x300/f8fafc/64748b?text=${encodeURIComponent(`${item.carat || '?'}ct ${item.shape || 'Diamond'}`)}`;
-          console.log('🎨 GENERATED FALLBACK for', item.stock_number || item.stock, ':', fallbackImageUrl);
+          const stockText = item.stock_number || item.stock || 'Diamond';
+          const caratText = item.carat || item.weight || '?';
+          const shapeText = item.shape || 'Round';
+          fallbackImageUrl = `https://via.placeholder.com/400x300/f8fafc/64748b?text=${encodeURIComponent(`${caratText}ct ${shapeText}`)}`;
+          console.log('🎨 GENERATED FALLBACK for', stockText, ':', fallbackImageUrl);
         }
 
         // Determine color type based on the color value
@@ -210,8 +228,7 @@ export function useStoreData() {
           has360: !!result.gem360Url,
           imageUrl: result.imageUrl,
           gem360Url: result.gem360Url,
-          originalPicture: item.picture,
-          originalImageUrl: item.image_url,
+          mediaType: result.gem360Url ? '360°/HTML' : result.imageUrl ? 'Image' : 'Placeholder',
         });
 
         return result;
@@ -250,13 +267,15 @@ export function useStoreData() {
       if (result.data && result.data.length > 0) {
         const transformedDiamonds = transformData(result.data);
         
-        const diamondsWithImages = transformedDiamonds.filter(d => d.imageUrl);
+        const diamondsWithImages = transformedDiamonds.filter(d => d.imageUrl && !d.imageUrl.includes('placeholder'));
         const diamondsWith360 = transformedDiamonds.filter(d => d.gem360Url);
+        const diamondsWithMy360 = transformedDiamonds.filter(d => d.gem360Url && d.gem360Url.includes('my360.fab'));
         
         console.log('🖼️ TRANSFORM SUMMARY:', {
           totalDiamonds: transformedDiamonds.length,
           diamondsWithImages: diamondsWithImages.length,
           diamondsWith360: diamondsWith360.length,
+          diamondsWithMy360: diamondsWithMy360.length,
         });
         
         // Update cache

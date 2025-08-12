@@ -7,7 +7,7 @@ interface ProfitabilityData {
   totalInventoryValue: number;
   averagePricePerCarat: number;
   averageMargin: number;
-  topPerformingShapes: Array<{ shape: string; averagePrice: number; count: number }>;
+  topPerformingShapes: Array<{ shape: string; avgPrice: number; margin: number; trend: 'up' | 'down' | 'stable' }>;
   priceDistribution: Array<{ range: string; count: number; percentage: number }>;
   profitMargins: Array<{ category: string; margin: number }>;
   underperformingStones: Array<{
@@ -101,7 +101,7 @@ export function useEnhancedInsights() {
 
     const averagePricePerCarat = diamonds.reduce((sum, d) => sum + (d.price_per_carat || 0), 0) / diamonds.length;
 
-    // Group by shape for top performing analysis
+    // Group by shape for top performing analysis with proper typing
     const shapeGroups = diamonds.reduce((acc, d) => {
       const shape = d.shape || 'Unknown';
       if (!acc[shape]) {
@@ -115,10 +115,11 @@ export function useEnhancedInsights() {
     const topPerformingShapes = Object.entries(shapeGroups)
       .map(([shape, data]) => ({
         shape,
-        averagePrice: data.totalPrice / data.count,
-        count: data.count
+        avgPrice: data.totalPrice / data.count,
+        margin: 15, // Base margin
+        trend: 'stable' as const
       }))
-      .sort((a, b) => b.averagePrice - a.averagePrice)
+      .sort((a, b) => b.avgPrice - a.avgPrice)
       .slice(0, 5);
 
     // Price distribution analysis
@@ -178,8 +179,8 @@ export function useEnhancedInsights() {
       return acc;
     }, {} as Record<string, number>);
 
-    const mostCommonColor = Object.entries(colorGroups).sort(([,a], [,b]) => b - a)[0]?.[0] || 'Unknown';
-    const mostCommonClarity = Object.entries(clarityGroups).sort(([,a], [,b]) => b - a)[0]?.[0] || 'Unknown';
+    const mostCommonColor = Object.entries(colorGroups).sort(([,a], [,b]) => (b as number) - (a as number))[0]?.[0] || 'Unknown';
+    const mostCommonClarity = Object.entries(clarityGroups).sort(([,a], [,b]) => (b as number) - (a as number))[0]?.[0] || 'Unknown';
 
     const competitiveAdvantage = [
       { metric: 'Primary Color Grade', value: mostCommonColor, trend: 'stable' as const },
@@ -203,10 +204,10 @@ export function useEnhancedInsights() {
     // Shape comparison with market averages
     const shapeComparison = topPerformingShapes.map(shape => ({
       shape: shape.shape,
-      yourAvgPrice: shape.averagePrice,
-      marketAvgPrice: shape.averagePrice * 0.9, // Simplified market average
+      yourAvgPrice: shape.avgPrice,
+      marketAvgPrice: shape.avgPrice * 0.9, // Simplified market average
       difference: 10, // Simplified difference percentage
-      marketShare: Math.round((shape.count / totalDiamonds) * 100)
+      marketShare: Math.round((shapeGroups[shape.shape]?.count || 0) / totalDiamonds * 100)
     }));
 
     // Inventory velocity based on creation dates
@@ -222,18 +223,18 @@ export function useEnhancedInsights() {
     const fastMovers = topPerformingShapes.slice(0, 3).map(shape => ({
       shape: shape.shape,
       avgDaysToSell: 30,
-      volume: shape.count
+      volume: shapeGroups[shape.shape]?.count || 0
     }));
 
     const slowMovers = topPerformingShapes.slice(-2).map(shape => ({
       shape: shape.shape,
       avgDaysInStock: Math.round(avgAge),
-      count: shape.count
+      count: shapeGroups[shape.shape]?.count || 0
     }));
 
     // Velocity trend (simplified with current month)
     const velocityTrend = [
-      { month: 'Current', turnoverRate, avgDaysToSell }
+      { month: 'Current', turnoverRate, avgDaysToSell: avgTimeToSell }
     ];
 
     // Aging breakdown
@@ -260,7 +261,7 @@ export function useEnhancedInsights() {
         topPerformingShapes,
         priceDistribution,
         profitMargins: [
-          { category: 'Premium Shapes', margin: topPerformingShapes[0]?.averagePrice > averagePricePerCarat ? 15 : 8 },
+          { category: 'Premium Shapes', margin: topPerformingShapes[0]?.avgPrice > averagePricePerCarat ? 15 : 8 },
           { category: 'Standard Shapes', margin: 12 },
           { category: 'Specialty Items', margin: 18 }
         ],
@@ -295,7 +296,7 @@ export function useEnhancedInsights() {
         avgTimeToSell,
         fastMovingCategories: topPerformingShapes.slice(0, 3).map(shape => ({
           category: shape.shape,
-          velocity: Math.round(shape.averagePrice / 1000)
+          velocity: Math.round(shape.avgPrice / 1000)
         })),
         slowMovingInventory: diamonds
           .map(d => {
