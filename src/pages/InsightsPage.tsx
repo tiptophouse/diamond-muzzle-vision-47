@@ -16,6 +16,7 @@ import { MarketComparison } from "@/components/insights/MarketComparison";
 import { InventoryVelocity } from "@/components/insights/InventoryVelocity";
 import { useInsightsData } from "@/hooks/useInsightsData";
 import { useEnhancedInsights } from "@/hooks/useEnhancedInsights";
+import { useStoreData } from "@/hooks/useStoreData";
 import { BarChart3, TrendingUp, Zap, Target, RefreshCw, Upload } from "lucide-react";
 
 export default function InsightsPage() {
@@ -30,14 +31,10 @@ export default function InsightsPage() {
     isAuthenticated: basicAuth
   } = useInsightsData();
 
-  const {
-    loading: enhancedLoading,
-    data: enhancedData,
-    refetch: refetchEnhanced,
-    isAuthenticated: enhancedAuth
-  } = useEnhancedInsights();
+  const { diamonds, loading: storeLoading, refetch: refetchStore } = useStoreData();
+  const enhancedInsights = useEnhancedInsights(diamonds);
   
-  if (!basicAuth || !enhancedAuth) {
+  if (!basicAuth) {
     return (
       <TelegramLayout>
         <div className="flex items-center justify-center h-64">
@@ -52,7 +49,7 @@ export default function InsightsPage() {
     );
   }
   
-  const loading = basicLoading || enhancedLoading;
+  const loading = basicLoading || storeLoading;
   
   if (loading) {
     return (
@@ -75,7 +72,7 @@ export default function InsightsPage() {
   }
 
   const handleRefreshAll = async () => {
-    await Promise.all([fetchRealInsights(), refetchEnhanced()]);
+    await Promise.all([fetchRealInsights(), refetchStore()]);
   };
 
   return (
@@ -92,7 +89,7 @@ export default function InsightsPage() {
           </Button>
         </div>
 
-        {totalDiamonds === 0 ? (
+        {totalDiamonds === 0 && diamonds.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Upload className="h-16 w-16 text-muted-foreground mb-4" />
@@ -129,7 +126,7 @@ export default function InsightsPage() {
 
             <TabsContent value="overview" className="space-y-6">
               <InsightsHeader
-                totalDiamonds={totalDiamonds}
+                totalDiamonds={Math.max(totalDiamonds, diamonds.length)}
                 loading={loading}
                 onRefresh={handleRefreshAll}
               />
@@ -146,57 +143,75 @@ export default function InsightsPage() {
               </div>
               
               <QuickStatsGrid 
-                totalDiamonds={totalDiamonds}
+                totalDiamonds={Math.max(totalDiamonds, diamonds.length)}
                 marketTrends={marketTrends}
               />
+
+              {/* Enhanced Insights from Real Data */}
+              {diamonds.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Enhanced Portfolio Analysis</CardTitle>
+                    <CardDescription>Based on your actual inventory data</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold">{enhancedInsights.totalCount}</p>
+                        <p className="text-sm text-muted-foreground">Total Stones</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold">${enhancedInsights.totalValue.toLocaleString()}</p>
+                        <p className="text-sm text-muted-foreground">Total Value</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold">${enhancedInsights.averagePrice.toLocaleString()}</p>
+                        <p className="text-sm text-muted-foreground">Average Price</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold">{enhancedInsights.topShapes.length}</p>
+                        <p className="text-sm text-muted-foreground">Shape Types</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="profitability" className="space-y-6">
-              {enhancedData?.profitability ? (
-                <ProfitabilityInsights data={enhancedData.profitability} />
-              ) : (
-                <Card>
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <Target className="h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No Profitability Data</h3>
-                    <p className="text-muted-foreground text-center">
-                      Add more diamonds to your inventory to see detailed profitability insights.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Target className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Profitability Analysis</h3>
+                  <p className="text-muted-foreground text-center">
+                    Profit margin: {(enhancedInsights.profitMargin * 100).toFixed(1)}%
+                  </p>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="market" className="space-y-6">
-              {enhancedData?.marketComparison ? (
-                <MarketComparison data={enhancedData.marketComparison} />
-              ) : (
-                <Card>
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <TrendingUp className="h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No Market Data</h3>
-                    <p className="text-muted-foreground text-center">
-                      Add more diamonds to your inventory to see market comparison insights.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <TrendingUp className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Market Analysis</h3>
+                  <p className="text-muted-foreground text-center">
+                    Based on {enhancedInsights.totalCount} diamonds in your inventory.
+                  </p>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="velocity" className="space-y-6">
-              {enhancedData?.inventoryVelocity ? (
-                <InventoryVelocity data={enhancedData.inventoryVelocity} />
-              ) : (
-                <Card>
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <Zap className="h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No Velocity Data</h3>
-                    <p className="text-muted-foreground text-center">
-                      Add more diamonds to your inventory to see velocity analysis.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Zap className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Inventory Velocity</h3>
+                  <p className="text-muted-foreground text-center">
+                    Turnover rate: {(enhancedInsights.inventoryVelocity * 100).toFixed(1)}%
+                  </p>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         )}
