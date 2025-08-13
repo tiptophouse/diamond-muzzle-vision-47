@@ -1,176 +1,194 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 import { 
-  Share2, 
   Eye, 
+  Share2, 
   Clock, 
   Users, 
   TrendingUp, 
+  BarChart3,
   RefreshCw,
-  Smartphone,
-  Monitor
+  Calendar
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-interface ShareAnalytics {
+interface DiamondShare {
+  id: string;
   diamond_id: string;
   stock_number: string;
-  total_shares: number;
-  total_views: number;
-  unique_viewers: number;
-  avg_view_time: number;
-  total_interactions: number;
-  reshare_rate: number;
-  mobile_views: number;
-  desktop_views: number;
-  last_shared: string;
-  last_viewed: string;
+  shared_by: number;
+  share_url: string;
+  created_at: string;
+}
+
+interface DiamondView {
+  id: string;
+  diamond_id: string;
+  session_id: string;
+  viewer_telegram_id?: number;
+  view_start: string;
+  last_interaction?: string;
+  total_view_time: number;
+  interactions: any;
+  reshared: boolean;
+  device_type?: string;
+  user_agent?: string;
+  referrer?: string;
+}
+
+interface AnalyticsData {
+  totalShares: number;
+  totalViews: number;
+  uniqueViewers: number;
+  avgViewTime: number;
+  reshareRate: number;
+  topDiamonds: Array<{
+    diamond_id: string;
+    stock_number: string;
+    shares: number;
+    views: number;
+  }>;
+  recentActivity: Array<{
+    type: 'share' | 'view';
+    diamond_id: string;
+    stock_number: string;
+    timestamp: string;
+    details: string;
+  }>;
 }
 
 export function DiamondSharingAnalytics() {
-  const [analytics, setAnalytics] = useState<ShareAnalytics[]>([]);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('7d');
 
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
+      
+      const now = new Date();
+      const timeAgo = new Date();
+      
+      switch (timeRange) {
+        case '24h':
+          timeAgo.setHours(now.getHours() - 24);
+          break;
+        case '7d':
+          timeAgo.setDate(now.getDate() - 7);
+          break;
+        case '30d':
+          timeAgo.setDate(now.getDate() - 30);
+          break;
+      }
 
-      // Get sharing data from diamond_shares table
-      const { data: sharesData, error: sharesError } = await supabase
+      // Fetch shares data
+      const { data: shares, error: sharesError } = await supabase
         .from('diamond_shares')
-        .select('diamond_id, stock_number, created_at');
+        .select('*')
+        .gte('created_at', timeAgo.toISOString());
 
-      // Get viewing data from diamond_views table  
-      const { data: viewsData, error: viewsError } = await supabase
+      // Fetch views data
+      const { data: views, error: viewsError } = await supabase
         .from('diamond_views')
-        .select(`
-          diamond_id,
-          session_id,
-          viewer_telegram_id,
-          total_view_time,
-          interactions,
-          reshared,
-          device_type,
-          view_start,
-          last_interaction
-        `);
+        .select('*')
+        .gte('view_start', timeAgo.toISOString());
 
-      if (sharesError) {
-        console.error('Error fetching shares:', sharesError);
-        // If tables don't exist yet, show empty state
-        if (sharesError.code === '42P01') {
-          setAnalytics([]);
-          return;
-        }
-        throw sharesError;
-      }
+      if (sharesError) throw sharesError;
+      if (viewsError) throw viewsError;
 
-      if (viewsError) {
-        console.error('Error fetching views:', viewsError);
-        if (viewsError.code === '42P01') {
-          setAnalytics([]);
-          return;
-        }
-        throw viewsError;
-      }
+      // Process analytics data
+      const sharesData = shares || [];
+      const viewsData = views || [];
 
-      // Aggregate analytics by diamond
-      const analyticsMap = new Map<string, any>();
+      // Calculate metrics
+      const totalShares = sharesData.length;
+      const totalViews = viewsData.length;
+      const uniqueViewers = new Set(
+        viewsData
+          .filter(v => v.viewer_telegram_id)
+          .map(v => `${v.viewer_telegram_id}_${v.session_id}`)
+      ).size;
 
-      // Process shares data
-      sharesData?.forEach(share => {
+      const avgViewTime = viewsData.length > 0 
+        ? Math.round(viewsData.reduce((sum, v) => sum + (v.total_view_time || 0), 0) / viewsData.length)
+        : 0;
+
+      const reshareCount = viewsData.filter(v => v.reshared).length;
+      const reshareRate = viewsData.length > 0 ? (reshareCount / viewsData.length) * 100 : 0;
+
+      // Top diamonds
+      const diamondStats = new Map();
+      
+      sharesData.forEach(share => {
         const key = share.diamond_id;
-        if (!analyticsMap.has(key)) {
-          analyticsMap.set(key, {
+        if (!diamondStats.has(key)) {
+          diamondStats.set(key, {
             diamond_id: share.diamond_id,
             stock_number: share.stock_number,
-            total_shares: 0,
-            total_views: 0,
-            unique_viewers: new Set(),
-            total_view_time: 0,
-            total_interactions: 0,
-            reshares: 0,
-            mobile_views: 0,
-            desktop_views: 0,
-            last_shared: share.created_at,
-            last_viewed: null
+            shares: 0,
+            views: 0
           });
         }
-        
-        const item = analyticsMap.get(key);
-        item.total_shares++;
-        if (new Date(share.created_at) > new Date(item.last_shared)) {
-          item.last_shared = share.created_at;
-        }
+        diamondStats.get(key).shares++;
       });
 
-      // Process views data
-      viewsData?.forEach(view => {
+      viewsData.forEach(view => {
         const key = view.diamond_id;
-        if (!analyticsMap.has(key)) {
-          analyticsMap.set(key, {
+        if (!diamondStats.has(key)) {
+          diamondStats.set(key, {
             diamond_id: view.diamond_id,
-            stock_number: view.diamond_id, // Fallback
-            total_shares: 0,
-            total_views: 0,
-            unique_viewers: new Set(),
-            total_view_time: 0,
-            total_interactions: 0,
-            reshares: 0,
-            mobile_views: 0,
-            desktop_views: 0,
-            last_shared: null,
-            last_viewed: view.view_start
+            stock_number: view.diamond_id, // fallback
+            shares: 0,
+            views: 0
           });
         }
-
-        const item = analyticsMap.get(key);
-        item.total_views++;
-        item.unique_viewers.add(view.viewer_telegram_id || view.session_id);
-        item.total_view_time += view.total_view_time || 0;
-        item.total_interactions += view.interactions?.length || 0;
-        
-        if (view.reshared) item.reshares++;
-        if (view.device_type === 'mobile') item.mobile_views++;
-        else item.desktop_views++;
-
-        if (view.last_interaction && (!item.last_viewed || new Date(view.last_interaction) > new Date(item.last_viewed))) {
-          item.last_viewed = view.last_interaction;
-        }
+        diamondStats.get(key).views++;
       });
 
-      // Convert to final format
-      const analyticsArray: ShareAnalytics[] = Array.from(analyticsMap.values()).map(item => ({
-        diamond_id: item.diamond_id,
-        stock_number: item.stock_number,
-        total_shares: item.total_shares,
-        total_views: item.total_views,
-        unique_viewers: item.unique_viewers.size,
-        avg_view_time: item.total_views > 0 ? Math.round(item.total_view_time / item.total_views / 1000) : 0,
-        total_interactions: item.total_interactions,
-        reshare_rate: item.total_views > 0 ? Math.round((item.reshares / item.total_views) * 100) : 0,
-        mobile_views: item.mobile_views,
-        desktop_views: item.desktop_views,
-        last_shared: item.last_shared,
-        last_viewed: item.last_viewed
-      }));
+      const topDiamonds = Array.from(diamondStats.values())
+        .sort((a, b) => (b.shares + b.views) - (a.shares + a.views))
+        .slice(0, 10);
 
-      // Sort by total engagement (views + shares)
-      analyticsArray.sort((a, b) => (b.total_views + b.total_shares) - (a.total_views + a.total_shares));
+      // Recent activity
+      const recentActivity = [
+        ...sharesData.map(s => ({
+          type: 'share' as const,
+          diamond_id: s.diamond_id,
+          stock_number: s.stock_number,
+          timestamp: s.created_at,
+          details: `Shared by user ${s.shared_by}`
+        })),
+        ...viewsData.map(v => ({
+          type: 'view' as const,
+          diamond_id: v.diamond_id,
+          stock_number: v.diamond_id,
+          timestamp: v.view_start,
+          details: `Viewed for ${Math.round(v.total_view_time || 0)}s, ${
+            Array.isArray(v.interactions) ? v.interactions.length : 
+            (typeof v.interactions === 'object' && v.interactions !== null) ? Object.keys(v.interactions).length : 0
+          } interactions`
+        }))
+      ]
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        .slice(0, 20);
 
-      setAnalytics(analyticsArray);
+      setAnalytics({
+        totalShares,
+        totalViews,
+        uniqueViewers,
+        avgViewTime,
+        reshareRate: Math.round(reshareRate),
+        topDiamonds,
+        recentActivity
+      });
+
     } catch (error) {
-      console.error('Error fetching sharing analytics:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch sharing analytics",
-        variant: "destructive"
-      });
+      console.error('Failed to fetch analytics:', error);
+      toast.error('Failed to load analytics data');
     } finally {
       setLoading(false);
     }
@@ -178,158 +196,205 @@ export function DiamondSharingAnalytics() {
 
   useEffect(() => {
     fetchAnalytics();
-  }, []);
+  }, [timeRange]);
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Never';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const getEngagementColor = (score: number) => {
-    if (score >= 100) return 'text-green-600';
-    if (score >= 50) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Diamond Sharing Analytics</h2>
-        <Button onClick={fetchAnalytics} disabled={loading} size="sm">
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
-      </div>
-
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-4 bg-slate-200 rounded mb-2"></div>
-                <div className="h-8 bg-slate-200 rounded mb-4"></div>
-                <div className="space-y-2">
-                  <div className="h-3 bg-slate-200 rounded"></div>
-                  <div className="h-3 bg-slate-200 rounded w-2/3"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+  if (loading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <RefreshCw className="h-8 w-8 animate-spin text-blue-500" />
         </div>
-      ) : analytics.length === 0 ? (
+      </div>
+    );
+  }
+
+  if (!analytics) {
+    return (
+      <div className="p-6">
         <Card>
-          <CardContent className="pt-6 text-center">
-            <Share2 className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Sharing Data</h3>
-            <p className="text-muted-foreground">
-              Start sharing your diamonds to see analytics data here.
-            </p>
+          <CardContent className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">No analytics data available</p>
+            </div>
           </CardContent>
         </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {analytics.map((item) => (
-            <Card key={item.diamond_id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">
-                    Diamond {item.stock_number}
-                  </CardTitle>
-                  <Badge variant="secondary">
-                    {item.total_shares + item.total_views} total
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Last activity: {formatDate(item.last_viewed || item.last_shared)}
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Primary Metrics */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-1 mb-1">
-                      <Share2 className="h-4 w-4 text-blue-500" />
-                      <span className="text-2xl font-bold text-blue-600">
-                        {item.total_shares}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">Shares</p>
-                  </div>
-                  
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-1 mb-1">
-                      <Eye className="h-4 w-4 text-green-500" />
-                      <span className="text-2xl font-bold text-green-600">
-                        {item.total_views}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">Views</p>
-                  </div>
-                </div>
+      </div>
+    );
+  }
 
-                {/* Detailed Metrics */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-purple-500" />
-                      <span className="text-sm">Unique Viewers</span>
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Diamond Sharing Analytics</h1>
+          <p className="text-gray-600 mt-1">Track how your diamonds are shared and viewed</p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            {(['24h', '7d', '30d'] as const).map((range) => (
+              <Button
+                key={range}
+                variant={timeRange === range ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setTimeRange(range)}
+                className="text-xs"
+              >
+                {range}
+              </Button>
+            ))}
+          </div>
+          <Button onClick={fetchAnalytics} size="sm" variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Shares</p>
+                <p className="text-2xl font-bold text-blue-600">{analytics.totalShares}</p>
+              </div>
+              <Share2 className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Views</p>
+                <p className="text-2xl font-bold text-green-600">{analytics.totalViews}</p>
+              </div>
+              <Eye className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Unique Viewers</p>
+                <p className="text-2xl font-bold text-purple-600">{analytics.uniqueViewers}</p>
+              </div>
+              <Users className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Avg View Time</p>
+                <p className="text-2xl font-bold text-orange-600">{analytics.avgViewTime}s</p>
+              </div>
+              <Clock className="h-8 w-8 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Reshare Rate</p>
+                <p className="text-2xl font-bold text-pink-600">{analytics.reshareRate}%</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-pink-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Top Diamonds & Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top Performing Diamonds */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Top Performing Diamonds
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {analytics.topDiamonds.map((diamond, index) => (
+                <div key={diamond.diamond_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-semibold text-blue-600">
+                      {index + 1}
                     </div>
-                    <Badge variant="secondary">{item.unique_viewers}</Badge>
+                    <div>
+                      <p className="font-medium">#{diamond.stock_number}</p>
+                      <p className="text-sm text-gray-500">ID: {diamond.diamond_id}</p>
+                    </div>
                   </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-orange-500" />
-                      <span className="text-sm">Avg View Time</span>
-                    </div>
-                    <Badge 
-                      variant="secondary" 
-                      className={getEngagementColor(item.avg_view_time)}
-                    >
-                      {item.avg_view_time}s
+                  <div className="flex gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      {diamond.shares} shares
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {diamond.views} views
                     </Badge>
                   </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-indigo-500" />
-                      <span className="text-sm">Interactions</span>
-                    </div>
-                    <Badge variant="secondary">{item.total_interactions}</Badge>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Share2 className="h-4 w-4 text-pink-500" />
-                      <span className="text-sm">Reshare Rate</span>
-                    </div>
-                    <Badge variant="secondary">{item.reshare_rate}%</Badge>
-                  </div>
                 </div>
+              ))}
+              {analytics.topDiamonds.length === 0 && (
+                <p className="text-center text-gray-500 py-4">No data available</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-                {/* Device Split */}
-                <div className="pt-2 border-t">
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Smartphone className="h-3 w-3" />
-                      {item.mobile_views} mobile
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Recent Activity
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {analytics.recentActivity.map((activity, index) => (
+                <div key={index} className="flex items-start gap-3 p-3 border-l-2 border-gray-200 hover:border-blue-300 transition-colors">
+                  <div className={`w-2 h-2 rounded-full mt-2 ${
+                    activity.type === 'share' ? 'bg-blue-500' : 'bg-green-500'
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge 
+                        variant={activity.type === 'share' ? 'default' : 'secondary'}
+                        className="text-xs"
+                      >
+                        {activity.type}
+                      </Badge>
+                      <span className="font-medium text-sm">#{activity.stock_number}</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Monitor className="h-3 w-3" />
-                      {item.desktop_views} desktop
-                    </div>
+                    <p className="text-sm text-gray-600 mb-1">{activity.details}</p>
+                    <p className="text-xs text-gray-400">
+                      {new Date(activity.timestamp).toLocaleString()}
+                    </p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+              ))}
+              {analytics.recentActivity.length === 0 && (
+                <p className="text-center text-gray-500 py-4">No recent activity</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

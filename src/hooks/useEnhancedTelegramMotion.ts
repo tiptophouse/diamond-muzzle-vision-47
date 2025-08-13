@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { useTelegramWebApp } from './useTelegramWebApp';
 
 interface AccelerometerData {
@@ -39,12 +39,18 @@ export function useEnhancedTelegramMotion() {
   });
 
   const startMotionTracking = useCallback(() => {
-    if (!webApp?.Accelerometer || !webApp?.DeviceOrientation) return false;
+    if (!webApp) return false;
 
     try {
-      // Start accelerometer with correct parameters
-      webApp.Accelerometer.start({ refresh_rate: 60 });
-      webApp.DeviceOrientation.start({ refresh_rate: 60 });
+      // Check if accelerometer is available
+      if (webApp.Accelerometer && typeof webApp.Accelerometer.start === 'function') {
+        webApp.Accelerometer.start({ refresh_rate: 60 });
+      }
+      
+      // Check if device orientation is available
+      if (webApp.DeviceOrientation && typeof webApp.DeviceOrientation.start === 'function') {
+        webApp.DeviceOrientation.start({ refresh_rate: 60 });
+      }
       
       setMotionState(prev => ({ ...prev, isActive: true }));
       return true;
@@ -55,22 +61,34 @@ export function useEnhancedTelegramMotion() {
   }, [webApp]);
 
   const stopMotionTracking = useCallback(() => {
-    if (!webApp?.Accelerometer || !webApp?.DeviceOrientation) return;
+    if (!webApp) return;
 
-    webApp.Accelerometer.stop();
-    webApp.DeviceOrientation.stop();
-    setMotionState(prev => ({ ...prev, isActive: false }));
+    try {
+      if (webApp.Accelerometer && typeof webApp.Accelerometer.stop === 'function') {
+        webApp.Accelerometer.stop();
+      }
+      
+      if (webApp.DeviceOrientation && typeof webApp.DeviceOrientation.stop === 'function') {
+        webApp.DeviceOrientation.stop();
+      }
+      
+      setMotionState(prev => ({ ...prev, isActive: false }));
+    } catch (error) {
+      console.error('Failed to stop motion tracking:', error);
+    }
   }, [webApp]);
 
   const calibrateMotion = useCallback(() => {
     setMotionState(prev => ({ ...prev, isCalibrated: true }));
   }, []);
 
+  const isAvailable = !!(webApp?.Accelerometer && webApp?.DeviceOrientation);
+
   return {
     motionState,
     startMotionTracking,
     stopMotionTracking,
     calibrateMotion,
-    isAvailable: !!(webApp?.Accelerometer && webApp?.DeviceOrientation)
+    isAvailable
   };
 }
