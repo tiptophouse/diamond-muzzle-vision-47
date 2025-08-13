@@ -37,7 +37,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate, nextDiamonds = []
   const [searchParams] = useSearchParams();
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // Use cached image for main diamond image
+  // Use cached image for main diamond image with correct interface
   const { 
     src: imageSrc, 
     isLoading: imageLoading, 

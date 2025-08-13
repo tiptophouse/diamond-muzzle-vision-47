@@ -30,7 +30,7 @@ function FigmaDiamondCard({
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // Use cached image hook
+  // Use cached image hook with correct interface
   const { 
     src: imageSrc, 
     isLoading: imageLoading, 
