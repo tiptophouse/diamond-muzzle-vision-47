@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Home, Package, Store, MessageCircle, TrendingUp, Bell, Settings, Shield } from 'lucide-react';
@@ -6,9 +7,11 @@ import { useGroupCTATracking } from '@/hooks/useGroupCTATracking';
 import { TelegramWebApp } from '@/types/telegram';
 import { FloatingFirstUploadCTA } from '@/components/upload/FloatingFirstUploadCTA';
 import { telegramNavigation, PAGE_CONFIGS } from '@/utils/telegramNavigation';
+
 interface TelegramLayoutProps {
   children: React.ReactNode;
 }
+
 interface TabItem {
   path: string;
   icon: React.ComponentType<{
@@ -17,6 +20,7 @@ interface TabItem {
   label: string;
   adminOnly?: boolean;
 }
+
 const tabs: TabItem[] = [{
   path: '/dashboard',
   icon: Home,
@@ -38,6 +42,7 @@ const tabs: TabItem[] = [{
   icon: TrendingUp,
   label: 'Insights'
 }];
+
 const secondaryTabs: TabItem[] = [{
   path: '/notifications',
   icon: Bell,
@@ -52,6 +57,7 @@ const secondaryTabs: TabItem[] = [{
   label: 'Admin',
   adminOnly: true
 }];
+
 export function TelegramLayout({
   children
 }: TelegramLayoutProps) {
@@ -127,6 +133,7 @@ export function TelegramLayout({
             document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableHeight}px`);
             // Fix body height on iOS
             document.body.style.height = `${stableHeight}px`;
+            document.body.style.maxHeight = `${stableHeight}px`;
           } else {
             document.documentElement.style.setProperty('--tg-viewport-height', `${height}px`);
             document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableHeight}px`);
@@ -240,24 +247,47 @@ export function TelegramLayout({
       }
     }
   }, [location.pathname, navigate]);
+  
   const handleTabClick = (path: string) => {
     // Add haptic feedback
     telegramNavigation.selectionFeedback();
     navigate(path);
   };
+  
+  const handleSecondaryTabClick = (path: string) => {
+    // Add haptic feedback for secondary tabs
+    telegramNavigation.selectionFeedback();
+    navigate(path);
+  };
+  
   const isActiveTab = (path: string) => {
     if (path === '/dashboard') {
       return location.pathname === '/' || location.pathname === '/dashboard';
     }
     return location.pathname.startsWith(path);
   };
+  
   // For store page, only show store tab for security (prevent navigation to protected areas)
   const isPublicStoreAccess = location.pathname === '/store' && !user;
   const availableTabs = isPublicStoreAccess ? tabs.filter(tab => tab.path === '/store') : tabs.filter(tab => !tab.adminOnly || isAdmin);
   const availableSecondaryTabs = isPublicStoreAccess ? [] : secondaryTabs.filter(tab => !tab.adminOnly || isAdmin);
-  return <div className="flex flex-col w-full tg-viewport overflow-hidden bg-background" style={{ height: 'var(--tg-viewport-height, 100dvh)', maxHeight: 'var(--tg-viewport-stable-height, 100dvh)' }}>
+
+  return (
+    <div 
+      className="flex flex-col w-full tg-viewport overflow-hidden bg-background" 
+      style={{ 
+        height: 'var(--tg-viewport-height, 100dvh)', 
+        maxHeight: 'var(--tg-viewport-stable-height, 100dvh)' 
+      }}
+    >
       {/* Main content area */}
-      <main className="flex-1 overflow-auto smooth-scroll bg-background w-full py-0" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}>
+      <main 
+        className="flex-1 overflow-auto smooth-scroll bg-background w-full py-0" 
+        style={{ 
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--tg-safe-area-inset-bottom, 0px) + 72px)',
+          paddingTop: 'var(--tg-safe-area-inset-top, 0px)'
+        }}
+      >
         <div className="min-h-full p-3 sm:p-4 pt-4">
           <div className="w-full max-w-none overflow-x-hidden">
             {children}
@@ -268,36 +298,70 @@ export function TelegramLayout({
       {/* Floating First Upload CTA */}
       <FloatingFirstUploadCTA />
 
-      {/* Bottom tab navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-center bg-card/90 supports-[backdrop-filter]:bg-card/70 backdrop-blur-md border-t border-border/50 w-full" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      {/* Bottom tab navigation - Enhanced for iPhone */}
+      <nav 
+        className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-center bg-card/90 supports-[backdrop-filter]:bg-card/70 backdrop-blur-md border-t border-border/50 w-full" 
+        style={{ 
+          paddingBottom: 'max(env(safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px))',
+          paddingLeft: 'var(--tg-safe-area-inset-left, 0px)',
+          paddingRight: 'var(--tg-safe-area-inset-right, 0px)'
+        }}
+      >
         <div className="flex items-center justify-around w-full max-w-xl px-2 py-2">
           {availableTabs.map(tab => {
-          const Icon = tab.icon;
-          const isActive = isActiveTab(tab.path);
-          return <button key={tab.path} onClick={() => handleTabClick(tab.path)} className={`
+            const Icon = tab.icon;
+            const isActive = isActiveTab(tab.path);
+            return (
+              <button 
+                key={tab.path} 
+                onClick={() => handleTabClick(tab.path)} 
+                className={`
                   flex flex-col items-center gap-1 p-2 sm:p-3 rounded-xl touch-target transition-all duration-200 min-w-[60px] sm:min-w-[80px]
                   ${isActive ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}
-                `} aria-label={tab.label}>
+                `} 
+                aria-label={tab.label}
+                style={{ minHeight: '44px', minWidth: '44px' }}
+              >
                 <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${isActive ? 'scale-110' : ''} transition-transform duration-200`} />
                 <span className={`text-[10px] sm:text-xs font-medium leading-tight ${isActive ? 'text-primary' : ''}`}>
                   {tab.label}
                 </span>
-              </button>;
-        })}
+              </button>
+            );
+          })}
         </div>
       </nav>
 
-      {/* Secondary actions floating button (for non-main tabs) */}
-      {availableSecondaryTabs.length > 0 && <div className="fixed right-4 z-50" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)' }}>
+      {/* Secondary actions floating button (for non-main tabs) - Enhanced for iPhone */}
+      {availableSecondaryTabs.length > 0 && (
+        <div 
+          className="fixed right-4 z-50" 
+          style={{ 
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--tg-safe-area-inset-bottom, 0px) + 96px)',
+            right: 'max(16px, var(--tg-safe-area-inset-right, 0px))'
+          }}
+        >
           <div className="flex flex-col gap-2">
             {availableSecondaryTabs.map(tab => {
-          const Icon = tab.icon;
-          const isActive = isActiveTab(tab.path);
-          if (isActive) return null; // Don't show if currently active
+              const Icon = tab.icon;
+              const isActive = isActiveTab(tab.path);
+              if (isActive) return null; // Don't show if currently active
 
-          return;
-        })}
+              return (
+                <button
+                  key={tab.path}
+                  onClick={() => handleSecondaryTabClick(tab.path)}
+                  className="touch-target bg-card/90 supports-[backdrop-filter]:bg-card/80 backdrop-blur-md border border-border/50 rounded-full p-3 shadow-lg hover:bg-accent/50 transition-all duration-200"
+                  aria-label={tab.label}
+                  style={{ minHeight: '44px', minWidth: '44px' }}
+                >
+                  <Icon className="h-5 w-5 text-muted-foreground" />
+                </button>
+              );
+            })}
           </div>
-        </div>}
-    </div>;
+        </div>
+      )}
+    </div>
+  );
 }

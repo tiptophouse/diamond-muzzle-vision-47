@@ -8,6 +8,7 @@ import { getVerificationResult } from '@/lib/api';
 import { useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { TelegramLayout } from '@/components/layout/TelegramLayout';
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
@@ -50,16 +51,16 @@ export default function Dashboard() {
 
   if (authLoading || loading) {
     return (
-      <>
+      <TelegramLayout>
         <DashboardLoading onEmergencyMode={handleEmergencyMode} />
         <SecurityMonitor />
-      </>
+      </TelegramLayout>
     );
   }
 
   if (!isAuthenticated || !user) {
     return (
-      <>
+      <TelegramLayout>
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Enhanced Authentication Required</h2>
@@ -73,12 +74,12 @@ export default function Dashboard() {
           </div>
         </div>
         <SecurityMonitor />
-      </>
+      </TelegramLayout>
     );
   }
 
   return (
-    <>
+    <TelegramLayout>
       <div className="min-h-screen bg-gray-50">
         <DataDrivenDashboard 
           allDiamonds={allDiamonds} 
@@ -87,6 +88,6 @@ export default function Dashboard() {
         />
       </div>
       <SecurityMonitor />
-    </>
+    </TelegramLayout>
   );
 }

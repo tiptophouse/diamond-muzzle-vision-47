@@ -28,6 +28,24 @@
   --radius: 0.5rem;
 }
 
+/* Telegram Web App CSS variables */
+:root {
+  --tg-viewport-height: 100vh;
+  --tg-viewport-stable-height: 100vh;
+  --tg-safe-area-inset-top: 0px;
+  --tg-safe-area-inset-bottom: 0px;
+  --tg-safe-area-inset-left: 0px;
+  --tg-safe-area-inset-right: 0px;
+}
+
+html {
+  height: 100%;
+  height: 100dvh; /* Dynamic viewport height for modern browsers */
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
@@ -36,6 +54,43 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
+  height: 100%;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  /* Enable momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+  /* Prevent text size adjustment on orientation change */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Prevent pull-to-refresh on iOS */
+  overscroll-behavior-y: contain;
+}
+
+/* Telegram Web App specific styles */
+.tg-viewport {
+  height: 100vh;
+  height: 100dvh;
+  height: var(--tg-viewport-height, 100dvh);
+  max-height: var(--tg-viewport-stable-height, 100dvh);
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Enhanced touch targets for better mobile interaction */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Smooth scroll behavior */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Enhanced image loading optimizations */
@@ -60,11 +115,6 @@ img {
   animation: shimmer 2s infinite;
 }
 
-/* Better scroll performance */
-* {
-  scroll-behavior: smooth;
-}
-
 /* Mobile optimizations */
 @media (max-width: 640px) {
   .grid {
@@ -78,21 +128,28 @@ img {
   }
 }
 
-/* iOS specific fixes for Telegram WebApp */
+/* iOS Safari and Telegram WebApp specific fixes */
 @supports (-webkit-touch-callout: none) {
   /* iOS Safari specific styles */
-  body {
-    position: fixed;
-    overflow: hidden;
-    width: 100%;
-    height: 100vh;
-    height: 100dvh; /* Dynamic viewport height for iOS */
+  html {
+    height: 100%;
+    height: 100dvh;
+    position: relative;
   }
   
-  /* Fix for iOS back button jumping */
+  body {
+    height: 100%;
+    height: 100dvh;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  /* Fix for iOS viewport issues in Telegram */
   .tg-viewport {
     height: 100vh;
     height: 100dvh;
+    height: var(--tg-viewport-height, 100dvh);
+    max-height: var(--tg-viewport-stable-height, 100dvh);
     overflow: hidden;
     position: relative;
   }
@@ -105,27 +162,61 @@ img {
     -moz-osx-font-smoothing: grayscale;
   }
   
-  /* Fix for viewport meta tag issues on iOS */
-  html {
-    height: 100%;
-    height: 100dvh;
-    overflow: hidden;
+  /* Enhanced touch handling for iOS */
+  button, .touch-target {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
   
-  /* Smooth scroll fix for iOS */
+  /* Fix scrolling issues on iOS */
   .smooth-scroll {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
   
   /* Safe area handling for iOS */
   .pb-safe {
     padding-bottom: max(env(safe-area-inset-bottom), 16px);
+    padding-bottom: max(var(--tg-safe-area-inset-bottom, 0px), 16px);
   }
   
   .pt-safe {
     padding-top: max(env(safe-area-inset-top), 16px);
+    padding-top: max(var(--tg-safe-area-inset-top, 0px), 16px);
   }
+  
+  .pl-safe {
+    padding-left: max(env(safe-area-inset-left), 16px);
+    padding-left: max(var(--tg-safe-area-inset-left, 0px), 16px);
+  }
+  
+  .pr-safe {
+    padding-right: max(env(safe-area-inset-right), 16px);
+    padding-right: max(var(--tg-safe-area-inset-right, 0px), 16px);
+  }
+}
+
+/* Fix for viewport height on mobile browsers */
+@media screen and (max-width: 768px) {
+  .min-h-screen {
+    min-height: 100vh;
+    min-height: 100dvh;
+    min-height: var(--tg-viewport-height, 100dvh);
+  }
+  
+  .h-screen {
+    height: 100vh;
+    height: 100dvh;
+    height: var(--tg-viewport-height, 100dvh);
+  }
+}
+
+/* Enhanced button and interaction styles for mobile */
+button:active, .touch-target:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
 }
 
 /* Ensure light theme always */
@@ -149,4 +240,15 @@ img {
   --border: 214.3 31.8% 91.4%;
   --input: 214.3 31.8% 91.4%;
   --ring: 221.2 83.2% 53.3%;
+}
+
+/* Prevent overscroll bounce on iOS */
+html, body {
+  overscroll-behavior: none;
+}
+
+/* Fix for sticky elements on iOS */
+.sticky {
+  position: -webkit-sticky;
+  position: sticky;
 }
