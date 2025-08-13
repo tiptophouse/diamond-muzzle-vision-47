@@ -40,11 +40,12 @@ export function DiamondSharingAnalytics() {
     try {
       setLoading(true);
 
-      // Get sharing and viewing data
+      // Get sharing data from diamond_shares table
       const { data: sharesData, error: sharesError } = await supabase
         .from('diamond_shares')
         .select('diamond_id, stock_number, created_at');
 
+      // Get viewing data from diamond_views table  
       const { data: viewsData, error: viewsError } = await supabase
         .from('diamond_views')
         .select(`
@@ -59,8 +60,23 @@ export function DiamondSharingAnalytics() {
           last_interaction
         `);
 
-      if (sharesError || viewsError) {
-        throw sharesError || viewsError;
+      if (sharesError) {
+        console.error('Error fetching shares:', sharesError);
+        // If tables don't exist yet, show empty state
+        if (sharesError.code === '42P01') {
+          setAnalytics([]);
+          return;
+        }
+        throw sharesError;
+      }
+
+      if (viewsError) {
+        console.error('Error fetching views:', viewsError);
+        if (viewsError.code === '42P01') {
+          setAnalytics([]);
+          return;
+        }
+        throw viewsError;
       }
 
       // Aggregate analytics by diamond

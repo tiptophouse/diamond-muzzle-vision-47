@@ -421,6 +421,78 @@ export type Database = {
         }
         Relationships: []
       }
+      diamond_shares: {
+        Row: {
+          created_at: string
+          diamond_id: string
+          id: string
+          share_url: string
+          shared_by: number
+          stock_number: string
+        }
+        Insert: {
+          created_at?: string
+          diamond_id: string
+          id?: string
+          share_url: string
+          shared_by: number
+          stock_number: string
+        }
+        Update: {
+          created_at?: string
+          diamond_id?: string
+          id?: string
+          share_url?: string
+          shared_by?: number
+          stock_number?: string
+        }
+        Relationships: []
+      }
+      diamond_views: {
+        Row: {
+          device_type: string | null
+          diamond_id: string
+          id: string
+          interactions: Json | null
+          last_interaction: string | null
+          referrer: string | null
+          reshared: boolean | null
+          session_id: string
+          total_view_time: number | null
+          user_agent: string | null
+          view_start: string
+          viewer_telegram_id: number | null
+        }
+        Insert: {
+          device_type?: string | null
+          diamond_id: string
+          id?: string
+          interactions?: Json | null
+          last_interaction?: string | null
+          referrer?: string | null
+          reshared?: boolean | null
+          session_id: string
+          total_view_time?: number | null
+          user_agent?: string | null
+          view_start?: string
+          viewer_telegram_id?: number | null
+        }
+        Update: {
+          device_type?: string | null
+          diamond_id?: string
+          id?: string
+          interactions?: Json | null
+          last_interaction?: string | null
+          referrer?: string | null
+          reshared?: boolean | null
+          session_id?: string
+          total_view_time?: number | null
+          user_agent?: string | null
+          view_start?: string
+          viewer_telegram_id?: number | null
+        }
+        Relationships: []
+      }
       diamonds: {
         Row: {
           carat: number
