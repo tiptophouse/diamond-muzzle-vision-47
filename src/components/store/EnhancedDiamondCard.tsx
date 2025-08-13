@@ -22,10 +22,11 @@ export function EnhancedDiamondCard({ diamond, index, onUpdate, onDelete }: Enha
   const isAdmin = user?.id === ADMIN_TELEGRAM_ID;
 
   const handleContactOwner = () => {
+    const formattedCarat = Number(diamond.carat).toFixed(2);
     const message = `Hi! I'm interested in your diamond:\n\n` +
       `Stock #: ${diamond.stockNumber}\n` +
       `Shape: ${diamond.shape}\n` +
-      `Carat: ${diamond.carat}\n` +
+      `Carat: ${formattedCarat}\n` +
       `Color: ${diamond.color}\n` +
       `Clarity: ${diamond.clarity}\n` +
       `Price: $${diamond.price.toLocaleString()}\n\n` +
@@ -36,6 +37,8 @@ export function EnhancedDiamondCard({ diamond, index, onUpdate, onDelete }: Enha
     
     window.open(telegramUrl, '_blank');
   };
+
+  const formattedCarat = Number(diamond.carat).toFixed(2);
 
   return (
     <div 
@@ -103,7 +106,7 @@ export function EnhancedDiamondCard({ diamond, index, onUpdate, onDelete }: Enha
         {/* Diamond Details */}
         <div className="space-y-2">
           <h3 className="font-semibold text-slate-900 text-lg">
-            {diamond.carat} ct {diamond.shape}
+            {formattedCarat}ct {diamond.shape}
           </h3>
           
           <div className="grid grid-cols-3 gap-2 text-sm">

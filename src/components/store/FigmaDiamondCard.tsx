@@ -90,6 +90,10 @@ function FigmaDiamondCard({
     }).format(diamond.price);
   }, [diamond.price]);
 
+  const formattedCarat = useMemo(() => {
+    return Number(diamond.carat).toFixed(2);
+  }, [diamond.carat]);
+
   return (
     <div 
       ref={cardRef}
@@ -114,7 +118,7 @@ function FigmaDiamondCard({
           <img 
             ref={imgRef}
             src={diamond.imageUrl} 
-            alt={`${diamond.carat} ct ${diamond.shape} Diamond`} 
+            alt={`${formattedCarat} ct ${diamond.shape} Diamond`} 
             className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
@@ -165,7 +169,7 @@ function FigmaDiamondCard({
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-foreground text-base leading-tight truncate">
-              {diamond.carat} ct {diamond.shape}
+              {formattedCarat}ct {diamond.shape}
             </h3>
             <p className="text-sm text-muted-foreground mt-1 truncate">
               {diamond.stockNumber}
