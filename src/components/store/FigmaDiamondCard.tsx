@@ -7,28 +7,41 @@ import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { useTelegramAccelerometer } from "@/hooks/useTelegramAccelerometer";
+import { useCachedImage } from "@/hooks/useCachedImage";
 import { toast } from 'sonner';
 
 interface FigmaDiamondCardProps {
   diamond: Diamond;
   index: number;
   onUpdate?: () => void;
+  nextDiamonds?: { url: string; id: string }[];
 }
 
 function FigmaDiamondCard({
   diamond,
   index,
-  onUpdate
+  onUpdate,
+  nextDiamonds = []
 }: FigmaDiamondCardProps) {
-  const [imageError, setImageError] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const { impactOccurred } = useTelegramHapticFeedback();
   const { orientationData } = useTelegramAccelerometer(true);
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement>(null);
-  const imgRef = useRef<HTMLImageElement>(null);
+
+  // Use cached image hook
+  const { 
+    src: imageSrc, 
+    isLoading: imageLoading, 
+    error: imageError, 
+    isCached,
+    prefetchNext 
+  } = useCachedImage({
+    imageUrl: diamond.imageUrl,
+    diamondId: diamond.id.toString(),
+    enablePrefetch: true
+  });
 
   const handleLike = useCallback(() => {
     impactOccurred('light');
@@ -46,16 +59,22 @@ function FigmaDiamondCard({
     toast.success("Opening contact options...");
   }, [impactOccurred]);
 
-  // Intersection Observer for lazy loading
+  // Intersection Observer for lazy loading and prefetching
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsVisible(true);
+          
+          // Prefetch next images when this card becomes visible
+          if (nextDiamonds.length > 0) {
+            prefetchNext(nextDiamonds);
+          }
+          
           observer.disconnect();
         }
       },
-      { rootMargin: '50px' }
+      { rootMargin: '100px' } // Start loading when 100px away
     );
 
     if (cardRef.current) {
@@ -63,24 +82,15 @@ function FigmaDiamondCard({
     }
 
     return () => observer.disconnect();
-  }, []);
-
-  const handleImageLoad = useCallback(() => {
-    setImageLoaded(true);
-  }, []);
-
-  const handleImageError = useCallback(() => {
-    setImageError(true);
-    setImageLoaded(true);
-  }, []);
+  }, [nextDiamonds, prefetchNext]);
 
   const isAvailable = useMemo(() => diamond.status === "Available", [diamond.status]);
 
   const imageTransform = useMemo(() => {
-    return diamond.imageUrl && !imageError 
+    return imageSrc && !imageError 
       ? `perspective(1000px) rotateX(${orientationData.beta * 0.2}deg) rotateY(${orientationData.gamma * 0.2}deg)`
       : undefined;
-  }, [diamond.imageUrl, imageError, orientationData.beta, orientationData.gamma]);
+  }, [imageSrc, imageError, orientationData.beta, orientationData.gamma]);
 
   const formattedPrice = useMemo(() => {
     return new Intl.NumberFormat('en-US', {
@@ -104,7 +114,7 @@ function FigmaDiamondCard({
       {/* Image Container */}
       <div className="relative aspect-square bg-muted overflow-hidden">
         {/* Loading skeleton */}
-        {!imageLoaded && (
+        {imageLoading && (
           <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10 animate-pulse">
             <div className="flex items-center justify-center h-full">
               <div className="w-16 h-16 bg-muted-foreground/20 rounded-full flex items-center justify-center">
@@ -114,20 +124,26 @@ function FigmaDiamondCard({
           </div>
         )}
         
-        {diamond.imageUrl && !imageError && isVisible ? (
-          <img 
-            ref={imgRef}
-            src={diamond.imageUrl} 
-            alt={`${formattedCarat} ct ${diamond.shape} Diamond`} 
-            className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
-            style={{ transform: imageTransform }}
-            onLoad={handleImageLoad}
-            onError={handleImageError}
-            loading="lazy"
-            decoding="async"
-          />
+        {imageSrc && !imageError && isVisible ? (
+          <div className="relative w-full h-full">
+            <img 
+              src={imageSrc} 
+              alt={`${formattedCarat} ct ${diamond.shape} Diamond`} 
+              className="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
+              style={{ transform: imageTransform }}
+              loading="lazy"
+              decoding="async"
+            />
+            
+            {/* Cache indicator */}
+            {isCached && (
+              <div className="absolute bottom-2 left-2">
+                <Badge className="text-xs bg-green-500/80 text-white border-0 px-1.5 py-0.5">
+                  ⚡ Cached
+                </Badge>
+              </div>
+            )}
+          </div>
         ) : imageError ? (
           <div className="flex items-center justify-center h-full bg-gradient-to-br from-muted to-muted-foreground/10">
             <div className="w-16 h-16 bg-muted-foreground/20 rounded-full flex items-center justify-center">

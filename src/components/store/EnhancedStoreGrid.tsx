@@ -86,12 +86,12 @@ export function EnhancedStoreGrid({ diamonds, loading, error, onUpdate }: Enhanc
             </Badge>
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            Showing {mediaStats.total} diamonds prioritized by media availability (3D → Photos → Info)
+            Showing {mediaStats.total} diamonds prioritized by media availability (3D → Photos → Info) • ⚡ Fast caching enabled
           </p>
         </div>
       )}
 
-      {/* PHASE 5: Optimized Grid with Priority-Based Layout - Enhanced for mobile */}
+      {/* PHASE 5: Optimized Grid with Priority-Based Layout and Image Prefetching */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
         {diamonds.map((diamond, index) => {
           console.log('🎯 GRID: Rendering diamond', diamond.stockNumber, 'with media:', {
@@ -100,6 +100,15 @@ export function EnhancedStoreGrid({ diamonds, loading, error, onUpdate }: Enhanc
             gem360Url: diamond.gem360Url,
             imageUrl: diamond.imageUrl
           });
+
+          // Prepare next 3 diamonds for prefetching
+          const nextDiamonds = diamonds
+            .slice(index + 1, index + 4)
+            .filter(d => d.imageUrl)
+            .map(d => ({
+              url: d.imageUrl!,
+              id: d.id.toString()
+            }));
           
           return (
             <div 
@@ -114,6 +123,7 @@ export function EnhancedStoreGrid({ diamonds, loading, error, onUpdate }: Enhanc
                 diamond={diamond}
                 index={index}
                 onUpdate={onUpdate}
+                nextDiamonds={nextDiamonds}
               />
             </div>
           );
