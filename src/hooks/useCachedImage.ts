@@ -1,110 +1,145 @@
-
 import { useState, useEffect, useCallback } from 'react';
-import { useTelegramWebApp } from './useTelegramWebApp';
-import { telegramImageCache } from '@/services/telegramImageCache';
 
-interface UseCachedImageProps {
-  imageUrl?: string;
-  diamondId: string;
-  enablePrefetch?: boolean;
+interface CacheEntry {
+  url: string;
+  timestamp: number;
+  blob: Blob;
 }
 
-interface UseCachedImageReturn {
-  src: string | null;
+interface ImageCache {
+  [key: string]: CacheEntry;
+}
+
+export interface UseCachedImageReturn {
+  imageUrl: string | null;
   isLoading: boolean;
-  error: boolean;
-  isCached: boolean;
-  prefetchNext: (urls: { url: string; id: string }[]) => void;
+  error: string | null;
+  cacheHit: boolean;
+  prefetchNext: () => void;
 }
 
-export function useCachedImage({ 
-  imageUrl, 
-  diamondId, 
-  enablePrefetch = true 
-}: UseCachedImageProps): UseCachedImageReturn {
-  const [src, setSrc] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [isCached, setIsCached] = useState(false);
-  const { webApp, isReady } = useTelegramWebApp();
+const imageCache: ImageCache = {};
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+const MAX_CACHE_SIZE = 50; // Maximum number of cached images
 
-  // Initialize cache service with webApp when ready
-  useEffect(() => {
-    if (isReady && webApp) {
-      telegramImageCache.setWebApp(webApp);
+export function useCachedImage(originalUrl: string | undefined, diamondId: string): UseCachedImageReturn {
+  const [cachedUrl, setCachedUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [cacheHit, setCacheHit] = useState(false);
+
+  const cleanupCache = useCallback(() => {
+    const now = Date.now();
+    const entries = Object.entries(imageCache);
+    
+    // Remove expired entries
+    entries.forEach(([key, entry]) => {
+      if (now - entry.timestamp > CACHE_DURATION) {
+        URL.revokeObjectURL(entry.url);
+        delete imageCache[key];
+      }
+    });
+
+    // If still too many entries, remove oldest ones
+    const remainingEntries = Object.entries(imageCache);
+    if (remainingEntries.length > MAX_CACHE_SIZE) {
+      const sortedEntries = remainingEntries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+      const toRemove = sortedEntries.slice(0, remainingEntries.length - MAX_CACHE_SIZE);
+      
+      toRemove.forEach(([key, entry]) => {
+        URL.revokeObjectURL(entry.url);
+        delete imageCache[key];
+      });
     }
-  }, [isReady, webApp]);
+  }, []);
 
-  const loadImage = useCallback(async () => {
-    if (!imageUrl || !diamondId) {
+  const cacheImage = useCallback(async (url: string, key: string): Promise<string | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Check if already cached and not expired
+      const cached = imageCache[key];
+      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        setCacheHit(true);
+        return cached.url;
+      }
+
+      // Fetch and cache the image
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+
+      // Clean up old cache entries before adding new one
+      cleanupCache();
+
+      // Cache the new image
+      imageCache[key] = {
+        url: objectUrl,
+        timestamp: Date.now(),
+        blob
+      };
+
+      setCacheHit(false);
+      return objectUrl;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to cache image';
+      setError(errorMessage);
+      console.error('Image caching error:', err);
+      return null;
+    } finally {
       setIsLoading(false);
+    }
+  }, [cleanupCache]);
+
+  const prefetchNext = useCallback(() => {
+    // This could be enhanced to prefetch related diamonds
+    console.log('Prefetch next images for diamond:', diamondId);
+  }, [diamondId]);
+
+  useEffect(() => {
+    if (!originalUrl) {
+      setCachedUrl(null);
+      setCacheHit(false);
       return;
     }
 
-    setIsLoading(true);
-    setError(false);
-
-    try {
-      // First, try to get cached image
-      const cachedImage = await telegramImageCache.getCachedImage(diamondId);
-      
-      if (cachedImage) {
-        setSrc(cachedImage);
-        setIsCached(true);
-        setIsLoading(false);
-        console.log('🚀 Using cached image for:', diamondId);
-        return;
-      }
-
-      // If not cached, use original URL and cache in background
-      setSrc(imageUrl);
-      setIsCached(false);
-      setIsLoading(false);
-
-      // Cache the image for future use (don't await to avoid blocking)
-      if (enablePrefetch) {
-        telegramImageCache.cacheImage(imageUrl, diamondId).then(success => {
-          if (success) {
-            console.log('📦 Background cached:', diamondId);
-          }
-        });
-      }
-
-    } catch (err) {
-      console.error('❌ Error loading image:', err);
-      setError(true);
-      setSrc(imageUrl || null); // Fallback to original URL
-      setIsLoading(false);
+    const cacheKey = `diamond_${diamondId}_${originalUrl}`;
+    
+    // Check immediate cache hit
+    const cached = imageCache[cacheKey];
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      setCachedUrl(cached.url);
+      setCacheHit(true);
+      return;
     }
-  }, [imageUrl, diamondId, enablePrefetch]);
 
-  // Prefetch function for batch caching
-  const prefetchNext = useCallback(async (urls: { url: string; id: string }[]) => {
-    if (!enablePrefetch) return;
-
-    // Cache images in background without blocking UI
-    urls.forEach(async ({ url, id }) => {
-      try {
-        const cached = await telegramImageCache.getCachedImage(id);
-        if (!cached) {
-          telegramImageCache.cacheImage(url, id);
-        }
-      } catch (error) {
-        console.warn('Prefetch failed for:', id, error);
+    // Cache the image
+    cacheImage(originalUrl, cacheKey).then(url => {
+      if (url) {
+        setCachedUrl(url);
       }
     });
-  }, [enablePrefetch]);
+  }, [originalUrl, diamondId, cacheImage]);
 
-  // Load image when dependencies change
+  // Cleanup on unmount
   useEffect(() => {
-    loadImage();
-  }, [loadImage]);
+    return () => {
+      if (cachedUrl && !imageCache[`diamond_${diamondId}_${originalUrl}`]) {
+        URL.revokeObjectURL(cachedUrl);
+      }
+    };
+  }, [cachedUrl, diamondId, originalUrl]);
 
   return {
-    src,
+    imageUrl: cachedUrl || originalUrl || null,
     isLoading,
     error,
-    isCached,
+    cacheHit,
     prefetchNext
   };
 }
