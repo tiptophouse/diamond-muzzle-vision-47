@@ -64,7 +64,7 @@ export function useMCPClient() {
         criteria
       });
       
-      return response.data;
+      return response.data as MCPSearchResult;
     } catch (error) {
       console.error('MCP Inventory Search Error:', error);
       toast({
@@ -85,7 +85,7 @@ export function useMCPClient() {
         userId: user?.id
       });
       
-      return response.data;
+      return response.data as MCPUserPreferences;
     } catch (error) {
       console.error('MCP User Preferences Error:', error);
       throw error;
@@ -102,7 +102,7 @@ export function useMCPClient() {
         diamondSpec
       });
       
-      return response.data;
+      return response.data as MCPMarketData;
     } catch (error) {
       console.error('MCP Market Pricing Error:', error);
       throw error;
@@ -138,7 +138,7 @@ export function useMCPClient() {
 }
 
 // Mock responses for development - replace with real FastAPI MCP calls
-function mockMCPResponse(endpoint: string, data: any) {
+function mockMCPResponse(endpoint: string, data: any): MCPSearchResult | MCPUserPreferences | MCPMarketData | any {
   switch (endpoint) {
     case '/mcp/inventory/search':
       return {
@@ -149,24 +149,24 @@ function mockMCPResponse(endpoint: string, data: any) {
         totalCount: 2,
         avgPrice: 7850,
         priceRange: { min: 7200, max: 8500 }
-      };
+      } as MCPSearchResult;
     
     case '/mcp/users/preferences':
       return {
         favoriteShapes: ['Round', 'Princess'],
         priceRange: { min: 5000, max: 15000 },
-        buyingPattern: 'occasional',
+        buyingPattern: 'occasional' as const,
         preferredColors: ['F', 'G', 'H']
-      };
+      } as MCPUserPreferences;
     
     case '/mcp/market/pricing':
       return {
         avgPricePerCarat: 5800,
-        marketTrend: 'stable',
-        competitivePosition: 'competitive',
+        marketTrend: 'stable' as const,
+        competitivePosition: 'competitive' as const,
         suggestedPrice: 8200,
         reasoning: 'Based on similar diamonds in the market, your price is competitive. Consider highlighting the VS1 clarity as a selling point.'
-      };
+      } as MCPMarketData;
     
     case '/mcp/campaigns/targeting':
       return {
