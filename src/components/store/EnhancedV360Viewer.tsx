@@ -1,10 +1,10 @@
 
 import { useState, useEffect, useRef, memo } from 'react';
-import { Maximize2, RotateCcw, Loader2, AlertCircle, ExternalLink, Smartphone } from 'lucide-react';
+import { Maximize2, RotateCcw, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { useNativeTelegramMotion } from '@/hooks/useNativeTelegramMotion';
+import { DiamondTiltControl } from './DiamondTiltControl';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 
 interface EnhancedV360ViewerProps {
@@ -20,9 +20,7 @@ const EnhancedV360Viewer = memo(({ v360Url, stockNumber, isInline = false, class
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [currentFrame, setCurrentFrame] = useState(0);
-  const [isMotionEnabled, setIsMotionEnabled] = useState(false);
   
-  const { motionState, startMotion, stopMotion, isSupported } = useNativeTelegramMotion();
   const { hapticFeedback } = useTelegramWebApp();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -45,7 +43,7 @@ const EnhancedV360Viewer = memo(({ v360Url, stockNumber, isInline = false, class
       urlObj.searchParams.set('hidecontrols', '0');
       
       // Add frame parameter for motion control
-      if (isMotionEnabled && currentFrame > 0) {
+      if (currentFrame > 0) {
         urlObj.searchParams.set('frame', currentFrame.toString());
       }
       
@@ -55,48 +53,14 @@ const EnhancedV360Viewer = memo(({ v360Url, stockNumber, isInline = false, class
     return url;
   })();
 
-  // Handle native motion for frame navigation
+  // Update iframe when frame changes (for motion control)
   useEffect(() => {
-    if (isMotionEnabled && motionState.isActive) {
-      const { alpha } = motionState.orientation;
-      
-      // Convert alpha (0-2π) to frame index (0-35)
-      const normalizedAlpha = ((alpha / (2 * Math.PI)) % 1 + 1) % 1;
-      const newFrame = Math.floor(normalizedAlpha * totalFrames);
-      
-      if (newFrame !== currentFrame) {
-        setCurrentFrame(newFrame);
-        
-        // Update iframe with new frame
-        if (iframeRef.current && v360Url.includes('v360.in')) {
-          const url = new URL(processedUrl);
-          url.searchParams.set('frame', newFrame.toString());
-          iframeRef.current.src = url.toString();
-        }
-      }
+    if (iframeRef.current && v360Url.includes('v360.in')) {
+      const url = new URL(processedUrl);
+      url.searchParams.set('frame', currentFrame.toString());
+      iframeRef.current.src = url.toString();
     }
-  }, [motionState.orientation, isMotionEnabled, motionState.isActive, currentFrame, processedUrl, v360Url]);
-
-  const toggleMotion = async () => {
-    if (!isSupported) {
-      hapticFeedback.notification('error');
-      return;
-    }
-
-    if (isMotionEnabled) {
-      stopMotion();
-      setIsMotionEnabled(false);
-      hapticFeedback.impact('light');
-    } else {
-      const started = await startMotion();
-      if (started) {
-        setIsMotionEnabled(true);
-        hapticFeedback.impact('medium');
-      } else {
-        hapticFeedback.notification('error');
-      }
-    }
-  };
+  }, [currentFrame, processedUrl, v360Url]);
 
   const handleIframeLoad = () => {
     console.log('✅ Enhanced V360 VIEWER LOADED for', stockNumber);
@@ -173,7 +137,7 @@ const EnhancedV360Viewer = memo(({ v360Url, stockNumber, isInline = false, class
     <>
       <div 
         ref={containerRef}
-        className={`relative w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden ${className}`}
+        className={`relative w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden group ${className}`}
       >
         {/* Loading state */}
         {isLoading && (
@@ -220,22 +184,6 @@ const EnhancedV360Viewer = memo(({ v360Url, stockNumber, isInline = false, class
                   <RotateCcw className="h-3 w-3" />
                 </Button>
                 
-                {/* Native Motion Toggle */}
-                {isSupported && (
-                  <Button
-                    onClick={toggleMotion}
-                    size="sm"
-                    variant={isMotionEnabled ? "default" : "outline"}
-                    className={`h-8 px-2 shadow-sm ${
-                      isMotionEnabled 
-                        ? 'bg-blue-500 hover:bg-blue-600 text-white' 
-                        : 'bg-white/95 hover:bg-white border-0 text-gray-900'
-                    }`}
-                  >
-                    <Smartphone className="h-3 w-3" />
-                  </Button>
-                )}
-                
                 <Button
                   onClick={() => setIsFullscreen(true)}
                   size="sm"
@@ -255,19 +203,19 @@ const EnhancedV360Viewer = memo(({ v360Url, stockNumber, isInline = false, class
                 </Button>
               </div>
               
-              <div className="flex items-center gap-2">
-                {isMotionEnabled && (
-                  <Badge className="bg-blue-500 text-white text-xs px-2 py-1">
-                    Motion: {Math.round(motionState.quality.stability)}%
-                  </Badge>
-                )}
-                <Badge className="bg-black/80 text-white border-0 px-2 py-1 text-xs font-medium">
-                  360° Enhanced • Frame {currentFrame + 1}/{totalFrames}
-                </Badge>
-              </div>
+              <Badge className="bg-black/80 text-white border-0 px-2 py-1 text-xs font-medium">
+                360° Enhanced • Frame {currentFrame + 1}/{totalFrames}
+              </Badge>
             </div>
           </div>
         )}
+
+        {/* Tilt Control for Motion */}
+        <DiamondTiltControl
+          frames={totalFrames}
+          setFrame={setCurrentFrame}
+          className="opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        />
       </div>
 
       {/* Enhanced Fullscreen Modal */}
@@ -276,26 +224,14 @@ const EnhancedV360Viewer = memo(({ v360Url, stockNumber, isInline = false, class
           <DialogHeader className="pb-2">
             <DialogTitle className="text-base flex items-center justify-between">
               <span>Enhanced 360° Interactive View - Diamond {stockNumber}</span>
-              <div className="flex gap-2">
-                {isSupported && (
-                  <Button
-                    onClick={toggleMotion}
-                    size="sm"
-                    variant={isMotionEnabled ? "default" : "outline"}
-                  >
-                    <Smartphone className="h-3 w-3 mr-1" />
-                    {isMotionEnabled ? 'Motion ON' : 'Enable Motion'}
-                  </Button>
-                )}
-                <Button onClick={openInNewTab} size="sm" variant="outline">
-                  <ExternalLink className="h-3 w-3 mr-1" />
-                  Open Direct
-                </Button>
-              </div>
+              <Button onClick={openInNewTab} size="sm" variant="outline">
+                <ExternalLink className="h-3 w-3 mr-1" />
+                Open Direct
+              </Button>
             </DialogTitle>
           </DialogHeader>
           
-          <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden relative">
+          <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden relative group">
             <iframe
               src={processedUrl}
               className="w-full h-full border-0"
@@ -314,18 +250,13 @@ const EnhancedV360Viewer = memo(({ v360Url, stockNumber, isInline = false, class
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Reset View
               </Button>
-              
-              {isSupported && (
-                <Button 
-                  onClick={toggleMotion}
-                  variant={isMotionEnabled ? "default" : "outline"}
-                  className="bg-white/95 hover:bg-white border-0 text-gray-900 shadow-lg"
-                >
-                  <Smartphone className="h-4 w-4 mr-2" />
-                  {isMotionEnabled ? 'Disable Motion' : 'Enable Motion'}
-                </Button>
-              )}
             </div>
+
+            {/* Fullscreen Tilt Control */}
+            <DiamondTiltControl
+              frames={totalFrames}
+              setFrame={setCurrentFrame}
+            />
           </div>
         </DialogContent>
       </Dialog>

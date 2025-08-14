@@ -7,20 +7,21 @@ import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 
 export default function ChatPage() {
   const navigate = useNavigate();
-  const { hapticFeedback } = useTelegramWebApp();
+  const { hapticFeedback, backButton } = useTelegramWebApp();
 
   const handleBack = () => {
     hapticFeedback.impact('light');
     navigate(-1);
   };
 
+  // Configure back button for chat
+  React.useEffect(() => {
+    backButton.show(handleBack);
+    return () => backButton.hide();
+  }, [handleBack]);
+
   return (
-    <TelegramLayout
-      showBackButton={true}
-      onBackClick={handleBack}
-      title="AI Assistant"
-      className="h-screen flex flex-col"
-    >
+    <TelegramLayout className="h-screen flex flex-col">
       <div className="flex-1 overflow-hidden">
         <ChatContainer />
       </div>
