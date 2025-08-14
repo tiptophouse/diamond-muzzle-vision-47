@@ -3,28 +3,16 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface CampaignLog {
-  id: string;
-  campaign_type: string;
-  campaign_name: string;
-  message_content: string;
-  target_group: string;
-  current_uploaders: number;
-  hours_remaining: number;
-  sent_at: string;
-  metadata?: any;
-}
-
-interface CampaignAnalytics {
+interface CampaignAnalyticsData {
   totalCampaigns: number;
   campaignsByType: Record<string, number>;
-  recentCampaigns: CampaignLog[];
+  recentCampaigns: any[];
   averageUploaders: number;
   conversionRate: number;
 }
 
 export function useCampaignAnalytics() {
-  const [analytics, setAnalytics] = useState<CampaignAnalytics | null>(null);
+  const [analytics, setAnalytics] = useState<CampaignAnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -34,12 +22,13 @@ export function useCampaignAnalytics() {
       const fromDate = new Date();
       fromDate.setDate(fromDate.getDate() - daysBack);
 
-      // Fetch campaign logs
+      // Fetch campaign events from analytics_events
       const { data: campaigns, error } = await supabase
-        .from('campaign_logs')
+        .from('analytics_events')
         .select('*')
-        .gte('sent_at', fromDate.toISOString())
-        .order('sent_at', { ascending: false });
+        .eq('event_type', 'campaign_sent')
+        .gte('timestamp', fromDate.toISOString())
+        .order('timestamp', { ascending: false });
 
       if (error) throw error;
 
@@ -54,14 +43,15 @@ export function useCampaignAnalytics() {
         return;
       }
 
-      // Calculate analytics
+      // Calculate analytics from event_data
       const campaignsByType = campaigns.reduce((acc: Record<string, number>, campaign) => {
-        acc[campaign.campaign_type] = (acc[campaign.campaign_type] || 0) + 1;
+        const campaignType = campaign.event_data?.campaign_type || 'unknown';
+        acc[campaignType] = (acc[campaignType] || 0) + 1;
         return acc;
       }, {});
 
       const averageUploaders = campaigns.length > 0 
-        ? campaigns.reduce((sum, c) => sum + (c.current_uploaders || 0), 0) / campaigns.length
+        ? campaigns.reduce((sum, c) => sum + (c.event_data?.current_uploaders || 0), 0) / campaigns.length
         : 0;
 
       // Calculate conversion rate (simplified - could be improved with actual user tracking)
@@ -90,12 +80,17 @@ export function useCampaignAnalytics() {
   const logCampaignInteraction = async (campaignId: string, interactionType: 'click' | 'conversion' | 'share') => {
     try {
       const { error } = await supabase
-        .from('campaign_interactions')
+        .from('analytics_events')
         .insert({
-          campaign_id: campaignId,
-          interaction_type: interactionType,
-          timestamp: new Date().toISOString(),
-          user_agent: navigator.userAgent
+          event_type: 'campaign_interaction',
+          page_path: '/campaigns',
+          session_id: crypto.randomUUID(),
+          user_agent: navigator.userAgent,
+          event_data: {
+            campaign_id: campaignId,
+            interaction_type: interactionType,
+            timestamp: new Date().toISOString()
+          }
         });
 
       if (error) throw error;
