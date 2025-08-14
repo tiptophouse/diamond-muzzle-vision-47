@@ -3,6 +3,14 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+interface CampaignEventData {
+  campaign_type?: string;
+  campaign_name?: string;
+  current_uploaders?: number;
+  hours_remaining?: number;
+  target_group?: string;
+}
+
 interface CampaignAnalyticsData {
   totalCampaigns: number;
   campaignsByType: Record<string, number>;
@@ -43,15 +51,19 @@ export function useCampaignAnalytics() {
         return;
       }
 
-      // Calculate analytics from event_data
+      // Calculate analytics from event_data with proper typing
       const campaignsByType = campaigns.reduce((acc: Record<string, number>, campaign) => {
-        const campaignType = campaign.event_data?.campaign_type || 'unknown';
+        const eventData = campaign.event_data as CampaignEventData;
+        const campaignType = eventData?.campaign_type || 'unknown';
         acc[campaignType] = (acc[campaignType] || 0) + 1;
         return acc;
       }, {});
 
       const averageUploaders = campaigns.length > 0 
-        ? campaigns.reduce((sum, c) => sum + (c.event_data?.current_uploaders || 0), 0) / campaigns.length
+        ? campaigns.reduce((sum, c) => {
+            const eventData = c.event_data as CampaignEventData;
+            return sum + (eventData?.current_uploaders || 0);
+          }, 0) / campaigns.length
         : 0;
 
       // Calculate conversion rate (simplified - could be improved with actual user tracking)
