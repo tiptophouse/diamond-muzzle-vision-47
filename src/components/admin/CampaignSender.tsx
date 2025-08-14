@@ -18,58 +18,11 @@ interface CampaignMessage {
   type: 'urgency' | 'scarcity' | 'social_proof' | 'value' | 'fomo' | 'exclusive';
   subject: string;
   message: string;
-  messageHe: string;
   icon: React.ReactNode;
   color: string;
 }
 
 const campaignMessages: CampaignMessage[] = [
-  {
-    id: 'lifetime_discount_new',
-    name: 'Lifetime Discount - New Version',
-    type: 'urgency',
-    subject: '🚨 LIMITED TIME: LIFETIME DISCOUNT!',
-    message: `🚨 **LIMITED TIME: LIFETIME DISCOUNT!** 🚨
-
-💎 **Only the FIRST 100 uploaders get LIFETIME access for $50 instead of $75!**
-
-⏰ **You have 72 HOURS to secure your spot!**
-
-🎯 **What you get as a LIFETIME member:**
-• ✨ Upload unlimited diamonds to BrilliantBot
-• 🔍 AI-powered buyer matching system  
-• 📊 Real-time market analytics
-• 💰 Priority notifications for high-value deals
-• 🚀 Early access to ALL future features
-• 🎖️ VIP status in the trading community
-
-**Current spots taken: [X]/100** ⚠️
-
-Don't miss out - once we hit 100 uploaders, the price goes back to $75/month!
-
-⚡ **Start uploading NOW and claim your lifetime discount!**`,
-    messageHe: `🚨 **זמן מוגבל: הנחה לכל החיים!** 🚨
-
-💎 **רק 100 המעלים הראשונים מקבלים גישה לכל החיים ב-$50 במקום $75!**
-
-⏰ **יש לכם 72 שעות להבטיח את המקום שלכם!**
-
-🎯 **מה תקבלו כחברים לכל החיים:**
-• ✨ העלאת יהלומים ללא הגבלה ל-BrilliantBot
-• 🔍 מערכת התאמת קונים מבוססת AI
-• 📊 ניתוחי שוק בזמן אמת
-• 💰 התראות עדיפות על עסקאות בעלות ערך גבוה
-• 🚀 גישה מוקדמת לכל התכונות העתידיות
-• 🎖️ סטטוס VIP בקהילת הסחר
-
-**מקומות תפוסים כרגע: [X]/100** ⚠️
-
-אל תפספסו - ברגע שנגיע ל-100 מעלים, המחיר חוזר ל-$75 לחודש!
-
-⚡ **התחילו להעלות עכשיו וקבלו את ההנחה לכל החיים!**`,
-    icon: <Zap className="h-4 w-4" />,
-    color: 'text-red-600'
-  },
   {
     id: 'urgency_72h',
     name: 'Urgency - 72 Hours',
@@ -93,24 +46,6 @@ Don't miss out - once we hit 100 uploaders, the price goes back to $75/month!
 ⚡ **העלה את היהלום הראשון שלך כדי להבטיח את המקום!**
 
 הזמן אוזל... למה לשלם דמי מנוי חודשיים כשאפשר לקבל גישה לכל החיים רק ב-$50!`,
-    messageHe: `🚨 **⏰ דחוף: 72 שעות נותרו!** ⏰ 🚨
-
-💎 **הנחת לכל החייםמסתיימת בקרוב!**
-
-רק **[X] מקומות נותרו** מתוך 100 עבור גישה לכל החיים ב-$50!
-
-🎯 **זו ההזדמנות האחרונה שלך לקבל:**
-• ✨ העלאות יהלומים ללא הגבלה - לכל החיים
-• 🤖 התאמת קונים באמצעות AI - גישה לכל החיים
-• 📊 תובנות שוק וניתוחים - ללא עמלות חודשיות
-• 💰 התראות עדיפות על עסקאות - סטטוס VIP קבוע
-• 🚀 כל התכונות העתידיות כלולות - ללא עלות נוספת
-
-**אחרי 100 מעלים = המחיר עובר ל-$75 לחודש!**
-
-⚡ **העלה את היהלום הראשון שלך כדי להבטיח את המקום!**
-
-הזמן אוזל... למה לשלם דמי מנוי חודשיים כשאפשר לקבל גישה לכל החיים רק ב-$50!`,
     icon: <Clock className="h-4 w-4" />,
     color: 'text-red-600'
   },
@@ -118,30 +53,8 @@ Don't miss out - once we hit 100 uploaders, the price goes back to $75/month!
     id: 'scarcity_spots',
     name: 'Scarcity - Limited Spots',
     type: 'scarcity',
-    subject: '🔥 אזהרת מחסור: רק [X] מקומות נותרו!',
+    subject: '🔥 אזהרת מחסור: רק [X] מקומות נותרו!',  
     message: `🔥 **אזהרת מחסור: רק [X] מקומות נותרו!** 🔥
-
-💎 **BrilliantBot גישה לכל החיים - $50 (היה $75)**
-
-⚠️ **רק ל-100 המעלים הראשונים - ללא יוצאים מן הכלל!**
-
-מה קורה כשאתה מעלה את היהלום הראשון:
-• 🎖️ הפעלת חברות לכל החיים מיידית
-• 💰 נעילת מחיר $50 לכל החיים (אחרים משלמים $75 לחודש)
-• 🚀 דילוג על כל מחזורי התשלום העתידיים
-• ⭐ סטטוס VIP קבוע בקהילת הסחר
-• 🔍 התאמת קונים באמצעות AI ללא הגבלה
-• 📊 חבילת ניתוחים מלאה - שלך לכל החיים
-
-**ספירה נוכחית: [X]/100 מקומות מאוישים**
-
-כל שעה = פחות מקומות זמינים!
-כל מעלה חדש = הזדמנות אחת פחות עבורך!
-
-⏰ **ספירה לאחור של 72 שעות החלה...**
-
-אל תצפה מהצד בזמן שאחרים מבטיחים את הגישה לכל החיים שלהם!`,
-    messageHe: `🔥 **אזהרת מחסור: רק [X] מקומות נותרו!** 🔥
 
 💎 **BrilliantBot גישה לכל החיים - $50 (היה $75)**
 
@@ -165,6 +78,137 @@ Don't miss out - once we hit 100 uploaders, the price goes back to $75/month!
 אל תצפה מהצד בזמן שאחרים מבטיחים את הגישה לכל החיים שלהם!`,
     icon: <AlertTriangle className="h-4 w-4" />,
     color: 'text-orange-600'
+  },
+  {
+    id: 'social_proof',
+    name: 'Social Proof - Others Joining',
+    type: 'social_proof',
+    subject: '👥 יותר מ-[X] סוחרים כבר הצטרפו!',
+    message: `👥 **יותר מ-[X] סוחרים מובילים כבר הבטיחו את המקום שלהם!** 👥
+
+💎 **למה הם ממהרים להצטרף ל-BrilliantBot?**
+
+🎯 **מה שסוחרים מובילים אומרים:**
+• "השקעה של $50 שחסכה לי $10,000 ברווחים החמוצים" - יוסי כ.
+• "ה-AI מוצא לי קונים שלא הייתי מוצא לבד" - מיכל ר.
+• "סוף סוף פלטפורמה שמבינה את הצרכים שלנו" - אבי מ.
+
+⚡ **רק [X] מקומות נותרו מתוך 100**
+
+📈 **הנתונים מדברים בעד עצמם:**
+• ממוצע 40% יותר פניות לכל יהלום
+• 65% זמן מכירה מהיר יותר
+• 28% שיפור ברווחיות
+
+🚀 **אל תהיה האחרון שנכנס - המקומות נגמרים מהר!**
+
+**המחיר עולה ל-$75/חודש ברגע שנמלאים 100 המקומות**
+
+⏰ נותרו רק 72 שעות להבטיח $50 לכל החיים`,
+    icon: <Users className="h-4 w-4" />,
+    color: 'text-blue-600'
+  },
+  {
+    id: 'value_proposition',
+    name: 'Value - ROI Focus',
+    type: 'value',
+    subject: '💰 חסוך $300 בשנה הראשונה!',
+    message: `💰 **חישוב פשוט: BrilliantBot מחזיר את עצמו תוך שבוע!** 💰
+
+📊 **בואו נעשה חשבון:**
+
+**עלות רגילה:**
+• $75 לחודש × 12 חודשים = $900 בשנה
+• לכל החיים (5 שנים): $4,500
+
+**מחיר מיוחד עכשיו:**
+• תשלום חד-פעמי: $50 בלבד!
+• חיסכון בשנה הראשונה: $850
+• חיסכון לכל החיים: $4,450
+
+🎯 **מה שאתה מקבל בתמורה:**
+• 🔍 AI שמוצא קונים בדקות במקום שבועות
+• 📈 ממוצע 40% יותר פניות לכל יהלום
+• ⚡ 65% זמן מכירה מהיר יותר
+• 💎 גישה לרשת 1,600+ סוחרים פעילים
+
+**אפילו עסקה אחת נוספת בחודש משלמת את ההשקעה!**
+
+⏰ **רק [X] מקומות נותרו מתוך 100**
+⏰ **רק 72 שעות נותרו למחיר המיוחד**
+
+🚀 **העלה יהלום אחד עכשיו והתחל לחסוך!**`,
+    icon: <Target className="h-4 w-4" />,
+    color: 'text-green-600'
+  },
+  {
+    id: 'fomo_exclusive',
+    name: 'FOMO - Exclusive Access',
+    type: 'fomo',
+    subject: '🎖️ גישה בלעדית לחברי VIP בלבד!',
+    message: `🎖️ **אתה מוזמן לחברות VIP בלעדית ב-BrilliantBot!** 🎖️
+
+👑 **מה זה אומר להיות VIP?**
+
+🌟 **הטבות בלעדיות שאחרים לא יקבלו:**
+• 🚀 גישה מוקדמת לכל התכונות החדשות
+• 💎 עדיפות בהתאמות AI (התוצאות שלך קודם)
+• 📊 דוחות שוק מתקדמים (ערך $200/חודש)
+• 🎯 ייעוץ אישי מומחי יהלומים
+• 👥 גישה לקבוצת VIP סגורה (50 חברים בלבד)
+• 🏆 תג זהב בפרופיל + הכרה מיוחדת
+
+⚡ **המיוחד: רק 100 מקומות VIP יפתחו אי פעם!**
+
+מאחרי זה - הכל יהיה $75/חודש ללא הטבות VIP.
+
+🔥 **למה עכשיו?**
+• חברי VIP מקבלים פי 3 יותר פניות
+• גישה לעסקאות בלעדיות שאחרים לא רואים
+• רשת קשרים עם 100 הסוחרים המובילים בארץ
+
+⏰ **נותרו [X] הזמנות VIP מתוך 100**
+⏰ **נותרו 72 שעות לתפוס את המקום**
+
+🎖️ **תהיה חלק מה-VIP - תעלה יהלום עכשיו!**`,
+    icon: <Crown className="h-4 w-4" />,
+    color: 'text-purple-600'
+  },
+  {
+    id: 'last_chance',
+    name: 'Last Chance - Final Call',
+    type: 'fomo',
+    subject: '🚨 הזדמנות אחרונה - נגמר מחר!',
+    message: `🚨 **זה זה - ההזדמנות האחרונה שלך!** 🚨
+
+⏰ **פחות מ-24 שעות נותרו למחיר $50**
+
+💔 **אל תהיה מהסוחרים שיצטערו מחר:**
+• "איך פספסתי את זה?"
+• "הייתי יכול לחסוך $4,000..."
+• "למה לא העליתי יהלום אחד בזמן?"
+
+🔥 **מה שקורה מחר ב-00:00:**
+• המחיר קופץ ל-$75/חודש
+• הטבות ה-VIP נסגרות לתמיד
+• 100 המקומות המובטחים נגמרים
+• תצטרך לחכות בתור כמו כולם
+
+⚡ **עכשיו או אף פעם:**
+רק **[X] מקומות** נותרו מתוך 100
+רק **[X] שעות** נותרו למחיר המיוחד
+
+🎯 **מה שצריך לעשות עכשיו:**
+1. לחץ על הכפתור למטה
+2. העלה יהלום אחד (אפילו ישן)
+3. קבל גישה לכל החיים ב-$50
+4. התחל לקבל יותר פניות מיד
+
+**אחרי חצות - אין דרך חזרה!**
+
+⚡ **תעלה עכשיו ותבטיח את העתיד שלך!**`,
+    icon: <Zap className="h-4 w-4" />,
+    color: 'text-red-700'
   }
 ];
 
@@ -175,7 +219,6 @@ export function CampaignSender() {
   const [targetGroup, setTargetGroup] = useState('-1001009290613');
   const [currentUploaders, setCurrentUploaders] = useState(47);
   const [hoursLeft, setHoursLeft] = useState(72);
-  const [language, setLanguage] = useState<'en' | 'he'>('he');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -183,10 +226,7 @@ export function CampaignSender() {
     setIsLoading(true);
     
     try {
-      const isHebrew = language === 'he';
-      const finalMessage = messageData 
-        ? (isHebrew ? messageData.messageHe : messageData.message) 
-        : customMessage;
+      const finalMessage = messageData ? messageData.message : customMessage;
       const finalSubject = messageData ? messageData.subject : 'הודעת קמפיין מיוחדת';
       
       // Replace placeholders
@@ -202,7 +242,7 @@ export function CampaignSender() {
       const { data, error } = await supabase.functions.invoke('send-group-cta', {
         body: {
           message: personalizedMessage,
-          buttonText: isHebrew ? '🚀 קבל גישה לכל החיים - $50' : '🚀 Get Lifetime Access - $50',
+          buttonText: '🚀 קבל גישה לכל החיים - $50',
           groupId: targetGroup,
           botUsername: 'diamondmazalbot'
         }
@@ -210,22 +250,17 @@ export function CampaignSender() {
 
       if (error) throw error;
 
-      // Log campaign in analytics_events table
+      // Log campaign for analytics
       const { error: logError } = await supabase
-        .from('analytics_events')
+        .from('campaign_logs')
         .insert({
-          event_type: 'campaign_sent',
-          page_path: '/admin/campaigns',
-          session_id: crypto.randomUUID(),
-          user_agent: navigator.userAgent,
-          event_data: {
-            campaign_type: messageData?.type || 'custom',
-            campaign_name: campaignName || messageData?.name || 'Custom Campaign',
-            message_content: personalizedMessage,
-            target_group: targetGroup,
-            current_uploaders: currentUploaders,
-            hours_remaining: hoursLeft,
-            language: language,
+          campaign_type: messageData?.type || 'custom',
+          campaign_name: campaignName || messageData?.name || 'Custom Campaign',
+          message_content: personalizedMessage,
+          target_group: targetGroup,
+          current_uploaders: currentUploaders,
+          hours_remaining: hoursLeft,
+          metadata: {
             campaign_id: messageData?.id || 'custom',
             subject: personalizedSubject
           }
@@ -276,7 +311,7 @@ export function CampaignSender() {
           </TabsList>
 
           {/* Campaign Settings */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-muted rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
             <div className="space-y-2">
               <Label>מספר מעלים נוכחי</Label>
               <Input
@@ -293,18 +328,6 @@ export function CampaignSender() {
                 value={hoursLeft}
                 onChange={(e) => setHoursLeft(parseInt(e.target.value) || 0)}
               />
-            </div>
-            <div className="space-y-2">
-              <Label>שפה</Label>
-              <Select value={language} onValueChange={(value: 'en' | 'he') => setLanguage(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="he">עברית</SelectItem>
-                  <SelectItem value="en">English</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
             <div className="space-y-2">
               <Label>ID קבוצת יעד</Label>
@@ -343,7 +366,7 @@ export function CampaignSender() {
                         {campaign.subject.replace(/\[X\]/g, currentUploaders.toString())}
                       </p>
                       <pre className="whitespace-pre-wrap text-sm text-right">
-                        {(language === 'he' ? campaign.messageHe : campaign.message)
+                        {campaign.message
                           .replace(/\[X\]/g, currentUploaders.toString())
                           .replace(/\[HOURS\]/g, hoursLeft.toString())
                           .substring(0, 300)}...
