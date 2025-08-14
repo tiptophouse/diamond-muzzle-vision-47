@@ -21,8 +21,8 @@ export default function ChatPage() {
   }, [handleBack]);
 
   return (
-    <TelegramLayout className="h-screen flex flex-col">
-      <div className="flex-1 overflow-hidden">
+    <TelegramLayout>
+      <div className="flex-1 overflow-hidden h-screen flex flex-col">
         <ChatContainer />
       </div>
     </TelegramLayout>
