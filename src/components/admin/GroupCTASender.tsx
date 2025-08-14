@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,16 +12,26 @@ export function GroupCTASender() {
   const { sendGroupCTA, isLoading } = useGroupCTA();
   
   const [formData, setFormData] = useState({
-    message: `💎 **שדרגו את הפעילות שלכם ביהלומים!**
+    message: `🚨 **LIMITED TIME: LIFETIME DISCOUNT!** 🚨
 
-🤖 BrilliantBot כאן כדי לעזור לכם:
-• ✨ התאמות חכמות של יהלומים
-• 📊 ניתוחי שוק בזמן אמת  
-• 🔍 חיפוש מתקדם במלאי
-• 💰 הזדמנויות השקעה
+💎 **Only the FIRST 100 uploaders get LIFETIME access for $50 instead of $75!**
 
-⚡ **התחילו עכשיו - לחצו על הכפתור למטה!**`,
-    buttonText: '🚀 התחל עם BrilliantBot',
+⏰ **You have 72 HOURS to secure your spot!**
+
+🎯 **What you get as a LIFETIME member:**
+• ✨ Upload unlimited diamonds to BrilliantBot
+• 🔍 AI-powered buyer matching system  
+• 📊 Real-time market analytics
+• 💰 Priority notifications for high-value deals
+• 🚀 Early access to ALL future features
+• 🎖️ VIP status in the trading community
+
+**Current spots taken: [X]/100** ⚠️
+
+Don't miss out - once we hit 100 uploaders, the price goes back to $75/month!
+
+⚡ **Start uploading NOW and claim your lifetime discount!**`,
+    buttonText: '🚀 Get Lifetime Access - $50',
     groupId: '-1001009290613',
     botUsername: 'diamondmazalbot'
   });
@@ -39,6 +50,60 @@ export function GroupCTASender() {
     }
   };
 
+  const loadUrgentTemplate = () => {
+    setFormData(prev => ({
+      ...prev,
+      message: `🚨 **⏰ URGENT: 72 HOURS LEFT!** ⏰ 🚨
+
+💎 **LIFETIME DISCOUNT ending soon!**
+
+Only **[X] spots left** out of 100 for the $50 LIFETIME access!
+
+🎯 **This is your LAST CHANCE to get:**
+• ✨ Unlimited diamond uploads - FOREVER
+• 🤖 AI buyer matching - LIFETIME access  
+• 📊 Market insights & analytics - NO monthly fees
+• 💰 Priority deal notifications - PERMANENT VIP status
+• 🚀 All future features included - NO extra cost
+
+**After 100 uploaders = Price goes to $75/month!**
+
+⚡ **Upload your first diamond NOW to secure your spot!**
+
+Time is running out... Don't pay monthly fees when you can get LIFETIME access for just $50!`,
+      buttonText: '🔥 Claim Lifetime $50 Deal'
+    }));
+  };
+
+  const loadScarcityTemplate = () => {
+    setFormData(prev => ({
+      ...prev,
+      message: `🔥 **SCARCITY ALERT: Only [X] spots remaining!** 🔥
+
+💎 **BrilliantBot LIFETIME access - $50 (was $75)**
+
+⚠️ **First 100 uploaders ONLY - No exceptions!**
+
+What happens when you upload your first diamond:
+• 🎖️ INSTANT lifetime membership activation
+• 💰 Lock in $50 price FOREVER (others pay $75/month)
+• 🚀 Skip all future payment cycles
+• ⭐ Permanent VIP status in trading community
+• 🔍 Unlimited AI-powered buyer matching
+• 📊 Full analytics suite - yours for life
+
+**Current count: [X]/100 spots filled**
+
+Every hour = fewer spots available!
+Every new uploader = one less opportunity for you!
+
+⏰ **72 hours countdown has started...**
+
+Don't watch from the sidelines while others secure their lifetime access!`,
+      buttonText: '⚡ Upload & Lock $50 Price'
+    }));
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -47,10 +112,19 @@ export function GroupCTASender() {
           Send Group Call-to-Action
         </CardTitle>
         <CardDescription>
-          Send an inline keyboard message to encourage users to start the bot
+          Send lifetime discount message to encourage urgency for first 100 uploaders
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="flex gap-2 mb-4">
+          <Button variant="outline" size="sm" onClick={loadUrgentTemplate}>
+            Load Urgent Template
+          </Button>
+          <Button variant="outline" size="sm" onClick={loadScarcityTemplate}>
+            Load Scarcity Template
+          </Button>
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="groupId">Group ID</Label>
           <Input
@@ -90,7 +164,7 @@ export function GroupCTASender() {
             value={formData.message}
             onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
             placeholder="Enter your call-to-action message"
-            rows={8}
+            rows={12}
             maxLength={2000}
             dir="rtl"
             className="text-right"
@@ -108,6 +182,12 @@ export function GroupCTASender() {
               <pre className="whitespace-pre-wrap text-right text-sm">{formData.message}</pre>
             </div>
           </div>
+        </div>
+
+        <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg">
+          <p className="text-sm text-yellow-800">
+            <strong>💡 Pro Tip:</strong> Remember to manually update [X] with the actual number of current uploaders before sending!
+          </p>
         </div>
 
         <div className="flex justify-end pt-4">
