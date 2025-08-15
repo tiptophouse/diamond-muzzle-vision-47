@@ -1,10 +1,12 @@
+
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TelegramAuthProvider } from './context/TelegramAuthContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
-import { initTelegramSDK } from './lib/telegram';
+import { ModernTelegramLayout } from './components/layout/ModernTelegramLayout';
+import telegramSDK from './lib/telegramSDK';
 import { initViewport } from './lib/viewport';
 import { authService } from './lib/auth';
 import Index from './pages/Index';
@@ -38,18 +40,18 @@ function App() {
     },
   });
   
-  // Bootstrap Telegram SDK and viewport
+  // Bootstrap modern Telegram SDK and viewport
   useEffect(() => {
     const initApp = async () => {
-      console.log('🚀 Initializing Telegram Mini-App...');
+      console.log('🚀 Initializing Modern Telegram Mini-App...');
       
       // Initialize viewport fixes
       initViewport();
       
-      // Initialize Telegram SDK
-      const telegramReady = await initTelegramSDK();
+      // Initialize modern Telegram SDK
+      const telegramReady = await telegramSDK.initialize();
       if (telegramReady) {
-        console.log('✅ Telegram SDK initialized');
+        console.log('✅ Modern Telegram SDK initialized');
         
         // Auto sign-in
         try {
@@ -59,7 +61,7 @@ function App() {
           console.warn('⚠️ Auto sign-in failed:', error);
         }
       } else {
-        console.warn('⚠️ Telegram SDK not available - running in browser mode');
+        console.warn('⚠️ Modern Telegram SDK not available - running in browser mode');
       }
     };
     
@@ -72,7 +74,7 @@ function App() {
         <Router>
           <TutorialProvider>
             <InteractiveWizardProvider>
-              <div className="min-h-screen bg-background">
+              <ModernTelegramLayout>
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/dashboard" element={<Dashboard />} />
@@ -96,7 +98,7 @@ function App() {
                   <Route path="/standardize-csv" element={<StandardizeCsvPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-              </div>
+              </ModernTelegramLayout>
             </InteractiveWizardProvider>
           </TutorialProvider>
         </Router>

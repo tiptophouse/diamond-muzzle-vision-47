@@ -1,249 +1,130 @@
+import telegramSDK from './telegramSDK';
 
-import { getTelegramInitData } from './telegram';
-
-// Security: Memory-only token storage (no localStorage/sessionStorage)
-class SecureTokenStore {
-  private token: string | null = null;
-  private refreshPromise: Promise<string> | null = null;
-  private readonly tokenPrefix = 'tg_'; // Security marker
-  
-  set(token: string | null) {
-    // Security: Validate token format before storing
-    if (token && !this.isValidTokenFormat(token)) {
-      console.warn('⚠️ Invalid token format detected');
-      return;
-    }
-    this.token = token;
-  }
-  
-  get(): string | null {
-    return this.token;
-  }
-  
-  clear() {
-    this.token = null;
-    this.refreshPromise = null;
-  }
-  
-  setRefreshPromise(promise: Promise<string> | null) {
-    this.refreshPromise = promise;
-  }
-  
-  getRefreshPromise(): Promise<string> | null {
-    return this.refreshPromise;
-  }
-  
-  // Security: Basic JWT format validation
-  private isValidTokenFormat(token: string): boolean {
-    // JWT has 3 parts separated by dots
-    const parts = token.split('.');
-    if (parts.length !== 3) return false;
-    
-    // Each part should be base64url encoded
-    return parts.every(part => /^[A-Za-z0-9_-]+$/.test(part));
-  }
+interface SignInResponse {
+  access_token: string;
+  expires_in: number;
+  token_type: string;
 }
 
-// Singleton secure auth service
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const TOKEN_EXPIRY_THRESHOLD = 60 * 1000; // 60 seconds
+const RATE_LIMIT_WINDOW = 5 * 1000; // 5 seconds
+const MAX_SIGN_IN_ATTEMPTS = 3;
+
 class SecureAuthService {
-  private tokenStore = new SecureTokenStore();
-  private baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-  private readonly maxSignInAttempts = 3;
+  private token: string | null = null;
+  private refreshPromise: Promise<string | null> | null = null;
   private signInAttempts = 0;
-  
-  // Secure sign in with Telegram initData validation
-  async signIn(): Promise<string> {
-    // Security: Rate limiting
-    if (this.signInAttempts >= this.maxSignInAttempts) {
-      throw new Error('Too many sign-in attempts. Please wait.');
+  private lastSignInAttempt = 0;
+
+  private validateInput(input: string): boolean {
+    if (typeof input !== 'string' || input.length < 10) {
+      console.warn('⚠️ Invalid input format');
+      return false;
     }
-    
-    const initData = getTelegramInitData();
-    
-    if (!initData) {
-      throw new Error('No Telegram init data available');
-    }
-    
-    // Security: Validate initData format
-    if (!this.isValidInitData(initData)) {
-      throw new Error('Invalid Telegram init data format');
-    }
-    
+    return true;
+  }
+
+  private isTokenExpired(): boolean {
+    const token = this.getToken();
+    if (!token) return true;
+
     try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const expiry = payload.exp * 1000; // Convert seconds to milliseconds
+      const now = Date.now();
+
+      return expiry - now < TOKEN_EXPIRY_THRESHOLD;
+    } catch (error) {
+      console.error('❌ Failed to decode or validate token:', error);
+      return true;
+    }
+  }
+
+  private async performSignIn(): Promise<string | null> {
+    // Rate limiting
+    const now = Date.now();
+    if (now - this.lastSignInAttempt < RATE_LIMIT_WINDOW) {
       this.signInAttempts++;
+      if (this.signInAttempts > MAX_SIGN_IN_ATTEMPTS) {
+        throw new Error('Too many sign-in attempts. Please wait.');
+      }
+    } else {
+      this.signInAttempts = 1;
+    }
+    this.lastSignInAttempt = now;
+
+    try {
+      // Get init data from modern SDK
+      const initData = telegramSDK.getInitData();
       
-      const response = await fetch(`${this.baseUrl}/api/v1/auth/sign-in`, {
+      if (!initData || !this.validateInput(initData)) {
+        console.warn('⚠️ No valid init data available');
+        return null;
+      }
+
+      console.log('🔐 Signing in with init data...');
+      
+      const response = await fetch(`${API_BASE_URL}/api/v1/sign-in/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'TelegramMiniApp/1.0',
+          'Accept': 'application/json',
         },
-        body: JSON.stringify({ init_data: initData }),
+        body: JSON.stringify({
+          init_data: initData,
+          timestamp: Date.now()
+        }),
       });
-      
+
       if (!response.ok) {
-        throw new Error(`Sign in failed: ${response.status}`);
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`Sign-in failed: ${response.status} ${errorText}`);
       }
-      
+
       const data = await response.json();
       
-      // Security: Validate response structure
       if (!data.access_token || typeof data.access_token !== 'string') {
-        throw new Error('Invalid authentication response');
+        throw new Error('Invalid token received from server');
       }
-      
-      const token = data.access_token;
-      
-      // Security: Validate JWT structure
-      if (!this.isValidJWT(token)) {
-        throw new Error('Invalid JWT token received');
-      }
-      
-      this.tokenStore.set(token);
-      this.signInAttempts = 0; // Reset on success
-      
-      // Dispatch secure auth state change
-      this.dispatchAuthStateChange(true);
-      
-      console.log('✅ Secure authentication successful');
-      return token;
+
+      this.token = data.access_token;
+      console.log('✅ Sign-in successful');
+      return this.token;
+
     } catch (error) {
-      console.error('🚫 Sign in error:', error);
+      console.error('❌ Sign-in error:', error);
       throw error;
     }
   }
-  
-  // Secure token refresh (reuse sign-in with initData)
-  async refreshToken(): Promise<string> {
-    // Prevent multiple simultaneous refresh attempts
-    const existingPromise = this.tokenStore.getRefreshPromise();
-    if (existingPromise) {
-      return existingPromise;
+
+  async signIn(): Promise<string | null> {
+    if (this.token && !this.isTokenExpired()) {
+      console.log('✅ Already signed in with valid token');
+      return this.token;
     }
-    
-    const refreshPromise = this.signIn();
-    this.tokenStore.setRefreshPromise(refreshPromise);
-    
+
+    if (this.refreshPromise) {
+      console.log('🔄 Sign-in already in progress, awaiting...');
+      return this.refreshPromise;
+    }
+
     try {
-      const token = await refreshPromise;
-      return token;
+      this.refreshPromise = this.performSignIn();
+      return await this.refreshPromise;
     } finally {
-      this.tokenStore.setRefreshPromise(null);
+      this.refreshPromise = null;
     }
   }
-  
-  // Get current token with security check
+
   getToken(): string | null {
-    const token = this.tokenStore.get();
-    
-    // Security: Check if token is expired
-    if (token && this.isTokenExpired()) {
-      console.warn('⚠️ Token expired, clearing...');
-      this.tokenStore.clear();
-      return null;
-    }
-    
-    return token;
+    return this.token;
   }
-  
-  // Secure sign out
-  signOut() {
-    this.tokenStore.clear();
-    this.signInAttempts = 0;
-    this.dispatchAuthStateChange(false);
-    console.log('🚪 Secure sign out completed');
-  }
-  
-  // Check if authenticated with security validation
-  isAuthenticated(): boolean {
-    const token = this.getToken();
-    return !!token && !this.isTokenExpired();
-  }
-  
-  // Secure JWT decode (without external library)
-  getUserFromToken(): any {
-    const token = this.tokenStore.get();
-    if (!token) return null;
-    
-    try {
-      const base64Url = token.split('.')[1];
-      
-      // Security: Validate base64url format
-      if (!base64Url || !/^[A-Za-z0-9_-]+$/.test(base64Url)) {
-        console.error('🚫 Invalid JWT payload format');
-        return null;
-      }
-      
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split('')
-          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
-      );
-      
-      const payload = JSON.parse(jsonPayload);
-      
-      // Security: Validate payload structure
-      if (!payload.exp || !payload.sub) {
-        console.warn('⚠️ JWT payload missing required fields');
-        return null;
-      }
-      
-      return payload;
-    } catch (error) {
-      console.error('🚫 Failed to decode JWT:', error);
-      return null;
-    }
-  }
-  
-  // Check if token is expired with security buffer
-  isTokenExpired(): boolean {
-    const user = this.getUserFromToken();
-    if (!user || !user.exp) return true;
-    
-    // Security: Add 30 second buffer before actual expiry
-    const bufferTime = 30 * 1000; // 30 seconds
-    return Date.now() >= (user.exp * 1000 - bufferTime);
-  }
-  
-  // Security: Validate initData format
-  private isValidInitData(initData: string): boolean {
-    try {
-      // Should be URL-encoded parameters
-      const params = new URLSearchParams(initData);
-      
-      // Must have required fields
-      const hasUser = params.has('user');
-      const hasHash = params.has('hash');
-      const hasAuthDate = params.has('auth_date');
-      
-      return hasUser && hasHash && hasAuthDate;
-    } catch {
-      return false;
-    }
-  }
-  
-  // Security: Validate JWT structure
-  private isValidJWT(token: string): boolean {
-    const parts = token.split('.');
-    if (parts.length !== 3) return false;
-    
-    // Each part should be valid base64url
-    return parts.every(part => /^[A-Za-z0-9_-]+$/.test(part));
-  }
-  
-  // Security: Safe event dispatch
-  private dispatchAuthStateChange(authenticated: boolean) {
-    try {
-      window.dispatchEvent(new CustomEvent('auth-state-changed', { 
-        detail: { authenticated } 
-      }));
-    } catch (error) {
-      console.error('Failed to dispatch auth state change:', error);
-    }
+
+  async signOut(): Promise<void> {
+    this.token = null;
+    console.log('🚪 Signed out');
   }
 }
 
-// Export singleton instance
 export const authService = new SecureAuthService();
