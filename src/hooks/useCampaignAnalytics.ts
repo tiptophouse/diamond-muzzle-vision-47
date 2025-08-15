@@ -1,124 +1,138 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
-interface CampaignEventData {
-  campaign_type?: string;
-  campaign_name?: string;
-  current_uploaders?: number;
-  hours_remaining?: number;
-  target_group?: string;
+export interface CampaignLog {
+  id: string;
+  campaign_type: string;
+  campaign_name: string;
+  message_content: string;
+  target_group: string;
+  sent_count: number;
+  current_uploaders: number;
+  created_at: string;
 }
 
-interface CampaignAnalyticsData {
+export interface CampaignInteraction {
+  id: string;
+  campaign_id: string;
+  user_id: number;
+  interaction_type: 'click' | 'view' | 'share' | 'dismiss';
+  created_at: string;
+}
+
+export interface CampaignMetrics {
   totalCampaigns: number;
-  campaignsByType: Record<string, number>;
-  recentCampaigns: any[];
-  averageUploaders: number;
-  conversionRate: number;
+  totalSent: number;
+  totalInteractions: number;
+  averageEngagement: number;
+  recentCampaigns: CampaignLog[];
 }
 
 export function useCampaignAnalytics() {
-  const [analytics, setAnalytics] = useState<CampaignAnalyticsData | null>(null);
+  const [metrics, setMetrics] = useState<CampaignMetrics>({
+    totalCampaigns: 0,
+    totalSent: 0,
+    totalInteractions: 0,
+    averageEngagement: 0,
+    recentCampaigns: []
+  });
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
-  const fetchCampaignAnalytics = async (daysBack = 30) => {
+  const fetchCampaignMetrics = async () => {
     setIsLoading(true);
     try {
-      const fromDate = new Date();
-      fromDate.setDate(fromDate.getDate() - daysBack);
-
-      // Fetch campaign events from analytics_events
-      const { data: campaigns, error } = await supabase
+      // Use analytics_events table to store campaign logs with proper structure
+      const { data: campaignLogs, error: logsError } = await supabase
         .from('analytics_events')
         .select('*')
         .eq('event_type', 'campaign_sent')
-        .gte('timestamp', fromDate.toISOString())
-        .order('timestamp', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(10);
 
-      if (error) throw error;
+      if (logsError) throw logsError;
 
-      if (!campaigns) {
-        setAnalytics({
-          totalCampaigns: 0,
-          campaignsByType: {},
-          recentCampaigns: [],
-          averageUploaders: 0,
-          conversionRate: 0
-        });
-        return;
-      }
+      // Transform analytics events to campaign logs format
+      const transformedLogs: CampaignLog[] = (campaignLogs || []).map(log => ({
+        id: log.id,
+        campaign_type: (log.event_data as any)?.campaign_type || 'unknown',
+        campaign_name: (log.event_data as any)?.campaign_name || 'Unnamed Campaign',
+        message_content: (log.event_data as any)?.message_content || '',
+        target_group: (log.event_data as any)?.target_group || 'all',
+        sent_count: (log.event_data as any)?.sent_count || 0,
+        current_uploaders: (log.event_data as any)?.current_uploaders || 0,
+        created_at: log.created_at
+      }));
 
-      // Calculate analytics from event_data with proper typing
-      const campaignsByType = campaigns.reduce((acc: Record<string, number>, campaign) => {
-        const eventData = campaign.event_data as CampaignEventData;
-        const campaignType = eventData?.campaign_type || 'unknown';
-        acc[campaignType] = (acc[campaignType] || 0) + 1;
-        return acc;
-      }, {});
+      // Get campaign interactions from analytics_events
+      const { data: interactions, error: interactionsError } = await supabase
+        .from('analytics_events')
+        .select('*')
+        .eq('event_type', 'campaign_interaction');
 
-      const averageUploaders = campaigns.length > 0 
-        ? campaigns.reduce((sum, c) => {
-            const eventData = c.event_data as CampaignEventData;
-            return sum + (eventData?.current_uploaders || 0);
-          }, 0) / campaigns.length
-        : 0;
+      if (interactionsError) throw interactionsError;
 
-      // Calculate conversion rate (simplified - could be improved with actual user tracking)
-      const conversionRate = Math.random() * 15 + 5; // Mock data for now
+      const totalSent = transformedLogs.reduce((sum, log) => sum + log.sent_count, 0);
+      const totalInteractions = interactions?.length || 0;
+      const averageEngagement = totalSent > 0 ? (totalInteractions / totalSent) * 100 : 0;
 
-      setAnalytics({
-        totalCampaigns: campaigns.length,
-        campaignsByType,
-        recentCampaigns: campaigns.slice(0, 10),
-        averageUploaders: Math.round(averageUploaders),
-        conversionRate: Math.round(conversionRate * 100) / 100
+      setMetrics({
+        totalCampaigns: transformedLogs.length,
+        totalSent,
+        totalInteractions,
+        averageEngagement,
+        recentCampaigns: transformedLogs
       });
-
     } catch (error) {
-      console.error('Error fetching campaign analytics:', error);
-      toast({
-        title: "שגיאה בטעינת נתוני קמפיינים",
-        description: "לא ניתן לטעון את נתוני הקמפיינים",
-        variant: "destructive",
-      });
+      console.error('Error fetching campaign metrics:', error);
+      toast.error('Failed to load campaign analytics');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logCampaignInteraction = async (campaignId: string, interactionType: 'click' | 'conversion' | 'share') => {
+  const logCampaignSent = async (campaignData: Omit<CampaignLog, 'id' | 'created_at'>) => {
     try {
-      const { error } = await supabase
-        .from('analytics_events')
-        .insert({
-          event_type: 'campaign_interaction',
-          page_path: '/campaigns',
-          session_id: crypto.randomUUID(),
-          user_agent: navigator.userAgent,
-          event_data: {
-            campaign_id: campaignId,
-            interaction_type: interactionType,
-            timestamp: new Date().toISOString()
-          }
-        });
+      await supabase.from('analytics_events').insert({
+        event_type: 'campaign_sent',
+        event_data: campaignData,
+        page_path: '/admin',
+        session_id: crypto.randomUUID(),
+        user_agent: navigator.userAgent
+      });
+    } catch (error) {
+      console.error('Error logging campaign:', error);
+    }
+  };
 
-      if (error) throw error;
+  const logCampaignInteraction = async (campaignId: string, userId: number, interactionType: string) => {
+    try {
+      await supabase.from('analytics_events').insert({
+        event_type: 'campaign_interaction',
+        event_data: {
+          campaign_id: campaignId,
+          user_id: userId,
+          interaction_type: interactionType
+        },
+        page_path: window.location.pathname,
+        session_id: crypto.randomUUID(),
+        user_agent: navigator.userAgent
+      });
     } catch (error) {
       console.error('Error logging campaign interaction:', error);
     }
   };
 
   useEffect(() => {
-    fetchCampaignAnalytics();
+    fetchCampaignMetrics();
   }, []);
 
   return {
-    analytics,
+    metrics,
     isLoading,
-    fetchCampaignAnalytics,
+    fetchCampaignMetrics,
+    logCampaignSent,
     logCampaignInteraction
   };
 }

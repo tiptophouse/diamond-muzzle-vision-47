@@ -1,34 +1,97 @@
 
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Diamond Muzzle Vision</title>
+    <meta name="description" content="Diamond inventory management for Telegram" />
+    <meta name="author" content="Diamond Muzzle" />
     
-    <!-- Content Security Policy -->
-    <meta http-equiv="Content-Security-Policy" content="
-      default-src 'self';
-      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org https://*.telegram.org;
-      style-src 'self' 'unsafe-inline';
-      img-src 'self' data: blob: https: http:;
-      font-src 'self' data:;
-      connect-src 'self' https: wss:;
-      media-src 'self' blob: data:;
-    ">
+    <!-- Telegram Mini App Configuration -->
+    <meta name="telegram-web-app" content="true" />
+    <meta name="theme-color" content="#1f2937" />
     
-    <!-- iOS Safari specific meta tags -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="format-detection" content="telephone=no">
+    <!-- Open Graph -->
+    <meta property="og:title" content="Diamond Muzzle Vision" />
+    <meta property="og:description" content="Diamond inventory management for Telegram" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@lovable_dev" />
+    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
     
-    <!-- Telegram WebApp Script -->
+    <!-- Telegram Web App Script - MUST be loaded first and synchronously -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
-    <title>BrilliantBot - Diamond Trading Platform</title>
+    <!-- Initialize Telegram WebApp immediately -->
+    <script>
+      // Wait for script to fully load
+      let initAttempts = 0;
+      const maxInitAttempts = 10;
+      
+      function initializeTelegramWebApp() {
+        initAttempts++;
+        
+        if (window.Telegram && window.Telegram.WebApp) {
+          console.log('✅ Telegram WebApp script loaded successfully');
+          console.log('📱 WebApp version:', window.Telegram.WebApp.version);
+          console.log('🔍 InitData available:', !!window.Telegram.WebApp.initData);
+          console.log('🔍 InitData length:', window.Telegram.WebApp.initData?.length || 0);
+          console.log('🔍 InitDataUnsafe available:', !!window.Telegram.WebApp.initDataUnsafe);
+          console.log('🔍 InitDataUnsafe user:', window.Telegram.WebApp.initDataUnsafe?.user);
+          
+          // Ready the app
+          try {
+            window.Telegram.WebApp.ready();
+            console.log('✅ Telegram WebApp ready() called');
+          } catch (e) {
+            console.error('❌ Failed to call ready():', e);
+          }
+          
+          // Expand to full height
+          try {
+            window.Telegram.WebApp.expand();
+            console.log('✅ Telegram WebApp expand() called');
+          } catch (e) {
+            console.error('❌ Failed to call expand():', e);
+          }
+          
+          // Set header color
+          try {
+            window.Telegram.WebApp.setHeaderColor('#1f2937');
+            console.log('✅ Telegram WebApp header color set');
+          } catch (e) {
+            console.warn('⚠️ Failed to set header color:', e);
+          }
+          
+        } else if (initAttempts < maxInitAttempts) {
+          console.log(`⏳ Telegram WebApp not ready yet, attempt ${initAttempts}/${maxInitAttempts}`);
+          setTimeout(initializeTelegramWebApp, 100);
+        } else {
+          console.warn('⚠️ Telegram WebApp not available after maximum attempts');
+        }
+      }
+      
+      // Start initialization
+      initializeTelegramWebApp();
+      
+      // Global error handling
+      window.addEventListener('error', function(e) {
+        console.error('Global error:', e.error);
+      });
+      
+      window.addEventListener('unhandledrejection', function(e) {
+        console.error('Unhandled promise rejection:', e.reason);
+      });
+    </script>
   </head>
+
   <body>
     <div id="root"></div>
+    <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
+    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

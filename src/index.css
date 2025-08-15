@@ -26,16 +26,6 @@
   --input: 214.3 31.8% 91.4%;
   --ring: 221.2 83.2% 53.3%;
   --radius: 0.5rem;
-
-  /* Telegram theme variables (will be updated dynamically) */
-  --tg-bg: var(--background);
-  --tg-text: var(--foreground);
-  --tg-hint: var(--muted-foreground);
-  --tg-button: var(--primary);
-  --tg-button-text: var(--primary-foreground);
-
-  /* iOS viewport variables */
-  --vh: 1vh;
 }
 
 /* Telegram Web App CSS variables */
@@ -50,7 +40,7 @@
 
 html {
   height: 100%;
-  height: calc(var(--vh, 1vh) * 100); /* Use dynamic viewport height */
+  height: 100dvh; /* Dynamic viewport height for modern browsers */
   overflow-x: hidden;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -62,10 +52,10 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: hsl(var(--tg-bg, var(--background)));
-  color: hsl(var(--tg-text, var(--foreground)));
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
   height: 100%;
-  height: calc(var(--vh, 1vh) * 100);
+  height: 100dvh;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
@@ -81,20 +71,11 @@ body {
 /* Telegram Web App specific styles */
 .tg-viewport {
   height: 100vh;
-  height: calc(var(--vh, 1vh) * 100);
-  height: var(--tg-viewport-height, calc(var(--vh, 1vh) * 100));
-  max-height: var(--tg-viewport-stable-height, calc(var(--vh, 1vh) * 100));
+  height: 100dvh;
+  height: var(--tg-viewport-height, 100dvh);
+  max-height: var(--tg-viewport-stable-height, 100dvh);
   overflow-x: hidden;
   position: relative;
-}
-
-/* Enhanced safe area handling */
-.safe-container {
-  min-height: calc(var(--vh, 1vh) * 100);
-  padding-top: max(env(safe-area-inset-top), var(--tg-safe-area-inset-top, 0px));
-  padding-bottom: max(env(safe-area-inset-bottom), var(--tg-safe-area-inset-bottom, 0px));
-  padding-left: max(env(safe-area-inset-left), var(--tg-safe-area-inset-left, 0px));
-  padding-right: max(env(safe-area-inset-right), var(--tg-safe-area-inset-right, 0px));
 }
 
 /* Enhanced touch targets for better mobile interaction */
@@ -119,8 +100,6 @@ img {
   backface-visibility: hidden;
   transform: translateZ(0);
 }
-
-/* ... keep existing code (loading animations, mobile optimizations, iOS Safari fixes, etc.) */
 
 /* Improved loading animations */
 @keyframes shimmer {
@@ -154,13 +133,13 @@ img {
   /* iOS Safari specific styles */
   html {
     height: 100%;
-    height: calc(var(--vh, 1vh) * 100);
+    height: 100dvh;
     position: relative;
   }
   
   body {
     height: 100%;
-    height: calc(var(--vh, 1vh) * 100);
+    height: 100dvh;
     position: relative;
     overflow: hidden;
   }
@@ -168,9 +147,9 @@ img {
   /* Fix for iOS viewport issues in Telegram */
   .tg-viewport {
     height: 100vh;
-    height: calc(var(--vh, 1vh) * 100);
-    height: var(--tg-viewport-height, calc(var(--vh, 1vh) * 100));
-    max-height: var(--tg-viewport-stable-height, calc(var(--vh, 1vh) * 100));
+    height: 100dvh;
+    height: var(--tg-viewport-height, 100dvh);
+    max-height: var(--tg-viewport-stable-height, 100dvh);
     overflow: hidden;
     position: relative;
   }
@@ -223,14 +202,14 @@ img {
 @media screen and (max-width: 768px) {
   .min-h-screen {
     min-height: 100vh;
-    min-height: calc(var(--vh, 1vh) * 100);
-    min-height: var(--tg-viewport-height, calc(var(--vh, 1vh) * 100));
+    min-height: 100dvh;
+    min-height: var(--tg-viewport-height, 100dvh);
   }
   
   .h-screen {
     height: 100vh;
-    height: calc(var(--vh, 1vh) * 100);
-    height: var(--tg-viewport-height, calc(var(--vh, 1vh) * 100));
+    height: 100dvh;
+    height: var(--tg-viewport-height, 100dvh);
   }
 }
 
