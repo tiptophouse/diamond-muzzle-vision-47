@@ -1,343 +1,264 @@
 
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { useTelegramWebApp } from './useTelegramWebApp';
+import { useEffect, useState, useCallback } from 'react';
+import { 
+  initData, 
+  initDataUser, 
+  hapticFeedback,
+  mainButton,
+  backButton,
+  viewport,
+  themeParams
+} from '@telegram-apps/sdk';
 
-interface EnhancedTelegramFeatures {
-  deviceMotion: {
-    isSupported: boolean;
-    isActive: boolean;
-    start: () => Promise<boolean>;
-    stop: () => void;
-    data: {
-      acceleration: { x: number; y: number; z: number };
-      orientation: { alpha: number; beta: number; gamma: number };
-    };
-  };
-  biometrics: {
-    isSupported: boolean;
-    authenticate: () => Promise<boolean>;
-  };
-  sharing: {
-    shareToStory: (mediaUrl: string, text?: string) => Promise<boolean>;
-    shareContact: (contact: any) => Promise<boolean>;
-  };
-  viewport: {
-    height: number;
-    stableHeight: number;
-    safeAreaInset: { top: number; bottom: number; left: number; right: number };
-    isExpanded: boolean;
-  };
+interface TelegramSDKFeatures {
   performance: {
     enableSmoothing: () => void;
     optimizeForIOS: () => void;
+    enableVirtualization: () => void;
+  };
+  haptics: {
+    impact: (style: 'light' | 'medium' | 'heavy') => void;
+    notification: (type: 'error' | 'success' | 'warning') => void;
+    selection: () => void;
+  };
+  navigation: {
+    setMainButton: (text: string, onClick: () => void) => void;
+    hideMainButton: () => void;
+    setBackButton: (onClick: () => void) => void;
+    hideBackButton: () => void;
+  };
+  ui: {
+    expand: () => void;
+    setHeaderColor: (color: string) => void;
+    enableClosingConfirmation: () => void;
+  };
+  data: {
+    getInitData: () => string;
+    getUserData: () => any;
   };
 }
 
-export function useEnhancedTelegramSDK(): EnhancedTelegramFeatures {
-  const { webApp, isReady } = useTelegramWebApp();
-  const [motionData, setMotionData] = useState({
-    acceleration: { x: 0, y: 0, z: 0 },
-    orientation: { alpha: 0, beta: 0, gamma: 0 }
-  });
-  const [isMotionActive, setIsMotionActive] = useState(false);
-  const [viewport, setViewport] = useState({
-    height: 0,
-    stableHeight: 0,
-    safeAreaInset: { top: 0, bottom: 0, left: 0, right: 0 },
-    isExpanded: false
-  });
+export function useEnhancedTelegramSDK(): TelegramSDKFeatures {
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  const motionHandlerRef = useRef<((data: any) => void) | null>(null);
-  const orientationHandlerRef = useRef<((data: any) => void) | null>(null);
-
-  // iOS detection
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
-
-  // Initialize viewport handling with iOS-specific fixes
   useEffect(() => {
-    if (!webApp || !isReady) return;
-
-    const updateViewport = () => {
-      const height = (webApp as any).viewportHeight || window.innerHeight;
-      const stableHeight = (webApp as any).viewportStableHeight || height;
-      const insets = (webApp as any).safeAreaInset || { top: 0, bottom: 0, left: 0, right: 0 };
-
-      setViewport({
-        height,
-        stableHeight,
-        safeAreaInset: insets,
-        isExpanded: webApp.isExpanded || false
-      });
-
-      // iOS-specific viewport fixes
-      if (isIOS) {
-        // Set CSS custom properties for responsive design
-        document.documentElement.style.setProperty('--tg-viewport-height', `${stableHeight}px`);
-        document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableHeight}px`);
-        document.documentElement.style.setProperty('--tg-safe-area-inset-top', `${insets.top || 0}px`);
-        document.documentElement.style.setProperty('--tg-safe-area-inset-bottom', `${insets.bottom || 0}px`);
-        document.documentElement.style.setProperty('--tg-safe-area-inset-left', `${insets.left || 0}px`);
-        document.documentElement.style.setProperty('--tg-safe-area-inset-right', `${insets.right || 0}px`);
-
-        // Fix body height on iOS to prevent scrolling issues
-        document.body.style.height = `${stableHeight}px`;
-        document.body.style.maxHeight = `${stableHeight}px`;
-        document.body.style.overflow = 'hidden';
-
-        // Prevent zoom on iOS
-        const metaViewport = document.querySelector('meta[name=viewport]');
-        if (metaViewport) {
-          metaViewport.setAttribute('content', 
-            'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'
-          );
-        }
-      }
-    };
-
-    // Initial update
-    updateViewport();
-
-    // Listen for viewport changes
-    (webApp as any).onEvent?.('viewportChanged', updateViewport);
-    (webApp as any).onEvent?.('safeAreaChanged', updateViewport);
-
-    return () => {
-      (webApp as any).offEvent?.('viewportChanged', updateViewport);
-      (webApp as any).offEvent?.('safeAreaChanged', updateViewport);
-    };
-  }, [webApp, isReady, isIOS]);
-
-  // Device motion support
-  const startDeviceMotion = useCallback(async (): Promise<boolean> => {
-    if (!webApp || isMotionActive) return false;
-
     try {
-      // Try Telegram's new Device APIs first (Bot API 8.0+)
-      if ((webApp as any).isVersionAtLeast?.('8.0')) {
-        if ((webApp as any).Accelerometer) {
-          const accelerometer = (webApp as any).Accelerometer;
-          
-          motionHandlerRef.current = (data: any) => {
-            setMotionData(prev => ({
-              ...prev,
-              acceleration: { x: data.x || 0, y: data.y || 0, z: data.z || 0 }
-            }));
-          };
-          
-          (webApp as any).onEvent?.('accelerometerChanged', motionHandlerRef.current);
-          accelerometer.start({ refresh_rate: 60 });
-        }
-
-        if ((webApp as any).DeviceOrientation) {
-          const orientation = (webApp as any).DeviceOrientation;
-          
-          orientationHandlerRef.current = (data: any) => {
-            setMotionData(prev => ({
-              ...prev,
-              orientation: { 
-                alpha: data.alpha || 0, 
-                beta: data.beta || 0, 
-                gamma: data.gamma || 0 
-              }
-            }));
-          };
-          
-          (webApp as any).onEvent?.('deviceOrientationChanged', orientationHandlerRef.current);
-          orientation.start({ refresh_rate: 60, need_absolute: false });
-        }
-
-        setIsMotionActive(true);
-        return true;
+      // Initialize all SDK components
+      if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+        setIsInitialized(true);
       }
-
-      // Fallback to standard DeviceMotion API
-      if (typeof DeviceMotionEvent !== 'undefined') {
-        // Request permission on iOS 13+
-        if (isIOS && typeof (DeviceMotionEvent as any).requestPermission === 'function') {
-          const permission = await (DeviceMotionEvent as any).requestPermission();
-          if (permission !== 'granted') return false;
-        }
-
-        const handleMotion = (event: DeviceMotionEvent) => {
-          setMotionData({
-            acceleration: {
-              x: event.acceleration?.x || 0,
-              y: event.acceleration?.y || 0,
-              z: event.acceleration?.z || 0
-            },
-            orientation: {
-              alpha: event.rotationRate?.alpha || 0,
-              beta: event.rotationRate?.beta || 0,
-              gamma: event.rotationRate?.gamma || 0
-            }
-          });
-        };
-
-        window.addEventListener('devicemotion', handleMotion);
-        setIsMotionActive(true);
-        return true;
-      }
-
-      return false;
     } catch (error) {
-      console.error('Failed to start device motion:', error);
-      return false;
+      console.warn('Telegram SDK initialization failed:', error);
     }
-  }, [webApp, isMotionActive, isIOS]);
+  }, []);
 
-  const stopDeviceMotion = useCallback(() => {
-    if (!isMotionActive) return;
-
-    try {
-      // Stop Telegram APIs
-      if ((webApp as any).Accelerometer) {
-        (webApp as any).Accelerometer.stop();
-        if (motionHandlerRef.current) {
-          (webApp as any).offEvent?.('accelerometerChanged', motionHandlerRef.current);
-        }
-      }
-
-      if ((webApp as any).DeviceOrientation) {
-        (webApp as any).DeviceOrientation.stop();
-        if (orientationHandlerRef.current) {
-          (webApp as any).offEvent?.('deviceOrientationChanged', orientationHandlerRef.current);
-        }
-      }
-
-      // Stop standard API
-      window.removeEventListener('devicemotion', () => {});
-
-      setIsMotionActive(false);
-    } catch (error) {
-      console.error('Failed to stop device motion:', error);
-    }
-  }, [webApp, isMotionActive]);
-
-  // Biometric authentication
-  const authenticateWithBiometrics = useCallback(async (): Promise<boolean> => {
-    if (!webApp) return false;
-
-    try {
-      // Check if biometric authentication is supported
-      if ((webApp as any).BiometricManager) {
-        const biometric = (webApp as any).BiometricManager;
-        if (biometric.isInited && biometric.isBiometricAvailable) {
-          const result = await new Promise<boolean>((resolve) => {
-            biometric.authenticate({
-              reason: 'Authenticate to access your diamond collection'
-            }, (success: boolean) => {
-              resolve(success);
-            });
-          });
-          return result;
-        }
-      }
-      return false;
-    } catch (error) {
-      console.error('Biometric authentication failed:', error);
-      return false;
-    }
-  }, [webApp]);
-
-  // Enhanced sharing capabilities
-  const shareToStory = useCallback(async (mediaUrl: string, text?: string): Promise<boolean> => {
-    if (!webApp) return false;
-
-    try {
-      if ((webApp as any).shareToStory) {
-        (webApp as any).shareToStory(mediaUrl, {
-          text: text || '',
-          widget_link: {
-            url: window.location.href,
-            name: 'BrilliantBot'
-          }
+  const performance = {
+    enableSmoothing: useCallback(() => {
+      if (!isInitialized) return;
+      
+      try {
+        // Enable smooth scrolling
+        document.documentElement.style.scrollBehavior = 'smooth';
+        
+        // Optimize scroll performance
+        const scrollElements = document.querySelectorAll('.smooth-scroll');
+        scrollElements.forEach(el => {
+          const element = el as HTMLElement;
+          element.style.transform = 'translateZ(0)';
+          element.style.willChange = 'scroll-position';
         });
-        return true;
+      } catch (error) {
+        console.warn('Performance smoothing failed:', error);
       }
-      return false;
-    } catch (error) {
-      console.error('Share to story failed:', error);
-      return false;
-    }
-  }, [webApp]);
+    }, [isInitialized]),
 
-  const shareContact = useCallback(async (contact: any): Promise<boolean> => {
-    if (!webApp) return false;
-
-    try {
-      if ((webApp as any).shareContact) {
-        (webApp as any).shareContact(contact);
-        return true;
+    optimizeForIOS: useCallback(() => {
+      if (!isInitialized) return;
+      
+      try {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isIOS) {
+          // iOS-specific optimizations
+          document.body.style.webkitUserSelect = 'none';
+          document.body.style.webkitTouchCallout = 'none';
+          document.body.style.webkitTapHighlightColor = 'transparent';
+          
+          // Fix iOS scroll issues
+          const scrollElements = document.querySelectorAll('.overflow-auto, .overflow-y-auto');
+          scrollElements.forEach(el => {
+            const element = el as HTMLElement;
+            // Use setProperty for vendor-prefixed properties
+            element.style.setProperty('-webkit-overflow-scrolling', 'touch');
+            element.style.setProperty('overflow-scrolling', 'touch');
+          });
+        }
+      } catch (error) {
+        console.warn('iOS optimization failed:', error);
       }
-      return false;
-    } catch (error) {
-      console.error('Share contact failed:', error);
-      return false;
-    }
-  }, [webApp]);
+    }, [isInitialized]),
 
-  // Performance optimizations
-  const enableSmoothing = useCallback(() => {
-    if (!isIOS) return;
+    enableVirtualization: useCallback(() => {
+      if (!isInitialized) return;
+      
+      try {
+        // Enable hardware acceleration for lists
+        const listElements = document.querySelectorAll('[data-virtualized]');
+        listElements.forEach(el => {
+          const element = el as HTMLElement;
+          element.style.transform = 'translateZ(0)';
+          element.style.willChange = 'transform';
+        });
+      } catch (error) {
+        console.warn('Virtualization failed:', error);
+      }
+    }, [isInitialized])
+  };
 
-    // Enable hardware acceleration for smooth scrolling on iOS
-    document.body.style.webkitOverflowScrolling = 'touch';
-    document.body.style.overflowScrolling = 'touch';
+  const haptics = {
+    impact: useCallback((style: 'light' | 'medium' | 'heavy') => {
+      if (!isInitialized) return;
+      
+      try {
+        hapticFeedback.impactOccurred(style);
+      } catch (error) {
+        console.warn('Haptic impact failed:', error);
+      }
+    }, [isInitialized]),
 
-    // Optimize touch events
-    document.addEventListener('touchstart', () => {}, { passive: true });
-    document.addEventListener('touchmove', () => {}, { passive: true });
-  }, [isIOS]);
+    notification: useCallback((type: 'error' | 'success' | 'warning') => {
+      if (!isInitialized) return;
+      
+      try {
+        hapticFeedback.notificationOccurred(type);
+      } catch (error) {
+        console.warn('Haptic notification failed:', error);
+      }
+    }, [isInitialized]),
 
-  const optimizeForIOS = useCallback(() => {
-    if (!isIOS) return;
+    selection: useCallback(() => {
+      if (!isInitialized) return;
+      
+      try {
+        hapticFeedback.selectionChanged();
+      } catch (error) {
+        console.warn('Haptic selection failed:', error);
+      }
+    }, [isInitialized])
+  };
 
-    // Prevent rubber band scrolling
-    document.body.addEventListener('touchmove', (e) => {
-      if ((e.target as Element).closest('.scrollable')) return;
-      e.preventDefault();
-    }, { passive: false });
+  const navigation = {
+    setMainButton: useCallback((text: string, onClick: () => void) => {
+      if (!isInitialized) return;
+      
+      try {
+        mainButton.setParams({
+          text,
+          isVisible: true,
+          isEnabled: true
+        });
+        mainButton.onClick(onClick);
+      } catch (error) {
+        console.warn('Main button setup failed:', error);
+      }
+    }, [isInitialized]),
 
-    // Fix iOS viewport bugs
-    const fixViewportHeight = () => {
-      const vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
-    };
+    hideMainButton: useCallback(() => {
+      if (!isInitialized) return;
+      
+      try {
+        mainButton.hide();
+      } catch (error) {
+        console.warn('Hide main button failed:', error);
+      }
+    }, [isInitialized]),
 
-    fixViewportHeight();
-    window.addEventListener('resize', fixViewportHeight);
-    window.addEventListener('orientationchange', fixViewportHeight);
-  }, [isIOS]);
+    setBackButton: useCallback((onClick: () => void) => {
+      if (!isInitialized) return;
+      
+      try {
+        backButton.show();
+        backButton.onClick(onClick);
+      } catch (error) {
+        console.warn('Back button setup failed:', error);
+      }
+    }, [isInitialized]),
 
-  // Initialize performance optimizations
-  useEffect(() => {
-    if (isIOS && isReady) {
-      enableSmoothing();
-      optimizeForIOS();
-    }
-  }, [isIOS, isReady, enableSmoothing, optimizeForIOS]);
+    hideBackButton: useCallback(() => {
+      if (!isInitialized) return;
+      
+      try {
+        backButton.hide();
+      } catch (error) {
+        console.warn('Hide back button failed:', error);
+      }
+    }, [isInitialized])
+  };
+
+  const ui = {
+    expand: useCallback(() => {
+      if (!isInitialized) return;
+      
+      try {
+        viewport.expand();
+      } catch (error) {
+        console.warn('Viewport expand failed:', error);
+      }
+    }, [isInitialized]),
+
+    setHeaderColor: useCallback((color: string) => {
+      if (!isInitialized) return;
+      
+      try {
+        if (window.Telegram?.WebApp?.setHeaderColor) {
+          window.Telegram.WebApp.setHeaderColor(color);
+        }
+      } catch (error) {
+        console.warn('Header color setup failed:', error);
+      }
+    }, [isInitialized]),
+
+    enableClosingConfirmation: useCallback(() => {
+      if (!isInitialized) return;
+      
+      try {
+        if (window.Telegram?.WebApp?.enableClosingConfirmation) {
+          window.Telegram.WebApp.enableClosingConfirmation();
+        }
+      } catch (error) {
+        console.warn('Closing confirmation failed:', error);
+      }
+    }, [isInitialized])
+  };
+
+  const data = {
+    getInitData: useCallback(() => {
+      if (!isInitialized) return '';
+      
+      try {
+        return initData() || '';
+      } catch (error) {
+        console.warn('Get init data failed:', error);
+        return '';
+      }
+    }, [isInitialized]),
+
+    getUserData: useCallback(() => {
+      if (!isInitialized) return null;
+      
+      try {
+        return initDataUser() || null;
+      } catch (error) {
+        console.warn('Get user data failed:', error);
+        return null;
+      }
+    }, [isInitialized])
+  };
 
   return {
-    deviceMotion: {
-      isSupported: !!(webApp && ((webApp as any).Accelerometer || typeof DeviceMotionEvent !== 'undefined')),
-      isActive: isMotionActive,
-      start: startDeviceMotion,
-      stop: stopDeviceMotion,
-      data: motionData
-    },
-    biometrics: {
-      isSupported: !!((webApp as any)?.BiometricManager?.isBiometricAvailable),
-      authenticate: authenticateWithBiometrics
-    },
-    sharing: {
-      shareToStory,
-      shareContact
-    },
-    viewport,
-    performance: {
-      enableSmoothing,
-      optimizeForIOS
-    }
+    performance,
+    haptics,
+    navigation,
+    ui,
+    data
   };
 }

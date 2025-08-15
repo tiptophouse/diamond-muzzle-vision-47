@@ -65,9 +65,14 @@ function AppContent() {
   // Initialize enhanced Telegram SDK
   useEnhancedTelegramSDK();
 
+  const handleRefresh = async () => {
+    // Handle pull to refresh
+    window.location.reload();
+  };
+
   return (
     <Router>
-      <MobilePullToRefresh>
+      <MobilePullToRefresh onRefresh={handleRefresh}>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Index />} />
