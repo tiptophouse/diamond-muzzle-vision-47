@@ -1,202 +1,365 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { WelcomeMessageSender } from '@/components/admin/WelcomeMessageSender';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table"
+import { MoreVertical, Edit, Copy, Trash, BarChart3, TrendingUp } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { useToast } from "@/hooks/use-toast"
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useNavigate } from 'react-router-dom';
+import { AdminGuard } from '@/components/auth/AdminGuard';
+import { TelegramOnlyGuard } from '@/components/auth/TelegramOnlyGuard';
+import { StartupQualityLayout } from '@/layouts/StartupQualityLayout';
 import { InvestmentNotificationSender } from '@/components/admin/InvestmentNotificationSender';
+import { InvestmentAnalyticsDashboard } from '@/components/admin/InvestmentAnalyticsDashboard';
 
-const Admin = () => {
+interface User {
+  id: string
+  firstName: string
+  lastName: string
+  age: number
+  visits: number
+  status: string
+  progress: number
+  createdAt: string
+}
+
+const data: User[] = [
+  {
+    id: "m5gr84i9",
+    firstName: "Pete",
+    lastName: "Fox",
+    age: 19,
+    visits: 624,
+    status: "pending",
+    progress: 75,
+    createdAt: "2022-01-02",
+  },
+  {
+    id: "3u1k1k1j",
+    firstName: "Mike",
+    lastName: "Foxtrot",
+    age: 22,
+    visits: 352,
+    status: "active",
+    progress: 23,
+    createdAt: "2022-01-02",
+  },
+  {
+    id: "9it24msw",
+    firstName: "Oscar",
+    lastName: "Hotel",
+    age: 23,
+    visits: 721,
+    status: "active",
+    progress: 88,
+    createdAt: "2022-01-02",
+  },
+  {
+    id: "g9v2j0ps",
+    firstName: "Sierra",
+    lastName: "Golf",
+    age: 20,
+    visits: 721,
+    status: "pending",
+    progress: 13,
+    createdAt: "2022-01-02",
+  },
+  {
+    id: "f0v4m3uw",
+    firstName: "Victor",
+    lastName: "Lima",
+    age: 18,
+    visits: 50,
+    status: "active",
+    progress: 93,
+    createdAt: "2022-01-02",
+  },
+]
+
+const AdminHeader = () => {
+  const { user } = useTelegramAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
-  const [announcementMessage, setAnnouncementMessage] = useState('');
-  const [groupUrl, setGroupUrl] = useState('');
-  const [buttonText, setButtonText] = useState('Join Group');
-  const [testMode, setTestMode] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [users, setUsers] = useState<any[]>([]);
-  const [userStats, setUserStats] = useState({ total: 0, activeToday: 0 });
-  const [isFetchingUsers, setIsFetchingUsers] = useState(false);
 
-  useEffect(() => {
-    fetchUsers();
-    fetchUserStats();
-  }, []);
+  const handleLogout = () => {
+    // Clear local storage
+    localStorage.removeItem('telegram-webapp-auth-data');
 
-  const fetchUsers = async () => {
-    setIsFetchingUsers(true);
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('telegram_id, first_name, last_name')
-        .order('created_at', { ascending: false });
+    // Redirect to the index page
+    navigate('/');
 
-      if (error) throw error;
-
-      setUsers(data || []);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch users',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsFetchingUsers(false);
-    }
-  };
-
-  const fetchUserStats = async () => {
-    try {
-      const { data, error } = await supabase.from('user_profiles').select('*', { count: 'exact' });
-      if (error) throw error;
-
-      const totalUsers = data ? data.length : 0;
-
-      // Fetch users active today (example, adjust as needed)
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const { data: activeToday, error: activeError } = await supabase
-        .from('user_profiles')
-        .select('*', { count: 'exact' })
-        .gte('created_at', today.toISOString());
-
-      if (activeError) throw activeError;
-      const activeTodayCount = activeToday ? activeToday.length : 0;
-
-      setUserStats({ total: totalUsers, activeToday: activeTodayCount });
-    } catch (error) {
-      console.error('Error fetching user stats:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch user statistics',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleSendAnnouncement = async () => {
-    setIsLoading(true);
-    try {
-      console.log('Sending announcement:', { message: announcementMessage, groupUrl, buttonText, testMode });
-
-      const { data, error } = await supabase.functions.invoke('send-announcement', {
-        body: {
-          message: announcementMessage,
-          groupUrl: groupUrl,
-          buttonText: buttonText,
-          users: users,
-          testMode: testMode,
-          timestamp: new Date().toISOString()
-        }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: testMode ? 'Test Announcement Sent' : 'Announcement Sent',
-        description: testMode
-          ? 'Test message sent to admin for review'
-          : `Announcement sent to ${users.length} users`,
-      });
-    } catch (error) {
-      console.error('Error sending announcement:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to send announcement',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    // Show a toast notification
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out.",
+    });
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-8">
-      <AdminHeader />
-
-      {/* User Statistics */}
-      <section>
-        <Card>
-          <CardHeader>
-            <CardTitle>User Statistics</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Badge variant="secondary">Total Users: {userStats.total}</Badge>
-            <Badge variant="secondary">Active Today: {userStats.activeToday}</Badge>
-          </CardContent>
-        </Card>
-      </section>
-
-      {/* Announcement Sender */}
-      <section>
-        <Card>
-          <CardHeader>
-            <CardTitle>Send Announcement</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="announcement">Message</Label>
-                <Textarea
-                  id="announcement"
-                  value={announcementMessage}
-                  onChange={(e) => setAnnouncementMessage(e.target.value)}
-                  placeholder="Enter announcement message"
-                />
-              </div>
-              <div>
-                <Label htmlFor="groupUrl">Group URL</Label>
-                <Input
-                  id="groupUrl"
-                  type="url"
-                  value={groupUrl}
-                  onChange={(e) => setGroupUrl(e.target.value)}
-                  placeholder="Enter Telegram group URL"
-                />
-                <Label htmlFor="buttonText">Button Text</Label>
-                <Input
-                  id="buttonText"
-                  type="text"
-                  value={buttonText}
-                  onChange={(e) => setButtonText(e.target.value)}
-                  placeholder="Enter button text"
-                />
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="testMode" checked={testMode} onCheckedChange={() => setTestMode(!testMode)} />
-              <Label htmlFor="testMode">Test Mode (Send to Admin Only)</Label>
-            </div>
-            <Button onClick={handleSendAnnouncement} disabled={isLoading}>
-              {isLoading ? 'Sending...' : 'Send Announcement'}
-            </Button>
-          </CardContent>
-        </Card>
-      </section>
-
-      {/* Welcome Message Campaign Section */}
-      <section>
-        <WelcomeMessageSender />
-      </section>
-
-      {/* Investment Campaign Section */}
-      <section>
-        <InvestmentNotificationSender />
-      </section>
-    </div>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-2xl font-bold">Admin Dashboard</CardTitle>
+        <Button variant="destructive" onClick={handleLogout}>Logout</Button>
+      </CardHeader>
+      <CardContent>
+        <CardDescription>
+          Manage users, settings, and monitor application analytics.
+        </CardDescription>
+      </CardContent>
+    </Card>
   );
 };
 
-const AdminHeader = () => (
-  <div className="text-2xl font-bold">
-    Admin Panel
-  </div>
-);
+export const columns: ColumnDef<User>[] = [
+  {
+    accessorKey: "firstName",
+    header: "First Name",
+  },
+  {
+    accessorKey: "lastName",
+    header: "Last Name",
+  },
+  {
+    accessorKey: "age",
+    header: "Age",
+  },
+  {
+    accessorKey: "visits",
+    header: "Visits",
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+  },
+  {
+    accessorKey: "progress",
+    header: "Progress",
+  },
+  {
+    accessorKey: "createdAt",
+    header: () => <div className="text-right">Created At</div>,
+    cell: ({ row }) => {
+      const date = new Date(row.getValue("createdAt") as string)
+      return <div className="text-right">{date.toLocaleDateString()}</div>
+    },
+  },
+  {
+    id: "actions",
+    cell: ({ row }) => {
+      const user = row.original
 
-export default Admin;
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => navigator.clipboard.writeText(user.id)}
+            >
+              <Copy className="mr-2 h-4 w-4" /> Copy Id
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Edit className="mr-2 h-4 w-4" /> Edit
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <Trash className="mr-2 h-4 w-4" /> Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
+    },
+  },
+]
+
+export default function Admin() {
+  const [activeTab, setActiveTab] = useState("users");
+  const { toast } = useToast()
+
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  })
+
+  return (
+    <TelegramOnlyGuard>
+      <AdminGuard>
+        <StartupQualityLayout>
+          <div className="container mx-auto p-4 space-y-6" dir="rtl">
+            <AdminHeader />
+            
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-12 gap-1 h-auto p-1">
+                <TabsTrigger value="users" className="text-xs p-2">
+                  Users
+                </TabsTrigger>
+                <TabsTrigger value="settings" className="text-xs p-2">
+                  Settings
+                </TabsTrigger>
+                <TabsTrigger value="analytics" className="text-xs p-2">
+                  Analytics
+                </TabsTrigger>
+                <TabsTrigger value="investment" className="text-xs p-2">
+                  💼 השקעות
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="users">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Users</CardTitle>
+                    <CardDescription>
+                      Manage users and their activity.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          {table.getHeaderGroups().map((headerGroup) => (
+                            <TableRow key={headerGroup.id}>
+                              {headerGroup.headers.map((header) => {
+                                return (
+                                  <TableHead key={header.id}>
+                                    {header.isPlaceholder
+                                      ? null
+                                      : flexRender(
+                                          header.column.columnDef.header,
+                                          header.getContext()
+                                        )}
+                                  </TableHead>
+                                )
+                              })}
+                            </TableRow>
+                          ))}
+                        </TableHeader>
+                        <TableBody>
+                          {table.getRowModel().rows.map((row) => (
+                            <TableRow key={row.id}>
+                              {row.getVisibleCells().map((cell) => (
+                                <TableCell key={cell.id}>
+                                  {flexRender(
+                                    cell.column.columnDef.cell,
+                                    cell.getContext()
+                                  )}
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="settings">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Settings</CardTitle>
+                    <CardDescription>
+                      Configure application settings.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <form className="space-y-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="name">Name</Label>
+                        <Input id="name" placeholder="Name" />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input id="email" placeholder="Email" />
+                      </div>
+                      <Button>Update Settings</Button>
+                    </form>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="analytics">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Analytics</CardTitle>
+                    <CardDescription>
+                      Monitor application analytics.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p>Analytics data will be displayed here.</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="investment" className="space-y-6">
+                <div className="grid gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5" />
+                        ניהול קמפיין השקעה
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <InvestmentNotificationSender />
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <BarChart3 className="h-5 w-5" />
+                        אנליטיקס קמפיין השקעה
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <InvestmentAnalyticsDashboard />
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </StartupQualityLayout>
+      </AdminGuard>
+    </TelegramOnlyGuard>
+  );
+}
