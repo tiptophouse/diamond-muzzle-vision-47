@@ -1,10 +1,12 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TelegramAuthProvider } from './context/TelegramAuthContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
+import { initTelegramSDK } from './lib/telegram';
+import { initViewport } from './lib/viewport';
+import { authService } from './lib/auth';
 import Index from './pages/Index';
 import Dashboard from './pages/Dashboard';
 import InventoryPage from './pages/InventoryPage';
@@ -35,6 +37,34 @@ function App() {
       },
     },
   });
+  
+  // Bootstrap Telegram SDK and viewport
+  useEffect(() => {
+    const initApp = async () => {
+      console.log('🚀 Initializing Telegram Mini-App...');
+      
+      // Initialize viewport fixes
+      initViewport();
+      
+      // Initialize Telegram SDK
+      const telegramReady = await initTelegramSDK();
+      if (telegramReady) {
+        console.log('✅ Telegram SDK initialized');
+        
+        // Auto sign-in
+        try {
+          await authService.signIn();
+          console.log('✅ Auto sign-in successful');
+        } catch (error) {
+          console.warn('⚠️ Auto sign-in failed:', error);
+        }
+      } else {
+        console.warn('⚠️ Telegram SDK not available - running in browser mode');
+      }
+    };
+    
+    initApp();
+  }, []);
   
   return (
     <QueryClientProvider client={queryClient}>
