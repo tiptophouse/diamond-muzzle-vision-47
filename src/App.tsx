@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -29,6 +28,7 @@ import DiamondSwipe from './pages/DiamondSwipe';
 import NotFound from './pages/NotFound';
 import StandardizeCsvPage from './pages/StandardizeCsvPage';
 import BulkUploadPage from './pages/BulkUploadPage';
+import InvestmentPage from './pages/InvestmentPage';
 
 function App() {
   const queryClient = new QueryClient({
@@ -90,6 +90,7 @@ function App() {
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="/wishlist" element={<WishlistPage />} />
+                  <Route path="/investment" element={<InvestmentPage />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/admin/analytics" element={<AdminAnalytics />} />
                   <Route path="/diamond/:stockNumber" element={<DiamondDetailPage />} />

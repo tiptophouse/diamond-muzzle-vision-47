@@ -11,9 +11,7 @@ import {
   qrScanner,
   invoice,
   biometry,
-  closingConfirmation,
   swipeBehavior,
-  initDataUnsafe,
   retrieveLaunchParams,
   shareURL,
   switchInlineQuery,
@@ -72,27 +70,32 @@ class ModernTelegramSDK {
         this.setupThemeListener();
       }
 
-      // Initialize closing confirmation
-      if (!closingConfirmation.isMounted()) {
-        closingConfirmation.mount();
-        closingConfirmation.enableClosingConfirmation();
-      }
-
       // Initialize swipe behavior for better UX
       if (!swipeBehavior.isMounted()) {
         swipeBehavior.mount();
-        swipeBehavior.disableVerticalSwipe();
+        swipeBehavior.disableVertical();
       }
 
-      // Get user data and start param
-      const userData = initDataUnsafe.user;
-      const startParam = initDataUnsafe.startParam;
+      // Get user data and start param from initData
+      const initDataRaw = initData.raw();
+      const urlParams = new URLSearchParams(initDataRaw || '');
+      const userParam = urlParams.get('user');
+      const startParam = urlParams.get('start_param');
+      
+      let userData = null;
+      if (userParam) {
+        try {
+          userData = JSON.parse(userParam);
+        } catch (error) {
+          console.warn('Failed to parse user data:', error);
+        }
+      }
 
       this.state = {
         isInitialized: true,
         user: userData || null,
         startParam: startParam || null,
-        themeParams: themeParams.get(),
+        themeParams: themeParams.state,
         platform: launchParams.platform || 'unknown',
         version: launchParams.version || '1.0'
       };
@@ -108,14 +111,14 @@ class ModernTelegramSDK {
 
   private setupThemeListener() {
     // Modern theme change listener
-    themeParams.onChange(() => {
-      const newTheme = themeParams.get();
+    themeParams.on('change', () => {
+      const newTheme = themeParams.state;
       this.updateCSSThemeVariables(newTheme);
       this.state.themeParams = newTheme;
     });
 
     // Initial theme setup
-    this.updateCSSThemeVariables(themeParams.get());
+    this.updateCSSThemeVariables(themeParams.state);
   }
 
   private updateCSSThemeVariables(theme: any) {
@@ -174,23 +177,23 @@ class ModernTelegramSDK {
         mainButton.mount();
       }
 
-      mainButton.setText(text);
+      mainButton.text = text;
       
       if (options?.color) {
-        mainButton.setBgColor(options.color);
+        mainButton.bgColor = options.color;
       }
       if (options?.textColor) {
-        mainButton.setTextColor(options.textColor);
+        mainButton.textColor = options.textColor;
       }
 
-      mainButton.onClick(onClick);
+      mainButton.on('click', onClick);
       
       if (options?.isEnabled !== false) {
-        mainButton.enable();
+        mainButton.isEnabled = true;
       }
       
       if (options?.isVisible !== false) {
-        mainButton.show();
+        mainButton.isVisible = true;
       }
 
     } catch (error) {
@@ -201,7 +204,7 @@ class ModernTelegramSDK {
   hideMainButton() {
     try {
       if (mainButton.isMounted()) {
-        mainButton.hide();
+        mainButton.isVisible = false;
       }
     } catch (error) {
       console.error('❌ Failed to hide main button:', error);
@@ -215,7 +218,7 @@ class ModernTelegramSDK {
         backButton.mount();
       }
       
-      backButton.onClick(onClick);
+      backButton.on('click', onClick);
       backButton.show();
     } catch (error) {
       console.error('❌ Failed to show back button:', error);
@@ -235,9 +238,6 @@ class ModernTelegramSDK {
   // Haptic Feedback
   impactFeedback(style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft' = 'medium') {
     try {
-      if (!hapticFeedback.isMounted()) {
-        hapticFeedback.mount();
-      }
       hapticFeedback.impactOccurred(style);
     } catch (error) {
       console.error('❌ Haptic feedback failed:', error);
@@ -246,9 +246,6 @@ class ModernTelegramSDK {
 
   notificationFeedback(type: 'error' | 'success' | 'warning' = 'success') {
     try {
-      if (!hapticFeedback.isMounted()) {
-        hapticFeedback.mount();
-      }
       hapticFeedback.notificationOccurred(type);
     } catch (error) {
       console.error('❌ Notification feedback failed:', error);
@@ -257,9 +254,6 @@ class ModernTelegramSDK {
 
   selectionFeedback() {
     try {
-      if (!hapticFeedback.isMounted()) {
-        hapticFeedback.mount();
-      }
       hapticFeedback.selectionChanged();
     } catch (error) {
       console.error('❌ Selection feedback failed:', error);
@@ -269,10 +263,7 @@ class ModernTelegramSDK {
   // Cloud Storage
   async setCloudStorage(key: string, value: string): Promise<boolean> {
     try {
-      if (!cloudStorage.isMounted()) {
-        cloudStorage.mount();
-      }
-      await cloudStorage.setItem(key, value);
+      await cloudStorage.set(key, value);
       return true;
     } catch (error) {
       console.error('❌ Cloud storage set failed:', error);
@@ -282,10 +273,7 @@ class ModernTelegramSDK {
 
   async getCloudStorage(key: string): Promise<string | null> {
     try {
-      if (!cloudStorage.isMounted()) {
-        cloudStorage.mount();
-      }
-      return await cloudStorage.getItem(key);
+      return await cloudStorage.get(key);
     } catch (error) {
       console.error('❌ Cloud storage get failed:', error);
       return null;
@@ -295,17 +283,13 @@ class ModernTelegramSDK {
   // QR Scanner
   async scanQR(text?: string): Promise<string | null> {
     try {
-      if (!qrScanner.isMounted()) {
-        qrScanner.mount();
-      }
-      
       return new Promise((resolve) => {
         qrScanner.open({
-          text: text || 'Scan QR Code',
-          onCaptured: (data) => {
-            qrScanner.close();
-            resolve(data);
-          }
+          text: text || 'Scan QR Code'
+        }).then((data) => {
+          resolve(data);
+        }).catch(() => {
+          resolve(null);
         });
       });
     } catch (error) {
@@ -339,7 +323,7 @@ class ModernTelegramSDK {
     }
   }
 
-  switchInlineQuery(query: string, chooseChatTypes?: string[]) {
+  switchInlineQuery(query: string, chooseChatTypes?: ('users' | 'bots' | 'groups' | 'channels')[]) {
     try {
       switchInlineQuery(query, chooseChatTypes);
     } catch (error) {
@@ -367,10 +351,7 @@ class ModernTelegramSDK {
   // Invoice
   async openInvoice(url: string): Promise<'paid' | 'cancelled' | 'failed' | 'pending'> {
     try {
-      if (!invoice.isMounted()) {
-        invoice.mount();
-      }
-      return await invoice.open(url);
+      return await invoice.open(url, 'url');
     } catch (error) {
       console.error('❌ Open invoice failed:', error);
       return 'failed';
@@ -380,15 +361,11 @@ class ModernTelegramSDK {
   // Biometry (if available)
   async requestBiometry(): Promise<boolean> {
     try {
-      if (!biometry.isMounted()) {
-        biometry.mount();
-      }
-      
       if (!biometry.isSupported()) {
         return false;
       }
 
-      return await biometry.requestAccess();
+      return await biometry.requestAccess('Please authenticate to continue');
     } catch (error) {
       console.error('❌ Biometry request failed:', error);
       return false;
@@ -419,7 +396,7 @@ class ModernTelegramSDK {
   cleanup() {
     try {
       if (mainButton.isMounted()) {
-        mainButton.hide();
+        mainButton.isVisible = false;
       }
       if (backButton.isMounted()) {
         backButton.hide();

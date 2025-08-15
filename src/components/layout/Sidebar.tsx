@@ -14,7 +14,9 @@ import {
   Settings,
   Heart,
   Diamond,
+  TrendingUp,
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -24,6 +26,14 @@ const navigation = [
   { name: 'Insights', href: '/insights', icon: BarChart3 },
   { name: 'Chat', href: '/chat', icon: MessageCircle },
   { name: 'Wishlist', href: '/wishlist', icon: Heart },
+  { 
+    name: 'Investment Opportunity', 
+    href: '/investment', 
+    icon: TrendingUp,
+    badge: 'NEW',
+    badgeColor: 'bg-red-500 text-white',
+    highlight: true
+  },
   { name: 'Notifications', href: '/notifications', icon: Bell },
   { name: 'Profile', href: '/profile', icon: User },
   { name: 'Settings', href: '/settings', icon: Settings },
@@ -52,14 +62,30 @@ export function Sidebar({ className }: SidebarProps) {
                   key={item.name}
                   to={item.href}
                   className={cn(
-                    'flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100 transition-colors',
+                    'flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100 transition-colors relative',
                     isActive
                       ? 'bg-blue-100 text-blue-700'
-                      : 'text-slate-700 hover:text-slate-900'
+                      : 'text-slate-700 hover:text-slate-900',
+                    item.highlight && 'bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 hover:from-red-100 hover:to-orange-100'
                   )}
                 >
-                  <item.icon className="mr-3 h-5 w-5" />
-                  {item.name}
+                  <item.icon className={cn(
+                    "mr-3 h-5 w-5",
+                    item.highlight && "text-red-600"
+                  )} />
+                  <span className={item.highlight ? "text-red-700 font-semibold" : ""}>
+                    {item.name}
+                  </span>
+                  {item.badge && (
+                    <Badge 
+                      className={cn(
+                        "ml-auto text-xs px-1.5 py-0.5",
+                        item.badgeColor || "bg-blue-500 text-white"
+                      )}
+                    >
+                      {item.badge}
+                    </Badge>
+                  )}
                 </Link>
               );
             })}

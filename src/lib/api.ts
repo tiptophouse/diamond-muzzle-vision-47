@@ -79,14 +79,9 @@ class SecureApiClient {
     this.isRefreshing = true;
     
     try {
-      // Security: Validate token before refresh
-      if (authService.isTokenExpired()) {
-        console.log('🔐 Token expired, refreshing...');
-        const token = await authService.refreshToken();
-        return token;
-      }
-      
-      return authService.getToken();
+      console.log('🔐 Token refresh requested');
+      const token = await authService.signIn();
+      return token;
     } catch (error) {
       console.error('🚫 Secure token refresh failed:', error);
       return null;
