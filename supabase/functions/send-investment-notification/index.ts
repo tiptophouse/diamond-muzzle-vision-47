@@ -68,7 +68,7 @@ serve(async (req) => {
       reply_markup: {
         inline_keyboard: [[
           {
-            text: "🚀 View Investment Opportunity",
+            text: "🚀 צפה בהזדמנות השקעה",
             url: "https://brilliantbot-investor-hub.lovable.app/investment"
           }
         ]]

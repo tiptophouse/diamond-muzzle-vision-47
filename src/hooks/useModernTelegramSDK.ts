@@ -1,193 +1,166 @@
-
 import { useState, useEffect, useCallback } from 'react';
-import telegramSDK from '@/lib/telegramSDK';
+import { telegramSDK } from '@/lib/telegramSDK';
 
-interface TelegramSDKHookState {
-  isInitialized: boolean;
-  isLoading: boolean;
-  user: any;
-  startParam: string | null;
-  themeParams: any;
-  platform: string;
-  version: string;
-  error: string | null;
+interface UserData {
+  id: number;
+  first_name: string;
+  last_name: string;
+  username: string;
+  language_code: string;
+  is_premium: boolean;
+  photo_url: string;
 }
 
-export function useModernTelegramSDK() {
-  const [state, setState] = useState<TelegramSDKHookState>({
-    isInitialized: false,
-    isLoading: true,
-    user: null,
-    startParam: null,
-    themeParams: {},
-    platform: 'unknown',
-    version: '1.0',
-    error: null
+interface ThemeParams {
+  bg_color: string;
+  text_color: string;
+  hint_color: string;
+  link_color: string;
+  button_color: string;
+  button_text_color: string;
+}
+
+interface Contact {
+  phone_number: string;
+  first_name: string;
+  last_name?: string;
+  user_id?: number;
+}
+
+interface UseTelegramSDKReturn {
+  isWebAppReady: boolean;
+  userData: UserData | null;
+  themeParams: ThemeParams;
+  setMainButton: (text: string, color?: string, textColor?: string) => void;
+  hideMainButton: () => void;
+  onMainButtonClick: (callback: () => void) => void;
+  showBackButton: () => void;
+  hideBackButton: () => void;
+  setCloudStorage: (key: string, value: string) => Promise<void>;
+  getCloudStorage: (key: string) => Promise<string | null>;
+	requestWriteAccess: () => Promise<boolean>;
+  requestContact: () => Promise<Contact | null>;
+  shareURL: (url: string, text?: string) => void;
+  openLink: (url: string) => void;
+  openTelegramLink: (url: string) => void;
+  impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void;
+  notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
+  selectionChanged: () => void;
+}
+
+export function useModernTelegramSDK(): UseTelegramSDKReturn {
+  const [isWebAppReady, setIsWebAppReady] = useState(false);
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [themeParams, setThemeParams] = useState<ThemeParams>({
+    bg_color: '#ffffff',
+    text_color: '#000000',
+    hint_color: '#707579',
+    link_color: '#3390ec',
+    button_color: '#3390ec',
+    button_text_color: '#ffffff'
   });
 
   useEffect(() => {
-    const initSDK = async () => {
-      try {
-        setState(prev => ({ ...prev, isLoading: true, error: null }));
-        
-        const success = await telegramSDK.initialize();
-        
-        if (success) {
-          const sdkState = telegramSDK.getState();
-          setState({
-            isInitialized: sdkState.isInitialized,
-            isLoading: false,
-            user: sdkState.user,
-            startParam: sdkState.startParam,
-            themeParams: sdkState.themeParams,
-            platform: sdkState.platform,
-            version: sdkState.version,
-            error: null
-          });
-        } else {
-          setState(prev => ({
-            ...prev,
-            isLoading: false,
-            error: 'Failed to initialize Telegram SDK'
-          }));
-        }
-      } catch (error) {
-        console.error('❌ SDK initialization error:', error);
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }));
+    const initialize = async () => {
+      const isInitialized = await telegramSDK.initialize();
+      if (isInitialized) {
+        setIsWebAppReady(telegramSDK.isWebAppReady());
+        setUserData(telegramSDK.getUserData());
+        setThemeParams(telegramSDK.getThemeParams());
       }
     };
 
-    initSDK();
-
-    return () => {
-      telegramSDK.cleanup();
-    };
+    initialize();
   }, []);
 
-  // Main Button controls
-  const showMainButton = useCallback((
-    text: string, 
-    onClick: () => void, 
-    options?: { color?: string; textColor?: string; isEnabled?: boolean }
-  ) => {
-    telegramSDK.showMainButton(text, onClick, options);
+  const setMainButton = useCallback((text: string, color?: string, textColor?: string) => {
+    telegramSDK.setMainButton(text, color, textColor);
   }, []);
 
   const hideMainButton = useCallback(() => {
     telegramSDK.hideMainButton();
   }, []);
 
-  // Back Button controls
-  const showBackButton = useCallback((onClick: () => void) => {
-    telegramSDK.showBackButton(onClick);
+  const onMainButtonClick = useCallback((callback: () => void) => {
+    return telegramSDK.onMainButtonClick(callback);
+  }, []);
+
+  const showBackButton = useCallback(() => {
+    telegramSDK.showBackButton();
   }, []);
 
   const hideBackButton = useCallback(() => {
     telegramSDK.hideBackButton();
   }, []);
 
-  // Haptic Feedback
-  const impactFeedback = useCallback((style?: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => {
-    telegramSDK.impactFeedback(style);
-  }, []);
-
-  const notificationFeedback = useCallback((type?: 'error' | 'success' | 'warning') => {
-    telegramSDK.notificationFeedback(type);
-  }, []);
-
-  const selectionFeedback = useCallback(() => {
-    telegramSDK.selectionFeedback();
-  }, []);
-
-  // Cloud Storage
   const setCloudStorage = useCallback(async (key: string, value: string) => {
-    return await telegramSDK.setCloudStorage(key, value);
+    await telegramSDK.setCloudStorage(key, value);
   }, []);
 
   const getCloudStorage = useCallback(async (key: string) => {
     return await telegramSDK.getCloudStorage(key);
   }, []);
 
-  // QR Scanner
-  const scanQR = useCallback(async (text?: string) => {
-    return await telegramSDK.scanQR(text);
+  const requestWriteAccess = useCallback(async () => {
+    return await telegramSDK.requestWriteAccess();
   }, []);
 
-  // Sharing & Navigation
+  const requestContact = useCallback(async () => {
+    try {
+      const contact = await telegramSDK.requestContact();
+      if (contact) {
+        console.log('📞 Contact received:', contact);
+        return contact;
+      }
+      return null;
+    } catch (error) {
+      console.error('❌ Error requesting contact:', error);
+      return null;
+    }
+  }, []);
+
   const shareURL = useCallback((url: string, text?: string) => {
     telegramSDK.shareURL(url, text);
   }, []);
 
-  const switchInlineQuery = useCallback((query: string, chooseChatTypes?: string[]) => {
-    telegramSDK.switchInlineQuery(query, chooseChatTypes);
+  const openLink = useCallback((url: string) => {
+    telegramSDK.openLink(url);
   }, []);
 
   const openTelegramLink = useCallback((url: string) => {
     telegramSDK.openTelegramLink(url);
   }, []);
 
-  const openLink = useCallback((url: string, options?: { tryInstantView?: boolean }) => {
-    telegramSDK.openLink(url, options);
+  const impactOccurred = useCallback((style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft' = 'medium') => {
+    telegramSDK.impactOccurred(style);
   }, []);
 
-  // Bridge Communication
-  const sendData = useCallback((data: any) => {
-    telegramSDK.sendData(data);
+  const notificationOccurred = useCallback((type: 'error' | 'success' | 'warning') => {
+    telegramSDK.notificationOccurred(type);
   }, []);
 
-  // Invoice
-  const openInvoice = useCallback(async (url: string) => {
-    return await telegramSDK.openInvoice(url);
-  }, []);
-
-  // Biometry
-  const requestBiometry = useCallback(async () => {
-    return await telegramSDK.requestBiometry();
-  }, []);
-
-  // Getters
-  const getInitData = useCallback(() => {
-    return telegramSDK.getInitData();
+  const selectionChanged = useCallback(() => {
+    telegramSDK.selectionChanged();
   }, []);
 
   return {
-    // State
-    ...state,
-    
-    // Controls
-    showMainButton,
+    isWebAppReady,
+    userData,
+    themeParams,
+    setMainButton,
     hideMainButton,
+    onMainButtonClick,
     showBackButton,
     hideBackButton,
-    
-    // Feedback
-    impactFeedback,
-    notificationFeedback,
-    selectionFeedback,
-    
-    // Storage
     setCloudStorage,
     getCloudStorage,
-    
-    // Scanner
-    scanQR,
-    
-    // Sharing & Navigation
+		requestWriteAccess,
+    requestContact,
     shareURL,
-    switchInlineQuery,
-    openTelegramLink,
     openLink,
-    
-    // Communication
-    sendData,
-    getInitData,
-    
-    // Advanced
-    openInvoice,
-    requestBiometry
+    openTelegramLink,
+    impactOccurred,
+    notificationOccurred,
+    selectionChanged
   };
 }
