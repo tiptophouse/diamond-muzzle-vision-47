@@ -89,56 +89,58 @@ export function CampaignAnalytics() {
       </div>
 
       {/* Charts */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart className="h-5 w-5" />
-              קמפיינים לפי סוג
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={campaignTypeData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="count" fill="#8884d8" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+      {campaignTypeData.length > 0 && (
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart className="h-5 w-5" />
+                קמפיינים לפי סוג
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={campaignTypeData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#8884d8" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              התפלגות סוגי קמפיינים
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={campaignTypeData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="count"
-                >
-                  {campaignTypeData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                התפלגות סוגי קמפיינים
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={campaignTypeData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="count"
+                  >
+                    {campaignTypeData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Recent Campaigns */}
       <Card>
@@ -171,17 +173,17 @@ export function CampaignAnalytics() {
                 <div key={campaign.id} className="flex items-start justify-between p-4 border rounded-lg">
                   <div className="space-y-2 flex-1">
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline">{campaign.campaign_type}</Badge>
-                      <span className="font-medium">{campaign.campaign_name}</span>
+                      <Badge variant="outline">{campaign.event_data?.campaign_type || 'unknown'}</Badge>
+                      <span className="font-medium">{campaign.event_data?.campaign_name || 'ללא שם'}</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {campaign.current_uploaders} מעלים | {campaign.hours_remaining} שעות נותרו
+                      {campaign.event_data?.current_uploaders || 0} מעלים | {campaign.event_data?.hours_remaining || 0} שעות נותרו
                     </p>
                     <div className="text-xs text-muted-foreground">
-                      נשלח: {formatDistanceToNow(new Date(campaign.sent_at), { addSuffix: true })}
+                      נשלח: {formatDistanceToNow(new Date(campaign.timestamp), { addSuffix: true })}
                     </div>
                   </div>
-                  <Badge variant="secondary">{campaign.target_group}</Badge>
+                  <Badge variant="secondary">{campaign.event_data?.target_group || 'ללא קבוצה'}</Badge>
                 </div>
               ))}
             </div>
