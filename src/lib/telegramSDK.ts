@@ -3,200 +3,200 @@ import {
   initData, 
   viewport, 
   themeParams, 
-  mainButton,
-  utils,
+  mainButton, 
   hapticFeedback,
-  qrScanner,
-  cloudStorage
+  retrieveLaunchParams
 } from '@telegram-apps/sdk';
 
-// Initialize Telegram WebApp SDK
-let isInitialized = false;
-let webApp: any = null;
-let user: any = null;
-let initDataRaw = '';
-let platform = 'unknown';
+export interface TelegramWebApp {
+  initData?: string;
+  initDataUnsafe?: any;
+  version?: string;
+  platform?: string;
+  colorScheme?: 'light' | 'dark';
+  themeParams?: any;
+  isExpanded?: boolean;
+  viewportHeight?: number;
+  sendData?: (data: string) => void;
+  ready?: () => void;
+  expand?: () => void;
+  close?: () => void;
+  MainButton?: {
+    text?: string;
+    color?: string;
+    textColor?: string;
+    isVisible?: boolean;
+    isActive?: boolean;
+    show?: () => void;
+    hide?: () => void;
+    enable?: () => void;
+    disable?: () => void;
+    setText?: (text: string) => void;
+    onClick?: (callback: () => void) => void;
+    offClick?: (callback: () => void) => void;
+  };
+  HapticFeedback?: {
+    impactOccurred?: (style: 'light' | 'medium' | 'heavy') => void;
+    notificationOccurred?: (type: 'error' | 'success' | 'warning') => void;
+    selectionChanged?: () => void;
+  };
+}
 
-export const telegramSDK = {
-  // Core initialization
-  async init() {
+export const initializeTelegramSDK = async () => {
+  try {
+    const launchParams = retrieveLaunchParams();
+    console.log('📱 Telegram SDK initialized with launch params:', launchParams);
+
+    // Initialize initData if supported
     try {
-      if (typeof window === 'undefined') return false;
-      
-      // Initialize init data
-      if (initData.isSupported()) {
-        initData.restore();
-        const data = initData.state();
-        if (data) {
-          initDataRaw = data.raw;
-          user = data.user;
-        }
-      }
-
-      // Initialize viewport
-      if (viewport.isSupported()) {
-        viewport.mount();
-        viewport.expand();
-      }
-
-      // Initialize theme
-      if (themeParams.isSupported()) {
-        themeParams.mount();
-      }
-
-      // Initialize main button
-      if (mainButton.isSupported()) {
-        mainButton.mount();
-      }
-
-      // Initialize haptic feedback
-      if (hapticFeedback.isSupported()) {
-        hapticFeedback.mount();
-      }
-
-      isInitialized = true;
-      
-      // Get user data
-      if (user) {
-        console.log('📱 Telegram user authenticated:', {
-          id: user.id,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          username: user.username,
-          language_code: user.language_code,
-          is_premium: user.is_premium
-        });
-      }
-
-      return true;
+      initData.restore();
+      console.log('✅ InitData restored successfully');
     } catch (error) {
-      console.error('❌ Telegram SDK initialization failed:', error);
-      return false;
+      console.warn('⚠️ InitData not available:', error);
     }
-  },
 
-  // User data
-  getUser() {
-    return user ? {
-      id: user.id,
-      first_name: user.first_name || '',
-      last_name: user.last_name || '',
-      username: user.username || '',
-      language_code: user.language_code || 'en',
-      is_premium: user.is_premium || false,
-      photo_url: user.photo_url || ''
-    } : null;
-  },
-
-  // Main button controls
-  showMainButton(text: string, onClick?: () => void) {
-    if (!mainButton.isSupported()) return;
-    
+    // Initialize viewport if supported
     try {
-      mainButton.setParams({
-        text,
-        is_visible: true,
-        is_active: true,
-        color: '#007AFF',
-        text_color: '#FFFFFF'
-      });
-      
-      if (onClick) {
-        mainButton.onClick(onClick);
-      }
+      viewport.mount();
+      viewport.expand();
+      console.log('✅ Viewport initialized and expanded');
     } catch (error) {
-      console.error('❌ Error showing main button:', error);
+      console.warn('⚠️ Viewport not available:', error);
     }
-  },
 
-  hideMainButton() {
-    if (!mainButton.isSupported()) return;
-    
+    // Initialize theme params if supported
     try {
-      mainButton.setParams({ is_visible: false });
+      themeParams.mount();
+      console.log('✅ Theme params initialized');
     } catch (error) {
-      console.error('❌ Error hiding main button:', error);
+      console.warn('⚠️ Theme params not available:', error);
     }
-  },
 
-  // Haptic feedback
-  impactFeedback(style: 'light' | 'medium' | 'heavy' = 'medium') {
-    if (!hapticFeedback.isSupported()) return;
-    
+    // Initialize main button if supported
     try {
-      hapticFeedback.impactOccurred(style);
+      mainButton.mount();
+      console.log('✅ Main button initialized');
     } catch (error) {
-      console.error('❌ Error with haptic feedback:', error);
+      console.warn('⚠️ Main button not available:', error);
     }
-  },
 
-  // Utilities
-  openTelegramLink(url: string) {
-    if (!utils.isSupported()) return false;
-    
+    // Initialize haptic feedback if supported
     try {
-      utils.openTelegramLink(url);
-      return true;
+      hapticFeedback.mount();
+      console.log('✅ Haptic feedback initialized');
     } catch (error) {
-      console.error('❌ Error opening Telegram link:', error);
-      return false;
+      console.warn('⚠️ Haptic feedback not available:', error);
     }
-  },
 
-  openLink(url: string) {
-    if (!utils.isSupported()) return false;
-    
-    try {
-      utils.openLink(url);
-      return true;
-    } catch (error) {
-      console.error('❌ Error opening link:', error);
-      return false;
-    }
-  },
-
-  readTextFromClipboard() {
-    if (!utils.isSupported()) return Promise.resolve('');
-    
-    try {
-      return utils.readTextFromClipboard();
-    } catch (error) {
-      console.error('❌ Error reading clipboard:', error);
-      return Promise.resolve('');
-    }
-  },
-
-  // QR Scanner
-  async scanQR() {
-    if (!qrScanner.isSupported()) return false;
-    
-    try {
-      const result = await qrScanner.open();
-      return result;
-    } catch (error) {
-      console.error('❌ Error scanning QR:', error);
-      return false;
-    }
-  },
-
-  // Data sharing
-  sendData(data: string) {
-    try {
-      if (window.Telegram?.WebApp?.sendData) {
-        window.Telegram.WebApp.sendData(data);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('❌ Error sending data:', error);
-      return false;
-    }
-  },
-
-  // State getters
-  isInitialized: () => isInitialized,
-  getInitDataRaw: () => initDataRaw,
-  getPlatform: () => platform
+    return {
+      initData: initData.state,
+      viewport: viewport.state,
+      themeParams: themeParams.state,
+      mainButton: mainButton.state,
+      hapticFeedback
+    };
+  } catch (error) {
+    console.error('❌ Failed to initialize Telegram SDK:', error);
+    return null;
+  }
 };
 
-export default telegramSDK;
+export const getTelegramWebApp = (): TelegramWebApp | null => {
+  if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+    return window.Telegram.WebApp;
+  }
+  return null;
+};
+
+export const showMainButton = (text: string, onClick: () => void) => {
+  try {
+    mainButton.setText(text);
+    mainButton.show();
+    mainButton.enable();
+    mainButton.on('click', onClick);
+    console.log('✅ Main button shown with text:', text);
+  } catch (error) {
+    console.warn('⚠️ Could not show main button:', error);
+  }
+};
+
+export const hideMainButton = () => {
+  try {
+    mainButton.hide();
+    console.log('✅ Main button hidden');
+  } catch (error) {
+    console.warn('⚠️ Could not hide main button:', error);
+  }
+};
+
+export const triggerHapticFeedback = (type: 'light' | 'medium' | 'heavy' | 'success' | 'error' | 'warning' = 'light') => {
+  try {
+    if (type === 'success' || type === 'error' || type === 'warning') {
+      hapticFeedback.notificationOccurred(type);
+    } else {
+      hapticFeedback.impactOccurred(type);
+    }
+    console.log('✅ Haptic feedback triggered:', type);
+  } catch (error) {
+    console.warn('⚠️ Could not trigger haptic feedback:', error);
+  }
+};
+
+export const expandTelegramApp = () => {
+  try {
+    viewport.expand();
+    console.log('✅ Telegram app expanded');
+  } catch (error) {
+    console.warn('⚠️ Could not expand Telegram app:', error);
+  }
+};
+
+export const getTelegramInitData = () => {
+  try {
+    return initData.state;
+  } catch (error) {
+    console.warn('⚠️ Could not get init data:', error);
+    return null;
+  }
+};
+
+export const getTelegramThemeParams = () => {
+  try {
+    return themeParams.state;
+  } catch (error) {
+    console.warn('⚠️ Could not get theme params:', error);
+    return null;
+  }
+};
+
+export const isTelegramWebApp = (): boolean => {
+  return typeof window !== 'undefined' && !!window.Telegram?.WebApp;
+};
+
+export const sendTelegramData = (data: any) => {
+  try {
+    const webApp = getTelegramWebApp();
+    if (webApp && typeof webApp.sendData === 'function') {
+      webApp.sendData(JSON.stringify(data));
+      console.log('✅ Data sent to Telegram:', data);
+    } else {
+      console.warn('⚠️ sendData not available');
+    }
+  } catch (error) {
+    console.error('❌ Failed to send data to Telegram:', error);
+  }
+};
+
+export const closeTelegramApp = () => {
+  try {
+    const webApp = getTelegramWebApp();
+    if (webApp && typeof webApp.close === 'function') {
+      webApp.close();
+      console.log('✅ Telegram app closed');
+    } else {
+      console.warn('⚠️ close not available');
+    }
+  } catch (error) {
+    console.error('❌ Failed to close Telegram app:', error);
+  }
+};

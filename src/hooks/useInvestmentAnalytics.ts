@@ -26,6 +26,15 @@ interface InvestmentInteraction {
   metadata?: any;
 }
 
+interface EventData {
+  step?: string;
+  telegram_id?: number;
+  metadata?: any;
+  timestamp?: string;
+  user_agent?: string;
+  referrer?: string;
+}
+
 export function useInvestmentAnalytics() {
   const { user } = useTelegramAuth();
   const [analytics, setAnalytics] = useState<InvestmentAnalytics | null>(null);
@@ -147,14 +156,37 @@ export function useInvestmentAnalytics() {
         return;
       }
 
-      // Process analytics data
-      const views = interactions.filter(i => i.event_data?.step === 'view');
-      const interests = interactions.filter(i => i.event_data?.step === 'interest');
-      const ndaStarts = interactions.filter(i => i.event_data?.step === 'nda_start');
-      const ndaSigned = interactions.filter(i => i.event_data?.step === 'nda_signed');
-      const meetings = interactions.filter(i => i.event_data?.step === 'meeting_scheduled');
+      // Process analytics data with proper type checking
+      const views = interactions.filter(i => {
+        const eventData = i.event_data as EventData;
+        return eventData?.step === 'view';
+      });
+      
+      const interests = interactions.filter(i => {
+        const eventData = i.event_data as EventData;
+        return eventData?.step === 'interest';
+      });
+      
+      const ndaStarts = interactions.filter(i => {
+        const eventData = i.event_data as EventData;
+        return eventData?.step === 'nda_start';
+      });
+      
+      const ndaSigned = interactions.filter(i => {
+        const eventData = i.event_data as EventData;
+        return eventData?.step === 'nda_signed';
+      });
+      
+      const meetings = interactions.filter(i => {
+        const eventData = i.event_data as EventData;
+        return eventData?.step === 'meeting_scheduled';
+      });
 
-      const uniqueViewers = new Set(views.map(v => v.event_data?.telegram_id)).size;
+      const uniqueViewers = new Set(views.map(v => {
+        const eventData = v.event_data as EventData;
+        return eventData?.telegram_id;
+      }).filter(Boolean)).size;
+      
       const conversionRate = uniqueViewers > 0 ? (meetings.length / uniqueViewers) * 100 : 0;
 
       // Views by hour
@@ -167,7 +199,8 @@ export function useInvestmentAnalytics() {
 
       // Top referrers
       const referrerCounts = views.reduce((acc: Record<string, number>, view) => {
-        const referrer = view.event_data?.referrer || 'direct';
+        const eventData = view.event_data as EventData;
+        const referrer = eventData?.referrer || 'direct';
         acc[referrer] = (acc[referrer] || 0) + 1;
         return acc;
       }, {});

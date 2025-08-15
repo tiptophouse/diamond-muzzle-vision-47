@@ -1,61 +1,105 @@
 
 import { useState, useEffect } from 'react';
-import { telegramSDK } from '@/lib/telegramSDK';
+import { initializeTelegramSDK, getTelegramWebApp } from '@/lib/telegramSDK';
 
 export interface UseTelegramSDKReturn {
   isInitialized: boolean;
-  isLoading: boolean;
-  user: any;
-  platform: string;
   webApp: any;
-  showMainButton: (text: string, onClick?: () => void) => void;
+  user: any;
+  initData: any;
+  viewport: any;
+  mainButton: any;
+  hapticFeedback: any;
+  error: string | null;
+  showMainButton: (text: string, onClick: () => void) => void;
   hideMainButton: () => void;
-  impactFeedback: (style?: 'light' | 'medium' | 'heavy') => void;
-  openTelegramLink: (url: string) => boolean;
-  openLink: (url: string) => boolean;
-  readTextFromClipboard: () => Promise<string>;
-  scanQR: () => Promise<string | boolean>;
-  sendData: (data: string) => boolean;
+  triggerHaptic: (type?: 'light' | 'medium' | 'heavy') => void;
+  expand: () => void;
 }
 
 export function useModernTelegramSDK(): UseTelegramSDKReturn {
   const [isInitialized, setIsInitialized] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  const [webApp, setWebApp] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
+  const [initData, setInitData] = useState<any>(null);
+  const [viewport, setViewport] = useState<any>(null);
+  const [mainButton, setMainButton] = useState<any>(null);
+  const [hapticFeedback, setHapticFeedback] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const initSDK = async () => {
+    const initialize = async () => {
       try {
-        const initialized = await telegramSDK.init();
-        setIsInitialized(initialized);
-        
-        if (initialized) {
-          const userData = telegramSDK.getUser();
-          setUser(userData);
+        const telegramSDK = await initializeTelegramSDK();
+        const telegramWebApp = getTelegramWebApp();
+
+        if (telegramSDK && telegramWebApp) {
+          setWebApp(telegramWebApp);
+          setInitData(telegramSDK.initData);
+          setViewport(telegramSDK.viewport);
+          setMainButton(telegramSDK.mainButton);
+          setHapticFeedback(telegramSDK.hapticFeedback);
+          
+          // Extract user data from initData
+          if (telegramSDK.initData?.user) {
+            setUser(telegramSDK.initData.user);
+          } else if (telegramWebApp.initDataUnsafe?.user) {
+            setUser(telegramWebApp.initDataUnsafe.user);
+          }
+
+          setIsInitialized(true);
+          console.log('✅ Telegram SDK hooks initialized successfully');
+        } else {
+          setError('Failed to initialize Telegram SDK');
+          console.warn('⚠️ Telegram SDK initialization failed');
         }
-      } catch (error) {
-        console.error('❌ Failed to initialize Telegram SDK:', error);
-      } finally {
-        setIsLoading(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+        console.error('❌ Telegram SDK initialization error:', err);
       }
     };
 
-    initSDK();
+    initialize();
   }, []);
+
+  const showMainButton = (text: string, onClick: () => void) => {
+    if (webApp?.MainButton) {
+      webApp.MainButton.setText(text);
+      webApp.MainButton.show();
+      webApp.MainButton.onClick(onClick);
+    }
+  };
+
+  const hideMainButton = () => {
+    if (webApp?.MainButton) {
+      webApp.MainButton.hide();
+    }
+  };
+
+  const triggerHaptic = (type: 'light' | 'medium' | 'heavy' = 'light') => {
+    if (webApp?.HapticFeedback) {
+      webApp.HapticFeedback.impactOccurred(type);
+    }
+  };
+
+  const expand = () => {
+    if (webApp?.expand) {
+      webApp.expand();
+    }
+  };
 
   return {
     isInitialized,
-    isLoading,
+    webApp,
     user,
-    platform: telegramSDK.getPlatform(),
-    webApp: null, // Keep for compatibility
-    showMainButton: telegramSDK.showMainButton,
-    hideMainButton: telegramSDK.hideMainButton,
-    impactFeedback: telegramSDK.impactFeedback,
-    openTelegramLink: telegramSDK.openTelegramLink,
-    openLink: telegramSDK.openLink,
-    readTextFromClipboard: telegramSDK.readTextFromClipboard,
-    scanQR: telegramSDK.scanQR,
-    sendData: telegramSDK.sendData,
+    initData,
+    viewport,
+    mainButton,
+    hapticFeedback,
+    error,
+    showMainButton,
+    hideMainButton,
+    triggerHaptic,
+    expand
   };
 }
