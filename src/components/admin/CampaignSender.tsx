@@ -7,426 +7,350 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Send, Users, Target, Clock, Zap, Crown, Gift, AlertTriangle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  Send, 
+  Users, 
+  MessageSquare, 
+  Clock, 
+  CheckCircle, 
+  AlertCircle,
+  Target,
+  Zap,
+  TrendingUp,
+  Calendar
+} from 'lucide-react';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useCampaignAnalytics } from '@/hooks/useCampaignAnalytics';
 
-interface CampaignMessage {
-  id: string;
+interface CampaignData {
   name: string;
-  type: 'urgency' | 'scarcity' | 'social_proof' | 'value' | 'fomo' | 'exclusive';
-  subject: string;
   message: string;
-  icon: React.ReactNode;
-  color: string;
+  targetGroup: 'all' | 'uploaders' | 'zero-diamonds' | 'inactive';
+  campaignType: 'announcement' | 'promotion' | 'reminder' | 'welcome';
 }
 
-const campaignMessages: CampaignMessage[] = [
-  {
-    id: 'urgency_72h',
-    name: 'Urgency - 72 Hours',
-    type: 'urgency',
-    subject: '⏰ רק 72 שעות נותרו!',
-    message: `🚨 **⏰ דחוף: 72 שעות נותרו!** ⏰ 🚨
-
-💎 **הנחת לכל החיים מסתיימת בקרוב!**
-
-רק **[X] מקומות נותרו** מתוך 100 עבור גישה לכל החיים ב-$50!
-
-🎯 **זו ההזדמנות האחרונה שלך לקבל:**
-• ✨ העלאות יהלומים ללא הגבלה - לכל החיים
-• 🤖 התאמת קונים באמצעות AI - גישה לכל החיים
-• 📊 תובנות שוק וניתוחים - ללא עמלות חודשיות
-• 💰 התראות עדיפות על עסקאות - סטטוס VIP קבוע
-• 🚀 כל התכונות העתידיות כלולות - ללא עלות נוספת
-
-**אחרי 100 מעלים = המחיר עובר ל-$75 לחודש!**
-
-⚡ **העלה את היהלום הראשון שלך כדי להבטיח את המקום!**
-
-הזמן אוזל... למה לשלם דמי מנוי חודשיים כשאפשר לקבל גישה לכל החיים רק ב-$50!`,
-    icon: <Clock className="h-4 w-4" />,
-    color: 'text-red-600'
-  },
-  {
-    id: 'scarcity_spots',
-    name: 'Scarcity - Limited Spots',
-    type: 'scarcity',
-    subject: '🔥 אזהרת מחסור: רק [X] מקומות נותרו!',  
-    message: `🔥 **אזהרת מחסור: רק [X] מקומות נותרו!** 🔥
-
-💎 **BrilliantBot גישה לכל החיים - $50 (היה $75)**
-
-⚠️ **רק ל-100 המעלים הראשונים - ללא יוצאים מן הכלל!**
-
-מה קורה כשאתה מעלה את היהלום הראשון:
-• 🎖️ הפעלת חברות לכל החיים מיידית
-• 💰 נעילת מחיר $50 לכל החיים (אחרים משלמים $75 לחודש)
-• 🚀 דילוג על כל מחזורי התשלום העתידיים
-• ⭐ סטטוס VIP קבוע בקהילת הסחר
-• 🔍 התאמת קונים באמצעות AI ללא הגבלה
-• 📊 חבילת ניתוחים מלאה - שלך לכל החיים
-
-**ספירה נוכחית: [X]/100 מקומות מאוישים**
-
-כל שעה = פחות מקומות זמינים!
-כל מעלה חדש = הזדמנות אחת פחות עבורך!
-
-⏰ **ספירה לאחור של 72 שעות החלה...**
-
-אל תצפה מהצד בזמן שאחרים מבטיחים את הגישה לכל החיים שלהם!`,
-    icon: <AlertTriangle className="h-4 w-4" />,
-    color: 'text-orange-600'
-  },
-  {
-    id: 'social_proof',
-    name: 'Social Proof - Others Joining',
-    type: 'social_proof',
-    subject: '👥 יותר מ-[X] סוחרים כבר הצטרפו!',
-    message: `👥 **יותר מ-[X] סוחרים מובילים כבר הבטיחו את המקום שלהם!** 👥
-
-💎 **למה הם ממהרים להצטרף ל-BrilliantBot?**
-
-🎯 **מה שסוחרים מובילים אומרים:**
-• "השקעה של $50 שחסכה לי $10,000 ברווחים החמוצים" - יוסי כ.
-• "ה-AI מוצא לי קונים שלא הייתי מוצא לבד" - מיכל ר.
-• "סוף סוף פלטפורמה שמבינה את הצרכים שלנו" - אבי מ.
-
-⚡ **רק [X] מקומות נותרו מתוך 100**
-
-📈 **הנתונים מדברים בעד עצמם:**
-• ממוצע 40% יותר פניות לכל יהלום
-• 65% זמן מכירה מהיר יותר
-• 28% שיפור ברווחיות
-
-🚀 **אל תהיה האחרון שנכנס - המקומות נגמרים מהר!**
-
-**המחיר עולה ל-$75/חודש ברגע שנמלאים 100 המקומות**
-
-⏰ נותרו רק 72 שעות להבטיח $50 לכל החיים`,
-    icon: <Users className="h-4 w-4" />,
-    color: 'text-blue-600'
-  },
-  {
-    id: 'value_proposition',
-    name: 'Value - ROI Focus',
-    type: 'value',
-    subject: '💰 חסוך $300 בשנה הראשונה!',
-    message: `💰 **חישוב פשוט: BrilliantBot מחזיר את עצמו תוך שבוע!** 💰
-
-📊 **בואו נעשה חשבון:**
-
-**עלות רגילה:**
-• $75 לחודש × 12 חודשים = $900 בשנה
-• לכל החיים (5 שנים): $4,500
-
-**מחיר מיוחד עכשיו:**
-• תשלום חד-פעמי: $50 בלבד!
-• חיסכון בשנה הראשונה: $850
-• חיסכון לכל החיים: $4,450
-
-🎯 **מה שאתה מקבל בתמורה:**
-• 🔍 AI שמוצא קונים בדקות במקום שבועות
-• 📈 ממוצע 40% יותר פניות לכל יהלום
-• ⚡ 65% זמן מכירה מהיר יותר
-• 💎 גישה לרשת 1,600+ סוחרים פעילים
-
-**אפילו עסקה אחת נוספת בחודש משלמת את ההשקעה!**
-
-⏰ **רק [X] מקומות נותרו מתוך 100**
-⏰ **רק 72 שעות נותרו למחיר המיוחד**
-
-🚀 **העלה יהלום אחד עכשיו והתחל לחסוך!**`,
-    icon: <Target className="h-4 w-4" />,
-    color: 'text-green-600'
-  },
-  {
-    id: 'fomo_exclusive',
-    name: 'FOMO - Exclusive Access',
-    type: 'fomo',
-    subject: '🎖️ גישה בלעדית לחברי VIP בלבד!',
-    message: `🎖️ **אתה מוזמן לחברות VIP בלעדית ב-BrilliantBot!** 🎖️
-
-👑 **מה זה אומר להיות VIP?**
-
-🌟 **הטבות בלעדיות שאחרים לא יקבלו:**
-• 🚀 גישה מוקדמת לכל התכונות החדשות
-• 💎 עדיפות בהתאמות AI (התוצאות שלך קודם)
-• 📊 דוחות שוק מתקדמים (ערך $200/חודש)
-• 🎯 ייעוץ אישי מומחי יהלומים
-• 👥 גישה לקבוצת VIP סגורה (50 חברים בלבד)
-• 🏆 תג זהב בפרופיל + הכרה מיוחדת
-
-⚡ **המיוחד: רק 100 מקומות VIP יפתחו אי פעם!**
-
-מאחרי זה - הכל יהיה $75/חודש ללא הטבות VIP.
-
-🔥 **למה עכשיו?**
-• חברי VIP מקבלים פי 3 יותר פניות
-• גישה לעסקאות בלעדיות שאחרים לא רואים
-• רשת קשרים עם 100 הסוחרים המובילים בארץ
-
-⏰ **נותרו [X] הזמנות VIP מתוך 100**
-⏰ **נותרו 72 שעות לתפוס את המקום**
-
-🎖️ **תהיה חלק מה-VIP - תעלה יהלום עכשיו!**`,
-    icon: <Crown className="h-4 w-4" />,
-    color: 'text-purple-600'
-  },
-  {
-    id: 'last_chance',
-    name: 'Last Chance - Final Call',
-    type: 'fomo',
-    subject: '🚨 הזדמנות אחרונה - נגמר מחר!',
-    message: `🚨 **זה זה - ההזדמנות האחרונה שלך!** 🚨
-
-⏰ **פחות מ-24 שעות נותרו למחיר $50**
-
-💔 **אל תהיה מהסוחרים שיצטערו מחר:**
-• "איך פספסתי את זה?"
-• "הייתי יכול לחסוך $4,000..."
-• "למה לא העליתי יהלום אחד בזמן?"
-
-🔥 **מה שקורה מחר ב-00:00:**
-• המחיר קופץ ל-$75/חודש
-• הטבות ה-VIP נסגרות לתמיד
-• 100 המקומות המובטחים נגמרים
-• תצטרך לחכות בתור כמו כולם
-
-⚡ **עכשיו או אף פעם:**
-רק **[X] מקומות** נותרו מתוך 100
-רק **[X] שעות** נותרו למחיר המיוחד
-
-🎯 **מה שצריך לעשות עכשיו:**
-1. לחץ על הכפתור למטה
-2. העלה יהלום אחד (אפילו ישן)
-3. קבל גישה לכל החיים ב-$50
-4. התחל לקבל יותר פניות מיד
-
-**אחרי חצות - אין דרך חזרה!**
-
-⚡ **תעלה עכשיו ותבטיח את העתיד שלך!**`,
-    icon: <Zap className="h-4 w-4" />,
-    color: 'text-red-700'
-  }
-];
-
 export function CampaignSender() {
-  const [selectedCampaign, setSelectedCampaign] = useState<string>('');
-  const [customMessage, setCustomMessage] = useState('');
-  const [campaignName, setCampaignName] = useState('');
-  const [targetGroup, setTargetGroup] = useState('-1001009290613');
-  const [currentUploaders, setCurrentUploaders] = useState(47);
-  const [hoursLeft, setHoursLeft] = useState(72);
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+  const [campaignData, setCampaignData] = useState<CampaignData>({
+    name: '',
+    message: '',
+    targetGroup: 'all',
+    campaignType: 'announcement'
+  });
+  const [isSending, setIsSending] = useState(false);
+  const [sendProgress, setSendProgress] = useState(0);
+  const [estimatedReach, setEstimatedReach] = useState(0);
+  
+  const { metrics, logCampaignSent } = useCampaignAnalytics();
 
-  const handleSendCampaign = async (messageData: CampaignMessage | null = null) => {
-    setIsLoading(true);
-    
+  // Estimate reach based on target group
+  React.useEffect(() => {
+    const estimateReach = async () => {
+      try {
+        let query = supabase.from('user_profiles').select('telegram_id', { count: 'exact' });
+        
+        switch (campaignData.targetGroup) {
+          case 'uploaders':
+            // Users who have diamonds
+            const { data: uploaders } = await supabase
+              .from('diamonds')
+              .select('user_id')
+              .not('user_id', 'is', null);
+            const uniqueUploaders = [...new Set(uploaders?.map(d => d.user_id) || [])];
+            setEstimatedReach(uniqueUploaders.length);
+            break;
+          case 'zero-diamonds':
+            // Users with no diamonds
+            const { data: allUsers } = await supabase.from('user_profiles').select('telegram_id');
+            const { data: usersWithDiamonds } = await supabase
+              .from('diamonds')
+              .select('user_id')
+              .not('user_id', 'is', null);
+            const usersWithDiamondsSet = new Set(usersWithDiamonds?.map(d => d.user_id) || []);
+            const zeroUsers = allUsers?.filter(u => !usersWithDiamondsSet.has(u.telegram_id)) || [];
+            setEstimatedReach(zeroUsers.length);
+            break;
+          case 'inactive':
+            // Users who haven't logged in recently (last 7 days)
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            const { count } = await supabase
+              .from('user_profiles')
+              .select('telegram_id', { count: 'exact' })
+              .lt('last_login', sevenDaysAgo.toISOString());
+            setEstimatedReach(count || 0);
+            break;
+          default:
+            const { count: totalCount } = await supabase
+              .from('user_profiles')
+              .select('telegram_id', { count: 'exact' });
+            setEstimatedReach(totalCount || 0);
+        }
+      } catch (error) {
+        console.error('Error estimating reach:', error);
+        setEstimatedReach(0);
+      }
+    };
+
+    if (campaignData.targetGroup) {
+      estimateReach();
+    }
+  }, [campaignData.targetGroup]);
+
+  const handleSendCampaign = async () => {
+    if (!campaignData.name.trim() || !campaignData.message.trim()) {
+      toast.error('Please fill in campaign name and message');
+      return;
+    }
+
+    setIsSending(true);
+    setSendProgress(0);
+
     try {
-      const finalMessage = messageData ? messageData.message : customMessage;
-      const finalSubject = messageData ? messageData.subject : 'הודעת קמפיין מיוחדת';
+      // Log campaign start
+      await logCampaignSent({
+        campaign_type: campaignData.campaignType,
+        campaign_name: campaignData.name,
+        message_content: campaignData.message,
+        target_group: campaignData.targetGroup,
+        sent_count: estimatedReach,
+        current_uploaders: 0 // Will be updated by backend
+      });
+
+      // Call the appropriate Supabase function based on campaign type
+      const functionName = getCampaignFunction(campaignData.campaignType, campaignData.targetGroup);
       
-      // Replace placeholders
-      const personalizedMessage = finalMessage
-        .replace(/\[X\]/g, currentUploaders.toString())
-        .replace(/\[HOURS\]/g, hoursLeft.toString());
-
-      const personalizedSubject = finalSubject
-        .replace(/\[X\]/g, currentUploaders.toString())
-        .replace(/\[HOURS\]/g, hoursLeft.toString());
-
-      // Send to Telegram group
-      const { data, error } = await supabase.functions.invoke('send-group-cta', {
+      const { data, error } = await supabase.functions.invoke(functionName, {
         body: {
-          message: personalizedMessage,
-          buttonText: '🚀 קבל גישה לכל החיים - $50',
-          groupId: targetGroup,
-          botUsername: 'diamondmazalbot'
+          message: campaignData.message,
+          campaign_name: campaignData.name,
+          target_group: campaignData.targetGroup
         }
       });
 
       if (error) throw error;
 
-      // Log campaign for analytics
-      const { error: logError } = await supabase
-        .from('campaign_logs')
-        .insert({
-          campaign_type: messageData?.type || 'custom',
-          campaign_name: campaignName || messageData?.name || 'Custom Campaign',
-          message_content: personalizedMessage,
-          target_group: targetGroup,
-          current_uploaders: currentUploaders,
-          hours_remaining: hoursLeft,
-          metadata: {
-            campaign_id: messageData?.id || 'custom',
-            subject: personalizedSubject
+      // Simulate progress
+      const progressInterval = setInterval(() => {
+        setSendProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
           }
+          return prev + 10;
         });
+      }, 200);
 
-      if (logError) console.warn('Campaign logging failed:', logError);
-
-      toast({
-        title: "🚀 קמפיין נשלח בהצלחה!",
-        description: `הודעת ${messageData?.name || 'קמפיין מותאם אישית'} נשלחה לקבוצה`,
-      });
-
-      // Reset form
-      setSelectedCampaign('');
-      setCustomMessage('');
-      setCampaignName('');
+      // Complete after response
+      setTimeout(() => {
+        setSendProgress(100);
+        toast.success(`Campaign "${campaignData.name}" sent successfully to ${estimatedReach} users!`);
+        
+        // Reset form
+        setCampaignData({
+          name: '',
+          message: '',
+          targetGroup: 'all',
+          campaignType: 'announcement'
+        });
+      }, 2000);
 
     } catch (error) {
       console.error('Campaign send error:', error);
-      toast({
-        title: "❌ שגיאה בשליחת קמפיין",
-        description: "נכשל בשליחת הקמפיין, נסה שוב",
-        variant: "destructive",
-      });
+      toast.error('Failed to send campaign');
+      setSendProgress(0);
     } finally {
-      setIsLoading(false);
+      setTimeout(() => {
+        setIsSending(false);
+        setSendProgress(0);
+      }, 3000);
     }
   };
 
-  const selectedCampaignData = campaignMessages.find(c => c.id === selectedCampaign);
+  const getCampaignFunction = (type: string, target: string): string => {
+    switch (type) {
+      case 'welcome':
+        return 'send-welcome-message';
+      case 'reminder':
+        return 'send-upload-reminder';
+      default:
+        return 'send-announcement';
+    }
+  };
+
+  const getCampaignIcon = (type: string) => {
+    switch (type) {
+      case 'announcement': return <MessageSquare className="h-4 w-4" />;
+      case 'promotion': return <TrendingUp className="h-4 w-4" />;
+      case 'reminder': return <Clock className="h-4 w-4" />;
+      case 'welcome': return <Zap className="h-4 w-4" />;
+      default: return <MessageSquare className="h-4 w-4" />;
+    }
+  };
 
   return (
-    <Card className="max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Send className="h-5 w-5" />
-          מערכת קמפיינים מתקדמת
-        </CardTitle>
-        <CardDescription>
-          שלח קמפיינים מותאמים עם הודעות שונות לקידום מכירות והרשמות
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="templates" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="templates">תבניות קמפיין</TabsTrigger>
-            <TabsTrigger value="custom">קמפיין מותאם</TabsTrigger>
-          </TabsList>
-
-          {/* Campaign Settings */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
-            <div className="space-y-2">
-              <Label>מספר מעלים נוכחי</Label>
-              <Input
-                type="number"
-                value={currentUploaders}
-                onChange={(e) => setCurrentUploaders(parseInt(e.target.value) || 0)}
-                max={100}
-              />
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Send className="h-5 w-5" />
+            Campaign Sender
+          </CardTitle>
+          <CardDescription>
+            Send targeted campaigns to user groups via Telegram
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Campaign Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="flex items-center justify-between">
+                <Target className="h-5 w-5 text-blue-600" />
+                <span className="text-2xl font-bold text-blue-600">{estimatedReach}</span>
+              </div>
+              <p className="text-sm text-blue-600 mt-1">Estimated Reach</p>
             </div>
-            <div className="space-y-2">
-              <Label>שעות נותרות</Label>
-              <Input
-                type="number"
-                value={hoursLeft}
-                onChange={(e) => setHoursLeft(parseInt(e.target.value) || 0)}
-              />
+            <div className="bg-green-50 p-4 rounded-lg">
+              <div className="flex items-center justify-between">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                <span className="text-2xl font-bold text-green-600">{metrics.totalSent}</span>
+              </div>
+              <p className="text-sm text-green-600 mt-1">Total Sent</p>
             </div>
-            <div className="space-y-2">
-              <Label>ID קבוצת יעד</Label>
-              <Input
-                value={targetGroup}
-                onChange={(e) => setTargetGroup(e.target.value)}
-                placeholder="-1001009290613"
-              />
+            <div className="bg-purple-50 p-4 rounded-lg">
+              <div className="flex items-center justify-between">
+                <TrendingUp className="h-5 w-5 text-purple-600" />
+                <span className="text-2xl font-bold text-purple-600">{metrics.averageEngagement.toFixed(1)}%</span>
+              </div>
+              <p className="text-sm text-purple-600 mt-1">Avg Engagement</p>
+            </div>
+            <div className="bg-orange-50 p-4 rounded-lg">
+              <div className="flex items-center justify-between">
+                <Calendar className="h-5 w-5 text-orange-600" />
+                <span className="text-2xl font-bold text-orange-600">{metrics.totalCampaigns}</span>
+              </div>
+              <p className="text-sm text-orange-600 mt-1">Campaigns Sent</p>
             </div>
           </div>
 
-          <TabsContent value="templates" className="space-y-4">
-            <div className="grid gap-4">
-              {campaignMessages.map((campaign) => (
-                <Card key={campaign.id} className="relative">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className={campaign.color}>{campaign.icon}</span>
-                        <CardTitle className="text-lg">{campaign.name}</CardTitle>
-                        <Badge variant="outline">{campaign.type}</Badge>
-                      </div>
-                      <Button
-                        onClick={() => handleSendCampaign(campaign)}
-                        disabled={isLoading}
-                        size="sm"
-                      >
-                        <Send className="h-4 w-4 mr-2" />
-                        שלח קמפיין
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="bg-background p-4 rounded border">
-                      <p className="font-semibold text-sm mb-2">
-                        {campaign.subject.replace(/\[X\]/g, currentUploaders.toString())}
-                      </p>
-                      <pre className="whitespace-pre-wrap text-sm text-right">
-                        {campaign.message
-                          .replace(/\[X\]/g, currentUploaders.toString())
-                          .replace(/\[HOURS\]/g, hoursLeft.toString())
-                          .substring(0, 300)}...
-                      </pre>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
+          <Separator />
 
-          <TabsContent value="custom" className="space-y-4">
+          {/* Campaign Form */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>שם הקמפיין</Label>
+              <div>
+                <Label htmlFor="campaign-name">Campaign Name</Label>
                 <Input
-                  value={campaignName}
-                  onChange={(e) => setCampaignName(e.target.value)}
-                  placeholder="הכנס שם לקמפיין"
+                  id="campaign-name"
+                  placeholder="e.g., Weekly Diamond Update"
+                  value={campaignData.name}
+                  onChange={(e) => setCampaignData(prev => ({ ...prev, name: e.target.value }))}
                 />
               </div>
-              
-              <div className="space-y-2">
-                <Label>הודעת קמפיין מותאמת</Label>
-                <Textarea
-                  value={customMessage}
-                  onChange={(e) => setCustomMessage(e.target.value)}
-                  placeholder="כתב את הודעת הקמפיין שלך כאן..."
-                  rows={12}
-                  dir="rtl"
-                  className="text-right"
-                />
-                <p className="text-xs text-muted-foreground">
-                  השתמש ב-[X] למספר המעלים הנוכחי ו-[HOURS] לשעות הנותרות
-                </p>
+
+              <div>
+                <Label htmlFor="campaign-type">Campaign Type</Label>
+                <Select 
+                  value={campaignData.campaignType} 
+                  onValueChange={(value: any) => setCampaignData(prev => ({ ...prev, campaignType: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="announcement">📢 Announcement</SelectItem>
+                    <SelectItem value="promotion">🎯 Promotion</SelectItem>
+                    <SelectItem value="reminder">⏰ Reminder</SelectItem>
+                    <SelectItem value="welcome">👋 Welcome</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="bg-muted p-4 rounded-lg">
-                <h4 className="font-semibold mb-2">תצוגה מקדימה:</h4>
-                <div className="bg-background p-3 rounded border">
-                  <pre className="whitespace-pre-wrap text-sm text-right">
-                    {customMessage
-                      .replace(/\[X\]/g, currentUploaders.toString())
-                      .replace(/\[HOURS\]/g, hoursLeft.toString())}
-                  </pre>
-                </div>
+              <div>
+                <Label htmlFor="target-group">Target Group</Label>
+                <Select 
+                  value={campaignData.targetGroup} 
+                  onValueChange={(value: any) => setCampaignData(prev => ({ ...prev, targetGroup: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">👥 All Users</SelectItem>
+                    <SelectItem value="uploaders">💎 Active Uploaders</SelectItem>
+                    <SelectItem value="zero-diamonds">🆘 Zero Diamonds</SelectItem>
+                    <SelectItem value="inactive">😴 Inactive Users</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-
-              <Button
-                onClick={() => handleSendCampaign()}
-                disabled={isLoading || !customMessage || !campaignName}
-                className="w-full"
-              >
-                <Send className="h-4 w-4 mr-2" />
-                {isLoading ? 'שולח קמפיין...' : 'שלח קמפיין מותאם'}
-              </Button>
             </div>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+
+            <div>
+              <Label htmlFor="message">Campaign Message</Label>
+              <Textarea
+                id="message"
+                placeholder="Enter your campaign message here..."
+                className="min-h-[200px]"
+                value={campaignData.message}
+                onChange={(e) => setCampaignData(prev => ({ ...prev, message: e.target.value }))}
+              />
+              <p className="text-sm text-muted-foreground mt-2">
+                {campaignData.message.length}/1000 characters
+              </p>
+            </div>
+          </div>
+
+          {/* Progress */}
+          {isSending && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Sending campaign...</span>
+                <span className="text-sm text-muted-foreground">{sendProgress}%</span>
+              </div>
+              <Progress value={sendProgress} className="w-full" />
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-3">
+            <Button 
+              onClick={handleSendCampaign}
+              disabled={isSending || !campaignData.name.trim() || !campaignData.message.trim()}
+              className="flex-1 md:flex-none"
+            >
+              {isSending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  {getCampaignIcon(campaignData.campaignType)}
+                  <span className="ml-2">Send Campaign</span>
+                </>
+              )}
+            </Button>
+            
+            <Badge variant="outline" className="hidden md:flex">
+              Reach: {estimatedReach} users
+            </Badge>
+          </div>
+
+          {/* Preview */}
+          {campaignData.message && (
+            <Alert>
+              <MessageSquare className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Preview:</strong> {campaignData.message.substring(0, 100)}
+                {campaignData.message.length > 100 && '...'}
+              </AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
