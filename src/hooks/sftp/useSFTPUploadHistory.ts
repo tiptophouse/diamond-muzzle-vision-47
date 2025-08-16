@@ -2,22 +2,20 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { SFTPUploadJob, SFTPUploadJobResponse } from '@/types/sftp';
 
-interface SFTPUploadJob {
-  id: string;
-  ftp_account_id: string;
-  user_id: number;
-  filename: string;
-  file_size_bytes?: number;
-  status: 'received' | 'processing' | 'completed' | 'failed' | 'invalid';
-  diamonds_processed: number;
-  diamonds_failed: number;
-  error_message?: string;
-  processing_started_at?: string;
-  processing_completed_at?: string;
-  created_at: string;
-  updated_at: string;
-}
+// Type guard to validate status
+const isValidUploadStatus = (status: string): status is 'received' | 'processing' | 'completed' | 'failed' | 'invalid' => {
+  return ['received', 'processing', 'completed', 'failed', 'invalid'].includes(status);
+};
+
+// Convert database response to typed upload job
+const convertToSFTPUploadJob = (response: SFTPUploadJobResponse): SFTPUploadJob => {
+  return {
+    ...response,
+    status: isValidUploadStatus(response.status) ? response.status : 'failed'
+  };
+};
 
 export function useSFTPUploadHistory() {
   const [uploads, setUploads] = useState<SFTPUploadJob[]>([]);
@@ -47,7 +45,11 @@ export function useSFTPUploadHistory() {
         throw error;
       }
 
-      setUploads(data || []);
+      const typedData = (data || []).map((item: SFTPUploadJobResponse) => 
+        convertToSFTPUploadJob(item)
+      );
+      
+      setUploads(typedData);
     } catch (error) {
       console.error('Error fetching upload history:', error);
     } finally {

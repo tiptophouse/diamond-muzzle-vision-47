@@ -3,26 +3,25 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-
-interface SFTPAccount {
-  id: string;
-  user_id: number;
-  telegram_id: number;
-  ftp_username: string;
-  ftp_folder_path: string;
-  status: 'active' | 'suspended' | 'revoked';
-  last_used_at?: string;
-  created_at: string;
-  updated_at: string;
-  expires_at?: string;
-  password_changed_at?: string;
-  password?: string; // Only available immediately after generation/rotation
-}
+import { SFTPAccount, SFTPAccountResponse } from '@/types/sftp';
 
 interface TestConnectionResult {
   success: boolean;
   message: string;
 }
+
+// Type guard to validate status
+const isValidSFTPStatus = (status: string): status is 'active' | 'suspended' | 'revoked' => {
+  return ['active', 'suspended', 'revoked'].includes(status);
+};
+
+// Convert database response to typed account
+const convertToSFTPAccount = (response: SFTPAccountResponse): SFTPAccount => {
+  return {
+    ...response,
+    status: isValidSFTPStatus(response.status) ? response.status : 'suspended'
+  };
+};
 
 export function useSFTPAccount() {
   const [account, setAccount] = useState<SFTPAccount | null>(null);
@@ -53,7 +52,11 @@ export function useSFTPAccount() {
         throw error;
       }
 
-      setAccount(data);
+      if (data) {
+        setAccount(convertToSFTPAccount(data as SFTPAccountResponse));
+      } else {
+        setAccount(null);
+      }
     } catch (error) {
       console.error('Error fetching SFTP account:', error);
       toast({

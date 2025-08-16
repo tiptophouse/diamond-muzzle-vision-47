@@ -31,13 +31,13 @@ export default function InsightsPage() {
   } = useInsightsData();
 
   const {
-    loading: enhancedLoading,
-    data: enhancedData,
+    isLoading: enhancedLoading,
+    insights: enhancedData,
     refetch: refetchEnhanced,
-    isAuthenticated: enhancedAuth
+    error: enhancedError
   } = useEnhancedInsights();
   
-  if (!basicAuth || !enhancedAuth) {
+  if (!basicAuth) {
     return (
       <TelegramLayout>
         <div className="flex items-center justify-center h-64">

@@ -53,50 +53,68 @@ export function useModernTelegramWebApp(): ModernTelegramWebApp {
         // Initialize the SDK
         initSDK();
         
-        // Initialize components
-        await Promise.all([
-          initData.restore().catch(() => console.log('InitData not available')),
-          viewport.restore().catch(() => console.log('Viewport not available')),
-          themeParams.restore().catch(() => console.log('ThemeParams not available')),
-          mainButton.restore().catch(() => console.log('MainButton not available')),
-          backButton.restore().catch(() => console.log('BackButton not available')),
-          hapticFeedback.restore().catch(() => console.log('HapticFeedback not available'))
-        ]);
+        // Initialize components with proper error handling
+        try {
+          initData.restore();
+        } catch (e) {
+          console.log('InitData not available');
+        }
 
-        // Set up viewport
-        if (viewport.mount.isAvailable()) {
+        try {
           viewport.mount();
           viewport.expand();
+        } catch (e) {
+          console.log('Viewport not available');
+        }
+
+        try {
+          themeParams.mount();
+        } catch (e) {
+          console.log('ThemeParams not available');
+        }
+
+        try {
+          mainButton.mount();
+        } catch (e) {
+          console.log('MainButton not available');
+        }
+
+        try {
+          backButton.mount();
+        } catch (e) {
+          console.log('BackButton not available');
+        }
+
+        try {
+          hapticFeedback.mount();
+        } catch (e) {
+          console.log('HapticFeedback not available');
         }
 
         // Get user data from initData
-        if (initData.restore.isAvailable() && initData.user()) {
+        try {
           const telegramUser = initData.user();
           if (telegramUser) {
             setUser({
               id: telegramUser.id,
-              first_name: telegramUser.firstName,
-              last_name: telegramUser.lastName,
+              first_name: telegramUser.first_name,
+              last_name: telegramUser.last_name,
               username: telegramUser.username,
-              language_code: telegramUser.languageCode,
-              is_premium: telegramUser.isPremium,
-              photo_url: telegramUser.photoUrl
+              language_code: telegramUser.language_code,
+              is_premium: telegramUser.is_premium,
+              photo_url: telegramUser.photo_url
             });
           }
+        } catch (e) {
+          console.log('User data not available');
         }
 
         // Set up theme params
-        if (themeParams.mount.isAvailable()) {
-          themeParams.mount();
-          setCurrentThemeParams(themeParams.getState());
-          
-          // Listen for theme changes
-          const unsubscribe = themeParams.onChange(() => {
-            setCurrentThemeParams(themeParams.getState());
-          });
+        try {
+          const params = themeParams.state();
+          setCurrentThemeParams(params);
           
           // Apply theme to CSS
-          const params = themeParams.getState();
           if (params.bgColor) {
             document.documentElement.style.setProperty('--tg-theme-bg-color', params.bgColor);
             document.body.style.backgroundColor = params.bgColor;
@@ -104,10 +122,12 @@ export function useModernTelegramWebApp(): ModernTelegramWebApp {
           if (params.textColor) {
             document.documentElement.style.setProperty('--tg-theme-text-color', params.textColor);
           }
+        } catch (e) {
+          console.log('Theme params not available');
         }
 
         // Set up viewport handling
-        if (viewport.mount.isAvailable()) {
+        try {
           const updateViewport = () => {
             const height = viewport.height();
             const stableHeight = viewport.stableHeight();
@@ -117,7 +137,8 @@ export function useModernTelegramWebApp(): ModernTelegramWebApp {
           };
           
           updateViewport();
-          const unsubscribe = viewport.onChange(updateViewport);
+        } catch (e) {
+          console.log('Viewport handling not available');
         }
 
         setIsReady(true);
@@ -142,102 +163,110 @@ export function useModernTelegramWebApp(): ModernTelegramWebApp {
 
   const modernHapticFeedback = {
     impact: (style: 'light' | 'medium' | 'heavy' = 'medium') => {
-      if (hapticFeedback.impactOccurred.isAvailable()) {
+      try {
         hapticFeedback.impactOccurred(style);
+      } catch (e) {
+        console.log('Haptic feedback not available');
       }
     },
     notification: (type: 'error' | 'success' | 'warning') => {
-      if (hapticFeedback.notificationOccurred.isAvailable()) {
+      try {
         hapticFeedback.notificationOccurred(type);
+      } catch (e) {
+        console.log('Haptic notification not available');
       }
     },
     selection: () => {
-      if (hapticFeedback.selectionChanged.isAvailable()) {
+      try {
         hapticFeedback.selectionChanged();
+      } catch (e) {
+        console.log('Haptic selection not available');
       }
     }
   };
 
   const modernMainButton = {
     show: (text: string, onClick: () => void, color = '#007AFF') => {
-      if (mainButton.mount.isAvailable()) {
-        mainButton.mount();
-        
+      try {
         // Remove previous callback
-        if (mainButtonCallbackRef.current && mainButton.onClick.isAvailable()) {
+        if (mainButtonCallbackRef.current) {
           mainButton.offClick(mainButtonCallbackRef.current);
         }
         
         mainButtonCallbackRef.current = onClick;
-        mainButton.setParams({ text, bgColor: color, isVisible: true });
-        
-        if (mainButton.onClick.isAvailable()) {
-          mainButton.onClick(onClick);
-        }
+        mainButton.setParams({ text, isVisible: true });
+        mainButton.onClick(onClick);
+      } catch (e) {
+        console.log('Main button not available');
       }
     },
     hide: () => {
-      if (mainButton.setParams.isAvailable()) {
+      try {
         mainButton.setParams({ isVisible: false });
-      }
-      if (mainButtonCallbackRef.current && mainButton.offClick.isAvailable()) {
-        mainButton.offClick(mainButtonCallbackRef.current);
-        mainButtonCallbackRef.current = null;
+        if (mainButtonCallbackRef.current) {
+          mainButton.offClick(mainButtonCallbackRef.current);
+          mainButtonCallbackRef.current = null;
+        }
+      } catch (e) {
+        console.log('Main button not available');
       }
     },
     setText: (text: string) => {
-      if (mainButton.setParams.isAvailable()) {
+      try {
         mainButton.setParams({ text });
+      } catch (e) {
+        console.log('Main button not available');
       }
     },
     enable: () => {
-      if (mainButton.setParams.isAvailable()) {
+      try {
         mainButton.setParams({ isEnabled: true });
+      } catch (e) {
+        console.log('Main button not available');
       }
     },
     disable: () => {
-      if (mainButton.setParams.isAvailable()) {
+      try {
         mainButton.setParams({ isEnabled: false });
+      } catch (e) {
+        console.log('Main button not available');
       }
     }
   };
 
   const modernBackButton = {
     show: (onClick: () => void) => {
-      if (backButton.mount.isAvailable()) {
-        backButton.mount();
-        
+      try {
         // Remove previous callback
-        if (backButtonCallbackRef.current && backButton.offClick.isAvailable()) {
+        if (backButtonCallbackRef.current) {
           backButton.offClick(backButtonCallbackRef.current);
         }
         
         backButtonCallbackRef.current = onClick;
         backButton.show();
-        
-        if (backButton.onClick.isAvailable()) {
-          backButton.onClick(onClick);
-        }
+        backButton.onClick(onClick);
+      } catch (e) {
+        console.log('Back button not available');
       }
     },
     hide: () => {
-      if (backButton.hide.isAvailable()) {
+      try {
         backButton.hide();
-      }
-      if (backButtonCallbackRef.current && backButton.offClick.isAvailable()) {
-        backButton.offClick(backButtonCallbackRef.current);
-        backButtonCallbackRef.current = null;
+        if (backButtonCallbackRef.current) {
+          backButton.offClick(backButtonCallbackRef.current);
+          backButtonCallbackRef.current = null;
+        }
+      } catch (e) {
+        console.log('Back button not available');
       }
     }
   };
 
   const showAlert = (message: string) => {
-    // Use native alert as fallback if Telegram method not available
     alert(message);
   };
 
   const showConfirm = async (message: string): Promise<boolean> => {
-    // Use native confirm as fallback if Telegram method not available
     return confirm(message);
   };
 
