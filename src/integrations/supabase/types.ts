@@ -1072,6 +1072,124 @@ export type Database = {
         }
         Relationships: []
       }
+      store_item_reshares: {
+        Row: {
+          created_at: string | null
+          id: string
+          original_share_id: string | null
+          reshare_type: string
+          reshared_by_telegram_id: number
+          reshared_to_telegram_id: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          original_share_id?: string | null
+          reshare_type: string
+          reshared_by_telegram_id: number
+          reshared_to_telegram_id?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          original_share_id?: string | null
+          reshare_type?: string
+          reshared_by_telegram_id?: number
+          reshared_to_telegram_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_item_reshares_original_share_id_fkey"
+            columns: ["original_share_id"]
+            isOneToOne: false
+            referencedRelation: "store_item_shares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_item_shares: {
+        Row: {
+          created_at: string | null
+          diamond_stock_number: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          owner_telegram_id: number
+          share_type: string
+          share_url: string
+          shared_with_telegram_id: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          diamond_stock_number: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          owner_telegram_id: number
+          share_type: string
+          share_url: string
+          shared_with_telegram_id?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          diamond_stock_number?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          owner_telegram_id?: number
+          share_type?: string
+          share_url?: string
+          shared_with_telegram_id?: number | null
+        }
+        Relationships: []
+      }
+      store_item_views: {
+        Row: {
+          created_at: string | null
+          device_info: Json | null
+          diamond_stock_number: string
+          id: string
+          session_id: string | null
+          share_id: string | null
+          total_view_duration_seconds: number | null
+          view_ended_at: string | null
+          view_started_at: string | null
+          viewer_telegram_id: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_info?: Json | null
+          diamond_stock_number: string
+          id?: string
+          session_id?: string | null
+          share_id?: string | null
+          total_view_duration_seconds?: number | null
+          view_ended_at?: string | null
+          view_started_at?: string | null
+          viewer_telegram_id?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          device_info?: Json | null
+          diamond_stock_number?: string
+          id?: string
+          session_id?: string | null
+          share_id?: string | null
+          total_view_duration_seconds?: number | null
+          view_ended_at?: string | null
+          view_started_at?: string | null
+          viewer_telegram_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_item_views_share_id_fkey"
+            columns: ["share_id"]
+            isOneToOne: false
+            referencedRelation: "store_item_shares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           amount: number | null
