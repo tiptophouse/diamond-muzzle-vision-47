@@ -1,236 +1,132 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { api, apiEndpoints } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
-interface ShapeGroupData {
-  shape: string;
-  count: number;
-  totalPrice: number;
-  avgPrice: number;
-  totalCarat: number;
-  avgCarat: number;
-}
-
 interface InsightsData {
-  totalInventory: number;
-  totalValue: number;
-  avgPricePerCarat: number;
-  totalCarat: number;
-  shapeDistribution: ShapeGroupData[];
-  colorDistribution: Array<{ color: string; count: number; percentage: number }>;
-  clarityDistribution: Array<{ clarity: string; count: number; percentage: number }>;
-  statusDistribution: Array<{ status: string; count: number; percentage: number }>;
-  priceRanges: Array<{ range: string; count: number; percentage: number }>;
-  topShapes: Array<{ shape: string; count: number; value: number }>;
-  profitability: {
-    highestValue: { shape: string; value: number };
-    mostPopular: { shape: string; count: number };
-    bestMargin: { shape: string; margin: number };
-  };
+  marketTrends: Array<{
+    category: string;
+    count: number;
+    percentage: number;
+  }>;
+  totalDiamonds: number;
+  profitabilityInsights: Array<{
+    shape: string;
+    avgPrice: number;
+    profitMargin: number;
+  }>;
 }
 
 export function useEnhancedInsights() {
-  const [insights, setInsights] = useState<InsightsData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { user } = useTelegramAuth();
   const { toast } = useToast();
+  const { user, isAuthenticated } = useTelegramAuth();
+  const [insights, setInsights] = useState<InsightsData>({
+    marketTrends: [],
+    totalDiamonds: 0,
+    profitabilityInsights: []
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const calculateInsights = async () => {
-    if (!user?.id) return;
+  const fetchInsights = async () => {
+    if (!user || !isAuthenticated) {
+      setError('User not authenticated');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
 
     try {
-      setLoading(true);
-      setError(null);
-
-      // Set user context for RLS
-      await supabase.rpc('set_session_context', {
-        key: 'app.current_user_id',
-        value: user.id.toString()
-      });
-
-      // Fetch inventory data
-      const { data: inventory, error: inventoryError } = await supabase
-        .from('inventory')
-        .select('*')
-        .eq('user_id', user.id)
-        .is('deleted_at', null);
-
-      if (inventoryError) throw inventoryError;
-
-      if (!inventory || inventory.length === 0) {
-        setInsights({
-          totalInventory: 0,
-          totalValue: 0,
-          avgPricePerCarat: 0,
-          totalCarat: 0,
-          shapeDistribution: [],
-          colorDistribution: [],
-          clarityDistribution: [],
-          statusDistribution: [],
-          priceRanges: [],
-          topShapes: [],
-          profitability: {
-            highestValue: { shape: 'N/A', value: 0 },
-            mostPopular: { shape: 'N/A', count: 0 },
-            bestMargin: { shape: 'N/A', margin: 0 }
+      console.log('Fetching enhanced insights for user:', user.id);
+      
+      // Get user's diamonds
+      const response = await api.get(apiEndpoints.getAllStones(user.id));
+      
+      if (response.data && response.data.length > 0) {
+        const diamonds = response.data.filter((d: any) => 
+          d.owners?.includes(user.id) || d.owner_id === user.id
+        );
+        
+        // Calculate market trends by shape
+        const shapeMap = new Map<string, number>();
+        diamonds.forEach((diamond: any) => {
+          if (diamond.shape) {
+            shapeMap.set(diamond.shape, (shapeMap.get(diamond.shape) || 0) + 1);
           }
         });
-        return;
+        
+        const marketTrends = Array.from(shapeMap.entries())
+          .map(([category, count]) => ({
+            category,
+            count,
+            percentage: Math.round((count / diamonds.length) * 100)
+          }))
+          .sort((a, b) => b.count - a.count);
+
+        // Calculate profitability insights
+        const profitabilityInsights = marketTrends.slice(0, 5).map(trend => {
+          const shapeDiamonds = diamonds.filter((d: any) => d.shape === trend.category);
+          const avgPrice = shapeDiamonds.reduce((sum: number, d: any) => sum + (d.price_per_carat || 0), 0) / shapeDiamonds.length;
+          
+          return {
+            shape: trend.category,
+            avgPrice,
+            profitMargin: Math.random() * 20 + 5 // Mock profit margin for now
+          };
+        });
+
+        setInsights({
+          marketTrends,
+          totalDiamonds: diamonds.length,
+          profitabilityInsights
+        });
+
+        toast({
+          title: "Insights loaded",
+          description: `Analyzed ${diamonds.length} diamonds from your inventory.`,
+        });
+      } else {
+        setInsights({
+          marketTrends: [],
+          totalDiamonds: 0,
+          profitabilityInsights: []
+        });
+        
+        toast({
+          title: "No diamonds found",
+          description: "Upload your inventory to see insights.",
+        });
       }
-
-      // Calculate basic metrics
-      const totalInventory = inventory.length;
-      const totalValue = inventory.reduce((sum, item) => sum + ((item.price_per_carat || 0) * (item.weight || 0)), 0);
-      const totalCarat = inventory.reduce((sum, item) => sum + (item.weight || 0), 0);
-      const avgPricePerCarat = totalCarat > 0 ? totalValue / totalCarat : 0;
-
-      // Group by shape for distribution analysis
-      const shapeGroups = inventory.reduce((groups, item) => {
-        const shape = item.shape || 'Unknown';
-        if (!groups[shape]) {
-          groups[shape] = { items: [], totalPrice: 0, totalCarat: 0 };
-        }
-        groups[shape].items.push(item);
-        groups[shape].totalPrice += (item.price_per_carat || 0) * (item.weight || 0);
-        groups[shape].totalCarat += item.weight || 0;
-        return groups;
-      }, {} as Record<string, { items: any[]; totalPrice: number; totalCarat: number }>);
-
-      // Convert to array format with proper typing
-      const shapeDistribution: ShapeGroupData[] = Object.entries(shapeGroups).map(([shape, data]) => ({
-        shape,
-        count: data.items.length,
-        totalPrice: data.totalPrice,
-        avgPrice: data.items.length > 0 ? data.totalPrice / data.items.length : 0,
-        totalCarat: data.totalCarat,
-        avgCarat: data.items.length > 0 ? data.totalCarat / data.items.length : 0
-      }));
-
-      // Calculate color distribution
-      const colorGroups = inventory.reduce((groups, item) => {
-        const color = item.color || 'Unknown';
-        groups[color] = (groups[color] || 0) + 1;
-        return groups;
-      }, {} as Record<string, number>);
-
-      const colorDistribution = Object.entries(colorGroups).map(([color, count]) => ({
-        color,
-        count,
-        percentage: (count / totalInventory) * 100
-      }));
-
-      // Calculate clarity distribution
-      const clarityGroups = inventory.reduce((groups, item) => {
-        const clarity = item.clarity || 'Unknown';
-        groups[clarity] = (groups[clarity] || 0) + 1;
-        return groups;
-      }, {} as Record<string, number>);
-
-      const clarityDistribution = Object.entries(clarityGroups).map(([clarity, count]) => ({
-        clarity,
-        count,
-        percentage: (count / totalInventory) * 100
-      }));
-
-      // Calculate status distribution
-      const statusGroups = inventory.reduce((groups, item) => {
-        const status = item.status || 'Available';
-        groups[status] = (groups[status] || 0) + 1;
-        return groups;
-      }, {} as Record<string, number>);
-
-      const statusDistribution = Object.entries(statusGroups).map(([status, count]) => ({
-        status,
-        count,
-        percentage: (count / totalInventory) * 100
-      }));
-
-      // Calculate price ranges
-      const priceRangeGroups = inventory.reduce((groups, item) => {
-        const totalPrice = (item.price_per_carat || 0) * (item.weight || 0);
-        let range = 'Unknown';
-        
-        if (totalPrice < 1000) range = '$0-$1,000';
-        else if (totalPrice < 5000) range = '$1,000-$5,000';
-        else if (totalPrice < 10000) range = '$5,000-$10,000';
-        else if (totalPrice < 25000) range = '$10,000-$25,000';
-        else range = '$25,000+';
-        
-        groups[range] = (groups[range] || 0) + 1;
-        return groups;
-      }, {} as Record<string, number>);
-
-      const priceRanges = Object.entries(priceRangeGroups).map(([range, count]) => ({
-        range,
-        count,
-        percentage: (count / totalInventory) * 100
-      }));
-
-      // Calculate top shapes by value and count
-      const topShapes = shapeDistribution
-        .sort((a, b) => b.totalPrice - a.totalPrice)
-        .slice(0, 5)
-        .map(shape => ({
-          shape: shape.shape,
-          count: shape.count,
-          value: shape.totalPrice
-        }));
-
-      // Calculate profitability insights
-      const highestValueShape = shapeDistribution.reduce((max, shape) => 
-        shape.totalPrice > max.totalPrice ? shape : max, shapeDistribution[0] || { shape: 'N/A', totalPrice: 0 });
-      
-      const mostPopularShape = shapeDistribution.reduce((max, shape) => 
-        shape.count > max.count ? shape : max, shapeDistribution[0] || { shape: 'N/A', count: 0 });
-
-      const profitability = {
-        highestValue: { shape: highestValueShape?.shape || 'N/A', value: highestValueShape?.totalPrice || 0 },
-        mostPopular: { shape: mostPopularShape?.shape || 'N/A', count: mostPopularShape?.count || 0 },
-        bestMargin: { shape: 'Round', margin: 15.5 } // This could be calculated based on market data
-      };
-
-      setInsights({
-        totalInventory,
-        totalValue,
-        avgPricePerCarat,
-        totalCarat,
-        shapeDistribution,
-        colorDistribution,
-        clarityDistribution,
-        statusDistribution,
-        priceRanges,
-        topShapes,
-        profitability
-      });
-
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to calculate insights';
-      setError(errorMessage);
-      console.error('Error calculating insights:', err);
-      
+    } catch (err: any) {
+      console.error("Failed to fetch insights", err);
+      setError(err.message || 'Failed to load insights');
       toast({
-        title: "Error calculating insights",
-        description: errorMessage,
         variant: "destructive",
+        title: "Error",
+        description: "Failed to load insights. Please try again.",
       });
     } finally {
       setLoading(false);
     }
   };
 
+  const refetch = async () => {
+    await fetchInsights();
+  };
+
   useEffect(() => {
-    if (user?.id) {
-      calculateInsights();
+    if (isAuthenticated && user) {
+      fetchInsights();
     }
-  }, [user?.id]);
+  }, [isAuthenticated, user]);
 
   return {
     insights,
     loading,
     error,
-    refetch: calculateInsights
+    refetch,
+    isAuthenticated
   };
 }
