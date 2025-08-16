@@ -44,7 +44,8 @@ export function useEnhancedInsights() {
       // Get user's diamonds
       const response = await api.get(apiEndpoints.getAllStones(user.id));
       
-      if (response.data && response.data.length > 0) {
+      // Add type checking for response.data
+      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
         const diamonds = response.data.filter((d: any) => 
           d.owners?.includes(user.id) || d.owner_id === user.id
         );
