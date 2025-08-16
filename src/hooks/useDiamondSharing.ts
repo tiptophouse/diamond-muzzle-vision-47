@@ -207,13 +207,22 @@ export function useDiamondSharing() {
             reshares: reshares?.length || 0,
             uniqueViewers
           },
-          viewers: views?.map(view => ({
-            viewerId: view.viewer_telegram_id || 0,
-            viewDuration: view.total_view_duration_seconds || 0,
-            deviceType: view.device_info?.deviceType || 'unknown',
-            viewedAt: view.view_started_at,
-            reshared: reshares?.some(r => r.reshared_by_telegram_id === view.viewer_telegram_id) || false
-          })) || []
+          viewers: views?.map(view => {
+            // Safely extract deviceType from device_info
+            let deviceType = 'unknown';
+            if (view.device_info && typeof view.device_info === 'object') {
+              const deviceInfo = view.device_info as { deviceType?: string };
+              deviceType = deviceInfo.deviceType || 'unknown';
+            }
+
+            return {
+              viewerId: view.viewer_telegram_id || 0,
+              viewDuration: view.total_view_duration_seconds || 0,
+              deviceType,
+              viewedAt: view.view_started_at,
+              reshared: reshares?.some(r => r.reshared_by_telegram_id === view.viewer_telegram_id) || false
+            };
+          }) || []
         };
 
         return analytics;

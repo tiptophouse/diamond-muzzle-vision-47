@@ -20,25 +20,8 @@ export default function StorePage() {
   const { shareAnalytics, getShareAnalytics, createShare, loading: sharingLoading } = useDiamondSharing();
   const [showStoreAnalytics, setShowStoreAnalytics] = useState(false);
   
-  const {
-    filteredDiamonds,
-    searchTerm,
-    setSearchTerm,
-    shapeFilter,
-    setShapeFilter,
-    priceRange,
-    setPriceRange,
-    colorFilter,
-    setColorFilter,
-    clarityFilter,
-    setClarityFilter,
-    caratRange,
-    setCaratRange,
-    sortBy,
-    setSortBy,
-    clearFilters,
-    hasActiveFilters
-  } = useStoreFilters(diamonds || []);
+  const storeFilters = useStoreFilters(diamonds || []);
+  const { filteredDiamonds, filters, updateFilter, clearFilters } = storeFilters;
 
   useEffect(() => {
     if (webApp) {
@@ -75,6 +58,12 @@ export default function StorePage() {
   const avgViewDuration = shareAnalytics.length > 0 
     ? shareAnalytics.reduce((sum, analytics) => sum + analytics.metrics.avgViewDuration, 0) / shareAnalytics.length 
     : 0;
+
+  const hasActiveFilters = Object.values(filters).some(value => {
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === 'object' && value !== null) return Object.values(value).some(v => v !== null && v !== '');
+    return value !== null && value !== '';
+  });
 
   if (loading) {
     return (
@@ -237,20 +226,8 @@ export default function StorePage() {
       {/* Filters */}
       <div className="container mx-auto px-4 py-4">
         <TelegramStoreFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          shapeFilter={shapeFilter}
-          setShapeFilter={setShapeFilter}
-          priceRange={priceRange}
-          setPriceRange={setPriceRange}
-          colorFilter={colorFilter}
-          setColorFilter={setColorFilter}
-          clarityFilter={clarityFilter}
-          setClarityFilter={setClarityFilter}
-          caratRange={caratRange}
-          setCaratRange={setCaratRange}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
+          filters={filters}
+          updateFilter={updateFilter}
           clearFilters={clearFilters}
           hasActiveFilters={hasActiveFilters}
           diamondCount={filteredDiamonds.length}

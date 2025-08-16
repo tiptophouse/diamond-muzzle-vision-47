@@ -8,8 +8,8 @@ interface InventoryVelocityData {
   netChange: number;
   turnoverRate: number;
   avgTimeToSell: number;
-  fastMovers: Array<{ shape: string; avgDaysToSell: number; volume: number }>;
-  slowMovers: Array<{ shape: string; avgDaysToSell: number; volume: number }>;
+  fastMovers: Array<{ shape: string; avgDaysInStock: number; count: number }>;
+  slowMovers: Array<{ shape: string; avgDaysInStock: number; count: number }>;
   seasonalTrends: Array<{ month: string; velocity: number }>;
   velocityTrend: 'up' | 'down' | 'stable';
   agingBreakdown: Array<{ ageRange: string; count: number; percentage: number }>;
@@ -31,6 +31,27 @@ interface ProfitabilityData {
   }>;
 }
 
+interface MarketComparisonData {
+  yourPosition: {
+    rank: number;
+    percentile: number;
+    competitiveAdvantage: string[];
+  };
+  benchmarks: {
+    averagePrice: number;
+    pricePosition: 'above' | 'at' | 'below';
+    qualityScore: number;
+  };
+  shapeComparison: Array<{
+    shape: string;
+    yourAvgPrice: number;
+    marketAvgPrice: number;
+    position: 'above' | 'at' | 'below';
+  }>;
+  competitiveAdvantages: string[];
+  recommendations: string[];
+}
+
 interface EnhancedInsights {
   inventoryVelocity: InventoryVelocityData;
   profitabilityMetrics: {
@@ -45,18 +66,7 @@ interface EnhancedInsights {
     demandTrends: Array<{ period: string; demand: number }>;
   };
   profitability?: ProfitabilityData;
-  marketComparison?: {
-    yourPosition: {
-      rank: number;
-      percentile: number;
-      competitiveAdvantage: string[];
-    };
-    benchmarks: {
-      averagePrice: number;
-      pricePosition: 'above' | 'at' | 'below';
-      qualityScore: number;
-    };
-  };
+  marketComparison?: MarketComparisonData;
 }
 
 export function useEnhancedInsights(diamonds: Diamond[]) {
@@ -169,13 +179,13 @@ function generateEnhancedInsights(diamonds: Diamond[]): EnhancedInsights {
       avgTimeToSell: 45,
       fastMovers: topShapes.slice(0, 3).map(shape => ({
         shape: shape.shape,
-        avgDaysToSell: 15 + Math.floor(Math.random() * 20),
-        volume: shape.count
+        avgDaysInStock: 15 + Math.floor(Math.random() * 20),
+        count: shape.count
       })),
       slowMovers: topShapes.slice(-2).map(shape => ({
         shape: shape.shape,
-        avgDaysToSell: 60 + Math.floor(Math.random() * 40),
-        volume: shape.count
+        avgDaysInStock: 60 + Math.floor(Math.random() * 40),
+        count: shape.count
       })),
       seasonalTrends: [
         { month: 'Jan', velocity: 65 },
@@ -241,7 +251,23 @@ function generateEnhancedInsights(diamonds: Diamond[]): EnhancedInsights {
         averagePrice: averagePricePerCarat * (0.9 + Math.random() * 0.2),
         pricePosition: averagePricePerCarat > 5000 ? 'above' : averagePricePerCarat > 3000 ? 'at' : 'below',
         qualityScore: 8.2 + Math.random() * 1.5
-      }
+      },
+      shapeComparison: topShapes.slice(0, 5).map(shape => ({
+        shape: shape.shape,
+        yourAvgPrice: shape.avgPrice,
+        marketAvgPrice: shape.avgPrice * (0.9 + Math.random() * 0.2),
+        position: Math.random() > 0.5 ? 'above' : 'below' as 'above' | 'below'
+      })),
+      competitiveAdvantages: [
+        'Superior diamond quality standards',
+        'Competitive pricing model',
+        'Extensive inventory variety'
+      ],
+      recommendations: [
+        'Focus on fast-moving shapes for better turnover',
+        'Consider price adjustments for slow-moving inventory',
+        'Leverage seasonal trends for marketing'
+      ]
     };
   }
 
