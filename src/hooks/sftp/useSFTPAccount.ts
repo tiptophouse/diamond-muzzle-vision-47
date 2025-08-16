@@ -53,7 +53,16 @@ export function useSFTPAccount() {
         throw error;
       }
 
-      setAccount(data);
+      // Type assertion to ensure the status field matches our expected type
+      if (data) {
+        const typedData: SFTPAccount = {
+          ...data,
+          status: data.status as 'active' | 'suspended' | 'revoked'
+        };
+        setAccount(typedData);
+      } else {
+        setAccount(null);
+      }
     } catch (error) {
       console.error('Error fetching SFTP account:', error);
       toast({

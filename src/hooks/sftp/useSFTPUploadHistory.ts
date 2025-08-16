@@ -47,7 +47,13 @@ export function useSFTPUploadHistory() {
         throw error;
       }
 
-      setUploads(data || []);
+      // Type assertion to ensure the status field matches our expected type
+      const typedData: SFTPUploadJob[] = (data || []).map(item => ({
+        ...item,
+        status: item.status as 'received' | 'processing' | 'completed' | 'failed' | 'invalid'
+      }));
+
+      setUploads(typedData);
     } catch (error) {
       console.error('Error fetching upload history:', error);
     } finally {

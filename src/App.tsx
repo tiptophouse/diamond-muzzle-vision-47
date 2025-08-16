@@ -1,4 +1,3 @@
-
 import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,7 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { TelegramAuthProvider } from "@/context/TelegramAuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { TutorialProvider } from "@/contexts/TutorialContext";
-import ErrorBoundary from "@/components/ErrorBoundary";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Lazy load components
 const Index = lazy(() => import("@/pages/Index"));
