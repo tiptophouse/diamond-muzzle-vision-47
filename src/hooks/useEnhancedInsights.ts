@@ -74,6 +74,11 @@ interface EnhancedInsightsData {
   inventoryVelocity: InventoryVelocityData | null;
 }
 
+interface ShapeGroupData {
+  totalPrice: number;
+  count: number;
+}
+
 export function useEnhancedInsights() {
   const [data, setData] = useState<EnhancedInsightsData>({
     profitability: null,
@@ -110,7 +115,7 @@ export function useEnhancedInsights() {
       acc[shape].totalPrice += (d.price_per_carat || 0);
       acc[shape].count += 1;
       return acc;
-    }, {} as Record<string, { totalPrice: number; count: number }>);
+    }, {} as Record<string, ShapeGroupData>);
 
     const topPerformingShapes = Object.entries(shapeGroups)
       .map(([shape, data]) => ({
