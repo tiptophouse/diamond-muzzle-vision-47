@@ -7,41 +7,28 @@ import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { useTelegramAccelerometer } from "@/hooks/useTelegramAccelerometer";
-import { useCachedImage } from "@/hooks/useCachedImage";
 import { toast } from 'sonner';
 
 interface FigmaDiamondCardProps {
   diamond: Diamond;
   index: number;
   onUpdate?: () => void;
-  nextDiamonds?: { url: string; id: string }[];
 }
 
 function FigmaDiamondCard({
   diamond,
   index,
-  onUpdate,
-  nextDiamonds = []
+  onUpdate
 }: FigmaDiamondCardProps) {
+  const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const { impactOccurred } = useTelegramHapticFeedback();
   const { orientationData } = useTelegramAccelerometer(true);
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement>(null);
-
-  // Use cached image hook with correct interface
-  const { 
-    src: imageSrc, 
-    isLoading: imageLoading, 
-    error: imageError, 
-    isCached,
-    prefetchNext 
-  } = useCachedImage({
-    imageUrl: diamond.imageUrl,
-    diamondId: diamond.id.toString(),
-    enablePrefetch: true
-  });
+  const imgRef = useRef<HTMLImageElement>(null);
 
   const handleLike = useCallback(() => {
     impactOccurred('light');
@@ -59,22 +46,16 @@ function FigmaDiamondCard({
     toast.success("Opening contact options...");
   }, [impactOccurred]);
 
-  // Intersection Observer for lazy loading and prefetching
+  // Intersection Observer for lazy loading
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsVisible(true);
-          
-          // Prefetch next images when this card becomes visible
-          if (nextDiamonds.length > 0) {
-            prefetchNext(nextDiamonds);
-          }
-          
           observer.disconnect();
         }
       },
-      { rootMargin: '100px' } // Start loading when 100px away
+      { rootMargin: '50px' }
     );
 
     if (cardRef.current) {
@@ -82,15 +63,24 @@ function FigmaDiamondCard({
     }
 
     return () => observer.disconnect();
-  }, [nextDiamonds, prefetchNext]);
+  }, []);
+
+  const handleImageLoad = useCallback(() => {
+    setImageLoaded(true);
+  }, []);
+
+  const handleImageError = useCallback(() => {
+    setImageError(true);
+    setImageLoaded(true);
+  }, []);
 
   const isAvailable = useMemo(() => diamond.status === "Available", [diamond.status]);
 
   const imageTransform = useMemo(() => {
-    return imageSrc && !imageError 
+    return diamond.imageUrl && !imageError 
       ? `perspective(1000px) rotateX(${orientationData.beta * 0.2}deg) rotateY(${orientationData.gamma * 0.2}deg)`
       : undefined;
-  }, [imageSrc, imageError, orientationData.beta, orientationData.gamma]);
+  }, [diamond.imageUrl, imageError, orientationData.beta, orientationData.gamma]);
 
   const formattedPrice = useMemo(() => {
     return new Intl.NumberFormat('en-US', {
@@ -99,10 +89,6 @@ function FigmaDiamondCard({
       minimumFractionDigits: 0,
     }).format(diamond.price);
   }, [diamond.price]);
-
-  const formattedCarat = useMemo(() => {
-    return Number(diamond.carat).toFixed(2);
-  }, [diamond.carat]);
 
   return (
     <div 
@@ -114,7 +100,7 @@ function FigmaDiamondCard({
       {/* Image Container */}
       <div className="relative aspect-square bg-muted overflow-hidden">
         {/* Loading skeleton */}
-        {imageLoading && (
+        {!imageLoaded && (
           <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10 animate-pulse">
             <div className="flex items-center justify-center h-full">
               <div className="w-16 h-16 bg-muted-foreground/20 rounded-full flex items-center justify-center">
@@ -124,26 +110,20 @@ function FigmaDiamondCard({
           </div>
         )}
         
-        {imageSrc && !imageError && isVisible ? (
-          <div className="relative w-full h-full">
-            <img 
-              src={imageSrc} 
-              alt={`${formattedCarat} ct ${diamond.shape} Diamond`} 
-              className="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
-              style={{ transform: imageTransform }}
-              loading="lazy"
-              decoding="async"
-            />
-            
-            {/* Cache indicator */}
-            {isCached && (
-              <div className="absolute bottom-2 left-2">
-                <Badge className="text-xs bg-green-500/80 text-white border-0 px-1.5 py-0.5">
-                  ⚡ Cached
-                </Badge>
-              </div>
-            )}
-          </div>
+        {diamond.imageUrl && !imageError && isVisible ? (
+          <img 
+            ref={imgRef}
+            src={diamond.imageUrl} 
+            alt={`${diamond.carat} ct ${diamond.shape} Diamond`} 
+            className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            style={{ transform: imageTransform }}
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+            loading="lazy"
+            decoding="async"
+          />
         ) : imageError ? (
           <div className="flex items-center justify-center h-full bg-gradient-to-br from-muted to-muted-foreground/10">
             <div className="w-16 h-16 bg-muted-foreground/20 rounded-full flex items-center justify-center">
@@ -185,7 +165,7 @@ function FigmaDiamondCard({
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-foreground text-base leading-tight truncate">
-              {formattedCarat}ct {diamond.shape}
+              {diamond.carat} ct {diamond.shape}
             </h3>
             <p className="text-sm text-muted-foreground mt-1 truncate">
               {diamond.stockNumber}

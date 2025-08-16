@@ -1,4 +1,3 @@
-
 import { useState, memo, useCallback, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Heart, Eye, MessageCircle, Gem, Share2, Sparkles } from "lucide-react";
@@ -7,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { useSecureDiamondSharing } from "@/hooks/useSecureDiamondSharing";
-import { useCachedImage } from "@/hooks/useCachedImage";
 import { toast } from 'sonner';
 import { Gem360Viewer } from "./Gem360Viewer";
 import { V360Viewer } from "./V360Viewer";
@@ -25,10 +23,11 @@ interface OptimizedDiamondCardProps {
   diamond: Diamond;
   index: number;
   onUpdate?: () => void;
-  nextDiamonds?: { url: string; id: string }[];
 }
 
-const OptimizedDiamondCard = memo(({ diamond, index, onUpdate, nextDiamonds = [] }: OptimizedDiamondCardProps) => {
+const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamondCardProps) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const { impactOccurred } = useTelegramHapticFeedback();
@@ -36,19 +35,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate, nextDiamonds = []
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const cardRef = useRef<HTMLDivElement>(null);
-
-  // Use cached image for main diamond image with correct interface
-  const { 
-    src: imageSrc, 
-    isLoading: imageLoading, 
-    error: imageError, 
-    isCached,
-    prefetchNext 
-  } = useCachedImage({
-    imageUrl: diamond.imageUrl,
-    diamondId: diamond.id.toString(),
-    enablePrefetch: true
-  });
+  const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     const isShared = searchParams.get('shared');
@@ -64,12 +51,6 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate, nextDiamonds = []
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsVisible(true);
-          
-          // Prefetch next images when this card becomes visible
-          if (nextDiamonds.length > 0) {
-            prefetchNext(nextDiamonds);
-          }
-          
           observer.disconnect();
         }
       },
@@ -84,7 +65,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate, nextDiamonds = []
     }
 
     return () => observer.disconnect();
-  }, [nextDiamonds, prefetchNext]);
+  }, []);
 
   const has360 = !!(diamond.gem360Url && diamond.gem360Url.trim() && (
     diamond.gem360Url.includes('my360.fab') ||     // Your specific provider (highest priority)
@@ -163,6 +144,18 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate, nextDiamonds = []
     }
   }, [impactOccurred, shareAvailable, shareWithInlineButtons, diamond]);
 
+  const handleImageLoad = useCallback(() => {
+    console.log('✅ IMAGE LOADED for', diamond.stockNumber);
+    setImageLoaded(true);
+    setImageError(false);
+  }, [diamond.stockNumber]);
+
+  const handleImageError = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
+    console.error('❌ IMAGE FAILED for', diamond.stockNumber, ':', event.currentTarget.src);
+    setImageError(true);
+    setImageLoaded(true);
+  }, [diamond.stockNumber]);
+
   const priceDisplay = diamond.price > 0 ? formatCurrency(diamond.price) : null;
 
   return (
@@ -200,38 +193,32 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate, nextDiamonds = []
         </div>
       ) : hasValidImage && isVisible ? (
         <div className="relative aspect-square bg-gray-50 overflow-hidden">
-          {imageLoading && (
+          {!imageLoaded && (
             <div className="absolute inset-0 bg-gray-100 flex items-center justify-center z-10">
               <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
             </div>
           )}
           
-          {imageSrc && !imageError && (
-            <img 
-              src={imageSrc} 
-              alt={`${diamond.carat} ct ${diamond.shape} Diamond`} 
-              className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105"
-              style={{
-                imageRendering: 'crisp-edges',
-                transform: 'translateZ(0)'
-              }}
-              loading="lazy"
-              decoding="async"
-            />
-          )}
+          <img 
+            ref={imgRef}
+            src={diamond.imageUrl} 
+            alt={`${diamond.carat} ct ${diamond.shape} Diamond`} 
+            className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${
+              imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'
+            }`}
+            style={{
+              imageRendering: 'crisp-edges',
+              transform: 'translateZ(0)'
+            }}
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+            loading="lazy"
+            decoding="async"
+          />
           
           <div className="absolute top-2 left-2">
             <MediaPriorityBadge hasGem360={false} hasImage={true} />
           </div>
-
-          {/* Cache indicator */}
-          {isCached && (
-            <div className="absolute bottom-2 left-2">
-              <Badge className="bg-green-500/90 text-white border-0 px-1.5 py-0.5 text-xs">
-                ⚡ Cached
-              </Badge>
-            </div>
-          )}
         </div>
       ) : (
         <div className="aspect-square flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">

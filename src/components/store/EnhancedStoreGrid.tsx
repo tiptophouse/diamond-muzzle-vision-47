@@ -1,4 +1,3 @@
-
 import { useMemo } from "react";
 import { OptimizedDiamondCard } from "./OptimizedDiamondCard";
 import { DiamondCardSkeleton } from "./DiamondCardSkeleton";
@@ -27,10 +26,10 @@ export function EnhancedStoreGrid({ diamonds, loading, error, onUpdate }: Enhanc
     return (
       <div className="space-y-4">
         {/* Loading state with media priority info */}
-        <div className="text-center text-sm text-gray-500 p-4">
+        <div className="text-center text-sm text-gray-500">
           Loading your catalog with priority for 3D viewers and images...
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
           {Array.from({ length: 12 }, (_, i) => (
             <DiamondCardSkeleton key={i} />
           ))}
@@ -67,32 +66,32 @@ export function EnhancedStoreGrid({ diamonds, loading, error, onUpdate }: Enhanc
 
   return (
     <div className="space-y-4">
-      {/* PHASE 5: Media Statistics Display - Enhanced for mobile */}
+      {/* PHASE 5: Media Statistics Display */}
       {mediaStats.total > 0 && (
-        <div className="bg-white rounded-lg border p-3 sm:p-4">
+        <div className="bg-white rounded-lg border p-4">
           <h3 className="text-sm font-medium text-gray-900 mb-3">Catalog Overview</h3>
-          <div className="flex flex-wrap gap-2 sm:gap-3">
-            <Badge variant="default" className="gap-1 text-xs sm:text-sm">
+          <div className="flex flex-wrap gap-3">
+            <Badge variant="default" className="gap-1">
               <Sparkles className="h-3 w-3" />
               {mediaStats.with3D} with 3D View
             </Badge>
-            <Badge variant="secondary" className="gap-1 text-xs sm:text-sm">
+            <Badge variant="secondary" className="gap-1">
               <Camera className="h-3 w-3" />
               {mediaStats.withImages} with Photos
             </Badge>
-            <Badge variant="outline" className="gap-1 text-xs sm:text-sm">
+            <Badge variant="outline" className="gap-1">
               <FileText className="h-3 w-3" />
               {mediaStats.infoOnly} Info Only
             </Badge>
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            Showing {mediaStats.total} diamonds prioritized by media availability (3D → Photos → Info) • ⚡ Fast caching enabled
+            Showing {mediaStats.total} diamonds prioritized by media availability (3D → Photos → Info)
           </p>
         </div>
       )}
 
-      {/* PHASE 5: Optimized Grid with Priority-Based Layout and Image Prefetching */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
+      {/* PHASE 5: Optimized Grid with Priority-Based Layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
         {diamonds.map((diamond, index) => {
           console.log('🎯 GRID: Rendering diamond', diamond.stockNumber, 'with media:', {
             hasGem360: !!diamond.gem360Url,
@@ -100,32 +99,14 @@ export function EnhancedStoreGrid({ diamonds, loading, error, onUpdate }: Enhanc
             gem360Url: diamond.gem360Url,
             imageUrl: diamond.imageUrl
           });
-
-          // Prepare next 3 diamonds for prefetching
-          const nextDiamonds = diamonds
-            .slice(index + 1, index + 4)
-            .filter(d => d.imageUrl)
-            .map(d => ({
-              url: d.imageUrl!,
-              id: d.id.toString()
-            }));
           
           return (
-            <div 
+            <OptimizedDiamondCard 
               key={diamond.id} 
-              className="touch-target"
-              style={{ 
-                minHeight: '44px',
-                contain: 'layout style paint'
-              }}
-            >
-              <OptimizedDiamondCard 
-                diamond={diamond}
-                index={index}
-                onUpdate={onUpdate}
-                nextDiamonds={nextDiamonds}
-              />
-            </div>
+              diamond={diamond}
+              index={index}
+              onUpdate={onUpdate}
+            />
           );
         })}
       </div>

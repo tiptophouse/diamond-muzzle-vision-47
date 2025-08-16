@@ -76,11 +76,6 @@ export interface TelegramWebApp {
     isStarted: boolean;
   };
   DeviceOrientation?: {
-    start: (config?: { refresh_rate?: number; need_absolute?: boolean }) => void;
-    stop: () => void;
-    isStarted: boolean;
-  };
-  Gyroscope?: {
     start: (config?: { refresh_rate?: number }) => void;
     stop: () => void;
     isStarted: boolean;
