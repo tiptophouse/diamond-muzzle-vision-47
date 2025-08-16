@@ -1,4 +1,3 @@
-
 import { TelegramLayout } from "@/components/layout/TelegramLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,7 +26,8 @@ export default function InsightsPage() {
     groupInsights,
     personalInsights,
     fetchRealInsights,
-    isAuthenticated: basicAuth
+    isAuthenticated: basicAuth,
+    diamonds
   } = useInsightsData();
 
   const {
@@ -35,7 +35,7 @@ export default function InsightsPage() {
     insights: enhancedData,
     refetch: refetchEnhanced,
     error: enhancedError
-  } = useEnhancedInsights();
+  } = useEnhancedInsights(diamonds);
   
   if (!basicAuth) {
     return (

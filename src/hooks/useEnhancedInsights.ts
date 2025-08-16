@@ -8,8 +8,8 @@ interface InventoryVelocityData {
   netChange: number;
   turnoverRate: number;
   avgTimeToSell: number;
-  fastMovers: Array<{ shape: string; avgDaysInStock: number; count: number }>;
-  slowMovers: Array<{ shape: string; avgDaysInStock: number; count: number }>;
+  fastMovers: Array<{ shape: string; avgDaysToSell: number; volume: number }>;
+  slowMovers: Array<{ shape: string; avgDaysToSell: number; volume: number }>;
   seasonalTrends: Array<{ month: string; velocity: number }>;
   velocityTrend: 'up' | 'down' | 'stable';
   agingBreakdown: Array<{ ageRange: string; count: number; percentage: number }>;
@@ -33,9 +33,9 @@ interface ProfitabilityData {
 
 interface MarketComparisonData {
   yourPosition: {
-    rank: number;
-    percentile: number;
-    competitiveAdvantage: string[];
+    avgPricePerCarat: number;
+    marketRank: 'value' | 'premium' | 'competitive';
+    percentileRank: number;
   };
   benchmarks: {
     averagePrice: number;
@@ -69,7 +69,7 @@ interface EnhancedInsights {
   marketComparison?: MarketComparisonData;
 }
 
-export function useEnhancedInsights(diamonds: Diamond[]) {
+export function useEnhancedInsights(diamonds?: Diamond[]) {
   const [insights, setInsights] = useState<EnhancedInsights>({
     inventoryVelocity: {
       newThisMonth: 0,
@@ -96,21 +96,56 @@ export function useEnhancedInsights(diamonds: Diamond[]) {
     }
   });
 
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refetch = () => {
+    if (!diamonds?.length) return Promise.resolve();
+
+    setIsLoading(true);
+    setError(null);
+
+    return new Promise<void>((resolve) => {
+      setTimeout(() => {
+        try {
+          const enhancedInsights = generateEnhancedInsights(diamonds);
+          setInsights(enhancedInsights);
+          setError(null);
+        } catch (err) {
+          setError('Failed to generate insights');
+        } finally {
+          setIsLoading(false);
+          resolve();
+        }
+      }, 800);
+    });
+  };
 
   useEffect(() => {
     if (!diamonds?.length) return;
 
-    setLoading(true);
+    setIsLoading(true);
 
     setTimeout(() => {
-      const enhancedInsights = generateEnhancedInsights(diamonds);
-      setInsights(enhancedInsights);
-      setLoading(false);
+      try {
+        const enhancedInsights = generateEnhancedInsights(diamonds);
+        setInsights(enhancedInsights);
+        setError(null);
+      } catch (err) {
+        setError('Failed to generate insights');
+      } finally {
+        setIsLoading(false);
+      }
     }, 800);
   }, [diamonds]);
 
-  return { insights, loading };
+  return { 
+    insights, 
+    isLoading, 
+    error, 
+    refetch,
+    loading: isLoading // For backward compatibility
+  };
 }
 
 function generateEnhancedInsights(diamonds: Diamond[]): EnhancedInsights {
@@ -166,7 +201,8 @@ function generateEnhancedInsights(diamonds: Diamond[]): EnhancedInsights {
     .map(([shape, items]) => ({
       shape,
       count: items.length,
-      avgPrice: items.reduce((sum, item) => sum + (item.price || 0), 0) / items.length
+      avgPrice: items.reduce((sum, item) => sum + (item.price || 0), 0) / items.length,
+      volume: items.length
     }))
     .sort((a, b) => b.count - a.count);
 
@@ -179,13 +215,13 @@ function generateEnhancedInsights(diamonds: Diamond[]): EnhancedInsights {
       avgTimeToSell: 45,
       fastMovers: topShapes.slice(0, 3).map(shape => ({
         shape: shape.shape,
-        avgDaysInStock: 15 + Math.floor(Math.random() * 20),
-        count: shape.count
+        avgDaysToSell: 15 + Math.floor(Math.random() * 20),
+        volume: shape.volume
       })),
       slowMovers: topShapes.slice(-2).map(shape => ({
         shape: shape.shape,
-        avgDaysInStock: 60 + Math.floor(Math.random() * 40),
-        count: shape.count
+        avgDaysToSell: 60 + Math.floor(Math.random() * 40),
+        volume: shape.volume
       })),
       seasonalTrends: [
         { month: 'Jan', velocity: 65 },
@@ -226,7 +262,7 @@ function generateEnhancedInsights(diamonds: Diamond[]): EnhancedInsights {
       averageMargin: profitMargin,
       topPerformingShapes: topShapes.slice(0, 3).map(shape => ({
         shape: shape.shape,
-        avgPrice: averagePricePerCarat,
+        avgPrice: shape.avgPrice,
         margin: 15 + Math.random() * 20,
         trend: Math.random() > 0.5 ? 'up' : 'down' as 'up' | 'down'
       })),
@@ -237,15 +273,15 @@ function generateEnhancedInsights(diamonds: Diamond[]): EnhancedInsights {
       }))
     };
 
+    const marketRank: 'value' | 'premium' | 'competitive' = 
+      averagePricePerCarat > 5000 ? 'premium' : 
+      averagePricePerCarat > 3000 ? 'competitive' : 'value';
+
     enhancedInsights.marketComparison = {
       yourPosition: {
-        rank: Math.floor(Math.random() * 100) + 1,
-        percentile: 75 + Math.floor(Math.random() * 20),
-        competitiveAdvantage: [
-          'Premium certification standards',
-          'Competitive pricing strategy',
-          'Diverse inventory selection'
-        ]
+        avgPricePerCarat,
+        marketRank,
+        percentileRank: 75 + Math.floor(Math.random() * 20)
       },
       benchmarks: {
         averagePrice: averagePricePerCarat * (0.9 + Math.random() * 0.2),

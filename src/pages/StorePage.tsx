@@ -227,8 +227,8 @@ export default function StorePage() {
       <div className="container mx-auto px-4 py-4">
         <TelegramStoreFilters
           filters={filters}
-          updateFilter={updateFilter}
-          clearFilters={clearFilters}
+          onUpdateFilter={updateFilter}
+          onClearFilters={clearFilters}
           hasActiveFilters={hasActiveFilters}
           diamondCount={filteredDiamonds.length}
         />
