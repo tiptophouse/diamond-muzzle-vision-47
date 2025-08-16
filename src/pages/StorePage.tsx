@@ -1,4 +1,3 @@
-
 import { EnhancedStoreGrid } from "@/components/store/EnhancedStoreGrid";
 import { EnhancedStoreHeader } from "@/components/store/EnhancedStoreHeader";
 import { TelegramStoreFilters } from "@/components/store/TelegramStoreFilters";
@@ -229,7 +228,6 @@ export default function StorePage() {
           filters={filters}
           onUpdateFilter={updateFilter}
           onClearFilters={clearFilters}
-          hasActiveFilters={hasActiveFilters}
           diamondCount={filteredDiamonds.length}
         />
       </div>

@@ -9,7 +9,7 @@ interface InventoryVelocityData {
   turnoverRate: number;
   avgTimeToSell: number;
   fastMovers: Array<{ shape: string; avgDaysToSell: number; volume: number }>;
-  slowMovers: Array<{ shape: string; avgDaysToSell: number; volume: number }>;
+  slowMovers: Array<{ shape: string; avgDaysInStock: number; count: number }>;
   seasonalTrends: Array<{ month: string; velocity: number }>;
   velocityTrend: 'up' | 'down' | 'stable';
   agingBreakdown: Array<{ ageRange: string; count: number; percentage: number }>;
@@ -46,7 +46,8 @@ interface MarketComparisonData {
     shape: string;
     yourAvgPrice: number;
     marketAvgPrice: number;
-    position: 'above' | 'at' | 'below';
+    difference: number;
+    marketShare: number;
   }>;
   competitiveAdvantages: string[];
   recommendations: string[];
@@ -220,8 +221,8 @@ function generateEnhancedInsights(diamonds: Diamond[]): EnhancedInsights {
       })),
       slowMovers: topShapes.slice(-2).map(shape => ({
         shape: shape.shape,
-        avgDaysToSell: 60 + Math.floor(Math.random() * 40),
-        volume: shape.volume
+        avgDaysInStock: 60 + Math.floor(Math.random() * 40),
+        count: shape.volume
       })),
       seasonalTrends: [
         { month: 'Jan', velocity: 65 },
@@ -279,7 +280,7 @@ function generateEnhancedInsights(diamonds: Diamond[]): EnhancedInsights {
 
     enhancedInsights.marketComparison = {
       yourPosition: {
-        avgPricePerCarat,
+        avgPricePerCarat: averagePricePerCarat,
         marketRank,
         percentileRank: 75 + Math.floor(Math.random() * 20)
       },
@@ -292,7 +293,8 @@ function generateEnhancedInsights(diamonds: Diamond[]): EnhancedInsights {
         shape: shape.shape,
         yourAvgPrice: shape.avgPrice,
         marketAvgPrice: shape.avgPrice * (0.9 + Math.random() * 0.2),
-        position: Math.random() > 0.5 ? 'above' : 'below' as 'above' | 'below'
+        difference: ((shape.avgPrice - (shape.avgPrice * (0.9 + Math.random() * 0.2))) / (shape.avgPrice * (0.9 + Math.random() * 0.2))) * 100,
+        marketShare: Math.random() * 20 + 5
       })),
       competitiveAdvantages: [
         'Superior diamond quality standards',
