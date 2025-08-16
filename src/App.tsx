@@ -7,11 +7,10 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { TelegramAuthProvider } from "@/context/TelegramAuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { TutorialProvider } from "@/contexts/TutorialContext";
-import ErrorBoundary from "@/components/ErrorBoundary";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Lazy load components
 const Index = lazy(() => import("@/pages/Index"));
-const HomePage = lazy(() => import("@/pages/HomePage"));
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const InventoryPage = lazy(() => import("@/pages/InventoryPage"));
 const UploadPage = lazy(() => import("@/pages/UploadPage"));
@@ -55,7 +54,6 @@ function App() {
                     <Suspense fallback={<div>Loading...</div>}>
                       <Routes>
                         <Route path="/" element={<Index />} />
-                        <Route path="/home" element={<HomePage />} />
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/inventory" element={<InventoryPage />} />
                         <Route path="/upload" element={<UploadPage />} />
