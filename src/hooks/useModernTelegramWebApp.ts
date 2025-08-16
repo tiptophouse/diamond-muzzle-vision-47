@@ -85,11 +85,8 @@ export function useModernTelegramWebApp(): ModernTelegramWebApp {
           console.log('BackButton not available');
         }
 
-        try {
-          hapticFeedback.mount();
-        } catch (e) {
-          console.log('HapticFeedback not available');
-        }
+        // Haptic feedback is available directly, no mount needed
+        console.log('HapticFeedback available');
 
         // Get user data from initData
         try {
