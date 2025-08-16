@@ -29,6 +29,8 @@ interface EnhancedInsights {
     fastMovers: Array<{ shape: string; avgDays: number }>;
     slowMovers: Array<{ shape: string; avgDays: number }>;
     seasonalTrends: Array<{ month: string; velocity: number }>;
+    velocityTrend: 'up' | 'down' | 'stable';
+    agingBreakdown: Array<{ ageRange: string; count: number; percentage: number }>;
   };
   profitabilityMetrics: {
     totalCost: number;
@@ -42,12 +44,19 @@ interface EnhancedInsights {
     demandTrends: Array<{ period: string; demand: number }>;
   };
   profitability?: {
-    totalCost: number;
-    totalRevenue: number;
-    netProfit: number;
-    profitMargin: number;
-    costBreakdown: Array<{ category: string; amount: number }>;
-    revenueStreams: Array<{ source: string; amount: number }>;
+    totalInventoryValue: number;
+    averageMargin: number;
+    topPerformingShapes: Array<{
+      shape: string;
+      avgPrice: number;
+      margin: number;
+      trend: 'up' | 'down' | 'stable';
+    }>;
+    underperformingStones: Array<{
+      shape: string;
+      daysInInventory: number;
+      priceAdjustmentSuggestion: number;
+    }>;
   };
   marketComparison?: {
     yourPosition: {
@@ -82,7 +91,9 @@ export function useEnhancedInsights() {
       avgTimeToSell: 0,
       fastMovers: [],
       slowMovers: [],
-      seasonalTrends: []
+      seasonalTrends: [],
+      velocityTrend: 'stable',
+      agingBreakdown: []
     },
     profitabilityMetrics: {
       totalCost: 0,
@@ -200,6 +211,12 @@ export function useEnhancedInsights() {
             { month: 'Mar', velocity: 78 },
             { month: 'Apr', velocity: 88 },
             { month: 'May', velocity: 95 }
+          ],
+          velocityTrend: 'up' as const,
+          agingBreakdown: [
+            { ageRange: '0-30 days', count: Math.floor(totalDiamonds * 0.4), percentage: 40 },
+            { ageRange: '31-90 days', count: Math.floor(totalDiamonds * 0.35), percentage: 35 },
+            { ageRange: '91+ days', count: Math.floor(totalDiamonds * 0.25), percentage: 25 }
           ]
         },
         profitabilityMetrics: {
@@ -224,19 +241,19 @@ export function useEnhancedInsights() {
       // Add optional enhanced data if there's enough data
       if (totalDiamonds > 5) {
         enhancedInsights.profitability = {
-          totalCost,
-          totalRevenue,
-          netProfit,
-          profitMargin,
-          costBreakdown: [
-            { category: 'Acquisition', amount: totalCost * 0.8 },
-            { category: 'Operations', amount: totalCost * 0.15 },
-            { category: 'Marketing', amount: totalCost * 0.05 }
-          ],
-          revenueStreams: [
-            { source: 'Direct Sales', amount: totalRevenue * 0.7 },
-            { source: 'Wholesale', amount: totalRevenue * 0.3 }
-          ]
+          totalInventoryValue,
+          averageMargin: profitMargin,
+          topPerformingShapes: topShapes.slice(0, 3).map(shape => ({
+            shape: shape.shape,
+            avgPrice: averagePricePerCarat,
+            margin: 15 + Math.random() * 20,
+            trend: Math.random() > 0.5 ? 'up' : 'down' as 'up' | 'down'
+          })),
+          underperformingStones: topShapes.slice(-2).map(shape => ({
+            shape: shape.shape,
+            daysInInventory: 60 + Math.floor(Math.random() * 40),
+            priceAdjustmentSuggestion: -5 - Math.random() * 10
+          }))
         };
 
         enhancedInsights.marketComparison = {
