@@ -1,3 +1,4 @@
+
 export const apiEndpoints = {
   // Health check
   alive: () => `/api/v1/alive`,
@@ -22,6 +23,12 @@ export const apiEndpoints = {
   
   // Delete diamond - DELETE /api/v1/delete_stone/{diamond_id}?user_id={user_id}&diamond_id={diamond_id}
   deleteDiamond: (diamondId: string, userId: number) => `/api/v1/delete_stone/${diamondId}?user_id=${userId}&diamond_id=${diamondId}`,
+  
+  // SFTP endpoints
+  sftpProvision: () => `/api/v1/sftp/provision`,
+  sftpStatus: (telegramId: number) => `/api/v1/sftp/status/${telegramId}`,
+  sftpTestConnection: () => `/api/v1/sftp/test-connection`,
+  sftpDeactivate: () => `/api/v1/sftp/deactivate`,
   
   // Reports
   createReport: () => `/api/v1/create-report`,
