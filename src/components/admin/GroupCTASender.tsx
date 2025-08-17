@@ -6,11 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Send, Users, MessageSquare, Loader2, Sparkles, Diamond, Store, Zap } from 'lucide-react';
+import { Send, Users, MessageSquare, Loader2, Sparkles, Diamond, Store, Zap, TestTube } from 'lucide-react';
 import { useGroupCTA } from '@/hooks/useGroupCTA';
+import { useGroupCTARegistration } from '@/hooks/useGroupCTARegistration';
 
 export function GroupCTASender() {
   const { sendGroupCTA, isLoading } = useGroupCTA();
+  const { testCTAClickWithRegistration, isRegistering } = useGroupCTARegistration();
   
   const [formData, setFormData] = useState({
     message: `💎 **העלו את העסק שלכם לרמה הבאה עם BrilliantBot!**
@@ -42,8 +44,12 @@ export function GroupCTASender() {
     });
 
     if (success) {
-      console.log('✅ Enhanced Group CTA sent successfully');
+      console.log('✅ הודעת CTA קבוצתית משופרת נשלחה בהצלחה');
     }
+  };
+
+  const handleTestClick = async () => {
+    await testCTAClickWithRegistration();
   };
 
   return (
@@ -186,7 +192,26 @@ export function GroupCTASender() {
           </div>
         </div>
 
-        <div className="flex justify-end pt-4">
+        <div className="flex justify-between items-center pt-4">
+          <Button 
+            onClick={handleTestClick}
+            disabled={isRegistering}
+            variant="outline"
+            className="bg-green-50 hover:bg-green-100 border-green-200"
+          >
+            {isRegistering ? (
+              <>
+                <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                בודק רישום...
+              </>
+            ) : (
+              <>
+                <TestTube className="h-4 w-4 ml-2" />
+                בדוק רישום משתמש
+              </>
+            )}
+          </Button>
+          
           <Button 
             onClick={handleSend} 
             disabled={isLoading || !formData.groupId || !formData.message}

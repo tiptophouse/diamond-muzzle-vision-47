@@ -3,13 +3,17 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Users, MousePointer, Calendar, TrendingUp } from 'lucide-react';
+import { RefreshCw, Users, MousePointer, Calendar, TrendingUp, UserCheck, UserX, Target } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { toast } from '@/components/ui/use-toast';
 
 interface CTAAnalytics {
   totalClicks: number;
+  registrationAttempts: number;
+  successfulRegistrations: number;
+  failedRegistrations: number;
+  conversionRate: number;
   clicksByDay: Record<string, number>;
   uniqueUsers: number;
   data: any[];
@@ -23,9 +27,8 @@ export function GroupCTAAnalytics() {
   const fetchAnalytics = async () => {
     setIsLoading(true);
     try {
-      console.log('🔍 Fetching Group CTA Analytics...');
+      console.log('🔍 מביא אנליטיקת Group CTA...');
       
-      // First try to fetch directly from the table
       const fromDate = new Date();
       fromDate.setDate(fromDate.getDate() - daysFilter);
 
@@ -36,54 +39,84 @@ export function GroupCTAAnalytics() {
         .order('clicked_at', { ascending: false });
 
       if (directError) {
-        console.error('❌ Direct query error:', directError);
+        console.error('❌ שגיאה בשאילתה ישירה:', directError);
         throw directError;
       }
 
-      console.log('✅ Direct query successful, data:', directData);
+      console.log('✅ שאילתה ישירה הצליחה, נתונים:', directData);
 
-      // Process the data
+      // Process the data with registration metrics
       const clicksByDay: Record<string, number> = {};
+      let registrationAttempts = 0;
+      let successfulRegistrations = 0;
+      
       for (const click of directData || []) {
         const d = new Date(click.clicked_at);
         const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
         clicksByDay[key] = (clicksByDay[key] || 0) + 1;
+        
+        if (click.registration_attempted) {
+          registrationAttempts++;
+          if (click.registration_success) {
+            successfulRegistrations++;
+          }
+        }
       }
 
       const uniqueUsers = new Set((directData || []).map((c: any) => c.telegram_id)).size;
+      const totalClicks = directData?.length || 0;
+      const failedRegistrations = registrationAttempts - successfulRegistrations;
+      const conversionRate = totalClicks > 0 ? (successfulRegistrations / totalClicks) * 100 : 0;
 
-      const analyticsData = {
-        totalClicks: directData?.length || 0,
+      const analyticsData: CTAAnalytics = {
+        totalClicks,
+        registrationAttempts,
+        successfulRegistrations,
+        failedRegistrations,
+        conversionRate: Math.round(conversionRate * 100) / 100,
         uniqueUsers,
         clicksByDay,
         data: directData || [],
       };
 
-      console.log('📊 Processed analytics:', analyticsData);
+      console.log('📊 אנליטיקה מעובדת:', analyticsData);
       setAnalytics(analyticsData);
 
       if (analyticsData.totalClicks === 0) {
         toast({
-          title: "📊 No CTA Data",
-          description: "No group CTA clicks recorded yet. Send a group message with a start button to begin tracking.",
+          title: "📊 אין נתוני CTA",
+          description: "עדיין לא נרשמו לחיצות CTA של קבוצה. שלח הודעת קבוצה עם כפתור התחלה כדי להתחיל לעקוב.",
           duration: 4000,
         });
       } else {
+        const registrationInfo = analyticsData.registrationAttempts > 0 
+          ? ` | ${analyticsData.successfulRegistrations} רישומים מוצלחים`
+          : '';
+        
         toast({
-          title: "✅ Analytics Updated",
-          description: `Found ${analyticsData.totalClicks} clicks from ${analyticsData.uniqueUsers} users`,
+          title: "✅ אנליטיקה עודכנה",
+          description: `נמצאו ${analyticsData.totalClicks} לחיצות מ-${analyticsData.uniqueUsers} משתמשים${registrationInfo}`,
           duration: 3000,
         });
       }
 
     } catch (err) {
-      console.error('❌ Error fetching CTA analytics:', err);
+      console.error('❌ שגיאה בהבאת אנליטיקת CTA:', err);
       toast({
-        title: "❌ Analytics Error",
-        description: "Failed to fetch group CTA analytics. Check console for details.",
+        title: "❌ שגיאת אנליטיקה",
+        description: "נכשל בהבאת אנליטיקת CTA של קבוצה. בדוק את הקונסול לפרטים.",
         variant: "destructive",
       });
-      setAnalytics({ totalClicks: 0, clicksByDay: {}, uniqueUsers: 0, data: [] });
+      setAnalytics({ 
+        totalClicks: 0, 
+        registrationAttempts: 0,
+        successfulRegistrations: 0,
+        failedRegistrations: 0,
+        conversionRate: 0,
+        clicksByDay: {}, 
+        uniqueUsers: 0, 
+        data: [] 
+      });
     } finally {
       setIsLoading(false);
     }
@@ -94,56 +127,16 @@ export function GroupCTAAnalytics() {
   }, [daysFilter]);
 
   const handleRefresh = () => {
-    console.log('🔄 Manual refresh triggered');
+    console.log('🔄 רענון ידני הופעל');
     fetchAnalytics();
-  };
-
-  const testCTAClick = async () => {
-    try {
-      console.log('🧪 Testing CTA click insertion...');
-      
-      const { data, error } = await supabase
-        .from('group_cta_clicks')
-        .insert({
-          telegram_id: 123456789,
-          start_parameter: 'test_group_activation',
-          source_group_id: -1001009290613,
-          user_agent: navigator.userAgent
-        })
-        .select();
-
-      if (error) {
-        console.error('❌ Test insert error:', error);
-        toast({
-          title: "❌ Test Failed",
-          description: `Test CTA click failed: ${error.message}`,
-          variant: "destructive",
-        });
-      } else {
-        console.log('✅ Test insert successful:', data);
-        toast({
-          title: "✅ Test Successful",
-          description: "Test CTA click recorded successfully",
-        });
-        // Refresh analytics after test
-        setTimeout(fetchAnalytics, 1000);
-      }
-    } catch (err) {
-      console.error('❌ Test error:', err);
-      toast({
-        title: "❌ Test Error",
-        description: "Failed to test CTA click functionality",
-        variant: "destructive",
-      });
-    }
   };
 
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Group CTA Analytics</CardTitle>
-          <CardDescription>Loading click analytics...</CardDescription>
+          <CardTitle>אנליטיקת Group CTA</CardTitle>
+          <CardDescription>טוען אנליטיקת לחיצות...</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center p-8">
@@ -157,13 +150,13 @@ export function GroupCTAAnalytics() {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <div>
+        <div dir="rtl">
           <CardTitle className="flex items-center gap-2">
             <MousePointer className="h-5 w-5" />
-            Group CTA Analytics
+            אנליטיקת Group CTA
           </CardTitle>
           <CardDescription>
-            Track how many users clicked the start button from group messages
+            עקוב אחר כמה משתמשים לחצו על כפתור התחלה מהודעות קבוצה ונרשמו
           </CardDescription>
         </div>
         <div className="flex items-center gap-2">
@@ -172,84 +165,118 @@ export function GroupCTAAnalytics() {
             onChange={(e) => setDaysFilter(Number(e.target.value))}
             className="px-3 py-1 border rounded-md text-sm"
           >
-            <option value={1}>Last 24h</option>
-            <option value={7}>Last 7 days</option>
-            <option value={14}>Last 14 days</option>
-            <option value={30}>Last 30 days</option>
+            <option value={1}>24 שעות האחרונות</option>
+            <option value={7}>7 ימים האחרונים</option>
+            <option value={14}>14 ימים האחרונים</option>
+            <option value={30}>30 ימים האחרונים</option>
           </select>
-          <Button variant="outline" size="sm" onClick={testCTAClick}>
-            Test
-          </Button>
           <Button variant="outline" size="sm" onClick={handleRefresh}>
             <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-primary/10 p-4 rounded-lg">
+        {/* Enhanced Summary Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-blue-50 p-4 rounded-lg">
             <div className="flex items-center gap-2">
-              <MousePointer className="h-5 w-5 text-primary" />
-              <span className="text-sm font-medium">Total Clicks</span>
+              <MousePointer className="h-5 w-5 text-blue-600" />
+              <span className="text-sm font-medium">סה״כ לחיצות</span>
             </div>
             <p className="text-2xl font-bold mt-1">{analytics?.totalClicks || 0}</p>
           </div>
           
-          <div className="bg-secondary/10 p-4 rounded-lg">
+          <div className="bg-green-50 p-4 rounded-lg">
             <div className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              <span className="text-sm font-medium">Unique Users</span>
+              <UserCheck className="h-5 w-5 text-green-600" />
+              <span className="text-sm font-medium">רישומים מוצלחים</span>
             </div>
-            <p className="text-2xl font-bold mt-1">{analytics?.uniqueUsers || 0}</p>
+            <p className="text-2xl font-bold mt-1">{analytics?.successfulRegistrations || 0}</p>
           </div>
           
-          <div className="bg-accent/10 p-4 rounded-lg">
+          <div className="bg-red-50 p-4 rounded-lg">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-accent" />
-              <span className="text-sm font-medium">Conversion Rate</span>
+              <UserX className="h-5 w-5 text-red-600" />
+              <span className="text-sm font-medium">רישומים נכשלים</span>
             </div>
-            <p className="text-2xl font-bold mt-1">
-              {analytics?.totalClicks && analytics.uniqueUsers 
-                ? `${((analytics.uniqueUsers / analytics.totalClicks) * 100).toFixed(1)}%`
-                : '0%'
-              }
-            </p>
+            <p className="text-2xl font-bold mt-1">{analytics?.failedRegistrations || 0}</p>
+          </div>
+          
+          <div className="bg-purple-50 p-4 rounded-lg">
+            <div className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-purple-600" />
+              <span className="text-sm font-medium">שיעור הרשמה</span>
+            </div>
+            <p className="text-2xl font-bold mt-1">{analytics?.conversionRate || 0}%</p>
           </div>
         </div>
+
+        {/* Registration Status Breakdown */}
+        {analytics && analytics.registrationAttempts > 0 && (
+          <div>
+            <h4 className="font-medium mb-3 flex items-center gap-2" dir="rtl">
+              <Users className="h-4 w-4" />
+              פילוח סטטוס רישום
+            </h4>
+            <div className="bg-muted/30 p-4 rounded-lg" dir="rtl">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-sm text-muted-foreground">ניסיונות רישום</p>
+                  <p className="text-xl font-bold text-blue-600">{analytics.registrationAttempts}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">הצליחו</p>
+                  <p className="text-xl font-bold text-green-600">{analytics.successfulRegistrations}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">נכשלו</p>
+                  <p className="text-xl font-bold text-red-600">{analytics.failedRegistrations}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Daily Breakdown */}
         {analytics?.clicksByDay && Object.keys(analytics.clicksByDay).length > 0 && (
           <div>
-            <h4 className="font-medium mb-3 flex items-center gap-2">
+            <h4 className="font-medium mb-3 flex items-center gap-2" dir="rtl">
               <Calendar className="h-4 w-4" />
-              Daily Breakdown
+              פילוח יומי
             </h4>
             <div className="space-y-2">
               {Object.entries(analytics.clicksByDay)
                 .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
                 .map(([day, count]) => (
-                  <div key={day} className="flex items-center justify-between py-2 px-3 bg-muted/30 rounded">
+                  <div key={day} className="flex items-center justify-between py-2 px-3 bg-muted/30 rounded" dir="rtl">
                     <span className="text-sm">{day}</span>
-                    <Badge variant="secondary">{count} clicks</Badge>
+                    <Badge variant="secondary">{count} לחיצות</Badge>
                   </div>
                 ))}
             </div>
           </div>
         )}
 
-        {/* Recent Clicks */}
+        {/* Recent Clicks with Registration Status */}
         {analytics?.data && analytics.data.length > 0 && (
           <div>
-            <h4 className="font-medium mb-3">Recent Clicks</h4>
+            <h4 className="font-medium mb-3" dir="rtl">לחיצות אחרונות</h4>
             <div className="space-y-2 max-h-60 overflow-y-auto">
               {analytics.data.slice(0, 10).map((click) => (
-                <div key={click.id} className="flex items-center justify-between py-2 px-3 border rounded text-sm">
-                  <div>
-                    <span className="font-medium">User {click.telegram_id}</span>
-                    <span className="text-muted-foreground ml-2">
-                      {format(new Date(click.clicked_at), 'MMM dd, HH:mm')}
+                <div key={click.id} className="flex items-center justify-between py-2 px-3 border rounded text-sm" dir="rtl">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">משתמש {click.telegram_id}</span>
+                    <span className="text-muted-foreground">
+                      {format(new Date(click.clicked_at), 'dd/MM, HH:mm')}
                     </span>
+                    {click.registration_attempted && (
+                      <Badge 
+                        variant={click.registration_success ? "default" : "destructive"}
+                        className="text-xs"
+                      >
+                        {click.registration_success ? "נרשם ✓" : "רישום נכשל ✗"}
+                      </Badge>
+                    )}
                   </div>
                   <Badge variant="outline" className="text-xs">
                     {click.start_parameter}
@@ -263,19 +290,20 @@ export function GroupCTAAnalytics() {
         {analytics?.totalClicks === 0 && (
           <div className="text-center py-8">
             <MousePointer className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">No group CTA clicks recorded yet</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Send a group message with a start button to begin tracking
+            <p className="text-muted-foreground" dir="rtl">עדיין לא נרשמו לחיצות CTA של קבוצה</p>
+            <p className="text-sm text-muted-foreground mt-1" dir="rtl">
+              שלח הודעת קבוצה עם כפתור התחלה כדי להתחיל לעקוב
             </p>
-            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg" dir="rtl">
               <p className="text-sm text-yellow-800">
-                <strong>Troubleshooting:</strong> If you've sent group messages but see no data:
+                <strong>פתרון בעיות:</strong> אם שלחת הודעות קבוצה אבל לא רואה נתונים:
               </p>
-              <ul className="text-xs text-yellow-700 mt-2 space-y-1">
-                <li>• Check if users are actually clicking the start button</li>
-                <li>• Verify the bot has proper permissions in the group</li>
-                <li>• Ensure the start parameter is 'group_activation'</li>
-                <li>• Check the console logs for tracking errors</li>
+              <ul className="text-xs text-yellow-700 mt-2 space-y-1 text-right">
+                <li>• בדוק שמשתמשים באמת לוחצים על כפתור ההתחלה</li>
+                <li>• ודא שלבוט יש הרשאות מתאימות בקבוצה</li>
+                <li>• וודא שהפרמטר start הוא 'group_activation'</li>
+                <li>• בדוק את לוגי הקונסול לשגיאות מעקב</li>
+                <li>• השתמש בכפתור 'בדוק רישום משתמש' לבדיקה</li>
               </ul>
             </div>
           </div>

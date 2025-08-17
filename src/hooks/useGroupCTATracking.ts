@@ -2,58 +2,130 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from './useTelegramAuth';
+import { useTelegramWebApp } from './useTelegramWebApp';
 import { toast } from '@/components/ui/use-toast';
+import { API_BASE_URL } from '@/lib/api/config';
+import { getBackendAccessToken } from '@/lib/api/secureConfig';
 
 export function useGroupCTATracking() {
   const { user } = useTelegramAuth();
+  const { webApp } = useTelegramWebApp();
   const [isLoading, setIsLoading] = useState(false);
+
+  const registerUserWithFastAPI = async (initData: string) => {
+    try {
+      console.log('🔐 רושם משתמש ב-FastAPI');
+      
+      const backendToken = await getBackendAccessToken();
+      if (!backendToken) {
+        throw new Error('אין אסימון גישה לשרת');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/v1/sign-in/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${backendToken}`,
+        },
+        body: JSON.stringify({
+          init_data: initData
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`רישום נכשל: ${response.status} ${errorText}`);
+      }
+
+      const result = await response.json();
+      return { success: true, token: result.token };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'שגיאה לא ידועה';
+      return { success: false, error: errorMessage };
+    }
+  };
 
   const trackCTAClick = async (startParameter: string, sourceGroupId?: number) => {
     if (!user?.id) {
-      console.warn('⚠️ Cannot track CTA click - no user ID available');
+      console.warn('⚠️ לא ניתן לעקוב אחר לחיצה - אין מזהה משתמש');
       return false;
     }
     
     setIsLoading(true);
     try {
-      console.log('📊 Tracking CTA click:', { 
+      console.log('📊 עוקב אחר לחיצת CTA עם רישום:', { 
         telegram_id: user.id, 
         startParameter, 
         sourceGroupId 
       });
 
+      // Get Telegram initData for registration
+      const initData = webApp?.initData;
+      let registrationResult = null;
+      
+      if (initData && startParameter === 'group_activation') {
+        console.log('🔐 מנסה לרשום משתמש...');
+        registrationResult = await registerUserWithFastAPI(initData);
+      }
+
+      const clickData = {
+        telegram_id: user.id,
+        start_parameter: startParameter,
+        source_group_id: sourceGroupId,
+        user_agent: navigator.userAgent,
+        registration_attempted: !!initData && startParameter === 'group_activation',
+        registration_success: registrationResult?.success || false,
+        registration_token: registrationResult?.token || null,
+        registration_error: registrationResult?.error || null,
+        fastapi_response: registrationResult
+      };
+
       const { data, error } = await supabase
         .from('group_cta_clicks')
-        .insert({
-          telegram_id: user.id,
-          start_parameter: startParameter,
-          source_group_id: sourceGroupId,
-          user_agent: navigator.userAgent
-        })
+        .insert(clickData)
         .select();
 
       if (error) {
-        console.error('❌ Error tracking CTA click:', error);
+        console.error('❌ שגיאה בעקיבת לחיצת CTA:', error);
         toast({
-          title: "❌ Tracking Failed",
-          description: `Failed to track CTA click: ${error.message}`,
+          title: "❌ מעקב נכשל",
+          description: `נכשל במעקב אחר לחיצת CTA: ${error.message}`,
           variant: "destructive",
         });
         return false;
       }
 
-      console.log('✅ CTA click tracked successfully:', data);
-      toast({
-        title: "✅ Click Tracked",
-        description: "Group CTA interaction recorded successfully",
-        duration: 2000,
-      });
+      console.log('✅ לחיצת CTA נעקבה בהצלחה:', data);
+      
+      // Show appropriate message based on registration result
+      if (registrationResult?.success) {
+        toast({
+          title: "✅ רישום הצליח!",
+          description: "לחיצת הקבוצה נרשמה והמשתמש נרשם בהצלחה במערכת",
+          duration: 3000,
+        });
+      } else if (registrationResult?.error) {
+        toast({
+          title: "⚠️ לחיצה נרשמה",
+          description: `הלחיצה נרשמה אבל הרישום נכשל: ${registrationResult.error}`,
+          variant: "destructive",
+          duration: 4000,
+        });
+      } else {
+        toast({
+          title: "✅ לחיצה נרשמה",
+          description: "אינטראקציית קבוצה נרשמה בהצלחה",
+          duration: 2000,
+        });
+      }
+      
       return true;
     } catch (err) {
-      console.error('❌ Error tracking CTA click:', err);
+      console.error('❌ שגיאה בעקיבת לחיצת CTA:', err);
       toast({
-        title: "❌ Tracking Error", 
-        description: "Failed to record group interaction",
+        title: "❌ שגיאת מעקב", 
+        description: "נכשל ברישום אינטראקציית הקבוצה",
         variant: "destructive",
       });
       return false;
@@ -74,14 +146,26 @@ export function useGroupCTATracking() {
         .order('clicked_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Error fetching CTA analytics:', error);
+        console.error('❌ שגיאה בקבלת אנליטיקת CTA:', error);
         throw error;
       }
 
-      console.log('📊 CTA Analytics fetched:', data);
+      console.log('📊 אנליטיקת CTA התקבלה:', data);
+
+      // Calculate registration metrics
+      const totalClicks = data?.length || 0;
+      const registrationAttempts = data?.filter(click => click.registration_attempted).length || 0;
+      const successfulRegistrations = data?.filter(click => click.registration_success).length || 0;
+      const failedRegistrations = registrationAttempts - successfulRegistrations;
+      
+      const conversionRate = totalClicks > 0 ? (successfulRegistrations / totalClicks) * 100 : 0;
 
       return {
-        totalClicks: data?.length || 0,
+        totalClicks,
+        registrationAttempts,
+        successfulRegistrations,
+        failedRegistrations,
+        conversionRate: Math.round(conversionRate * 100) / 100,
         clicksByDay: data?.reduce((acc: any, click) => {
           const day = new Date(click.clicked_at).toDateString();
           acc[day] = (acc[day] || 0) + 1;
@@ -91,7 +175,7 @@ export function useGroupCTATracking() {
         data: data || []
       };
     } catch (err) {
-      console.error('❌ Error fetching CTA analytics:', err);
+      console.error('❌ שגיאה בקבלת אנליטיקת CTA:', err);
       return null;
     }
   };
@@ -99,17 +183,17 @@ export function useGroupCTATracking() {
   // Auto-track if user comes from group_activation
   useEffect(() => {
     if (!user?.id) {
-      console.log('🔍 No user ID available for auto-tracking');
+      console.log('🔍 אין מזהה משתמש זמין למעקב אוטומטי');
       return;
     }
 
     const urlParams = new URLSearchParams(window.location.search);
     const startParam = urlParams.get('start');
     
-    console.log('🔍 Checking URL params:', { startParam, url: window.location.href });
+    console.log('🔍 בודק פרמטרי URL:', { startParam, url: window.location.href });
     
     if (startParam === 'group_activation') {
-      console.log('🎯 Group activation detected, tracking CTA click...');
+      console.log('🎯 זוהתה הפעלת קבוצה, עוקב אחר לחיצת CTA...');
       trackCTAClick('group_activation');
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
