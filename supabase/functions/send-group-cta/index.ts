@@ -8,15 +8,32 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  console.log('🚀 Group CTA function invoked');
+  console.log('🚀 Enhanced Group CTA function invoked');
   
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { message, buttonText, groupId, botUsername: providedBotUsername } = await req.json();
-    console.log('📥 Request data:', { message: !!message, buttonText, groupId, botUsername: providedBotUsername });
+    const { 
+      message, 
+      groupId, 
+      botUsername: providedBotUsername,
+      useMultipleButtons = true,
+      includePremiumButton = true,
+      includeInventoryButton = true,
+      includeChatButton = true
+    } = await req.json();
+    
+    console.log('📥 Enhanced CTA request:', { 
+      hasMessage: !!message, 
+      groupId, 
+      botUsername: providedBotUsername,
+      useMultipleButtons,
+      includePremiumButton,
+      includeInventoryButton,
+      includeChatButton
+    });
 
     const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
     if (!botToken) {
@@ -29,21 +46,77 @@ serve(async (req) => {
 
     const botUsername = providedBotUsername || Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot';
     
-    // Default message if not provided
-    const defaultMessage = `💎 **שדרגו את הפעילות שלכם ביהלומים!**
+    // Enhanced default message
+    const defaultMessage = `💎 **העלו את העסק שלכם לרמה הבאה עם BrilliantBot!**
 
-🤖 BrilliantBot כאן כדי לעזור לכם:
-• ✨ התאמות חכמות של יהלומים
-• 📊 ניתוחי שוק בזמן אמת  
+🚀 **הבוט החכם ביותר לסוחרי יהלומים:**
 • 🔍 חיפוש מתקדם במלאי
-• 💰 הזדמনויות השקעה
+• 📊 ניתוחי שוק בזמן אמת
+• 💰 מעקב רווחיות חכם
+• 🎯 התאמות מושלמות ללקוחות
 
-⚡ **התחילו עכשיו - לחצו על הכפתור למטה!**`;
+⭐ **אלפי סוחרים כבר משתמשים - הצטרפו עכשיו!**`;
 
     const finalMessage = message || defaultMessage;
-    const finalButtonText = buttonText || '🚀 התחל עם BrilliantBot';
 
-    console.log('📤 Sending CTA message to group...');
+    // Create dynamic inline keyboard based on options
+    let inlineKeyboard = [];
+
+    if (useMultipleButtons) {
+      // Main CTA button (always included)
+      inlineKeyboard.push([{
+        text: '🚀 התחל עם BrilliantBot',
+        url: `https://t.me/${botUsername}?start=group_activation`
+      }]);
+
+      // Secondary action buttons row
+      const secondRow = [];
+      
+      if (includePremiumButton) {
+        secondRow.push({
+          text: '💎 גלה תכונות פרמיום',
+          url: `https://t.me/${botUsername}?start=premium_features`
+        });
+      }
+
+      if (includeInventoryButton) {
+        secondRow.push({
+          text: '📦 נהל מלאי חכם',
+          url: `https://t.me/${botUsername}?start=inventory_demo`
+        });
+      }
+
+      // Add second row if it has buttons
+      if (secondRow.length > 0) {
+        inlineKeyboard.push(secondRow);
+      }
+
+      // Third row for chat button (if enabled)
+      if (includeChatButton) {
+        inlineKeyboard.push([{
+          text: '💬 צ\'אט AI מתקדם',
+          url: `https://t.me/${botUsername}?start=ai_chat_demo`
+        }]);
+      }
+
+      // Add share button to encourage viral growth
+      inlineKeyboard.push([{
+        text: '📢 שתף עם חברים',
+        switch_inline_query: `💎 המלצה על BrilliantBot - הבוט החכם ביותר לסוחרי יהלומים! https://t.me/${botUsername}`
+      }]);
+
+    } else {
+      // Single button fallback
+      inlineKeyboard = [[
+        {
+          text: '🚀 התחל עם BrilliantBot',
+          url: `https://t.me/${botUsername}?start=group_activation`
+        }
+      ]];
+    }
+
+    console.log('📤 Sending enhanced CTA message with', inlineKeyboard.length, 'button rows');
+    
     const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
       headers: {
@@ -54,12 +127,7 @@ serve(async (req) => {
         text: finalMessage,
         parse_mode: 'Markdown',
         reply_markup: {
-          inline_keyboard: [[
-            {
-              text: finalButtonText,
-              url: `https://t.me/${botUsername}?start=group_activation`
-            }
-          ]]
+          inline_keyboard: inlineKeyboard
         }
       }),
     });
@@ -70,23 +138,30 @@ serve(async (req) => {
     if (!telegramResponse.ok) {
       console.error('❌ Telegram API error:', result);
       return new Response(
-        JSON.stringify({ error: 'Failed to send group CTA message', details: result }),
+        JSON.stringify({ error: 'Failed to send enhanced group CTA message', details: result }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('✅ Group CTA message sent successfully');
+    console.log('✅ Enhanced Group CTA message sent successfully');
     return new Response(
       JSON.stringify({ 
         success: true, 
         messageId: result.result.message_id,
-        groupId: groupId || -1001009290613
+        groupId: groupId || -1001009290613,
+        buttonsCount: inlineKeyboard.length,
+        features: {
+          useMultipleButtons,
+          includePremiumButton,
+          includeInventoryButton,
+          includeChatButton
+        }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('❌ Error sending group CTA message:', error);
+    console.error('❌ Error sending enhanced group CTA message:', error);
     return new Response(
       JSON.stringify({ error: 'Internal server error', details: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
