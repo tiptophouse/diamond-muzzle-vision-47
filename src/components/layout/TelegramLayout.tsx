@@ -245,30 +245,20 @@ export function TelegramLayout({
     telegramNavigation.selectionFeedback();
     navigate(path);
   };
-  
   const isActiveTab = (path: string) => {
     if (path === '/dashboard') {
       return location.pathname === '/' || location.pathname === '/dashboard';
     }
     return location.pathname.startsWith(path);
   };
-  
   // For store page, only show store tab for security (prevent navigation to protected areas)
   const isPublicStoreAccess = location.pathname === '/store' && !user;
   const availableTabs = isPublicStoreAccess ? tabs.filter(tab => tab.path === '/store') : tabs.filter(tab => !tab.adminOnly || isAdmin);
   const availableSecondaryTabs = isPublicStoreAccess ? [] : secondaryTabs.filter(tab => !tab.adminOnly || isAdmin);
-
-  return (
-    <div className="flex flex-col w-full tg-viewport overflow-hidden bg-background" 
-         style={{ 
-           height: 'var(--tg-viewport-height, 100dvh)', 
-           maxHeight: 'var(--tg-viewport-stable-height, 100dvh)' 
-         }}>
-      
-      {/* Main content area with consistent padding */}
-      <main className="flex-1 overflow-auto smooth-scroll bg-background w-full" 
-            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}>
-        <div className="min-h-full p-3 sm:p-4 pt-4 pb-6">
+  return <div className="flex flex-col w-full tg-viewport overflow-hidden bg-background" style={{ height: 'var(--tg-viewport-height, 100dvh)', maxHeight: 'var(--tg-viewport-stable-height, 100dvh)' }}>
+      {/* Main content area */}
+      <main className="flex-1 overflow-auto smooth-scroll bg-background w-full py-0" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}>
+        <div className="min-h-full p-3 sm:p-4 pt-4">
           <div className="w-full max-w-none overflow-x-hidden">
             {children}
           </div>
@@ -278,85 +268,36 @@ export function TelegramLayout({
       {/* Floating First Upload CTA */}
       <FloatingFirstUploadCTA />
 
-      {/* Enhanced Bottom Tab Navigation with Better Styling */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 supports-[backdrop-filter]:bg-card/80 backdrop-blur-xl border-t border-border/40 shadow-lg" 
-           style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)' }}>
-        
-        {/* Navigation Tabs */}
-        <div className="flex items-center justify-around w-full max-w-2xl mx-auto px-2 py-3">
+      {/* Bottom tab navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-center bg-card/90 supports-[backdrop-filter]:bg-card/70 backdrop-blur-md border-t border-border/50 w-full" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+        <div className="flex items-center justify-around w-full max-w-xl px-2 py-2">
           {availableTabs.map(tab => {
-            const Icon = tab.icon;
-            const isActive = isActiveTab(tab.path);
-            return (
-              <button
-                key={tab.path}
-                onClick={() => handleTabClick(tab.path)}
-                className={`
-                  flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-2xl 
-                  min-w-[64px] sm:min-w-[72px] touch-target 
-                  transition-all duration-300 ease-out
-                  ${isActive 
-                    ? 'text-primary bg-primary/15 shadow-md scale-105' 
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 hover:scale-102'
-                  }
-                `}
-                aria-label={tab.label}
-              >
-                <Icon className={`
-                  w-5 h-5 sm:w-6 sm:h-6 
-                  ${isActive ? 'scale-110 drop-shadow-sm' : ''} 
-                  transition-all duration-300
-                `} />
-                <span className={`
-                  text-[10px] sm:text-xs font-medium leading-tight
-                  ${isActive ? 'text-primary font-semibold' : ''}
-                  transition-all duration-300
-                `}>
+          const Icon = tab.icon;
+          const isActive = isActiveTab(tab.path);
+          return <button key={tab.path} onClick={() => handleTabClick(tab.path)} className={`
+                  flex flex-col items-center gap-1 p-2 sm:p-3 rounded-xl touch-target transition-all duration-200 min-w-[60px] sm:min-w-[80px]
+                  ${isActive ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}
+                `} aria-label={tab.label}>
+                <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${isActive ? 'scale-110' : ''} transition-transform duration-200`} />
+                <span className={`text-[10px] sm:text-xs font-medium leading-tight ${isActive ? 'text-primary' : ''}`}>
                   {tab.label}
                 </span>
-                {isActive && (
-                  <div className="absolute -top-1 w-1 h-1 bg-primary rounded-full animate-pulse" />
-                )}
-              </button>
-            );
-          })}
+              </button>;
+        })}
         </div>
-
-        {/* Active page indicator */}
-        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-primary/20 rounded-b-full" />
       </nav>
 
-      {/* Secondary actions floating button (for settings, notifications etc) */}
-      {availableSecondaryTabs.length > 0 && (
-        <div className="fixed right-4 z-40" 
-             style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 100px)' }}>
-          <div className="flex flex-col gap-3">
+      {/* Secondary actions floating button (for non-main tabs) */}
+      {availableSecondaryTabs.length > 0 && <div className="fixed right-4 z-50" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)' }}>
+          <div className="flex flex-col gap-2">
             {availableSecondaryTabs.map(tab => {
-              const Icon = tab.icon;
-              const isActive = isActiveTab(tab.path);
-              if (isActive) return null; // Don't show if currently active
+          const Icon = tab.icon;
+          const isActive = isActiveTab(tab.path);
+          if (isActive) return null; // Don't show if currently active
 
-              return (
-                <button
-                  key={tab.path}
-                  onClick={() => handleTabClick(tab.path)}
-                  className="
-                    w-12 h-12 bg-card/90 backdrop-blur-md rounded-2xl 
-                    flex items-center justify-center
-                    text-muted-foreground hover:text-foreground
-                    border border-border/40 shadow-lg
-                    hover:scale-110 transition-all duration-300
-                    hover:bg-primary/10 hover:border-primary/30
-                  "
-                  aria-label={tab.label}
-                >
-                  <Icon className="w-5 h-5" />
-                </button>
-              );
-            })}
+          return;
+        })}
           </div>
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 }

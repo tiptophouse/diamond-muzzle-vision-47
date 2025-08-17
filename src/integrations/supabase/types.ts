@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
+  // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -421,78 +421,6 @@ export type Database = {
         }
         Relationships: []
       }
-      diamond_shares: {
-        Row: {
-          created_at: string
-          diamond_id: string
-          id: string
-          share_url: string
-          shared_by: number
-          stock_number: string
-        }
-        Insert: {
-          created_at?: string
-          diamond_id: string
-          id?: string
-          share_url: string
-          shared_by: number
-          stock_number: string
-        }
-        Update: {
-          created_at?: string
-          diamond_id?: string
-          id?: string
-          share_url?: string
-          shared_by?: number
-          stock_number?: string
-        }
-        Relationships: []
-      }
-      diamond_views: {
-        Row: {
-          device_type: string | null
-          diamond_id: string
-          id: string
-          interactions: Json | null
-          last_interaction: string | null
-          referrer: string | null
-          reshared: boolean | null
-          session_id: string
-          total_view_time: number | null
-          user_agent: string | null
-          view_start: string
-          viewer_telegram_id: number | null
-        }
-        Insert: {
-          device_type?: string | null
-          diamond_id: string
-          id?: string
-          interactions?: Json | null
-          last_interaction?: string | null
-          referrer?: string | null
-          reshared?: boolean | null
-          session_id: string
-          total_view_time?: number | null
-          user_agent?: string | null
-          view_start?: string
-          viewer_telegram_id?: number | null
-        }
-        Update: {
-          device_type?: string | null
-          diamond_id?: string
-          id?: string
-          interactions?: Json | null
-          last_interaction?: string | null
-          referrer?: string | null
-          reshared?: boolean | null
-          session_id?: string
-          total_view_time?: number | null
-          user_agent?: string | null
-          view_start?: string
-          viewer_telegram_id?: number | null
-        }
-        Relationships: []
-      }
       diamonds: {
         Row: {
           carat: number
@@ -523,51 +451,6 @@ export type Database = {
           id?: string
           price?: number
           user_id?: string
-        }
-        Relationships: []
-      }
-      ftp_accounts: {
-        Row: {
-          created_at: string
-          expires_at: string | null
-          ftp_folder_path: string
-          ftp_username: string
-          id: string
-          last_used_at: string | null
-          password_changed_at: string | null
-          password_hash: string
-          status: string
-          telegram_id: number
-          updated_at: string
-          user_id: number
-        }
-        Insert: {
-          created_at?: string
-          expires_at?: string | null
-          ftp_folder_path: string
-          ftp_username: string
-          id?: string
-          last_used_at?: string | null
-          password_changed_at?: string | null
-          password_hash: string
-          status?: string
-          telegram_id: number
-          updated_at?: string
-          user_id: number
-        }
-        Update: {
-          created_at?: string
-          expires_at?: string | null
-          ftp_folder_path?: string
-          ftp_username?: string
-          id?: string
-          last_used_at?: string | null
-          password_changed_at?: string | null
-          password_hash?: string
-          status?: string
-          telegram_id?: number
-          updated_at?: string
-          user_id?: number
         }
         Relationships: []
       }
@@ -796,56 +679,6 @@ export type Database = {
         }
         Relationships: []
       }
-      meshy_jobs: {
-        Row: {
-          completed_at: string | null
-          created_at: string
-          error_message: string | null
-          gpt_prompt: string | null
-          id: string
-          job_type: string
-          meshy_task_id: string
-          processing_started_at: string
-          ring_order_id: string | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string
-          error_message?: string | null
-          gpt_prompt?: string | null
-          id?: string
-          job_type?: string
-          meshy_task_id: string
-          processing_started_at?: string
-          ring_order_id?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string
-          error_message?: string | null
-          gpt_prompt?: string | null
-          id?: string
-          job_type?: string
-          meshy_task_id?: string
-          processing_started_at?: string
-          ring_order_id?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "meshy_jobs_ring_order_id_fkey"
-            columns: ["ring_order_id"]
-            isOneToOne: false
-            referencedRelation: "ring_orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       notifications: {
         Row: {
           created_at: string
@@ -955,241 +788,6 @@ export type Database = {
           },
         ]
       }
-      ring_assets: {
-        Row: {
-          created_at: string
-          frame_sequence: string[] | null
-          glb_url: string | null
-          id: string
-          meshy_job_id: string | null
-          ring_order_id: string | null
-          thumbnail_url: string | null
-          turntable_gif_url: string | null
-          updated_at: string
-          usdz_url: string | null
-        }
-        Insert: {
-          created_at?: string
-          frame_sequence?: string[] | null
-          glb_url?: string | null
-          id?: string
-          meshy_job_id?: string | null
-          ring_order_id?: string | null
-          thumbnail_url?: string | null
-          turntable_gif_url?: string | null
-          updated_at?: string
-          usdz_url?: string | null
-        }
-        Update: {
-          created_at?: string
-          frame_sequence?: string[] | null
-          glb_url?: string | null
-          id?: string
-          meshy_job_id?: string | null
-          ring_order_id?: string | null
-          thumbnail_url?: string | null
-          turntable_gif_url?: string | null
-          updated_at?: string
-          usdz_url?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ring_assets_meshy_job_id_fkey"
-            columns: ["meshy_job_id"]
-            isOneToOne: false
-            referencedRelation: "meshy_jobs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ring_assets_ring_order_id_fkey"
-            columns: ["ring_order_id"]
-            isOneToOne: false
-            referencedRelation: "ring_orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ring_orders: {
-        Row: {
-          budget_currency: string
-          budget_max: number
-          budget_min: number
-          created_at: string
-          crown_head: string | null
-          customer_name: string | null
-          customer_phone: string | null
-          customer_telegram_id: number
-          diamond_shape: string | null
-          gpt_style_prompt: string | null
-          id: string
-          lead_status: string
-          ring_material: string
-          ring_style_description: string | null
-          ring_style_tags: string[] | null
-          selected_diamond_id: string | null
-          selected_diamond_stock_number: string | null
-          updated_at: string
-        }
-        Insert: {
-          budget_currency?: string
-          budget_max: number
-          budget_min: number
-          created_at?: string
-          crown_head?: string | null
-          customer_name?: string | null
-          customer_phone?: string | null
-          customer_telegram_id: number
-          diamond_shape?: string | null
-          gpt_style_prompt?: string | null
-          id?: string
-          lead_status?: string
-          ring_material: string
-          ring_style_description?: string | null
-          ring_style_tags?: string[] | null
-          selected_diamond_id?: string | null
-          selected_diamond_stock_number?: string | null
-          updated_at?: string
-        }
-        Update: {
-          budget_currency?: string
-          budget_max?: number
-          budget_min?: number
-          created_at?: string
-          crown_head?: string | null
-          customer_name?: string | null
-          customer_phone?: string | null
-          customer_telegram_id?: number
-          diamond_shape?: string | null
-          gpt_style_prompt?: string | null
-          id?: string
-          lead_status?: string
-          ring_material?: string
-          ring_style_description?: string | null
-          ring_style_tags?: string[] | null
-          selected_diamond_id?: string | null
-          selected_diamond_stock_number?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      store_item_reshares: {
-        Row: {
-          created_at: string | null
-          id: string
-          original_share_id: string | null
-          reshare_type: string
-          reshared_by_telegram_id: number
-          reshared_to_telegram_id: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          original_share_id?: string | null
-          reshare_type: string
-          reshared_by_telegram_id: number
-          reshared_to_telegram_id?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          original_share_id?: string | null
-          reshare_type?: string
-          reshared_by_telegram_id?: number
-          reshared_to_telegram_id?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "store_item_reshares_original_share_id_fkey"
-            columns: ["original_share_id"]
-            isOneToOne: false
-            referencedRelation: "store_item_shares"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      store_item_shares: {
-        Row: {
-          created_at: string | null
-          diamond_stock_number: string
-          expires_at: string | null
-          id: string
-          is_active: boolean | null
-          owner_telegram_id: number
-          share_type: string
-          share_url: string
-          shared_with_telegram_id: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          diamond_stock_number: string
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          owner_telegram_id: number
-          share_type: string
-          share_url: string
-          shared_with_telegram_id?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          diamond_stock_number?: string
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          owner_telegram_id?: number
-          share_type?: string
-          share_url?: string
-          shared_with_telegram_id?: number | null
-        }
-        Relationships: []
-      }
-      store_item_views: {
-        Row: {
-          created_at: string | null
-          device_info: Json | null
-          diamond_stock_number: string
-          id: string
-          session_id: string | null
-          share_id: string | null
-          total_view_duration_seconds: number | null
-          view_ended_at: string | null
-          view_started_at: string | null
-          viewer_telegram_id: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          device_info?: Json | null
-          diamond_stock_number: string
-          id?: string
-          session_id?: string | null
-          share_id?: string | null
-          total_view_duration_seconds?: number | null
-          view_ended_at?: string | null
-          view_started_at?: string | null
-          viewer_telegram_id?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          device_info?: Json | null
-          diamond_stock_number?: string
-          id?: string
-          session_id?: string | null
-          share_id?: string | null
-          total_view_duration_seconds?: number | null
-          view_ended_at?: string | null
-          view_started_at?: string | null
-          viewer_telegram_id?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "store_item_views_share_id_fkey"
-            columns: ["share_id"]
-            isOneToOne: false
-            referencedRelation: "store_item_shares"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       subscriptions: {
         Row: {
           amount: number | null
@@ -1290,103 +888,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-      }
-      upload_errors: {
-        Row: {
-          column_name: string | null
-          created_at: string
-          error_message: string
-          error_type: string
-          id: string
-          raw_data: Json | null
-          row_number: number | null
-          upload_job_id: string
-        }
-        Insert: {
-          column_name?: string | null
-          created_at?: string
-          error_message: string
-          error_type: string
-          id?: string
-          raw_data?: Json | null
-          row_number?: number | null
-          upload_job_id: string
-        }
-        Update: {
-          column_name?: string | null
-          created_at?: string
-          error_message?: string
-          error_type?: string
-          id?: string
-          raw_data?: Json | null
-          row_number?: number | null
-          upload_job_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "upload_errors_upload_job_id_fkey"
-            columns: ["upload_job_id"]
-            isOneToOne: false
-            referencedRelation: "upload_jobs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      upload_jobs: {
-        Row: {
-          created_at: string
-          diamonds_failed: number | null
-          diamonds_processed: number | null
-          error_message: string | null
-          file_size_bytes: number | null
-          filename: string
-          ftp_account_id: string
-          id: string
-          processing_completed_at: string | null
-          processing_started_at: string | null
-          status: string
-          updated_at: string
-          user_id: number
-        }
-        Insert: {
-          created_at?: string
-          diamonds_failed?: number | null
-          diamonds_processed?: number | null
-          error_message?: string | null
-          file_size_bytes?: number | null
-          filename: string
-          ftp_account_id: string
-          id?: string
-          processing_completed_at?: string | null
-          processing_started_at?: string | null
-          status?: string
-          updated_at?: string
-          user_id: number
-        }
-        Update: {
-          created_at?: string
-          diamonds_failed?: number | null
-          diamonds_processed?: number | null
-          error_message?: string | null
-          file_size_bytes?: number | null
-          filename?: string
-          ftp_account_id?: string
-          id?: string
-          processing_completed_at?: string | null
-          processing_started_at?: string | null
-          status?: string
-          updated_at?: string
-          user_id?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "upload_jobs_ftp_account_id_fkey"
-            columns: ["ftp_account_id"]
-            isOneToOne: false
-            referencedRelation: "ftp_accounts"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       user_activity_log: {
         Row: {
@@ -1880,19 +1381,19 @@ export type Database = {
     Functions: {
       add_diamond_for_user: {
         Args: {
-          p_certificate_url: string
-          p_clarity: string
-          p_color: string
-          p_cut: string
-          p_picture: string
-          p_polish: string
-          p_price_per_carat: number
-          p_shape: string
-          p_status: string
-          p_stock_number: string
-          p_symmetry: string
           p_user_id: number
+          p_stock_number: string
+          p_shape: string
           p_weight: number
+          p_color: string
+          p_clarity: string
+          p_cut: string
+          p_polish: string
+          p_symmetry: string
+          p_price_per_carat: number
+          p_status: string
+          p_picture: string
+          p_certificate_url: string
         }
         Returns: boolean
       }
@@ -1927,23 +1428,23 @@ export type Database = {
       get_realistic_analytics_summary: {
         Args: Record<PropertyKey, never>
         Returns: {
-          active_users_last_hour: number
-          avg_session_duration_seconds: number
-          today_views: number
-          total_page_views: number
           total_sessions: number
+          total_page_views: number
           total_users: number
+          active_users_last_hour: number
+          today_views: number
+          avg_session_duration_seconds: number
         }[]
       }
       get_user_statistics: {
         Args: Record<PropertyKey, never>
         Returns: {
-          active_users: number
-          blocked_users: number
-          premium_users: number
-          recent_signups: number
           total_users: number
+          active_users: number
+          premium_users: number
+          blocked_users: number
           users_with_phone: number
+          recent_signups: number
         }[]
       }
       is_admin_user: {
@@ -1967,7 +1468,7 @@ export type Database = {
         Returns: undefined
       }
       update_diamond_for_user: {
-        Args: { p_stock_number: string; p_update_data: Json; p_user_id: number }
+        Args: { p_user_id: number; p_stock_number: string; p_update_data: Json }
         Returns: boolean
       }
     }

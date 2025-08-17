@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { api, apiEndpoints } from "@/lib/api";
@@ -57,7 +58,6 @@ export function useInsightsData() {
   const [demandInsights, setDemandInsights] = useState<DemandInsight[]>([]);
   const [groupInsights, setGroupInsights] = useState<GroupInsight | null>(null);
   const [personalInsights, setPersonalInsights] = useState<PersonalInsight | null>(null);
-  const [diamonds, setDiamonds] = useState<Diamond[]>([]);
   
   const fetchGroupInsights = async () => {
     try {
@@ -95,13 +95,11 @@ export function useInsightsData() {
       const response = await api.get<Diamond[]>(apiEndpoints.getAllStones(user.id));
       
       if (response.data && response.data.length > 0) {
-        const userDiamonds = response.data.filter(d => 
+        const diamonds = response.data.filter(d => 
           d.owners?.includes(user.id) || d.owner_id === user.id
         );
         
-        setDiamonds(userDiamonds);
-        
-        if (userDiamonds.length === 0) {
+        if (diamonds.length === 0) {
           setTotalDiamonds(0);
           setMarketTrends([]);
           setDemandInsights([]);
@@ -113,11 +111,11 @@ export function useInsightsData() {
           return;
         }
         
-        setTotalDiamonds(userDiamonds.length);
+        setTotalDiamonds(diamonds.length);
         
         // Calculate real market trends by shape
         const shapeMap = new Map<string, number>();
-        userDiamonds.forEach(diamond => {
+        diamonds.forEach(diamond => {
           if (diamond.shape) {
             shapeMap.set(diamond.shape, (shapeMap.get(diamond.shape) || 0) + 1);
           }
@@ -127,7 +125,7 @@ export function useInsightsData() {
           .map(([category, count]) => ({
             category,
             count,
-            percentage: Math.round((count / userDiamonds.length) * 100),
+            percentage: Math.round((count / diamonds.length) * 100),
             change: 0 // Would need historical data for real change
           }))
           .sort((a, b) => b.count - a.count);
@@ -136,7 +134,7 @@ export function useInsightsData() {
 
         // Generate real demand insights from actual inventory
         const demandData: DemandInsight[] = trends.slice(0, 5).map(trend => {
-          const shapeDiamonds = userDiamonds.filter(d => d.shape === trend.category);
+          const shapeDiamonds = diamonds.filter(d => d.shape === trend.category);
           const avgPrice = shapeDiamonds.reduce((sum, d) => sum + (d.price_per_carat || 0), 0) / shapeDiamonds.length;
           const mostCommonColor = getMostFrequent(shapeDiamonds, 'color') || 'G';
           const mostCommonClarity = getMostFrequent(shapeDiamonds, 'clarity') || 'VS1';
@@ -154,9 +152,9 @@ export function useInsightsData() {
         setDemandInsights(demandData);
 
         // Calculate real personal insights
-        if (userDiamonds.length > 0) {
-          const totalValue = userDiamonds.reduce((sum, d) => sum + ((d.price_per_carat || 0) * (d.weight || 0)), 0);
-          const avgPricePerCarat = userDiamonds.reduce((sum, d) => sum + (d.price_per_carat || 0), 0) / userDiamonds.length;
+        if (diamonds.length > 0) {
+          const totalValue = diamonds.reduce((sum, d) => sum + ((d.price_per_carat || 0) * (d.weight || 0)), 0);
+          const avgPricePerCarat = diamonds.reduce((sum, d) => sum + (d.price_per_carat || 0), 0) / diamonds.length;
           
           const personalInsight: PersonalInsight = {
             inventoryValue: totalValue,
@@ -173,7 +171,7 @@ export function useInsightsData() {
         
         toast({
           title: "Insights loaded",
-          description: `Analyzed ${userDiamonds.length} diamonds from your real inventory.`,
+          description: `Analyzed ${diamonds.length} diamonds from your real inventory.`,
         });
       } else {
         console.log('No diamonds found for user');
@@ -182,7 +180,6 @@ export function useInsightsData() {
         setDemandInsights([]);
         setPersonalInsights(null);
         setGroupInsights(null);
-        setDiamonds([]);
       }
     } catch (error) {
       console.error("Failed to fetch insights", error);
@@ -196,7 +193,6 @@ export function useInsightsData() {
       setDemandInsights([]);
       setPersonalInsights(null);
       setGroupInsights(null);
-      setDiamonds([]);
     } finally {
       setLoading(false);
     }
@@ -229,7 +225,6 @@ export function useInsightsData() {
       setDemandInsights([]);
       setPersonalInsights(null);
       setGroupInsights(null);
-      setDiamonds([]);
     }
   }, [isAuthenticated, user]);
 
@@ -241,7 +236,6 @@ export function useInsightsData() {
     groupInsights,
     personalInsights,
     fetchRealInsights,
-    isAuthenticated,
-    diamonds
+    isAuthenticated
   };
 }
