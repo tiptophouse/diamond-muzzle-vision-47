@@ -59,14 +59,16 @@ serve(async (req) => {
 
     const finalMessage = message || defaultMessage;
 
-    // Create dynamic inline keyboard based on options
+    // Create dynamic inline keyboard with intelligent routing
     let inlineKeyboard = [];
 
     if (useMultipleButtons) {
-      // Main CTA button (always included)
+      // Main CTA button - routes to dashboard
       inlineKeyboard.push([{
-        text: '🚀 התחל עם BrilliantBot',
-        url: `https://t.me/${botUsername}?start=group_activation`
+        text: '🏠 התחל במחוון הראשי',
+        web_app: {
+          url: `https://diamondbot-store.vercel.app/?utm_source=group_cta&utm_campaign=main_dashboard&start=group_activation`
+        }
       }]);
 
       // Secondary action buttons row
@@ -74,15 +76,19 @@ serve(async (req) => {
       
       if (includePremiumButton) {
         secondRow.push({
-          text: '💎 גלה תכונות פרמיום',
-          url: `https://t.me/${botUsername}?start=premium_features`
+          text: '💎 תכונות פרמיום',
+          web_app: {
+            url: `https://diamondbot-store.vercel.app/dashboard?utm_source=group_cta&utm_campaign=premium_features&start=premium_features&focus=premium`
+          }
         });
       }
 
       if (includeInventoryButton) {
         secondRow.push({
-          text: '📦 נהל מלאי חכם',
-          url: `https://t.me/${botUsername}?start=inventory_demo`
+          text: '📦 ניהול מלאי',
+          web_app: {
+            url: `https://diamondbot-store.vercel.app/inventory?utm_source=group_cta&utm_campaign=inventory_demo&start=inventory_demo`
+          }
         });
       }
 
@@ -91,31 +97,43 @@ serve(async (req) => {
         inlineKeyboard.push(secondRow);
       }
 
-      // Third row for chat button (if enabled)
+      // Third row for AI chat button
       if (includeChatButton) {
         inlineKeyboard.push([{
-          text: '💬 צ\'אט AI מתקדם',
-          url: `https://t.me/${botUsername}?start=ai_chat_demo`
+          text: '🤖 צ\'אט AI יועץ יהלומים',
+          web_app: {
+            url: `https://diamondbot-store.vercel.app/chat?utm_source=group_cta&utm_campaign=ai_chat_demo&start=ai_chat_demo&welcome=true`
+          }
         }]);
       }
 
-      // Add share button to encourage viral growth
+      // Store button - direct to marketplace
       inlineKeyboard.push([{
-        text: '📢 שתף עם חברים',
+        text: '🏪 חנות יהלומים מקוונת',
+        web_app: {
+          url: `https://diamondbot-store.vercel.app/store?utm_source=group_cta&utm_campaign=store_visit&start=store_demo&view=featured`
+        }
+      }]);
+
+      // Share button to encourage viral growth
+      inlineKeyboard.push([{
+        text: '📢 שתף עם חברים סוחרים',
         switch_inline_query: `💎 המלצה על BrilliantBot - הבוט החכם ביותר לסוחרי יהלומים! https://t.me/${botUsername}`
       }]);
 
     } else {
-      // Single button fallback
+      // Single button fallback - routes to dashboard
       inlineKeyboard = [[
         {
           text: '🚀 התחל עם BrilliantBot',
-          url: `https://t.me/${botUsername}?start=group_activation`
+          web_app: {
+            url: `https://diamondbot-store.vercel.app/?utm_source=group_cta&utm_campaign=single_button&start=group_activation`
+          }
         }
       ]];
     }
 
-    console.log('📤 Sending enhanced CTA message with', inlineKeyboard.length, 'button rows');
+    console.log('📤 Sending enhanced CTA message with intelligent routing and', inlineKeyboard.length, 'button rows');
     
     const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
@@ -143,13 +161,14 @@ serve(async (req) => {
       );
     }
 
-    console.log('✅ Enhanced Group CTA message sent successfully');
+    console.log('✅ Enhanced Group CTA message with intelligent routing sent successfully');
     return new Response(
       JSON.stringify({ 
         success: true, 
         messageId: result.result.message_id,
         groupId: groupId || -1001009290613,
         buttonsCount: inlineKeyboard.length,
+        intelligentRouting: true,
         features: {
           useMultipleButtons,
           includePremiumButton,

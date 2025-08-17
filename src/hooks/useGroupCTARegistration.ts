@@ -93,7 +93,7 @@ export function useGroupCTARegistration() {
         registration_success: registrationResult.success,
         registration_token: registrationResult.token || null,
         registration_error: registrationResult.error || null,
-        fastapi_response: registrationResult
+        fastapi_response: registrationResult as any // Cast to Json type for Supabase
       };
 
       console.log('📊 רושם נתוני לחיצה:', clickData);
