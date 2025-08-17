@@ -49,37 +49,39 @@ export function GroupCTASender() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2" dir="rtl">
           <MessageSquare className="h-5 w-5" />
-          Enhanced Group Call-to-Action
+          שליחת הודעת קרא לפעולה משופרת לקבוצה
         </CardTitle>
-        <CardDescription>
-          Send an engaging message with multiple inline buttons to maximize user engagement
+        <CardDescription dir="rtl">
+          שלח הודעה מעוררת עניין עם מספר כפתורי פעולה כדי למקסם את מעורבות המשתמשים
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="groupId">Group ID</Label>
+          <Label htmlFor="groupId" dir="rtl">מזהה קבוצה</Label>
           <Input
             id="groupId"
             value={formData.groupId}
             onChange={(e) => setFormData(prev => ({ ...prev, groupId: e.target.value }))}
-            placeholder="Enter group ID (e.g., -1001009290613)"
+            placeholder="הכנס מזהה קבוצה (לדוגמה: -1001009290613)"
+            dir="ltr"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="botUsername">Bot Username</Label>
+          <Label htmlFor="botUsername" dir="rtl">שם משתמש של הבוט</Label>
           <Input
             id="botUsername"
             value={formData.botUsername}
             onChange={(e) => setFormData(prev => ({ ...prev, botUsername: e.target.value.replace('@','') }))}
-            placeholder="e.g., diamondmazalbot (without @)"
+            placeholder="לדוגמה: diamondmazalbot (ללא @)"
+            dir="ltr"
           />
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 space-x-reverse" dir="rtl">
             <Switch
               id="multipleButtons"
               checked={formData.useMultipleButtons}
@@ -87,13 +89,13 @@ export function GroupCTASender() {
             />
             <Label htmlFor="multipleButtons" className="flex items-center gap-2">
               <Sparkles className="h-4 w-4" />
-              Use Multiple Action Buttons
+              השתמש במספר כפתורי פעולה
             </Label>
           </div>
 
           {formData.useMultipleButtons && (
-            <div className="ml-6 space-y-3 border-l-2 border-primary/20 pl-4">
-              <div className="flex items-center space-x-2">
+            <div className="mr-6 space-y-3 border-r-2 border-primary/20 pr-4" dir="rtl">
+              <div className="flex items-center space-x-2 space-x-reverse">
                 <Switch
                   id="premiumButton"
                   checked={formData.includePremiumButton}
@@ -101,11 +103,11 @@ export function GroupCTASender() {
                 />
                 <Label htmlFor="premiumButton" className="flex items-center gap-2">
                   <Diamond className="h-4 w-4 text-yellow-500" />
-                  Premium Features Button
+                  כפתור תכונות פרמיום
                 </Label>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 space-x-reverse">
                 <Switch
                   id="inventoryButton"
                   checked={formData.includeInventoryButton}
@@ -113,11 +115,11 @@ export function GroupCTASender() {
                 />
                 <Label htmlFor="inventoryButton" className="flex items-center gap-2">
                   <Store className="h-4 w-4 text-blue-500" />
-                  Inventory Management Button
+                  כפתור ניהול מלאי
                 </Label>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 space-x-reverse">
                 <Switch
                   id="chatButton"
                   checked={formData.includeChatButton}
@@ -125,7 +127,7 @@ export function GroupCTASender() {
                 />
                 <Label htmlFor="chatButton" className="flex items-center gap-2">
                   <Zap className="h-4 w-4 text-green-500" />
-                  AI Chat Assistant Button
+                  כפתור עוזר צ'אט AI
                 </Label>
               </div>
             </div>
@@ -133,31 +135,31 @@ export function GroupCTASender() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="message">Enhanced Message</Label>
+          <Label htmlFor="message" dir="rtl">הודעה משופרת</Label>
           <Textarea
             id="message"
             value={formData.message}
             onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
-            placeholder="Enter your call-to-action message"
+            placeholder="הכנס את הודעת הקרא לפעולה שלך"
             rows={8}
             maxLength={2000}
             dir="rtl"
             className="text-right"
           />
-          <p className="text-xs text-gray-500">{formData.message.length}/2000 characters</p>
+          <p className="text-xs text-gray-500" dir="rtl">{formData.message.length}/2000 תווים</p>
         </div>
 
         <div className="bg-muted p-4 rounded-lg">
-          <h4 className="font-semibold mb-2">Preview:</h4>
-          <div className="text-sm space-y-2">
-            <p><strong>Group ID:</strong> {formData.groupId}</p>
-            <p><strong>Bot:</strong> @{formData.botUsername}</p>
+          <h4 className="font-semibold mb-2" dir="rtl">תצוגה מקדימה:</h4>
+          <div className="text-sm space-y-2" dir="rtl">
+            <p><strong>מזהה קבוצה:</strong> {formData.groupId}</p>
+            <p><strong>בוט:</strong> @{formData.botUsername}</p>
             <div className="bg-background p-3 rounded border">
               <pre className="whitespace-pre-wrap text-right text-sm mb-3">{formData.message}</pre>
               
               {formData.useMultipleButtons && (
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">Inline Buttons:</p>
+                  <p className="text-xs font-medium text-muted-foreground">כפתורים מוטמעים:</p>
                   <div className="grid grid-cols-1 gap-1">
                     <div className="bg-primary text-primary-foreground px-3 py-1 rounded text-xs text-center">
                       🚀 התחל עם BrilliantBot
@@ -193,12 +195,12 @@ export function GroupCTASender() {
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Sending Enhanced CTA...
+                שולח הודעת CTA משופרת...
               </>
             ) : (
               <>
                 <Send className="h-4 w-4 mr-2" />
-                Send Enhanced Group CTA
+                שלח הודעת CTA משופרת לקבוצה
               </>
             )}
           </Button>
