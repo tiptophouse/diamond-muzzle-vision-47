@@ -228,7 +228,6 @@ export default function StorePage() {
           filters={filters}
           onUpdateFilter={updateFilter}
           onClearFilters={clearFilters}
-          diamondCount={filteredDiamonds.length}
         />
       </div>
 

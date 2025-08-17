@@ -1,3 +1,4 @@
+
 import { TelegramLayout } from "@/components/layout/TelegramLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,12 +31,23 @@ export default function InsightsPage() {
     diamonds
   } = useInsightsData();
 
+  // Convert diamonds to the format expected by useEnhancedInsights
+  const formattedDiamonds = diamonds?.map(d => ({
+    ...d,
+    stockNumber: d.stockNumber || d.id || '',
+    carat: d.carat || 0,
+    cut: d.cut || 'Unknown',
+    price: d.price || 0,
+    status: d.status || 'Available',
+    store_visible: d.store_visible ?? true
+  })) || [];
+
   const {
     isLoading: enhancedLoading,
     insights: enhancedData,
     refetch: refetchEnhanced,
     error: enhancedError
-  } = useEnhancedInsights(diamonds);
+  } = useEnhancedInsights(formattedDiamonds);
   
   if (!basicAuth) {
     return (
