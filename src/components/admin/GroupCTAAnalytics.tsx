@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { RefreshCw, Users, MousePointer, Calendar, TrendingUp, UserCheck, UserX,
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { toast } from '@/components/ui/use-toast';
+import { getButtonClicked, isFastAPIResponse } from '@/types/groupCTA';
 
 interface CTAAnalytics {
   totalClicks: number;
@@ -57,8 +57,8 @@ export function GroupCTAAnalytics() {
         const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
         clicksByDay[key] = (clicksByDay[key] || 0) + 1;
         
-        // Track button clicks by type
-        const buttonType = click.fastapi_response?.button_clicked || 'לא ידוע';
+        // Track button clicks by type - safely handle Json type
+        const buttonType = getButtonClicked(click.fastapi_response);
         buttonClicksByType[buttonType] = (buttonClicksByType[buttonType] || 0) + 1;
         
         if (click.registration_attempted) {
@@ -318,9 +318,9 @@ export function GroupCTAAnalytics() {
                         {click.registration_success ? "נרשם ✓" : "רישום נכשל ✗"}
                       </Badge>
                     )}
-                    {click.fastapi_response?.button_clicked && (
+                    {click.fastapi_response && (
                       <Badge variant="outline" className="text-xs">
-                        {getButtonDisplayName(click.fastapi_response.button_clicked)}
+                        {getButtonDisplayName(getButtonClicked(click.fastapi_response))}
                       </Badge>
                     )}
                   </div>

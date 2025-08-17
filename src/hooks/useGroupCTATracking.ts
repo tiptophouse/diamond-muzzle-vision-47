@@ -6,6 +6,7 @@ import { useTelegramWebApp } from './useTelegramWebApp';
 import { toast } from '@/components/ui/use-toast';
 import { API_BASE_URL } from '@/lib/api/config';
 import { getBackendAccessToken } from '@/lib/api/secureConfig';
+import { getButtonClicked, isFastAPIResponse } from '@/types/groupCTA';
 
 export function useGroupCTATracking() {
   const { user } = useTelegramAuth();
@@ -166,9 +167,9 @@ export function useGroupCTATracking() {
       
       const conversionRate = totalClicks > 0 ? (successfulRegistrations / totalClicks) * 100 : 0;
 
-      // Track button clicks by type
+      // Track button clicks by type - safely handle Json type
       const buttonClicksByType = data?.reduce((acc: any, click) => {
-        const buttonType = click.fastapi_response?.button_clicked || 'unknown';
+        const buttonType = getButtonClicked(click.fastapi_response);
         acc[buttonType] = (acc[buttonType] || 0) + 1;
         return acc;
       }, {});
