@@ -3,14 +3,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Diamond Muzzle Vision</title>
     <meta name="description" content="Diamond inventory management for Telegram" />
     <meta name="author" content="Diamond Muzzle" />
     
-    <!-- Telegram Mini App Configuration -->
+    <!-- Enhanced Telegram Mini App Configuration -->
     <meta name="telegram-web-app" content="true" />
     <meta name="theme-color" content="#1f2937" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="format-detection" content="telephone=no" />
     
     <!-- Open Graph -->
     <meta property="og:title" content="Diamond Muzzle Vision" />
@@ -22,64 +25,132 @@
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
     
-    <!-- Telegram Web App Script - MUST be loaded first and synchronously -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Latest Telegram Web App Script -->
+    <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
     
-    <!-- Initialize Telegram WebApp immediately -->
+    <!-- Enhanced iPhone-optimized initialization -->
     <script>
-      // Wait for script to fully load
       let initAttempts = 0;
-      const maxInitAttempts = 10;
+      const maxInitAttempts = 15;
       
-      function initializeTelegramWebApp() {
+      function initializeEnhancedWebApp() {
         initAttempts++;
         
         if (window.Telegram && window.Telegram.WebApp) {
-          console.log('✅ Telegram WebApp script loaded successfully');
+          console.log('✅ Latest Telegram WebApp SDK loaded successfully');
           console.log('📱 WebApp version:', window.Telegram.WebApp.version);
-          console.log('🔍 InitData available:', !!window.Telegram.WebApp.initData);
-          console.log('🔍 InitData length:', window.Telegram.WebApp.initData?.length || 0);
-          console.log('🔍 InitDataUnsafe available:', !!window.Telegram.WebApp.initDataUnsafe);
-          console.log('🔍 InitDataUnsafe user:', window.Telegram.WebApp.initDataUnsafe?.user);
+          console.log('🔍 Platform:', window.Telegram.WebApp.platform);
+          console.log('🔍 Safe area insets:', window.Telegram.WebApp.safeAreaInset);
+          console.log('🔍 Viewport stable height:', window.Telegram.WebApp.viewportStableHeight);
           
-          // Ready the app
-          try {
-            window.Telegram.WebApp.ready();
-            console.log('✅ Telegram WebApp ready() called');
-          } catch (e) {
-            console.error('❌ Failed to call ready():', e);
-          }
+          const tg = window.Telegram.WebApp;
           
-          // Expand to full height
           try {
-            window.Telegram.WebApp.expand();
-            console.log('✅ Telegram WebApp expand() called');
+            // Enhanced initialization with latest features
+            tg.ready();
+            console.log('✅ WebApp ready() called');
+            
+            tg.expand();
+            console.log('✅ WebApp expand() called');
+            
+            // Enable closing confirmation for better UX
+            if (typeof tg.enableClosingConfirmation === 'function') {
+              tg.enableClosingConfirmation();
+              console.log('✅ Closing confirmation enabled');
+            }
+            
+            // Set enhanced theme colors
+            if (typeof tg.setHeaderColor === 'function') {
+              tg.setHeaderColor('#1f2937');
+              console.log('✅ Header color set');
+            }
+            
+            if (typeof tg.setBackgroundColor === 'function') {
+              tg.setBackgroundColor('#f8fafc');
+              console.log('✅ Background color set');
+            }
+            
+            // iPhone-specific optimizations
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            if (isIOS) {
+              console.log('📱 iOS device detected - applying optimizations');
+              
+              // Set CSS variables for safe areas
+              if (tg.safeAreaInset) {
+                document.documentElement.style.setProperty('--tg-safe-area-inset-top', `${tg.safeAreaInset.top || 0}px`);
+                document.documentElement.style.setProperty('--tg-safe-area-inset-bottom', `${tg.safeAreaInset.bottom || 0}px`);
+                document.documentElement.style.setProperty('--tg-safe-area-inset-left', `${tg.safeAreaInset.left || 0}px`);
+                document.documentElement.style.setProperty('--tg-safe-area-inset-right', `${tg.safeAreaInset.right || 0}px`);
+              }
+              
+              // Use stable height for iOS
+              if (tg.viewportStableHeight) {
+                document.documentElement.style.setProperty('--tg-viewport-height', `${tg.viewportStableHeight}px`);
+              }
+              
+              // Prevent iOS zoom on input focus
+              document.addEventListener('gesturestart', function(e) {
+                e.preventDefault();
+              });
+            } else {
+              // Use regular height for other platforms
+              if (tg.viewportHeight) {
+                document.documentElement.style.setProperty('--tg-viewport-height', `${tg.viewportHeight}px`);
+              }
+            }
+            
+            // Listen for viewport changes (enhanced for iPhone)
+            if (typeof tg.onEvent === 'function') {
+              tg.onEvent('viewportChanged', function(data) {
+                console.log('📱 Enhanced viewport changed:', data);
+                
+                if (isIOS && tg.viewportStableHeight) {
+                  document.documentElement.style.setProperty('--tg-viewport-height', `${tg.viewportStableHeight}px`);
+                } else if (tg.viewportHeight) {
+                  document.documentElement.style.setProperty('--tg-viewport-height', `${tg.viewportHeight}px`);
+                }
+              });
+              
+              tg.onEvent('themeChanged', function() {
+                console.log('🎨 Enhanced theme changed');
+                if (tg.themeParams?.bg_color) {
+                  document.body.style.backgroundColor = tg.themeParams.bg_color;
+                }
+              });
+              
+              // Enhanced safe area handling for iPhone
+              if (isIOS && typeof tg.onEvent === 'function') {
+                tg.onEvent('safeAreaChanged', function() {
+                  console.log('📱 Enhanced safe area changed for iPhone');
+                  if (tg.safeAreaInset) {
+                    document.documentElement.style.setProperty('--tg-safe-area-inset-top', `${tg.safeAreaInset.top || 0}px`);
+                    document.documentElement.style.setProperty('--tg-safe-area-inset-bottom', `${tg.safeAreaInset.bottom || 0}px`);
+                  }
+                });
+              }
+            }
+            
           } catch (e) {
-            console.error('❌ Failed to call expand():', e);
-          }
-          
-          // Set header color
-          try {
-            window.Telegram.WebApp.setHeaderColor('#1f2937');
-            console.log('✅ Telegram WebApp header color set');
-          } catch (e) {
-            console.warn('⚠️ Failed to set header color:', e);
+            console.error('❌ Enhanced WebApp initialization error:', e);
           }
           
         } else if (initAttempts < maxInitAttempts) {
-          console.log(`⏳ Telegram WebApp not ready yet, attempt ${initAttempts}/${maxInitAttempts}`);
-          setTimeout(initializeTelegramWebApp, 100);
+          console.log(`⏳ Enhanced WebApp not ready yet, attempt ${initAttempts}/${maxInitAttempts}`);
+          setTimeout(initializeEnhancedWebApp, 100);
         } else {
-          console.warn('⚠️ Telegram WebApp not available after maximum attempts');
+          console.warn('⚠️ Enhanced Telegram WebApp not available after maximum attempts');
         }
       }
       
-      // Start initialization
-      initializeTelegramWebApp();
+      // Start enhanced initialization
+      initializeEnhancedWebApp();
       
-      // Global error handling
+      // Enhanced global error handling
       window.addEventListener('error', function(e) {
         console.error('Global error:', e.error);
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+          window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
+        }
       });
       
       window.addEventListener('unhandledrejection', function(e) {
