@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,6 +31,9 @@ interface FastAPIResponse {
   account: SFTPAccount;
 }
 
+// SFTP server authentication token
+const SFTP_AUTH_TOKEN = 'D1O2hcZ9v9sef5k9Bej3';
+
 export function SFTPSettings() {
   const { user } = useTelegramAuth();
   const { toast } = useToast();
@@ -56,6 +58,7 @@ export function SFTPSettings() {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
+            'Authorization': `Bearer ${SFTP_AUTH_TOKEN}`,
           },
         });
 
@@ -72,13 +75,18 @@ export function SFTPSettings() {
       } catch (error) {
         console.error('❌ Error loading SFTP account:', error);
         setSftpAccount(null);
+        toast({
+          title: "שגיאה בטעינת חשבון SFTP",
+          description: "לא ניתן לטעון את פרטי החשבון",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     loadSFTPAccount();
-  }, [user]);
+  }, [user, toast]);
 
   const generateSFTPCredentials = async () => {
     if (!user?.id) {
@@ -99,6 +107,7 @@ export function SFTPSettings() {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'Authorization': `Bearer ${SFTP_AUTH_TOKEN}`,
         },
         body: JSON.stringify({ telegram_id: user.id }),
       });
@@ -154,6 +163,7 @@ export function SFTPSettings() {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'Authorization': `Bearer ${SFTP_AUTH_TOKEN}`,
         },
         body: JSON.stringify({ telegram_id: user.id }),
       });
@@ -212,6 +222,7 @@ export function SFTPSettings() {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'Authorization': `Bearer ${SFTP_AUTH_TOKEN}`,
         },
         body: JSON.stringify({ telegram_id: user.id }),
       });
