@@ -1,3 +1,4 @@
+
 import { EnhancedStoreGrid } from "@/components/store/EnhancedStoreGrid";
 import { EnhancedStoreHeader } from "@/components/store/EnhancedStoreHeader";
 import { TelegramStoreFilters } from "@/components/store/TelegramStoreFilters";
@@ -8,7 +9,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Share2, BarChart3, Users, Eye, Clock } from "lucide-react";
+import { Share2, BarChart3, Users, Eye, Clock, ArrowLeft, Home } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useDiamondSharing } from "@/hooks/useDiamondSharing";
 import { toast } from "sonner";
@@ -58,12 +59,6 @@ export default function StorePage() {
     ? shareAnalytics.reduce((sum, analytics) => sum + analytics.metrics.avgViewDuration, 0) / shareAnalytics.length 
     : 0;
 
-  const hasActiveFilters = Object.values(filters).some(value => {
-    if (Array.isArray(value)) return value.length > 0;
-    if (typeof value === 'object' && value !== null) return Object.values(value).some(v => v !== null && v !== '');
-    return value !== null && value !== '';
-  });
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -82,7 +77,7 @@ export default function StorePage() {
   if (error) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="max-w-md mx-auto">
+        <Card className="max-w-md mx-auto shadow-lg">
           <CardContent className="pt-6 text-center">
             <div className="text-destructive mb-4">⚠️ Error Loading Store</div>
             <p className="text-muted-foreground">{error}</p>
@@ -92,11 +87,39 @@ export default function StorePage() {
     );
   }
 
+  const handleApplyFilters = () => {
+    // Filters are applied automatically through the useStoreFilters hook
+    toast.success('Filters applied successfully');
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Enhanced Header with Store Sharing */}
-      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b">
+      {/* Enhanced Header with Navigation and Store Sharing */}
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b shadow-sm">
         <div className="container mx-auto px-4 py-4">
+          {/* Navigation Bar */}
+          <div className="flex items-center gap-4 mb-4">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => window.history.back()}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+            <div className="h-4 border-l border-border mx-2" />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => window.location.href = '/'}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Home className="h-4 w-4 mr-2" />
+              Home
+            </Button>
+          </div>
+
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-2xl font-bold">Diamond Store</h1>
@@ -108,7 +131,7 @@ export default function StorePage() {
             <div className="flex items-center gap-2">
               <Dialog open={showStoreAnalytics} onOpenChange={setShowStoreAnalytics}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="shadow-sm">
                     <BarChart3 className="h-4 w-4 mr-2" />
                     Analytics
                   </Button>
@@ -124,7 +147,7 @@ export default function StorePage() {
                   <div className="space-y-6">
                     {/* Overall Metrics */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <Card>
+                      <Card className="shadow-sm">
                         <CardContent className="pt-4 text-center">
                           <Eye className="h-6 w-6 mx-auto mb-2 text-blue-500" />
                           <div className="text-2xl font-bold">{totalViews}</div>
@@ -132,7 +155,7 @@ export default function StorePage() {
                         </CardContent>
                       </Card>
                       
-                      <Card>
+                      <Card className="shadow-sm">
                         <CardContent className="pt-4 text-center">
                           <Share2 className="h-6 w-6 mx-auto mb-2 text-green-500" />
                           <div className="text-2xl font-bold">{shareAnalytics.length}</div>
@@ -140,7 +163,7 @@ export default function StorePage() {
                         </CardContent>
                       </Card>
                       
-                      <Card>
+                      <Card className="shadow-sm">
                         <CardContent className="pt-4 text-center">
                           <Clock className="h-6 w-6 mx-auto mb-2 text-orange-500" />
                           <div className="text-2xl font-bold">{Math.round(avgViewDuration)}s</div>
@@ -148,7 +171,7 @@ export default function StorePage() {
                         </CardContent>
                       </Card>
                       
-                      <Card>
+                      <Card className="shadow-sm">
                         <CardContent className="pt-4 text-center">
                           <Users className="h-6 w-6 mx-auto mb-2 text-purple-500" />
                           <div className="text-2xl font-bold">{totalReshares}</div>
@@ -159,7 +182,7 @@ export default function StorePage() {
 
                     {/* Top Performing Diamonds */}
                     {shareAnalytics.length > 0 && (
-                      <Card>
+                      <Card className="shadow-sm">
                         <CardHeader>
                           <CardTitle className="text-lg">Top Performing Diamonds</CardTitle>
                         </CardHeader>
@@ -193,7 +216,7 @@ export default function StorePage() {
               <Button 
                 onClick={handleShareEntireStore}
                 disabled={sharingLoading}
-                className="bg-primary hover:bg-primary/90"
+                className="bg-primary hover:bg-primary/90 shadow-sm"
                 size="sm"
               >
                 <Share2 className="h-4 w-4 mr-2" />
@@ -228,6 +251,8 @@ export default function StorePage() {
           filters={filters}
           onUpdateFilter={updateFilter}
           onClearFilters={clearFilters}
+          onApplyFilters={handleApplyFilters}
+          diamonds={diamonds || []}
         />
       </div>
 
