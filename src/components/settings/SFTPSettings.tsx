@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useToast } from '@/components/ui/use-toast';
-import { api, apiEndpoints } from '@/lib/api';
 import { Server, Key, Copy, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface SFTPAccount {
@@ -26,6 +25,11 @@ interface SFTPCredentials {
   username: string;
   password: string;
   folder_path: string;
+}
+
+interface FastAPIResponse {
+  credentials: SFTPCredentials;
+  account: SFTPAccount;
 }
 
 export function SFTPSettings() {
@@ -48,14 +52,22 @@ export function SFTPSettings() {
       try {
         console.log('🔍 Loading SFTP account for user:', user.id);
         
-        const response = await api.get<SFTPAccount>(apiEndpoints.sftpStatus(user.id));
-        
-        if (response.data && !response.error) {
-          console.log('✅ Found existing SFTP account');
-          setSftpAccount(response.data);
-        } else {
+        const response = await fetch(`/api/v1/sftp/status/${user.id}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ Found existing SFTP account:', data);
+          setSftpAccount(data);
+        } else if (response.status === 404) {
           console.log('ℹ️ No existing SFTP account found');
           setSftpAccount(null);
+        } else {
+          throw new Error(`HTTP ${response.status}`);
         }
       } catch (error) {
         console.error('❌ Error loading SFTP account:', error);
@@ -69,41 +81,58 @@ export function SFTPSettings() {
   }, [user]);
 
   const generateSFTPCredentials = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      toast({
+        title: "שגיאה",
+        description: "לא ניתן לזהות את המשתמש",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsGenerating(true);
     try {
       console.log('📤 Requesting SFTP provision for user:', user.id);
       
-      const response = await api.post<{ credentials: SFTPCredentials; account: SFTPAccount }>(
-        apiEndpoints.sftpProvision(),
-        { telegram_id: user.id }
-      );
+      const response = await fetch('/api/v1/sftp/provision', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ telegram_id: user.id }),
+      });
 
-      if (response.data && !response.error) {
-        console.log('✅ SFTP account created successfully');
-        
-        setSftpAccount(response.data.account);
-        setCredentials(response.data.credentials);
-        setShowPassword(true);
-
-        toast({
-          title: "SFTP חשבון נוצר בהצלחה",
-          description: "פרטי הגישה שלך מוכנים לשימוש",
-        });
-
-        // Start connection testing after showing credentials
-        setTimeout(() => {
-          testConnection();
-        }, 2000);
-      } else {
-        throw new Error(response.error || 'Failed to create SFTP account');
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
+
+      const data: FastAPIResponse = await response.json();
+      console.log('✅ SFTP account created successfully:', data);
+      
+      // Update state with new account and credentials
+      setSftpAccount(data.account);
+      setCredentials(data.credentials);
+      setShowPassword(true);
+
+      toast({
+        title: "SFTP חשבון נוצר בהצלחה",
+        description: "פרטי הגישה שלך מוכנים לשימוש",
+      });
+
+      // Start connection testing after showing credentials
+      setTimeout(() => {
+        testConnection();
+      }, 2000);
+      
     } catch (error) {
       console.error('❌ Error generating SFTP credentials:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
       toast({
         title: "שגיאה ביצירת חשבון SFTP",
-        description: "אנא נסה שוב מאוחר יותר",
+        description: `לא ניתן ליצור חשבון: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {
@@ -120,25 +149,36 @@ export function SFTPSettings() {
     try {
       console.log('🔄 Testing SFTP connection for user:', user.id);
       
-      const response = await api.post<{ status: string; message?: string }>(
-        apiEndpoints.sftpTestConnection(),
-        { telegram_id: user.id }
-      );
+      const response = await fetch('/api/v1/sftp/test-connection', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ telegram_id: user.id }),
+      });
 
-      if (response.data && !response.error) {
-        if (response.data.status === 'success') {
-          console.log('✅ SFTP connection test successful');
-          setConnectionStatus('success');
-          toast({
-            title: "חיבור SFTP מוצלח",
-            description: "החשבון שלך פעיל ומוכן לשימוש",
-          });
-        } else {
-          console.log('❌ SFTP connection test failed');
-          setConnectionStatus('failed');
-        }
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.status === 'success') {
+        console.log('✅ SFTP connection test successful');
+        setConnectionStatus('success');
+        toast({
+          title: "חיבור SFTP מוצלח",
+          description: "החשבון שלך פעיל ומוכן לשימוש",
+        });
       } else {
-        throw new Error(response.error || 'Connection test failed');
+        console.log('❌ SFTP connection test failed:', data);
+        setConnectionStatus('failed');
+        toast({
+          title: "בדיקת חיבור נכשלה",
+          description: data.message || "לא ניתן להתחבר לשרת SFTP",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('❌ Error testing SFTP connection:', error);
@@ -167,23 +207,30 @@ export function SFTPSettings() {
     try {
       console.log('🗑️ Deactivating SFTP account for user:', user.id);
       
-      const response = await api.post(apiEndpoints.sftpDeactivate(), { telegram_id: user.id });
+      const response = await fetch('/api/v1/sftp/deactivate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ telegram_id: user.id }),
+      });
 
-      if (!response.error) {
-        console.log('✅ SFTP account deactivated successfully');
-        
-        setSftpAccount(null);
-        setCredentials(null);
-        setShowPassword(false);
-        setConnectionStatus(null);
-
-        toast({
-          title: "חשבון SFTP הושבת",
-          description: "החשבון הושבת בהצלחה",
-        });
-      } else {
-        throw new Error(response.error);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
       }
+
+      console.log('✅ SFTP account deactivated successfully');
+      
+      setSftpAccount(null);
+      setCredentials(null);
+      setShowPassword(false);
+      setConnectionStatus(null);
+
+      toast({
+        title: "חשבון SFTP הושבת",
+        description: "החשבון הושבת בהצלחה",
+      });
     } catch (error) {
       console.error('❌ Error deactivating SFTP account:', error);
       toast({
@@ -279,14 +326,14 @@ export function SFTPSettings() {
                 <Label>שרת SFTP</Label>
                 <div className="flex gap-2">
                   <Input
-                    value={credentials?.host || "sftp.brilliantbot.app"}
+                    value={credentials?.host || "טוען..."}
                     readOnly
                     className="bg-muted"
                   />
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => copyToClipboard(credentials?.host || "sftp.brilliantbot.app", 'כתובת השרת')}
+                    onClick={() => copyToClipboard(credentials?.host || "", 'כתובת השרת')}
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
@@ -297,14 +344,14 @@ export function SFTPSettings() {
                 <Label>שם משתמש</Label>
                 <div className="flex gap-2">
                   <Input
-                    value={credentials?.username || sftpAccount.ftp_username}
+                    value={credentials?.username || sftpAccount.ftp_username || "טוען..."}
                     readOnly
                     className="bg-muted"
                   />
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => copyToClipboard(credentials?.username || sftpAccount.ftp_username, 'שם המשתמש')}
+                    onClick={() => copyToClipboard(credentials?.username || sftpAccount.ftp_username || "", 'שם המשתמש')}
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
@@ -341,7 +388,7 @@ export function SFTPSettings() {
               <div className="space-y-2">
                 <Label>תיקיית העלאה</Label>
                 <Input
-                  value={credentials?.folder_path || sftpAccount.ftp_folder_path}
+                  value={credentials?.folder_path || sftpAccount.ftp_folder_path || "טוען..."}
                   readOnly
                   className="bg-muted font-mono text-sm"
                 />
@@ -354,7 +401,7 @@ export function SFTPSettings() {
                 <Label>פורט</Label>
                 <div className="flex gap-2">
                   <Input
-                    value={credentials?.port || "22"}
+                    value={credentials?.port?.toString() || "22"}
                     readOnly
                     className="bg-muted"
                   />
