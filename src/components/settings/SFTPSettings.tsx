@@ -69,13 +69,14 @@ export function SFTPSettings() {
       // Generate random password
       const password = generateRandomPassword();
       const username = `user_${user.id}_${Date.now()}`;
+      // Use telegram_id for folder path to ensure consistency
       const folderPath = `/diamonds/${user.id}`;
 
       const { data, error } = await supabase
         .from('ftp_accounts')
         .insert({
           telegram_id: user.id,
-          user_id: user.id,
+          user_id: user.id, // Keep user_id the same as telegram_id for consistency
           ftp_username: username,
           password_hash: password, // In real implementation, this should be hashed
           ftp_folder_path: folderPath,
@@ -292,6 +293,9 @@ export function SFTPSettings() {
                   readOnly
                   className="bg-muted font-mono text-sm"
                 />
+                <p className="text-xs text-muted-foreground">
+                  📁 תיקייה ייחודית לטלגרם ID: {user?.id}
+                </p>
               </div>
 
               <div className="space-y-2">
