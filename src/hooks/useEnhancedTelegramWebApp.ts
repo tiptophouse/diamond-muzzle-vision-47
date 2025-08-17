@@ -130,6 +130,14 @@ export function useEnhancedTelegramWebApp() {
     }
   }, [initializeWebApp]);
 
+  // Helper function to ensure color format is valid for Telegram SDK
+  const formatColor = (color: string): `#${string}` => {
+    if (color.startsWith('#')) {
+      return color as `#${string}`;
+    }
+    return `#${color}` as `#${string}`;
+  };
+
   // Enhanced navigation controls with iPhone fixes and proper color typing
   const navigation = {
     showBackButton: useCallback((onClick?: () => void) => {
@@ -156,8 +164,8 @@ export function useEnhancedTelegramWebApp() {
     showMainButton: useCallback((text: string, onClick?: () => void, color: string = '#007AFF') => {
       try {
         WebApp.MainButton.setText(text);
-        // Ensure color is properly formatted as hex
-        const validColor = color.startsWith('#') ? color : `#${color}`;
+        // Ensure color is properly formatted as hex with type safety
+        const validColor = formatColor(color);
         WebApp.MainButton.color = validColor;
         if (onClick) WebApp.MainButton.onClick(onClick);
         WebApp.MainButton.show();
