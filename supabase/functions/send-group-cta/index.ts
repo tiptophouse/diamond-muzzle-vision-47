@@ -59,7 +59,7 @@ serve(async (req) => {
 
     const finalMessage = message || defaultMessage;
 
-    // Create dynamic inline keyboard with intelligent routing
+    // Create dynamic inline keyboard with only web_app buttons (no mixing with other button types)
     let inlineKeyboard = [];
 
     if (useMultipleButtons) {
@@ -67,7 +67,7 @@ serve(async (req) => {
       inlineKeyboard.push([{
         text: '🏠 התחל במחוון הראשי',
         web_app: {
-          url: `https://diamondbot-store.vercel.app/?utm_source=group_cta&utm_campaign=main_dashboard&start=group_activation`
+          url: `https://diamondbot-store.vercel.app/?utm_source=group_cta&utm_campaign=main_dashboard&start=group_activation&button_clicked=main_dashboard`
         }
       }]);
 
@@ -78,7 +78,7 @@ serve(async (req) => {
         secondRow.push({
           text: '💎 תכונות פרמיום',
           web_app: {
-            url: `https://diamondbot-store.vercel.app/dashboard?utm_source=group_cta&utm_campaign=premium_features&start=premium_features&focus=premium`
+            url: `https://diamondbot-store.vercel.app/dashboard?utm_source=group_cta&utm_campaign=premium_features&start=premium_features&focus=premium&button_clicked=premium_features`
           }
         });
       }
@@ -87,7 +87,7 @@ serve(async (req) => {
         secondRow.push({
           text: '📦 ניהול מלאי',
           web_app: {
-            url: `https://diamondbot-store.vercel.app/inventory?utm_source=group_cta&utm_campaign=inventory_demo&start=inventory_demo`
+            url: `https://diamondbot-store.vercel.app/inventory?utm_source=group_cta&utm_campaign=inventory_demo&start=inventory_demo&button_clicked=inventory_management`
           }
         });
       }
@@ -102,7 +102,7 @@ serve(async (req) => {
         inlineKeyboard.push([{
           text: '🤖 צ\'אט AI יועץ יהלומים',
           web_app: {
-            url: `https://diamondbot-store.vercel.app/chat?utm_source=group_cta&utm_campaign=ai_chat_demo&start=ai_chat_demo&welcome=true`
+            url: `https://diamondbot-store.vercel.app/chat?utm_source=group_cta&utm_campaign=ai_chat_demo&start=ai_chat_demo&welcome=true&button_clicked=ai_chat`
           }
         }]);
       }
@@ -111,14 +111,8 @@ serve(async (req) => {
       inlineKeyboard.push([{
         text: '🏪 חנות יהלומים מקוונת',
         web_app: {
-          url: `https://diamondbot-store.vercel.app/store?utm_source=group_cta&utm_campaign=store_visit&start=store_demo&view=featured`
+          url: `https://diamondbot-store.vercel.app/store?utm_source=group_cta&utm_campaign=store_visit&start=store_demo&view=featured&button_clicked=online_store`
         }
-      }]);
-
-      // Share button to encourage viral growth
-      inlineKeyboard.push([{
-        text: '📢 שתף עם חברים סוחרים',
-        switch_inline_query: `💎 המלצה על BrilliantBot - הבוט החכם ביותר לסוחרי יהלומים! https://t.me/${botUsername}`
       }]);
 
     } else {
@@ -127,7 +121,7 @@ serve(async (req) => {
         {
           text: '🚀 התחל עם BrilliantBot',
           web_app: {
-            url: `https://diamondbot-store.vercel.app/?utm_source=group_cta&utm_campaign=single_button&start=group_activation`
+            url: `https://diamondbot-store.vercel.app/?utm_source=group_cta&utm_campaign=single_button&start=group_activation&button_clicked=single_start`
           }
         }
       ]];

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Users, MousePointer, Calendar, TrendingUp, UserCheck, UserX, Target } from 'lucide-react';
+import { RefreshCw, Users, MousePointer, Calendar, TrendingUp, UserCheck, UserX, Target, BarChart3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { toast } from '@/components/ui/use-toast';
@@ -15,6 +15,7 @@ interface CTAAnalytics {
   failedRegistrations: number;
   conversionRate: number;
   clicksByDay: Record<string, number>;
+  buttonClicksByType: Record<string, number>;
   uniqueUsers: number;
   data: any[];
 }
@@ -47,6 +48,7 @@ export function GroupCTAAnalytics() {
 
       // Process the data with registration metrics
       const clicksByDay: Record<string, number> = {};
+      const buttonClicksByType: Record<string, number> = {};
       let registrationAttempts = 0;
       let successfulRegistrations = 0;
       
@@ -54,6 +56,10 @@ export function GroupCTAAnalytics() {
         const d = new Date(click.clicked_at);
         const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
         clicksByDay[key] = (clicksByDay[key] || 0) + 1;
+        
+        // Track button clicks by type
+        const buttonType = click.fastapi_response?.button_clicked || 'לא ידוע';
+        buttonClicksByType[buttonType] = (buttonClicksByType[buttonType] || 0) + 1;
         
         if (click.registration_attempted) {
           registrationAttempts++;
@@ -76,6 +82,7 @@ export function GroupCTAAnalytics() {
         conversionRate: Math.round(conversionRate * 100) / 100,
         uniqueUsers,
         clicksByDay,
+        buttonClicksByType,
         data: directData || [],
       };
 
@@ -114,6 +121,7 @@ export function GroupCTAAnalytics() {
         failedRegistrations: 0,
         conversionRate: 0,
         clicksByDay: {}, 
+        buttonClicksByType: {},
         uniqueUsers: 0, 
         data: [] 
       });
@@ -129,6 +137,19 @@ export function GroupCTAAnalytics() {
   const handleRefresh = () => {
     console.log('🔄 רענון ידני הופעל');
     fetchAnalytics();
+  };
+
+  const getButtonDisplayName = (buttonType: string) => {
+    const buttonNames: Record<string, string> = {
+      'main_dashboard': '🏠 מחוון ראשי',
+      'premium_features': '💎 תכונות פרמיום',
+      'inventory_management': '📦 ניהול מלאי',
+      'ai_chat': '🤖 צ\'אט AI',
+      'online_store': '🏪 חנות מקוונת',
+      'single_start': '🚀 התחלה יחידה',
+      'לא ידוע': '❓ לא ידוע'
+    };
+    return buttonNames[buttonType] || buttonType;
   };
 
   if (isLoading) {
@@ -211,6 +232,26 @@ export function GroupCTAAnalytics() {
           </div>
         </div>
 
+        {/* Button Analytics */}
+        {analytics && Object.keys(analytics.buttonClicksByType).length > 0 && (
+          <div>
+            <h4 className="font-medium mb-3 flex items-center gap-2" dir="rtl">
+              <BarChart3 className="h-4 w-4" />
+              לחיצות לפי כפתור
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {Object.entries(analytics.buttonClicksByType)
+                .sort(([,a], [,b]) => (b as number) - (a as number))
+                .map(([buttonType, count]) => (
+                  <div key={buttonType} className="flex items-center justify-between py-2 px-3 bg-muted/30 rounded" dir="rtl">
+                    <span className="text-sm">{getButtonDisplayName(buttonType)}</span>
+                    <Badge variant="secondary">{count} לחיצות</Badge>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
         {/* Registration Status Breakdown */}
         {analytics && analytics.registrationAttempts > 0 && (
           <div>
@@ -277,6 +318,11 @@ export function GroupCTAAnalytics() {
                         {click.registration_success ? "נרשם ✓" : "רישום נכשל ✗"}
                       </Badge>
                     )}
+                    {click.fastapi_response?.button_clicked && (
+                      <Badge variant="outline" className="text-xs">
+                        {getButtonDisplayName(click.fastapi_response.button_clicked)}
+                      </Badge>
+                    )}
                   </div>
                   <Badge variant="outline" className="text-xs">
                     {click.start_parameter}
@@ -301,7 +347,7 @@ export function GroupCTAAnalytics() {
               <ul className="text-xs text-yellow-700 mt-2 space-y-1 text-right">
                 <li>• בדוק שמשתמשים באמת לוחצים על כפתור ההתחלה</li>
                 <li>• ודא שלבוט יש הרשאות מתאימות בקבוצה</li>
-                <li>• וודא שהפרמטר start הוא 'group_activation'</li>
+                <li>• וודא שהפרמטר start מועבר נכון ב-URL</li>
                 <li>• בדוק את לוגי הקונסול לשגיאות מעקב</li>
                 <li>• השתמש בכפתור 'בדוק רישום משתמש' לבדיקה</li>
               </ul>

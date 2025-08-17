@@ -46,7 +46,7 @@ export function useGroupCTATracking() {
     }
   };
 
-  const trackCTAClick = async (startParameter: string, sourceGroupId?: number) => {
+  const trackCTAClick = async (startParameter: string, sourceGroupId?: number, buttonClicked?: string) => {
     if (!user?.id) {
       console.warn('⚠️ לא ניתן לעקוב אחר לחיצה - אין מזהה משתמש');
       return false;
@@ -57,7 +57,8 @@ export function useGroupCTATracking() {
       console.log('📊 עוקב אחר לחיצת CTA עם רישום:', { 
         telegram_id: user.id, 
         startParameter, 
-        sourceGroupId 
+        sourceGroupId,
+        buttonClicked 
       });
 
       // Get Telegram initData for registration
@@ -78,7 +79,12 @@ export function useGroupCTATracking() {
         registration_success: registrationResult?.success || false,
         registration_token: registrationResult?.token || null,
         registration_error: registrationResult?.error || null,
-        fastapi_response: registrationResult
+        fastapi_response: {
+          ...registrationResult,
+          button_clicked: buttonClicked,
+          utm_source: 'group_cta',
+          timestamp: new Date().toISOString()
+        }
       };
 
       const { data, error } = await supabase
@@ -160,12 +166,20 @@ export function useGroupCTATracking() {
       
       const conversionRate = totalClicks > 0 ? (successfulRegistrations / totalClicks) * 100 : 0;
 
+      // Track button clicks by type
+      const buttonClicksByType = data?.reduce((acc: any, click) => {
+        const buttonType = click.fastapi_response?.button_clicked || 'unknown';
+        acc[buttonType] = (acc[buttonType] || 0) + 1;
+        return acc;
+      }, {});
+
       return {
         totalClicks,
         registrationAttempts,
         successfulRegistrations,
         failedRegistrations,
         conversionRate: Math.round(conversionRate * 100) / 100,
+        buttonClicksByType,
         clicksByDay: data?.reduce((acc: any, click) => {
           const day = new Date(click.clicked_at).toDateString();
           acc[day] = (acc[day] || 0) + 1;
@@ -180,7 +194,7 @@ export function useGroupCTATracking() {
     }
   };
 
-  // Auto-track if user comes from group_activation
+  // Auto-track if user comes from group_activation with enhanced URL parameter tracking
   useEffect(() => {
     if (!user?.id) {
       console.log('🔍 אין מזהה משתמש זמין למעקב אוטומטי');
@@ -189,12 +203,14 @@ export function useGroupCTATracking() {
 
     const urlParams = new URLSearchParams(window.location.search);
     const startParam = urlParams.get('start');
+    const buttonClicked = urlParams.get('button_clicked');
+    const utmSource = urlParams.get('utm_source');
     
-    console.log('🔍 בודק פרמטרי URL:', { startParam, url: window.location.href });
+    console.log('🔍 בודק פרמטרי URL:', { startParam, buttonClicked, utmSource, url: window.location.href });
     
-    if (startParam === 'group_activation') {
-      console.log('🎯 זוהתה הפעלת קבוצה, עוקב אחר לחיצת CTA...');
-      trackCTAClick('group_activation');
+    if (startParam && utmSource === 'group_cta') {
+      console.log('🎯 זוהתה הפעלת קבוצה, עוקב אחר לחיצת CTA...', { startParam, buttonClicked });
+      trackCTAClick(startParam, undefined, buttonClicked);
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
