@@ -25,28 +25,26 @@
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
     
-    <!-- Latest Telegram Web App Script -->
-    <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
+    <!-- Latest Telegram Web App Script (SDK 8.0) -->
+    <script src="https://telegram.org/js/telegram-web-app.js?60"></script>
     
-    <!-- Enhanced iPhone-optimized initialization -->
+    <!-- Enhanced iPhone-optimized initialization with error handling -->
     <script>
       let initAttempts = 0;
-      const maxInitAttempts = 15;
+      const maxInitAttempts = 20;
       
-      function initializeEnhancedWebApp() {
+      function initializeSecureTelegramWebApp() {
         initAttempts++;
         
         if (window.Telegram && window.Telegram.WebApp) {
-          console.log('✅ Latest Telegram WebApp SDK loaded successfully');
+          console.log('✅ Telegram WebApp SDK 8.0+ loaded successfully');
           console.log('📱 WebApp version:', window.Telegram.WebApp.version);
           console.log('🔍 Platform:', window.Telegram.WebApp.platform);
-          console.log('🔍 Safe area insets:', window.Telegram.WebApp.safeAreaInset);
-          console.log('🔍 Viewport stable height:', window.Telegram.WebApp.viewportStableHeight);
           
           const tg = window.Telegram.WebApp;
           
           try {
-            // Enhanced initialization with latest features
+            // Enhanced initialization sequence
             tg.ready();
             console.log('✅ WebApp ready() called');
             
@@ -59,102 +57,132 @@
               console.log('✅ Closing confirmation enabled');
             }
             
-            // Set enhanced theme colors
+            // Set enhanced theme colors with proper validation
             if (typeof tg.setHeaderColor === 'function') {
               tg.setHeaderColor('#1f2937');
-              console.log('✅ Header color set');
+              console.log('✅ Header color set to #1f2937');
             }
             
             if (typeof tg.setBackgroundColor === 'function') {
               tg.setBackgroundColor('#f8fafc');
-              console.log('✅ Background color set');
+              console.log('✅ Background color set to #f8fafc');
             }
             
-            // iPhone-specific optimizations
+            // Enhanced iPhone-specific optimizations
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
             if (isIOS) {
-              console.log('📱 iOS device detected - applying optimizations');
+              console.log('📱 iPhone/iPad detected - applying enhanced optimizations');
               
-              // Set CSS variables for safe areas
-              if (tg.safeAreaInset) {
-                document.documentElement.style.setProperty('--tg-safe-area-inset-top', `${tg.safeAreaInset.top || 0}px`);
-                document.documentElement.style.setProperty('--tg-safe-area-inset-bottom', `${tg.safeAreaInset.bottom || 0}px`);
-                document.documentElement.style.setProperty('--tg-safe-area-inset-left', `${tg.safeAreaInset.left || 0}px`);
-                document.documentElement.style.setProperty('--tg-safe-area-inset-right', `${tg.safeAreaInset.right || 0}px`);
-              }
+              // Set CSS variables for safe areas with fallbacks
+              const safeAreaTop = tg.safeAreaInset?.top || 0;
+              const safeAreaBottom = tg.safeAreaInset?.bottom || 0;
+              const viewportHeight = tg.viewportStableHeight || tg.viewportHeight || window.innerHeight;
               
-              // Use stable height for iOS
-              if (tg.viewportStableHeight) {
-                document.documentElement.style.setProperty('--tg-viewport-height', `${tg.viewportStableHeight}px`);
-              }
+              document.documentElement.style.setProperty('--tg-safe-area-inset-top', `${safeAreaTop}px`);
+              document.documentElement.style.setProperty('--tg-safe-area-inset-bottom', `${safeAreaBottom}px`);
+              document.documentElement.style.setProperty('--tg-viewport-height', `${viewportHeight}px`);
               
-              // Prevent iOS zoom on input focus
+              console.log('📱 Safe areas set:', { top: safeAreaTop, bottom: safeAreaBottom, height: viewportHeight });
+              
+              // Prevent iOS zoom and handle gestures
               document.addEventListener('gesturestart', function(e) {
                 e.preventDefault();
-              });
+              }, { passive: false });
+              
+              document.addEventListener('touchmove', function(e) {
+                if (e.scale !== 1) {
+                  e.preventDefault();
+                }
+              }, { passive: false });
+              
             } else {
-              // Use regular height for other platforms
-              if (tg.viewportHeight) {
-                document.documentElement.style.setProperty('--tg-viewport-height', `${tg.viewportHeight}px`);
-              }
+              // Standard viewport for non-iOS devices
+              const viewportHeight = tg.viewportHeight || window.innerHeight;
+              document.documentElement.style.setProperty('--tg-viewport-height', `${viewportHeight}px`);
+              console.log('🖥️ Standard viewport set:', viewportHeight);
             }
             
-            // Listen for viewport changes (enhanced for iPhone)
+            // Enhanced event listeners with error handling
             if (typeof tg.onEvent === 'function') {
+              // Viewport change handler
               tg.onEvent('viewportChanged', function(data) {
-                console.log('📱 Enhanced viewport changed:', data);
+                console.log('📱 Viewport changed:', data);
                 
-                if (isIOS && tg.viewportStableHeight) {
-                  document.documentElement.style.setProperty('--tg-viewport-height', `${tg.viewportStableHeight}px`);
-                } else if (tg.viewportHeight) {
-                  document.documentElement.style.setProperty('--tg-viewport-height', `${tg.viewportHeight}px`);
-                }
-              });
-              
-              tg.onEvent('themeChanged', function() {
-                console.log('🎨 Enhanced theme changed');
-                if (tg.themeParams?.bg_color) {
-                  document.body.style.backgroundColor = tg.themeParams.bg_color;
-                }
-              });
-              
-              // Enhanced safe area handling for iPhone
-              if (isIOS && typeof tg.onEvent === 'function') {
-                tg.onEvent('safeAreaChanged', function() {
-                  console.log('📱 Enhanced safe area changed for iPhone');
-                  if (tg.safeAreaInset) {
+                try {
+                  const newHeight = isIOS && tg.viewportStableHeight 
+                    ? tg.viewportStableHeight 
+                    : tg.viewportHeight || window.innerHeight;
+                  
+                  document.documentElement.style.setProperty('--tg-viewport-height', `${newHeight}px`);
+                  
+                  // Update safe areas for iPhone
+                  if (isIOS && tg.safeAreaInset) {
                     document.documentElement.style.setProperty('--tg-safe-area-inset-top', `${tg.safeAreaInset.top || 0}px`);
                     document.documentElement.style.setProperty('--tg-safe-area-inset-bottom', `${tg.safeAreaInset.bottom || 0}px`);
                   }
-                });
-              }
+                } catch (e) {
+                  console.warn('Viewport change handler error:', e);
+                }
+              });
+              
+              // Theme change handler
+              tg.onEvent('themeChanged', function() {
+                console.log('🎨 Theme changed');
+                try {
+                  if (tg.themeParams?.bg_color) {
+                    document.body.style.backgroundColor = tg.themeParams.bg_color;
+                  }
+                } catch (e) {
+                  console.warn('Theme change handler error:', e);
+                }
+              });
             }
+            
+            console.log('✅ Enhanced Telegram WebApp initialization complete');
             
           } catch (e) {
             console.error('❌ Enhanced WebApp initialization error:', e);
+            // Continue anyway - some features may still work
           }
           
         } else if (initAttempts < maxInitAttempts) {
-          console.log(`⏳ Enhanced WebApp not ready yet, attempt ${initAttempts}/${maxInitAttempts}`);
-          setTimeout(initializeEnhancedWebApp, 100);
+          console.log(`⏳ WebApp SDK not ready yet, attempt ${initAttempts}/${maxInitAttempts}`);
+          setTimeout(initializeSecureTelegramWebApp, 150);
         } else {
-          console.warn('⚠️ Enhanced Telegram WebApp not available after maximum attempts');
+          console.warn('⚠️ Telegram WebApp SDK not available after maximum attempts - continuing in fallback mode');
+          // Set fallback viewport
+          document.documentElement.style.setProperty('--tg-viewport-height', '100vh');
         }
       }
       
-      // Start enhanced initialization
-      initializeEnhancedWebApp();
+      // Start secure initialization with retry mechanism
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeSecureTelegramWebApp);
+      } else {
+        initializeSecureTelegramWebApp();
+      }
       
-      // Enhanced global error handling
+      // Enhanced global error handling with haptic feedback
       window.addEventListener('error', function(e) {
         console.error('Global error:', e.error);
         if (window.Telegram?.WebApp?.HapticFeedback) {
-          window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
+          try {
+            window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
+          } catch (hapticError) {
+            console.warn('Haptic feedback error:', hapticError);
+          }
         }
       });
       
       window.addEventListener('unhandledrejection', function(e) {
         console.error('Unhandled promise rejection:', e.reason);
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+          try {
+            window.Telegram.WebApp.HapticFeedback.notificationOccurred('warning');
+          } catch (hapticError) {
+            console.warn('Haptic feedback error:', hapticError);
+          }
+        }
       });
     </script>
   </head>

@@ -130,7 +130,7 @@ export function useEnhancedTelegramWebApp() {
     }
   }, [initializeWebApp]);
 
-  // Enhanced navigation controls with iPhone fixes
+  // Enhanced navigation controls with iPhone fixes and proper color typing
   const navigation = {
     showBackButton: useCallback((onClick?: () => void) => {
       try {
@@ -153,10 +153,12 @@ export function useEnhancedTelegramWebApp() {
       }
     }, []),
 
-    showMainButton: useCallback((text: string, onClick?: () => void, color?: string) => {
+    showMainButton: useCallback((text: string, onClick?: () => void, color: string = '#007AFF') => {
       try {
         WebApp.MainButton.setText(text);
-        if (color) WebApp.MainButton.color = color;
+        // Ensure color is properly formatted as hex
+        const validColor = color.startsWith('#') ? color : `#${color}`;
+        WebApp.MainButton.color = validColor;
         if (onClick) WebApp.MainButton.onClick(onClick);
         WebApp.MainButton.show();
         console.log('📱 Main button shown:', text);

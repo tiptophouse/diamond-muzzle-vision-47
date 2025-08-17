@@ -1,8 +1,9 @@
 
 import React, { useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { Home, Package, Store, MessageCircle, TrendingUp, Settings } from 'lucide-react';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
+import { useSecureNavigation } from '@/hooks/useSecureNavigation';
 import { useEnhancedTelegramWebApp } from '@/hooks/useEnhancedTelegramWebApp';
 import { FloatingFirstUploadCTA } from '@/components/upload/FloatingFirstUploadCTA';
 
@@ -20,76 +21,14 @@ const mainTabs = [
 
 export function EnhancedTelegramLayout({ children }: EnhancedTelegramLayoutProps) {
   const location = useLocation();
-  const navigate = useNavigate();
   const { user } = useTelegramAuth();
-  const { webApp, isInitialized, navigation, haptics } = useEnhancedTelegramWebApp();
-
-  // Configure navigation based on current route with iPhone optimizations
-  useEffect(() => {
-    if (!isInitialized || !webApp) return;
-
-    const configurePage = () => {
-      // Clear any existing navigation first
-      navigation.hideBackButton();
-      navigation.hideMainButton();
-
-      const currentPath = location.pathname;
-      
-      // Configure back button for detail pages
-      if (currentPath.startsWith('/diamond/') || 
-          currentPath === '/upload-single-stone' || 
-          currentPath === '/upload' ||
-          currentPath === '/settings') {
-        
-        navigation.showBackButton(() => {
-          haptics.light();
-          navigate(-1);
-        });
-      }
-
-      // Configure main button for specific pages
-      switch (currentPath) {
-        case '/inventory':
-          navigation.showMainButton('Add Diamond', () => {
-            haptics.medium();
-            navigate('/upload-single-stone');
-          }, '#059669');
-          break;
-          
-        case '/upload-single-stone':
-        case '/upload':
-          navigation.showMainButton('Save Diamond', undefined, '#3b82f6');
-          break;
-      }
-
-      // Update header color based on page with iPhone safe area consideration
-      const headerColors: Record<string, string> = {
-        '/dashboard': '#1f2937',
-        '/inventory': '#059669', 
-        '/store': '#7c3aed',
-        '/chat': '#0ea5e9',
-        '/insights': '#dc2626',
-        '/settings': '#6b7280'
-      };
-
-      const headerColor = headerColors[currentPath] || '#1f2937';
-      
-      // Apply theme with enhanced iPhone support
-      if (webApp.platform === 'ios' || /iPad|iPhone|iPod/.test(navigator.userAgent)) {
-        // iOS-specific styling
-        document.documentElement.style.setProperty('--ios-header-height', '44px');
-        document.documentElement.style.setProperty('--ios-safe-area-top', `${webApp.safeAreaInset.top}px`);
-        document.documentElement.style.setProperty('--ios-safe-area-bottom', `${webApp.safeAreaInset.bottom}px`);
-      }
-    };
-
-    configurePage();
-  }, [location.pathname, isInitialized, webApp, navigation, haptics, navigate]);
+  const { webApp, isInitialized } = useEnhancedTelegramWebApp();
+  const { haptics } = useSecureNavigation();
 
   // Handle tab navigation with enhanced haptics
   const handleTabClick = (path: string) => {
     haptics.selection();
-    navigate(path);
+    window.location.href = path;
   };
 
   const isActiveTab = (path: string) => {
@@ -104,6 +43,18 @@ export function EnhancedTelegramLayout({ children }: EnhancedTelegramLayoutProps
     height: `${webApp.viewportStableHeight}px`,
     paddingTop: `${webApp.safeAreaInset.top}px`
   } : { height: '100vh' };
+
+  // iPhone-specific CSS variables
+  useEffect(() => {
+    if (webApp && isInitialized) {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      if (isIOS) {
+        document.documentElement.style.setProperty('--ios-safe-area-top', `${webApp.safeAreaInset.top}px`);
+        document.documentElement.style.setProperty('--ios-safe-area-bottom', `${webApp.safeAreaInset.bottom}px`);
+        document.documentElement.style.setProperty('--ios-viewport-height', `${webApp.viewportStableHeight}px`);
+      }
+    }
+  }, [webApp, isInitialized]);
 
   return (
     <div 
@@ -178,7 +129,7 @@ export function EnhancedTelegramLayout({ children }: EnhancedTelegramLayoutProps
       <button
         onClick={() => {
           haptics.light();
-          navigate('/settings');
+          window.location.href = '/settings';
         }}
         className="fixed right-4 z-40 bg-card/90 backdrop-blur-sm border border-border/50 rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95"
         style={{ 
