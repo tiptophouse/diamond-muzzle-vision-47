@@ -2,7 +2,6 @@
 import { ReactNode } from 'react';
 import { useStrictTelegramAuth } from '@/hooks/useStrictTelegramAuth';
 import { Shield, Smartphone, AlertTriangle, RefreshCw } from 'lucide-react';
-import { SimpleLogin } from './SimpleLogin';
 
 interface StrictTelegramGuardProps {
   children: ReactNode;
@@ -14,19 +13,14 @@ export function StrictTelegramGuard({ children }: StrictTelegramGuardProps) {
     isLoading,
     error,
     isTelegramEnvironment,
-    isAuthenticated,
-    showLogin,
-    handleLoginSuccess
+    isAuthenticated
   } = useStrictTelegramAuth();
 
   console.log('🔒 StrictTelegramGuard state:', {
     isTelegramEnvironment,
     isAuthenticated,
-    showLogin,
     userId: user?.id
   });
-
-  const ADMIN_TELEGRAM_ID = 2138564172;
 
   // Loading state
   if (isLoading) {
@@ -44,15 +38,8 @@ export function StrictTelegramGuard({ children }: StrictTelegramGuardProps) {
     );
   }
 
-  // STRICT ENFORCEMENT: Only allow Telegram environment OR admin with OTP
+  // STRICT ENFORCEMENT: ONLY allow Telegram environment - NO EXCEPTIONS
   if (!isTelegramEnvironment) {
-    // Check if this is the admin user trying to access
-    if (user?.id === ADMIN_TELEGRAM_ID || showLogin) {
-      console.log('🔐 Non-Telegram environment detected - showing admin OTP login');
-      return <SimpleLogin onLogin={handleLoginSuccess} />;
-    }
-
-    // Block all other users completely
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center px-4">
         <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md w-full border-2 border-red-200">
@@ -87,6 +74,7 @@ export function StrictTelegramGuard({ children }: StrictTelegramGuardProps) {
             <div>Environment: Web Browser</div>
             <div>Status: Unauthorized</div>
             <div>Telegram Required: Yes</div>
+            <div>No Exceptions Allowed</div>
           </div>
           
           <button

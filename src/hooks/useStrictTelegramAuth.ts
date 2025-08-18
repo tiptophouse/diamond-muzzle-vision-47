@@ -55,8 +55,6 @@ interface UseStrictTelegramAuthReturn {
   error: string | null;
   isTelegramEnvironment: boolean;
   accessDeniedReason: string | null;
-  showLogin: boolean;
-  handleLoginSuccess: () => void;
 }
 
 // Enhanced Telegram environment detection
@@ -80,27 +78,11 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
   const [error, setError] = useState<string | null>(null);
   const [isTelegramEnvironment, setIsTelegramEnvironment] = useState(false);
   const [accessDeniedReason, setAccessDeniedReason] = useState<string | null>(null);
-  const [showLogin, setShowLogin] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  const createAdminFallbackUser = useCallback((): TelegramUser => {
-    return {
-      id: 2138564172,
-      first_name: "Admin",
-      last_name: "User",
-      username: "admin",
-      language_code: "en"
-    };
-  }, []);
 
   const validateTelegramData = useCallback((initData: string): TelegramJWTPayload | null => {
     try {
       console.log('🔍 Validating Telegram data...');
       
-      // Get bot token from backend (not exposed to frontend)
-      // This should be handled by your FastAPI backend
-      console.log('🔐 Telegram validation should be handled by backend');
-
       // Parse JWT payload from the token (we need to extract the payload)
       try {
         const urlParams = new URLSearchParams(initData);
@@ -146,16 +128,6 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
     }
   }, []);
 
-  const handleLoginSuccess = useCallback(() => {
-    console.log('🔐 Login successful, setting admin user');
-    setIsLoggedIn(true);
-    setShowLogin(false);
-    setUser(createAdminFallbackUser());
-    setError(null);
-    setAccessDeniedReason(null);
-    setIsLoading(false);
-  }, [createAdminFallbackUser]);
-
   useEffect(() => {
     const initializeAuth = async () => {
       try {
@@ -172,44 +144,48 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
         setIsTelegramEnvironment(inTelegram);
         console.log('📱 Telegram environment:', inTelegram);
 
-        if (inTelegram) {
-          const tg = (window as any).Telegram.WebApp as TelegramWebApp;
-          
-          // Initialize Telegram WebApp
-          try {
-            if (typeof tg.ready === 'function') tg.ready();
-            if (typeof tg.expand === 'function') tg.expand();
-          } catch (setupError) {
-            console.warn('⚠️ Telegram WebApp setup failed:', setupError);
-          }
-
-          if (tg.initData && tg.initData.length > 0) {
-            const validatedPayload = validateTelegramData(tg.initData);
-            
-            if (validatedPayload && validatedPayload.user) {
-              console.log('✅ Authenticated Telegram user:', validatedPayload.user.first_name);
-              setUser(validatedPayload.user);
-              setError(null);
-              setAccessDeniedReason(null);
-              setIsLoading(false);
-              return;
-            }
-          }
-
-          // If we're in Telegram but validation failed
-          console.log('❌ Telegram validation failed, showing login');
-          setAccessDeniedReason('Telegram validation failed');
+        // STRICT: If not in Telegram, immediately deny access
+        if (!inTelegram) {
+          console.log('❌ Not in Telegram environment - access denied');
+          setAccessDeniedReason('not_telegram');
+          setError('Access denied: Telegram environment required');
+          setIsLoading(false);
+          return;
         }
 
-        // For non-Telegram environments or failed validation, show login
-        console.log('🔐 Showing login page for authentication');
-        setShowLogin(true);
+        const tg = (window as any).Telegram.WebApp as TelegramWebApp;
+        
+        // Initialize Telegram WebApp
+        try {
+          if (typeof tg.ready === 'function') tg.ready();
+          if (typeof tg.expand === 'function') tg.expand();
+        } catch (setupError) {
+          console.warn('⚠️ Telegram WebApp setup failed:', setupError);
+        }
+
+        if (tg.initData && tg.initData.length > 0) {
+          const validatedPayload = validateTelegramData(tg.initData);
+          
+          if (validatedPayload && validatedPayload.user) {
+            console.log('✅ Authenticated Telegram user:', validatedPayload.user.first_name);
+            setUser(validatedPayload.user);
+            setError(null);
+            setAccessDeniedReason(null);
+            setIsLoading(false);
+            return;
+          }
+        }
+
+        // If we're in Telegram but validation failed
+        console.log('❌ Telegram validation failed');
+        setAccessDeniedReason('invalid_telegram_data');
+        setError('Telegram validation failed');
         setIsLoading(false);
 
       } catch (error) {
         console.error('❌ Authentication initialization error:', error);
         setError('Authentication failed');
-        setShowLogin(true);
+        setAccessDeniedReason('authentication_failed');
         setIsLoading(false);
       }
     };
@@ -224,7 +200,5 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
     error,
     isTelegramEnvironment,
     accessDeniedReason,
-    showLogin: showLogin && !isLoggedIn,
-    handleLoginSuccess,
   };
 }
