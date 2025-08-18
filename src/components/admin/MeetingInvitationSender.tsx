@@ -14,7 +14,6 @@ interface UserWithoutDiamonds {
   last_name?: string;
   username?: string;
   created_at: string;
-  last_active?: string;
 }
 
 export function MeetingInvitationSender() {
@@ -67,7 +66,7 @@ export function MeetingInvitationSender() {
       // Get all users from the predefined list
       const { data: allUsers, error: usersError } = await supabase
         .from('user_profiles')
-        .select('telegram_id, first_name, last_name, username, created_at, last_active')
+        .select('telegram_id, first_name, last_name, username, created_at')
         .in('telegram_id', predefinedTelegramIds);
 
       if (usersError) throw usersError;
@@ -279,12 +278,10 @@ export function MeetingInvitationSender() {
                   </span>
                   <div className="text-xs text-muted-foreground">
                     ID: {user.telegram_id}
-                    {user.last_active && (
-                      <span className="ml-2 flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        פעיל לאחרונה: {new Date(user.last_active).toLocaleDateString('he-IL')}
-                      </span>
-                    )}
+                    <span className="ml-2 flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      הצטרף: {new Date(user.created_at).toLocaleDateString('he-IL')}
+                    </span>
                   </div>
                 </div>
                 <Badge variant="secondary" className="text-xs">
