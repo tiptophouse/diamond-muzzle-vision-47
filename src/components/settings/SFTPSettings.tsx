@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Server, Key, Copy, RefreshCw, AlertCircle, CheckCircle, RotateCcw } from 'lucide-react';
+import { Server, Key, Copy, RefreshCw, AlertCircle, CheckCircle, RotateCcw, Wifi, WifiOff } from 'lucide-react';
 import { sftpApi, type ProvisionResponse } from '@/lib/api/sftp';
 import { useTelegramSendData } from '@/hooks/useTelegramSendData';
+import { checkSftpServerHealth } from '@/lib/api/sftpConfig';
 
 // Connection result callback type
 type ConnectionResultCallback = (status: "success" | "failed" | "pending", details: any) => void;
@@ -26,6 +28,7 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
   const [creds, setCreds] = useState<ProvisionResponse["credentials"] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [serverHealth, setServerHealth] = useState<boolean | null>(null);
 
   // Get Telegram ID with fallback for local dev
   function getTelegramId(): string {
@@ -41,6 +44,13 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
     
     return String(telegramId);
   }
+
+  // Check server health
+  const checkServerHealth = async () => {
+    const isHealthy = await checkSftpServerHealth();
+    setServerHealth(isHealthy);
+    return isHealthy;
+  };
 
   // Send SFTP status to Telegram bot
   const sendSFTPStatusToBot = (
@@ -169,6 +179,22 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
     // Report user action to Telegram
     reportUserAction('sftp_generate_clicked');
     
+    // Check server health first
+    const isHealthy = await checkServerHealth();
+    if (!isHealthy) {
+      setError("SFTP server is currently unavailable");
+      setStatus("failed");
+      setLocked(true);
+      setLoading(false);
+      
+      toast({
+        title: "❌ שרת SFTP לא זמין",
+        description: "השרת אינו זמין כרגע. אנא נסה שוב מאוחר יותר.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       console.log('🚀 Generating SFTP credentials for Telegram ID:', telegramId);
       
@@ -217,6 +243,7 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
     setCreds(null);
     setError(null);
     setPasswordVisible(false);
+    setServerHealth(null);
     
     // Report retry action
     reportUserAction('sftp_retry_clicked');
@@ -266,6 +293,18 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
     }
   };
 
+  // Server health indicator
+  const ServerHealthIndicator = () => {
+    if (serverHealth === null) return null;
+    
+    return (
+      <div className={`flex items-center gap-2 text-sm ${serverHealth ? 'text-green-600' : 'text-red-600'}`}>
+        {serverHealth ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
+        <span>{serverHealth ? 'שרת זמין' : 'שרת לא זמין'}</span>
+      </div>
+    );
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -281,6 +320,7 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
         <CardDescription>
           העלאה מאובטחת; אתה מוגבל לתיקייה פרטית. העלה ל-/inbox.
         </CardDescription>
+        <ServerHealthIndicator />
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Telegram ID Info */}

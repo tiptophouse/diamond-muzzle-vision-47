@@ -29,3 +29,21 @@ export const getTelegramIdForSFTP = (): string => {
   
   return String(telegramId);
 };
+
+// Check if SFTP server is available
+export const checkSftpServerHealth = async (): Promise<boolean> => {
+  try {
+    const response = await fetch(`${SFTP_CONFIG.API_BASE}${SFTP_CONFIG.PREFIX}${SFTP_CONFIG.ENDPOINTS.ALIVE}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+      signal: AbortSignal.timeout(5000), // 5 second timeout
+    });
+    
+    return response.ok;
+  } catch (error) {
+    console.error('SFTP server health check failed:', error);
+    return false;
+  }
+};

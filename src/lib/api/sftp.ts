@@ -1,6 +1,9 @@
+
 // SFTP API client for FastAPI backend
-const SFTP_API_BASE = "http://136.0.3.22:8000";
-const SFTP_API_PREFIX = "/api/v1";
+import { checkSftpServerHealth, SFTP_CONFIG } from './sftpConfig';
+
+const SFTP_API_BASE = SFTP_CONFIG.API_BASE;
+const SFTP_API_PREFIX = SFTP_CONFIG.PREFIX;
 
 export interface ProvisionResponse {
   success: boolean;
@@ -52,6 +55,12 @@ async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<
   
   console.log('🚀 SFTP API Call:', url, options.method || 'GET');
   
+  // First check if server is healthy
+  const isHealthy = await checkSftpServerHealth();
+  if (!isHealthy) {
+    throw new Error('SFTP server is currently unavailable. Please try again later or contact support.');
+  }
+  
   try {
     const response = await fetch(url, {
       ...options,
@@ -60,6 +69,7 @@ async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<
         'Accept': 'application/json',
         ...options.headers,
       },
+      signal: AbortSignal.timeout(10000), // 10 second timeout
     });
 
     if (!response.ok) {
@@ -84,7 +94,11 @@ async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<
     console.error('❌ SFTP API Error:', error);
     
     if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-      throw new Error(`Cannot connect to SFTP server at ${SFTP_API_BASE}. Please check if the server is running.`);
+      throw new Error(`SFTP server at ${SFTP_API_BASE} is not responding. Please check your internet connection or try again later.`);
+    }
+    
+    if (error instanceof DOMException && error.name === 'TimeoutError') {
+      throw new Error('SFTP server request timed out. Please try again later.');
     }
     
     throw error;
