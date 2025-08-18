@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TelegramAuthProvider } from './context/TelegramAuthContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
+import { StrictTelegramGuard } from './components/auth/StrictTelegramGuard';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import Index from './pages/Index';
 import Dashboard from './pages/Dashboard';
@@ -40,122 +41,124 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TelegramAuthProvider>
-        <Router>
-          <TutorialProvider>
-            <InteractiveWizardProvider>
-              <div className="min-h-screen bg-background">
-                <Routes>
-                  {/* Public route - login/landing page */}
-                  <Route path="/" element={<Index />} />
-                  
-                  {/* Protected routes - require authentication */}
-                  <Route path="/dashboard" element={
-                    <ProtectedRoute>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/inventory" element={
-                    <ProtectedRoute>
-                      <InventoryPage />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/catalog" element={
-                    <ProtectedRoute>
-                      <CatalogPage />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/store" element={
-                    <ProtectedRoute>
-                      <CatalogPage />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/upload" element={
-                    <ProtectedRoute>
-                      <UploadPage />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/upload/bulk" element={
-                    <ProtectedRoute>
-                      <BulkUploadPage />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/upload-single-stone" element={
-                    <ProtectedRoute>
-                      <UploadSingleStonePage />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/insights" element={
-                    <ProtectedRoute>
-                      <InsightsPage />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/chat" element={
-                    <ProtectedRoute>
-                      <ChatPage />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/notifications" element={
-                    <ProtectedRoute>
-                      <NotificationsPage />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/profile" element={
-                    <ProtectedRoute>
-                      <ProfilePage />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/settings" element={
-                    <ProtectedRoute>
-                      <SettingsPage />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/wishlist" element={
-                    <ProtectedRoute>
-                      <WishlistPage />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/swipe" element={
-                    <ProtectedRoute>
-                      <DiamondSwipe />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/standardize-csv" element={
-                    <ProtectedRoute>
-                      <StandardizeCsvPage />
-                    </ProtectedRoute>
-                  } />
-                  
-                  {/* Admin routes - require admin privileges */}
-                  <Route path="/admin" element={
-                    <ProtectedRoute requireAdmin={true}>
-                      <Admin />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/admin/analytics" element={
-                    <ProtectedRoute requireAdmin={true}>
-                      <AdminAnalytics />
-                    </ProtectedRoute>
-                  } />
-                  
-                  {/* Diamond viewing routes - protected but allow shared access */}
-                  <Route path="/diamond/:stockNumber" element={
-                    <ProtectedRoute>
-                      <DiamondDetailPage />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/secure-diamond/:encryptedData" element={
-                    <ProtectedRoute>
-                      <SecureDiamondPage />
-                    </ProtectedRoute>
-                  } />
-                  
-                  {/* 404 handler */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </div>
-            </InteractiveWizardProvider>
-          </TutorialProvider>
-        </Router>
+        <StrictTelegramGuard>
+          <Router>
+            <TutorialProvider>
+              <InteractiveWizardProvider>
+                <div className="min-h-screen bg-background">
+                  <Routes>
+                    {/* Public route - login/landing page */}
+                    <Route path="/" element={<Index />} />
+                    
+                    {/* Protected routes - require authentication */}
+                    <Route path="/dashboard" element={
+                      <ProtectedRoute>
+                        <Dashboard />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/inventory" element={
+                      <ProtectedRoute>
+                        <InventoryPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/catalog" element={
+                      <ProtectedRoute>
+                        <CatalogPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/store" element={
+                      <ProtectedRoute>
+                        <CatalogPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/upload" element={
+                      <ProtectedRoute>
+                        <UploadPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/upload/bulk" element={
+                      <ProtectedRoute>
+                        <BulkUploadPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/upload-single-stone" element={
+                      <ProtectedRoute>
+                        <UploadSingleStonePage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/insights" element={
+                      <ProtectedRoute>
+                        <InsightsPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/chat" element={
+                      <ProtectedRoute>
+                        <ChatPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/notifications" element={
+                      <ProtectedRoute>
+                        <NotificationsPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/profile" element={
+                      <ProtectedRoute>
+                        <ProfilePage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/settings" element={
+                      <ProtectedRoute>
+                        <SettingsPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/wishlist" element={
+                      <ProtectedRoute>
+                        <WishlistPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/swipe" element={
+                      <ProtectedRoute>
+                        <DiamondSwipe />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/standardize-csv" element={
+                      <ProtectedRoute>
+                        <StandardizeCsvPage />
+                      </ProtectedRoute>
+                    } />
+                    
+                    {/* Admin routes - require admin privileges */}
+                    <Route path="/admin" element={
+                      <ProtectedRoute requireAdmin={true}>
+                        <Admin />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin/analytics" element={
+                      <ProtectedRoute requireAdmin={true}>
+                        <AdminAnalytics />
+                      </ProtectedRoute>
+                    } />
+                    
+                    {/* Diamond viewing routes - protected but allow shared access */}
+                    <Route path="/diamond/:stockNumber" element={
+                      <ProtectedRoute>
+                        <DiamondDetailPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/secure-diamond/:encryptedData" element={
+                      <ProtectedRoute>
+                        <SecureDiamondPage />
+                      </ProtectedRoute>
+                    } />
+                    
+                    {/* 404 handler */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </div>
+              </InteractiveWizardProvider>
+            </TutorialProvider>
+          </Router>
+        </StrictTelegramGuard>
       </TelegramAuthProvider>
     </QueryClientProvider>
   );
