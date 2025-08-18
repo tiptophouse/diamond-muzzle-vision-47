@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Server, Key, Copy, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
+import { getAuthHeaders } from '@/lib/api/auth';
+import { API_BASE_URL } from '@/lib/api/config';
 
 type Provision = {
   success: boolean;
@@ -29,12 +31,6 @@ type TestResult = {
   last_event?: string 
 };
 
-function getTelegramId(): string {
-  const tg = (window as any).Telegram?.WebApp?.initDataUnsafe;
-  const id = tg?.user?.id ?? tg?.user?.user_id ?? "";
-  return String(id || "");
-}
-
 export function SFTPSettings() {
   const { user } = useTelegramAuth();
   const { toast } = useToast();
@@ -45,28 +41,37 @@ export function SFTPSettings() {
   const [creds, setCreds] = useState<Provision["credentials"]|null>(null);
   const [error, setError] = useState<string|null>(null);
 
-  // API configuration
-  const apiBase = "https://api.mazalbot.com";
-  const prefix = "/v1";
-  const authToken = "D1O2hcZ9v9sef5k9Bej3";
-
-  const headers: Record<string,string> = { "Content-Type": "application/json" };
-  if (authToken) headers.Authorization = `Bearer ${authToken}`;
+  // Use the correct API configuration
+  const apiBase = API_BASE_URL;
+  const prefix = "/api/v1";
 
   async function post<T>(path: string, body: any): Promise<T> {
+    const authHeaders = await getAuthHeaders();
+    const headers = {
+      "Content-Type": "application/json",
+      ...authHeaders,
+    };
+
+    console.log('🚀 SFTP: Making request to:', `${apiBase}${prefix}${path}`);
+    console.log('🚀 SFTP: With headers:', Object.keys(headers));
+    
     const res = await fetch(`${apiBase}${prefix}${path}`, { 
       method: "POST", 
       headers, 
       body: JSON.stringify(body) 
     });
+    
     if (!res.ok) {
       const errorText = await res.text().catch(() => "Request failed");
+      console.error('❌ SFTP: Request failed:', res.status, errorText);
       throw new Error(errorText);
     }
+    
     return res.json() as Promise<T>;
   }
 
   async function testOnce(telegram_id: string): Promise<TestResult> {
+    console.log('🔍 SFTP: Testing connection for user:', telegram_id);
     return post<TestResult>("/sftp/test-connection", { telegram_id });
   }
 
@@ -76,6 +81,8 @@ export function SFTPSettings() {
     for (let i = 0; i < tries; i++) {
       try {
         const r = await testOnce(telegram_id);
+        console.log('🔍 SFTP: Test result:', r);
+        
         if (r.status === "success" || r.status === "failed") {
           setStatus(r.status);
           setCreds(c => (c ? { ...c, password: undefined } : c)); // hide password
@@ -97,7 +104,7 @@ export function SFTPSettings() {
         }
         await new Promise(r => setTimeout(r, waitMs));
       } catch (error) {
-        console.error('Connection test error:', error);
+        console.error('❌ SFTP: Connection test error:', error);
       }
     }
     
@@ -130,10 +137,12 @@ export function SFTPSettings() {
     
     try {
       const telegram_id = String(user.id);
-      console.log('🚀 Generating SFTP credentials for user:', telegram_id);
+      console.log('🚀 SFTP: Generating credentials for user:', telegram_id);
+      console.log('🚀 SFTP: Using API base:', apiBase);
+      console.log('🚀 SFTP: Using prefix:', prefix);
       
       const data = await post<Provision>("/sftp/provision", { telegram_id });
-      console.log('✅ SFTP credentials generated:', data);
+      console.log('✅ SFTP: Credentials generated successfully');
       
       setCreds(data.credentials); // includes one-time password
       
@@ -147,7 +156,7 @@ export function SFTPSettings() {
       
     } catch (e: any) {
       const errorMessage = e?.message || "Provision failed";
-      console.error('❌ SFTP generation error:', errorMessage);
+      console.error('❌ SFTP: Generation error:', errorMessage);
       
       setError(errorMessage);
       setStatus("failed");
