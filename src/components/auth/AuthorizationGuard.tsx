@@ -1,3 +1,4 @@
+
 import { ReactNode, useEffect, useState } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
@@ -43,6 +44,13 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
       return;
     }
 
+    // Enhanced security: verify environment in production for non-admin users
+    if (process.env.NODE_ENV === 'production' && !isTelegramEnvironment) {
+      console.log('❌ Production requires Telegram environment for non-admin users');
+      setIsAuthorized(false);
+      return;
+    }
+
     // Check if user is blocked (only applies to non-admin users)
     if (isUserBlocked(user.id)) {
       console.log('❌ User is blocked');
@@ -85,6 +93,7 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
   if (!isAuthorized) {
     const isBlocked = user && isUserBlocked(user.id);
     const isAdminUser = user && user.id === adminTelegramId;
+    const invalidEnvironment = process.env.NODE_ENV === 'production' && !isTelegramEnvironment;
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -102,22 +111,26 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
           </div>
           
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            {isBlocked 
-              ? 'Access Denied' 
-              : 'Authorization Required'
+            {invalidEnvironment 
+              ? 'Invalid Access Method'
+              : isBlocked 
+                ? 'Access Denied' 
+                : 'Authorization Required'
             }
           </h2>
           
           <p className="text-gray-600 mb-6">
-            {isBlocked 
-              ? 'Your access to this application has been restricted by the administrator.'
-              : 'This application now requires manual authorization. Please contact the administrator to request access.'
+            {invalidEnvironment
+              ? 'This application must be accessed through the official Telegram application for security reasons.'
+              : isBlocked 
+                ? 'Your access to this application has been restricted by the administrator.'
+                : 'This application now requires manual authorization. Please contact the administrator to request access.'
             }
           </p>
           
           <div className="text-sm text-gray-500 mb-8 space-y-1">
             <p>User ID: {user?.id || 'Unknown'}</p>
-            <p>Status: {isBlocked ? 'Blocked' : 'Pending Authorization'}</p>
+            <p>Status: {invalidEnvironment ? 'Invalid Environment' : isBlocked ? 'Blocked' : 'Pending Authorization'}</p>
             {isAdminUser && <p className="text-yellow-600 font-medium">⚠️ Admin user detected but authorization failed</p>}
           </div>
           
