@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Send, Users, Clock } from 'lucide-react';
+import { Calendar, Send, Users, Clock, Eye, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,12 +16,26 @@ interface UserWithoutDiamonds {
   created_at: string;
 }
 
+interface MeetingInviteClick {
+  id: string;
+  telegram_id: number;
+  clicked_at: string;
+  user_agent?: string;
+  ip_address?: string;
+  user_info?: {
+    first_name?: string;
+    username?: string;
+  };
+}
+
 export function MeetingInvitationSender() {
   const { toast } = useToast();
   const [users, setUsers] = useState<UserWithoutDiamonds[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
+  const [clickTracking, setClickTracking] = useState<MeetingInviteClick[]>([]);
+  const [showClickTracking, setShowClickTracking] = useState(false);
 
   const defaultMessage = `שלום {firstName}! 👋
 
@@ -33,7 +47,7 @@ export function MeetingInvitationSender() {
 אני אור, מייסד BrilliantBot – ובזמן הקרוב אני מקיים שיחות אישיות עם סוחרים שמעוניינים לקבל הסבר, ייעוץ או חיבור לפלטפורמה.
 
 📅 לקביעת פגישה קצרה איתי:
-👉 https://calendly.com/avtipoos
+👉 https://calendly.com/avtipoos?utm_source=brilliantbot&utm_medium=telegram&utm_campaign=meeting_invite
 
 🔒 השיחה פרטית, ממוקדת, ומיועדת רק למי שבאמת רוצה להשתדרג.
 
@@ -58,12 +72,11 @@ export function MeetingInvitationSender() {
     156440200, 868350884, 2084882603, 215605918, 174230606, 363600108, 819441864, 1021878792,
     291063886, 67414578, 5945056045, 223604456, 215251646, 7348943395, 1933311874, 812263552,
     843225749, 15178583, 158952076, 2138564172
-  ].filter(id => id !== 0); // Remove the 0 ID
+  ].filter(id => id !== 0);
 
   const fetchUsersWithoutDiamonds = async () => {
     setLoading(true);
     try {
-      // Get all users from the predefined list
       const { data: allUsers, error: usersError } = await supabase
         .from('user_profiles')
         .select('telegram_id, first_name, last_name, username, created_at')
@@ -71,7 +84,6 @@ export function MeetingInvitationSender() {
 
       if (usersError) throw usersError;
 
-      // For each user, check if they have diamonds
       const usersWithDiamondStatus = await Promise.all(
         (allUsers || []).map(async (user) => {
           const { count } = await supabase
@@ -87,14 +99,11 @@ export function MeetingInvitationSender() {
         })
       );
 
-      // Filter users without diamonds
       const usersWithoutDiamonds = usersWithDiamondStatus
         .filter(user => !user.hasDiamonds)
         .map(({ hasDiamonds, ...user }) => user);
 
       setUsers(usersWithoutDiamonds);
-      
-      // Auto-select all users
       setSelectedUsers(new Set(usersWithoutDiamonds.map(u => u.telegram_id)));
 
     } catch (error) {
@@ -106,6 +115,21 @@ export function MeetingInvitationSender() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchClickTracking = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('meeting_invite_clicks')
+        .select('*')
+        .order('clicked_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      setClickTracking(data || []);
+    } catch (error) {
+      console.error('Error fetching click tracking:', error);
     }
   };
 
@@ -135,14 +159,15 @@ export function MeetingInvitationSender() {
           status: 'sent',
           metadata: {
             title: '📅 הזמנה לפגישה אישית - BrilliantBot',
-            calendly_url: 'https://calendly.com/avtipoos',
+            calendly_url: 'https://calendly.com/avtipoos?utm_source=brilliantbot&utm_medium=telegram&utm_campaign=meeting_invite',
             user_info: {
               first_name: user.first_name,
               last_name: user.last_name,
               username: user.username
             },
             diamond_count: 0,
-            reason: 'no_diamonds_uploaded'
+            reason: 'no_diamonds_uploaded',
+            tracking_enabled: true
           }
         };
       });
@@ -155,11 +180,11 @@ export function MeetingInvitationSender() {
 
       toast({
         title: 'הזמנות נשלחו בהצלחה! 📅',
-        description: `נשלחו ${selectedUsersList.length} הזמנות לפגישה אישית`,
+        description: `נשלחו ${selectedUsersList.length} הזמנות לפגישה אישית עם מעקב לחיצות`,
       });
 
-      // Refresh the list
       await fetchUsersWithoutDiamonds();
+      await fetchClickTracking();
 
     } catch (error) {
       console.error('Error sending meeting invitations:', error);
@@ -175,6 +200,7 @@ export function MeetingInvitationSender() {
 
   useEffect(() => {
     fetchUsersWithoutDiamonds();
+    fetchClickTracking();
   }, []);
 
   if (loading) {
@@ -197,101 +223,162 @@ export function MeetingInvitationSender() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-blue-500" />
-          הזמנות לפגישות אישיות ({users.length})
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">הודעת הזמנה:</label>
-          <Textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            rows={12}
-            className="text-sm"
-            placeholder="כתוב את הודעת ההזמנה..."
-          />
-          <p className="text-xs text-muted-foreground">
-            השתמש ב-{'{firstName}'} לשם אישי
-          </p>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Badge variant="outline">{selectedUsers.size} נבחרו</Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedUsers(new Set(users.map(u => u.telegram_id)))}
-            >
-              בחר הכל
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedUsers(new Set())}
-            >
-              בטל בחירה
-            </Button>
+    <div className="space-y-6" dir="rtl">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-right">
+            <Calendar className="h-5 w-5 text-blue-500" />
+            הזמנות לפגישות אישיות ({users.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-right block">הודעת הזמנה:</label>
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={12}
+              className="text-sm text-right"
+              placeholder="כתוב את הודעת ההזמנה..."
+              dir="rtl"
+            />
+            <p className="text-xs text-muted-foreground text-right">
+              השתמש ב-{'{firstName}'} לשם אישי
+            </p>
           </div>
-          
-          <Button
-            onClick={sendMeetingInvitations}
-            disabled={sending || selectedUsers.size === 0}
-            className="flex items-center gap-2"
-          >
-            <Send className="h-4 w-4" />
-            {sending ? 'שולח...' : `שלח הזמנות ל-${selectedUsers.size} משתמשים`}
-          </Button>
-        </div>
 
-        {users.length === 0 ? (
-          <div className="text-center py-8">
-            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">כל המשתמשים כבר העלו יהלומים! 🎉</p>
-          </div>
-        ) : (
-          <div className="max-h-80 overflow-y-auto space-y-2">
-            {users.map((user, index) => (
-              <div 
-                key={user.telegram_id} 
-                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                  selectedUsers.has(user.telegram_id) 
-                    ? 'bg-blue-50 border-blue-200' 
-                    : 'bg-muted/30 hover:bg-muted/50'
-                }`}
-                onClick={() => toggleUserSelection(user.telegram_id)}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">{selectedUsers.size} נבחרו</Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedUsers(new Set(users.map(u => u.telegram_id)))}
               >
-                <input
-                  type="checkbox"
-                  checked={selectedUsers.has(user.telegram_id)}
-                  onChange={() => toggleUserSelection(user.telegram_id)}
-                  className="rounded"
-                />
-                <Badge variant="outline" className="text-xs">{index + 1}</Badge>
-                <div className="flex-1">
-                  <span className="font-medium text-sm">
-                    {user.first_name || user.username || `User ${user.telegram_id}`}
-                  </span>
-                  <div className="text-xs text-muted-foreground">
-                    ID: {user.telegram_id}
-                    <span className="ml-2 flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      הצטרף: {new Date(user.created_at).toLocaleDateString('he-IL')}
-                    </span>
-                  </div>
-                </div>
-                <Badge variant="secondary" className="text-xs">
-                  0 יהלומים
-                </Badge>
-              </div>
-            ))}
+                בחר הכל
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedUsers(new Set())}
+              >
+                בטל בחירה
+              </Button>
+            </div>
+            
+            <Button
+              onClick={sendMeetingInvitations}
+              disabled={sending || selectedUsers.size === 0}
+              className="flex items-center gap-2"
+            >
+              <Send className="h-4 w-4" />
+              {sending ? 'שולח...' : `שלח הזמנות ל-${selectedUsers.size} משתמשים`}
+            </Button>
           </div>
+
+          {users.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">כל המשתמשים כבר העלו יהלומים! 🎉</p>
+            </div>
+          ) : (
+            <div className="max-h-80 overflow-y-auto space-y-2">
+              {users.map((user, index) => (
+                <div 
+                  key={user.telegram_id} 
+                  className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    selectedUsers.has(user.telegram_id) 
+                      ? 'bg-blue-50 border-blue-200' 
+                      : 'bg-muted/30 hover:bg-muted/50'
+                  }`}
+                  onClick={() => toggleUserSelection(user.telegram_id)}
+                  dir="rtl"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedUsers.has(user.telegram_id)}
+                    onChange={() => toggleUserSelection(user.telegram_id)}
+                    className="rounded"
+                  />
+                  <Badge variant="outline" className="text-xs">{index + 1}</Badge>
+                  <div className="flex-1 text-right">
+                    <span className="font-medium text-sm">
+                      {user.first_name || user.username || `User ${user.telegram_id}`}
+                    </span>
+                    <div className="text-xs text-muted-foreground">
+                      ID: {user.telegram_id}
+                      <span className="mr-2 flex items-center gap-1 justify-end">
+                        <Clock className="h-3 w-3" />
+                        הצטרף: {new Date(user.created_at).toLocaleDateString('he-IL')}
+                      </span>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="text-xs">
+                    0 יהלומים
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Click Tracking Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between text-right">
+            <div className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-green-500" />
+              מעקב לחיצות על הזמנות ({clickTracking.length})
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowClickTracking(!showClickTracking)}
+            >
+              {showClickTracking ? 'הסתר' : 'הצג'} מעקב
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        {showClickTracking && (
+          <CardContent>
+            {clickTracking.length === 0 ? (
+              <div className="text-center py-8">
+                <Eye className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">עדיין אין לחיצות על הזמנות</p>
+              </div>
+            ) : (
+              <div className="max-h-60 overflow-y-auto space-y-2">
+                {clickTracking.map((click) => (
+                  <div key={click.id} className="p-3 bg-muted/30 rounded-lg" dir="rtl">
+                    <div className="flex items-center justify-between">
+                      <div className="text-right">
+                        <span className="font-medium">
+                          {click.user_info?.first_name || `User ${click.telegram_id}`}
+                        </span>
+                        <p className="text-xs text-muted-foreground">
+                          ID: {click.telegram_id}
+                        </p>
+                      </div>
+                      <div className="text-left">
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(click.clicked_at).toLocaleString('he-IL')}
+                        </p>
+                        <ExternalLink className="h-3 w-3 text-green-500" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800 text-right">
+                💡 כל לחיצה על קישור הקלנדלי תירשם כאן אוטומטית
+              </p>
+            </div>
+          </CardContent>
         )}
-      </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 }
