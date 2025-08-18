@@ -1,74 +1,136 @@
 
 import React, { useEffect } from 'react';
-import { useEnhancedTelegramWebApp } from '@/hooks/useEnhancedTelegramWebApp';
-import { useSecureNavigation } from '@/hooks/useSecureNavigation';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
+import { cn } from '@/lib/utils';
 
 interface EnhancedTelegramLayoutProps {
   children: React.ReactNode;
+  className?: string;
+  showBackButton?: boolean;
+  onBackClick?: () => void;
+  mainButtonText?: string;
+  mainButtonColor?: string;
+  onMainButtonClick?: () => void;
+  enableScrolling?: boolean;
 }
 
-export function EnhancedTelegramLayout({ children }: EnhancedTelegramLayoutProps) {
-  const { webApp, isInitialized } = useEnhancedTelegramWebApp();
-  const { isReady } = useSecureNavigation();
+export function EnhancedTelegramLayout({ 
+  children, 
+  className,
+  showBackButton = false,
+  onBackClick,
+  mainButtonText,
+  mainButtonColor = '#007AFF',
+  onMainButtonClick,
+  enableScrolling = true
+}: EnhancedTelegramLayoutProps) {
+  const { 
+    webApp, 
+    isReady, 
+    backButton, 
+    mainButton, 
+    hapticFeedback,
+    isIOS,
+    safeAreaInset 
+  } = useTelegramWebApp();
 
+  // Configure Telegram navigation
   useEffect(() => {
-    // Apply RTL direction for Hebrew content globally
-    const setGlobalRTL = () => {
-      document.documentElement.dir = 'rtl';
-      document.documentElement.lang = 'he';
-      
-      // Add RTL styles to body
-      document.body.style.direction = 'rtl';
-      document.body.style.textAlign = 'right';
-      
-      console.log('🔄 Applied RTL direction globally');
+    if (!isReady || !webApp) return;
+
+    // Configure back button
+    if (showBackButton && onBackClick) {
+      backButton.show(() => {
+        hapticFeedback.impact('light');
+        onBackClick();
+      });
+    } else {
+      backButton.hide();
+    }
+
+    // Configure main button
+    if (mainButtonText && onMainButtonClick) {
+      mainButton.show(mainButtonText, () => {
+        hapticFeedback.impact('medium');
+        onMainButtonClick();
+      }, mainButtonColor);
+    } else {
+      mainButton.hide();
+    }
+
+    // Cleanup on unmount
+    return () => {
+      backButton.hide();
+      mainButton.hide();
+    };
+  }, [isReady, webApp, showBackButton, onBackClick, mainButtonText, onMainButtonClick, mainButtonColor, backButton, mainButton, hapticFeedback]);
+
+  // Handle iPhone viewport changes
+  useEffect(() => {
+    if (!isIOS) return;
+
+    const handleResize = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
     };
 
-    if (isInitialized) {
-      setGlobalRTL();
-    }
-  }, [isInitialized]);
+    const handleOrientationChange = () => {
+      setTimeout(() => {
+        handleResize();
+        hapticFeedback.selection();
+      }, 100);
+    };
 
-  // Apply Telegram theme colors and safe area
-  useEffect(() => {
-    if (webApp && isInitialized) {
-      const root = document.documentElement;
-      
-      // Set CSS custom properties for Telegram theming
-      root.style.setProperty('--tg-bg-color', webApp.backgroundColor);
-      root.style.setProperty('--tg-text-color', '#000000');
-      root.style.setProperty('--tg-safe-area-inset-top', `${webApp.safeAreaInset.top}px`);
-      root.style.setProperty('--tg-safe-area-inset-bottom', `${webApp.safeAreaInset.bottom}px`);
-      root.style.setProperty('--tg-viewport-height', `${webApp.viewportHeight}px`);
-      
-      console.log('🎨 Applied Telegram theme and safe area');
-    }
-  }, [webApp, isInitialized]);
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleOrientationChange);
 
-  if (!isInitialized || !isReady) {
+    // Initial call
+    handleResize();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleOrientationChange);
+    };
+  }, [isIOS, hapticFeedback]);
+
+  if (!isReady) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
-        <div className="animate-pulse text-center">
-          <div className="text-lg font-semibold text-foreground">טוען...</div>
-          <div className="text-sm text-muted-foreground mt-2">מכין את המערכת</div>
+      <div className="telegram-container bg-background">
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div 
-      className="min-h-screen bg-background text-foreground overflow-x-hidden"
-      dir="rtl"
-      style={{
-        paddingTop: 'var(--tg-safe-area-inset-top, 0px)',
-        paddingBottom: 'var(--tg-safe-area-inset-bottom, 0px)',
-        minHeight: 'var(--tg-viewport-height, 100vh)'
-      }}
-    >
-      <main className="container mx-auto px-4 py-6 max-w-4xl" dir="rtl">
+    <div className={cn(
+      "telegram-container bg-background text-foreground",
+      className
+    )}>
+      {/* Safe area top spacer for iPhone */}
+      {isIOS && safeAreaInset.top > 0 && (
+        <div 
+          className="bg-background flex-shrink-0"
+          style={{ height: `${safeAreaInset.top}px` }}
+        />
+      )}
+      
+      {/* Main content area */}
+      <div className={cn(
+        "flex-1 relative",
+        enableScrolling ? "telegram-scrollable" : "overflow-hidden"
+      )}>
         {children}
-      </main>
+      </div>
+      
+      {/* Safe area bottom spacer for iPhone */}
+      {isIOS && safeAreaInset.bottom > 0 && (
+        <div 
+          className="bg-background flex-shrink-0"
+          style={{ height: `${safeAreaInset.bottom}px` }}
+        />
+      )}
     </div>
   );
 }

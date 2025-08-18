@@ -1,198 +1,307 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-  }
+/* CSS Custom Properties for Telegram WebApp */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+  --radius: 0.5rem;
+  
+  /* Telegram WebApp Variables */
+  --tg-viewport-height: 100vh;
+  --tg-stable-height: 100vh;
+  --tg-safe-area-top: 0px;
+  --tg-safe-area-bottom: 0px;
+  --vh: 1vh;
+  
+  /* Safe Area Variables */
+  --safe-area-inset-top: 0px;
+  --safe-area-inset-bottom: 0px;
+  --safe-area-inset-left: 0px;
+  --safe-area-inset-right: 0px;
+}
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+/* Base Styles */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  height: calc(var(--vh, 1vh) * 100);
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  height: 100%;
+  height: calc(var(--vh, 1vh) * 100);
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+}
+
+#root {
+  height: 100%;
+  height: calc(var(--vh, 1vh) * 100);
+  overflow-x: hidden;
+}
+
+/* Enhanced image loading optimizations */
+img {
+  image-rendering: optimizeQuality;
+  image-rendering: -webkit-optimize-contrast;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Improved loading animations */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+/* Better scroll performance */
+* {
+  scroll-behavior: smooth;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .grid {
+    gap: 0.75rem;
   }
   
+  .aspect-square img {
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+/* iPhone and iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari and WebView specific styles */
   html {
-    direction: rtl;
-    font-family: 'Heebo', 'Inter', system-ui, sans-serif;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    height: calc(var(--vh, 1vh) * 100);
+    overflow: hidden;
   }
   
   body {
-    @apply bg-background text-foreground;
-    direction: rtl;
-    text-align: right;
-    font-family: 'Heebo', 'Inter', system-ui, sans-serif;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    height: calc(var(--vh, 1vh) * 100);
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
   }
-
-  /* RTL-specific styles */
-  [dir="rtl"] {
-    text-align: right;
+  
+  #root {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    height: calc(var(--vh, 1vh) * 100);
+    overflow: hidden;
   }
-
-  [dir="rtl"] .text-left {
-    text-align: right;
+  
+  /* Fix for iOS back button jumping */
+  .tg-viewport {
+    height: 100%;
+    height: calc(var(--vh, 1vh) * 100);
+    overflow: hidden;
+    position: relative;
   }
-
-  [dir="rtl"] .text-right {
-    text-align: right;
+  
+  /* Prevent text jumping on iOS */
+  * {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-
-  /* Fix for input fields in RTL */
-  [dir="rtl"] input,
-  [dir="rtl"] textarea {
-    text-align: right;
-    direction: rtl;
+  
+  /* Smooth scroll fix for iOS */
+  .smooth-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
   }
-
-  /* Fix for buttons and navigation */
-  [dir="rtl"] .flex {
-    flex-direction: row;
+  
+  /* Prevent zoom on input focus */
+  input, select, textarea {
+    font-size: 16px !important;
   }
-
-  [dir="rtl"] .justify-between {
-    justify-content: space-between;
+  
+  /* Fix for viewport units on iOS */
+  .h-screen {
+    height: calc(var(--vh, 1vh) * 100) !important;
   }
-
-  /* Ensure proper spacing for RTL */
-  [dir="rtl"] .space-x-2 > * + * {
-    margin-right: 0.5rem;
-    margin-left: 0;
-  }
-
-  [dir="rtl"] .ml-2 {
-    margin-right: 0.5rem;
-    margin-left: 0;
-  }
-
-  [dir="rtl"] .mr-2 {
-    margin-left: 0.5rem;
-    margin-right: 0;
-  }
-
-  /* Hebrew font optimization */
-  .hebrew {
-    font-family: 'Heebo', system-ui, sans-serif;
-    direction: rtl;
-    text-align: right;
-  }
-
-  /* Telegram-specific styles */
-  .telegram-safe-area {
-    padding-top: var(--tg-safe-area-inset-top, 0px);
-    padding-bottom: var(--tg-safe-area-inset-bottom, 0px);
-  }
-
-  /* Fix scrollbar for RTL */
-  [dir="rtl"] ::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  [dir="rtl"] ::-webkit-scrollbar-track {
-    background: hsl(var(--muted));
-  }
-
-  [dir="rtl"] ::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted-foreground));
-    border-radius: 4px;
-  }
-
-  /* Responsive text for mobile */
-  @media (max-width: 640px) {
-    body {
-      font-size: 14px;
-      line-height: 1.5;
-    }
-    
-    h1, h2, h3, h4, h5, h6 {
-      line-height: 1.3;
-    }
+  
+  .min-h-screen {
+    min-height: calc(var(--vh, 1vh) * 100) !important;
   }
 }
 
-/* Component-specific RTL fixes */
-@layer components {
-  .card {
-    @apply rounded-lg border bg-card text-card-foreground shadow-sm;
-    direction: rtl;
-  }
+/* Safe area handling utilities */
+.pt-safe {
+  padding-top: max(var(--safe-area-inset-top), 16px);
+}
 
-  .button {
-    direction: rtl;
-  }
+.pb-safe {
+  padding-bottom: max(var(--safe-area-inset-bottom), 16px);
+}
 
-  /* Toast positioning for RTL */
-  [dir="rtl"] .toast {
-    right: auto;
-    left: 1rem;
-  }
+.pl-safe {
+  padding-left: max(var(--safe-area-inset-left), 16px);
+}
 
-  /* Navigation fixes */
-  [dir="rtl"] .nav-link {
-    text-align: right;
-  }
+.pr-safe {
+  padding-right: max(var(--safe-area-inset-right), 16px);
+}
 
-  /* Form fixes */
-  [dir="rtl"] .form-control {
-    text-align: right;
-    direction: rtl;
-  }
+.mt-safe {
+  margin-top: max(var(--safe-area-inset-top), 0px);
+}
 
-  [dir="rtl"] .form-label {
-    text-align: right;
+.mb-safe {
+  margin-bottom: max(var(--safe-area-inset-bottom), 0px);
+}
+
+/* Telegram-specific viewport utilities */
+.h-tg-viewport {
+  height: var(--tg-viewport-height);
+}
+
+.h-tg-stable {
+  height: var(--tg-stable-height);
+}
+
+.min-h-tg-viewport {
+  min-height: var(--tg-viewport-height);
+}
+
+.min-h-tg-stable {
+  min-height: var(--tg-stable-height);
+}
+
+/* Touch-friendly interactions */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Better button interactions on mobile */
+button, [role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Improved focus states for mobile */
+button:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+/* Ensure light theme always */
+.dark {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+}
+
+/* Mobile-first responsive grid improvements */
+@media (max-width: 768px) {
+  .responsive-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
   }
+  
+  .mobile-padding {
+    padding: 1rem;
+  }
+  
+  .mobile-text-sm {
+    font-size: 0.875rem;
+  }
+}
+
+/* Telegram WebApp container */
+.telegram-container {
+  height: 100%;
+  height: calc(var(--vh, 1vh) * 100);
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollable content area */
+.telegram-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: var(--safe-area-inset-bottom);
 }
