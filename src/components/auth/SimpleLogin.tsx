@@ -4,30 +4,76 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/components/ui/use-toast';
-import { Eye, EyeOff, Shield } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Shield, Mail, Key, Clock } from 'lucide-react';
+import { OTPService } from './OTPService';
 
 interface SimpleLoginProps {
   onLogin: () => void;
 }
 
 export function SimpleLogin({ onLogin }: SimpleLoginProps) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [isOtpSent, setIsOtpSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
   const { toast } = useToast();
 
-  // Simple hardcoded credentials - you can change these
-  const VALID_USERNAME = 'admin';
-  const VALID_PASSWORD = 'admin123';
+  const ADMIN_EMAIL = 'avtipoos@gmail.com';
+  const otpService = OTPService.getInstance();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const startCountdown = () => {
+    setTimeLeft(600); // 10 minutes
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const sendOTP = async () => {
+    if (email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+      toast({
+        title: "Access Denied",
+        description: "This email is not authorized for admin access.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
+    
+    try {
+      const result = await otpService.sendOTP(email);
+      
+      if (result.success) {
+        toast({
+          title: "OTP Sent",
+          description: result.message,
+        });
+        setIsOtpSent(true);
+        startCountdown();
+      } else {
+        toast({
+          title: "Error",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    // Simple validation
-    if (username === VALID_USERNAME && password === VALID_PASSWORD) {
+  const verifyOTP = () => {
+    const result = otpService.verifyOTP(email, otp);
+    
+    if (result.success) {
       toast({
         title: "Login Successful",
         description: "Welcome to BrilliantBot!",
@@ -35,13 +81,39 @@ export function SimpleLogin({ onLogin }: SimpleLoginProps) {
       onLogin();
     } else {
       toast({
-        title: "Login Failed",
-        description: "Invalid username or password",
+        title: "Verification Failed",
+        description: result.message,
         variant: "destructive",
       });
+      
+      if (result.message.includes('expired') || result.message.includes('Too many')) {
+        resetForm();
+      }
     }
+  };
 
-    setIsLoading(false);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!isOtpSent) {
+      await sendOTP();
+    } else {
+      verifyOTP();
+    }
+  };
+
+  const resetForm = () => {
+    setIsOtpSent(false);
+    setOtp('');
+    setEmail('');
+    setTimeLeft(0);
+    otpService.clearOTP(email);
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -53,59 +125,85 @@ export function SimpleLogin({ onLogin }: SimpleLoginProps) {
           </div>
           <div>
             <CardTitle className="text-2xl font-bold">BrilliantBot</CardTitle>
-            <CardDescription>Please sign in to continue</CardDescription>
+            <CardDescription>
+              {isOtpSent ? 'Enter the OTP sent to your email' : 'Secure Admin Authentication'}
+            </CardDescription>
           </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter username"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter password"
-                  required
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
+            {!isOtpSent ? (
+              <div className="space-y-2">
+                <Label htmlFor="email">Admin Email Address</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your authorized email"
+                    className="pl-10"
+                    required
+                  />
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="otp">One-Time Password</Label>
+                  {timeLeft > 0 && (
+                    <div className="flex items-center text-sm text-gray-500">
+                      <Clock className="h-3 w-3 mr-1" />
+                      {formatTime(timeLeft)}
+                    </div>
+                  )}
+                </div>
+                <div className="relative">
+                  <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="otp"
+                    type="text"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="Enter 6-digit OTP"
+                    className="pl-10 text-center tracking-widest font-mono text-lg"
+                    maxLength={6}
+                    required
+                  />
+                </div>
+              </div>
+            )}
+            
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isLoading}
+              disabled={isLoading || (isOtpSent && otp.length !== 6)}
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? 'Processing...' : isOtpSent ? 'Verify & Login' : 'Send Secure OTP'}
             </Button>
           </form>
-          <div className="mt-4 text-xs text-center text-muted-foreground">
-            <p>Default credentials: admin / admin123</p>
-          </div>
+          
+          {isOtpSent && (
+            <div className="mt-4 space-y-2">
+              <Button 
+                variant="outline" 
+                className="w-full" 
+                onClick={resetForm}
+                disabled={isLoading}
+              >
+                Use Different Email
+              </Button>
+              <Button 
+                variant="ghost" 
+                className="w-full text-sm" 
+                onClick={sendOTP}
+                disabled={isLoading || timeLeft > 540} // Can resend after 1 minute
+              >
+                {timeLeft > 540 ? `Resend in ${formatTime(timeLeft - 540)}` : 'Resend OTP'}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
