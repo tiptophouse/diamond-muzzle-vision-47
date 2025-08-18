@@ -33,16 +33,14 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
     user: authState.user, 
     isAuthenticated: authState.isAuthenticated,
     isTelegramEnvironment: authState.isTelegramEnvironment,
-    showLogin: authState.showLogin,
-    isLoading: authState.isLoading
+    showLogin: authState.showLogin
   });
   
   // Automatically persist user data when authenticated
   useUserDataPersistence(authState.user, authState.isTelegramEnvironment);
 
-  // Show login page ONLY if needed (not authenticated and not in Telegram environment or admin access required)
-  if (authState.showLogin && !authState.isLoading) {
-    console.log('🔐 Showing admin login page');
+  // Show login page if needed
+  if (authState.showLogin) {
     return <SimpleLogin onLogin={authState.handleLoginSuccess} />;
   }
 

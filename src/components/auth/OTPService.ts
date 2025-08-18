@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export class OTPService {
@@ -23,26 +22,10 @@ export class OTPService {
     try {
       console.log('📱 Sending OTP via Telegram to admin:', this.ADMIN_TELEGRAM_ID);
       
-      const stoneData = {
-        stockNumber: 'OTP-REQUEST',
-        shape: 'Authentication',
-        carat: 0,
-        color: 'Security',
-        clarity: 'Admin Access',
-        cut: '',
-        polish: 'Login',
-        symmetry: 'Request',
-        fluorescence: 'OTP',
-        pricePerCarat: 0,
-        lab: '',
-        certificateNumber: otp
-      };
-
-      const { data, error } = await supabase.functions.invoke('send-telegram-message', {
+      const { data, error } = await supabase.functions.invoke('send-telegram-otp', {
         body: {
           telegramId: this.ADMIN_TELEGRAM_ID,
-          stoneData: stoneData,
-          storeUrl: `🔐 **Admin Login OTP**\n\nYour one-time password: **${otp}**\n\nValid for 10 minutes.\n\nDo not share this code with anyone.`
+          otp: otp
         }
       });
 
@@ -80,46 +63,27 @@ export class OTPService {
         attempts: 0
       });
 
-      // Try Telegram first (more reliable)
-      console.log('🔐 Attempting to send OTP via Telegram first...');
+      // Send via Telegram (primary method)
+      console.log('🔐 Sending OTP via Telegram...');
       const telegramResult = await this.sendOTPToTelegram(otp);
       
       if (telegramResult.success) {
         return telegramResult;
       }
 
-      // Fallback to email
-      console.log('📧 Telegram failed, trying email...');
-      try {
-        const { data, error } = await supabase.functions.invoke('send-otp-email', {
-          body: { email, otp }
-        });
-
-        if (error) {
-          throw error;
-        }
-
+      // Fallback to development console
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🔐 DEVELOPMENT OTP for ${email}: ${otp}`);
         return {
           success: true,
-          message: `OTP sent successfully to ${email}`
-        };
-      } catch (emailError) {
-        console.error('❌ Email OTP failed:', emailError);
-        
-        // Final fallback: Log to console in development
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`🔐 DEVELOPMENT OTP for ${email}: ${otp}`);
-          return {
-            success: true,
-            message: `OTP generated (check console): ${otp}`
-          };
-        }
-        
-        return {
-          success: false,
-          message: 'Failed to send OTP. Both Telegram and email delivery failed.'
+          message: `OTP generated (check console): ${otp}`
         };
       }
+      
+      return {
+        success: false,
+        message: 'Failed to send OTP via Telegram. Please try again.'
+      };
     } catch (error) {
       console.error('❌ Failed to send OTP:', error);
       return {
