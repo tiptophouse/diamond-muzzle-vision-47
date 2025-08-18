@@ -5,12 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Server, Key, Copy, RefreshCw, AlertCircle, CheckCircle, RotateCcw } from 'lucide-react';
-
-// API Configuration
-const API_BASE = "http://136.0.3.22:8000";
-const PREFIX = "/api/v1";
+import { getSftpEndpoint } from '@/lib/api/sftpConfig';
 
 // Type definitions matching your API contracts
 type Provision = {
@@ -60,14 +57,14 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
     return String(tg?.user?.id ?? tg?.user?.user_id ?? "");
   }
 
-  // Simple fetch wrapper
-  async function post<T>(path: string, body: any): Promise<T> {
+  // Simple fetch wrapper with proper endpoint construction
+  async function post<T>(endpoint: string, body: any): Promise<T> {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     
-    console.log('🚀 SFTP: Making request to:', `${API_BASE}${PREFIX}${path}`);
+    console.log('🚀 SFTP: Making request to:', endpoint);
     console.log('🚀 SFTP: Request body:', body);
     
-    const response = await fetch(`${API_BASE}${PREFIX}${path}`, { 
+    const response = await fetch(endpoint, { 
       method: "POST", 
       headers, 
       body: JSON.stringify(body) 
@@ -87,7 +84,7 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
   // Test connection once
   async function testOnce(telegram_id: string): Promise<TestResult> {
     console.log('🔍 SFTP: Testing connection for user:', telegram_id);
-    return post<TestResult>("/sftp/test-connection", { telegram_id });
+    return post<TestResult>(getSftpEndpoint('TEST_CONNECTION'), { telegram_id });
   }
 
   // Poll test connection with retries
@@ -178,7 +175,7 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
     try {
       console.log('🚀 SFTP: Generating credentials for Telegram ID:', telegram_id);
       
-      const data = await post<Provision>("/sftp/provision", { telegram_id });
+      const data = await post<Provision>(getSftpEndpoint('PROVISION'), { telegram_id });
       console.log('✅ SFTP: Credentials generated successfully');
       
       setCreds(data.credentials);
@@ -228,6 +225,10 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
     });
   };
 
+  // Check if Telegram ID is available
+  const telegramId = tgId();
+  const isTelegramAvailable = !!telegramId;
+
   // Status badge component
   const StatusBadge = () => {
     switch (status) {
@@ -269,11 +270,21 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Telegram ID Warning */}
+        {!isTelegramAvailable && (
+          <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <AlertCircle className="h-4 w-4 text-amber-500" />
+            <p className="text-sm text-amber-700">
+              לא ניתן לזהות את המשתמש מ-Telegram. ודא שהאפליקציה פועלת בתוך Telegram.
+            </p>
+          </div>
+        )}
+
         {/* Generate Button */}
         <div className="space-y-4">
           <Button
             onClick={onGenerate}
-            disabled={loading || locked}
+            disabled={loading || locked || !isTelegramAvailable}
             className="w-full"
             size="lg"
           >

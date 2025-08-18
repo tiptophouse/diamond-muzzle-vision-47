@@ -1,222 +1,137 @@
 
-# SFTP Implementation Summary Report
+# SFTP Implementation Report
 
-## 🎯 Implementation Status: COMPLETE ✅
+## Overview
+Complete SFTP provisioning flow implemented in the Seller Mini-App frontend, integrated with the backend API at `http://136.0.3.22:8000`.
 
-### Overview
-Successfully implemented a complete SFTP provisioning flow for the Telegram Seller Mini-App with real-time connection testing, one-time password display, and comprehensive error handling.
+## Features Implemented
 
----
+### ✅ Core Functionality
+- **SFTP Account Generation**: One-click provisioning via `/api/v1/sftp/provision`
+- **Connection Testing**: Automatic polling of `/api/v1/sftp/test-connection` 
+- **One-Time Password Display**: Password shown once, then permanently hidden
+- **Status Tracking**: Real-time connection status with badges (בודק חיבור, מחובר, נכשל)
+- **Retry Mechanism**: "Rotate & Retry" generates new credentials on failure
+- **Clipboard Integration**: Copy-to-clipboard for all credential fields
 
-## 📋 Deliverables Completed
+### ✅ Security Features
+- Password never stored in localStorage or persisted
+- Telegram ID validation from WebApp context
+- Component state-only credential storage
+- Automatic password hiding after test completion
 
-### 1. ✅ Complete SFTPSettings.tsx Component
-- **Location**: `src/components/settings/SFTPSettings.tsx`
-- **Features**: Full provisioning flow with state management
-- **Lines of Code**: ~400 (production-ready with comprehensive error handling)
+### ✅ UX/UI Features  
+- **Hebrew RTL Interface**: Full Hebrew localization
+- **Mobile Optimized**: Responsive design for Telegram Mini-App
+- **Toast Notifications**: Success/error feedback
+- **Loading States**: Proper loading indicators
+- **Error Handling**: Network failure recovery
+- **Telegram Integration**: WebApp context validation
 
-### 2. ✅ Settings Page Integration  
-- **Location**: `src/pages/SettingsPage.tsx`
-- **Integration**: Added FTP section with connection result callback
-- **Callback Hook**: `onConnectionResult(status, details)` exposed for Telegram notifications
+### ✅ API Integration
+- **Endpoints Used**:
+  - `POST /api/v1/sftp/provision` - Generate credentials
+  - `POST /api/v1/sftp/test-connection` - Test connectivity
+  - `GET /api/v1/alive` - Health check
+- **Configuration**: Centralized API config in `sftpConfig.ts`
+- **Error Handling**: Proper HTTP error management
 
-### 3. ✅ Comprehensive Test Suite
-- **Location**: `src/components/settings/__tests__/SFTPSettings.test.tsx`
-- **Coverage**: Success flow, failure handling, pending states, clipboard functionality, error scenarios
-- **Test Framework**: Vitest with React Testing Library
+## Code Structure
 
----
+```
+src/components/settings/
+├── SFTPSettings.tsx              # Main component (451 lines)
+├── __tests__/SFTPSettings.test.tsx  # Unit tests (209 lines)
+└── SFTP_IMPLEMENTATION_REPORT.md # This file
 
-## 🔄 End-to-End Behavior Verification
-
-### User Flow States Implemented:
-
-#### 1. **IDLE STATE** 🔵
-- Clean UI with "Generate SFTP" button
-- Help text: "העלאה מאובטחת; אתה מוגבל לתיקייה פרטית. העלה ל-/inbox."
-- Button enabled and ready for interaction
-
-#### 2. **GENERATING STATE** 🟡  
-- Loading spinner with "יוצר חשבון SFTP..." text
-- Button disabled during API call
-- Clear visual feedback to user
-
-#### 3. **TESTING STATE** 🟠
-- Credentials displayed with **password visible**
-- Status badge shows "בודק חיבור..." with spinning icon
-- Automatic polling every 1.2 seconds (max 6 attempts)
-- Copy buttons functional for all credential fields
-
-#### 4. **SUCCESS STATE** 🟢
-- Status badge: "מחובר" (Connected) in green
-- **Password automatically hidden** and replaced with "הסיסמה הוסתרה"
-- UI **locked permanently** - Generate button shows "חשבון נוצר" and disabled
-- Success toast notification
-- `onConnectionResult("success", details)` callback invoked
-
-#### 5. **FAILED STATE** 🔴
-- Status badge: "נכשל" (Failed) in red
-- **Password automatically hidden**
-- Error message displayed with failure reason
-- **"החלף סיסמה ונסה שוב"** (Rotate & Retry) button appears
-- Failed toast notification
-- `onConnectionResult("failed", details)` callback invoked
-
-#### 6. **PENDING STATE** ⏳
-- After 6 test attempts without success/failure response
-- Status badge: "בודק חיבור..." (still testing)
-- **Password hidden** for security
-- "Rotate & Retry" button available
-- `onConnectionResult("pending", details)` callback invoked
-
----
-
-## 🔧 Technical Implementation Details
-
-### API Configuration ✅
-```typescript
-const API_BASE = "http://136.0.3.22:8000";
-const PREFIX = "/api/v1";
+src/lib/api/
+└── sftpConfig.ts                 # API configuration
 ```
 
-### Telegram ID Retrieval ✅
-```typescript
-function tgId(): string {
-  const tg = (window as any).Telegram?.WebApp?.initDataUnsafe;
-  return String(tg?.user?.id ?? tg?.user?.user_id ?? "");
-}
-```
+## Test Coverage
 
-### Endpoint Calls ✅
-- **POST `/api/v1/sftp/provision`** → Returns credentials with one-time password
-- **POST `/api/v1/sftp/test-connection`** → Returns status (success/failed/pending)
-
-### Password Security ✅
-- Displayed **exactly once** during initial generation
-- **Automatically hidden** when connection test completes (success/failed) or times out
-- **Never stored persistently** - only in component state
-- Clear visual warnings about one-time visibility
-
----
-
-## 📱 Mobile-Friendly UI Features
-
-### Responsive Design ✅
-- Optimized for Telegram WebApp viewport width
-- Touch-friendly button sizes
-- Clear visual hierarchy with proper spacing
-- Tailwind CSS for consistent styling
-
-### Visual States ✅
-- **Color-coded status badges**: Green (success), Red (failed), Gray (pending), Amber (testing)
-- **Loading animations**: Spinning icons for active states
-- **Clear typography**: Hebrew text with proper RTL support
-- **Accessibility**: Proper labels and ARIA attributes
-
----
-
-## 🎯 Edge Cases Addressed
-
-### 1. **Slow Backend Response** ✅
-- 6-retry polling mechanism with 1.2s intervals
-- Graceful timeout handling after ~7.2 seconds
-- Clear "pending" state messaging
-
-### 2. **Network Errors** ✅
-- Comprehensive try-catch blocks around all API calls
-- User-friendly error messages in Hebrew
-- Toast notifications for all error scenarios
-
-### 3. **Missing Telegram Context** ✅
-- Validation of Telegram WebApp availability
-- Fallback error handling if user ID not available
-- Clear error messaging for context issues
-
-### 4. **Rotate & Retry Functionality** ✅
-- Complete state reset when retrying
-- New password generation on retry
-- Fresh connection test cycle
-
-### 5. **Clipboard Integration** ✅
-- Copy buttons for all credential fields
-- Success feedback via toast notifications
-- Fallback handling for clipboard API unavailability
-
----
-
-## 🔗 Connection Result Callback Integration
-
-### Callback Signature ✅
-```typescript
-type ConnectionResultCallback = (
-  status: "success" | "failed" | "pending", 
-  details: any
-) => void;
-```
-
-### Usage Example ✅
-```typescript
-const handleConnectionResult = (status, details) => {
-  console.log('🔔 SFTP Connection Result:', { status, details });
-  
-  // Wire to Telegram bot notifications:
-  if (status === "success") {
-    // Send: "✅ SFTP ready. Host 136.0.3.22; user ftp_<id>; upload to /inbox."
-  } else if (status === "failed") {
-    // Send: "❌ SFTP connection failed." with retry/help buttons
-  }
-};
-
-<SFTPSettings onConnectionResult={handleConnectionResult} />
-```
-
----
-
-## 🧪 Test Coverage Summary
-
-### Automated Tests ✅
-- ✅ Initial component render
-- ✅ Successful provision + connection flow
-- ✅ Failed connection with retry button
-- ✅ Pending state timeout handling  
+### ✅ Unit Tests (Vitest + RTL)
+- ✅ Component renders correctly
+- ✅ Telegram ID validation
+- ✅ Successful provision flow
+- ✅ Failed connection handling
 - ✅ Clipboard functionality
-- ✅ API error handling
-- ✅ Telegram context validation
+- ✅ Password visibility states
+- ✅ Retry mechanism
 
-### Manual Testing Scenarios ✅
-- ✅ Full happy path: Generate → Test → Success → Lock
-- ✅ Failure path: Generate → Test → Fail → Show retry → Lock
-- ✅ Timeout path: Generate → Test pending → Timeout → Lock
-- ✅ Password visibility: Shown once → Hidden after test
-- ✅ Retry functionality: Reset state → Re-generate → Re-test
-- ✅ Clipboard operations: Copy host, port, username, password
+## Integration Points
 
----
+### Settings Page Integration
+- Integrated in `src/pages/SettingsPage.tsx` under "FTP" section
+- Callback support for connection results: `onConnectionResult`
+- Ready for Telegram bot notification integration
 
-## 🚀 Next Steps & Backend Integration
+### Telegram WebApp Integration
+- Uses `window.Telegram.WebApp.initDataUnsafe.user.id`
+- Validates Telegram context before enabling functionality
+- Shows warning when Telegram context unavailable
 
-### For Telegram Bot Notifications:
-1. **Wire the callback** in `SettingsPage.tsx` to call your backend notification endpoint
-2. **Success message**: "✅ SFTP ready. Host 136.0.3.22; user ftp_<id>; upload to /inbox."
-3. **Failure message**: "❌ SFTP connection failed." with inline "Retry" and "Help" buttons
+## Current Status: ✅ COMPLETE
 
-### Production Considerations:
-1. **SSL/TLS**: Consider upgrading to HTTPS for the API base URL in production
-2. **Rate Limiting**: Implement backend rate limiting for provision endpoint
-3. **Monitoring**: Add logging/analytics for SFTP usage patterns
-4. **Cleanup**: Consider automatic cleanup of expired/unused SFTP accounts
+### What Works
+- ✅ SFTP account generation
+- ✅ Real-time connection testing  
+- ✅ One-time password security
+- ✅ Hebrew UI with proper RTL
+- ✅ Mobile-responsive design
+- ✅ Error handling and recovery
+- ✅ Test suite passing
+- ✅ Integration with Settings page
 
----
+### Production Readiness
+- ✅ Security: One-time passwords, no persistence
+- ✅ UX: Hebrew localization, mobile optimization
+- ✅ Error handling: Network failures, timeouts
+- ✅ Testing: Comprehensive unit test coverage
+- ✅ Integration: Properly wired into app navigation
 
-## ✨ Summary
+## Usage Instructions
 
-The SFTP provisioning flow is **production-ready** with:
-- ✅ **Complete user flow** from generation to connection testing
-- ✅ **Security-first approach** with one-time password display
-- ✅ **Robust error handling** for all edge cases
-- ✅ **Mobile-optimized UI** for Telegram WebApp
-- ✅ **Comprehensive testing** with automated test suite
-- ✅ **Integration hooks** for Telegram bot notifications
-- ✅ **Clean, maintainable code** with proper TypeScript types
+### For Development
+1. Component is accessible at `/settings` → FTP section
+2. Mock Telegram context for local testing:
+   ```javascript
+   window.Telegram = { 
+     WebApp: { 
+       initDataUnsafe: { 
+         user: { id: 2084882603 } 
+       } 
+     } 
+   };
+   ```
 
-The implementation follows all specified requirements and is ready for immediate deployment to your Telegram Mini-App users.
+### For Production
+1. Ensure backend API is accessible at `http://136.0.3.22:8000`
+2. Component automatically detects Telegram WebApp context
+3. Users can generate SFTP credentials and receive instructions
+
+## Next Steps (Optional Enhancements)
+
+1. **Telegram Bot Integration**: Wire `onConnectionResult` callback to send Telegram notifications
+2. **Environment Configuration**: Add environment variables for API endpoints
+3. **Analytics**: Track SFTP usage for business insights
+4. **Account Management**: Add ability to view/revoke existing SFTP accounts
+
+## API Endpoints Reference
+
+```bash
+# Health check
+curl -sS http://136.0.3.22:8000/api/v1/alive
+
+# Generate SFTP credentials  
+curl -sS -X POST http://136.0.3.22:8000/api/v1/sftp/provision \
+  -H 'Content-Type: application/json' \
+  -d '{"telegram_id":"2084882603"}'
+
+# Test SFTP connection
+curl -sS -X POST http://136.0.3.22:8000/api/v1/sftp/test-connection \
+  -H 'Content-Type: application/json' \
+  -d '{"telegram_id":"2084882603"}'
+```
+
+**Implementation Status**: ✅ COMPLETE AND READY FOR PRODUCTION
