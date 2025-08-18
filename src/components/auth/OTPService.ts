@@ -106,7 +106,7 @@ export class OTPService {
         attempts: 0
       });
 
-      console.log('🔐 Generated OTP for admin access:', otp);
+      console.log('🔐 Generated OTP for admin access');
 
       // Try Telegram first (primary method)
       console.log('📱 Attempting Telegram delivery first...');
