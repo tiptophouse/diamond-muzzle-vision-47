@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Share2, Send, User, Sparkles } from 'lucide-react';
-import { Diamond } from '@/components/inventory/InventoryTable';
+import { Diamond } from '@/types/diamond';
 import { useTelegramDiamondShare } from '@/hooks/useTelegramDiamondShare';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 
@@ -31,7 +31,7 @@ export function TelegramInlineShareButton({
   const handleShare = async () => {
     setIsSharing(true);
     try {
-      const success = await shareDiamondWithInlineKeyboard(diamond, recipientName || undefined);
+      const success = await shareDiamondWithInlineKeyboard(diamond);
       if (success) {
         setIsOpen(false);
         setRecipientName('');
@@ -91,7 +91,7 @@ export function TelegramInlineShareButton({
             <div className="text-sm text-muted-foreground grid grid-cols-2 gap-2">
               <span>Color: {diamond.color}</span>
               <span>Clarity: {diamond.clarity}</span>
-              <span>Stock: {diamond.stockNumber}</span>
+              <span>Stock: {diamond.stock_number}</span>
               <span>Price: ${diamond.price?.toLocaleString()}</span>
             </div>
           </div>

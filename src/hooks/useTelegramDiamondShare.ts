@@ -11,10 +11,10 @@ interface TelegramSendDataPayload {
 
 export function useTelegramDiamondShare() {
   const [isAvailable, setIsAvailable] = useState(false);
-  const tg = useTelegramWebApp();
+  const { webApp } = useTelegramWebApp();
 
   const shareWithInlineButtons = useCallback(async (diamond: Diamond): Promise<boolean> => {
-    if (!tg || !tg.sendData) {
+    if (!webApp || !webApp.sendData) {
       console.warn('Telegram WebApp not available for sharing');
       return false;
     }
@@ -33,14 +33,14 @@ export function useTelegramDiamondShare() {
         timestamp: Date.now()
       };
 
-      tg.sendData(JSON.stringify(shareData));
+      webApp.sendData(JSON.stringify(shareData));
       console.log('✅ Diamond shared via Telegram with inline buttons');
       return true;
     } catch (error) {
       console.error('❌ Failed to share diamond:', error);
       return false;
     }
-  }, [tg]);
+  }, [webApp]);
 
   const shareDiamondWithInlineKeyboard = useCallback(async (diamond: Diamond): Promise<boolean> => {
     return shareWithInlineButtons(diamond);
@@ -71,6 +71,6 @@ export function useTelegramDiamondShare() {
     shareDiamondWithInlineKeyboard,
     trackShareClick,
     verifyUserRegistration,
-    isAvailable: !!tg
+    isAvailable: !!webApp
   };
 }
