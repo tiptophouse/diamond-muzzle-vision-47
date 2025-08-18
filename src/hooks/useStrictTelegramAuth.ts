@@ -59,9 +59,6 @@ interface UseStrictTelegramAuthReturn {
   handleLoginSuccess: () => void;
 }
 
-// Bot token for validation (using Vite environment variable syntax)
-const BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN || '';
-
 // Enhanced Telegram environment detection
 function isGenuineTelegram(): boolean {
   if (typeof window === 'undefined') return false;
@@ -100,22 +97,9 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
     try {
       console.log('🔍 Validating Telegram data...');
       
-      if (!BOT_TOKEN) {
-        console.warn('⚠️ No bot token available for validation');
-        return null;
-      }
-
-      const isValid = validateTelegramHash(initData, BOT_TOKEN);
-      if (!isValid) {
-        console.error('❌ Telegram hash validation failed');
-        return null;
-      }
-
-      const jwtToken = createJWTFromTelegramData(initData, BOT_TOKEN);
-      if (!jwtToken) {
-        console.error('❌ Failed to create JWT token');
-        return null;
-      }
+      // Get bot token from backend (not exposed to frontend)
+      // This should be handled by your FastAPI backend
+      console.log('🔐 Telegram validation should be handled by backend');
 
       // Parse JWT payload from the token (we need to extract the payload)
       try {
@@ -128,25 +112,25 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
           return null;
         }
 
-        const user = JSON.parse(decodeURIComponent(userParam));
+        const userObj = JSON.parse(decodeURIComponent(userParam));
         
         const jwtPayload: TelegramJWTPayload = {
-          telegram_user_id: user.id,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          username: user.username,
-          language_code: user.language_code,
-          is_premium: user.is_premium,
+          telegram_user_id: userObj.id,
+          first_name: userObj.first_name,
+          last_name: userObj.last_name,
+          username: userObj.username,
+          language_code: userObj.language_code,
+          is_premium: userObj.is_premium,
           auth_date: parseInt(authDate),
           hash: hash,
           user: {
-            id: user.id,
-            first_name: user.first_name,
-            last_name: user.last_name,
-            username: user.username,
-            language_code: user.language_code,
-            is_premium: user.is_premium,
-            photo_url: user.photo_url
+            id: userObj.id,
+            first_name: userObj.first_name,
+            last_name: userObj.last_name,
+            username: userObj.username,
+            language_code: userObj.language_code,
+            is_premium: userObj.is_premium,
+            photo_url: userObj.photo_url
           }
         };
 

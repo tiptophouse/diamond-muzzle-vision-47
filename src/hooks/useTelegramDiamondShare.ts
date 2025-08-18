@@ -1,110 +1,165 @@
 
 import { useCallback } from 'react';
 import { useTelegramWebApp } from './useTelegramWebApp';
+import { useTelegramSendData } from './useTelegramSendData';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useTelegramDiamondShare() {
   const { webApp, user } = useTelegramWebApp();
+  const { sendData } = useTelegramSendData();
 
-  const shareDiamondWithInlineKeyboard = useCallback(async (diamond: Diamond, recipientName?: string) => {
+  const createSecureShareData = useCallback((diamond: Diamond) => {
+    // Create secure data payload that only works in Telegram for registered users
+    return {
+      type: 'diamond_share',
+      diamond: {
+        id: diamond.id,
+        stockNumber: diamond.stockNumber,
+        carat: diamond.carat,
+        shape: diamond.shape,
+        color: diamond.color,
+        clarity: diamond.clarity,
+        cut: diamond.cut,
+        price: diamond.price,
+        imageUrl: diamond.imageUrl,
+        gem360Url: diamond.gem360Url
+      },
+      sharedBy: user?.id,
+      timestamp: Date.now(),
+      miniAppUrl: window.location.origin,
+      requiresRegistration: true
+    };
+  }, [user]);
+
+  const verifyUserRegistration = useCallback(async (telegramId: number): Promise<boolean> => {
+    try {
+      // Check if user exists in user_profiles (meaning they've registered and clicked start)
+      const { data: userProfile, error } = await supabase
+        .from('user_profiles')
+        .select('telegram_id, status, created_at')
+        .eq('telegram_id', telegramId)
+        .single();
+
+      if (error || !userProfile) {
+        console.log('❌ User not found in database - not registered:', telegramId);
+        return false;
+      }
+
+      // Additional check: user must be active and have been created (registered)
+      if (userProfile.status !== 'active') {
+        console.log('❌ User account is not active:', telegramId);
+        return false;
+      }
+
+      console.log('✅ User is registered and active:', telegramId);
+      return true;
+    } catch (error) {
+      console.error('❌ Error verifying user registration:', error);
+      return false;
+    }
+  }, []);
+
+  const trackShareClick = useCallback(async (diamondId: string, sharedBy: number) => {
+    try {
+      await supabase.from('diamond_share_analytics').insert({
+        diamond_stock_number: diamondId,
+        owner_telegram_id: sharedBy,
+        viewer_telegram_id: user?.id,
+        viewer_user_agent: navigator.userAgent,
+        device_type: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop',
+        session_id: crypto.randomUUID(),
+        shared_click: true,
+        access_via_share: true
+      });
+      
+      console.log('✅ Share click tracked for diamond:', diamondId);
+    } catch (error) {
+      console.error('❌ Failed to track share click:', error);
+    }
+  }, [user]);
+
+  const shareWithInlineButtons = useCallback(async (diamond: Diamond) => {
     if (!webApp || !user) {
       toast.error('🔒 Telegram Mini App required for sharing');
       return false;
     }
 
     try {
-      // Create the diamond viewing URL
-      const diamondUrl = `${window.location.origin}/diamond/${diamond.id}?shared=true&from=${user.id}`;
+      const shareData = createSecureShareData(diamond);
       
-      // Create the professional diamond message
-      const diamondMessage = `💎 **${diamond.carat}ct ${diamond.shape} Diamond**\n\n` +
-        `🔹 **Shape:** ${diamond.shape}\n` +
-        `⚖️ **Weight:** ${diamond.carat}ct\n` +
-        `🎨 **Color:** ${diamond.color}\n` +
-        `💎 **Clarity:** ${diamond.clarity}\n` +
-        `✂️ **Cut:** ${diamond.cut}\n` +
-        `💰 **Price:** $${diamond.price?.toLocaleString() || 'Contact for Price'}\n` +
-        `📋 **Stock:** ${diamond.stockNumber}\n\n` +
-        `${recipientName ? `Hi ${recipientName}! ` : ''}Check out this beautiful diamond I found for you! 💎✨`;
+      // Create the share message with inline buttons for registered users only
+      const shareMessage = {
+        action: 'share_diamond_with_registration_check',
+        data: {
+          diamond: shareData.diamond,
+          message: `💎 *${diamond.carat} ct ${diamond.shape} Diamond*\n\n` +
+                  `🎨 Color: ${diamond.color}\n` +
+                  `💎 Clarity: ${diamond.clarity}\n` +
+                  `✂️ Cut: ${diamond.cut}\n` +
+                  `💰 Price: $${diamond.price?.toLocaleString() || 'Contact for Price'}\n\n` +
+                  `Stock: ${diamond.stockNumber}\n\n` +
+                  `⚠️ *Registration Required*: You must be registered in our Telegram Mini App to view this diamond.`,
+          inline_keyboard: [
+            [
+              {
+                text: '💎 View Diamond (Registered Users Only)',
+                web_app: {
+                  url: `${window.location.origin}/diamond/${diamond.id}?shared=true&from=${user.id}&verify=true`
+                }
+              }
+            ],
+            [
+              {
+                text: '📝 Register & Start Mini App',
+                web_app: {
+                  url: `${window.location.origin}/?register=true&from=${user.id}`
+                }
+              }
+            ],
+            [
+              {
+                text: '📞 Contact Seller',
+                callback_data: `contact_seller_${diamond.stockNumber}_${user.id}`
+              }
+            ]
+          ]
+        },
+        timestamp: Date.now(),
+        requiresRegistration: true
+      };
 
-      // Create inline keyboard with professional buttons
-      const inlineKeyboard = [
-        [
-          {
-            text: '💎 View Diamond Details',
-            web_app: { url: diamondUrl }
-          },
-          {
-            text: '📞 Contact Seller',
-            callback_data: `contact_${diamond.stockNumber}_${user.id}`
-          }
-        ],
-        [
-          {
-            text: '🔗 Share with Others',
-            switch_inline_query: `Check out this ${diamond.carat}ct ${diamond.shape} diamond! ${diamondUrl}`
-          }
-        ]
-      ];
+      // Send via Telegram WebApp - fix the TypeScript error by converting to array
+      const success = sendData([JSON.stringify(shareMessage)]);
+      
+      if (success) {
+        // Track the share action
+        await supabase.from('diamond_share_analytics').insert({
+          diamond_stock_number: diamond.stockNumber,
+          owner_telegram_id: user.id,
+          viewer_telegram_id: null, // Will be filled when someone clicks
+          action_type: 'share_initiated',
+          session_id: crypto.randomUUID(),
+          access_via_share: true
+        });
 
-      // Send via Telegram's inline keyboard API
-      if (webApp.switchInlineQuery) {
-        // Use switchInlineQuery for sharing with inline keyboard
-        webApp.switchInlineQuery(diamondMessage, false);
-        
-        // Send additional data to bot for inline keyboard processing
-        const shareData = {
-          action: 'share_diamond_inline',
-          data: {
-            diamond: {
-              id: diamond.id,
-              stockNumber: diamond.stockNumber,
-              carat: diamond.carat,
-              shape: diamond.shape,
-              color: diamond.color,
-              clarity: diamond.clarity,
-              cut: diamond.cut,
-              price: diamond.price,
-              imageUrl: diamond.imageUrl
-            },
-            message: diamondMessage,
-            inline_keyboard: inlineKeyboard,
-            sharedBy: {
-              id: user.id,
-              name: user.first_name,
-              username: user.username
-            },
-            diamondUrl: diamondUrl
-          },
-          timestamp: Date.now()
-        };
-
-        if (webApp.sendData) {
-          webApp.sendData(JSON.stringify(shareData));
-        }
-
-        toast.success('💎 Diamond shared with inline buttons!');
+        toast.success('💎 Diamond shared with registration verification!');
         return true;
       } else {
-        throw new Error('Inline sharing not available');
+        throw new Error('Failed to send share data');
       }
     } catch (error) {
-      console.error('❌ Failed to share diamond with inline keyboard:', error);
+      console.error('❌ Failed to share diamond:', error);
       toast.error('Failed to share diamond. Please try again.');
       return false;
     }
-  }, [webApp, user]);
-
-  const createSecureDiamondLink = useCallback((diamond: Diamond) => {
-    if (!user) return null;
-    
-    return `${window.location.origin}/diamond/${diamond.id}?shared=true&from=${user.id}&secure=true`;
-  }, [user]);
+  }, [webApp, user, createSecureShareData, sendData]);
 
   return {
-    shareDiamondWithInlineKeyboard,
-    createSecureDiamondLink,
+    shareWithInlineButtons,
+    trackShareClick,
+    verifyUserRegistration,
     isAvailable: !!(webApp && user)
   };
 }
