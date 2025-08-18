@@ -50,8 +50,8 @@ export function useTelegramDiamondShare() {
 
       // Send via Telegram's inline keyboard API
       if (webApp.switchInlineQuery) {
-        // Use switchInlineQuery with correct parameters - text and optional choose_chat_types
-        webApp.switchInlineQuery(diamondMessage);
+        // Use switchInlineQuery for sharing with inline keyboard
+        webApp.switchInlineQuery(diamondMessage, false);
         
         // Send additional data to bot for inline keyboard processing
         const shareData = {
