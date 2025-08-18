@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export class OTPService {
@@ -22,10 +23,21 @@ export class OTPService {
     try {
       console.log('📱 Sending OTP via Telegram to admin:', this.ADMIN_TELEGRAM_ID);
       
-      const { data, error } = await supabase.functions.invoke('send-telegram-otp', {
+      const { data, error } = await supabase.functions.invoke('send-telegram-message', {
         body: {
           telegramId: this.ADMIN_TELEGRAM_ID,
-          otp: otp
+          stoneData: {
+            stockNumber: 'OTP-REQUEST',
+            shape: 'Admin',
+            carat: 0,
+            color: 'Login',
+            clarity: 'Request',
+            cut: '',
+            polish: 'Secure',
+            symmetry: 'Access',
+            fluorescence: 'Code',
+            certificateNumber: otp
+          }
         }
       });
 
@@ -40,7 +52,7 @@ export class OTPService {
       console.log('✅ OTP sent via Telegram successfully');
       return {
         success: true,
-        message: 'OTP sent to your Telegram'
+        message: 'OTP sent to admin Telegram'
       };
     } catch (error) {
       console.error('❌ Telegram OTP error:', error);
@@ -71,12 +83,12 @@ export class OTPService {
         return telegramResult;
       }
 
-      // Fallback to development console
+      // Fallback to development console (but don't expose OTP in production)
       if (process.env.NODE_ENV === 'development') {
         console.log(`🔐 DEVELOPMENT OTP for ${email}: ${otp}`);
         return {
           success: true,
-          message: `OTP generated (check console): ${otp}`
+          message: 'OTP sent via Telegram (check your Telegram for the code)'
         };
       }
       
