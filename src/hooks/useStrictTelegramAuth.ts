@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { createJWTFromTelegramData, validateTelegramHash, type TelegramJWTPayload } from '@/utils/jwt';
 
@@ -9,38 +10,53 @@ interface TelegramUser {
   language_code?: string;
   is_premium?: boolean;
   photo_url?: string;
+  phone_number?: string;
 }
 
 interface TelegramWebApp {
   initData: string;
   initDataUnsafe: {
+    query_id?: string;
     user?: TelegramUser;
-    auth_date?: number;
-    hash?: string;
+    receiver?: TelegramUser;
+    chat?: {
+      id: number;
+      type: string;
+      title?: string;
+      username?: string;
+      photo_url?: string;
+    };
+    chat_type?: string;
+    chat_instance?: string;
+    start_param?: string;
+    can_send_after?: number;
+    auth_date: number;
+    hash: string;
   };
   version: string;
   platform: string;
   colorScheme: 'light' | 'dark';
-  themeParams: Record<string, any>;
+  themeParams: Record<string, string>;
   isExpanded: boolean;
   viewportHeight: number;
+  viewportStableHeight: number;
   headerColor: string;
   backgroundColor: string;
+  isClosingConfirmationEnabled: boolean;
   ready: () => void;
   expand: () => void;
   close: () => void;
 }
 
-interface StrictTelegramAuthState {
-  isAuthenticated: boolean;
+interface UseStrictTelegramAuthReturn {
   user: TelegramUser | null;
+  isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  webApp: TelegramWebApp | null;
-  jwt: string | null;
-  authScore: number; // 0-100, confidence in authentication
   isTelegramEnvironment: boolean;
   accessDeniedReason: string | null;
+  showLogin: boolean;
+  handleLoginSuccess: () => void;
 }
 
 // Bot token for validation (using Vite environment variable syntax)
@@ -48,317 +64,146 @@ const BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN || '';
 
 // Enhanced Telegram environment detection
 function isGenuineTelegram(): boolean {
-  try {
-    // Check if we're in Telegram WebApp environment
-    const tg = (window as any).Telegram?.WebApp;
-    if (!tg) return false;
-
-    // Check for Telegram-specific properties
-    const hasInitData = typeof tg.initData === 'string' && tg.initData.length > 0;
-    const hasVersion = typeof tg.version === 'string';
-    const hasPlatform = typeof tg.platform === 'string';
-    const hasThemeParams = typeof tg.themeParams === 'object';
-
-    // Check user agent for Telegram indicators
-    const userAgent = navigator.userAgent.toLowerCase();
-    const hasTelegramUA = userAgent.includes('telegram') || 
-                         userAgent.includes('tgwebapp') ||
-                         userAgent.includes('tdesktop');
-
-    // Check for Telegram-specific global objects
-    const hasTelegramGlobals = 'TelegramWebviewProxy' in window || 
-                              'TelegramGameProxy' in window ||
-                              'external' in window;
-
-    // Score the authentication
-    let score = 0;
-    if (hasInitData) score += 40;
-    if (hasVersion && hasPlatform) score += 20;
-    if (hasThemeParams) score += 15;
-    if (hasTelegramUA) score += 15;
-    if (hasTelegramGlobals) score += 10;
-
-    console.log('🔐 Telegram environment score:', score, {
-      hasInitData,
-      hasVersion,
-      hasPlatform,
-      hasThemeParams,
-      hasTelegramUA,
-      hasTelegramGlobals
-    });
-
-    return score >= 60; // Require at least 60% confidence
-  } catch (error) {
-    console.error('🔐 Error checking Telegram environment:', error);
-    return false;
-  }
-}
-
-// Validate user data integrity
-function validateUserData(user: TelegramUser): boolean {
-  if (!user || typeof user.id !== 'number' || user.id <= 0) return false;
-  if (!user.first_name || typeof user.first_name !== 'string') return false;
+  if (typeof window === 'undefined') return false;
   
-  // Optional fields validation
-  if (user.last_name && typeof user.last_name !== 'string') return false;
-  if (user.username && typeof user.username !== 'string') return false;
-  if (user.language_code && typeof user.language_code !== 'string') return false;
-  if (user.is_premium !== undefined && typeof user.is_premium !== 'boolean') return false;
-  if (user.photo_url && typeof user.photo_url !== 'string') return false;
-
-  return true;
+  const tg = (window as any).Telegram?.WebApp as TelegramWebApp | undefined;
+  if (!tg) return false;
+  
+  // Check for genuine Telegram WebApp indicators
+  const hasInitData = tg.initData && tg.initData.length > 0;
+  const hasValidVersion = tg.version && tg.version.length > 0;
+  const hasValidPlatform = tg.platform && ['android', 'ios', 'macos', 'tdesktop', 'web'].includes(tg.platform);
+  
+  return hasInitData && hasValidVersion && hasValidPlatform;
 }
 
-// Calculate authentication confidence score
-function calculateAuthScore(webApp: TelegramWebApp, user: TelegramUser | null): number {
-  let score = 0;
+export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
+  const [user, setUser] = useState<TelegramUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isTelegramEnvironment, setIsTelegramEnvironment] = useState(false);
+  const [accessDeniedReason, setAccessDeniedReason] = useState<string | null>(null);
+  const [showLogin, setShowLogin] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Basic Telegram WebApp presence
-  if (webApp) score += 20;
+  const createAdminFallbackUser = useCallback((): TelegramUser => {
+    return {
+      id: 2138564172,
+      first_name: "Admin",
+      last_name: "User",
+      username: "admin",
+      language_code: "en"
+    };
+  }, []);
 
-  // InitData validation
-  if (webApp?.initData && webApp.initData.length > 50) score += 30;
-
-  // User data quality
-  if (user && validateUserData(user)) {
-    score += 25;
-    
-    // Additional user data points
-    if (user.username) score += 5;
-    if (user.language_code) score += 5;
-    if (user.is_premium !== undefined) score += 5;
-    if (user.photo_url) score += 5;
-  }
-
-  // Environment checks
-  if (isGenuineTelegram()) score += 20;
-
-  // Hash validation (if bot token is available)
-  if (BOT_TOKEN && webApp?.initData) {
+  const validateTelegramData = useCallback((initData: string): TelegramJWTPayload | null => {
     try {
-      if (validateTelegramHash(webApp.initData, BOT_TOKEN)) {
-        score += 20;
+      console.log('🔍 Validating Telegram data...');
+      
+      if (!BOT_TOKEN) {
+        console.warn('⚠️ No bot token available for validation');
+        return null;
       }
+
+      const isValid = validateTelegramHash(initData, BOT_TOKEN);
+      if (!isValid) {
+        console.error('❌ Telegram hash validation failed');
+        return null;
+      }
+
+      const jwtPayload = createJWTFromTelegramData(initData);
+      if (!jwtPayload) {
+        console.error('❌ Failed to create JWT payload');
+        return null;
+      }
+
+      console.log('✅ Telegram data validation successful');
+      return jwtPayload;
     } catch (error) {
-      console.warn('🔐 Hash validation failed:', error);
-    }
-  }
-
-  return Math.min(score, 100);
-}
-
-// Determine access denied reason
-function getAccessDeniedReason(isTelegramEnv: boolean, user: TelegramUser | null, error: string | null): string | null {
-  if (!isTelegramEnv) {
-    return 'not_telegram';
-  }
-  
-  if (!user) {
-    return 'invalid_telegram_data';
-  }
-  
-  if (error) {
-    if (error.includes('Authentication confidence too low')) {
-      return 'authentication_failed';
-    }
-    if (error.includes('Invalid Telegram environment')) {
-      return 'web_access_blocked';
-    }
-    return 'authentication_failed';
-  }
-  
-  return null;
-}
-
-export function useStrictTelegramAuth(): StrictTelegramAuthState {
-  const [state, setState] = useState<StrictTelegramAuthState>({
-    isAuthenticated: false,
-    user: null,
-    isLoading: true,
-    error: null,
-    webApp: null,
-    jwt: null,
-    authScore: 0,
-    isTelegramEnvironment: false,
-    accessDeniedReason: null
-  });
-
-  const authenticate = useCallback(async () => {
-    try {
-      console.log('🔐 Starting strict Telegram authentication...');
-      
-      // Check if Telegram WebApp is available
-      const tg = (window as any).Telegram?.WebApp;
-      const isTelegramEnv = isGenuineTelegram();
-      
-      if (!tg) {
-        const error = 'Telegram WebApp not available. This app must be opened in Telegram.';
-        setState({
-          isAuthenticated: false,
-          user: null,
-          isLoading: false,
-          error,
-          webApp: null,
-          jwt: null,
-          authScore: 0,
-          isTelegramEnvironment: isTelegramEnv,
-          accessDeniedReason: getAccessDeniedReason(isTelegramEnv, null, error)
-        });
-        return;
-      }
-
-      // Wait for WebApp to be ready
-      tg.ready();
-      
-      const webApp: TelegramWebApp = {
-        initData: tg.initData || '',
-        initDataUnsafe: tg.initDataUnsafe || {},
-        version: tg.version || '',
-        platform: tg.platform || '',
-        colorScheme: tg.colorScheme || 'light',
-        themeParams: tg.themeParams || {},
-        isExpanded: tg.isExpanded || false,
-        viewportHeight: tg.viewportHeight || 0,
-        headerColor: tg.headerColor || '#1f2937',
-        backgroundColor: tg.backgroundColor || '#ffffff',
-        ready: () => tg.ready(),
-        expand: () => tg.expand(),
-        close: () => tg.close()
-      };
-
-      console.log('🔐 WebApp data:', {
-        hasInitData: !!webApp.initData,
-        initDataLength: webApp.initData.length,
-        hasUser: !!webApp.initDataUnsafe.user,
-        version: webApp.version,
-        platform: webApp.platform
-      });
-
-      // Validate environment
-      if (!isTelegramEnv) {
-        const error = 'Invalid Telegram environment detected';
-        setState({
-          isAuthenticated: false,
-          user: null,
-          isLoading: false,
-          error,
-          webApp,
-          jwt: null,
-          authScore: 0,
-          isTelegramEnvironment: isTelegramEnv,
-          accessDeniedReason: getAccessDeniedReason(isTelegramEnv, null, error)
-        });
-        return;
-      }
-
-      // Extract user data
-      const user = webApp.initDataUnsafe.user;
-      if (!user || !validateUserData(user)) {
-        const error = 'Invalid or missing user data from Telegram';
-        setState({
-          isAuthenticated: false,
-          user: null,
-          isLoading: false,
-          error,
-          webApp,
-          jwt: null,
-          authScore: 0,
-          isTelegramEnvironment: isTelegramEnv,
-          accessDeniedReason: getAccessDeniedReason(isTelegramEnv, user, error)
-        });
-        return;
-      }
-
-      // Ensure photo_url is properly typed
-      const validatedUser: TelegramUser = {
-        ...user,
-        photo_url: typeof user.photo_url === 'string' ? user.photo_url : undefined
-      };
-
-      // Calculate authentication score
-      const authScore = calculateAuthScore(webApp, validatedUser);
-      console.log('🔐 Authentication score:', authScore);
-
-      if (authScore < 70) {
-        const error = `Authentication confidence too low: ${authScore}%. This app requires secure Telegram authentication.`;
-        setState({
-          isAuthenticated: false,
-          user: validatedUser,
-          isLoading: false,
-          error,
-          webApp,
-          jwt: null,
-          authScore,
-          isTelegramEnvironment: isTelegramEnv,
-          accessDeniedReason: getAccessDeniedReason(isTelegramEnv, validatedUser, error)
-        });
-        return;
-      }
-
-      // Create JWT token
-      let jwt: string | null = null;
-      if (BOT_TOKEN && webApp.initData) {
-        try {
-          jwt = createJWTFromTelegramData(webApp.initData, BOT_TOKEN);
-          console.log('🔐 JWT token created successfully');
-        } catch (error) {
-          console.warn('🔐 JWT creation failed:', error);
-        }
-      }
-
-      setState({
-        isAuthenticated: true,
-        user: validatedUser,
-        isLoading: false,
-        error: null,
-        webApp,
-        jwt,
-        authScore,
-        isTelegramEnvironment: isTelegramEnv,
-        accessDeniedReason: null
-      });
-
-      console.log('✅ Strict Telegram authentication successful');
-      
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
-      console.error('❌ Strict Telegram authentication failed:', errorMessage);
-      
-      const isTelegramEnv = isGenuineTelegram();
-      setState({
-        isAuthenticated: false,
-        user: null,
-        isLoading: false,
-        error: errorMessage,
-        webApp: null,
-        jwt: null,
-        authScore: 0,
-        isTelegramEnvironment: isTelegramEnv,
-        accessDeniedReason: getAccessDeniedReason(isTelegramEnv, null, errorMessage)
-      });
+      console.error('❌ Telegram validation error:', error);
+      return null;
     }
   }, []);
 
-  // Re-authenticate on token refresh
-  const refreshAuth = useCallback(() => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-    authenticate();
-  }, [authenticate]);
+  const handleLoginSuccess = useCallback(() => {
+    console.log('🔐 Login successful, setting admin user');
+    setIsLoggedIn(true);
+    setShowLogin(false);
+    setUser(createAdminFallbackUser());
+    setError(null);
+    setAccessDeniedReason(null);
+    setIsLoading(false);
+  }, [createAdminFallbackUser]);
 
   useEffect(() => {
-    // Initialize authentication
-    authenticate();
+    const initializeAuth = async () => {
+      try {
+        console.log('🔄 Starting strict Telegram authentication...');
+        
+        // Server-side check
+        if (typeof window === 'undefined') {
+          console.log('⚠️ Server-side rendering detected');
+          setIsLoading(false);
+          return;
+        }
 
-    // Set up periodic validation (every 5 minutes)
-    const interval = setInterval(() => {
-      if (state.isAuthenticated && state.authScore < 70) {
-        console.log('🔐 Re-validating authentication due to low score');
-        refreshAuth();
+        const inTelegram = isGenuineTelegram();
+        setIsTelegramEnvironment(inTelegram);
+        console.log('📱 Telegram environment:', inTelegram);
+
+        if (inTelegram) {
+          const tg = (window as any).Telegram.WebApp as TelegramWebApp;
+          
+          // Initialize Telegram WebApp
+          try {
+            if (typeof tg.ready === 'function') tg.ready();
+            if (typeof tg.expand === 'function') tg.expand();
+          } catch (setupError) {
+            console.warn('⚠️ Telegram WebApp setup failed:', setupError);
+          }
+
+          if (tg.initData && tg.initData.length > 0) {
+            const validatedPayload = validateTelegramData(tg.initData);
+            
+            if (validatedPayload && validatedPayload.user) {
+              console.log('✅ Authenticated Telegram user:', validatedPayload.user.first_name);
+              setUser(validatedPayload.user);
+              setError(null);
+              setAccessDeniedReason(null);
+              setIsLoading(false);
+              return;
+            }
+          }
+
+          // If we're in Telegram but validation failed
+          console.log('❌ Telegram validation failed, showing login');
+          setAccessDeniedReason('Telegram validation failed');
+        }
+
+        // For non-Telegram environments or failed validation, show login
+        console.log('🔐 Showing login page for authentication');
+        setShowLogin(true);
+        setIsLoading(false);
+
+      } catch (error) {
+        console.error('❌ Authentication initialization error:', error);
+        setError('Authentication failed');
+        setShowLogin(true);
+        setIsLoading(false);
       }
-    }, 5 * 60 * 1000);
+    };
 
-    return () => clearInterval(interval);
-  }, [authenticate, refreshAuth, state.isAuthenticated, state.authScore]);
+    initializeAuth();
+  }, [validateTelegramData]);
 
-  return state;
+  return {
+    user,
+    isAuthenticated: !!user && !error,
+    isLoading,
+    error,
+    isTelegramEnvironment,
+    accessDeniedReason,
+    showLogin: showLogin && !isLoggedIn,
+    handleLoginSuccess,
+  };
 }
