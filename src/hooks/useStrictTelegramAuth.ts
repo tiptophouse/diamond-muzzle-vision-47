@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { createJWTFromTelegramData, validateTelegramHash, type TelegramJWTPayload } from '@/utils/jwt';
 
@@ -44,8 +43,8 @@ interface StrictTelegramAuthState {
   accessDeniedReason: string | null;
 }
 
-// Bot token for validation (should be environment variable in production)
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
+// Bot token for validation (using Vite environment variable syntax)
+const BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN || '';
 
 // Enhanced Telegram environment detection
 function isGenuineTelegram(): boolean {
