@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Server, Key, Copy, RefreshCw, AlertCircle, CheckCircle, RotateCcw } from 'lucide-react';
 import { sftpApi, type ProvisionResponse } from '@/lib/api/sftp';
+import { useTelegramSendData } from '@/hooks/useTelegramSendData';
 
 // Connection result callback type
 type ConnectionResultCallback = (status: "success" | "failed" | "pending", details: any) => void;
@@ -18,6 +18,7 @@ interface SFTPSettingsProps {
 
 export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
   const { toast } = useToast();
+  const { sendData, reportUserAction, isAvailable: telegramAvailable } = useTelegramSendData();
   
   const [loading, setLoading] = useState(false);
   const [locked, setLocked] = useState(false);
@@ -41,11 +42,54 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
     return String(telegramId);
   }
 
+  // Send SFTP status to Telegram bot
+  const sendSFTPStatusToBot = (
+    status: "success" | "failed" | "pending", 
+    details: any, 
+    credentials?: ProvisionResponse["credentials"]
+  ) => {
+    const telegramId = getTelegramId();
+    
+    const payload = {
+      action: 'sftp_result',
+      data: {
+        type: 'sftp_result',
+        status,
+        telegram_id: telegramId,
+        host: credentials?.host || '136.0.3.22',
+        username: credentials?.username || 'unknown',
+        folder_path: credentials?.folder_path || '/inbox',
+        last_event: details?.last_event || null,
+        timestamp: Date.now()
+      },
+      timestamp: Date.now()
+    };
+
+    console.log('📤 Sending SFTP status to Telegram bot:', payload);
+    
+    if (telegramAvailable) {
+      const success = sendData(payload);
+      if (success) {
+        toast({
+          title: "📱 הודעה נשלחה לטלגרם",
+          description: `סטטוס SFTP (${status}) נשלח לבוט`,
+        });
+      } else {
+        console.warn('⚠️ Failed to send SFTP status to Telegram bot');
+      }
+    } else {
+      console.warn('⚠️ Telegram WebApp not available for sending SFTP status');
+    }
+  };
+
   // Test connection with polling
   async function pollTestConnection(telegramId: string, maxTries = 6, intervalMs = 1200) {
     console.log('🔍 Starting connection test polling...');
     setStatus("pending");
     setPasswordVisible(false); // Hide password immediately when testing starts
+    
+    // Send pending status to bot
+    sendSFTPStatusToBot("pending", { last_event: "Starting connection test" }, creds);
     
     for (let i = 0; i < maxTries; i++) {
       try {
@@ -55,6 +99,9 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
         if (result.status === "success") {
           setStatus("success");
           setLocked(true);
+          
+          // Send success status to bot
+          sendSFTPStatusToBot("success", result, creds);
           
           onConnectionResult?.("success", result);
           
@@ -69,6 +116,9 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
           setStatus("failed");
           setLocked(true);
           setError(result.last_event || "Connection failed");
+          
+          // Send failure status to bot
+          sendSFTPStatusToBot("failed", result, creds);
           
           onConnectionResult?.("failed", result);
           
@@ -94,6 +144,9 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
     setStatus("pending");
     setLocked(true);
     
+    // Send timeout status to bot
+    sendSFTPStatusToBot("pending", { last_event: "Connection test timed out - still checking in background" }, creds);
+    
     onConnectionResult?.("pending", { last_event: "Connection test timed out" });
     
     toast({
@@ -112,6 +165,9 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
     setStatus("idle");
     setCreds(null);
     setPasswordVisible(false);
+    
+    // Report user action to Telegram
+    reportUserAction('sftp_generate_clicked');
     
     try {
       console.log('🚀 Generating SFTP credentials for Telegram ID:', telegramId);
@@ -141,6 +197,9 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
       setStatus("failed");
       setLocked(true);
       
+      // Send error status to bot
+      sendSFTPStatusToBot("failed", { last_event: errorMessage });
+      
       toast({
         title: "❌ שגיאה ביצירת חשבון SFTP",
         description: errorMessage,
@@ -158,6 +217,10 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
     setCreds(null);
     setError(null);
     setPasswordVisible(false);
+    
+    // Report retry action
+    reportUserAction('sftp_retry_clicked');
+    
     onGenerate();
   };
 
@@ -209,6 +272,11 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
         <CardTitle className="flex items-center gap-2">
           <Server className="h-5 w-5" />
           הגדרות SFTP
+          {telegramAvailable && (
+            <Badge variant="outline" className="text-xs">
+              📱 מחובר לטלגרם
+            </Badge>
+          )}
         </CardTitle>
         <CardDescription>
           העלאה מאובטחת; אתה מוגבל לתיקייה פרטית. העלה ל-/inbox.
@@ -390,7 +458,7 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
                 <li>• השתמש בלקוח SFTP כמו FileZilla או WinSCP</li>
                 <li>• העלה קבצי CSV לתיקיית {creds.folder_path}</li>
                 <li>• הקבצים יעובדו אוטומטית תוך מספר דקות</li>
-                <li>• תקבל הודעה כשהעיבוד יסתיים</li>
+                <li>• תקבל הודעה בטלגרם כשהעיבוד יסתיים</li>
               </ul>
             </div>
           </div>
