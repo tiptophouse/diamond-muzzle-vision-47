@@ -18,7 +18,6 @@ export function SimpleLogin({ onLogin }: SimpleLoginProps) {
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
-  const [deliveryMethod, setDeliveryMethod] = useState<string>('');
   const { toast } = useToast();
 
   const ADMIN_EMAIL = 'avtipoos@gmail.com';
@@ -53,18 +52,9 @@ export function SimpleLogin({ onLogin }: SimpleLoginProps) {
       const result = await otpService.sendOTP(email);
       
       if (result.success) {
-        // Determine delivery method from the message
-        if (result.message.includes('Telegram')) {
-          setDeliveryMethod('Telegram');
-        } else if (result.message.includes('email')) {
-          setDeliveryMethod('Email');
-        } else {
-          setDeliveryMethod('Console');
-        }
-        
         toast({
           title: "OTP Sent",
-          description: result.message,
+          description: "Check your Telegram for the verification code",
         });
         setIsOtpSent(true);
         startCountdown();
@@ -117,7 +107,6 @@ export function SimpleLogin({ onLogin }: SimpleLoginProps) {
     setOtp('');
     setEmail('');
     setTimeLeft(0);
-    setDeliveryMethod('');
     otpService.clearOTP(email);
   };
 
@@ -125,17 +114,6 @@ export function SimpleLogin({ onLogin }: SimpleLoginProps) {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const getDeliveryIcon = () => {
-    switch (deliveryMethod) {
-      case 'Telegram':
-        return <MessageCircle className="h-4 w-4 text-blue-500" />;
-      case 'Email':
-        return <Mail className="h-4 w-4 text-green-500" />;
-      default:
-        return <Key className="h-4 w-4 text-gray-400" />;
-    }
   };
 
   return (
@@ -149,7 +127,7 @@ export function SimpleLogin({ onLogin }: SimpleLoginProps) {
             <CardTitle className="text-2xl font-bold">BrilliantBot</CardTitle>
             <CardDescription>
               {isOtpSent ? 
-                `Enter the OTP sent via ${deliveryMethod || 'secure channel'}` : 
+                'Enter the OTP sent to your Telegram' : 
                 'Secure Admin Authentication'
               }
             </CardDescription>
@@ -172,8 +150,9 @@ export function SimpleLogin({ onLogin }: SimpleLoginProps) {
                     required
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  OTP will be sent to your Telegram first, then email as backup
+                <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                  <MessageCircle className="h-3 w-3" />
+                  OTP will be sent to your Telegram
                 </p>
               </div>
             ) : (
@@ -181,7 +160,7 @@ export function SimpleLogin({ onLogin }: SimpleLoginProps) {
                 <div className="flex items-center justify-between">
                   <Label htmlFor="otp" className="flex items-center gap-2">
                     One-Time Password
-                    {getDeliveryIcon()}
+                    <MessageCircle className="h-4 w-4 text-blue-500" />
                   </Label>
                   {timeLeft > 0 && (
                     <div className="flex items-center text-sm text-gray-500">
@@ -203,11 +182,10 @@ export function SimpleLogin({ onLogin }: SimpleLoginProps) {
                     required
                   />
                 </div>
-                {deliveryMethod && (
-                  <p className="text-xs text-gray-500">
-                    Code sent via {deliveryMethod}
-                  </p>
-                )}
+                <p className="text-xs text-gray-500 flex items-center gap-1">
+                  <MessageCircle className="h-3 w-3" />
+                  Code sent via Telegram
+                </p>
               </div>
             )}
             

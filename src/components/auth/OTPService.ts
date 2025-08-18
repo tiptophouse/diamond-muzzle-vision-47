@@ -75,7 +75,7 @@ export class OTPService {
         attempts: 0
       });
 
-      // Send via Telegram (primary method)
+      // Send via Telegram
       console.log('🔐 Sending OTP via Telegram...');
       const telegramResult = await this.sendOTPToTelegram(otp);
       
@@ -83,7 +83,7 @@ export class OTPService {
         return telegramResult;
       }
 
-      // Fallback to development console (but don't expose OTP in production)
+      // Fallback for development only
       if (process.env.NODE_ENV === 'development') {
         console.log(`🔐 DEVELOPMENT OTP for ${email}: ${otp}`);
         return {
