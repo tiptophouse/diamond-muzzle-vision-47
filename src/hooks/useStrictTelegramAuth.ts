@@ -146,7 +146,7 @@ export function useStrictTelegramAuth(): AuthState {
             username: unsafeUser.username,
             language_code: unsafeUser.language_code || 'en',
             is_premium: unsafeUser.is_premium,
-            photo_url: unsafeUser.photo_url,
+            photo_url: (unsafeUser as any).photo_url,
             phone_number: (unsafeUser as any).phone_number
           };
           console.log('✅ InitDataUnsafe authentication successful');
