@@ -111,14 +111,51 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
         return null;
       }
 
-      const jwtPayload = createJWTFromTelegramData(initData);
-      if (!jwtPayload) {
-        console.error('❌ Failed to create JWT payload');
+      const jwtToken = createJWTFromTelegramData(initData, BOT_TOKEN);
+      if (!jwtToken) {
+        console.error('❌ Failed to create JWT token');
         return null;
       }
 
-      console.log('✅ Telegram data validation successful');
-      return jwtPayload;
+      // Parse JWT payload from the token (we need to extract the payload)
+      try {
+        const urlParams = new URLSearchParams(initData);
+        const userParam = urlParams.get('user');
+        const authDate = urlParams.get('auth_date');
+        const hash = urlParams.get('hash');
+
+        if (!userParam || !authDate || !hash) {
+          return null;
+        }
+
+        const user = JSON.parse(decodeURIComponent(userParam));
+        
+        const jwtPayload: TelegramJWTPayload = {
+          telegram_user_id: user.id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          username: user.username,
+          language_code: user.language_code,
+          is_premium: user.is_premium,
+          auth_date: parseInt(authDate),
+          hash: hash,
+          user: {
+            id: user.id,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            username: user.username,
+            language_code: user.language_code,
+            is_premium: user.is_premium,
+            photo_url: user.photo_url
+          }
+        };
+
+        console.log('✅ Telegram data validation successful');
+        return jwtPayload;
+      } catch (parseError) {
+        console.error('❌ Failed to parse JWT payload:', parseError);
+        return null;
+      }
     } catch (error) {
       console.error('❌ Telegram validation error:', error);
       return null;
