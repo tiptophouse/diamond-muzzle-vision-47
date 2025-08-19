@@ -4,21 +4,23 @@ import { Diamond } from '@/components/inventory/InventoryTable';
 import { useInventoryData } from './useInventoryData';
 import { useParams } from 'react-router-dom';
 
-export function useDiamond() {
-  const { id } = useParams<{ id: string }>();
+export function useDiamond(diamondId?: string) {
+  const { id: paramId } = useParams<{ id: string }>();
   const { allDiamonds, loading } = useInventoryData();
   const [diamond, setDiamond] = useState<Diamond | null>(null);
+  
+  const idToUse = diamondId || paramId;
 
   useEffect(() => {
-    if (id && allDiamonds.length > 0) {
-      const foundDiamond = allDiamonds.find(d => d.id === id || d.stockNumber === id);
+    if (idToUse && allDiamonds.length > 0) {
+      const foundDiamond = allDiamonds.find(d => d.id === idToUse || d.stockNumber === idToUse);
       setDiamond(foundDiamond || null);
     }
-  }, [id, allDiamonds]);
+  }, [idToUse, allDiamonds]);
 
   return {
-    diamond,
-    loading,
-    error: !loading && !diamond && id ? 'Diamond not found' : null
+    data: diamond,
+    isLoading: loading,
+    error: !loading && !diamond && idToUse ? 'Diamond not found' : null
   };
 }

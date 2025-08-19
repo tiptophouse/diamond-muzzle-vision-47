@@ -43,7 +43,7 @@ interface InventoryTableProps {
   data: Diamond[];
   loading?: boolean;
   onEdit?: (diamond: Diamond) => void;
-  onDelete?: (diamondId: string) => void;
+  onDelete?: (diamond: Diamond) => void;
   onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
   onImageUpdate?: () => void;
 }

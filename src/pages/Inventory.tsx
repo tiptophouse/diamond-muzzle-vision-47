@@ -87,7 +87,7 @@ export default function Inventory() {
         onRefresh={refetch}
         onAddDiamond={() => navigate('/upload-single-stone')}
       />
-      <InventoryTable diamonds={inventory} />
+      <InventoryTable data={inventory} />
     </div>
   );
 }
