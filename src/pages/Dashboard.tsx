@@ -1,92 +1,27 @@
 
-import { useInventoryData } from '@/hooks/useInventoryData';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useEnhancedTelegramWebApp } from '@/hooks/useEnhancedTelegramWebApp';
 import { DataDrivenDashboard } from '@/components/dashboard/DataDrivenDashboard';
-import { DashboardLoading } from '@/components/dashboard/DashboardLoading';
-import { SecurityMonitor } from '@/components/auth/SecurityMonitor';
-import { getVerificationResult } from '@/lib/api';
-import { useSearchParams } from 'react-router-dom';
-import { useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
 
 export default function Dashboard() {
-  const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
-  const { loading, allDiamonds, fetchData } = useInventoryData();
-  const verificationResult = getVerificationResult();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { navigation, haptics, isInitialized } = useEnhancedTelegramWebApp();
 
-  // Check for upload success notification
   useEffect(() => {
-    const uploadSuccess = searchParams.get('upload_success');
-    const fromBulkUpload = searchParams.get('from');
-    
-    if (uploadSuccess && fromBulkUpload === 'bulk_upload') {
-      toast({
-        title: `🎉 Bulk Upload Successful!`,
-        description: `${uploadSuccess} diamonds have been added to your inventory and are now visible in your dashboard.`,
-        duration: 5000,
-      });
-      
-      // Clear the search parameters after showing the notification
-      setSearchParams({});
-      
-      // Refresh inventory data to show newly uploaded diamonds
-      fetchData();
-    }
-  }, [searchParams, setSearchParams, toast, fetchData]);
+    if (!isInitialized) return;
 
-  console.log('🔍 DASHBOARD DEBUG:');
-  console.log('- Auth loading:', authLoading);
-  console.log('- Is authenticated:', isAuthenticated);
-  console.log('- User:', user);
-  console.log('- FastAPI verification:', verificationResult);
-  console.log('- Inventory loading:', loading);
-  console.log('- Diamonds count:', allDiamonds.length);
+    // Configure navigation for dashboard - no back button, show main action
+    navigation.hideBackButton();
+    navigation.showMainButton('Add Diamond', () => {
+      haptics.medium();
+      navigate('/upload-single-stone');
+    }, '#059669');
 
-  const handleEmergencyMode = () => {
-    console.log('Emergency mode activated - skipping to basic dashboard');
-  };
+    return () => {
+      navigation.hideMainButton();
+    };
+  }, [isInitialized, navigation, haptics, navigate]);
 
-  if (authLoading || loading) {
-    return (
-      <>
-        <DashboardLoading onEmergencyMode={handleEmergencyMode} />
-        <SecurityMonitor />
-      </>
-    );
-  }
-
-  if (!isAuthenticated || !user) {
-    return (
-      <>
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Enhanced Authentication Required</h2>
-            <p className="text-gray-600 mb-4">Please authenticate through Telegram to access your dashboard.</p>
-            <div className="text-sm text-gray-500 space-y-1">
-              <p>Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
-              <p>Is Authenticated: {isAuthenticated ? 'Yes' : 'No'}</p>
-              <p>User: {user ? `${user.first_name} (${user.id})` : 'None'}</p>
-              <p>Enhanced Verification: {verificationResult ? 'Success' : 'Failed'}</p>
-            </div>
-          </div>
-        </div>
-        <SecurityMonitor />
-      </>
-    );
-  }
-
-  return (
-    <>
-      <div className="min-h-screen bg-gray-50">
-        <DataDrivenDashboard 
-          allDiamonds={allDiamonds} 
-          loading={loading}
-          fetchData={fetchData} 
-        />
-      </div>
-      <SecurityMonitor />
-    </>
-  );
+  return <DataDrivenDashboard />;
 }
