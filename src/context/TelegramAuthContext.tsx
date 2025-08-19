@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useStrictTelegramAuth } from '@/hooks/useStrictTelegramAuth';
+import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useUserDataPersistence } from '@/hooks/useUserDataPersistence';
 import { SimpleLogin } from '@/components/auth/SimpleLogin';
 import { useNavigate } from 'react-router-dom';
@@ -23,20 +23,18 @@ interface TelegramAuthContextType {
   isLoading: boolean;
   error: string | null;
   isTelegramEnvironment: boolean;
-  accessDeniedReason: string | null;
 }
 
 const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(undefined);
 
 export function TelegramAuthProvider({ children }: { children: ReactNode }) {
-  const authState = useStrictTelegramAuth();
+  const authState = useTelegramAuth();
   const navigate = useNavigate();
   
   console.log('🔍 TelegramAuthProvider - Auth state:', { 
     user: authState.user, 
     isAuthenticated: authState.isAuthenticated,
     isTelegramEnvironment: authState.isTelegramEnvironment,
-    showLogin: authState.showLogin,
     isLoading: authState.isLoading
   });
   
@@ -63,11 +61,7 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  // Show login page only if needed and not loading
-  if (authState.showLogin && !authState.isLoading) {
-    return <SimpleLogin onLogin={authState.handleLoginSuccess} />;
-  }
-
+  // If not authenticated, still provide the context but let individual pages handle login
   return (
     <TelegramAuthContext.Provider value={{
       user: authState.user,
@@ -75,7 +69,6 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
       isLoading: authState.isLoading,
       error: authState.error,
       isTelegramEnvironment: authState.isTelegramEnvironment,
-      accessDeniedReason: authState.accessDeniedReason,
     }}>
       {children}
     </TelegramAuthContext.Provider>
