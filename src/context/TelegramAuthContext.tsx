@@ -1,8 +1,7 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useTelegramAuth } from '@/hooks/useTelegramAuth';
+import { useTelegramAuth as useTelegramAuthHook } from '@/hooks/useTelegramAuth';
 import { useUserDataPersistence } from '@/hooks/useUserDataPersistence';
-import { SimpleLogin } from '@/components/auth/SimpleLogin';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 
@@ -28,7 +27,7 @@ interface TelegramAuthContextType {
 const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(undefined);
 
 export function TelegramAuthProvider({ children }: { children: ReactNode }) {
-  const authState = useTelegramAuth();
+  const authState = useTelegramAuthHook();
   const navigate = useNavigate();
   
   console.log('🔍 TelegramAuthProvider - Auth state:', { 
@@ -61,7 +60,6 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  // If not authenticated, still provide the context but let individual pages handle login
   return (
     <TelegramAuthContext.Provider value={{
       user: authState.user,
@@ -75,10 +73,10 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useTelegramAuth() {
+export function useTelegramAuthContext() {
   const context = useContext(TelegramAuthContext);
   if (context === undefined) {
-    throw new Error('useTelegramAuth must be used within a TelegramAuthProvider');
+    throw new Error('useTelegramAuthContext must be used within a TelegramAuthProvider');
   }
   return context;
 }
