@@ -1,9 +1,8 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useTelegramAuth as useTelegramAuthHook } from '@/hooks/useTelegramAuth';
+import { useStrictTelegramAuth } from '@/hooks/useStrictTelegramAuth';
 import { useUserDataPersistence } from '@/hooks/useUserDataPersistence';
-import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { SimpleLogin } from '@/components/auth/SimpleLogin';
 
 interface TelegramUser {
   id: number;
@@ -22,42 +21,27 @@ interface TelegramAuthContextType {
   isLoading: boolean;
   error: string | null;
   isTelegramEnvironment: boolean;
+  accessDeniedReason: string | null;
 }
 
 const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(undefined);
 
 export function TelegramAuthProvider({ children }: { children: ReactNode }) {
-  const authState = useTelegramAuthHook();
-  const navigate = useNavigate();
+  const authState = useStrictTelegramAuth();
   
   console.log('🔍 TelegramAuthProvider - Auth state:', { 
     user: authState.user, 
     isAuthenticated: authState.isAuthenticated,
     isTelegramEnvironment: authState.isTelegramEnvironment,
-    isLoading: authState.isLoading
+    showLogin: authState.showLogin
   });
   
   // Automatically persist user data when authenticated
   useUserDataPersistence(authState.user, authState.isTelegramEnvironment);
 
-  // Auto-redirect to dashboard when user is authenticated
-  useEffect(() => {
-    if (authState.isAuthenticated && authState.user && !authState.isLoading) {
-      console.log('✅ User authenticated, redirecting to dashboard');
-      navigate('/dashboard');
-    }
-  }, [authState.isAuthenticated, authState.user, authState.isLoading, navigate]);
-
-  // Show loading state while initializing
-  if (authState.isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Initializing...</p>
-        </div>
-      </div>
-    );
+  // Show login page if needed
+  if (authState.showLogin) {
+    return <SimpleLogin onLogin={authState.handleLoginSuccess} />;
   }
 
   return (
@@ -67,6 +51,7 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
       isLoading: authState.isLoading,
       error: authState.error,
       isTelegramEnvironment: authState.isTelegramEnvironment,
+      accessDeniedReason: authState.accessDeniedReason,
     }}>
       {children}
     </TelegramAuthContext.Provider>

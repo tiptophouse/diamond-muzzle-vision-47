@@ -1,7 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createJWTFromTelegramData, validateTelegramHash, type TelegramJWTPayload } from '@/utils/jwt';
-import { verifyTelegramUser, signInToBackend } from '@/lib/api/auth';
 
 interface TelegramUser {
   id: number;
@@ -97,60 +96,68 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
     };
   }, []);
 
-  const authenticateWithTelegramData = useCallback(async (initData: string): Promise<TelegramUser | null> => {
+  const validateTelegramData = useCallback((initData: string): TelegramJWTPayload | null => {
     try {
-      console.log('🔐 Authenticating with Telegram initData...');
+      console.log('🔍 Validating Telegram data...');
       
-      // First try backend verification
-      const verificationResult = await verifyTelegramUser(initData);
-      
-      if (verificationResult && verificationResult.success) {
-        console.log('✅ Backend verification successful');
-        
-        // Try to sign in to backend to get auth token
-        await signInToBackend(initData);
-        
-        return {
-          id: verificationResult.user_id,
-          first_name: verificationResult.user_data?.first_name || 'User',
-          last_name: verificationResult.user_data?.last_name,
-          username: verificationResult.user_data?.username,
-          language_code: verificationResult.user_data?.language_code || 'en',
-          is_premium: verificationResult.user_data?.is_premium,
-          photo_url: verificationResult.user_data?.photo_url
-        };
+      if (!BOT_TOKEN) {
+        console.warn('⚠️ No bot token available for validation');
+        return null;
       }
-      
-      // Fallback to client-side validation
-      if (BOT_TOKEN) {
-        const isValid = validateTelegramHash(initData, BOT_TOKEN);
-        if (isValid) {
-          const jwtToken = createJWTFromTelegramData(initData, BOT_TOKEN);
-          if (jwtToken) {
-            const urlParams = new URLSearchParams(initData);
-            const userParam = urlParams.get('user');
-            
-            if (userParam) {
-              const userData = JSON.parse(decodeURIComponent(userParam));
-              console.log('✅ Client-side validation successful');
-              
-              return {
-                id: userData.id,
-                first_name: userData.first_name,
-                last_name: userData.last_name,
-                username: userData.username,
-                language_code: userData.language_code || 'en',
-                is_premium: userData.is_premium,
-                photo_url: userData.photo_url
-              };
-            }
-          }
+
+      const isValid = validateTelegramHash(initData, BOT_TOKEN);
+      if (!isValid) {
+        console.error('❌ Telegram hash validation failed');
+        return null;
+      }
+
+      const jwtToken = createJWTFromTelegramData(initData, BOT_TOKEN);
+      if (!jwtToken) {
+        console.error('❌ Failed to create JWT token');
+        return null;
+      }
+
+      // Parse JWT payload from the token (we need to extract the payload)
+      try {
+        const urlParams = new URLSearchParams(initData);
+        const userParam = urlParams.get('user');
+        const authDate = urlParams.get('auth_date');
+        const hash = urlParams.get('hash');
+
+        if (!userParam || !authDate || !hash) {
+          return null;
         }
+
+        const user = JSON.parse(decodeURIComponent(userParam));
+        
+        const jwtPayload: TelegramJWTPayload = {
+          telegram_user_id: user.id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          username: user.username,
+          language_code: user.language_code,
+          is_premium: user.is_premium,
+          auth_date: parseInt(authDate),
+          hash: hash,
+          user: {
+            id: user.id,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            username: user.username,
+            language_code: user.language_code,
+            is_premium: user.is_premium,
+            photo_url: user.photo_url
+          }
+        };
+
+        console.log('✅ Telegram data validation successful');
+        return jwtPayload;
+      } catch (parseError) {
+        console.error('❌ Failed to parse JWT payload:', parseError);
+        return null;
       }
-      
-      return null;
     } catch (error) {
-      console.error('❌ Telegram authentication error:', error);
+      console.error('❌ Telegram validation error:', error);
       return null;
     }
   }, []);
@@ -168,7 +175,7 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        console.log('🔄 Starting Telegram authentication...');
+        console.log('🔄 Starting strict Telegram authentication...');
         
         // Server-side check
         if (typeof window === 'undefined') {
@@ -192,14 +199,12 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
             console.warn('⚠️ Telegram WebApp setup failed:', setupError);
           }
 
-          // Try authentication with initData first
           if (tg.initData && tg.initData.length > 0) {
-            console.log('🔐 Found initData, attempting authentication');
-            const authenticatedUser = await authenticateWithTelegramData(tg.initData);
+            const validatedPayload = validateTelegramData(tg.initData);
             
-            if (authenticatedUser) {
-              console.log('✅ Authenticated Telegram user:', authenticatedUser.first_name);
-              setUser(authenticatedUser);
+            if (validatedPayload && validatedPayload.user) {
+              console.log('✅ Authenticated Telegram user:', validatedPayload.user.first_name);
+              setUser(validatedPayload.user);
               setError(null);
               setAccessDeniedReason(null);
               setIsLoading(false);
@@ -207,55 +212,26 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
             }
           }
 
-          // Try initDataUnsafe as immediate fallback for Telegram users
-          if (tg.initDataUnsafe?.user) {
-            console.log('⚠️ Using initDataUnsafe for Telegram authentication');
-            const unsafeUser = tg.initDataUnsafe.user;
-            
-            const telegramUser: TelegramUser = {
-              id: unsafeUser.id,
-              first_name: unsafeUser.first_name || 'User',
-              last_name: unsafeUser.last_name,
-              username: unsafeUser.username,
-              language_code: unsafeUser.language_code || 'en',
-              is_premium: unsafeUser.is_premium,
-              photo_url: unsafeUser.photo_url
-            };
-
-            setUser(telegramUser);
-            setError(null);
-            setAccessDeniedReason(null);
-            setIsLoading(false);
-            return;
-          }
-
-          // If we're in Telegram but no user data, still try admin fallback
-          console.log('⚠️ Telegram environment but no user data, using admin fallback');
-          const adminUser = createAdminFallbackUser();
-          setUser(adminUser);
-          setError(null);
-          setAccessDeniedReason(null);
-          setIsLoading(false);
-          return;
+          // If we're in Telegram but validation failed
+          console.log('❌ Telegram validation failed, showing login');
+          setAccessDeniedReason('Telegram validation failed');
         }
 
-        // For non-Telegram environments, show login
-        console.log('🔐 Non-Telegram environment, showing login');
+        // For non-Telegram environments or failed validation, show login
+        console.log('🔐 Showing login page for authentication');
         setShowLogin(true);
         setIsLoading(false);
 
       } catch (error) {
         console.error('❌ Authentication initialization error:', error);
-        // Always fallback to admin for any error
-        const adminUser = createAdminFallbackUser();
-        setUser(adminUser);
-        setError('Authentication error - using admin access');
+        setError('Authentication failed');
+        setShowLogin(true);
         setIsLoading(false);
       }
     };
 
     initializeAuth();
-  }, [authenticateWithTelegramData, createAdminFallbackUser]);
+  }, [validateTelegramData]);
 
   return {
     user,
@@ -264,7 +240,7 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
     error,
     isTelegramEnvironment,
     accessDeniedReason,
-    showLogin: showLogin && !isLoggedIn && !user,
+    showLogin: showLogin && !isLoggedIn,
     handleLoginSuccess,
   };
 }
