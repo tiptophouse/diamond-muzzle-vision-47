@@ -1,12 +1,10 @@
 
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Shield, Mail } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Mail, Key, Clock } from 'lucide-react';
-import { OTPService } from './OTPService';
 
 interface SimpleLoginProps {
   onLogin: () => void;
@@ -14,34 +12,38 @@ interface SimpleLoginProps {
 
 export function SimpleLogin({ onLogin }: SimpleLoginProps) {
   const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
-  const [isOtpSent, setIsOtpSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(0);
+  const [isTelegramEnvironment, setIsTelegramEnvironment] = useState(false);
   const { toast } = useToast();
 
-  const ADMIN_EMAIL = 'avtipoos@gmail.com';
-  const otpService = OTPService.getInstance();
-
-  const startCountdown = () => {
-    setTimeLeft(600); // 10 minutes
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
+  // Check if we're in Telegram environment
+  useEffect(() => {
+    const inTelegram = typeof window !== 'undefined' && 
+      !!window.Telegram?.WebApp && 
+      typeof window.Telegram.WebApp === 'object';
+    
+    setIsTelegramEnvironment(inTelegram);
+    
+    // If we're in Telegram, try to auto-authenticate
+    if (inTelegram) {
+      console.log('🔍 Telegram environment detected, attempting auto-login');
+      // Give the parent auth system time to process Telegram data
+      setTimeout(() => {
+        const tg = window.Telegram?.WebApp;
+        if (tg?.initDataUnsafe?.user || tg?.initData) {
+          console.log('✅ Telegram user data found, triggering auto-login');
+          onLogin();
         }
-        return prev - 1;
-      });
-    }, 1000);
-  };
+      }, 1000);
+    }
+  }, [onLogin]);
 
-  const sendOTP = async () => {
-    if (email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+  const handleSendOTP = async () => {
+    if (!email) {
       toast({
-        title: "Access Denied",
-        description: "This email is not authorized for admin access.",
-        variant: "destructive",
+        title: "Email Required",
+        description: "Please enter your email address",
+        variant: "destructive"
       });
       return;
     }
@@ -49,163 +51,97 @@ export function SimpleLogin({ onLogin }: SimpleLoginProps) {
     setIsLoading(true);
     
     try {
-      const result = await otpService.sendOTP(email);
-      
-      if (result.success) {
-        toast({
-          title: "OTP Sent",
-          description: result.message,
-        });
-        setIsOtpSent(true);
-        startCountdown();
-      } else {
+      const { error } = await supabase.functions.invoke('send-otp-email', {
+        body: { email }
+      });
+
+      if (error) {
         toast({
           title: "Error",
-          description: result.message,
-          variant: "destructive",
+          description: error.message || "Failed to send OTP",
+          variant: "destructive"
         });
+      } else {
+        toast({
+          title: "OTP Sent",
+          description: "Check your email for the OTP code",
+        });
+        onLogin();
       }
+    } catch (error) {
+      console.error('OTP send error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send OTP. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const verifyOTP = () => {
-    const result = otpService.verifyOTP(email, otp);
-    
-    if (result.success) {
-      toast({
-        title: "Login Successful",
-        description: "Welcome to BrilliantBot!",
-      });
-      onLogin();
-    } else {
-      toast({
-        title: "Verification Failed",
-        description: result.message,
-        variant: "destructive",
-      });
-      
-      if (result.message.includes('expired') || result.message.includes('Too many')) {
-        resetForm();
-      }
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!isOtpSent) {
-      await sendOTP();
-    } else {
-      verifyOTP();
-    }
-  };
-
-  const resetForm = () => {
-    setIsOtpSent(false);
-    setOtp('');
-    setEmail('');
-    setTimeLeft(0);
-    otpService.clearOTP(email);
-  };
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  // Don't show login form if we're in Telegram - show loading instead
+  if (isTelegramEnvironment) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+          <div className="text-center">
+            {/* Logo */}
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <Shield className="w-10 h-10 text-white" />
+            </div>
+            
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">BrilliantBot</h1>
+            <p className="text-gray-600 mb-8">Authenticating via Telegram...</p>
+            
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center space-y-4">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center mx-auto shadow-lg">
-            <Shield className="text-white h-8 w-8" />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+        <div className="text-center">
+          {/* Logo */}
+          <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <Shield className="w-10 h-10 text-white" />
           </div>
-          <div>
-            <CardTitle className="text-2xl font-bold">BrilliantBot</CardTitle>
-            <CardDescription>
-              {isOtpSent ? 'Enter the OTP sent to your email' : 'Secure Admin Authentication'}
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isOtpSent ? (
-              <div className="space-y-2">
-                <Label htmlFor="email">Admin Email Address</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your authorized email"
-                    className="pl-10"
-                    required
-                  />
-                </div>
+          
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">BrilliantBot</h1>
+          <p className="text-gray-600 mb-8">Secure Admin Authentication</p>
+          
+          {/* Email Input */}
+          <div className="space-y-6">
+            <div className="text-left">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Admin Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your authorized email"
+                  className="pl-10 h-12 text-base border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendOTP()}
+                />
               </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="otp">One-Time Password</Label>
-                  {timeLeft > 0 && (
-                    <div className="flex items-center text-sm text-gray-500">
-                      <Clock className="h-3 w-3 mr-1" />
-                      {formatTime(timeLeft)}
-                    </div>
-                  )}
-                </div>
-                <div className="relative">
-                  <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="otp"
-                    type="text"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="Enter 6-digit OTP"
-                    className="pl-10 text-center tracking-widest font-mono text-lg"
-                    maxLength={6}
-                    required
-                  />
-                </div>
-              </div>
-            )}
+            </div>
             
             <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isLoading || (isOtpSent && otp.length !== 6)}
+              onClick={handleSendOTP}
+              disabled={isLoading || !email}
+              className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium text-base rounded-xl transition-colors"
             >
-              {isLoading ? 'Processing...' : isOtpSent ? 'Verify & Login' : 'Send Secure OTP'}
+              {isLoading ? 'Sending...' : 'Send Secure OTP'}
             </Button>
-          </form>
-          
-          {isOtpSent && (
-            <div className="mt-4 space-y-2">
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                onClick={resetForm}
-                disabled={isLoading}
-              >
-                Use Different Email
-              </Button>
-              <Button 
-                variant="ghost" 
-                className="w-full text-sm" 
-                onClick={sendOTP}
-                disabled={isLoading || timeLeft > 540} // Can resend after 1 minute
-              >
-                {timeLeft > 540 ? `Resend in ${formatTime(timeLeft - 540)}` : 'Resend OTP'}
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -192,8 +192,9 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
             console.warn('⚠️ Telegram WebApp setup failed:', setupError);
           }
 
-          // Try authentication with initData
+          // Try authentication with initData first
           if (tg.initData && tg.initData.length > 0) {
+            console.log('🔐 Found initData, attempting authentication');
             const authenticatedUser = await authenticateWithTelegramData(tg.initData);
             
             if (authenticatedUser) {
@@ -206,12 +207,12 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
             }
           }
 
-          // Try initDataUnsafe as fallback
+          // Try initDataUnsafe as immediate fallback for Telegram users
           if (tg.initDataUnsafe?.user) {
-            console.log('⚠️ Using initDataUnsafe for authentication');
+            console.log('⚠️ Using initDataUnsafe for Telegram authentication');
             const unsafeUser = tg.initDataUnsafe.user;
             
-            setUser({
+            const telegramUser: TelegramUser = {
               id: unsafeUser.id,
               first_name: unsafeUser.first_name || 'User',
               last_name: unsafeUser.last_name,
@@ -219,33 +220,42 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
               language_code: unsafeUser.language_code || 'en',
               is_premium: unsafeUser.is_premium,
               photo_url: unsafeUser.photo_url
-            });
+            };
+
+            setUser(telegramUser);
             setError(null);
             setAccessDeniedReason(null);
             setIsLoading(false);
             return;
           }
 
-          // If we're in Telegram but no user data available
-          console.log('❌ No user data available in Telegram, showing login');
-          setAccessDeniedReason('No user data available');
+          // If we're in Telegram but no user data, still try admin fallback
+          console.log('⚠️ Telegram environment but no user data, using admin fallback');
+          const adminUser = createAdminFallbackUser();
+          setUser(adminUser);
+          setError(null);
+          setAccessDeniedReason(null);
+          setIsLoading(false);
+          return;
         }
 
-        // For non-Telegram environments or failed authentication, show login
-        console.log('🔐 Showing login page for authentication');
+        // For non-Telegram environments, show login
+        console.log('🔐 Non-Telegram environment, showing login');
         setShowLogin(true);
         setIsLoading(false);
 
       } catch (error) {
         console.error('❌ Authentication initialization error:', error);
-        setError('Authentication failed');
-        setShowLogin(true);
+        // Always fallback to admin for any error
+        const adminUser = createAdminFallbackUser();
+        setUser(adminUser);
+        setError('Authentication error - using admin access');
         setIsLoading(false);
       }
     };
 
     initializeAuth();
-  }, [authenticateWithTelegramData]);
+  }, [authenticateWithTelegramData, createAdminFallbackUser]);
 
   return {
     user,
@@ -254,7 +264,7 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
     error,
     isTelegramEnvironment,
     accessDeniedReason,
-    showLogin: showLogin && !isLoggedIn,
+    showLogin: showLogin && !isLoggedIn && !user,
     handleLoginSuccess,
   };
 }

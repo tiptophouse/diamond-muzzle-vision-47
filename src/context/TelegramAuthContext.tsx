@@ -36,22 +36,35 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
     user: authState.user, 
     isAuthenticated: authState.isAuthenticated,
     isTelegramEnvironment: authState.isTelegramEnvironment,
-    showLogin: authState.showLogin
+    showLogin: authState.showLogin,
+    isLoading: authState.isLoading
   });
   
   // Automatically persist user data when authenticated
   useUserDataPersistence(authState.user, authState.isTelegramEnvironment);
 
-  // Auto-redirect to dashboard when user is authenticated via Telegram
+  // Auto-redirect to dashboard when user is authenticated
   useEffect(() => {
-    if (authState.isAuthenticated && authState.user && authState.isTelegramEnvironment) {
-      console.log('✅ Telegram user authenticated, redirecting to dashboard');
+    if (authState.isAuthenticated && authState.user && !authState.isLoading) {
+      console.log('✅ User authenticated, redirecting to dashboard');
       navigate('/dashboard');
     }
-  }, [authState.isAuthenticated, authState.user, authState.isTelegramEnvironment, navigate]);
+  }, [authState.isAuthenticated, authState.user, authState.isLoading, navigate]);
 
-  // Show login page if needed
-  if (authState.showLogin) {
+  // Show loading state while initializing
+  if (authState.isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Initializing...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login page only if needed and not loading
+  if (authState.showLogin && !authState.isLoading) {
     return <SimpleLogin onLogin={authState.handleLoginSuccess} />;
   }
 
