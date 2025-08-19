@@ -73,10 +73,10 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useTelegramAuthContext() {
+export function useTelegramAuth() {
   const context = useContext(TelegramAuthContext);
   if (context === undefined) {
-    throw new Error('useTelegramAuthContext must be used within a TelegramAuthProvider');
+    throw new Error('useTelegramAuth must be used within a TelegramAuthProvider');
   }
   return context;
 }
