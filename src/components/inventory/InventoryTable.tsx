@@ -17,7 +17,7 @@ export interface Diamond {
   shape: string;
   carat: number;
   color: string;
-  color_type?: 'Fancy' | 'Standard'; // Add this field to differentiate fancy vs standard
+  color_type?: 'Fancy' | 'Standard';
   clarity: string;
   cut: string;
   price: number;
@@ -31,12 +31,11 @@ export interface Diamond {
   certificateNumber?: string;
   lab?: string;
   certificateUrl?: string;
-  // Add CSV-specific fields
-  Image?: string; // CSV Image field
-  image?: string; // Alternative image field
-  picture?: string; // Another possible image field
-  'Video link'?: string; // CSV Video link field
-  videoLink?: string; // Alternative video link field
+  Image?: string;
+  image?: string;
+  picture?: string;
+  'Video link'?: string;
+  videoLink?: string;
 }
 
 interface InventoryTableProps {

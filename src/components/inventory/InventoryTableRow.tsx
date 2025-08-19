@@ -15,13 +15,17 @@ interface InventoryTableRowProps {
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamond: Diamond) => void;
   onView?: (diamond: Diamond) => void;
+  onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
+  onImageUpdate?: () => void;
 }
 
 export function InventoryTableRow({ 
   diamond, 
   onEdit, 
   onDelete, 
-  onView 
+  onView,
+  onStoreToggle,
+  onImageUpdate
 }: InventoryTableRowProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const { shareWithInlineButtons, isAvailable: sharingAvailable } = useSecureDiamondSharing();

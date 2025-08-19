@@ -54,13 +54,12 @@ export default function InventoryPage() {
     setEditingDiamond(diamond);
   };
 
-  const handleDelete = async (diamondId: string) => {
-    console.log('🗑️ Delete diamond clicked:', diamondId);
+  const handleDelete = async (diamond: Diamond) => {
+    console.log('🗑️ Delete diamond clicked:', diamond.id);
     if (window.confirm('Are you sure you want to delete this diamond?')) {
-      const diamond = allDiamonds.find(d => d.id === diamondId);
-      console.log('🗑️ Deleting diamond:', diamond?.stockNumber, 'Diamond ID:', diamond?.diamondId);
+      console.log('🗑️ Deleting diamond:', diamond.stockNumber, 'Diamond ID:', diamond.diamondId);
       
-      const success = await deleteDiamond(diamondId, diamond);
+      const success = await deleteDiamond(diamond.id, diamond);
       if (success) {
         console.log('✅ Diamond deleted successfully');
       } else {
@@ -98,7 +97,6 @@ export default function InventoryPage() {
   const handleEditSubmit = async (data: any) => {
     console.log('💾 Saving edited diamond:', data);
     if (editingDiamond) {
-      // Use the FastAPI diamond ID if available for the update
       const diamondIdToUpdate = editingDiamond.diamondId?.toString() || editingDiamond.id;
       console.log('📝 Using diamond ID for update:', diamondIdToUpdate);
       
