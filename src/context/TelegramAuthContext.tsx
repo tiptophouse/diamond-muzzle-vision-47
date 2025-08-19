@@ -1,8 +1,6 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useStrictTelegramAuth } from '@/hooks/useStrictTelegramAuth';
-import { useUserDataPersistence } from '@/hooks/useUserDataPersistence';
-import { SimpleLogin } from '@/components/auth/SimpleLogin';
+import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 
 interface TelegramUser {
   id: number;
@@ -21,37 +19,27 @@ interface TelegramAuthContextType {
   isLoading: boolean;
   error: string | null;
   isTelegramEnvironment: boolean;
-  accessDeniedReason: string | null;
 }
 
 const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(undefined);
 
 export function TelegramAuthProvider({ children }: { children: ReactNode }) {
-  const authState = useStrictTelegramAuth();
+  const { user, isLoading, error, isTelegramEnvironment, isAuthenticated } = useTelegramAuth();
   
   console.log('🔍 TelegramAuthProvider - Auth state:', { 
-    user: authState.user, 
-    isAuthenticated: authState.isAuthenticated,
-    isTelegramEnvironment: authState.isTelegramEnvironment,
-    showLogin: authState.showLogin
+    user: user, 
+    isAuthenticated: isAuthenticated,
+    isTelegramEnvironment: isTelegramEnvironment,
+    isLoading: isLoading
   });
-  
-  // Automatically persist user data when authenticated
-  useUserDataPersistence(authState.user, authState.isTelegramEnvironment);
-
-  // Show login page if needed
-  if (authState.showLogin) {
-    return <SimpleLogin onLogin={authState.handleLoginSuccess} />;
-  }
 
   return (
     <TelegramAuthContext.Provider value={{
-      user: authState.user,
-      isAuthenticated: authState.isAuthenticated,
-      isLoading: authState.isLoading,
-      error: authState.error,
-      isTelegramEnvironment: authState.isTelegramEnvironment,
-      accessDeniedReason: authState.accessDeniedReason,
+      user,
+      isAuthenticated,
+      isLoading,
+      error,
+      isTelegramEnvironment,
     }}>
       {children}
     </TelegramAuthContext.Provider>
