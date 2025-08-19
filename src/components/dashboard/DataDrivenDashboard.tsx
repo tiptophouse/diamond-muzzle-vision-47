@@ -5,7 +5,7 @@ import { FixedDashboardStats } from "./FixedDashboardStats";
 import { InventoryChart } from "./InventoryChart";
 import { MarketInsights } from "./MarketInsights";
 import { Diamond } from "@/components/inventory/InventoryTable";
-import { processDiamondDataForDashboard } from "@/services/diamondAnalytics";
+import { processDiamondDataForDashboard } from "@/services/dashboardDataProcessor";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 
 interface DataDrivenDashboardProps {

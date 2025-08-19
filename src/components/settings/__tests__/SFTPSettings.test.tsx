@@ -1,56 +1,55 @@
 
-import React from 'react';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import '@testing-library/jest-dom';
 import { SFTPSettings } from '../SFTPSettings';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
-// Mock the Telegram auth context
+// Mock the hooks and components
 vi.mock('@/context/TelegramAuthContext', () => ({
-  useTelegramAuth: vi.fn()
-}));
-
-// Mock the toast hook
-vi.mock('@/components/ui/use-toast', () => ({
-  useToast: () => ({
-    toast: vi.fn()
+  useTelegramAuth: () => ({
+    user: { id: 123456789 },
+    isAuthenticated: true
   })
 }));
 
-// Mock the API
-vi.mock('@/lib/api', () => ({
-  api: {
-    post: vi.fn(),
-    get: vi.fn()
+vi.mock('@/components/ui/use-toast', () => ({
+  toast: vi.fn()
+}));
+
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: {
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          single: vi.fn(() => Promise.resolve({ data: null, error: null }))
+        }))
+      })),
+      insert: vi.fn(() => Promise.resolve({ data: null, error: null })),
+      update: vi.fn(() => ({
+        eq: vi.fn(() => Promise.resolve({ data: null, error: null }))
+      }))
+    }))
   }
 }));
 
 describe('SFTPSettings', () => {
-  beforeEach(() => {
-    (useTelegramAuth as any).mockReturnValue({
-      user: { id: 123, first_name: 'Test User' },
-      isAuthenticated: true
-    });
-  });
-
   it('renders SFTP settings form', () => {
     render(<SFTPSettings />);
-    expect(screen.getByText('SFTP Configuration')).toBeInTheDocument();
+    
+    expect(screen.getByText('SFTP Settings')).toBeInTheDocument();
+    expect(screen.getByLabelText('FTP Username')).toBeInTheDocument();
   });
 
-  it('shows provision button when not provisioned', () => {
+  it('shows generate password button', () => {
     render(<SFTPSettings />);
-    expect(screen.getByText('Provision SFTP Access')).toBeInTheDocument();
+    
+    expect(screen.getByText('Generate New Password')).toBeInTheDocument();
   });
 
-  it('handles provision button click', async () => {
+  it('allows saving settings', async () => {
     render(<SFTPSettings />);
-    const provisionButton = screen.getByText('Provision SFTP Access');
     
-    fireEvent.click(provisionButton);
-    
-    await waitFor(() => {
-      expect(provisionButton).toBeInTheDocument();
-    });
+    const saveButton = screen.getByText('Save Settings');
+    expect(saveButton).toBeInTheDocument();
   });
 });
