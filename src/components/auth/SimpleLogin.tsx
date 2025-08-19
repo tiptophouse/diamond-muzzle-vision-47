@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Mail, Key, Clock, MessageCircle } from 'lucide-react';
+import { Shield, Mail, Key, Clock } from 'lucide-react';
 import { OTPService } from './OTPService';
 
 interface SimpleLoginProps {
@@ -18,7 +18,6 @@ export function SimpleLogin({ onLogin }: SimpleLoginProps) {
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
-  const [deliveryMethod, setDeliveryMethod] = useState<string>('');
   const { toast } = useToast();
 
   const ADMIN_EMAIL = 'avtipoos@gmail.com';
@@ -53,15 +52,6 @@ export function SimpleLogin({ onLogin }: SimpleLoginProps) {
       const result = await otpService.sendOTP(email);
       
       if (result.success) {
-        // Determine delivery method from the message
-        if (result.message.includes('Telegram')) {
-          setDeliveryMethod('Telegram');
-        } else if (result.message.includes('email')) {
-          setDeliveryMethod('Email');
-        } else {
-          setDeliveryMethod('Console');
-        }
-        
         toast({
           title: "OTP Sent",
           description: result.message,
@@ -117,7 +107,6 @@ export function SimpleLogin({ onLogin }: SimpleLoginProps) {
     setOtp('');
     setEmail('');
     setTimeLeft(0);
-    setDeliveryMethod('');
     otpService.clearOTP(email);
   };
 
@@ -125,17 +114,6 @@ export function SimpleLogin({ onLogin }: SimpleLoginProps) {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const getDeliveryIcon = () => {
-    switch (deliveryMethod) {
-      case 'Telegram':
-        return <MessageCircle className="h-4 w-4 text-blue-500" />;
-      case 'Email':
-        return <Mail className="h-4 w-4 text-green-500" />;
-      default:
-        return <Key className="h-4 w-4 text-gray-400" />;
-    }
   };
 
   return (
@@ -148,10 +126,7 @@ export function SimpleLogin({ onLogin }: SimpleLoginProps) {
           <div>
             <CardTitle className="text-2xl font-bold">BrilliantBot</CardTitle>
             <CardDescription>
-              {isOtpSent ? 
-                `Enter the OTP sent via ${deliveryMethod || 'secure channel'}` : 
-                'Secure Admin Authentication'
-              }
+              {isOtpSent ? 'Enter the OTP sent to your email' : 'Secure Admin Authentication'}
             </CardDescription>
           </div>
         </CardHeader>
@@ -172,17 +147,11 @@ export function SimpleLogin({ onLogin }: SimpleLoginProps) {
                     required
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  OTP will be sent to your Telegram first, then email as backup
-                </p>
               </div>
             ) : (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="otp" className="flex items-center gap-2">
-                    One-Time Password
-                    {getDeliveryIcon()}
-                  </Label>
+                  <Label htmlFor="otp">One-Time Password</Label>
                   {timeLeft > 0 && (
                     <div className="flex items-center text-sm text-gray-500">
                       <Clock className="h-3 w-3 mr-1" />
@@ -203,11 +172,6 @@ export function SimpleLogin({ onLogin }: SimpleLoginProps) {
                     required
                   />
                 </div>
-                {deliveryMethod && (
-                  <p className="text-xs text-gray-500">
-                    Code sent via {deliveryMethod}
-                  </p>
-                )}
               </div>
             )}
             

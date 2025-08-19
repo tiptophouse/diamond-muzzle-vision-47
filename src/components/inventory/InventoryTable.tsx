@@ -17,7 +17,7 @@ export interface Diamond {
   shape: string;
   carat: number;
   color: string;
-  color_type?: 'Fancy' | 'Standard';
+  color_type?: 'Fancy' | 'Standard'; // Add this field to differentiate fancy vs standard
   clarity: string;
   cut: string;
   price: number;
@@ -31,18 +31,19 @@ export interface Diamond {
   certificateNumber?: string;
   lab?: string;
   certificateUrl?: string;
-  Image?: string;
-  image?: string;
-  picture?: string;
-  'Video link'?: string;
-  videoLink?: string;
+  // Add CSV-specific fields
+  Image?: string; // CSV Image field
+  image?: string; // Alternative image field
+  picture?: string; // Another possible image field
+  'Video link'?: string; // CSV Video link field
+  videoLink?: string; // Alternative video link field
 }
 
 interface InventoryTableProps {
   data: Diamond[];
   loading?: boolean;
   onEdit?: (diamond: Diamond) => void;
-  onDelete?: (diamond: Diamond) => void;
+  onDelete?: (diamondId: string) => void;
   onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
   onImageUpdate?: () => void;
 }

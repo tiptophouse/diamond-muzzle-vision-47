@@ -1,164 +1,117 @@
 
-import React, { useState } from "react";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Diamond } from "./InventoryTable";
-import { Edit, Trash2, Eye, Share2 } from "lucide-react";
-import { useSecureDiamondSharing } from "@/hooks/useSecureDiamondSharing";
-import { toast } from "sonner";
-import { api, apiEndpoints } from "@/lib/api";
-import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { Edit, Trash, ImageIcon, Upload } from "lucide-react";
+import { StoreVisibilityToggle } from "./StoreVisibilityToggle";
+import { UserImageUpload } from "./UserImageUpload";
 
 interface InventoryTableRowProps {
-  diamond: Diamond;
+  diamond: Diamond & { store_visible?: boolean; picture?: string };
   onEdit?: (diamond: Diamond) => void;
-  onDelete?: (diamond: Diamond) => void;
-  onView?: (diamond: Diamond) => void;
+  onDelete?: (diamondId: string) => void;
   onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
   onImageUpdate?: () => void;
 }
 
-export function InventoryTableRow({ 
-  diamond, 
-  onEdit, 
-  onDelete, 
-  onView,
-  onStoreToggle,
-  onImageUpdate
-}: InventoryTableRowProps) {
-  const [isDeleting, setIsDeleting] = useState(false);
-  const { shareWithInlineButtons, isAvailable: sharingAvailable } = useSecureDiamondSharing();
-  const { user } = useTelegramAuth();
-
-  const handleDelete = async () => {
-    if (!user || !diamond.id) return;
-
-    setIsDeleting(true);
-    try {
-      console.log('🗑️ Deleting diamond:', diamond.id, 'for user:', user.id);
-      
-      // Use the correct FastAPI endpoint for deletion
-      await api.delete(apiEndpoints.deleteDiamond(diamond.id, user.id));
-      
-      console.log('✅ Diamond deleted successfully');
-      
-      // Dispatch success event for notifications
-      window.dispatchEvent(new CustomEvent('diamondDeleted', {
-        detail: { 
-          success: true, 
-          message: `Diamond ${diamond.stockNumber} deleted successfully!` 
-        }
-      }));
-      
-      // Call the onDelete callback if provided
-      onDelete?.(diamond);
-      
-    } catch (error) {
-      console.error('❌ Failed to delete diamond:', error);
-      
-      // Dispatch failure event for notifications
-      window.dispatchEvent(new CustomEvent('diamondDeleted', {
-        detail: { 
-          success: false, 
-          message: `Failed to delete diamond ${diamond.stockNumber}` 
-        }
-      }));
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleSecureShare = async () => {
-    if (!sharingAvailable) {
-      toast.error('🔒 Secure sharing requires Telegram Mini App');
-      return;
-    }
-
-    try {
-      const success = await shareWithInlineButtons(diamond);
-      
-      if (success) {
-        // Dispatch success event for notifications
-        window.dispatchEvent(new CustomEvent('diamondShared', {
-          detail: { 
-            success: true, 
-            message: `Diamond ${diamond.stockNumber} shared securely!` 
-          }
-        }));
-      }
-    } catch (error) {
-      console.error('❌ Failed to share diamond:', error);
-      
-      // Dispatch failure event for notifications
-      window.dispatchEvent(new CustomEvent('diamondShared', {
-        detail: { 
-          success: false, 
-          message: `Failed to share diamond ${diamond.stockNumber}` 
-        }
-      }));
-    }
-  };
-
+export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle, onImageUpdate }: InventoryTableRowProps) {
   return (
-    <TableRow>
-      <TableCell className="font-medium">{diamond.stockNumber}</TableCell>
-      <TableCell>{diamond.shape}</TableCell>
-      <TableCell>{diamond.carat}</TableCell>
-      <TableCell>
-        <Badge variant="outline">{diamond.color}</Badge>
+    <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-800">
+      <TableCell className="w-16">
+        {diamond.imageUrl || diamond.picture ? (
+          <img 
+            src={diamond.imageUrl || diamond.picture} 
+            alt={`Diamond ${diamond.stockNumber}`}
+            className="w-12 h-12 object-cover rounded border border-slate-200 dark:border-slate-600"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const placeholderDiv = e.currentTarget.nextElementSibling as HTMLElement;
+              if (placeholderDiv) {
+                placeholderDiv.classList.remove('hidden');
+              }
+            }}
+          />
+        ) : null}
+        <div className={`w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 flex items-center justify-center ${diamond.imageUrl || diamond.picture ? 'hidden' : ''}`}>
+          <ImageIcon className="h-4 w-4 text-slate-400" />
+        </div>
+      </TableCell>
+      <TableCell className="font-mono text-xs font-medium text-slate-600 dark:text-slate-400">
+        {diamond.diamondId || 'N/A'}
+      </TableCell>
+      <TableCell className="font-mono text-xs font-medium text-slate-900 dark:text-slate-100">
+        {diamond.stockNumber}
+      </TableCell>
+      <TableCell className="font-medium text-slate-900 dark:text-slate-100">{diamond.shape}</TableCell>
+      <TableCell className="text-right font-medium text-slate-900 dark:text-slate-100">
+        {diamond.carat.toFixed(2)}
       </TableCell>
       <TableCell>
-        <Badge variant="outline">{diamond.clarity}</Badge>
-      </TableCell>
-      <TableCell>{diamond.cut}</TableCell>
-      <TableCell className="text-right">
-        ${diamond.price?.toLocaleString() || 'N/A'}
+        <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">
+          {diamond.color}
+        </Badge>
       </TableCell>
       <TableCell>
-        <Badge variant={diamond.status === 'Available' ? 'default' : 'secondary'}>
+        <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">
+          {diamond.clarity}
+        </Badge>
+      </TableCell>
+      <TableCell>
+        <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">
+          {diamond.cut}
+        </Badge>
+      </TableCell>
+      <TableCell className="text-right font-bold text-slate-900 dark:text-slate-100">
+        ${diamond.price.toLocaleString()}
+      </TableCell>
+      <TableCell>
+        <Badge 
+          className={`${
+            diamond.status === "Available" 
+              ? "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900 dark:text-emerald-200" 
+              : diamond.status === "Reserved" 
+              ? "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900 dark:text-blue-200" 
+              : "bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-700 dark:text-slate-200"
+          }`}
+          variant="outline"
+        >
           {diamond.status}
         </Badge>
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-2">
-          {onView && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onView(diamond)}
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
+        <div className="flex gap-1">
+          {onStoreToggle && (
+            <StoreVisibilityToggle 
+              stockNumber={diamond.stockNumber}
+              isVisible={diamond.store_visible || false}
+              onToggle={onStoreToggle}
+            />
           )}
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleSecureShare}
-            disabled={!sharingAvailable}
-          >
-            <Share2 className="h-4 w-4" />
-          </Button>
-          
+          <UserImageUpload 
+            diamond={diamond}
+            onUpdate={onImageUpdate || (() => {})}
+          />
           {onEdit && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onEdit(diamond)}
+              className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700"
             >
               <Edit className="h-4 w-4" />
             </Button>
           )}
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleDelete}
-            disabled={isDeleting}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          {onDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDelete(diamond.id)}
+              className="h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400"
+            >
+              <Trash className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </TableCell>
     </TableRow>
