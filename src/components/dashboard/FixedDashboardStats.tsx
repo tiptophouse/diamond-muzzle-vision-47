@@ -2,7 +2,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Diamond, TrendingUp, DollarSign, Package } from "lucide-react";
 import { Diamond as DiamondType } from "@/components/inventory/InventoryTable";
-import { processDashboardStats, formatCurrency } from "@/services/dashboardDataProcessor";
+import { processDiamondDataForDashboard, formatCurrency } from "@/services/dashboardDataProcessor";
 import { useRealTimeUserCount } from "@/hooks/useRealTimeUserCount";
 
 interface FixedDashboardStatsProps {
@@ -10,7 +10,7 @@ interface FixedDashboardStatsProps {
 }
 
 export function FixedDashboardStats({ diamonds }: FixedDashboardStatsProps) {
-  const stats = processDashboardStats(diamonds);
+  const { stats } = processDiamondDataForDashboard(diamonds);
   const { userCount } = useRealTimeUserCount();
   
   return (
@@ -45,7 +45,7 @@ export function FixedDashboardStats({ diamonds }: FixedDashboardStatsProps) {
             <Package className="h-5 w-5 text-blue-500" />
             <span className="text-xs text-green-600 font-medium">+5%</span>
           </div>
-          <div className="text-2xl font-bold">{stats.availableDiamonds.toLocaleString()}</div>
+          <div className="text-2xl font-bold">{stats.totalDiamonds.toLocaleString()}</div>
           <div className="text-sm text-muted-foreground">Available</div>
           <div className="text-xs text-muted-foreground">Ready to sell</div>
         </CardContent>
@@ -57,7 +57,7 @@ export function FixedDashboardStats({ diamonds }: FixedDashboardStatsProps) {
             <TrendingUp className="h-5 w-5 text-blue-500" />
             <span className="text-xs text-red-600 font-medium">2%</span>
           </div>
-          <div className="text-2xl font-bold">{formatCurrency(stats.averagePricePerCarat)}</div>
+          <div className="text-2xl font-bold">{formatCurrency(stats.averagePrice)}</div>
           <div className="text-sm text-muted-foreground">Price/Ct</div>
           <div className="text-xs text-muted-foreground">Average</div>
         </CardContent>
