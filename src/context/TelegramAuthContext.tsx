@@ -3,6 +3,8 @@ import React, { createContext, useContext, ReactNode } from 'react';
 import { useStrictTelegramAuth } from '@/hooks/useStrictTelegramAuth';
 import { useUserDataPersistence } from '@/hooks/useUserDataPersistence';
 import { SimpleLogin } from '@/components/auth/SimpleLogin';
+import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 
 interface TelegramUser {
   id: number;
@@ -28,6 +30,7 @@ const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(u
 
 export function TelegramAuthProvider({ children }: { children: ReactNode }) {
   const authState = useStrictTelegramAuth();
+  const navigate = useNavigate();
   
   console.log('🔍 TelegramAuthProvider - Auth state:', { 
     user: authState.user, 
@@ -38,6 +41,14 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
   
   // Automatically persist user data when authenticated
   useUserDataPersistence(authState.user, authState.isTelegramEnvironment);
+
+  // Auto-redirect to dashboard when user is authenticated via Telegram
+  useEffect(() => {
+    if (authState.isAuthenticated && authState.user && authState.isTelegramEnvironment) {
+      console.log('✅ Telegram user authenticated, redirecting to dashboard');
+      navigate('/dashboard');
+    }
+  }, [authState.isAuthenticated, authState.user, authState.isTelegramEnvironment, navigate]);
 
   // Show login page if needed
   if (authState.showLogin) {
