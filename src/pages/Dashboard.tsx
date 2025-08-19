@@ -1,6 +1,5 @@
-
 import { useInventoryData } from '@/hooks/useInventoryData';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useSecureFastAPIAuthContext } from '@/context/SecureFastAPIAuthContext';
 import { DataDrivenDashboard } from '@/components/dashboard/DataDrivenDashboard';
 import { DashboardLoading } from '@/components/dashboard/DashboardLoading';
 import { SecurityMonitor } from '@/components/auth/SecurityMonitor';
@@ -10,7 +9,7 @@ import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Dashboard() {
-  const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useSecureFastAPIAuthContext();
   const { loading, allDiamonds, fetchData } = useInventoryData();
   const verificationResult = getVerificationResult();
   const [searchParams, setSearchParams] = useSearchParams();
