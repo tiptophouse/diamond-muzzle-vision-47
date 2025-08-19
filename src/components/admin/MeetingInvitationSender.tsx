@@ -120,11 +120,14 @@ export function MeetingInvitationSender() {
 
   const fetchClickTracking = async () => {
     try {
-      // TODO: Enable this once meeting_invite_clicks table is created
-      // For now, using empty array to prevent errors
-      setClickTracking([]);
-      
-      console.log('Click tracking will be available after database migration');
+      const { data, error } = await supabase
+        .from('meeting_invite_clicks')
+        .select('*')
+        .order('clicked_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      setClickTracking(data || []);
     } catch (error) {
       console.error('Error fetching click tracking:', error);
     }
@@ -320,7 +323,7 @@ export function MeetingInvitationSender() {
         </CardContent>
       </Card>
 
-      {/* Click Tracking Section - Temporarily disabled until table is created */}
+      {/* Click Tracking Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between text-right">
@@ -339,16 +342,38 @@ export function MeetingInvitationSender() {
         </CardHeader>
         {showClickTracking && (
           <CardContent>
-            <div className="text-center py-8">
-              <Eye className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">מעקב לחיצות יהיה זמין לאחר הגדרת מסד הנתונים</p>
-              <p className="text-xs text-muted-foreground mt-2">
-                לאחר יצירת הטבלה, תוכל לראות כאן מי לחץ על קישורי הקלנדלי
-              </p>
-            </div>
+            {clickTracking.length === 0 ? (
+              <div className="text-center py-8">
+                <Eye className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">עדיין אין לחיצות על הזמנות</p>
+              </div>
+            ) : (
+              <div className="max-h-60 overflow-y-auto space-y-2">
+                {clickTracking.map((click) => (
+                  <div key={click.id} className="p-3 bg-muted/30 rounded-lg" dir="rtl">
+                    <div className="flex items-center justify-between">
+                      <div className="text-right">
+                        <span className="font-medium">
+                          {click.user_info?.first_name || `User ${click.telegram_id}`}
+                        </span>
+                        <p className="text-xs text-muted-foreground">
+                          ID: {click.telegram_id}
+                        </p>
+                      </div>
+                      <div className="text-left">
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(click.clicked_at).toLocaleString('he-IL')}
+                        </p>
+                        <ExternalLink className="h-3 w-3 text-green-500" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="mt-4 p-3 bg-blue-50 rounded-lg">
               <p className="text-sm text-blue-800 text-right">
-                💡 כל לחיצה על קישור הקלנדלי תירשם כאן אוטומטית לאחר הגדרת המעקב
+                💡 כל לחיצה על קישור הקלנדלי תירשם כאן אוטומטית
               </p>
             </div>
           </CardContent>
