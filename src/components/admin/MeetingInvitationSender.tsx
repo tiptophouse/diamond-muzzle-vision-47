@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Send, Users, Clock, Eye, ExternalLink } from 'lucide-react';
+import { Calendar, Send, Users, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,26 +15,12 @@ interface UserWithoutDiamonds {
   created_at: string;
 }
 
-interface MeetingInviteClick {
-  id: string;
-  telegram_id: number;
-  clicked_at: string;
-  user_agent?: string;
-  ip_address?: string;
-  user_info?: {
-    first_name?: string;
-    username?: string;
-  };
-}
-
 export function MeetingInvitationSender() {
   const { toast } = useToast();
   const [users, setUsers] = useState<UserWithoutDiamonds[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
-  const [clickTracking, setClickTracking] = useState<MeetingInviteClick[]>([]);
-  const [showClickTracking, setShowClickTracking] = useState(false);
 
   const defaultMessage = `שלום {firstName}! 👋
 
@@ -118,21 +103,6 @@ export function MeetingInvitationSender() {
     }
   };
 
-  const fetchClickTracking = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('meeting_invite_clicks')
-        .select('*')
-        .order('clicked_at', { ascending: false })
-        .limit(100);
-
-      if (error) throw error;
-      setClickTracking(data || []);
-    } catch (error) {
-      console.error('Error fetching click tracking:', error);
-    }
-  };
-
   const toggleUserSelection = (telegramId: number) => {
     const newSelected = new Set(selectedUsers);
     if (newSelected.has(telegramId)) {
@@ -180,11 +150,10 @@ export function MeetingInvitationSender() {
 
       toast({
         title: 'הזמנות נשלחו בהצלחה! 📅',
-        description: `נשלחו ${selectedUsersList.length} הזמנות לפגישה אישית עם מעקב לחיצות`,
+        description: `נשלחו ${selectedUsersList.length} הזמנות לפגישה אישית`,
       });
 
       await fetchUsersWithoutDiamonds();
-      await fetchClickTracking();
 
     } catch (error) {
       console.error('Error sending meeting invitations:', error);
@@ -200,7 +169,6 @@ export function MeetingInvitationSender() {
 
   useEffect(() => {
     fetchUsersWithoutDiamonds();
-    fetchClickTracking();
   }, []);
 
   if (loading) {
@@ -321,63 +289,6 @@ export function MeetingInvitationSender() {
             </div>
           )}
         </CardContent>
-      </Card>
-
-      {/* Click Tracking Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between text-right">
-            <div className="flex items-center gap-2">
-              <Eye className="h-5 w-5 text-green-500" />
-              מעקב לחיצות על הזמנות ({clickTracking.length})
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowClickTracking(!showClickTracking)}
-            >
-              {showClickTracking ? 'הסתר' : 'הצג'} מעקב
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        {showClickTracking && (
-          <CardContent>
-            {clickTracking.length === 0 ? (
-              <div className="text-center py-8">
-                <Eye className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">עדיין אין לחיצות על הזמנות</p>
-              </div>
-            ) : (
-              <div className="max-h-60 overflow-y-auto space-y-2">
-                {clickTracking.map((click) => (
-                  <div key={click.id} className="p-3 bg-muted/30 rounded-lg" dir="rtl">
-                    <div className="flex items-center justify-between">
-                      <div className="text-right">
-                        <span className="font-medium">
-                          {click.user_info?.first_name || `User ${click.telegram_id}`}
-                        </span>
-                        <p className="text-xs text-muted-foreground">
-                          ID: {click.telegram_id}
-                        </p>
-                      </div>
-                      <div className="text-left">
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(click.clicked_at).toLocaleString('he-IL')}
-                        </p>
-                        <ExternalLink className="h-3 w-3 text-green-500" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800 text-right">
-                💡 כל לחיצה על קישור הקלנדלי תירשם כאן אוטומטית
-              </p>
-            </div>
-          </CardContent>
-        )}
       </Card>
     </div>
   );
