@@ -1,5 +1,6 @@
-
 import { TelegramLayout } from '@/components/layout/TelegramLayout';
+import { AdminOTPLogin } from '@/components/auth/AdminOTPLogin';
+import { useSecureAdminSession } from '@/hooks/useSecureAdminSession';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { AdminStatsGrid } from '@/components/admin/AdminStatsGrid';
 import { AdminUserManager } from '@/components/admin/AdminUserManager';
@@ -20,7 +21,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function Admin() {
-  const { user, isAuthenticated, isLoading } = useTelegramAuth();
+  const { isAuthenticated, isLoading, createSession, clearSession } = useSecureAdminSession();
+  const { user, isAuthenticated: telegramAuth, isLoading: telegramLoading } = useTelegramAuth();
   const { toast } = useToast();
   const [notifications, setNotifications] = useState([]);
 
@@ -145,30 +147,23 @@ export default function Admin() {
     });
   };
 
+  // Show loading while checking session
   if (isLoading) {
     return (
       <TelegramLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading admin panel...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Checking admin access...</p>
           </div>
         </div>
       </TelegramLayout>
     );
   }
 
-  if (!isAuthenticated || !user) {
-    return (
-      <TelegramLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
-            <p className="text-gray-600">You need to be authenticated to access the admin panel.</p>
-          </div>
-        </div>
-      </TelegramLayout>
-    );
+  // Show secure login if not authenticated
+  if (!isAuthenticated) {
+    return <AdminOTPLogin onSuccess={createSession} />;
   }
 
   return (
@@ -178,12 +173,20 @@ export default function Admin() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="text-gray-600 mt-1">Welcome back, {user.first_name || 'Admin'}</p>
+              <h1 className="text-2xl font-bold text-gray-900">🔐 Secure Admin Dashboard</h1>
+              <p className="text-gray-600 mt-1">Protected by Telegram OTP</p>
             </div>
             <div className="flex items-center gap-3">
-              <Settings className="h-5 w-5 text-gray-400" />
-              <span className="text-sm text-gray-500">System Status: Online</span>
+              <button
+                onClick={clearSession}
+                className="text-sm text-red-600 hover:text-red-800 font-medium px-3 py-1 rounded border border-red-200 hover:bg-red-50"
+              >
+                Logout
+              </button>
+              <div className="flex items-center gap-3">
+                <Settings className="h-5 w-5 text-gray-400" />
+                <span className="text-sm text-gray-500">System Status: Secure</span>
+              </div>
             </div>
           </div>
         </div>
@@ -254,7 +257,7 @@ export default function Admin() {
                 value="payments" 
                 className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
               >
-                <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                <CreditCard className="h-3 w-3 sm:h-4 sm:h-4 flex-shrink-0" />
                 <span className="hidden xs:inline sm:inline">Payments</span>
                 <span className="xs:hidden sm:hidden">Pay</span>
               </TabsTrigger>
