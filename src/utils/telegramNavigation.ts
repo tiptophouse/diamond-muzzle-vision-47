@@ -1,4 +1,7 @@
-// Telegram WebApp Navigation utilities
+
+// DEPRECATED: Use NavigationManager and useCentralizedNavigation instead
+// This file is kept for backwards compatibility but should not be used in new code
+
 export interface TelegramNavigationOptions {
   enableBackButton?: boolean;
   showMainButton?: boolean;
@@ -8,151 +11,48 @@ export interface TelegramNavigationOptions {
   onBackButtonClick?: () => void;
 }
 
+// Deprecated - use NavigationManager instead
 export class TelegramNavigationManager {
-  private tg: any = null;
-  private backButtonCallback: (() => void) | null = null;
-  private mainButtonCallback: (() => void) | null = null;
-
   constructor() {
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      this.tg = window.Telegram.WebApp;
-    }
+    console.warn('⚠️ TelegramNavigationManager is deprecated. Use NavigationManager instead.');
   }
 
-  // Configure navigation for a specific page
-  configurePage(options: TelegramNavigationOptions) {
-    if (!this.tg) return;
-
-    // Configure back button
-    if (options.enableBackButton) {
-      this.showBackButton(options.onBackButtonClick);
-    } else {
-      this.hideBackButton();
-    }
-
-    // Configure main button
-    if (options.showMainButton && options.mainButtonText) {
-      this.showMainButton({
-        text: options.mainButtonText,
-        color: options.mainButtonColor || '#2481cc',
-        onClick: options.onMainButtonClick
-      });
-    } else {
-      this.hideMainButton();
-    }
+  configurePage() {
+    console.warn('⚠️ Use useCentralizedNavigation hook instead');
   }
 
-  // Back button methods
-  showBackButton(callback?: () => void) {
-    if (!this.tg?.BackButton) return;
-
-    // Detach previous handler if any
-    if (this.backButtonCallback && this.tg.BackButton.offClick) {
-      try {
-        this.tg.BackButton.offClick(this.backButtonCallback);
-      } catch {}
-      this.backButtonCallback = null;
-    }
-
-    if (callback) {
-      this.backButtonCallback = callback;
-      this.tg.BackButton.onClick(this.backButtonCallback);
-    }
-    
-    this.tg.BackButton.show();
+  showBackButton() {
+    console.warn('⚠️ Use useCentralizedNavigation hook instead');
   }
 
   hideBackButton() {
-    if (!this.tg?.BackButton) return;
-    
-    if (this.backButtonCallback && this.tg.BackButton.offClick) {
-      try {
-        this.tg.BackButton.offClick(this.backButtonCallback);
-      } catch {}
-      this.backButtonCallback = null;
-    }
-    
-    this.tg.BackButton.hide();
+    console.warn('⚠️ Use useCentralizedNavigation hook instead');
   }
 
-  // Main button methods
-  showMainButton(options: {
-    text: string;
-    color?: string;
-    onClick?: () => void;
-  }) {
-    if (!this.tg?.MainButton) return;
-
-    // Detach previous handler if any
-    if (this.mainButtonCallback && this.tg.MainButton.offClick) {
-      try {
-        this.tg.MainButton.offClick(this.mainButtonCallback);
-      } catch {}
-      this.mainButtonCallback = null;
-    }
-
-    this.tg.MainButton.setText(options.text);
-    
-    if (options.color) {
-      this.tg.MainButton.color = options.color;
-    }
-
-    if (options.onClick) {
-      this.mainButtonCallback = options.onClick;
-      this.tg.MainButton.onClick(this.mainButtonCallback);
-    }
-
-    this.tg.MainButton.show();
+  showMainButton() {
+    console.warn('⚠️ Use useCentralizedNavigation hook instead');
   }
 
   hideMainButton() {
-    if (!this.tg?.MainButton) return;
-    
-    if (this.mainButtonCallback && this.tg.MainButton.offClick) {
-      try {
-        this.tg.MainButton.offClick(this.mainButtonCallback);
-      } catch {}
-      this.mainButtonCallback = null;
-    }
-    
-    this.tg.MainButton.hide();
+    console.warn('⚠️ Use useCentralizedNavigation hook instead');
   }
 
-  // Haptic feedback
-  impactFeedback(style: 'light' | 'medium' | 'heavy' = 'medium') {
-    if (this.tg?.HapticFeedback) {
-      this.tg.HapticFeedback.impactOccurred(style);
-    }
+  impactFeedback() {
+    console.warn('⚠️ Use useEnhancedTelegramWebApp haptics instead');
   }
 
-  selectionFeedback() {
-    if (this.tg?.HapticFeedback) {
-      this.tg.HapticFeedback.selectionChanged();
-    }
-  }
-
-  notificationFeedback(type: 'error' | 'success' | 'warning' = 'success') {
-    if (this.tg?.HapticFeedback) {
-      this.tg.HapticFeedback.notificationOccurred(type);
-    }
-  }
-
-  // Cleanup
   cleanup() {
-    this.hideBackButton();
-    this.hideMainButton();
+    console.warn('⚠️ Use useCentralizedNavigation hook instead');
   }
 }
 
-// Create singleton instance
 export const telegramNavigation = new TelegramNavigationManager();
 
-// Hook for easy React integration
 export function useTelegramNavigation() {
+  console.warn('⚠️ useTelegramNavigation is deprecated. Use useCentralizedNavigation instead.');
   return telegramNavigation;
 }
 
-// Predefined page configurations
 export const PAGE_CONFIGS = {
   DIAMOND_DETAIL: {
     enableBackButton: true,

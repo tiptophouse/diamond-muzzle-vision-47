@@ -1,6 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
+import { useCentralizedNavigation } from '@/hooks/useCentralizedNavigation';
 import { cn } from '@/lib/utils';
 
 interface EnhancedTelegramLayoutProps {
@@ -25,45 +26,41 @@ export function EnhancedTelegramLayout({
   enableScrolling = true
 }: EnhancedTelegramLayoutProps) {
   const { 
-    webApp, 
     isReady, 
-    backButton, 
-    mainButton, 
     hapticFeedback,
     isIOS,
     safeAreaInset 
   } = useTelegramWebApp();
 
-  // Configure Telegram navigation
-  useEffect(() => {
-    if (!isReady || !webApp) return;
+  const { configureNavigation } = useCentralizedNavigation();
 
-    // Configure back button
-    if (showBackButton && onBackClick) {
-      backButton.show(() => {
+  // Configure Telegram navigation using centralized system
+  useEffect(() => {
+    if (!isReady) return;
+
+    const requestId = configureNavigation({
+      showBackButton,
+      onBackClick: onBackClick ? () => {
         hapticFeedback.impact('light');
         onBackClick();
-      });
-    } else {
-      backButton.hide();
-    }
-
-    // Configure main button
-    if (mainButtonText && onMainButtonClick) {
-      mainButton.show(mainButtonText, () => {
+      } : undefined,
+      showMainButton: !!mainButtonText,
+      mainButtonText,
+      mainButtonColor,
+      onMainClick: onMainButtonClick ? () => {
         hapticFeedback.impact('medium');
         onMainButtonClick();
-      }, mainButtonColor);
-    } else {
-      mainButton.hide();
-    }
+      } : undefined,
+      priority: 2 // Layout priority
+    });
 
-    // Cleanup on unmount
+    // Return cleanup function
     return () => {
-      backButton.hide();
-      mainButton.hide();
+      if (requestId) {
+        // Cleanup handled by hook
+      }
     };
-  }, [isReady, webApp, showBackButton, onBackClick, mainButtonText, onMainButtonClick, mainButtonColor, backButton, mainButton, hapticFeedback]);
+  }, [isReady, showBackButton, onBackClick, mainButtonText, onMainButtonClick, mainButtonColor, hapticFeedback, configureNavigation]);
 
   // Handle iPhone viewport changes
   useEffect(() => {
