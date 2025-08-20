@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo, memo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
@@ -10,13 +9,15 @@ import { MobilePullToRefresh } from "@/components/mobile/MobilePullToRefresh";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Filter, SortAsc, AlertCircle, Search, Sparkles } from "lucide-react";
+import { Plus, Filter, SortAsc, AlertCircle, Search, Sparkles, Share2 } from "lucide-react";
 import { toast } from 'sonner';
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { TelegramStoreFilters } from "@/components/store/TelegramStoreFilters";
 import { TelegramSortSheet } from "@/components/store/TelegramSortSheet";
 import { getTelegramWebApp } from "@/utils/telegramWebApp";
 import { InventoryPagination } from "@/components/inventory/InventoryPagination";
+import { SecureNavigationWrapper } from "@/components/store/SecureNavigationWrapper";
+import { ShareOptionsModal } from "@/components/store/ShareOptionsModal";
 
 // Telegram memory management
 const tg = getTelegramWebApp();
@@ -34,6 +35,7 @@ function CatalogPage() {
   const stockNumber = searchParams.get('stock');
   const { selectionChanged, impactOccurred } = useTelegramHapticFeedback();
   const navigate = useNavigate();
+  const [showShareModal, setShowShareModal] = useState(false);
 
   // Telegram memory optimization
   useEffect(() => {
@@ -210,6 +212,11 @@ function CatalogPage() {
     setShowSort(false);
   }, [impactOccurred]);
 
+  const handleShareStore = useCallback(() => {
+    selectionChanged();
+    setShowShareModal(true);
+  }, [selectionChanged]);
+
   const activeFiltersCount = useMemo(() => 
     filters.shapes.length + 
     filters.colors.length + 
@@ -287,135 +294,153 @@ function CatalogPage() {
   }, [loading, currentPage, error, finalFilteredDiamonds, refetch, paginatedDiamonds.length, sortedDiamonds.length]);
 
   return (
-    <MobilePullToRefresh onRefresh={handleRefresh} enabled={!loading}>
-      <div className="min-h-screen bg-background">
-        {/* Header */}
-        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
-          <div className="px-4 py-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  Diamond Catalog
-                </h1>
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <p>{sortedDiamonds.length} available • Priority: 3D → Image → Info</p>
-                  <div className="flex items-center gap-3 text-xs">
-                    {mediaCounts.with3D > 0 && (
-                      <span className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                        {mediaCounts.with3D} with 3D
-                      </span>
-                    )}
-                    {mediaCounts.withImages > 0 && (
-                      <span className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        {mediaCounts.withImages} with images
-                      </span>
-                    )}
-                    {mediaCounts.infoOnly > 0 && (
-                      <span className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                        {mediaCounts.infoOnly} info only
-                      </span>
-                    )}
+    <SecureNavigationWrapper>
+      <MobilePullToRefresh onRefresh={handleRefresh} enabled={!loading}>
+        <div className="min-h-screen bg-background">
+          {/* Header */}
+          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
+            <div className="px-4 py-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    Diamond Catalog
+                  </h1>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <p>{sortedDiamonds.length} available • Priority: 3D → Image → Info</p>
+                    <div className="flex items-center gap-3 text-xs">
+                      {mediaCounts.with3D > 0 && (
+                        <span className="flex items-center gap-1">
+                          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                          {mediaCounts.with3D} with 3D
+                        </span>
+                      )}
+                      {mediaCounts.withImages > 0 && (
+                        <span className="flex items-center gap-1">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          {mediaCounts.withImages} with images
+                        </span>
+                      )}
+                      {mediaCounts.infoOnly > 0 && (
+                        <span className="flex items-center gap-1">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                          {mediaCounts.infoOnly} info only
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleOpenSort}
-                  className="h-8 px-2 text-xs"
-                >
-                  <SortAsc className="h-3 w-3 mr-1" />
-                  Sort
-                </Button>
-                <Button
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleOpenFilters}
-                  className="h-8 px-2 text-xs relative"
-                >
-                  <Filter className="h-3 w-3 mr-1" />
-                  Filter
-                  {activeFiltersCount > 0 && (
-                    <span className="absolute -top-1 -right-1 h-3 w-3 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
-                      {activeFiltersCount}
-                    </span>
-                  )}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleShareStore}
+                    className="h-8 px-2 text-xs"
+                  >
+                    <Share2 className="h-3 w-3 mr-1" />
+                    Share
+                  </Button>
+                  <Button
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleOpenSort}
+                    className="h-8 px-2 text-xs"
+                  >
+                    <SortAsc className="h-3 w-3 mr-1" />
+                    Sort
+                  </Button>
+                  <Button
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleOpenFilters}
+                    className="h-8 px-2 text-xs relative"
+                  >
+                    <Filter className="h-3 w-3 mr-1" />
+                    Filter
+                    {activeFiltersCount > 0 && (
+                      <span className="absolute -top-1 -right-1 h-3 w-3 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
+                        {activeFiltersCount}
+                      </span>
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Enhanced Diamond Grid with Media Priority */}
-        <div className="py-3">
-          <EnhancedStoreGrid
-            diamonds={finalFilteredDiamonds}
-            loading={loading && currentPage === 1}
-            error={error}
-            onUpdate={refetch}
-          />
-          
-          <div className="px-4 py-4">
-            <InventoryPagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
+          {/* Enhanced Diamond Grid with Media Priority */}
+          <div className="py-3">
+            <EnhancedStoreGrid
+              diamonds={finalFilteredDiamonds}
+              loading={loading && currentPage === 1}
+              error={error}
+              onUpdate={refetch}
             />
+            
+            <div className="px-4 py-4">
+              <InventoryPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </div>
           </div>
+
+          {/* Floating Action Button */}
+          <div className="fixed bottom-4 right-4 z-40">
+            <Button
+              onClick={handleAddDiamond}
+              size="lg"
+              className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-primary hover:bg-primary/90"
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Filters Bottom Sheet */}
+          <Sheet open={showFilters} onOpenChange={setShowFilters}>
+            <SheetContent side="bottom" className="h-[80vh] p-0">
+              <SheetHeader className="px-4 py-3 border-b border-border">
+                <SheetTitle className="flex items-center gap-2 text-sm">
+                  <Filter className="h-4 w-4" />
+                  Filters
+                </SheetTitle>
+              </SheetHeader>
+              <TelegramStoreFilters
+                filters={filters}
+                onUpdateFilter={updateFilter}
+                onClearFilters={clearFilters}
+                onApplyFilters={handleApplyFilters}
+                diamonds={diamonds || []}
+              />
+            </SheetContent>
+          </Sheet>
+
+          {/* Sort Bottom Sheet */}
+          <Sheet open={showSort} onOpenChange={setShowSort}>
+            <SheetContent side="bottom" className="h-auto p-0">
+              <SheetHeader className="px-4 py-3 border-b border-border">
+                <SheetTitle className="flex items-center gap-2 text-sm">
+                  <SortAsc className="h-4 w-4" />
+                  Sort by
+                </SheetTitle>
+              </SheetHeader>
+              <TelegramSortSheet
+                currentSort={sortBy}
+                onSortChange={handleApplySort}
+              />
+            </SheetContent>
+          </Sheet>
+
+          {/* Share Modal */}
+          <ShareOptionsModal
+            isOpen={showShareModal}
+            onClose={() => setShowShareModal(false)}
+            showStoreOption={true}
+          />
         </div>
-
-        {/* Floating Action Button */}
-        <div className="fixed bottom-4 right-4 z-40">
-          <Button
-            onClick={handleAddDiamond}
-            size="lg"
-            className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-primary hover:bg-primary/90"
-          >
-            <Plus className="h-5 w-5" />
-          </Button>
-        </div>
-
-        {/* Filters Bottom Sheet */}
-        <Sheet open={showFilters} onOpenChange={setShowFilters}>
-          <SheetContent side="bottom" className="h-[80vh] p-0">
-            <SheetHeader className="px-4 py-3 border-b border-border">
-              <SheetTitle className="flex items-center gap-2 text-sm">
-                <Filter className="h-4 w-4" />
-                Filters
-              </SheetTitle>
-            </SheetHeader>
-            <TelegramStoreFilters
-              filters={filters}
-              onUpdateFilter={updateFilter}
-              onClearFilters={clearFilters}
-              onApplyFilters={handleApplyFilters}
-              diamonds={diamonds || []}
-            />
-          </SheetContent>
-        </Sheet>
-
-        {/* Sort Bottom Sheet */}
-        <Sheet open={showSort} onOpenChange={setShowSort}>
-          <SheetContent side="bottom" className="h-auto p-0">
-            <SheetHeader className="px-4 py-3 border-b border-border">
-              <SheetTitle className="flex items-center gap-2 text-sm">
-                <SortAsc className="h-4 w-4" />
-                Sort by
-              </SheetTitle>
-            </SheetHeader>
-            <TelegramSortSheet
-              currentSort={sortBy}
-              onSortChange={handleApplySort}
-            />
-          </SheetContent>
-        </Sheet>
-      </div>
-    </MobilePullToRefresh>
+      </MobilePullToRefresh>
+    </SecureNavigationWrapper>
   );
 }
 

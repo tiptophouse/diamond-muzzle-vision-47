@@ -1,114 +1,82 @@
-import { useEffect, useCallback, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useEnhancedTelegramWebApp } from './useEnhancedTelegramWebApp';
 
-interface NavigationState {
-  backButtonHandler: (() => void) | null;
-  mainButtonHandler: (() => void) | null;
-}
+import { useEffect, useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useTelegramWebApp } from './useTelegramWebApp';
 
 export function useSecureNavigation() {
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { webApp, isInitialized, navigation, haptics } = useEnhancedTelegramWebApp();
-  const navigationState = useRef<NavigationState>({ backButtonHandler: null, mainButtonHandler: null });
+  const { backButton } = useTelegramWebApp();
+  const [isLocked, setIsLocked] = useState(false);
 
-  // Secure cleanup function to prevent button state conflicts
-  const cleanupNavigation = useCallback(() => {
-    try {
-      if (navigationState.current.backButtonHandler) {
-        navigation.hideBackButton();
-        navigationState.current.backButtonHandler = null;
-      }
-      if (navigationState.current.mainButtonHandler) {
-        navigation.hideMainButton();
-        navigationState.current.mainButtonHandler = null;
-      }
-    } catch (error) {
-      console.warn('Navigation cleanup warning:', error);
-    }
-  }, [navigation]);
-
-  // Enhanced back button with proper cleanup
-  const showSecureBackButton = useCallback((onClick?: () => void) => {
-    if (!isInitialized) return;
-
-    cleanupNavigation();
-
-    const handler = onClick || (() => {
-      haptics.light();
-      navigate(-1);
-    });
-
-    navigationState.current.backButtonHandler = handler;
-    navigation.showBackButton(handler);
-  }, [isInitialized, cleanupNavigation, haptics, navigate, navigation]);
-
-  // Enhanced main button with proper cleanup
-  const showSecureMainButton = useCallback((text: string, onClick?: () => void, color?: string) => {
-    if (!isInitialized) return;
-
-    // Only cleanup main button, keep back button if present
-    if (navigationState.current.mainButtonHandler) {
-      navigation.hideMainButton();
-    }
-
-    navigationState.current.mainButtonHandler = onClick || (() => {});
-    navigation.showMainButton(text, onClick, color);
-  }, [isInitialized, navigation]);
-
-  // Auto-configure navigation based on route with iPhone optimizations
   useEffect(() => {
-    if (!isInitialized) return;
+    const shared = searchParams.get('shared');
+    const locked = searchParams.get('locked');
+    const from = searchParams.get('from');
 
-    const currentPath = location.pathname;
-    
-    // Clean slate approach - clear all navigation first
-    cleanupNavigation();
+    if (shared === 'true' && locked === 'true' && from) {
+      setIsLocked(true);
+      console.log('🔒 Navigation locked - secure share mode active');
 
-    // Configure based on current route
-    switch (true) {
-      case currentPath.startsWith('/diamond/'):
-      case currentPath === '/upload-single-stone':
-      case currentPath === '/upload':
-      case currentPath === '/standardize-csv':
-      case currentPath === '/settings':
-        showSecureBackButton();
-        break;
+      // Override browser back button for locked navigation
+      const handlePopState = (event: PopStateEvent) => {
+        event.preventDefault();
+        // Stay on current page or redirect to share source
+        window.history.pushState(null, '', window.location.href);
+      };
 
-      case currentPath === '/inventory':
-        showSecureMainButton('Add Diamond', () => {
-          haptics.medium();
-          navigate('/upload-single-stone');
-        }, '#059669');
-        break;
+      // Add custom back button behavior
+      const handleBackClick = () => {
+        // Instead of normal navigation, could close or show message
+        console.log('🔒 Back navigation blocked in secure mode');
+      };
 
-      case currentPath === '/store':
-        // No navigation buttons for store
-        break;
+      window.addEventListener('popstate', handlePopState);
+      
+      // Override Telegram back button if available
+      if (backButton) {
+        backButton.show(handleBackClick);
+      }
 
-      default:
-        // Clear navigation for other pages
-        break;
+      // Push current state to prevent back navigation
+      window.history.pushState(null, '', window.location.href);
+
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+        if (backButton) {
+          backButton.hide();
+        }
+      };
+    } else {
+      setIsLocked(false);
     }
+  }, [searchParams, backButton]);
 
-    // Cleanup on unmount or route change
-    return cleanupNavigation;
-  }, [location.pathname, isInitialized, cleanupNavigation, showSecureBackButton, showSecureMainButton, haptics, navigate]);
+  const canNavigate = (path: string) => {
+    if (!isLocked) return true;
+
+    // Allow navigation only within shared content
+    const allowedPaths = [
+      '/catalog',
+      '/diamond/',
+      // Add other allowed paths for shared access
+    ];
+
+    return allowedPaths.some(allowedPath => path.startsWith(allowedPath));
+  };
+
+  const secureNavigate = (path: string) => {
+    if (canNavigate(path)) {
+      navigate(path);
+    } else {
+      console.log('🔒 Navigation blocked - path not allowed in secure mode:', path);
+    }
+  };
 
   return {
-    showBackButton: showSecureBackButton,
-    hideBackButton: () => {
-      navigation.hideBackButton();
-      navigationState.current.backButtonHandler = null;
-    },
-    showMainButton: showSecureMainButton,
-    hideMainButton: () => {
-      navigation.hideMainButton();
-      navigationState.current.mainButtonHandler = null;
-    },
-    cleanupNavigation,
-    haptics,
-    isReady: isInitialized
+    isLocked,
+    canNavigate,
+    secureNavigate,
+    restrictedMessage: isLocked ? "Navigation is restricted in secure sharing mode" : null
   };
 }
