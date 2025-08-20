@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -23,19 +22,6 @@ interface StoneData {
 }
 
 function generateStoneSummary(stone: StoneData): string {
-  // Handle OTP messages specially
-  if (stone.stockNumber === 'OTP-REQUEST') {
-    return `🔐 **Admin Login OTP**
-
-🔑 Your one-time password: **${stone.certificateNumber}**
-
-⏰ Valid for 10 minutes
-🚫 Do not share this code with anyone
-
-Use this code to complete your admin login.`;
-  }
-
-  // Regular stone summary
   const priceInfo = stone.pricePerCarat ? `\n💰 Price: $${stone.pricePerCarat}/ct` : '';
   const cutInfo = stone.cut ? `\n✂️ Cut: ${stone.cut}` : '';
   const certInfo = stone.certificateNumber ? `\n📋 Cert: ${stone.certificateNumber}` : '';
@@ -82,15 +68,9 @@ serve(async (req) => {
       );
     }
 
-    // Generate appropriate message based on stone data
-    let message;
-    if (stoneData.stockNumber === 'OTP-REQUEST') {
-      message = generateStoneSummary(stoneData);
-    } else {
-      const summary = generateStoneSummary(stoneData);
-      const storeLink = storeUrl ? `\n\n🔗 [View in Store](${storeUrl})` : '';
-      message = `${summary}${storeLink}`;
-    }
+    const summary = generateStoneSummary(stoneData);
+    const storeLink = storeUrl ? `\n\n🔗 [View in Store](${storeUrl})` : '';
+    const message = `${summary}${storeLink}`;
 
     console.log('📤 Sending message to Telegram...');
     const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
