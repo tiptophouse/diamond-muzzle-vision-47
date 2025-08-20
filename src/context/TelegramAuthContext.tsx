@@ -39,9 +39,28 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
   // Automatically persist user data when authenticated
   useUserDataPersistence(authState.user, authState.isTelegramEnvironment);
 
-  // Show login page if needed
-  if (authState.showLogin) {
+  // Only show login if NOT in Telegram environment OR if explicitly needed
+  // If coming from Telegram, we should have user data and not need login
+  if (authState.showLogin && !authState.isTelegramEnvironment) {
     return <SimpleLogin onLogin={authState.handleLoginSuccess} />;
+  }
+
+  // If coming from outside Telegram and no user, block access
+  if (!authState.isTelegramEnvironment && !authState.user && !authState.isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
+          <div className="text-6xl mb-4">🚫</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Restricted</h2>
+          <p className="text-gray-600 mb-6">
+            This application can only be accessed through the official Telegram bot.
+          </p>
+          <p className="text-sm text-gray-500">
+            Please use the Telegram Mini App to access this service.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (

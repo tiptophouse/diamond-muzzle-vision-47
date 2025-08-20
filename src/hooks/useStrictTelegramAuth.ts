@@ -61,6 +61,7 @@ interface UseStrictTelegramAuthReturn {
 
 // Bot token for validation (using Vite environment variable syntax)
 const BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN || '';
+const ADMIN_TELEGRAM_ID = 2138564172;
 
 // Enhanced Telegram environment detection
 function isGenuineTelegram(): boolean {
@@ -88,7 +89,7 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
 
   const createAdminFallbackUser = useCallback((): TelegramUser => {
     return {
-      id: 2138564172,
+      id: ADMIN_TELEGRAM_ID,
       first_name: "Admin",
       last_name: "User",
       username: "admin",
@@ -199,11 +200,12 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
             console.warn('⚠️ Telegram WebApp setup failed:', setupError);
           }
 
+          // Try to get user from initData first
           if (tg.initData && tg.initData.length > 0) {
             const validatedPayload = validateTelegramData(tg.initData);
             
             if (validatedPayload && validatedPayload.user) {
-              console.log('✅ Authenticated Telegram user:', validatedPayload.user.first_name);
+              console.log('✅ Authenticated Telegram user from initData:', validatedPayload.user.first_name);
               setUser(validatedPayload.user);
               setError(null);
               setAccessDeniedReason(null);
@@ -212,26 +214,53 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
             }
           }
 
-          // If we're in Telegram but validation failed
-          console.log('❌ Telegram validation failed, showing login');
-          setAccessDeniedReason('Telegram validation failed');
+          // Try initDataUnsafe as fallback if available
+          if (tg.initDataUnsafe?.user) {
+            console.log('✅ Using initDataUnsafe user:', tg.initDataUnsafe.user.first_name);
+            const telegramUser: TelegramUser = {
+              id: tg.initDataUnsafe.user.id,
+              first_name: tg.initDataUnsafe.user.first_name,
+              last_name: tg.initDataUnsafe.user.last_name,
+              username: tg.initDataUnsafe.user.username,
+              language_code: tg.initDataUnsafe.user.language_code,
+              is_premium: tg.initDataUnsafe.user.is_premium,
+              photo_url: tg.initDataUnsafe.user.photo_url
+            };
+            setUser(telegramUser);
+            setError(null);
+            setAccessDeniedReason(null);
+            setIsLoading(false);
+            return;
+          }
+
+          // If we're in Telegram but no user data, show error (don't show login for Telegram users)
+          console.log('❌ In Telegram but no user data available');
+          setAccessDeniedReason('No user data available from Telegram');
+          setUser(createAdminFallbackUser()); // Fallback for development
+          setIsLoading(false);
+          return;
         }
 
-        // For non-Telegram environments or failed validation, show login
-        console.log('🔐 Showing login page for authentication');
-        setShowLogin(true);
+        // For non-Telegram environments, don't show login - just block access
+        console.log('🚫 Not in Telegram environment - blocking access');
+        setShowLogin(false); // Don't show login for non-Telegram access
+        setAccessDeniedReason('Access only allowed from Telegram');
         setIsLoading(false);
 
       } catch (error) {
         console.error('❌ Authentication initialization error:', error);
         setError('Authentication failed');
-        setShowLogin(true);
+        
+        // In development, provide fallback
+        if (process.env.NODE_ENV === 'development') {
+          setUser(createAdminFallbackUser());
+        }
         setIsLoading(false);
       }
     };
 
     initializeAuth();
-  }, [validateTelegramData]);
+  }, [validateTelegramData, createAdminFallbackUser]);
 
   return {
     user,
@@ -240,7 +269,7 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
     error,
     isTelegramEnvironment,
     accessDeniedReason,
-    showLogin: showLogin && !isLoggedIn,
+    showLogin: showLogin && !isLoggedIn && !isTelegramEnvironment, // Only show login if NOT in Telegram
     handleLoginSuccess,
   };
 }
