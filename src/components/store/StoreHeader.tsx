@@ -1,102 +1,113 @@
-
-import { Search, Filter, SortAsc, Share2 } from "lucide-react";
+import { Filter, Gem, Share2, Copy, MessageCircle, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { SecureStoreShare } from "./SecureStoreShare";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useState } from "react";
-
+import { useToast } from "@/hooks/use-toast";
 interface StoreHeaderProps {
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-  onFilterClick: () => void;
-  onSortClick: () => void;
-  totalCount: number;
-  filteredCount: number;
-  storeOwnerName?: string;
+  totalDiamonds: number;
+  onOpenFilters: () => void;
 }
-
 export function StoreHeader({
-  searchQuery,
-  onSearchChange,
-  onFilterClick,
-  onSortClick,
-  totalCount,
-  filteredCount,
-  storeOwnerName = "Diamond Store"
+  totalDiamonds,
+  onOpenFilters
 }: StoreHeaderProps) {
   const [showShareDialog, setShowShareDialog] = useState(false);
-
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {storeOwnerName}
-          </h1>
-          <div className="flex items-center gap-2 mt-1">
-            <Badge variant="secondary">
-              {filteredCount} of {totalCount} diamonds
-            </Badge>
+  const {
+    toast
+  } = useToast();
+  const getCurrentUrl = () => {
+    return window.location.href;
+  };
+  const shareOptions = [{
+    name: "Copy Link",
+    icon: Copy,
+    action: () => {
+      navigator.clipboard.writeText(getCurrentUrl());
+      toast({
+        title: "Link Copied!",
+        description: "Store link has been copied to clipboard"
+      });
+      setShowShareDialog(false);
+    },
+    color: "bg-blue-500 hover:bg-blue-600"
+  }, {
+    name: "WhatsApp",
+    icon: MessageCircle,
+    action: () => {
+      const text = `Check out our premium diamond collection! ${getCurrentUrl()}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    },
+    color: "bg-green-500 hover:bg-green-600"
+  }, {
+    name: "Email",
+    icon: Mail,
+    action: () => {
+      const subject = "Premium Diamond Collection";
+      const body = `I'd like to share our exclusive diamond collection with you: ${getCurrentUrl()}`;
+      window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+    },
+    color: "bg-gray-500 hover:bg-gray-600"
+  }];
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Premium Diamond Collection",
+          text: "Check out our exquisite selection of premium diamonds",
+          url: getCurrentUrl()
+        });
+      } catch (error) {
+        // User cancelled sharing or error occurred
+        console.log('Share cancelled');
+      }
+    } else {
+      setShowShareDialog(true);
+    }
+  };
+  return <div className="w-full">
+      <div className="flex items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <div className="p-2 sm:p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg sm:rounded-xl shadow-lg flex-shrink-0">
+            <Gem className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 truncate">
+              Diamond Collection
+            </h1>
+            <p className="text-sm sm:text-base text-slate-600 mt-0.5 sm:mt-1">
+              <span className="hidden sm:inline">Discover our exquisite selection of </span>
+              <span className="font-medium">{totalDiamonds}</span> 
+              <span className="hidden sm:inline"> premium diamonds</span>
+              <span className="sm:hidden"> diamonds</span>
+            </p>
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowShareDialog(!showShareDialog)}
-            className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 hover:from-blue-100 hover:to-indigo-100"
-          >
-            <Share2 className="w-4 h-4 mr-2" />
-            Share Store
-          </Button>
-        </div>
-      </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Share Button */}
+          <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+            <DialogTrigger asChild>
+              
+            </DialogTrigger>
+            <DialogContent className="w-[95vw] max-w-md mx-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-lg">
+                  <Share2 className="h-5 w-5" />
+                  Share Diamond Collection
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 py-4">
+                {shareOptions.map(option => <Button key={option.name} onClick={option.action} className={`w-full flex items-center gap-3 justify-start h-12 text-white ${option.color}`}>
+                    <option.icon className="h-5 w-5" />
+                    {option.name}
+                  </Button>)}
+              </div>
+            </DialogContent>
+          </Dialog>
 
-      {showShareDialog && (
-        <div className="mt-4">
-          <SecureStoreShare 
-            storeTitle={storeOwnerName}
-            diamondCount={totalCount}
-            showAnalytics={true}
-          />
-        </div>
-      )}
-
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            placeholder="Search diamonds..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onFilterClick}
-            className="whitespace-nowrap"
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            Filters
-          </Button>
+          {/* Mobile Filter Button */}
           
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onSortClick}
-            className="whitespace-nowrap"
-          >
-            <SortAsc className="w-4 h-4 mr-2" />
-            Sort
-          </Button>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }

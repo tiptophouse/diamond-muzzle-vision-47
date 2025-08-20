@@ -1,15 +1,14 @@
+
 import { useToast } from '@/hooks/use-toast';
 import { api, apiEndpoints } from '@/lib/api';
 import { API_BASE_URL } from '@/lib/api/config';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
 import { generateDiamondId } from '@/utils/diamondUtils';
-import { useDiamondUploadNotifications } from '@/hooks/useDiamondUploadNotifications';
 
 export function useAddDiamond(onSuccess?: () => void) {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
-  const { sendDiamondUploadNotification } = useDiamondUploadNotifications();
 
   const addDiamond = async (data: DiamondFormData) => {
     if (!user?.id) {
@@ -132,17 +131,7 @@ export function useAddDiamond(onSuccess?: () => void) {
             description: `Stone "${data.stockNumber}" has been added to your inventory via FastAPI backend`,
           });
           
-          // Send group notification for single diamond upload
-          try {
-            await sendDiamondUploadNotification({
-              diamondCount: 1,
-              uploadType: 'single'
-            });
-          } catch (notificationError) {
-            console.error('Failed to send group notification:', notificationError);
-          }
-          
-          // Send personal notification with direct link to the specific diamond
+          // Send notification with direct link to the specific diamond
           try {
             const { supabase } = await import('@/integrations/supabase/client');
             const diamondUrl = `${window.location.origin}/inventory?item=${data.stockNumber}`;
@@ -168,7 +157,7 @@ export function useAddDiamond(onSuccess?: () => void) {
               }
             });
           } catch (notificationError) {
-            console.error('Failed to send personal notification:', notificationError);
+            console.error('Failed to send notification:', notificationError);
           }
           
           if (onSuccess) onSuccess();
@@ -199,16 +188,6 @@ export function useAddDiamond(onSuccess?: () => void) {
             // If not JSON, use the error message directly
             errorMessage = apiError.message;
           }
-        }
-        
-        // Send group notification even for fallback
-        try {
-          await sendDiamondUploadNotification({
-            diamondCount: 1,
-            uploadType: 'single'
-          });
-        } catch (notificationError) {
-          console.error('Failed to send group notification (fallback):', notificationError);
         }
         
         // Show specific error message to user with API details
