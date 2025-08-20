@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { createJWTFromTelegramData, validateTelegramHash, type TelegramJWTPayload } from '@/utils/jwt';
 
@@ -241,10 +240,9 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
           return;
         }
 
-        // For non-Telegram environments, don't show login - just block access
-        console.log('🚫 Not in Telegram environment - blocking access');
-        setShowLogin(false); // Don't show login for non-Telegram access
-        setAccessDeniedReason('Access only allowed from Telegram');
+        // For non-Telegram environments, show OTP login
+        console.log('🔐 Not in Telegram environment - showing OTP login');
+        setShowLogin(true); // Changed from false to true
         setIsLoading(false);
 
       } catch (error) {
@@ -269,7 +267,7 @@ export function useStrictTelegramAuth(): UseStrictTelegramAuthReturn {
     error,
     isTelegramEnvironment,
     accessDeniedReason,
-    showLogin: showLogin && !isLoggedIn && !isTelegramEnvironment, // Only show login if NOT in Telegram
+    showLogin: showLogin && !isLoggedIn, // Show login for non-Telegram users
     handleLoginSuccess,
   };
 }
