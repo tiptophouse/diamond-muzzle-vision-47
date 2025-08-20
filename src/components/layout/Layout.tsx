@@ -4,7 +4,6 @@ import { Header } from "./Header";
 import { useState } from "react";
 import { Menu, Diamond } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -14,45 +13,24 @@ export function Layout({
   children
 }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { hapticFeedback } = useTelegramWebApp();
-  
-  const handleMenuClick = () => {
-    hapticFeedback.impact('light');
-    setSidebarOpen(true);
-  };
-
-  const handleSidebarClose = () => {
-    hapticFeedback.impact('light');
-    setSidebarOpen(false);
-  };
   
   return (
     <div className="min-h-screen w-full overflow-x-hidden flex bg-background">
       {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden" 
-          onClick={handleSidebarClose} 
-        />
-      )}
+      {sidebarOpen && <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
       
-      {/* Sidebar - always available, slide in when open on mobile */}
+      {/* Sidebar - hidden on mobile, slide in when open */}
       <div className={`
           fixed lg:static inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        `}>
+        `} data-tutorial="sidebar">
         <Sidebar />
       </div>
       
-      <div className="flex-1 w-full min-w-0 flex flex-col bg-background">
-        {/* Mobile header with menu button - always visible */}
-        <div className="lg:hidden flex items-center justify-between h-14 sm:h-16 px-3 sm:px-4 border-b border-border/20 bg-card/80 backdrop-blur-md sticky top-0 z-30">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleMenuClick} 
-            className="p-2 rounded-xl hover:bg-accent/50 transition-colors min-w-[44px] min-h-[44px]"
-          >
+      <div className="flex-1 w-full min-w-0 flex flex-col bg-background lg:ml-0">
+        {/* Mobile header with menu button */}
+        <div className="lg:hidden flex items-center justify-between h-14 sm:h-16 px-3 sm:px-4 border-b border-border/20 bg-card/80 backdrop-blur-md">
+          <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)} className="p-2 rounded-xl hover:bg-accent/50 transition-colors min-w-[44px] min-h-[44px]">
             <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
           
@@ -68,8 +46,8 @@ export function Layout({
           <div className="w-11 sm:w-9 flex-shrink-0" />
         </div>
         
-        {/* Desktop header - always visible */}
-        <div className="hidden lg:block sticky top-0 z-30">
+        {/* Desktop header */}
+        <div className="hidden lg:block">
           <Header />
         </div>
         
