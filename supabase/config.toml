@@ -8,104 +8,38 @@ schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
-[auth]
-enabled = true
-port = 54324
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["https://localhost:3000"]
-jwt_expiry = 3600
-enable_signup = true
-enable_confirmations = false
-
 [db]
 port = 54322
-
-[functions.send-admin-otp]
-verify_jwt = false
-
-[functions.verify-admin-otp]
-verify_jwt = false
-
-[functions.daily-reports]
-verify_jwt = false
-
-[functions.diamond-search-match]
-verify_jwt = false
-
-[functions.enhance-csv-data]
-verify_jwt = false
-
-[functions.extract-gia-data]
-verify_jwt = false
-
-[functions.fetch-gia-data]
-verify_jwt = false
-
-[functions.generate-diamond-post]
-verify_jwt = false
-
-[functions.get-api-token]
-verify_jwt = false
-
-[functions.get-group-cta-analytics]
-verify_jwt = false
-
-[functions.get-users-country]
-verify_jwt = false
-
-[functions.improve-message]
-verify_jwt = false
-
-[functions.log-user-login]
-verify_jwt = false
-
-[functions.openai-chat]
-verify_jwt = false
-
-[functions.openai-csv-enhancer]
-verify_jwt = false
-
-[functions.promote-users-to-premium]
-verify_jwt = false
-
-[functions.send-announcement]
-verify_jwt = false
-
-[functions.send-bulk-upload-notification]
-verify_jwt = false
-
-[functions.send-diamond-contact]
-verify_jwt = false
-
-[functions.send-group-cta]
-verify_jwt = false
-
-[functions.send-telegram-message]
-verify_jwt = false
-
-[functions.send-upload-reminder]
-verify_jwt = false
-
-[functions.send-welcome-message]
-verify_jwt = false
-
-[functions.set-session-context]
-verify_jwt = false
-
-[functions.telegram-webhook]
-verify_jwt = false
-
-[functions.user-engagement-monitor]
-verify_jwt = false
-
-[functions.user-engagement]
-verify_jwt = false
 
 [studio]
 enabled = true
 port = 54323
 
-[storage]
+[inbucket]
 enabled = true
 port = 54324
-file_size_limit = 52428800
+smtp_port = 54325
+pop3_port = 54326
+
+[storage]
+enabled = true
+port = 54327
+
+[auth]
+enabled = true
+port = 54328
+
+[edge_functions]
+enabled = true
+
+[functions.user-engagement-monitor]
+verify_jwt = false
+
+[functions.send-telegram-message]
+verify_jwt = false
+
+[functions.user-engagement]
+verify_jwt = false
+
+[functions.openai-csv-enhancer]
+verify_jwt = false

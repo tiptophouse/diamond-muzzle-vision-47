@@ -7,32 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Server, Key, Copy, RefreshCw, AlertCircle, CheckCircle, RotateCcw } from 'lucide-react';
-import { getSftpEndpoint } from '@/lib/api/sftpConfig';
-
-// Type definitions matching your API contracts
-type Provision = {
-  success: boolean;
-  credentials: { 
-    host: string; 
-    port: number; 
-    username: string; 
-    password: string; 
-    folder_path: string 
-  };
-  account: { 
-    telegram_id: string | number; 
-    ftp_username: string;
-    ftp_folder_path: string;
-    status: "active" | "inactive";
-    created_at: string;
-    expires_at: string;
-  };
-};
-
-type TestResult = { 
-  status: "success" | "failed" | "pending"; 
-  last_event?: string 
-};
+import { sftpApi, type ProvisionResponse } from '@/lib/api/sftp';
 
 // Connection result callback type
 type ConnectionResultCallback = (status: "success" | "failed" | "pending", details: any) => void;
@@ -47,78 +22,54 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
   const [loading, setLoading] = useState(false);
   const [locked, setLocked] = useState(false);
   const [status, setStatus] = useState<"idle" | "pending" | "success" | "failed">("idle");
-  const [creds, setCreds] = useState<Provision["credentials"] | null>(null);
+  const [creds, setCreds] = useState<ProvisionResponse["credentials"] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [passwordVisible, setPasswordVisible] = useState(true);
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
-  // Get Telegram ID from WebApp context
-  function tgId(): string {
+  // Get Telegram ID with fallback for local dev
+  function getTelegramId(): string {
+    if (typeof window === 'undefined') return "2138564172";
+    
     const tg = (window as any).Telegram?.WebApp?.initDataUnsafe;
-    return String(tg?.user?.id ?? tg?.user?.user_id ?? "");
-  }
-
-  // Simple fetch wrapper with proper endpoint construction
-  async function post<T>(endpoint: string, body: any): Promise<T> {
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const telegramId = tg?.user?.id ?? tg?.user?.user_id;
     
-    console.log('🚀 SFTP: Making request to:', endpoint);
-    console.log('🚀 SFTP: Request body:', body);
-    
-    const response = await fetch(endpoint, { 
-      method: "POST", 
-      headers, 
-      body: JSON.stringify(body) 
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => `HTTP ${response.status}`);
-      console.error('❌ SFTP: Request failed:', response.status, errorText);
-      throw new Error(errorText);
+    if (!telegramId) {
+      console.warn('No Telegram ID found, using dev fallback');
+      return "2138564172";
     }
     
-    const result = await response.json();
-    console.log('✅ SFTP: Response received:', result);
-    return result as T;
+    return String(telegramId);
   }
 
-  // Test connection once
-  async function testOnce(telegram_id: string): Promise<TestResult> {
-    console.log('🔍 SFTP: Testing connection for user:', telegram_id);
-    return post<TestResult>(getSftpEndpoint('TEST_CONNECTION'), { telegram_id });
-  }
-
-  // Poll test connection with retries
-  async function pollTest(telegram_id: string, tries = 6, waitMs = 1200) {
-    console.log('🔍 SFTP: Starting connection test polling...');
+  // Test connection with polling
+  async function pollTestConnection(telegramId: string, maxTries = 6, intervalMs = 1200) {
+    console.log('🔍 Starting connection test polling...');
     setStatus("pending");
+    setPasswordVisible(false); // Hide password immediately when testing starts
     
-    for (let i = 0; i < tries; i++) {
+    for (let i = 0; i < maxTries; i++) {
       try {
-        const result = await testOnce(telegram_id);
-        console.log(`🔍 SFTP: Test attempt ${i + 1}/${tries}:`, result);
+        const result = await sftpApi.testConnection(telegramId);
+        console.log(`🔍 Test attempt ${i + 1}/${maxTries}:`, result);
         
         if (result.status === "success") {
           setStatus("success");
-          setPasswordVisible(false); // Hide password on success
           setLocked(true);
           
-          // Invoke callback
           onConnectionResult?.("success", result);
           
           toast({
             title: "✅ SFTP חיבור מוצלח",
-            description: `מחובר לשרת ${creds?.host}. העלה קבצים ל-/inbox`,
+            description: `מחובר לשרת ${creds?.host}. העלה קבצים ל-${creds?.folder_path}`,
           });
           return;
         }
         
         if (result.status === "failed") {
           setStatus("failed");
-          setPasswordVisible(false); // Hide password on failure
           setLocked(true);
           setError(result.last_event || "Connection failed");
           
-          // Invoke callback
           onConnectionResult?.("failed", result);
           
           toast({
@@ -130,21 +81,19 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
         }
         
         // Still pending, wait and try again
-        if (i < tries - 1) {
-          await new Promise(resolve => setTimeout(resolve, waitMs));
+        if (i < maxTries - 1) {
+          await new Promise(resolve => setTimeout(resolve, intervalMs));
         }
         
       } catch (error) {
-        console.error('❌ SFTP: Connection test error:', error);
+        console.error('❌ Connection test error:', error);
       }
     }
     
     // Timeout reached - still pending
     setStatus("pending");
-    setPasswordVisible(false); // Hide password on timeout
     setLocked(true);
     
-    // Invoke callback
     onConnectionResult?.("pending", { last_event: "Connection test timed out" });
     
     toast({
@@ -156,29 +105,25 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
 
   // Generate SFTP credentials
   async function onGenerate() {
-    const telegram_id = tgId();
-    if (!telegram_id) {
-      toast({
-        title: "שגיאה",
-        description: "לא ניתן לזהות את המשתמש מ-Telegram",
-        variant: "destructive",
-      });
-      return;
-    }
+    const telegramId = getTelegramId();
 
     setLoading(true);
     setError(null);
     setStatus("idle");
     setCreds(null);
-    setPasswordVisible(true);
+    setPasswordVisible(false);
     
     try {
-      console.log('🚀 SFTP: Generating credentials for Telegram ID:', telegram_id);
+      console.log('🚀 Generating SFTP credentials for Telegram ID:', telegramId);
       
-      const data = await post<Provision>(getSftpEndpoint('PROVISION'), { telegram_id });
-      console.log('✅ SFTP: Credentials generated successfully');
+      // Test API health first
+      await sftpApi.alive();
+      
+      const data = await sftpApi.provision(telegramId);
+      console.log('✅ SFTP credentials generated successfully');
       
       setCreds(data.credentials);
+      setPasswordVisible(true); // Show password ONLY on successful provision
       
       toast({
         title: "🔑 פרטי SFTP נוצרו בהצלחה",
@@ -186,11 +131,11 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
       });
       
       // Start connection testing immediately
-      await pollTest(telegram_id);
+      await pollTestConnection(telegramId);
       
     } catch (e: any) {
       const errorMessage = e?.message || "יצירת חשבון נכשלה";
-      console.error('❌ SFTP: Generation error:', errorMessage);
+      console.error('❌ SFTP Generation error:', errorMessage);
       
       setError(errorMessage);
       setStatus("failed");
@@ -212,7 +157,7 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
     setStatus("idle");
     setCreds(null);
     setError(null);
-    setPasswordVisible(true);
+    setPasswordVisible(false);
     onGenerate();
   };
 
@@ -226,7 +171,7 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
   };
 
   // Check if Telegram ID is available
-  const telegramId = tgId();
+  const telegramId = getTelegramId();
   const isTelegramAvailable = !!telegramId;
 
   // Status badge component
@@ -270,15 +215,10 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Telegram ID Warning */}
-        {!isTelegramAvailable && (
-          <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-            <AlertCircle className="h-4 w-4 text-amber-500" />
-            <p className="text-sm text-amber-700">
-              לא ניתן לזהות את המשתמש מ-Telegram. ודא שהאפליקציה פועלת בתוך Telegram.
-            </p>
-          </div>
-        )}
+        {/* Telegram ID Info */}
+        <div className="text-sm text-muted-foreground">
+          Telegram ID: {telegramId}
+        </div>
 
         {/* Generate Button */}
         <div className="space-y-4">
