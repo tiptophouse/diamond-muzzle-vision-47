@@ -1,10 +1,10 @@
-
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { api, apiEndpoints } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useInventoryDataSync } from './inventory/useInventoryDataSync';
 import { useBulkUploadNotifications } from './useBulkUploadNotifications';
+import { useDiamondUploadNotifications } from './useDiamondUploadNotifications';
 
 interface UploadResult {
   success: boolean;
@@ -21,6 +21,7 @@ export function useUploadHandler() {
   const { user } = useTelegramAuth();
   const { triggerInventoryChange } = useInventoryDataSync();
   const { sendBulkUploadNotification } = useBulkUploadNotifications();
+  const { sendDiamondUploadNotification } = useDiamondUploadNotifications();
 
   const handleUpload = async (file: File) => {
     if (!user?.id) {
@@ -84,18 +85,25 @@ export function useUploadHandler() {
         setResult(successResult);
         triggerInventoryChange();
         
-        // Send bulk upload notification if count > 80
+        // Send appropriate notifications based on count
         if (csvData.length > 80) {
           console.log('📢 Sending bulk upload notification to Telegram group...');
           await sendBulkUploadNotification({
             diamondCount: csvData.length,
             uploadType: 'csv'
           });
+        } else {
+          // Send regular diamond upload notification for smaller batches
+          console.log('📢 Sending diamond upload notification to Telegram group...');
+          await sendDiamondUploadNotification({
+            diamondCount: csvData.length,
+            uploadType: 'bulk'
+          });
         }
         
         toast({
           title: "Upload Successful! 🎉",
-          description: `${successResult.message}${csvData.length > 80 ? ' Community has been notified!' : ''}`,
+          description: `${successResult.message} Community has been notified!`,
         });
 
       } catch (apiError) {
@@ -130,18 +138,24 @@ export function useUploadHandler() {
         setResult(fallbackResult);
         triggerInventoryChange();
         
-        // Send bulk upload notification even for fallback if count > 80
+        // Send notifications even for fallback
         if (csvData.length > 80) {
           console.log('📢 Sending bulk upload notification to Telegram group (fallback)...');
           await sendBulkUploadNotification({
             diamondCount: csvData.length,
             uploadType: 'csv'
           });
+        } else {
+          console.log('📢 Sending diamond upload notification to Telegram group (fallback)...');
+          await sendDiamondUploadNotification({
+            diamondCount: csvData.length,
+            uploadType: 'bulk'
+          });
         }
         
         toast({
           title: "Upload Completed (Local Storage)",
-          description: `${fallbackResult.message}${csvData.length > 80 ? ' Community has been notified!' : ''}`,
+          description: `${fallbackResult.message} Community has been notified!`,
           variant: "default",
         });
       }
