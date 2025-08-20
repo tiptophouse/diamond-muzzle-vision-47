@@ -102,13 +102,15 @@ class NavigationManager {
     try {
       // Clear back button
       WebApp.BackButton.hide();
-      if (WebApp.BackButton.offClick) {
+      // Check if offClick method exists before calling
+      if (typeof WebApp.BackButton.offClick === 'function') {
         WebApp.BackButton.offClick();
       }
 
       // Clear main button
       WebApp.MainButton.hide();
-      if (WebApp.MainButton.offClick) {
+      // Check if offClick method exists before calling
+      if (typeof WebApp.MainButton.offClick === 'function') {
         WebApp.MainButton.offClick();
       }
     } catch (error) {

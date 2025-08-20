@@ -1,85 +1,84 @@
 
-// DEPRECATED: Use NavigationManager and useCentralizedNavigation instead
-// This file is kept for backwards compatibility but should not be used in new code
+// DEPRECATED: This file is being phased out in favor of NavigationManager
+// Use useCentralizedNavigation hook instead
 
-export interface TelegramNavigationOptions {
-  enableBackButton?: boolean;
+import WebApp from '@twa-dev/sdk';
+
+// Legacy interface for backward compatibility
+interface PageConfig {
+  showBackButton?: boolean;
+  onBackButtonClick?: () => void;
   showMainButton?: boolean;
   mainButtonText?: string;
   mainButtonColor?: string;
   onMainButtonClick?: () => void;
-  onBackButtonClick?: () => void;
 }
 
-// Deprecated - use NavigationManager instead
-export class TelegramNavigationManager {
-  constructor() {
-    console.warn('⚠️ TelegramNavigationManager is deprecated. Use NavigationManager instead.');
+class TelegramNavigation {
+  private static instance: TelegramNavigation;
+  
+  private constructor() {
+    console.warn('⚠️ TelegramNavigation is deprecated. Use NavigationManager instead.');
   }
 
-  configurePage() {
-    console.warn('⚠️ Use useCentralizedNavigation hook instead');
+  static getInstance(): TelegramNavigation {
+    if (!TelegramNavigation.instance) {
+      TelegramNavigation.instance = new TelegramNavigation();
+    }
+    return TelegramNavigation.instance;
   }
 
-  showBackButton() {
-    console.warn('⚠️ Use useCentralizedNavigation hook instead');
+  // Legacy method - now takes no arguments for backward compatibility
+  impactFeedback(): void {
+    try {
+      if (WebApp.HapticFeedback && WebApp.HapticFeedback.impactOccurred) {
+        WebApp.HapticFeedback.impactOccurred('medium');
+      }
+    } catch (error) {
+      console.warn('Haptic feedback not available:', error);
+    }
   }
 
-  hideBackButton() {
-    console.warn('⚠️ Use useCentralizedNavigation hook instead');
+  // Legacy method - now takes no arguments for backward compatibility  
+  cleanup(): void {
+    try {
+      WebApp.BackButton.hide();
+      WebApp.MainButton.hide();
+    } catch (error) {
+      console.warn('Telegram navigation cleanup warning:', error);
+    }
   }
 
-  showMainButton() {
-    console.warn('⚠️ Use useCentralizedNavigation hook instead');
-  }
+  // Legacy method for backward compatibility
+  configurePage(config: PageConfig): void {
+    console.warn('⚠️ configurePage is deprecated. Use NavigationManager instead.');
+    try {
+      if (config.showBackButton && config.onBackButtonClick) {
+        WebApp.BackButton.onClick(config.onBackButtonClick);
+        WebApp.BackButton.show();
+      }
 
-  hideMainButton() {
-    console.warn('⚠️ Use useCentralizedNavigation hook instead');
-  }
-
-  impactFeedback() {
-    console.warn('⚠️ Use useEnhancedTelegramWebApp haptics instead');
-  }
-
-  cleanup() {
-    console.warn('⚠️ Use useCentralizedNavigation hook instead');
+      if (config.showMainButton && config.mainButtonText) {
+        WebApp.MainButton.setText(config.mainButtonText);
+        if (config.mainButtonColor) {
+          WebApp.MainButton.color = config.mainButtonColor as `#${string}`;
+        }
+        if (config.onMainButtonClick) {
+          WebApp.MainButton.onClick(config.onMainButtonClick);
+        }
+        WebApp.MainButton.show();
+      }
+    } catch (error) {
+      console.error('Page configuration failed:', error);
+    }
   }
 }
 
-export const telegramNavigation = new TelegramNavigationManager();
-
-export function useTelegramNavigation() {
-  console.warn('⚠️ useTelegramNavigation is deprecated. Use useCentralizedNavigation instead.');
-  return telegramNavigation;
-}
-
+// Legacy constants for backward compatibility
 export const PAGE_CONFIGS = {
   DIAMOND_DETAIL: {
-    enableBackButton: true,
-    showMainButton: false
-  },
-  INVENTORY: {
-    enableBackButton: false,
-    showMainButton: true,
-    mainButtonText: 'Add Diamond',
-    mainButtonColor: '#059669'
-  },
-  STORE: {
-    enableBackButton: false,
-    showMainButton: false
-  },
-  UPLOAD: {
-    enableBackButton: true,
-    showMainButton: true,
-    mainButtonText: 'Save Diamond',
-    mainButtonColor: '#3b82f6'
-  },
-  CHAT: {
-    enableBackButton: false,
-    showMainButton: false
-  },
-  SETTINGS: {
-    enableBackButton: true,
-    showMainButton: false
+    showBackButton: true,
   }
-} as const;
+};
+
+export const telegramNavigation = TelegramNavigation.getInstance();
