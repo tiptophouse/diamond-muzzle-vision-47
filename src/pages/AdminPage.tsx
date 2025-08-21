@@ -2,12 +2,14 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import AdminUserManager from '@/components/admin/AdminUserManager';
-import AdminStatsGrid from '@/components/admin/AdminStatsGrid';
-import NotificationCenter from '@/components/admin/NotificationCenter';
-import GroupCTAAnalytics from '@/components/admin/GroupCTAAnalytics';
-import UserInsightsAnalytics from '@/components/admin/UserInsightsAnalytics';
-import { BarChart3, Users, Bell, TrendingUp, Activity, Database } from 'lucide-react';
+import { AdminUserManager } from '@/components/admin/AdminUserManager';
+import { AdminStatsGrid } from '@/components/admin/AdminStatsGrid';
+import { NotificationCenter } from '@/components/admin/NotificationCenter';
+import { GroupCTAAnalytics } from '@/components/admin/GroupCTAAnalytics';
+import { UserInsightsAnalytics } from '@/components/admin/UserInsightsAnalytics';
+import { UserDiamondCounts } from '@/components/admin/UserDiamondCounts';
+import { UserUploadAnalysis } from '@/components/admin/UserUploadAnalysis';
+import { BarChart3, Users, Bell, TrendingUp, Activity, Database, Diamond, Upload } from 'lucide-react';
 
 export default function AdminPage() {
   return (
@@ -19,15 +21,23 @@ export default function AdminPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="insights" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-8">
+          <TabsTrigger value="overview" className="flex items-center space-x-2">
+            <BarChart3 className="w-4 h-4" />
+            <span>Overview</span>
+          </TabsTrigger>
+          <TabsTrigger value="diamonds" className="flex items-center space-x-2">
+            <Diamond className="w-4 h-4" />
+            <span>Diamonds</span>
+          </TabsTrigger>
+          <TabsTrigger value="uploads" className="flex items-center space-x-2">
+            <Upload className="w-4 h-4" />
+            <span>Uploads</span>
+          </TabsTrigger>
           <TabsTrigger value="insights" className="flex items-center space-x-2">
             <Activity className="w-4 h-4" />
             <span>User Insights</span>
-          </TabsTrigger>
-          <TabsTrigger value="stats" className="flex items-center space-x-2">
-            <BarChart3 className="w-4 h-4" />
-            <span>Statistics</span>
           </TabsTrigger>
           <TabsTrigger value="users" className="flex items-center space-x-2">
             <Users className="w-4 h-4" />
@@ -47,12 +57,20 @@ export default function AdminPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="insights" className="space-y-6">
-          <UserInsightsAnalytics />
+        <TabsContent value="overview" className="space-y-6">
+          <AdminStatsGrid />
         </TabsContent>
 
-        <TabsContent value="stats" className="space-y-6">
-          <AdminStatsGrid />
+        <TabsContent value="diamonds" className="space-y-6">
+          <UserDiamondCounts />
+        </TabsContent>
+
+        <TabsContent value="uploads" className="space-y-6">
+          <UserUploadAnalysis />
+        </TabsContent>
+
+        <TabsContent value="insights" className="space-y-6">
+          <UserInsightsAnalytics />
         </TabsContent>
 
         <TabsContent value="users" className="space-y-6">

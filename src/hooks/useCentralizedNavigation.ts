@@ -18,19 +18,13 @@ export function useCentralizedNavigation(config?: NavigationConfig) {
   const navigate = useNavigate();
   const location = useLocation();
   const { haptics, isInitialized } = useEnhancedTelegramWebApp();
-  const requestIdRef = useRef<string>('');
-
-  // Generate unique request ID
-  const generateRequestId = useCallback(() => {
-    return `nav-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  }, []);
+  const activeButtonsRef = useRef<{ back?: boolean; main?: boolean }>({});
 
   const configureNavigation = useCallback((customConfig?: NavigationConfig) => {
-    if (!isInitialized) return;
+    if (!isInitialized) return '';
 
     const finalConfig = { ...config, ...customConfig };
-    const requestId = generateRequestId();
-    requestIdRef.current = requestId;
+    const requestId = `nav-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     // Default back handler
     const defaultBackHandler = () => {
@@ -38,19 +32,23 @@ export function useCentralizedNavigation(config?: NavigationConfig) {
       navigate(-1);
     };
 
-    navigationManager.requestNavigation({
-      id: requestId,
-      priority: finalConfig.priority || 1,
-      showBackButton: finalConfig.showBackButton,
-      onBackClick: finalConfig.onBackClick || defaultBackHandler,
-      showMainButton: finalConfig.showMainButton,
-      mainButtonText: finalConfig.mainButtonText,
-      mainButtonColor: finalConfig.mainButtonColor || '#007AFF',
-      onMainClick: finalConfig.onMainClick
-    });
+    // Configure back button
+    if (finalConfig.showBackButton) {
+      navigationManager.showBackButton(finalConfig.onBackClick || defaultBackHandler);
+      activeButtonsRef.current.back = true;
+    }
+
+    // Configure main button
+    if (finalConfig.showMainButton && finalConfig.mainButtonText) {
+      navigationManager.showMainButton(
+        finalConfig.mainButtonText,
+        finalConfig.onMainClick || (() => {})
+      );
+      activeButtonsRef.current.main = true;
+    }
 
     return requestId;
-  }, [config, isInitialized, haptics, navigate, generateRequestId]);
+  }, [config, isInitialized, haptics, navigate]);
 
   // Auto-configure based on route
   useEffect(() => {
@@ -96,8 +94,13 @@ export function useCentralizedNavigation(config?: NavigationConfig) {
     
     // Cleanup on route change
     return () => {
-      if (requestId) {
-        navigationManager.releaseNavigation(requestId);
+      if (activeButtonsRef.current.back) {
+        navigationManager.hideBackButton();
+        activeButtonsRef.current.back = false;
+      }
+      if (activeButtonsRef.current.main) {
+        navigationManager.hideMainButton();
+        activeButtonsRef.current.main = false;
       }
     };
   }, [location.pathname, isInitialized, configureNavigation, haptics, navigate]);
@@ -105,15 +108,25 @@ export function useCentralizedNavigation(config?: NavigationConfig) {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (requestIdRef.current) {
-        navigationManager.releaseNavigation(requestIdRef.current);
-      }
+      navigationManager.cleanup();
     };
+  }, []);
+
+  const releaseNavigation = useCallback((id: string) => {
+    // Simple cleanup
+    if (activeButtonsRef.current.back) {
+      navigationManager.hideBackButton();
+      activeButtonsRef.current.back = false;
+    }
+    if (activeButtonsRef.current.main) {
+      navigationManager.hideMainButton();
+      activeButtonsRef.current.main = false;
+    }
   }, []);
 
   return {
     configureNavigation,
-    releaseNavigation: (id: string) => navigationManager.releaseNavigation(id),
+    releaseNavigation,
     haptics,
     isReady: isInitialized
   };

@@ -1,3 +1,4 @@
+
 import { getTelegramWebApp } from './telegramWebApp';
 
 class NavigationManager {
@@ -21,7 +22,8 @@ class NavigationManager {
     try {
       // Remove existing handler if any
       if (this.backButtonHandler) {
-        tg.BackButton.offClick(this.backButtonHandler);
+        // BackButton doesn't have offClick method, we'll track handlers manually
+        this.backButtonHandler = null;
       }
 
       this.backButtonHandler = handler;
@@ -41,7 +43,6 @@ class NavigationManager {
 
     try {
       if (this.backButtonHandler) {
-        tg.BackButton.offClick(this.backButtonHandler);
         this.backButtonHandler = null;
       }
       tg.BackButton.hide();
@@ -55,18 +56,23 @@ class NavigationManager {
 
   showMainButton(text: string, handler: () => void) {
     const tg = getTelegramWebApp();
-    if (!tg?.MainButton) return;
+    if (!tg) return;
 
     try {
       // Remove existing handler if any
       if (this.mainButtonHandler) {
-        tg.MainButton.offClick(this.mainButtonHandler);
+        this.mainButtonHandler = null;
       }
 
       this.mainButtonHandler = handler;
-      tg.MainButton.setText(text);
-      tg.MainButton.onClick(this.mainButtonHandler);
-      tg.MainButton.show();
+      
+      // Use the standard Telegram WebApp MainButton API
+      if ((tg as any).MainButton) {
+        (tg as any).MainButton.setText(text);
+        (tg as any).MainButton.onClick(this.mainButtonHandler);
+        (tg as any).MainButton.show();
+      }
+      
       this.isMainButtonVisible = true;
       
       console.log('✅ Main button shown:', text);
@@ -77,14 +83,17 @@ class NavigationManager {
 
   hideMainButton() {
     const tg = getTelegramWebApp();
-    if (!tg?.MainButton) return;
+    if (!tg) return;
 
     try {
       if (this.mainButtonHandler) {
-        tg.MainButton.offClick(this.mainButtonHandler);
         this.mainButtonHandler = null;
       }
-      tg.MainButton.hide();
+      
+      if ((tg as any).MainButton) {
+        (tg as any).MainButton.hide();
+      }
+      
       this.isMainButtonVisible = false;
       
       console.log('✅ Main button hidden');
