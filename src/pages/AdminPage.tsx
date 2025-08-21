@@ -6,12 +6,28 @@ import { AdminUserManager } from '@/components/admin/AdminUserManager';
 import { AdminStatsGrid } from '@/components/admin/AdminStatsGrid';
 import { NotificationCenter } from '@/components/admin/NotificationCenter';
 import { GroupCTAAnalytics } from '@/components/admin/GroupCTAAnalytics';
-import { UserInsightsAnalytics } from '@/components/admin/UserInsightsAnalytics';
+import UserInsightsAnalytics from '@/components/admin/UserInsightsAnalytics';
 import { UserDiamondCounts } from '@/components/admin/UserDiamondCounts';
 import { UserUploadAnalysis } from '@/components/admin/UserUploadAnalysis';
-import { BarChart3, Users, Bell, TrendingUp, Activity, Database, Diamond, Upload } from 'lucide-react';
+import { GroupCTASender } from '@/components/admin/GroupCTASender';
+import { BarChart3, Users, Bell, TrendingUp, Activity, Database, Diamond, Upload, MessageSquare } from 'lucide-react';
 
 export default function AdminPage() {
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const handleRefresh = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  const mockStats = {
+    totalUsers: 0,
+    activeUsers: 0,
+    premiumUsers: 0,
+    totalRevenue: 0,
+    totalCosts: 0,
+    profit: 0,
+  };
+
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl">
       <div className="mb-6">
@@ -22,7 +38,7 @@ export default function AdminPage() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="overview" className="flex items-center space-x-2">
             <BarChart3 className="w-4 h-4" />
             <span>Overview</span>
@@ -47,9 +63,13 @@ export default function AdminPage() {
             <Bell className="w-4 h-4" />
             <span>Notifications</span>
           </TabsTrigger>
-          <TabsTrigger value="cta" className="flex items-center space-x-2">
-            <TrendingUp className="w-4 h-4" />
+          <TabsTrigger value="group-cta" className="flex items-center space-x-2">
+            <MessageSquare className="w-4 h-4" />
             <span>Group CTA</span>
+          </TabsTrigger>
+          <TabsTrigger value="cta-analytics" className="flex items-center space-x-2">
+            <TrendingUp className="w-4 h-4" />
+            <span>CTA Analytics</span>
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center space-x-2">
             <Database className="w-4 h-4" />
@@ -58,7 +78,11 @@ export default function AdminPage() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <AdminStatsGrid />
+          <AdminStatsGrid 
+            stats={mockStats} 
+            blockedUsersCount={0} 
+            averageEngagement={0} 
+          />
         </TabsContent>
 
         <TabsContent value="diamonds" className="space-y-6">
@@ -78,10 +102,17 @@ export default function AdminPage() {
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-6">
-          <NotificationCenter />
+          <NotificationCenter 
+            notifications={[]} 
+            onRefresh={handleRefresh} 
+          />
         </TabsContent>
 
-        <TabsContent value="cta" className="space-y-6">
+        <TabsContent value="group-cta" className="space-y-6">
+          <GroupCTASender />
+        </TabsContent>
+
+        <TabsContent value="cta-analytics" className="space-y-6">
           <GroupCTAAnalytics />
         </TabsContent>
 

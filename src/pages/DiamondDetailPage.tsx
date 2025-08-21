@@ -1,126 +1,107 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Share2, Diamond, Eye, Heart } from 'lucide-react';
-import { api, apiEndpoints } from '@/lib/api';
-import { useEnhancedTelegramWebApp } from '@/hooks/useEnhancedTelegramWebApp';
+import { ArrowLeft, Share2, Heart, Phone, MessageCircle, Star, Eye } from 'lucide-react';
+import { useStoreData } from '@/hooks/useStoreData';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
+import { useWishlist } from '@/hooks/useWishlist';
+import { ShareButton } from '@/components/store/ShareButton';
+import { useSharedDiamondAccess } from '@/hooks/useSharedDiamondAccess';
+import { toast } from 'sonner';
 
-interface DiamondData {
-  stock_number: string;
-  shape: string;
-  weight: number;
-  color: string;
-  clarity: string;
-  cut?: string;
-  polish?: string;
-  symmetry?: string;
-  fluorescence?: string;
-  price_per_carat?: number;
-  certificate_number?: string;
-  lab?: string;
-  picture?: string;
-  video_url?: string;
-  certificate_url?: string;
-  gem360_url?: string;
-  v360_url?: string;
-  length?: number;
-  width?: number;
-  depth?: number;
-  table_percentage?: number;
-  depth_percentage?: number;
-  gridle?: string;
-  culet?: string;
-  certificate_comment?: string;
-}
-
-export default function DiamondDetailPage() {
-  const { stockNumber } = useParams<{ stockNumber: string }>();
+const DiamondDetailPage = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const { haptics } = useEnhancedTelegramWebApp();
-  const [diamond, setDiamond] = useState<DiamondData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { diamonds, loading } = useStoreData();
+  const { webApp, user } = useTelegramWebApp();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { validateAndTrackAccess, sendAccessNotification } = useSharedDiamondAccess();
+  const [hasValidatedAccess, setHasValidatedAccess] = useState(false);
+
+  // Find the diamond, ensuring diamonds is an array
+  const diamond = Array.isArray(diamonds) ? diamonds.find(d => d.id === id || d.stockNumber === id) : null;
+  const isWishlisted = diamond ? isInWishlist(diamond.id) : false;
 
   useEffect(() => {
-    const loadDiamond = async () => {
-      if (!stockNumber) return;
+    const validateAccess = async () => {
+      if (!id || hasValidatedAccess) return;
       
-      try {
-        setLoading(true);
-        
-        // Get all stones and find the one with matching stock number
-        const response = await api.get(apiEndpoints.getAllStones());
-        const stones = response.data;
-        
-        const foundDiamond = stones.find((stone: any) => stone.stock_number === stockNumber);
-        
-        if (foundDiamond) {
-          setDiamond(foundDiamond);
-        } else {
-          toast({
-            title: "Diamond not found",
-            description: "The requested diamond could not be found.",
-            variant: "destructive",
-          });
-          navigate('/store');
-        }
-      } catch (error) {
-        console.error('Error loading diamond:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load diamond details.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
+      const isValid = await validateAndTrackAccess(id);
+      if (!isValid) {
+        navigate('/', { replace: true });
+        return;
+      }
+      
+      setHasValidatedAccess(true);
+      
+      // Send notification if this is a shared access
+      if (diamond && user) {
+        await sendAccessNotification(diamond.stockNumber || diamond.id, user.id);
       }
     };
-    
-    loadDiamond();
-  }, [stockNumber, toast, navigate]);
 
-  const handleShare = async () => {
-    haptics.impact('light');
-    
-    if (navigator.share && diamond) {
-      try {
-        await navigator.share({
-          title: `${diamond.shape} Diamond - ${diamond.weight}ct`,
-          text: `Check out this beautiful ${diamond.weight}ct ${diamond.shape} diamond!`,
-          url: window.location.href,
-        });
-      } catch (error) {
-        console.log('Share canceled or failed');
-      }
-    } else {
-      // Fallback: copy to clipboard
-      try {
-        await navigator.clipboard.writeText(window.location.href);
-        toast({
-          title: "Link copied!",
-          description: "Diamond link copied to clipboard",
-        });
-      } catch (error) {
-        console.error('Failed to copy link');
-      }
-    }
-  };
+    validateAccess();
+  }, [id, diamond, user, validateAndTrackAccess, sendAccessNotification, navigate, hasValidatedAccess]);
 
   const handleBack = () => {
-    haptics.impact('light');
+    if (webApp?.BackButton) {
+      webApp.BackButton.hide();
+    }
     navigate(-1);
   };
 
+  const handleContact = () => {
+    if (webApp?.HapticFeedback) {
+      webApp.HapticFeedback.impactOccurred('medium');
+    }
+    
+    const message = `היי, אני מעוניין ביהלום הזה:\n\n💎 ${diamond?.shape} ${diamond?.carat} קרט\n🎨 צבע: ${diamond?.color}\n💎 ניקיון: ${diamond?.clarity}\n✂️ ליטוש: ${diamond?.cut}\n📋 מלאי: ${diamond?.stockNumber}\n\nתודה!`;
+    
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    if (webApp?.openLink) {
+      webApp.openLink(whatsappUrl);
+    } else {
+      window.open(whatsappUrl, '_blank');
+    }
+  };
+
+  const handleWishlistToggle = () => {
+    if (!diamond) return;
+    
+    if (webApp?.HapticFeedback) {
+      webApp.HapticFeedback.impactOccurred('light');
+    }
+
+    if (isWishlisted) {
+      removeFromWishlist(diamond.id);
+      toast.success('הוסר מרשימת המשאלות');
+    } else {
+      addToWishlist(diamond);
+      toast.success('נוסף לרשימת המשאלות');
+    }
+  };
+
+  useEffect(() => {
+    if (webApp?.BackButton) {
+      webApp.BackButton.show();
+      webApp.BackButton.onClick(handleBack);
+      
+      return () => {
+        if (webApp.BackButton) {
+          webApp.BackButton.hide();
+        }
+      };
+    }
+  }, [webApp, handleBack]);
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <Diamond className="h-12 w-12 mx-auto animate-spin text-blue-600 mb-4" />
-          <p className="text-gray-600">Loading diamond details...</p>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600" dir="rtl">טוען פרטי יהלום...</p>
         </div>
       </div>
     );
@@ -128,173 +109,127 @@ export default function DiamondDetailPage() {
 
   if (!diamond) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Diamond className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-          <p className="text-gray-600">Diamond not found</p>
-          <Button onClick={handleBack} className="mt-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Go Back
-          </Button>
-        </div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardContent className="pt-6">
+            <div className="text-6xl mb-4">💎</div>
+            <h2 className="text-2xl font-bold mb-2" dir="rtl">יהלום לא נמצא</h2>
+            <p className="text-gray-600 mb-4" dir="rtl">היהלום שחיפשת לא קיים במערכת</p>
+            <Button onClick={handleBack} className="w-full">
+              <ArrowLeft className="ml-2 h-4 w-4" />
+              חזור לחנות
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b sticky top-0 z-10">
-        <div className="flex items-center justify-between p-4">
-          <Button variant="ghost" onClick={handleBack}>
-            <ArrowLeft className="h-5 w-5 mr-2" />
-            Back
-          </Button>
-          <h1 className="font-semibold">Diamond Details</h1>
-          <Button variant="ghost" onClick={handleShare}>
-            <Share2 className="h-5 w-5" />
-          </Button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <div className="container mx-auto px-4 py-8">
+        <Button onClick={handleBack} variant="ghost" className="mb-4">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          חזור לחנות
+        </Button>
 
-      {/* Content */}
-      <div className="p-4 space-y-6">
-        {/* Image */}
-        {diamond.picture && (
-          <Card>
-            <CardContent className="p-4">
-              <img
-                src={diamond.picture}
-                alt={`${diamond.shape} Diamond`}
-                className="w-full h-64 object-cover rounded-lg"
-              />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Basic Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Diamond className="h-5 w-5" />
-              {diamond.shape} Diamond
+        <Card className="shadow-lg border-0">
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
+            <CardTitle className="text-2xl font-bold text-gray-900" dir="rtl">
+              <div className="flex items-center gap-2">
+                💎 {diamond.shape} Diamond
+                {diamond.clarity && diamond.color && diamond.cut && (
+                  <Badge variant="secondary" className="text-xs">
+                    {diamond.clarity} | {diamond.color} | {diamond.cut}
+                  </Badge>
+                )}
+              </div>
             </CardTitle>
+            <div className="space-x-2 flex items-center">
+              <ShareButton diamond={diamond} />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleWishlistToggle}
+                className={`transition-colors ${isWishlisted ? 'text-red-600 hover:bg-red-100' : 'text-gray-500 hover:bg-gray-100'}`}
+              >
+                {isWishlisted ? <Heart className="h-4 w-4" /> : <Heart className="h-4 w-4" />}
+              </Button>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">Weight</p>
-                <p className="font-semibold">{diamond.weight} ct</p>
+
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex justify-center">
+              {diamond.imageUrl ? (
+                <img src={diamond.imageUrl} alt="Diamond" className="rounded-lg max-h-96 w-full object-contain" />
+              ) : (
+                <div className="text-gray-500 text-center">No Image Available</div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold text-gray-800" dir="rtl">פרטי היהלום:</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <p className="text-gray-600" dir="rtl">
+                    <Star className="inline-block h-4 w-4 mr-1" />
+                    קט: <span className="font-medium">{diamond.carat} קרט</span>
+                  </p>
+                  <p className="text-gray-600" dir="rtl">
+                    <Eye className="inline-block h-4 w-4 mr-1" />
+                    צורה: <span className="font-medium">{diamond.shape}</span>
+                  </p>
+                  <p className="text-gray-600" dir="rtl">
+                    🎨 צבע: <span className="font-medium">{diamond.color}</span>
+                  </p>
+                  <p className="text-gray-600" dir="rtl">
+                    💎 ניקיון: <span className="font-medium">{diamond.clarity}</span>
+                  </p>
+                  <p className="text-gray-600" dir="rtl">
+                    ✂️ ליטוש: <span className="font-medium">{diamond.cut}</span>
+                  </p>
+                  <p className="text-gray-600" dir="rtl">
+                    📏 עומק: <span className="font-medium">{diamond.depth}</span>
+                  </p>
+                  <p className="text-gray-600" dir="rtl">
+                    ✨ ברק: <span className="font-medium">{diamond.polish}</span>
+                  </p>
+                  <p className="text-gray-600" dir="rtl">
+                    🧿 סימטריה: <span className="font-medium">{diamond.symmetry}</span>
+                  </p>
+                  <p className="text-gray-600" dir="rtl">
+                    📋 מלאי: <span className="font-medium">{diamond.stockNumber}</span>
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Color</p>
-                <Badge variant="outline">{diamond.color}</Badge>
+
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold text-gray-800" dir="rtl">מחיר:</h3>
+                <p className="text-green-600 text-xl font-bold" dir="rtl">
+                  ${diamond.price ? diamond.price.toLocaleString() : 'צור קשר לפרטים'}
+                </p>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Clarity</p>
-                <Badge variant="outline">{diamond.clarity}</Badge>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Stock #</p>
-                <p className="font-mono text-sm">{diamond.stock_number}</p>
+
+              <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                <Button className="w-full" onClick={handleContact}>
+                  <Phone className="mr-2 h-4 w-4" />
+                  צור קשר
+                </Button>
+                {diamond.gem360Url && (
+                  <Button variant="secondary" className="w-full" asChild>
+                    <a href={diamond.gem360Url} target="_blank" rel="noopener noreferrer">
+                      <Share2 className="mr-2 h-4 w-4" />
+                      צפה ב-360
+                    </a>
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>
         </Card>
-
-        {/* Price */}
-        {diamond.price_per_carat && (
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-center">
-                <p className="text-sm text-gray-600">Price per Carat</p>
-                <p className="text-2xl font-bold text-green-600">
-                  ${diamond.price_per_carat.toLocaleString()}
-                </p>
-                <p className="text-lg text-gray-800">
-                  Total: ${(diamond.price_per_carat * diamond.weight).toLocaleString()}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Additional Details */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Detailed Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {diamond.cut && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Cut:</span>
-                <Badge variant="outline">{diamond.cut}</Badge>
-              </div>
-            )}
-            {diamond.polish && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Polish:</span>
-                <Badge variant="outline">{diamond.polish}</Badge>
-              </div>
-            )}
-            {diamond.symmetry && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Symmetry:</span>
-                <Badge variant="outline">{diamond.symmetry}</Badge>
-              </div>
-            )}
-            {diamond.fluorescence && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Fluorescence:</span>
-                <Badge variant="outline">{diamond.fluorescence}</Badge>
-              </div>
-            )}
-            {diamond.lab && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Lab:</span>
-                <Badge variant="outline">{diamond.lab}</Badge>
-              </div>
-            )}
-            {diamond.certificate_number && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Certificate:</span>
-                <span className="font-mono text-sm">{diamond.certificate_number}</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Measurements */}
-        {(diamond.length || diamond.width || diamond.depth) && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Measurements</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                {diamond.length && (
-                  <div>
-                    <p className="text-sm text-gray-600">Length</p>
-                    <p className="font-semibold">{diamond.length} mm</p>
-                  </div>
-                )}
-                {diamond.width && (
-                  <div>
-                    <p className="text-sm text-gray-600">Width</p>
-                    <p className="font-semibold">{diamond.width} mm</p>
-                  </div>
-                )}
-                {diamond.depth && (
-                  <div>
-                    <p className="text-sm text-gray-600">Depth</p>
-                    <p className="font-semibold">{diamond.depth} mm</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );
-}
+};
+
+export default DiamondDetailPage;
