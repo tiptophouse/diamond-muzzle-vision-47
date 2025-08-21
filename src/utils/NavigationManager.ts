@@ -1,28 +1,11 @@
-
-import WebApp from '@twa-dev/sdk';
-
-interface NavigationRequest {
-  id: string;
-  priority: number;
-  showBackButton?: boolean;
-  onBackClick?: () => void;
-  showMainButton?: boolean;
-  mainButtonText?: string;
-  mainButtonColor?: string;
-  onMainClick?: () => void;
-}
+import { getTelegramWebApp } from './telegramWebApp';
 
 class NavigationManager {
   private static instance: NavigationManager;
-  private currentRequest: NavigationRequest | null = null;
-  private debounceTimer: NodeJS.Timeout | null = null;
-  private isUpdating = false;
-  private readonly isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  private readonly debounceDelay = this.isIOS ? 300 : 100; // Longer delay for iOS
-
-  private constructor() {
-    console.log('🚀 NavigationManager initialized');
-  }
+  private backButtonHandler: (() => void) | null = null;
+  private mainButtonHandler: (() => void) | null = null;
+  private isBackButtonVisible = false;
+  private isMainButtonVisible = false;
 
   static getInstance(): NavigationManager {
     if (!NavigationManager.instance) {
@@ -31,99 +14,96 @@ class NavigationManager {
     return NavigationManager.instance;
   }
 
-  requestNavigation(request: NavigationRequest): void {
-    console.log('📱 Navigation requested:', request.id);
-    
-    // Higher priority requests override lower ones
-    if (this.currentRequest && request.priority <= this.currentRequest.priority) {
-      console.log('📱 Request ignored - lower priority');
-      return;
-    }
-
-    this.currentRequest = request;
-    this.debouncedUpdate();
-  }
-
-  releaseNavigation(id: string): void {
-    if (this.currentRequest?.id === id) {
-      console.log('📱 Navigation released:', id);
-      this.currentRequest = null;
-      this.debouncedUpdate();
-    }
-  }
-
-  private debouncedUpdate(): void {
-    if (this.debounceTimer) {
-      clearTimeout(this.debounceTimer);
-    }
-
-    this.debounceTimer = setTimeout(() => {
-      this.updateNavigation();
-    }, this.debounceDelay);
-  }
-
-  private updateNavigation(): void {
-    if (this.isUpdating) return;
-    this.isUpdating = true;
+  showBackButton(handler: () => void) {
+    const tg = getTelegramWebApp();
+    if (!tg?.BackButton) return;
 
     try {
-      // Clear existing handlers first
-      this.clearNavigation();
-
-      if (this.currentRequest) {
-        // Configure back button
-        if (this.currentRequest.showBackButton && this.currentRequest.onBackClick) {
-          WebApp.BackButton.onClick(this.currentRequest.onBackClick);
-          WebApp.BackButton.show();
-        }
-
-        // Configure main button
-        if (this.currentRequest.showMainButton && this.currentRequest.mainButtonText) {
-          WebApp.MainButton.setText(this.currentRequest.mainButtonText);
-          if (this.currentRequest.mainButtonColor) {
-            WebApp.MainButton.color = this.currentRequest.mainButtonColor as `#${string}`;
-          }
-          if (this.currentRequest.onMainClick) {
-            WebApp.MainButton.onClick(this.currentRequest.onMainClick);
-          }
-          WebApp.MainButton.show();
-        }
+      // Remove existing handler if any
+      if (this.backButtonHandler) {
+        tg.BackButton.offClick(this.backButtonHandler);
       }
 
-      console.log('📱 Navigation updated successfully');
+      this.backButtonHandler = handler;
+      tg.BackButton.onClick(this.backButtonHandler);
+      tg.BackButton.show();
+      this.isBackButtonVisible = true;
+      
+      console.log('✅ Back button shown with handler');
     } catch (error) {
-      console.error('❌ Navigation update failed:', error);
-    } finally {
-      this.isUpdating = false;
+      console.error('❌ Error showing back button:', error);
     }
   }
 
-  private clearNavigation(): void {
+  hideBackButton() {
+    const tg = getTelegramWebApp();
+    if (!tg?.BackButton) return;
+
     try {
-      // Clear back button
-      WebApp.BackButton.hide();
-      // Check if offClick method exists before calling
-      if (typeof WebApp.BackButton.offClick === 'function') {
-        WebApp.BackButton.offClick();
+      if (this.backButtonHandler) {
+        tg.BackButton.offClick(this.backButtonHandler);
+        this.backButtonHandler = null;
       }
-
-      // Clear main button
-      WebApp.MainButton.hide();
-      // Check if offClick method exists before calling
-      if (typeof WebApp.MainButton.offClick === 'function') {
-        WebApp.MainButton.offClick();
-      }
+      tg.BackButton.hide();
+      this.isBackButtonVisible = false;
+      
+      console.log('✅ Back button hidden');
     } catch (error) {
-      console.warn('⚠️ Navigation cleanup warning:', error);
+      console.error('❌ Error hiding back button:', error);
     }
   }
 
-  cleanup(): void {
-    if (this.debounceTimer) {
-      clearTimeout(this.debounceTimer);
+  showMainButton(text: string, handler: () => void) {
+    const tg = getTelegramWebApp();
+    if (!tg?.MainButton) return;
+
+    try {
+      // Remove existing handler if any
+      if (this.mainButtonHandler) {
+        tg.MainButton.offClick(this.mainButtonHandler);
+      }
+
+      this.mainButtonHandler = handler;
+      tg.MainButton.setText(text);
+      tg.MainButton.onClick(this.mainButtonHandler);
+      tg.MainButton.show();
+      this.isMainButtonVisible = true;
+      
+      console.log('✅ Main button shown:', text);
+    } catch (error) {
+      console.error('❌ Error showing main button:', error);
     }
-    this.clearNavigation();
-    this.currentRequest = null;
+  }
+
+  hideMainButton() {
+    const tg = getTelegramWebApp();
+    if (!tg?.MainButton) return;
+
+    try {
+      if (this.mainButtonHandler) {
+        tg.MainButton.offClick(this.mainButtonHandler);
+        this.mainButtonHandler = null;
+      }
+      tg.MainButton.hide();
+      this.isMainButtonVisible = false;
+      
+      console.log('✅ Main button hidden');
+    } catch (error) {
+      console.error('❌ Error hiding main button:', error);
+    }
+  }
+
+  cleanup() {
+    this.hideBackButton();
+    this.hideMainButton();
+  }
+
+  getIsBackButtonVisible(): boolean {
+    return this.isBackButtonVisible;
+  }
+
+  getIsMainButtonVisible(): boolean {
+    return this.isMainButtonVisible;
   }
 }
 
