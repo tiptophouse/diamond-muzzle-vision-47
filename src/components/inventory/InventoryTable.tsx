@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Diamond } from '@/types/diamond';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Eye, EyeOff } from 'lucide-react';
 
 interface InventoryTableProps {
   diamonds: Diamond[];
@@ -13,6 +13,11 @@ interface InventoryTableProps {
   onSelectionChange: (selected: string[]) => void;
   onEdit: (diamond: Diamond) => void;
   onDelete: (diamond: Diamond) => void;
+  onToggleVisibility?: (diamond: Diamond) => void;
+  onViewDetails?: (diamond: Diamond) => void;
+  sortBy?: string;
+  sortOrder?: string;
+  onSort?: (field: string) => void;
 }
 
 export function InventoryTable({
@@ -21,7 +26,12 @@ export function InventoryTable({
   selectedDiamonds,
   onSelectionChange,
   onEdit,
-  onDelete
+  onDelete,
+  onToggleVisibility,
+  onViewDetails,
+  sortBy,
+  sortOrder,
+  onSort
 }: InventoryTableProps) {
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -61,7 +71,7 @@ export function InventoryTable({
             <TableHead>Clarity</TableHead>
             <TableHead>Price</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead className="w-24">Actions</TableHead>
+            <TableHead className="w-32">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -88,6 +98,16 @@ export function InventoryTable({
                   <Button size="sm" variant="ghost" onClick={() => onDelete(diamond)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
+                  {onToggleVisibility && (
+                    <Button size="sm" variant="ghost" onClick={() => onToggleVisibility(diamond)}>
+                      {diamond.store_visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                    </Button>
+                  )}
+                  {onViewDetails && (
+                    <Button size="sm" variant="ghost" onClick={() => onViewDetails(diamond)}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </TableCell>
             </TableRow>

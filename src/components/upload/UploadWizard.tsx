@@ -11,7 +11,7 @@ import { BulkUploadProgress } from './BulkUploadProgress';
 import { SingleStoneUploadForm } from './SingleStoneUploadForm';
 import { useBulkUpload } from '@/hooks/useBulkUpload';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Upload, Diamond, FileText, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -152,12 +152,14 @@ export function UploadWizard({ onSuccess, showBulkUpload = true }: UploadWizardP
             )}
 
             {currentStep === 'processing' && (
-              <div className="space-y-4">
-                <div className="text-center">
-                  <Progress value={uploadProgress} className="mb-4" />
-                  <p>Uploading {uploadedCount} of {csvData.length} diamonds...</p>
-                </div>
-              </div>
+              <BulkUploadProgress
+                progress={uploadProgress}
+                uploadedCount={uploadedCount}
+                totalCount={csvData.length}
+                failedCount={failedCount}
+                errors={errors}
+                isUploading={isUploading}
+              />
             )}
 
             {currentStep === 'complete' && (
