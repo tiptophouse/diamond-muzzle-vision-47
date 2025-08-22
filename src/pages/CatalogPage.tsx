@@ -47,6 +47,9 @@ export default function CatalogPage() {
   }
 
   const handleOpenFilters = () => setShowFilters(true);
+  const handleSortChange = (value: string) => {
+    setSortBy(value as 'price' | 'carat' | 'recent');
+  };
 
   return (
     <Layout>
@@ -57,7 +60,7 @@ export default function CatalogPage() {
               totalDiamonds={data?.total || 0}
               onOpenFilters={handleOpenFilters}
               sortBy={sortBy}
-              onSortChange={setSortBy}
+              onSortChange={handleSortChange}
             />
           </div>
         </div>

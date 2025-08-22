@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -151,14 +152,12 @@ export function UploadWizard({ onSuccess, showBulkUpload = true }: UploadWizardP
             )}
 
             {currentStep === 'processing' && (
-              <BulkUploadProgress
-                progress={uploadProgress}
-                uploadedCount={uploadedCount}
-                totalCount={csvData.length}
-                failedCount={failedCount}
-                errors={errors}
-                isUploading={isUploading}
-              />
+              <div className="space-y-4">
+                <div className="text-center">
+                  <Progress value={uploadProgress} className="mb-4" />
+                  <p>Uploading {uploadedCount} of {csvData.length} diamonds...</p>
+                </div>
+              </div>
             )}
 
             {currentStep === 'complete' && (
@@ -198,17 +197,11 @@ export function UploadWizard({ onSuccess, showBulkUpload = true }: UploadWizardP
           </TabsContent>
 
           <TabsContent value="single" className="space-y-6">
-            <SingleStoneUploadForm 
-              showScanButton={true}
-              onSuccess={handleSingleStoneSuccess}
-            />
+            <SingleStoneUploadForm onSuccess={handleSingleStoneSuccess} />
           </TabsContent>
         </Tabs>
       ) : (
-        <SingleStoneUploadForm 
-          showScanButton={true}
-          onSuccess={handleSingleStoneSuccess}
-        />
+        <SingleStoneUploadForm onSuccess={handleSingleStoneSuccess} />
       )}
     </div>
   );
