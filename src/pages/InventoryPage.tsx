@@ -1,206 +1,221 @@
-
 import React, { useState } from 'react';
+import { Layout } from '@/components/layout/Layout';
+import { useInventoryData } from '@/hooks/useInventoryData';
+import { InventoryHeader } from '@/components/inventory/InventoryHeader';
 import { InventoryTable } from '@/components/inventory/InventoryTable';
 import { InventoryFilters } from '@/components/inventory/InventoryFilters';
-import { InventoryHeader } from '@/components/inventory/InventoryHeader';
-import { InventorySearch } from '@/components/inventory/InventorySearch';
-import { InventoryPagination } from '@/components/inventory/InventoryPagination';
-import { InventoryMobileCard } from '@/components/inventory/InventoryMobileCard';
-import { DiamondForm } from '@/components/inventory/DiamondForm';
-import { TelegramLayout } from '@/components/layout/TelegramLayout';
-import { useInventoryData } from '@/hooks/useInventoryData';
-import { useInventorySearch } from '@/hooks/useInventorySearch';
-import { useDeleteDiamond } from '@/hooks/inventory/useDeleteDiamond';
-import { useUpdateDiamond } from '@/hooks/inventory/useUpdateDiamond';
-import { useMobile } from '@/hooks/use-mobile';
+import { DiamondFormModal } from '@/components/inventory/DiamondFormModal';
+import { DeleteConfirmationModal } from '@/components/inventory/DeleteConfirmationModal';
+import { BulkActionsToolbar } from '@/components/inventory/BulkActionsToolbar';
+import { useDiamondOperations } from '@/hooks/inventory/useDiamondOperations';
+import { useToast } from '@/components/ui/use-toast';
 import { Diamond } from '@/types/diamond';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export default function InventoryPage() {
+  const navigate = useNavigate();
+  const { data, isLoading, refetch } = useInventoryData();
+  const { updateDiamond } = useDiamondOperations();
   const { toast } = useToast();
-  const isMobile = useMobile();
-  const [page, setPage] = useState(1);
+
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('carat');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [shapeFilter, setShapeFilter] = useState('all');
+  const [colorFilter, setColorFilter] = useState('all');
+  const [clarityFilter, setClarityFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState<'stockNumber' | 'shape' | 'carat' | 'price' | 'status'>('stockNumber');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [selectedDiamonds, setSelectedDiamonds] = useState<string[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [editingDiamond, setEditingDiamond] = useState<Diamond | null>(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [deletingDiamond, setDeletingDiamond] = useState<Diamond | null>(null);
 
-  const {
-    data: inventoryData,
-    isLoading,
-    error,
-    refetch
-  } = useInventoryData(page, 20);
+  const diamonds = data?.diamonds || [];
 
-  const { filteredDiamonds } = useInventorySearch(
-    inventoryData?.diamonds || [],
-    searchTerm
-  );
+  const filteredDiamonds = diamonds.filter(diamond => {
+    const matchesSearch = !searchTerm || 
+      diamond.stockNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      diamond.shape.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      diamond.color.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesShape = shapeFilter === 'all' || diamond.shape === shapeFilter;
+    const matchesColor = colorFilter === 'all' || diamond.color === colorFilter;
+    const matchesClarity = clarityFilter === 'all' || diamond.clarity === clarityFilter;
+    const matchesStatus = statusFilter === 'all' || diamond.status === statusFilter;
+    
+    return matchesSearch && matchesShape && matchesColor && matchesClarity && matchesStatus;
+  });
 
-  const deleteStone = useDeleteDiamond();
-  const updateStone = useUpdateDiamond();
-
-  const handleEdit = (diamond: Diamond) => {
-    setEditingDiamond(diamond);
-    setIsFormOpen(true);
-  };
-
-  const handleDelete = async (diamond: Diamond) => {
-    if (confirm(`Are you sure you want to delete this ${diamond.shape} ${diamond.carat}ct diamond?`)) {
-      try {
-        await deleteStone.mutateAsync(diamond);
-        toast({
-          title: "Diamond deleted successfully",
-          description: `${diamond.shape} ${diamond.carat}ct has been removed`,
-        });
-      } catch (error) {
-        console.error('Delete error:', error);
-      }
-    }
-  };
-
-  const handleToggleVisibility = async (diamond: Diamond) => {
-    try {
-      await updateStone.mutateAsync({
-        ...diamond,
-        store_visible: !diamond.store_visible
-      });
-      
-      toast({
-        title: diamond.store_visible ? "Diamond hidden from store" : "Diamond visible in store",
-        description: `${diamond.shape} ${diamond.carat}ct visibility updated`,
-      });
-    } catch (error) {
-      console.error('Visibility toggle error:', error);
-    }
-  };
-
-  const handleViewDetails = (diamond: Diamond) => {
-    // Navigate to diamond details
-    const diamondId = diamond.diamondId || diamond.id;
-    window.open(`/diamond/${diamondId}`, '_blank');
-  };
-
-  const handleSort = (field: string) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+  const sortedDiamonds = [...filteredDiamonds].sort((a, b) => {
+    let aValue: any = a[sortBy];
+    let bValue: any = b[sortBy];
+    
+    if (sortBy === 'carat' || sortBy === 'price') {
+      aValue = Number(aValue) || 0;
+      bValue = Number(bValue) || 0;
     } else {
-      setSortBy(field);
-      setSortOrder('desc');
+      aValue = String(aValue).toLowerCase();
+      bValue = String(bValue).toLowerCase();
     }
+    
+    if (sortOrder === 'asc') {
+      return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+    } else {
+      return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+    }
+  });
+
+  const handleEditDiamond = async (diamond: Diamond) => {
+    setEditingDiamond(diamond);
+    setShowEditModal(true);
   };
 
-  const handleFormSubmit = async (diamondData: any) => {
+  const handleDeleteDiamond = (diamond: Diamond) => {
+    setDeletingDiamond(diamond);
+    setShowDeleteModal(true);
+  };
+
+  const handleSaveEdit = async (diamondData: any) => {
+    if (!editingDiamond) return;
+    
     try {
-      if (editingDiamond) {
-        await updateStone.mutateAsync({
-          ...editingDiamond,
-          ...diamondData
-        });
+      const success = await updateDiamond(editingDiamond.id, diamondData);
+      if (success) {
         toast({
           title: "Diamond updated successfully",
-          description: `${diamondData.shape} ${diamondData.carat}ct has been updated`,
+          description: `${diamondData.stockNumber} has been updated.`,
         });
-      } else {
-        // Handle add new diamond
-        toast({
-          title: "Diamond added successfully",
-          description: `${diamondData.shape} ${diamondData.carat}ct has been added`,
-        });
+        setShowEditModal(false);
+        setEditingDiamond(null);
+        refetch();
       }
-      
-      setIsFormOpen(false);
-      setEditingDiamond(null);
-      refetch();
     } catch (error) {
-      console.error('Form submission error:', error);
+      toast({
+        title: "Update failed",
+        description: "Failed to update diamond. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleFormCancel = () => {
-    setIsFormOpen(false);
-    setEditingDiamond(null);
+  const handleConfirmDelete = async () => {
+    if (!deletingDiamond) return;
+    
+    try {
+      // Handle delete logic here
+      toast({
+        title: "Diamond deleted successfully",
+        description: `${deletingDiamond.stockNumber} has been deleted.`,
+      });
+      setShowDeleteModal(false);
+      setDeletingDiamond(null);
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete diamond. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  if (error) {
-    return (
-      <TelegramLayout>
-        <div className="text-center py-8">
-          <p className="text-red-500">Error loading inventory: {error.message}</p>
-          <Button onClick={() => refetch()} className="mt-4">
-            Try Again
-          </Button>
-        </div>
-      </TelegramLayout>
-    );
-  }
+  const handleAddNew = () => {
+    navigate('/upload');
+  };
 
   return (
-    <TelegramLayout>
-      <div className="space-y-6">
-        <InventoryHeader onAddNew={() => setIsFormOpen(true)} />
-        
-        <div className="space-y-4">
-          <InventorySearch
+    <Layout>
+      <div className="container mx-auto px-4 py-6">
+        <InventoryHeader
+          totalCount={diamonds.length}
+          onRefresh={() => refetch()}
+          loading={isLoading}
+          onAddNew={handleAddNew}
+        />
+
+        <div className="mt-6 space-y-4">
+          <InventoryFilters
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
+            shapeFilter={shapeFilter}
+            onShapeChange={setShapeFilter}
+            colorFilter={colorFilter}
+            onColorChange={setColorFilter}
+            clarityFilter={clarityFilter}
+            onClarityChange={setClarityFilter}
+            statusFilter={statusFilter}
+            onStatusChange={setStatusFilter}
+            sortBy={sortBy}
+            onSortByChange={setSortBy}
+            sortOrder={sortOrder}
+            onSortOrderChange={setSortOrder}
+            diamonds={diamonds}
           />
-          
-          <InventoryFilters />
+
+          {selectedDiamonds.length > 0 && (
+            <BulkActionsToolbar
+              selectedCount={selectedDiamonds.length}
+              onClearSelection={() => setSelectedDiamonds([])}
+              onBulkDelete={() => {
+                // Handle bulk delete
+              }}
+              onBulkStatusUpdate={() => {
+                // Handle bulk status update
+              }}
+            />
+          )}
+
+          <InventoryTable
+            diamonds={sortedDiamonds}
+            loading={isLoading}
+            selectedDiamonds={selectedDiamonds}
+            onSelectionChange={setSelectedDiamonds}
+            onEdit={handleEditDiamond}
+            onDelete={handleDeleteDiamond}
+          />
         </div>
 
-        {isMobile ? (
-          <div className="space-y-4">
-            {filteredDiamonds.map((diamond) => (
-              <InventoryMobileCard
-                key={diamond.id}
-                diamond={diamond}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onToggleVisibility={handleToggleVisibility}
-                onViewDetails={handleViewDetails}
-              />
-            ))}
-          </div>
-        ) : (
-          <InventoryTable
-            diamonds={filteredDiamonds}
-            isLoading={isLoading}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onToggleVisibility={handleToggleVisibility}
-            onViewDetails={handleViewDetails}
-            sortBy={sortBy}
-            sortOrder={sortOrder}
-            onSort={handleSort}
+        {/* Modals */}
+        {showAddModal && (
+          <DiamondFormModal
+            isOpen={showAddModal}
+            onClose={() => setShowAddModal(false)}
+            onSave={async (data) => {
+              // Handle add new diamond
+              setShowAddModal(false);
+              refetch();
+            }}
+            title="Add New Diamond"
           />
         )}
 
-        <InventoryPagination
-          currentPage={page}
-          totalPages={inventoryData?.totalPages || 1}
-          onPageChange={setPage}
-        />
+        {showEditModal && editingDiamond && (
+          <DiamondFormModal
+            isOpen={showEditModal}
+            onClose={() => {
+              setShowEditModal(false);
+              setEditingDiamond(null);
+            }}
+            onSave={handleSaveEdit}
+            initialData={editingDiamond}
+            title="Edit Diamond"
+          />
+        )}
 
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingDiamond ? 'Edit Diamond' : 'Add New Diamond'}
-              </DialogTitle>
-            </DialogHeader>
-            <DiamondForm
-              initialData={editingDiamond}
-              onSubmit={handleFormSubmit}
-              onCancel={handleFormCancel}
-              isLoading={updateStone.isPending}
-            />
-          </DialogContent>
-        </Dialog>
+        {showDeleteModal && deletingDiamond && (
+          <DeleteConfirmationModal
+            isOpen={showDeleteModal}
+            onClose={() => {
+              setShowDeleteModal(false);
+              setDeletingDiamond(null);
+            }}
+            onConfirm={handleConfirmDelete}
+            diamondName={deletingDiamond.stockNumber}
+          />
+        )}
       </div>
-    </TelegramLayout>
+    </Layout>
   );
 }

@@ -16,7 +16,7 @@ export function useStoreData(page: number = 1, limit: number = 20) {
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['store', page, limit, user?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<StoreData> => {
       if (!user?.id) {
         return {
           diamonds: [],
@@ -33,11 +33,13 @@ export function useStoreData(page: number = 1, limit: number = 20) {
         throw new Error(response.error);
       }
 
+      const diamonds = Array.isArray(response.data) ? response.data : [];
+
       return {
-        diamonds: response.data || [],
-        total: response.data?.length || 0,
+        diamonds: diamonds,
+        total: diamonds.length,
         page: page,
-        totalPages: Math.ceil((response.data?.length || 0) / limit),
+        totalPages: Math.ceil(diamonds.length / limit),
       };
     },
     placeholderData: (previousData) => previousData,

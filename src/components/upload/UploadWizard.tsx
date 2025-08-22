@@ -1,389 +1,215 @@
-
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
-import { Camera, FileText, CheckCircle, Sparkles } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { QRCodeScanner } from '@/components/inventory/QRCodeScanner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FileUploadDropzone } from './FileUploadDropzone';
+import { CSVPreview } from './CSVPreview';
+import { BulkUploadProgress } from './BulkUploadProgress';
 import { SingleStoneUploadForm } from './SingleStoneUploadForm';
-import { useToast } from '@/hooks/use-toast';
-
-interface WizardStep {
-  id: string;
-  title: { en: string; he: string };
-  description: { en: string; he: string };
-  icon: React.ReactNode;
-}
+import { useBulkUpload } from '@/hooks/useBulkUpload';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useToast } from '@/components/ui/use-toast';
+import { Upload, Diamond, FileText, AlertTriangle, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface UploadWizardProps {
-  language?: 'en' | 'he';
-  onLanguageChange?: (lang: 'en' | 'he') => void;
-  onComplete?: () => void;
+  onSuccess?: () => void;
+  showBulkUpload?: boolean;
 }
 
-export function UploadWizard({ 
-  language = 'en', 
-  onLanguageChange,
-  onComplete 
-}: UploadWizardProps) {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [scannedData, setScannedData] = useState<any>(null);
-  const [isScanning, setIsScanning] = useState(false);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
+export function UploadWizard({ onSuccess, showBulkUpload = true }: UploadWizardProps) {
+  const [currentStep, setCurrentStep] = useState<'upload' | 'preview' | 'processing' | 'complete'>('upload');
+  const [csvData, setCsvData] = useState<any[]>([]);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadedCount, setUploadedCount] = useState(0);
+  const [failedCount, setFailedCount] = useState(0);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<'bulk' | 'single'>('bulk');
   
-  const { hapticFeedback, mainButton, backButton } = useTelegramWebApp();
-  const navigate = useNavigate();
+  const { user } = useTelegramAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { uploadDiamonds, isUploading } = useBulkUpload();
 
-  const wizardSteps: WizardStep[] = [
-    {
-      id: 'method-selection',
-      title: { en: 'Choose Upload Method', he: 'בחר שיטת העלאה' },
-      description: { en: 'Select how you want to add your diamond', he: 'בחר איך תרצה להוסיף את היהלום שלך' },
-      icon: <Sparkles className="h-6 w-6" />
-    },
-    {
-      id: 'certificate-scan',
-      title: { en: 'Scan Certificate', he: 'סרוק תעודה' },
-      description: { en: 'Use your camera to scan GIA certificate', he: 'השתמש במצלמה לסרוק תעודת GIA' },
-      icon: <Camera className="h-6 w-6" />
-    },
-    {
-      id: 'diamond-details',
-      title: { en: 'Diamond Details', he: 'פרטי היהלום' },
-      description: { en: 'Review and complete diamond information', he: 'סקור והשלם את מידע היהלום' },
-      icon: <FileText className="h-6 w-6" />
-    },
-    {
-      id: 'success',
-      title: { en: 'Upload Complete', he: 'העלאה הושלמה' },
-      description: { en: 'Your diamond has been added successfully', he: 'היהלום שלך נוסף בהצלחה' },
-      icon: <CheckCircle className="h-6 w-6" />
-    }
-  ];
+  const handleFileSelect = (file: File, data: any[]) => {
+    setCsvFile(file);
+    setCsvData(data);
+    setCurrentStep('preview');
+    setErrors([]);
+  };
 
-  const currentStepData = wizardSteps[currentStep];
-  const progressPercentage = ((currentStep + 1) / wizardSteps.length) * 100;
+  const handlePreviewConfirm = async () => {
+    if (!user?.id || !csvData.length) return;
 
-  // Handle Telegram main button
-  useEffect(() => {
-    if (currentStep === 0 || currentStep === 2) {
-      mainButton.hide(); // Hide for method selection and form filling
-    } else if (currentStep === 3) {
-      const buttonText = language === 'he' ? 'סיום' : 'Finish';
-      mainButton.show(buttonText, handleFinish, '#28a745');
-    } else {
-      mainButton.hide();
-    }
+    setCurrentStep('processing');
+    setUploadProgress(0);
+    setUploadedCount(0);
+    setFailedCount(0);
+    setErrors([]);
 
-    return () => {
-      mainButton.hide();
-    };
-  }, [currentStep, language]);
+    try {
+      const result = await uploadDiamonds(csvData, user.id, (progress) => {
+        setUploadProgress(progress.percentage);
+        setUploadedCount(progress.completed);
+        setFailedCount(progress.failed);
+        if (progress.errors) {
+          setErrors(prev => [...prev, ...progress.errors]);
+        }
+      });
 
-  // Handle Telegram back button
-  useEffect(() => {
-    if (currentStep > 0 && !isScanning) {
-      backButton.show(handlePrevious);
-    } else {
-      backButton.hide();
-    }
-
-    return () => {
-      backButton.hide();
-    };
-  }, [currentStep, isScanning]);
-
-  const handlePrevious = () => {
-    hapticFeedback.impact('light');
-    if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
+      if (result.success) {
+        setCurrentStep('complete');
+        toast({
+          title: "🎉 Upload Complete!",
+          description: `Successfully uploaded ${result.successCount} diamonds. ${result.failCount > 0 ? `${result.failCount} failed.` : ''}`,
+        });
+        
+        if (onSuccess) {
+          onSuccess();
+        }
+      }
+    } catch (error) {
+      console.error('Upload failed:', error);
+      toast({
+        title: "Upload Failed",
+        description: "An error occurred during upload. Please try again.",
+        variant: "destructive",
+      });
+      setCurrentStep('upload');
     }
   };
 
-  const handleFinish = () => {
-    hapticFeedback.notification('success');
-    onComplete?.();
-    navigate('/inventory');
+  const handleReset = () => {
+    setCurrentStep('upload');
+    setCsvData([]);
+    setCsvFile(null);
+    setUploadProgress(0);
+    setUploadedCount(0);
+    setFailedCount(0);
+    setErrors([]);
   };
 
-  const handleMethodSelect = (method: 'scan' | 'manual') => {
-    hapticFeedback.impact('medium');
-    
-    if (method === 'scan') {
-      setCurrentStep(1);
-      setIsScanning(true);
-    } else {
-      setCurrentStep(2);
-    }
-  };
-
-  const handleScanSuccess = (giaData: any) => {
-    hapticFeedback.notification('success');
-    setScannedData(giaData);
-    setIsScanning(false);
-    
+  const handleSingleStoneSuccess = () => {
     toast({
-      title: language === 'he' ? 'סריקה הצליחה!' : 'Scan Successful!',
-      description: language === 'he' 
-        ? 'פרטי התעודה נקלטו בהצלחה'
-        : 'Certificate details captured successfully'
+      title: "✅ Diamond Added",
+      description: "Individual diamond has been successfully added to your inventory.",
     });
     
-    setTimeout(() => {
-      setCurrentStep(2);
-    }, 1000);
-  };
-
-  const handleScanClose = () => {
-    setIsScanning(false);
-    hapticFeedback.impact('light');
-    setCurrentStep(0); // Go back to method selection
-  };
-
-  const handleUploadSuccess = () => {
-    hapticFeedback.notification('success');
-    setUploadSuccess(true);
-    setCurrentStep(3);
-    
-    toast({
-      title: language === 'he' ? 'היהלום נוסף בהצלחה!' : 'Diamond Added Successfully!',
-      description: language === 'he' 
-        ? 'היהלום שלך נוסף למלאי'
-        : 'Your diamond has been added to inventory'
-    });
-  };
-
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 0: // Method Selection
-        return (
-          <div className="space-y-6">
-            <div className="text-center space-y-4">
-              <div className="text-6xl">💎</div>
-              <div>
-                <h3 className="text-xl font-bold text-foreground mb-2">
-                  {language === 'he' ? 'איך תרצה להוסיף יהלום?' : 'How would you like to add a diamond?'}
-                </h3>
-                <p className="text-muted-foreground text-sm">
-                  {language === 'he' 
-                    ? 'בחר את השיטה המועדפת עליך'
-                    : 'Choose your preferred method'}
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <Button
-                onClick={() => handleMethodSelect('scan')}
-                size="lg"
-                className="w-full h-16 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0 shadow-lg active:scale-95 transition-all"
-                style={{ minHeight: '64px' }}
-              >
-                <div className="flex items-center gap-4">
-                  <Camera className="h-8 w-8" />
-                  <div className="text-left">
-                    <div className="font-semibold">
-                      {language === 'he' ? 'סרוק תעודה' : 'Scan Certificate'}
-                    </div>
-                    <div className="text-sm opacity-90">
-                      {language === 'he' ? 'מומלץ - מהיר ומדויק' : 'Recommended - Fast & Accurate'}
-                    </div>
-                  </div>
-                </div>
-              </Button>
-
-              <Button
-                onClick={() => handleMethodSelect('manual')}
-                variant="outline"
-                size="lg"
-                className="w-full h-16 border-2 active:scale-95 transition-all"
-                style={{ minHeight: '64px' }}
-              >
-                <div className="flex items-center gap-4">
-                  <FileText className="h-8 w-8" />
-                  <div className="text-left">
-                    <div className="font-semibold">
-                      {language === 'he' ? 'הזנה ידנית' : 'Manual Entry'}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {language === 'he' ? 'הזן פרטים באופן ידני' : 'Enter details manually'}
-                    </div>
-                  </div>
-                </div>
-              </Button>
-            </div>
-          </div>
-        );
-
-      case 1: // Certificate Scan
-        return (
-          <div className="space-y-6">
-            <div className="text-center space-y-4">
-              <div className="text-4xl">📱</div>
-              <div>
-                <h3 className="text-xl font-bold text-foreground mb-2">
-                  {language === 'he' ? 'מוכן לסרוק?' : 'Ready to Scan?'}
-                </h3>
-                <p className="text-muted-foreground text-sm">
-                  {language === 'he' 
-                    ? 'הנח את התעודה במרכז המסך והמתן לסריקה'
-                    : 'Place the certificate in the center and wait for scanning'}
-                </p>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 2: // Diamond Details
-        return (
-          <div className="space-y-4">
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-bold text-foreground mb-2">
-                {language === 'he' ? 'השלם פרטי היהלום' : 'Complete Diamond Details'}
-              </h3>
-              <p className="text-muted-foreground text-sm">
-                {language === 'he' 
-                  ? 'בדוק ועדכן את הפרטים לפי הצורך'
-                  : 'Review and update details as needed'}
-              </p>
-            </div>
-            
-            <SingleStoneUploadForm
-              initialData={scannedData}
-              showScanButton={false}
-              onSuccess={handleUploadSuccess}
-            />
-          </div>
-        );
-
-      case 3: // Success
-        return (
-          <div className="text-center space-y-6">
-            <div className="text-6xl">🎉</div>
-            <div>
-              <h3 className="text-2xl font-bold text-green-600 mb-2">
-                {language === 'he' ? 'כל הכבוד!' : 'Congratulations!'}
-              </h3>
-              <p className="text-muted-foreground">
-                {language === 'he' 
-                  ? 'היהלום שלך נוסף בהצלחה למלאי'
-                  : 'Your diamond has been successfully added to inventory'}
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <Button
-                onClick={() => navigate('/inventory')}
-                size="lg"
-                className="w-full h-12"
-                style={{ minHeight: '48px' }}
-              >
-                {language === 'he' ? 'עבור למלאי' : 'Go to Inventory'}
-              </Button>
-
-              <Button
-                onClick={() => {
-                  setCurrentStep(0);
-                  setScannedData(null);
-                  setUploadSuccess(false);
-                }}
-                variant="outline"
-                size="lg"
-                className="w-full h-12"
-                style={{ minHeight: '48px' }}
-              >
-                {language === 'he' ? 'הוסף יהלום נוסף' : 'Add Another Diamond'}
-              </Button>
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
+    if (onSuccess) {
+      onSuccess();
     }
   };
 
-  // Show scanner with proper z-index when scanning
-  if (isScanning) {
-    return (
-      <div className="fixed inset-0 z-[60]">
-        <QRCodeScanner
-          isOpen={true}
-          onScanSuccess={handleScanSuccess}
-          onClose={handleScanClose}
-        />
-      </div>
-    );
-  }
+  const handleViewDashboard = () => {
+    navigate(`/dashboard?upload_success=${uploadedCount}&from=bulk_upload`);
+  };
 
   return (
-    <div className="min-h-screen bg-background" style={{ height: 'var(--tg-viewport-height, 100vh)' }}>
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 text-white">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/20 rounded-lg">
-              {currentStepData.icon}
-            </div>
-            <div>
-              <div className="font-semibold">
-                {currentStepData.title[language]}
-              </div>
-              <div className="text-sm opacity-90">
-                {language === 'he' ? 'שלב' : 'Step'} {currentStep + 1} {language === 'he' ? 'מתוך' : 'of'} {wizardSteps.length}
-              </div>
-            </div>
-          </div>
-
-          {onLanguageChange && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                hapticFeedback.selection();
-                onLanguageChange(language === 'en' ? 'he' : 'en');
-              }}
-              className="text-white hover:bg-white/20 text-xs px-3 py-1 h-8"
-              style={{ minHeight: '32px' }}
-            >
-              {language === 'en' ? 'עב' : 'EN'}
-            </Button>
-          )}
+    <div className="max-w-4xl mx-auto p-4 space-y-6">
+      <div className="text-center space-y-2">
+        <div className="flex items-center justify-center space-x-2">
+          <Upload className="h-8 w-8 text-[#0088cc]" />
+          <h1 className="text-2xl font-bold">Upload Diamonds</h1>
         </div>
+        <p className="text-muted-foreground">
+          Add diamonds to your inventory via CSV upload or individual entry
+        </p>
+      </div>
 
-        <Progress 
-          value={progressPercentage} 
-          className="h-2 bg-white/20"
+      {showBulkUpload ? (
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'bulk' | 'single')}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="bulk" className="flex items-center space-x-2">
+              <FileText className="h-4 w-4" />
+              <span>Bulk Upload</span>
+            </TabsTrigger>
+            <TabsTrigger value="single" className="flex items-center space-x-2">
+              <Diamond className="h-4 w-4" />
+              <span>Single Diamond</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="bulk" className="space-y-6">
+            {currentStep === 'upload' && (
+              <FileUploadDropzone
+                onFileSelect={handleFileSelect}
+                accept=".csv,.xlsx,.xls"
+                maxSize={10 * 1024 * 1024}
+              />
+            )}
+
+            {currentStep === 'preview' && csvData.length > 0 && (
+              <CSVPreview
+                data={csvData}
+                fileName={csvFile?.name || 'Unknown'}
+                onConfirm={handlePreviewConfirm}
+                onCancel={handleReset}
+              />
+            )}
+
+            {currentStep === 'processing' && (
+              <BulkUploadProgress
+                progress={uploadProgress}
+                uploadedCount={uploadedCount}
+                totalCount={csvData.length}
+                failedCount={failedCount}
+                errors={errors}
+                isUploading={isUploading}
+              />
+            )}
+
+            {currentStep === 'complete' && (
+              <Card>
+                <CardHeader className="text-center">
+                  <div className="flex justify-center mb-4">
+                    <CheckCircle className="h-16 w-16 text-green-500" />
+                  </div>
+                  <CardTitle className="text-green-600">Upload Complete!</CardTitle>
+                  <CardDescription>
+                    Your diamonds have been successfully uploaded to your inventory
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="text-center space-y-4">
+                  <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
+                    <div className="bg-green-50 p-3 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600">{uploadedCount}</div>
+                      <div className="text-sm text-green-700">Uploaded</div>
+                    </div>
+                    <div className="bg-red-50 p-3 rounded-lg">
+                      <div className="text-2xl font-bold text-red-600">{failedCount}</div>
+                      <div className="text-sm text-red-700">Failed</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                    <Button onClick={handleViewDashboard} className="bg-[#0088cc] hover:bg-[#0088cc]/90">
+                      View Dashboard
+                    </Button>
+                    <Button variant="outline" onClick={handleReset}>
+                      Upload More
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="single" className="space-y-6">
+            <SingleStoneUploadForm 
+              showScanButton={true}
+              onSuccess={handleSingleStoneSuccess}
+            />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <SingleStoneUploadForm 
+          showScanButton={true}
+          onSuccess={handleSingleStoneSuccess}
         />
-      </div>
-
-      {/* Content */}
-      <div className="p-6" dir={language === 'he' ? 'rtl' : 'ltr'}>
-        <Card className="border-0 shadow-none bg-transparent">
-          <CardContent className="p-0">
-            {renderStepContent()}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Progress Indicators */}
-      <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 flex space-x-2">
-        {wizardSteps.map((_, index) => (
-          <div
-            key={index}
-            className={`w-3 h-3 rounded-full transition-all duration-300 ${
-              index === currentStep
-                ? 'bg-blue-500 scale-125'
-                : index < currentStep
-                ? 'bg-green-500'
-                : 'bg-gray-300'
-            }`}
-          />
-        ))}
-      </div>
+      )}
     </div>
   );
 }
