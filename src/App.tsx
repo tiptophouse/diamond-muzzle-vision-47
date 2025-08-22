@@ -6,6 +6,10 @@ import { TelegramAuthProvider } from './context/TelegramAuthContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
 import { Layout } from './components/layout/Layout';
+import { AuthGuard } from './components/auth/AuthGuard';
+import { AdminGuard } from './components/admin/AdminGuard';
+import { SessionGuard } from './components/guards/SessionGuard';
+import { RoleGuard } from './components/guards/RoleGuard';
 import Index from './pages/Index';
 import Dashboard from './pages/Dashboard';
 import InventoryPage from './pages/InventoryPage';
@@ -46,26 +50,230 @@ function App() {
               <div className="min-h-screen bg-background">
                 <Layout>
                   <Routes>
+                    {/* Public routes - no authentication required */}
                     <Route path="/" element={<Index />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/inventory" element={<InventoryPage />} />
-                    <Route path="/catalog" element={<CatalogPage />} />
-                    <Route path="/store" element={<CatalogPage />} />
-                    <Route path="/upload" element={<UploadPage />} />
-                    <Route path="/upload/bulk" element={<BulkUploadPage />} />
-                    <Route path="/upload-single-stone" element={<UploadSingleStonePage />} />
-                    <Route path="/insights" element={<InsightsPage />} />
-                    <Route path="/chat" element={<ChatPage />} />
-                    <Route path="/notifications" element={<NotificationsPage />} />
-                    <Route path="/profile" element={<ProfilePage />} />
-                    <Route path="/settings" element={<SettingsPage />} />
-                    <Route path="/wishlist" element={<WishlistPage />} />
-                    <Route path="/admin" element={<Admin />} />
-                    <Route path="/admin/analytics" element={<AdminAnalytics />} />
-                    <Route path="/diamond/:stockNumber" element={<DiamondDetailPage />} />
-                    <Route path="/secure-diamond/:encryptedData" element={<SecureDiamondPage />} />
-                    <Route path="/swipe" element={<DiamondSwipe />} />
-                    <Route path="/standardize-csv" element={<StandardizeCsvPage />} />
+                    
+                    {/* Protected routes - require authentication and valid session */}
+                    <Route 
+                      path="/dashboard" 
+                      element={
+                        <AuthGuard>
+                          <SessionGuard>
+                            <Dashboard />
+                          </SessionGuard>
+                        </AuthGuard>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/inventory" 
+                      element={
+                        <AuthGuard>
+                          <SessionGuard requiredPermission="inventory">
+                            <InventoryPage />
+                          </SessionGuard>
+                        </AuthGuard>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/catalog" 
+                      element={
+                        <AuthGuard>
+                          <SessionGuard>
+                            <CatalogPage />
+                          </SessionGuard>
+                        </AuthGuard>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/store" 
+                      element={
+                        <AuthGuard>
+                          <SessionGuard>
+                            <CatalogPage />
+                          </SessionGuard>
+                        </AuthGuard>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/upload" 
+                      element={
+                        <AuthGuard>
+                          <SessionGuard requiredPermission="upload">
+                            <UploadPage />
+                          </SessionGuard>
+                        </AuthGuard>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/upload/bulk" 
+                      element={
+                        <AuthGuard>
+                          <SessionGuard requiredPermission="upload">
+                            <BulkUploadPage />
+                          </SessionGuard>
+                        </AuthGuard>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/upload-single-stone" 
+                      element={
+                        <AuthGuard>
+                          <SessionGuard requiredPermission="upload">
+                            <UploadSingleStonePage />
+                          </SessionGuard>
+                        </AuthGuard>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/insights" 
+                      element={
+                        <AuthGuard>
+                          <SessionGuard>
+                            <InsightsPage />
+                          </SessionGuard>
+                        </AuthGuard>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/chat" 
+                      element={
+                        <AuthGuard>
+                          <SessionGuard>
+                            <ChatPage />
+                          </SessionGuard>
+                        </AuthGuard>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/notifications" 
+                      element={
+                        <AuthGuard>
+                          <SessionGuard>
+                            <NotificationsPage />
+                          </SessionGuard>
+                        </AuthGuard>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/profile" 
+                      element={
+                        <AuthGuard>
+                          <SessionGuard>
+                            <ProfilePage />
+                          </SessionGuard>
+                        </AuthGuard>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/settings" 
+                      element={
+                        <AuthGuard>
+                          <SessionGuard>
+                            <SettingsPage />
+                          </SessionGuard>
+                        </AuthGuard>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/wishlist" 
+                      element={
+                        <AuthGuard>
+                          <SessionGuard>
+                            <WishlistPage />
+                          </SessionGuard>
+                        </AuthGuard>
+                      } 
+                    />
+                    
+                    {/* Admin routes - require admin role */}
+                    <Route 
+                      path="/admin" 
+                      element={
+                        <AuthGuard>
+                          <SessionGuard>
+                            <RoleGuard requiredRole="admin">
+                              <AdminGuard>
+                                <Admin />
+                              </AdminGuard>
+                            </RoleGuard>
+                          </SessionGuard>
+                        </AuthGuard>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/admin/analytics" 
+                      element={
+                        <AuthGuard>
+                          <SessionGuard>
+                            <RoleGuard requiredRole="admin">
+                              <AdminGuard>
+                                <AdminAnalytics />
+                              </AdminGuard>
+                            </RoleGuard>
+                          </SessionGuard>
+                        </AuthGuard>
+                      } 
+                    />
+                    
+                    {/* Diamond detail routes - protected */}
+                    <Route 
+                      path="/diamond/:stockNumber" 
+                      element={
+                        <AuthGuard>
+                          <SessionGuard>
+                            <DiamondDetailPage />
+                          </SessionGuard>
+                        </AuthGuard>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/secure-diamond/:encryptedData" 
+                      element={
+                        <AuthGuard>
+                          <SessionGuard>
+                            <SecureDiamondPage />
+                          </SessionGuard>
+                        </AuthGuard>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/swipe" 
+                      element={
+                        <AuthGuard>
+                          <SessionGuard>
+                            <DiamondSwipe />
+                          </SessionGuard>
+                        </AuthGuard>
+                      } 
+                    />
+                    
+                    <Route 
+                      path="/standardize-csv" 
+                      element={
+                        <AuthGuard>
+                          <SessionGuard requiredPermission="upload">
+                            <StandardizeCsvPage />
+                          </SessionGuard>
+                        </AuthGuard>
+                      } 
+                    />
+                    
+                    {/* 404 - Not found */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Layout>
