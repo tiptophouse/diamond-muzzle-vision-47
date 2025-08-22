@@ -31,7 +31,7 @@ export default function DiamondDetailPage() {
         if (response.error) {
           setError(response.error);
         } else {
-          setDiamond(response.data);
+          setDiamond(response.data as Diamond);
         }
       } catch (err: any) {
         setError(err.message || 'Failed to fetch diamond');

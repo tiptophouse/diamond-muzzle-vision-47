@@ -1,4 +1,3 @@
-
 export const apiEndpoints = {
   // Health check
   alive: () => `/api/v1/alive`,
@@ -14,6 +13,9 @@ export const apiEndpoints = {
 
   // Get all diamonds - same as getAllStones but different endpoint name for compatibility
   getAllDiamonds: (userId: number) => `/api/v1/get_all_stones?user_id=${userId}`,
+  
+  // Get single diamond by ID
+  getDiamondById: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,
   
   // Create diamond - POST /api/v1/diamonds?user_id={user_id}
   addDiamond: (userId: number) => `/api/v1/diamonds?user_id=${userId}`,
