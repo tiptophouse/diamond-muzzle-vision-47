@@ -1,101 +1,97 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { EnhancedStoreHeader } from '@/components/store/EnhancedStoreHeader';
-import { StoreGrid } from '@/components/store/StoreGrid';
-import { TelegramStoreFilters } from '@/components/store/TelegramStoreFilters';
-import { FloatingShareButton } from '@/components/store/FloatingShareButton';
-import { OptimizedDiamondCard } from '@/components/store/OptimizedDiamondCard';
-import { TelegramLayout } from '@/components/layout/TelegramLayout';
+
+import React, { useState } from 'react';
 import { useStoreData } from '@/hooks/useStoreData';
 import { useStoreFilters } from '@/hooks/useStoreFilters';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
-import { useToast } from '@/hooks/use-toast';
+import { EnhancedStoreHeader } from '@/components/store/EnhancedStoreHeader';
+import { TelegramStoreFilters } from '@/components/store/TelegramStoreFilters';
+import { OptimizedDiamondCard } from '@/components/store/OptimizedDiamondCard';
+import { TelegramLayout } from '@/components/layout/TelegramLayout';
 import { Button } from '@/components/ui/button';
-import { Diamond } from '@/types/diamond';
-import { Heart, Share2, Eye, Filter, SlidersHorizontal, X } from 'lucide-react';
-
-interface CatalogPageProps {}
+import { SlidersHorizontal } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 export default function CatalogPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { user } = useTelegramAuth();
-  const { webApp } = useTelegramWebApp();
-  const { toast } = useToast();
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [page] = useState(1);
+  const [sortBy, setSortBy] = useState('most-popular');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  
+  const { data, isLoading, error, refetch } = useStoreData(page, 20);
+  const { 
+    filters, 
+    updateFilter, 
+    filteredDiamonds, 
+    resetFilters 
+  } = useStoreFilters(data?.diamonds || []);
 
-  const {
-    diamonds,
-    loading,
-    error,
-    refetch
-  } = useStoreData();
+  if (isLoading) {
+    return (
+      <TelegramLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p>Loading diamonds...</p>
+          </div>
+        </div>
+      </TelegramLayout>
+    );
+  }
 
-  const {
-    filters,
-    updateFilter,
-    filteredDiamonds
-  } = useStoreFilters(diamonds);
-
-  useEffect(() => {
-    if (webApp) {
-      webApp.BackButton.hide();
-      webApp.MainButton.hide();
-    }
-  }, [webApp]);
-
-  const handleShare = (diamond: Diamond) => {
-    if (webApp) {
-      webApp.MainButton.text = `Share ${diamond.shape} ${diamond.carat}ct`;
-      webApp.MainButton.show();
-      webApp.MainButton.onClick(() => {
-        webApp.openLink(`https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(`Check out this ${diamond.shape} ${diamond.carat}ct diamond!`)}`);
-      });
-    } else {
-      toast({
-        title: "Share",
-        description: "Share this diamond with your friends!",
-      });
-    }
-  };
-
-  const handleAddToWishlist = (diamond: Diamond) => {
-    toast({
-      title: "Wishlist",
-      description: "Added to wishlist!",
-    });
-  };
+  if (error) {
+    return (
+      <TelegramLayout>
+        <div className="text-center py-8">
+          <p className="text-red-500">Error loading store: {error.message}</p>
+          <Button onClick={() => refetch()} className="mt-4">
+            Try Again
+          </Button>
+        </div>
+      </TelegramLayout>
+    );
+  }
 
   const handleOpenFilters = () => {
-    setIsFilterOpen(true);
-  };
-
-  const handleCloseFilters = () => {
-    setIsFilterOpen(false);
+    setFiltersOpen(true);
   };
 
   return (
     <TelegramLayout>
-      <EnhancedStoreHeader
-        totalDiamonds={diamonds.length}
-        onOpenFilters={handleOpenFilters}
-      />
+      <div className="space-y-4">
+        {/* Header */}
+        <EnhancedStoreHeader
+          totalDiamonds={filteredDiamonds.length}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          onOpenFilters={handleOpenFilters}
+        />
 
-      <TelegramStoreFilters
-        open={isFilterOpen}
-        onOpenChange={setIsFilterOpen}
-        filters={filters}
-        onUpdateFilter={updateFilter}
-      />
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4">
-        {filteredDiamonds.map((diamond) => (
-          <OptimizedDiamondCard
-            key={diamond.id}
-            diamond={diamond}
-            onUpdate={refetch}
-          />
-        ))}
+        {/* Filters Sheet */}
+        <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+          <SheetContent side="bottom" className="h-[80vh]">
+            <TelegramStoreFilters
+              filters={filters}
+              onUpdateFilter={updateFilter}
+            />
+          </SheetContent>
+        </Sheet>
+
+        {/* Diamond Grid */}
+        <div className="grid grid-cols-2 gap-3 pb-20">
+          {filteredDiamonds.map((diamond) => (
+            <OptimizedDiamondCard
+              key={diamond.id}
+              diamond={diamond}
+            />
+          ))}
+        </div>
+
+        {filteredDiamonds.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-gray-500">No diamonds found matching your criteria.</p>
+            <Button onClick={resetFilters} className="mt-4">
+              Clear Filters
+            </Button>
+          </div>
+        )}
       </div>
     </TelegramLayout>
   );

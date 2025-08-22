@@ -30,19 +30,20 @@ export function useInventoryData(page: number = 1, pageSize: number = 20) {
       }
 
       console.log(`💎 Fetching inventory data from FastAPI for user ${user.id}, page ${page}, page size ${pageSize}...`);
-      const response = await api.get(apiEndpoints.getAllDiamonds(user.id), {
-        params: {
-          page: page,
-          page_size: pageSize,
-        },
-      });
+      const response = await api.get(apiEndpoints.getAllStones(user.id));
 
       if (response.error) {
         throw new Error(response.error);
       }
 
       console.log('💎 Inventory data from FastAPI:', response.data);
-      return response.data as InventoryResponse;
+      return {
+        diamonds: response.data || [],
+        total: response.data?.length || 0,
+        page: page,
+        pageSize: pageSize,
+        totalPages: Math.ceil((response.data?.length || 0) / pageSize),
+      };
     },
     placeholderData: (previousData) => previousData,
   });

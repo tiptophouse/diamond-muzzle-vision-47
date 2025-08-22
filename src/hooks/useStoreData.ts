@@ -27,18 +27,18 @@ export function useStoreData(page: number = 1, limit: number = 20) {
       }
 
       console.log('💎 Fetching store data from FastAPI...');
-      const response = await api.get(apiEndpoints.getStoreDiamonds(user.id), {
-        params: {
-          page,
-          limit,
-        },
-      });
+      const response = await api.get(apiEndpoints.getAllStones(user.id));
 
       if (response.error) {
         throw new Error(response.error);
       }
 
-      return response.data as StoreData;
+      return {
+        diamonds: response.data || [],
+        total: response.data?.length || 0,
+        page: page,
+        totalPages: Math.ceil((response.data?.length || 0) / limit),
+      };
     },
     placeholderData: (previousData) => previousData,
   });
