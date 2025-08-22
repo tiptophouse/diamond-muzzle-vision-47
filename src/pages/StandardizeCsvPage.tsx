@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -103,58 +104,68 @@ const StandardizeCsvPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label>Stock Number Column</Label>
-                <Input asChild>
-                  <select value={mapping.stockNumber} onChange={(e) => handleMappingChange('stockNumber', e.target.value)} className="border rounded px-2 py-1 w-full">
-                    <option value="">Select Column</option>
-                    {Object.keys(csvData[0]).map(key => (
-                      <option key={key} value={key}>{key}</option>
-                    ))}
-                  </select>
-                </Input>
+                <select 
+                  value={mapping.stockNumber} 
+                  onChange={(e) => handleMappingChange('stockNumber', e.target.value)} 
+                  className="border rounded px-2 py-1 w-full"
+                >
+                  <option value="">Select Column</option>
+                  {Object.keys(csvData[0]).map(key => (
+                    <option key={key} value={key}>{key}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <Label>Shape Column</Label>
-                <Input asChild>
-                  <select value={mapping.shape} onChange={(e) => handleMappingChange('shape', e.target.value)} className="border rounded px-2 py-1 w-full">
-                    <option value="">Select Column</option>
-                    {Object.keys(csvData[0]).map(key => (
-                      <option key={key} value={key}>{key}</option>
-                    ))}
-                  </select>
-                </Input>
+                <select 
+                  value={mapping.shape} 
+                  onChange={(e) => handleMappingChange('shape', e.target.value)} 
+                  className="border rounded px-2 py-1 w-full"
+                >
+                  <option value="">Select Column</option>
+                  {Object.keys(csvData[0]).map(key => (
+                    <option key={key} value={key}>{key}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <Label>Carat Column</Label>
-                <Input asChild>
-                  <select value={mapping.carat} onChange={(e) => handleMappingChange('carat', e.target.value)} className="border rounded px-2 py-1 w-full">
-                    <option value="">Select Column</option>
-                    {Object.keys(csvData[0]).map(key => (
-                      <option key={key} value={key}>{key}</option>
-                    ))}
-                  </select>
-                </Input>
+                <select 
+                  value={mapping.carat} 
+                  onChange={(e) => handleMappingChange('carat', e.target.value)} 
+                  className="border rounded px-2 py-1 w-full"
+                >
+                  <option value="">Select Column</option>
+                  {Object.keys(csvData[0]).map(key => (
+                    <option key={key} value={key}>{key}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <Label>Color Column</Label>
-                <Input asChild>
-                  <select value={mapping.color} onChange={(e) => handleMappingChange('color', e.target.value)} className="border rounded px-2 py-1 w-full">
-                    <option value="">Select Column</option>
-                    {Object.keys(csvData[0]).map(key => (
-                      <option key={key} value={key}>{key}</option>
-                    ))}
-                  </select>
-                </Input>
+                <select 
+                  value={mapping.color} 
+                  onChange={(e) => handleMappingChange('color', e.target.value)} 
+                  className="border rounded px-2 py-1 w-full"
+                >
+                  <option value="">Select Column</option>
+                  {Object.keys(csvData[0]).map(key => (
+                    <option key={key} value={key}>{key}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <Label>Clarity Column</Label>
-                <Input asChild>
-                  <select value={mapping.clarity} onChange={(e) => handleMappingChange('clarity', e.target.value)} className="border rounded px-2 py-1 w-full">
-                    <option value="">Select Column</option>
-                    {Object.keys(csvData[0]).map(key => (
-                      <option key={key} value={key}>{key}</option>
-                    ))}
-                  </select>
-                </Input>
+                <select 
+                  value={mapping.clarity} 
+                  onChange={(e) => handleMappingChange('clarity', e.target.value)} 
+                  className="border rounded px-2 py-1 w-full"
+                >
+                  <option value="">Select Column</option>
+                  {Object.keys(csvData[0]).map(key => (
+                    <option key={key} value={key}>{key}</option>
+                  ))}
+                </select>
               </div>
             </div>
           )}
