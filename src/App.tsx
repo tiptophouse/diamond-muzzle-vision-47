@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TelegramAuthProvider } from './context/TelegramAuthContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
+import { TelegramInitDataGuard } from './components/guards/TelegramInitDataGuard';
 import { Layout } from './components/layout/Layout';
 import Index from './pages/Index';
 import Dashboard from './pages/Dashboard';
@@ -44,31 +45,33 @@ function App() {
           <TutorialProvider>
             <InteractiveWizardProvider>
               <div className="min-h-screen bg-background">
-                <Layout>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/inventory" element={<InventoryPage />} />
-                    <Route path="/catalog" element={<CatalogPage />} />
-                    <Route path="/store" element={<CatalogPage />} />
-                    <Route path="/upload" element={<UploadPage />} />
-                    <Route path="/upload/bulk" element={<BulkUploadPage />} />
-                    <Route path="/upload-single-stone" element={<UploadSingleStonePage />} />
-                    <Route path="/insights" element={<InsightsPage />} />
-                    <Route path="/chat" element={<ChatPage />} />
-                    <Route path="/notifications" element={<NotificationsPage />} />
-                    <Route path="/profile" element={<ProfilePage />} />
-                    <Route path="/settings" element={<SettingsPage />} />
-                    <Route path="/wishlist" element={<WishlistPage />} />
-                    <Route path="/admin" element={<Admin />} />
-                    <Route path="/admin/analytics" element={<AdminAnalytics />} />
-                    <Route path="/diamond/:stockNumber" element={<DiamondDetailPage />} />
-                    <Route path="/secure-diamond/:encryptedData" element={<SecureDiamondPage />} />
-                    <Route path="/swipe" element={<DiamondSwipe />} />
-                    <Route path="/standardize-csv" element={<StandardizeCsvPage />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </Layout>
+                <TelegramInitDataGuard requireAuth={true}>
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/inventory" element={<InventoryPage />} />
+                      <Route path="/catalog" element={<CatalogPage />} />
+                      <Route path="/store" element={<CatalogPage />} />
+                      <Route path="/upload" element={<UploadPage />} />
+                      <Route path="/upload/bulk" element={<BulkUploadPage />} />
+                      <Route path="/upload-single-stone" element={<UploadSingleStonePage />} />
+                      <Route path="/insights" element={<InsightsPage />} />
+                      <Route path="/chat" element={<ChatPage />} />
+                      <Route path="/notifications" element={<NotificationsPage />} />
+                      <Route path="/profile" element={<ProfilePage />} />
+                      <Route path="/settings" element={<SettingsPage />} />
+                      <Route path="/wishlist" element={<WishlistPage />} />
+                      <Route path="/admin" element={<Admin />} />
+                      <Route path="/admin/analytics" element={<AdminAnalytics />} />
+                      <Route path="/diamond/:stockNumber" element={<DiamondDetailPage />} />
+                      <Route path="/secure-diamond/:encryptedData" element={<SecureDiamondPage />} />
+                      <Route path="/swipe" element={<DiamondSwipe />} />
+                      <Route path="/standardize-csv" element={<StandardizeCsvPage />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Layout>
+                </TelegramInitDataGuard>
               </div>
             </InteractiveWizardProvider>
           </TutorialProvider>
