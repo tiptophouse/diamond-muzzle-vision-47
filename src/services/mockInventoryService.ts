@@ -1,5 +1,5 @@
 
-import { Diamond } from "@/components/inventory/InventoryTable";
+import { Diamond } from "@/types/diamond";
 
 const mockDiamonds: Diamond[] = [
   {
@@ -11,9 +11,7 @@ const mockDiamonds: Diamond[] = [
     clarity: "VS1",
     cut: "Excellent",
     price: 8500,
-    status: "Available",
-    imageUrl: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop&crop=center",
-    gem360Url: "https://v360.in/demo/round",
+    availability: "Available",
     picture: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop&crop=center",
     store_visible: true
   },
@@ -26,8 +24,7 @@ const mockDiamonds: Diamond[] = [
     clarity: "VVS2",
     cut: "Very Good",
     price: 6200,
-    status: "Available",
-    imageUrl: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop&crop=center",
+    availability: "Available",
     picture: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop&crop=center",
     store_visible: true
   },
@@ -40,8 +37,7 @@ const mockDiamonds: Diamond[] = [
     clarity: "VS2",
     cut: "Good",
     price: 7800,
-    status: "Available",
-    imageUrl: "https://images.unsplash.com/photo-1544997845-3e191bf75b3c?w=400&h=400&fit=crop&crop=center",
+    availability: "Available",
     picture: "https://images.unsplash.com/photo-1544997845-3e191bf75b3c?w=400&h=400&fit=crop&crop=center",
     store_visible: true
   },
@@ -54,8 +50,7 @@ const mockDiamonds: Diamond[] = [
     clarity: "FL",
     cut: "Excellent", 
     price: 15000,
-    status: "Available",
-    imageUrl: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop&crop=center&auto=format&q=75",
+    availability: "Available",
     picture: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop&crop=center&auto=format&q=75",
     store_visible: true
   },
@@ -68,8 +63,7 @@ const mockDiamonds: Diamond[] = [
     clarity: "IF",
     cut: "Excellent",
     price: 12500,
-    status: "Available",
-    imageUrl: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop&crop=center&auto=format&q=75",
+    availability: "Available",
     picture: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop&crop=center&auto=format&q=75",
     store_visible: true
   }

@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Heart, ArrowLeft, Share2 } from 'lucide-react';
 import { useWishlist } from '@/hooks/useWishlist';
 import { ShareButton } from '@/components/store/ShareButton';
-import { Diamond } from '@/components/inventory/InventoryTable';
+import { Diamond } from '@/types/diamond';
 
 export default function DiamondDetailPage() {
   const { stockNumber } = useParams<{ stockNumber: string }>();
@@ -28,9 +28,9 @@ export default function DiamondDetailPage() {
         clarity: 'VS1',
         cut: 'Excellent',
         price: 15000,
-        status: 'Available',
-        depth: 62.5, // Add depth property
-        imageUrl: '/placeholder.svg'
+        availability: 'Available',
+        depth: 62.5,
+        picture: '/placeholder.svg'
       });
     }
   }, [stockNumber]);
@@ -70,7 +70,7 @@ export default function DiamondDetailPage() {
           <Card>
             <CardContent className="p-6">
               <img
-                src={diamond.imageUrl || '/placeholder.svg'}
+                src={diamond.picture || '/placeholder.svg'}
                 alt={`Diamond ${diamond.stockNumber}`}
                 className="w-full h-96 object-cover rounded-lg"
               />
@@ -113,7 +113,7 @@ export default function DiamondDetailPage() {
 
           <div className="border-t pt-6">
             <div className="text-3xl font-bold text-primary mb-4">
-              ${diamond.price.toLocaleString()}
+              ${diamond.price?.toLocaleString()}
             </div>
             
             <div className="flex gap-3">
@@ -126,7 +126,7 @@ export default function DiamondDetailPage() {
                 {inWishlist ? 'In Wishlist' : 'Add to Wishlist'}
               </Button>
               
-              <ShareButton stockNumber={diamond.stockNumber} />
+              <ShareButton stockNumber={diamond.stockNumber || diamond.id} />
             </div>
           </div>
 
@@ -137,14 +137,16 @@ export default function DiamondDetailPage() {
             <CardContent className="space-y-2">
               <div className="flex justify-between">
                 <span>Status:</span>
-                <Badge variant={diamond.status === 'Available' ? 'default' : 'secondary'}>
-                  {diamond.status}
+                <Badge variant={diamond.availability === 'Available' ? 'default' : 'secondary'}>
+                  {diamond.availability}
                 </Badge>
               </div>
-              <div className="flex justify-between">
-                <span>Price per Carat:</span>
-                <span>${Math.round(diamond.price / diamond.carat).toLocaleString()}</span>
-              </div>
+              {diamond.price && (
+                <div className="flex justify-between">
+                  <span>Price per Carat:</span>
+                  <span>${Math.round(diamond.price / diamond.carat).toLocaleString()}</span>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
