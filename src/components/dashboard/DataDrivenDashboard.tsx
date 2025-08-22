@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
 import { useEffect } from 'react';
-import { Diamond } from '@/components/inventory/InventoryTable';
+import { Diamond } from '@/types/diamond';
 import { useNavigate } from 'react-router-dom';
 
 interface DataDrivenDashboardProps {

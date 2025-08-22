@@ -1,9 +1,8 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Diamond } from '@/components/inventory/InventoryTable';
+import { Diamond } from '@/types/diamond';
 
 export function useWishlist() {
   const [isLoading, setIsLoading] = useState(false);

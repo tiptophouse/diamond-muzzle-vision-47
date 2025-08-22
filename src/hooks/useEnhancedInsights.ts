@@ -1,87 +1,49 @@
+import { useState, useEffect } from 'react';
+import { api, apiEndpoints } from '@/lib/api';
+import { Diamond } from '@/types/diamond';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
-import { useMemo } from 'react';
-import { Diamond } from '@/components/inventory/InventoryTable';
-
-interface ShapeGroup {
-  totalPrice: number;
-  count: number;
+interface Insight {
+  id: number;
+  title: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
 }
 
-interface ShapeGroups {
-  [shape: string]: ShapeGroup;
-}
+export function useEnhancedInsights() {
+  const { user } = useTelegramAuth();
+  const [insights, setInsights] = useState<Insight[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-export function useEnhancedInsights(diamonds: Diamond[]) {
-  const insights = useMemo(() => {
-    if (!diamonds || diamonds.length === 0) {
-      return {
-        totalValue: 0,
-        averagePrice: 0,
-        totalCount: 0,
-        shapeDistribution: [],
-        topShapes: [],
-        priceRanges: [],
-        inventoryVelocity: 0,
-        profitMargin: 0,
-      };
-    }
+  const fetchInsights = async () => {
+    if (!user?.id) return;
 
-    // Calculate total value and count
-    const totalValue = diamonds.reduce((sum, diamond) => sum + (diamond.price || 0), 0);
-    const totalCount = diamonds.length;
-    const averagePrice = totalCount > 0 ? totalValue / totalCount : 0;
+    setIsLoading(true);
+    setError(null);
 
-    // Shape distribution analysis
-    const shapeGroups: ShapeGroups = diamonds.reduce((groups, diamond) => {
-      const shape = diamond.shape || 'Unknown';
-      if (!groups[shape]) {
-        groups[shape] = { totalPrice: 0, count: 0 };
+    try {
+      const response = await api.get(apiEndpoints.getUserInsights(user.id));
+      if (response.error) {
+        throw new Error(response.error);
       }
-      groups[shape].totalPrice += diamond.price || 0;
-      groups[shape].count += 1;
-      return groups;
-    }, {} as ShapeGroups);
+      setInsights(response.data as Insight[]);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch insights');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    const shapeDistribution = Object.entries(shapeGroups).map(([shape, data]) => ({
-      shape,
-      count: data.count,
-      value: data.totalPrice,
-      percentage: (data.count / totalCount) * 100,
-    }));
+  useEffect(() => {
+    fetchInsights();
+  }, [user?.id]);
 
-    // Top shapes by count
-    const topShapes = Object.entries(shapeGroups)
-      .sort(([, a], [, b]) => b.count - a.count)
-      .slice(0, 5)
-      .map(([shape, data]) => ({
-        shape,
-        count: data.count,
-        value: data.totalPrice,
-      }));
-
-    // Price ranges
-    const priceRanges = [
-      { range: '$0 - $1,000', count: diamonds.filter(d => d.price < 1000).length },
-      { range: '$1,000 - $5,000', count: diamonds.filter(d => d.price >= 1000 && d.price < 5000).length },
-      { range: '$5,000 - $10,000', count: diamonds.filter(d => d.price >= 5000 && d.price < 10000).length },
-      { range: '$10,000+', count: diamonds.filter(d => d.price >= 10000).length },
-    ];
-
-    // Mock calculations for velocity and profit margin
-    const inventoryVelocity = Math.random() * 0.3 + 0.1; // 10-40% turnover
-    const profitMargin = Math.random() * 0.2 + 0.15; // 15-35% profit
-
-    return {
-      totalValue,
-      averagePrice,
-      totalCount,
-      shapeDistribution,
-      topShapes,
-      priceRanges,
-      inventoryVelocity,
-      profitMargin,
-    };
-  }, [diamonds]);
-
-  return insights;
+  return {
+    insights,
+    isLoading,
+    error,
+    refetch: fetchInsights,
+  };
 }

@@ -1,19 +1,20 @@
 
 import React from 'react';
+import { Share2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { ShareButton } from './ShareButton';
 import { Diamond } from '@/types/diamond';
 
 interface FloatingShareButtonProps {
   diamond: Diamond;
+  className?: string;
 }
 
-export function FloatingShareButton({ diamond }: FloatingShareButtonProps) {
+export function FloatingShareButton({ diamond, className }: FloatingShareButtonProps) {
   return (
-    <div className="fixed bottom-6 right-6 z-50">
-      <ShareButton
-        diamond={diamond}
-        className="shadow-lg hover:shadow-xl transition-shadow"
-      />
+    <div className={cn("fixed bottom-20 right-4 z-50", className)}>
+      <ShareButton diamond={diamond} />
     </div>
   );
 }
