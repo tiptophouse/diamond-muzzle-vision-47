@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { Diamond } from '@/types/diamond';
 import { api, apiEndpoints } from '@/lib/api';
@@ -43,11 +44,13 @@ export function useInventoryData(page: number = 1, pageSize: number = 20) {
       console.log('💎 Inventory data from FastAPI:', response.data);
       return response.data as InventoryResponse;
     },
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
   });
 
   return {
     ...query,
     data: query.data as InventoryResponse | undefined,
+    // Add backward compatibility properties
+    allDiamonds: query.data?.diamonds || [],
   };
 }

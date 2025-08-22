@@ -1,9 +1,8 @@
-
-import { Diamond as DiamondType } from "@/components/inventory/InventoryTable";
-import { Button } from "@/components/ui/button";
+import React, { useState } from 'react';
+import { Diamond } from '@/types/diamond';
+import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, X } from "lucide-react";
-import { useState } from "react";
 import { ShapeFilter } from "./filters/ShapeFilter";
 import { PriceRangeFilter } from "./filters/PriceRangeFilter";
 import { CaratRangeFilter } from "./filters/CaratRangeFilter";
@@ -34,7 +33,7 @@ interface TelegramStoreFiltersProps {
   onUpdateFilter: (key: string, value: any) => void;
   onClearFilters: () => void;
   onApplyFilters: () => void;
-  diamonds: DiamondType[];
+  diamonds: Diamond[];
   imageStats?: {
     withImages: number;
     with360: number;

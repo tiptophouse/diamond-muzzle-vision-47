@@ -21,6 +21,7 @@ export interface Diamond {
   lab?: string;
   location?: string;
   availability?: string;
+  status?: string; // Add missing status property
   comment?: string;
   store_visible?: boolean;
   picture?: string;

@@ -1,174 +1,37 @@
-
-import { useState, useMemo, useCallback } from "react";
-import { useForm } from 'react-hook-form';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
-import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { useInventoryCrud } from "@/hooks/useInventoryCrud";
-import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
-import { Camera } from "lucide-react";
-import { UploadSuccessCard } from "./UploadSuccessCard";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { DiamondDetailsSection } from './form/DiamondDetailsSection';
-import { CertificateSection } from './form/CertificateSection';
-import { MeasurementsSection } from './form/MeasurementsSection';
-import { DetailedGradingSection } from './form/DetailedGradingSection';
-import { BusinessInfoSection } from './form/BusinessInfoSection';
-import { ImageUploadSection } from './form/ImageUploadSection';
-import { FormActions } from './form/FormActions';
-import { useFormValidation } from './form/useFormValidation';
-import { ApiStatusIndicator } from '@/components/ui/ApiStatusIndicator';
-import { ApiTestButton } from '@/components/ui/ApiTestButton';
+import { useAddDiamond } from '@/hooks/inventory/useAddDiamond';
 
-interface SingleStoneUploadFormProps {
-  initialData?: any;
-  showScanButton?: boolean;
-  onSuccess?: () => void;
-}
+const SHAPES = ['Round', 'Princess', 'Emerald', 'Asscher', 'Marquise', 'Oval', 'Radiant', 'Pear', 'Heart', 'Cushion'];
+const COLORS = ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+const CLARITIES = ['FL', 'IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'SI3', 'I1', 'I2', 'I3'];
+const CUTS = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'];
 
-export function SingleStoneUploadForm({ 
-  initialData, 
-  showScanButton = true, 
-  onSuccess 
-}: SingleStoneUploadFormProps) {
+export function SingleStoneUploadForm() {
+  const [formData, setFormData] = useState<DiamondFormData>({
+    stockNumber: '',
+    shape: '',
+    carat: 0,
+    color: '',
+    clarity: '',
+    cut: '',
+    price: 0,
+    status: 'Available',
+  });
+
+  const { addDiamond, isLoading } = useAddDiamond();
   const { toast } = useToast();
-  const { user } = useTelegramAuth();
-  const [isScanning, setIsScanning] = useState(false);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
-  const [apiConnected, setApiConnected] = useState(true); // Track API connection status
-  const { addDiamond, isLoading } = useInventoryCrud({
-    onSuccess: () => {
-      console.log('✅ Diamond added successfully, showing success card');
-      setUploadSuccess(true);
-    }
-  });
 
-  // Memoize default values to prevent unnecessary re-calculations
-  const defaultValues = useMemo(() => {
-    const defaults = {
-      stockNumber: '',
-      carat: 1,
-      price: 0,
-      status: 'Available',
-      picture: '',
-      shape: 'Round',
-      color: 'G',
-      clarity: 'VS1',
-      cut: 'Excellent',
-      fluorescence: 'None',
-      polish: 'Excellent',
-      symmetry: 'Excellent',
-      lab: 'GIA',
-      gridle: 'Medium',
-      culet: 'None',
-      storeVisible: true
-    };
-
-    if (initialData) {
-      return {
-        ...defaults,
-        stockNumber: initialData.stock || defaults.stockNumber,
-        shape: initialData.shape || defaults.shape,
-        carat: Number(initialData.weight) || defaults.carat,
-        color: initialData.color || defaults.color,
-        clarity: initialData.clarity || defaults.clarity,
-        cut: initialData.cut || defaults.cut,
-        certificateNumber: initialData.certificate_number?.toString() || '',
-        lab: initialData.lab || defaults.lab,
-        fluorescence: initialData.fluorescence || defaults.fluorescence,
-        polish: initialData.polish || defaults.polish,
-        symmetry: initialData.symmetry || defaults.symmetry,
-        gridle: initialData.gridle || defaults.gridle,
-        culet: initialData.culet || defaults.culet,
-        length: Number(initialData.length) || undefined,
-        width: Number(initialData.width) || undefined,
-        depth: Number(initialData.depth) || undefined,
-        ratio: Number(initialData.ratio) || undefined,
-        tablePercentage: Number(initialData.table_percentage) || undefined,
-        depthPercentage: Number(initialData.depth_percentage) || undefined,
-        pricePerCarat: Number(initialData.price_per_carat) || undefined,
-        rapnet: Number(initialData.rapnet) || undefined,
-        picture: initialData.picture || defaults.picture,
-        certificateUrl: initialData.certificate_url || initialData.certificateUrl || '',
-        certificateComment: initialData.certificate_comment || ''
-      };
-    }
-
-    return defaults;
-  }, [initialData]);
-
-  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<DiamondFormData>({
-    defaultValues
-  });
-
-  const { validateFormData, formatFormData } = useFormValidation();
-
-  const handleGiaScanSuccess = useCallback((giaData: any) => {
-    console.log('GIA data received:', giaData);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    // Comprehensive mapping of all GIA data fields including certificate URL
-    if (giaData.stock) setValue('stockNumber', giaData.stock);
-    if (giaData.shape) setValue('shape', giaData.shape);
-    if (giaData.weight) setValue('carat', Number(giaData.weight));
-    if (giaData.color) setValue('color', giaData.color);
-    if (giaData.clarity) setValue('clarity', giaData.clarity);
-    if (giaData.cut) setValue('cut', giaData.cut);
-    if (giaData.certificate_number) setValue('certificateNumber', giaData.certificate_number.toString());
-    if (giaData.lab) setValue('lab', giaData.lab);
-    if (giaData.fluorescence) setValue('fluorescence', giaData.fluorescence);
-    if (giaData.polish) setValue('polish', giaData.polish);
-    if (giaData.symmetry) setValue('symmetry', giaData.symmetry);
-    if (giaData.gridle) setValue('gridle', giaData.gridle);
-    if (giaData.culet) setValue('culet', giaData.culet);
-    if (giaData.length) setValue('length', Number(giaData.length));
-    if (giaData.width) setValue('width', Number(giaData.width));
-    if (giaData.depth) setValue('depth', Number(giaData.depth));
-    if (giaData.ratio) setValue('ratio', Number(giaData.ratio));
-    if (giaData.table_percentage) setValue('tablePercentage', Number(giaData.table_percentage));
-    if (giaData.depth_percentage) setValue('depthPercentage', Number(giaData.depth_percentage));
-    if (giaData.price_per_carat) setValue('pricePerCarat', Number(giaData.price_per_carat));
-    if (giaData.rapnet) setValue('rapnet', Number(giaData.rapnet));
-    if (giaData.picture) setValue('picture', giaData.picture);
-    
-    // Handle certificate URL from uploaded certificate image
-    if (giaData.certificate_url || giaData.certificateUrl) {
-      setValue('certificateUrl', giaData.certificate_url || giaData.certificateUrl);
-      console.log('Certificate image uploaded to:', giaData.certificate_url || giaData.certificateUrl);
-    }
-    
-    if (giaData.certificate_comment) setValue('certificateComment', giaData.certificate_comment);
-    
-    setIsScanning(false);
-    
-    toast({
-      title: "✅ Certificate Scanned Successfully",
-      description: "All diamond information auto-filled and certificate image uploaded",
-    });
-  }, [setValue, toast]);
-
-  const currentShape = watch('shape');
-  const showCutField = currentShape === 'Round';
-
-  const handleFormSubmit = useCallback((data: DiamondFormData) => {
-    console.log('🔍 UPLOAD: Form submitted', { user: user?.id, data });
-    console.log('🔍 UPLOAD: Shape captured:', data.shape);
-    console.log('🔍 UPLOAD: Table % captured:', data.tablePercentage);
-    console.log('🔍 UPLOAD: Form submit button clicked - processing data...');
-    
-    if (!user?.id) {
-      console.log('❌ UPLOAD: No user ID found');
-      toast({
-        title: "Authentication Error",
-        description: "Please log in to add diamonds",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    console.log('🔍 UPLOAD: User authenticated, validating form data...');
-    if (!validateFormData(data)) {
-      console.log('❌ UPLOAD: Form validation failed');
+    if (!formData.shape || !formData.color || !formData.clarity || formData.carat <= 0) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields",
@@ -176,191 +39,218 @@ export function SingleStoneUploadForm({
       });
       return;
     }
-
-    console.log('✅ UPLOAD: Form validation passed, formatting data...');
-    const formattedData = formatFormData(data, showCutField);
-    console.log('🔍 UPLOAD: Calling addDiamond with:', formattedData);
-    console.log('🔍 UPLOAD: About to make API call to FastAPI create diamond endpoint...');
     
-    addDiamond(formattedData).then(success => {
-      console.log('🔍 UPLOAD: addDiamond result:', success);
-      console.log('🔍 UPLOAD: API call completed, success:', success);
-      
-      if (!success) {
-        console.log('❌ UPLOAD: Diamond creation failed');
-        setApiConnected(false);
-        toast({
-          title: "❌ Upload Failed",
-          description: "Failed to add diamond to inventory. Please try again.",
-          variant: "destructive",
-        });
-      } else {
-        console.log('✅ UPLOAD: Diamond creation successful!');
-        setApiConnected(true);
-        setUploadSuccess(true);
-        toast({
-          title: "Diamond Added Successfully",
-          description: "Your diamond has been added to your inventory.",
-        });
-        
-        // Call success callback if provided
-        onSuccess?.();
-        
-        // Reset form after 3 seconds
-        setTimeout(() => {
-          resetForm();
-          setUploadSuccess(false);
-        }, 3000);
-      }
-    }).catch(error => {
-      console.error('❌ UPLOAD: Error in addDiamond promise:', error);
-      setApiConnected(false);
+    try {
+      await addDiamond(formData);
       toast({
-        title: "❌ Upload Error",
-        description: "An error occurred while uploading. Please try again.",
+        title: "Success",
+        description: "Diamond added successfully",
+      });
+      
+      // Reset form
+      setFormData({
+        stockNumber: '',
+        shape: '',
+        carat: 0,
+        color: '',
+        clarity: '',
+        cut: '',
+        price: 0,
+        status: 'Available',
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add diamond",
         variant: "destructive",
       });
-    });
-  }, [user?.id, validateFormData, formatFormData, showCutField, addDiamond, toast, setApiConnected]);
+    }
+  };
 
-  const resetForm = useCallback(() => {
-    reset(defaultValues);
-  }, [reset, defaultValues]);
-
-  // Show success card after successful upload
-  if (uploadSuccess) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center px-4">
-        <UploadSuccessCard
-          title="Stone Uploaded Successfully"
-          description="Your diamond has been added to your inventory. Ready to share or continue adding more stones."
-          onContinue={() => {
-            setUploadSuccess(false);
-            resetForm();
-          }}
-          onShare={() => {
-            toast({
-              title: "✨ Ready to Share",
-              description: "Your diamond is now visible in your store",
-            });
-          }}
-        />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <Card>
-        <CardContent className="pt-6 text-center">
-          <p className="text-muted-foreground">Please log in to add diamonds to your inventory.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const handleInputChange = (field: keyof DiamondFormData, value: string | number) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   return (
-    <>
-      {/* iPhone/TMA optimized form */}
-      <div className="space-y-4">
-        {showScanButton && (
-          <Card className="border-primary/20">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Add Single Diamond</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsScanning(true)}
-                className="w-full h-12 text-base active:scale-95 transition-transform"
-              >
-                <Camera className="h-5 w-5 mr-2" />
-                Scan Diamond Certificate
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        <ApiTestButton />
-        <ApiStatusIndicator isConnected={apiConnected} className="mb-4" />
-        
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col min-h-screen">
-          {/* Main form content - scrollable */}
-          <div className="flex-1 overflow-y-auto smooth-scroll">
-            <DiamondDetailsSection
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors}
-            />
-
-            <div className="border-t border-border/20 mt-8">
-              <MeasurementsSection
-                register={register}
-                watch={watch}
-                errors={errors}
+    <Card>
+      <CardHeader>
+        <CardTitle>Add Single Diamond</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="stockNumber">Stock Number</Label>
+              <Input
+                id="stockNumber"
+                value={formData.stockNumber}
+                onChange={(e) => handleInputChange('stockNumber', e.target.value)}
+                placeholder="Enter stock number"
               />
             </div>
 
-            <div className="border-t border-border/20 mt-8 pt-8 px-4 space-y-6">
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold text-foreground">Certificate</h3>
-              </div>
-              <CertificateSection
-                register={register}
-                setValue={setValue}
-                watch={watch}
-                errors={errors}
+            <div className="space-y-2">
+              <Label htmlFor="shape">Shape *</Label>
+              <Select value={formData.shape} onValueChange={(value) => handleInputChange('shape', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select shape" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SHAPES.map(shape => (
+                    <SelectItem key={shape} value={shape}>{shape}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="carat">Carat *</Label>
+              <Input
+                id="carat"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.carat || ''}
+                onChange={(e) => handleInputChange('carat', parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
               />
             </div>
 
-            <div className="border-t border-border/20 mt-8 pt-8 px-4 space-y-6">
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold text-foreground">Business Info</h3>
-              </div>
-              <BusinessInfoSection
-                register={register}
-                setValue={setValue}
-                watch={watch}
-                errors={errors}
+            <div className="space-y-2">
+              <Label htmlFor="color">Color *</Label>
+              <Select value={formData.color} onValueChange={(value) => handleInputChange('color', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select color" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COLORS.map(color => (
+                    <SelectItem key={color} value={color}>{color}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="clarity">Clarity *</Label>
+              <Select value={formData.clarity} onValueChange={(value) => handleInputChange('clarity', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select clarity" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CLARITIES.map(clarity => (
+                    <SelectItem key={clarity} value={clarity}>{clarity}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cut">Cut</Label>
+              <Select value={formData.cut} onValueChange={(value) => handleInputChange('cut', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select cut" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CUTS.map(cut => (
+                    <SelectItem key={cut} value={cut}>{cut}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="price">Price</Label>
+              <Input
+                id="price"
+                type="number"
+                min="0"
+                value={formData.price || ''}
+                onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
+                placeholder="0"
               />
             </div>
 
-            <div className="border-t border-border/20 mt-8 pt-8 px-4 space-y-6">
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold text-foreground">Images</h3>
-              </div>
-              <ImageUploadSection
-                setValue={setValue}
-                watch={watch}
-                onGiaDataExtracted={handleGiaScanSuccess}
+            <div className="space-y-2">
+              <Label htmlFor="certificateNumber">Certificate Number</Label>
+              <Input
+                id="certificateNumber"
+                value={formData.certificateNumber || ''}
+                onChange={(e) => handleInputChange('certificateNumber', e.target.value)}
+                placeholder="Enter certificate number"
               />
             </div>
 
-            {/* Bottom padding for safe area */}
-            <div className="h-24"></div>
+            <div className="space-y-2">
+              <Label htmlFor="lab">Lab</Label>
+              <Input
+                id="lab"
+                value={formData.lab || ''}
+                onChange={(e) => handleInputChange('lab', e.target.value)}
+                placeholder="GIA, AGS, etc."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="fluorescence">Fluorescence</Label>
+              <Input
+                id="fluorescence"
+                value={formData.fluorescence || ''}
+                onChange={(e) => handleInputChange('fluorescence', e.target.value)}
+                placeholder="None, Faint, Medium, Strong"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="polish">Polish</Label>
+              <Select value={formData.polish || ''} onValueChange={(value) => handleInputChange('polish', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select polish" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CUTS.map(grade => (
+                    <SelectItem key={grade} value={grade}>{grade}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="symmetry">Symmetry</Label>
+              <Select value={formData.symmetry || ''} onValueChange={(value) => handleInputChange('symmetry', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select symmetry" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CUTS.map(grade => (
+                    <SelectItem key={grade} value={grade}>{grade}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {/* Sticky bottom actions */}
-          <div className="sticky bottom-0 bg-background border-t border-border/20 safe-area-inset-bottom">
-            <div data-tutorial="submit-diamond">
-              <FormActions
-                onReset={resetForm}
-                isLoading={isLoading}
-              />
-            </div>
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button type="button" variant="outline" onClick={() => setFormData({
+              stockNumber: '',
+              shape: '',
+              carat: 0,
+              color: '',
+              clarity: '',
+              cut: '',
+              price: 0,
+              status: 'Available',
+            })}>
+              Clear
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Adding...' : 'Add Diamond'}
+            </Button>
           </div>
         </form>
-      </div>
-
-      {showScanButton && (
-        <QRCodeScanner
-          isOpen={isScanning}
-          onClose={() => setIsScanning(false)}
-          onScanSuccess={handleGiaScanSuccess}
-        />
-      )}
-    </>
+      </CardContent>
+    </Card>
   );
 }

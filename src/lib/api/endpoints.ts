@@ -11,6 +11,9 @@ export const apiEndpoints = {
     }
     return endpoint;
   },
+
+  // Get all diamonds - same as getAllStones but different endpoint name for compatibility
+  getAllDiamonds: (userId: number) => `/api/v1/get_all_stones?user_id=${userId}`,
   
   // Create diamond - POST /api/v1/diamonds?user_id={user_id}
   addDiamond: (userId: number) => `/api/v1/diamonds?user_id=${userId}`,
@@ -46,6 +49,10 @@ export const apiEndpoints = {
   getInventoryByShape: (userId: number) => `/api/v1/users/${userId}/inventory/by-shape`,
   getRecentSales: (userId: number) => `/api/v1/users/${userId}/sales/recent`,
   getInventory: (userId: number, page: number = 1, limit: number = 10) => `/api/v1/users/${userId}/inventory?page=${page}&limit=${limit}`,
+  getUserInsights: (userId: number) => `/api/v1/users/${userId}/insights`,
+  
+  // Store endpoints
+  getStoreDiamonds: (userId: number) => `/api/v1/users/${userId}/store/diamonds`,
   
   // Payment management endpoints
   removeUserPayments: (userId: number) => `/api/v1/users/${userId}/payments/remove`,

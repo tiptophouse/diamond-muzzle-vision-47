@@ -1,136 +1,126 @@
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Heart, Share2, Eye } from 'lucide-react';
+import { Diamond } from '@/types/diamond';
 
-import { useState } from "react";
-import { MessageCircle, ImageIcon, Gem } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Diamond } from "@/components/inventory/InventoryTable";
-import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { AdminStoreControls } from "./AdminStoreControls";
-
-const ADMIN_TELEGRAM_ID = 2138564172;
-
-interface EnhancedDiamondCardProps {
+interface OptimizedDiamondCardProps {
   diamond: Diamond;
-  index: number;
-  onUpdate?: () => void;
-  onDelete?: () => void;
+  onAddToWishlist?: (diamond: Diamond) => void;
+  onShare?: (diamond: Diamond) => void;
+  onViewDetails?: (diamond: Diamond) => void;
 }
 
-export function EnhancedDiamondCard({ diamond, index, onUpdate, onDelete }: EnhancedDiamondCardProps) {
-  const [imageError, setImageError] = useState(false);
-  const { user } = useTelegramAuth();
-  const isAdmin = user?.id === ADMIN_TELEGRAM_ID;
+export function OptimizedDiamondCard({
+  diamond,
+  onAddToWishlist,
+  onShare,
+  onViewDetails,
+}: OptimizedDiamondCardProps) {
 
-  const handleContactOwner = () => {
-    const message = `Hi! I'm interested in your diamond:\n\n` +
-      `Stock #: ${diamond.stockNumber}\n` +
-      `Shape: ${diamond.shape}\n` +
-      `Carat: ${diamond.carat}\n` +
-      `Color: ${diamond.color}\n` +
-      `Clarity: ${diamond.clarity}\n` +
-      `Price: $${diamond.price.toLocaleString()}\n\n` +
-      `Could you please provide more details?`;
-
-    const encodedMessage = encodeURIComponent(message);
-    const telegramUrl = `https://t.me/share/url?url=${encodedMessage}`;
-    
-    window.open(telegramUrl, '_blank');
-  };
+  const isFancyColor = diamond.color_type === 'fancy' || 
+    (diamond.color && !['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'].includes(diamond.color));
+  
+  const fancyColorDisplay = diamond.color_type === 'fancy' ? diamond.color : diamond.color;
+  const shouldShowFancyBadge = diamond.color_type === 'fancy' || isFancyColor;
 
   return (
-    <div 
-      className="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group animate-fade-in relative"
-      style={{ animationDelay: `${index * 100}ms` }}
-    >
-      {/* Admin Controls */}
-      {isAdmin && onUpdate && onDelete && (
-        <AdminStoreControls 
-          diamond={diamond}
-          onUpdate={onUpdate}
-          onDelete={onDelete}
-        />
-      )}
-
-      {/* Image Container */}
-      <div className="relative h-48 bg-gradient-to-br from-slate-50 to-slate-100 rounded-t-xl overflow-hidden">
-        {diamond.imageUrl && !imageError ? (
+    <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-lg">
+      <div className="aspect-square relative bg-gradient-to-br from-gray-50 to-gray-100">
+        {diamond.picture ? (
           <img
-            src={diamond.imageUrl}
-            alt={`Diamond ${diamond.stockNumber}`}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={() => setImageError(true)}
+            src={diamond.picture}
+            alt={`${diamond.shape} ${diamond.carat}ct`}
+            className="w-full h-full object-cover"
+            loading="lazy"
           />
         ) : (
-          <div className="flex items-center justify-center h-full">
-            <div className="relative">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
-                <Gem className="h-8 w-8 text-white" />
-              </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
-              </div>
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
+              <span className="text-2xl">💎</span>
             </div>
           </div>
         )}
         
-        {/* Status Badge */}
-        <div className="absolute top-3 left-3">
+        {shouldShowFancyBadge && (
           <Badge 
-            className={`${
-              diamond.status === "Available" 
-                ? "bg-emerald-100 text-emerald-800 border-emerald-300" 
-                : "bg-blue-100 text-blue-800 border-blue-300"
-            }`}
-            variant="outline"
+            variant="secondary" 
+            className="absolute top-2 left-2 bg-purple-100 text-purple-800"
           >
-            {diamond.status}
+            Fancy Color
           </Badge>
-        </div>
+        )}
       </div>
 
-      {/* Card Content */}
-      <div className="p-4 space-y-3">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded">
-            #{diamond.stockNumber}
-          </span>
-          <span className="text-lg font-bold text-slate-900">
-            ${diamond.price.toLocaleString()}
-          </span>
-        </div>
-
-        {/* Diamond Details */}
+      <CardContent className="p-4">
         <div className="space-y-2">
-          <h3 className="font-semibold text-slate-900 text-lg">
-            {diamond.carat} ct {diamond.shape}
-          </h3>
-          
-          <div className="grid grid-cols-3 gap-2 text-sm">
-            <div className="text-center">
-              <p className="text-slate-500">Color</p>
-              <Badge variant="outline" className="text-xs">{diamond.color}</Badge>
-            </div>
-            <div className="text-center">
-              <p className="text-slate-500">Clarity</p>
-              <Badge variant="outline" className="text-xs">{diamond.clarity}</Badge>
-            </div>
-            <div className="text-center">
-              <p className="text-slate-500">Cut</p>
-              <Badge variant="outline" className="text-xs">{diamond.cut}</Badge>
-            </div>
+          <div className="flex justify-between items-start">
+            <h3 className="font-semibold text-lg">
+              {diamond.shape} {diamond.carat}ct
+            </h3>
+            {diamond.price && (
+              <p className="font-bold text-lg text-primary">
+                ${diamond.price.toLocaleString()}
+              </p>
+            )}
           </div>
+          
+          <div className="flex gap-2 text-sm text-muted-foreground">
+            <span>{fancyColorDisplay}</span>
+            <span>•</span>
+            <span>{diamond.clarity}</span>
+            {diamond.cut && (
+              <>
+                <span>•</span>
+                <span>{diamond.cut}</span>
+              </>
+            )}
+          </div>
+
+          {diamond.certificateNumber && (
+            <p className="text-xs text-muted-foreground">
+              Cert: {diamond.certificateNumber}
+            </p>
+          )}
         </div>
 
-        {/* Contact Button */}
-        <Button 
-          onClick={handleContactOwner}
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-        >
-          <MessageCircle className="h-4 w-4 mr-2" />
-          Contact Owner
-        </Button>
-      </div>
-    </div>
+        <div className="flex gap-2 mt-4">
+          {onAddToWishlist && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onAddToWishlist(diamond)}
+              className="flex-1"
+            >
+              <Heart className="h-4 w-4 mr-1" />
+              Save
+            </Button>
+          )}
+          
+          {onShare && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onShare(diamond)}
+            >
+              <Share2 className="h-4 w-4" />
+            </Button>
+          )}
+          
+          {onViewDetails && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => onViewDetails(diamond)}
+              className="flex-1"
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              View
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -1,121 +1,132 @@
-
-import { Diamond as DiamondType } from "@/components/inventory/InventoryTable";
-import { FilterHeader } from "./filters/FilterHeader";
-import { ShapeFilter } from "./filters/ShapeFilter";
-import { PriceRangeFilter } from "./filters/PriceRangeFilter";
-import { CaratRangeFilter } from "./filters/CaratRangeFilter";
-import { ColorFilter } from "./filters/ColorFilter";
-import { ClarityFilter } from "./filters/ClarityFilter";
-import { CutFilter } from "./filters/CutFilter";
-import { FluorescenceFilter } from "./filters/FluorescenceFilter";
+import React, { useState } from 'react';
+import { Diamond } from '@/types/diamond';
+import { Button } from '@/components/ui/button';
 
 interface PremiumStoreFiltersProps {
-  filters: {
-    shapes: string[];
-    colors: string[];
-    clarities: string[];
-    cuts: string[];
-    fluorescence: string[];
-    caratRange: [number, number];
-    priceRange: [number, number];
-  };
-  onUpdateFilter: (key: string, value: any) => void;
-  onClearFilters: () => void;
-  diamonds: DiamondType[];
+  diamonds: Diamond[];
+  onFilter: (filters: { shape?: string; color?: string; clarity?: string; price?: number }) => void;
 }
 
-export function PremiumStoreFilters({ 
-  filters, 
-  onUpdateFilter, 
-  onClearFilters, 
-  diamonds
-}: PremiumStoreFiltersProps) {
-  const getMinMaxValues = () => {
-    if (!diamonds || diamonds.length === 0) {
-      return { minCarat: 0, maxCarat: 10, minPrice: 0, maxPrice: 100000 };
-    }
-    
-    const carats = diamonds.map(d => d.carat);
-    const prices = diamonds.map(d => d.price);
-    
-    return {
-      minCarat: Math.min(...carats),
-      maxCarat: Math.max(...carats),
-      minPrice: Math.min(...prices),
-      maxPrice: Math.max(...prices)
-    };
+export function PremiumStoreFilters({ diamonds, onFilter }: PremiumStoreFiltersProps) {
+  const [shape, setShape] = useState<string>('');
+  const [color, setColor] = useState<string>('');
+  const [clarity, setClarity] = useState<string>('');
+  const [price, setPrice] = useState<number>(0);
+
+  const handleShapeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setShape(e.target.value);
   };
 
-  const { minCarat, maxCarat, minPrice, maxPrice } = getMinMaxValues();
-  
-  const activeFiltersCount = 
-    filters.shapes.length + 
-    filters.colors.length + 
-    filters.clarities.length + 
-    filters.cuts.length + 
-    filters.fluorescence.length + 
-    (filters.caratRange[0] > minCarat || filters.caratRange[1] < maxCarat ? 1 : 0) +
-    (filters.priceRange[0] > minPrice || filters.priceRange[1] < maxPrice ? 1 : 0);
+  const handleColorChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setColor(e.target.value);
+  };
 
-  const toggleFilter = (type: string, value: string) => {
-    const currentValues = filters[type as keyof typeof filters] as string[];
-    const newValues = currentValues.includes(value)
-      ? currentValues.filter(v => v !== value)
-      : [...currentValues, value];
-    onUpdateFilter(type, newValues);
+  const handleClarityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setClarity(e.target.value);
+  };
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPrice(Number(e.target.value));
+  };
+
+  const applyFilters = () => {
+    onFilter({
+      shape: shape,
+      color: color,
+      clarity: clarity,
+      price: price,
+    });
+  };
+
+  const resetFilters = () => {
+    setShape('');
+    setColor('');
+    setClarity('');
+    setPrice(0);
+    onFilter({});
   };
 
   return (
-    <div className="p-4 space-y-5">
-      <FilterHeader 
-        activeFiltersCount={activeFiltersCount}
-        onClearFilters={onClearFilters}
-      />
+    <div className="space-y-4">
+      <h4 className="text-lg font-medium">Premium Filters</h4>
 
-      {/* Shape Filter - Most important, placed first */}
-      <ShapeFilter
-        selectedShapes={filters.shapes}
-        onShapeToggle={(shape) => toggleFilter('shapes', shape)}
-      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="shape" className="block text-sm font-medium text-gray-700">
+            Shape
+          </label>
+          <select
+            id="shape"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            value={shape}
+            onChange={handleShapeChange}
+          >
+            <option value="">All Shapes</option>
+            {[...new Set(diamonds.map((d) => d.shape))].map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      {/* Range Filters - Single column for better mobile experience */}
-      <div className="space-y-4">
-        <PriceRangeFilter
-          priceRange={filters.priceRange}
-          minPrice={minPrice}
-          maxPrice={maxPrice}
-          onPriceRangeChange={(range) => onUpdateFilter('priceRange', range)}
-        />
+        <div>
+          <label htmlFor="color" className="block text-sm font-medium text-gray-700">
+            Color
+          </label>
+          <select
+            id="color"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            value={color}
+            onChange={handleColorChange}
+          >
+            <option value="">All Colors</option>
+            {[...new Set(diamonds.map((d) => d.color))].map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <CaratRangeFilter
-          caratRange={filters.caratRange}
-          minCarat={minCarat}
-          maxCarat={maxCarat}
-          onCaratRangeChange={(range) => onUpdateFilter('caratRange', range)}
-        />
+        <div>
+          <label htmlFor="clarity" className="block text-sm font-medium text-gray-700">
+            Clarity
+          </label>
+          <select
+            id="clarity"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            value={clarity}
+            onChange={handleClarityChange}
+          >
+            <option value="">All Clarities</option>
+            {[...new Set(diamonds.map((d) => d.clarity))].map((cl) => (
+              <option key={cl} value={cl}>
+                {cl}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="price" className="block text-sm font-medium text-gray-700">
+            Max Price
+          </label>
+          <input
+            type="number"
+            id="price"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            value={price}
+            onChange={handlePriceChange}
+          />
+        </div>
       </div>
-      
-      {/* Selection Filters - Single column for easier touch interaction */}
-      <div className="space-y-4">
-        <ColorFilter
-          selectedColors={filters.colors}
-          onColorToggle={(color) => toggleFilter('colors', color)}
-        />
 
-        <ClarityFilter
-          selectedClarities={filters.clarities}
-          onClarityToggle={(clarity) => toggleFilter('clarities', clarity)}
-        />
-        
-        <CutFilter
-          selectedCuts={filters.cuts}
-          onCutToggle={(cut) => toggleFilter('cuts', cut)}
-        />
-
-        <FluorescenceFilter
-          selectedFluorescence={filters.fluorescence}
-          onFluorescenceToggle={(fluorescence) => toggleFilter('fluorescence', fluorescence)}
-        />
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={resetFilters}>
+          Reset
+        </Button>
+        <Button onClick={applyFilters}>Apply Filters</Button>
       </div>
     </div>
   );
