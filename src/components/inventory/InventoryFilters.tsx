@@ -1,63 +1,22 @@
 
-import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Diamond } from '@/types/diamond';
 
 interface InventoryFiltersProps {
-  searchTerm: string;
-  onSearchChange: (value: string) => void;
-  shapeFilter: string;
-  onShapeChange: (value: string) => void;
-  colorFilter: string;
-  onColorChange: (value: string) => void;
-  clarityFilter: string;
-  onClarityChange: (value: string) => void;
-  statusFilter: string;
-  onStatusChange: (value: string) => void;
-  sortBy: string;
-  onSortByChange: (value: string) => void;
-  sortOrder: string;
-  onSortOrderChange: (value: string) => void;
-  diamonds: Diamond[];
+  onFilterChange?: (filters: any) => void;
 }
 
-export function InventoryFilters({
-  searchTerm,
-  onSearchChange,
-  shapeFilter,
-  onShapeChange,
-  colorFilter,
-  onColorChange,
-  clarityFilter,
-  onClarityChange,
-  statusFilter,
-  onStatusChange,
-  sortBy,
-  onSortByChange,
-  sortOrder,
-  onSortOrderChange,
-  diamonds
-}: InventoryFiltersProps) {
-  const handleClearFilters = () => {
-    onSearchChange('');
-    onShapeChange('all');
-    onColorChange('all');
-    onClarityChange('all');
-    onStatusChange('all');
+export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
+  const handleFilterChange = (key: string, value: any) => {
+    if (onFilterChange) {
+      onFilterChange({ [key]: value });
+    }
   };
 
   return (
     <div className="flex flex-wrap gap-4">
-      <Input
-        placeholder="Search diamonds..."
-        value={searchTerm}
-        onChange={(e) => onSearchChange(e.target.value)}
-        className="w-64"
-      />
-
-      <Select value={shapeFilter} onValueChange={onShapeChange}>
+      <Select onValueChange={(value) => handleFilterChange('shape', value)}>
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Shape" />
         </SelectTrigger>
@@ -76,7 +35,7 @@ export function InventoryFilters({
         </SelectContent>
       </Select>
 
-      <Select value={colorFilter} onValueChange={onColorChange}>
+      <Select onValueChange={(value) => handleFilterChange('color', value)}>
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Color" />
         </SelectTrigger>
@@ -94,7 +53,7 @@ export function InventoryFilters({
         </SelectContent>
       </Select>
 
-      <Select value={clarityFilter} onValueChange={onClarityChange}>
+      <Select onValueChange={(value) => handleFilterChange('clarity', value)}>
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Clarity" />
         </SelectTrigger>
@@ -114,7 +73,10 @@ export function InventoryFilters({
         </SelectContent>
       </Select>
 
-      <Button variant="outline" onClick={handleClearFilters}>
+      <Button 
+        variant="outline" 
+        onClick={() => onFilterChange && onFilterChange({})}
+      >
         Clear Filters
       </Button>
     </div>

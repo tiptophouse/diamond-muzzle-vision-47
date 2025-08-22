@@ -1,103 +1,98 @@
 
 import React, { useState } from 'react';
-import { Layout } from '@/components/layout/Layout';
 import { useStoreData } from '@/hooks/useStoreData';
 import { useStoreFilters } from '@/hooks/useStoreFilters';
 import { EnhancedStoreHeader } from '@/components/store/EnhancedStoreHeader';
 import { TelegramStoreFilters } from '@/components/store/TelegramStoreFilters';
 import { OptimizedDiamondCard } from '@/components/store/OptimizedDiamondCard';
-import { DashboardLoading } from '@/components/dashboard/DashboardLoading';
-import { Diamond } from '@/types/diamond';
+import { TelegramLayout } from '@/components/layout/TelegramLayout';
+import { Button } from '@/components/ui/button';
+import { SlidersHorizontal } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 export default function CatalogPage() {
-  const { data, isLoading, error, refetch } = useStoreData();
-  const {
-    filters,
-    filteredDiamonds,
-    updateFilter,
-    clearFilters,
-    imageStats
+  const [page] = useState(1);
+  const [sortBy, setSortBy] = useState('most-popular');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  
+  const { data, isLoading, error, refetch } = useStoreData(page, 20);
+  const { 
+    filters, 
+    updateFilter, 
+    filteredDiamonds, 
+    resetFilters 
   } = useStoreFilters(data?.diamonds || []);
-
-  const [sortBy, setSortBy] = useState<'price' | 'carat' | 'recent'>('recent');
-  const [showFilters, setShowFilters] = useState(false);
 
   if (isLoading) {
     return (
-      <Layout>
-        <DashboardLoading onEmergencyMode={() => {}} />
-      </Layout>
+      <TelegramLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p>Loading diamonds...</p>
+          </div>
+        </div>
+      </TelegramLayout>
     );
   }
 
   if (error) {
     return (
-      <Layout>
-        <div className="p-4 text-center">
-          <p className="text-red-600">Error loading catalog: {error.message}</p>
-          <button 
-            onClick={() => refetch()}
-            className="mt-2 px-4 py-2 bg-blue-600 text-white rounded"
-          >
-            Retry
-          </button>
+      <TelegramLayout>
+        <div className="text-center py-8">
+          <p className="text-red-500">Error loading store: {error.message}</p>
+          <Button onClick={() => refetch()} className="mt-4">
+            Try Again
+          </Button>
         </div>
-      </Layout>
+      </TelegramLayout>
     );
   }
 
-  const handleOpenFilters = () => setShowFilters(true);
-  const handleSortChange = (value: string) => {
-    setSortBy(value as 'price' | 'carat' | 'recent');
+  const handleOpenFilters = () => {
+    setFiltersOpen(true);
   };
 
   return (
-    <Layout>
-      <div className="min-h-screen bg-background">
-        <div className="sticky top-0 z-10 bg-background border-b">
-          <div className="px-4 py-3">
-            <EnhancedStoreHeader
-              totalDiamonds={data?.total || 0}
-              onOpenFilters={handleOpenFilters}
-              sortBy={sortBy}
-              onSortChange={handleSortChange}
+    <TelegramLayout>
+      <div className="space-y-4">
+        {/* Header */}
+        <EnhancedStoreHeader
+          totalDiamonds={filteredDiamonds.length}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          onOpenFilters={handleOpenFilters}
+        />
+
+        {/* Filters Sheet */}
+        <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+          <SheetContent side="bottom" className="h-[80vh]">
+            <TelegramStoreFilters
+              filters={filters}
+              onUpdateFilter={updateFilter}
             />
-          </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Diamond Grid */}
+        <div className="grid grid-cols-2 gap-3 pb-20">
+          {filteredDiamonds.map((diamond) => (
+            <OptimizedDiamondCard
+              key={diamond.id}
+              diamond={diamond}
+            />
+          ))}
         </div>
 
-        <div className="p-4">
-          <TelegramStoreFilters
-            filters={filters}
-            onUpdateFilter={updateFilter}
-            onClearFilters={clearFilters}
-            onApplyFilters={() => setShowFilters(false)}
-            diamonds={data?.diamonds || []}
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-            {filteredDiamonds.map((diamond: Diamond) => (
-              <OptimizedDiamondCard
-                key={diamond.stockNumber}
-                diamond={diamond}
-              />
-            ))}
+        {filteredDiamonds.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-gray-500">No diamonds found matching your criteria.</p>
+            <Button onClick={resetFilters} className="mt-4">
+              Clear Filters
+            </Button>
           </div>
-
-          {filteredDiamonds.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                No diamonds match your current filters.
-              </p>
-              <button
-                onClick={clearFilters}
-                className="mt-2 text-blue-600 hover:underline"
-              >
-                Clear filters
-              </button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
-    </Layout>
+    </TelegramLayout>
   );
 }

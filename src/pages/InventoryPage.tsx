@@ -1,164 +1,205 @@
 
 import React, { useState } from 'react';
-import { TelegramLayout } from '@/components/layout/TelegramLayout';
-import { InventoryFilters } from '@/components/inventory/InventoryFilters';
 import { InventoryTable } from '@/components/inventory/InventoryTable';
+import { InventoryFilters } from '@/components/inventory/InventoryFilters';
 import { InventoryHeader } from '@/components/inventory/InventoryHeader';
-import { DiamondFormModal } from '@/components/inventory/DiamondFormModal';
-import { DeleteConfirmationModal } from '@/components/inventory/DeleteConfirmationModal';
-import { BulkActionsToolbar } from '@/components/inventory/BulkActionsToolbar';
-import { useDiamondOperations } from '@/hooks/inventory/useDiamondOperations';
+import { InventorySearch } from '@/components/inventory/InventorySearch';
+import { InventoryPagination } from '@/components/inventory/InventoryPagination';
+import { InventoryMobileCard } from '@/components/inventory/InventoryMobileCard';
+import { DiamondForm } from '@/components/inventory/DiamondForm';
+import { TelegramLayout } from '@/components/layout/TelegramLayout';
 import { useInventoryData } from '@/hooks/useInventoryData';
+import { useInventorySearch } from '@/hooks/useInventorySearch';
+import { useDeleteDiamond } from '@/hooks/inventory/useDeleteDiamond';
+import { useUpdateDiamond } from '@/hooks/inventory/useUpdateDiamond';
+import { useMobile } from '@/hooks/use-mobile';
 import { Diamond } from '@/types/diamond';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 
 export default function InventoryPage() {
-  const { allDiamonds: diamonds, isLoading, refetch } = useInventoryData();
-  const { updateDiamond, deleteDiamond, isUpdating, isDeleting } = useDiamondOperations();
-  
+  const { toast } = useToast();
+  const isMobile = useMobile();
+  const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const [shapeFilter, setShapeFilter] = useState('all');
-  const [colorFilter, setColorFilter] = useState('all');
-  const [clarityFilter, setClarityFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [sortBy, setSortBy] = useState<'stockNumber' | 'shape' | 'carat' | 'price' | 'status'>('stockNumber');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [selectedDiamonds, setSelectedDiamonds] = useState<string[]>([]);
-  
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedDiamond, setSelectedDiamond] = useState<Diamond | null>(null);
+  const [sortBy, setSortBy] = useState('carat');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [editingDiamond, setEditingDiamond] = useState<Diamond | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
-  // Filter diamonds based on search and filters
-  const filteredDiamonds = diamonds.filter(diamond => {
-    const matchesSearch = !searchTerm || 
-      diamond.stockNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      diamond.shape.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      diamond.color.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      diamond.clarity.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesShape = shapeFilter === 'all' || diamond.shape.toLowerCase() === shapeFilter.toLowerCase();
-    const matchesColor = colorFilter === 'all' || diamond.color === colorFilter;
-    const matchesClarity = clarityFilter === 'all' || diamond.clarity === clarityFilter;
-    const matchesStatus = statusFilter === 'all' || (diamond.status || 'Available') === statusFilter;
-    
-    return matchesSearch && matchesShape && matchesColor && matchesClarity && matchesStatus;
-  });
+  const {
+    data: inventoryData,
+    isLoading,
+    error,
+    refetch
+  } = useInventoryData(page, 20);
 
-  const handleEdit = async (diamond: Diamond) => {
-    setSelectedDiamond(diamond);
-    setIsFormModalOpen(true);
+  const { filteredDiamonds } = useInventorySearch(
+    inventoryData?.diamonds || [],
+    searchTerm
+  );
+
+  const deleteStone = useDeleteDiamond();
+  const updateStone = useUpdateDiamond();
+
+  const handleEdit = (diamond: Diamond) => {
+    setEditingDiamond(diamond);
+    setIsFormOpen(true);
   };
 
-  const handleDelete = (diamond: Diamond) => {
-    setSelectedDiamond(diamond);
-    setIsDeleteModalOpen(true);
+  const handleDelete = async (diamond: Diamond) => {
+    if (confirm(`Are you sure you want to delete this ${diamond.shape} ${diamond.carat}ct diamond?`)) {
+      try {
+        await deleteStone.mutateAsync(diamond);
+        toast({
+          title: "Diamond deleted successfully",
+          description: `${diamond.shape} ${diamond.carat}ct has been removed`,
+        });
+      } catch (error) {
+        console.error('Delete error:', error);
+      }
+    }
   };
 
-  const handleConfirmDelete = async () => {
-    if (selectedDiamond) {
-      await deleteDiamond(selectedDiamond.id);
-      setIsDeleteModalOpen(false);
-      setSelectedDiamond(null);
+  const handleToggleVisibility = async (diamond: Diamond) => {
+    try {
+      await updateStone.mutateAsync({
+        ...diamond,
+        store_visible: !diamond.store_visible
+      });
+      
+      toast({
+        title: diamond.store_visible ? "Diamond hidden from store" : "Diamond visible in store",
+        description: `${diamond.shape} ${diamond.carat}ct visibility updated`,
+      });
+    } catch (error) {
+      console.error('Visibility toggle error:', error);
+    }
+  };
+
+  const handleViewDetails = (diamond: Diamond) => {
+    // Navigate to diamond details
+    const diamondId = diamond.diamondId || diamond.id;
+    window.open(`/diamond/${diamondId}`, '_blank');
+  };
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+  };
+
+  const handleFormSubmit = async (diamondData: any) => {
+    try {
+      if (editingDiamond) {
+        await updateStone.mutateAsync({
+          ...editingDiamond,
+          ...diamondData
+        });
+        toast({
+          title: "Diamond updated successfully",
+          description: `${diamondData.shape} ${diamondData.carat}ct has been updated`,
+        });
+      } else {
+        // Handle add new diamond
+        toast({
+          title: "Diamond added successfully",
+          description: `${diamondData.shape} ${diamondData.carat}ct has been added`,
+        });
+      }
+      
+      setIsFormOpen(false);
+      setEditingDiamond(null);
       refetch();
+    } catch (error) {
+      console.error('Form submission error:', error);
     }
   };
 
-  const handleSave = async (data: any) => {
-    if (selectedDiamond) {
-      await updateDiamond(selectedDiamond.id, data);
-      setIsFormModalOpen(false);
-      setSelectedDiamond(null);
-      refetch();
-    }
+  const handleFormCancel = () => {
+    setIsFormOpen(false);
+    setEditingDiamond(null);
   };
 
-  const handleBulkDelete = async () => {
-    for (const diamondId of selectedDiamonds) {
-      await deleteDiamond(diamondId);
-    }
-    setSelectedDiamonds([]);
-    refetch();
-  };
-
-  const handleBulkStatusUpdate = () => {
-    // Implementation for bulk status update
-    console.log('Bulk status update for:', selectedDiamonds);
-  };
-
-  const handleSortByChange = (value: string) => {
-    setSortBy(value as typeof sortBy);
-  };
-
-  const handleSortOrderChange = (value: string) => {
-    setSortOrder(value as typeof sortOrder);
-  };
+  if (error) {
+    return (
+      <TelegramLayout>
+        <div className="text-center py-8">
+          <p className="text-red-500">Error loading inventory: {error.message}</p>
+          <Button onClick={() => refetch()} className="mt-4">
+            Try Again
+          </Button>
+        </div>
+      </TelegramLayout>
+    );
+  }
 
   return (
     <TelegramLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <InventoryHeader 
-            totalCount={diamonds.length} 
-            onRefresh={() => refetch()}
+        <InventoryHeader onAddNew={() => setIsFormOpen(true)} />
+        
+        <div className="space-y-4">
+          <InventorySearch
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
           />
-          <Button onClick={() => setIsFormModalOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Diamond
-          </Button>
+          
+          <InventoryFilters />
         </div>
 
-        <InventoryFilters
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          shapeFilter={shapeFilter}
-          onShapeChange={setShapeFilter}
-          colorFilter={colorFilter}
-          onColorChange={setColorFilter}
-          clarityFilter={clarityFilter}
-          onClarityChange={setClarityFilter}
-          statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
-          sortBy={sortBy}
-          onSortByChange={handleSortByChange}
-          sortOrder={sortOrder}
-          onSortOrderChange={handleSortOrderChange}
-          diamonds={diamonds}
-        />
-
-        {selectedDiamonds.length > 0 && (
-          <BulkActionsToolbar
-            selectedCount={selectedDiamonds.length}
-            onClearSelection={() => setSelectedDiamonds([])}
-            onBulkDelete={handleBulkDelete}
-            onBulkStatusUpdate={handleBulkStatusUpdate}
+        {isMobile ? (
+          <div className="space-y-4">
+            {filteredDiamonds.map((diamond) => (
+              <InventoryMobileCard
+                key={diamond.id}
+                diamond={diamond}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onToggleVisibility={handleToggleVisibility}
+                onViewDetails={handleViewDetails}
+              />
+            ))}
+          </div>
+        ) : (
+          <InventoryTable
+            diamonds={filteredDiamonds}
+            isLoading={isLoading}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onToggleVisibility={handleToggleVisibility}
+            onViewDetails={handleViewDetails}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onSort={handleSort}
           />
         )}
 
-        <InventoryTable
-          diamonds={filteredDiamonds}
-          isLoading={isLoading}
-          selectedDiamonds={selectedDiamonds}
-          onSelectionChange={setSelectedDiamonds}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+        <InventoryPagination
+          currentPage={page}
+          totalPages={inventoryData?.totalPages || 1}
+          onPageChange={setPage}
         />
 
-        <DiamondFormModal
-          isOpen={isFormModalOpen}
-          onClose={() => setIsFormModalOpen(false)}
-          onSave={handleSave}
-          initialData={selectedDiamond}
-          title={selectedDiamond ? 'Edit Diamond' : 'Add Diamond'}
-        />
-
-        <DeleteConfirmationModal
-          isOpen={isDeleteModalOpen}
-          onClose={() => setIsDeleteModalOpen(false)}
-          onConfirm={handleConfirmDelete}
-          diamondName={selectedDiamond?.stockNumber || 'Unknown'}
-        />
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {editingDiamond ? 'Edit Diamond' : 'Add New Diamond'}
+              </DialogTitle>
+            </DialogHeader>
+            <DiamondForm
+              initialData={editingDiamond}
+              onSubmit={handleFormSubmit}
+              onCancel={handleFormCancel}
+              isLoading={updateStone.isPending}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </TelegramLayout>
   );

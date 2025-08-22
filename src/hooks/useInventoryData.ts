@@ -36,15 +36,13 @@ export function useInventoryData(page: number = 1, pageSize: number = 20) {
         throw new Error(response.error);
       }
 
-      const diamonds = Array.isArray(response.data) ? response.data : [];
-      console.log('💎 Inventory data from FastAPI:', diamonds.length, 'diamonds');
-      
+      console.log('💎 Inventory data from FastAPI:', response.data);
       return {
-        diamonds: diamonds,
-        total: diamonds.length,
+        diamonds: response.data || [],
+        total: response.data?.length || 0,
         page: page,
         pageSize: pageSize,
-        totalPages: Math.ceil(diamonds.length / pageSize),
+        totalPages: Math.ceil((response.data?.length || 0) / pageSize),
       };
     },
     placeholderData: (previousData) => previousData,

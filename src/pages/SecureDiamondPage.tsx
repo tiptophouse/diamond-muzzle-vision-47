@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSharedDiamondAccess } from '@/hooks/useSharedDiamondAccess';
@@ -21,9 +22,9 @@ export default function SecureDiamondPage() {
   const [accessGranted, setAccessGranted] = useState(false);
 
   const { 
-    validateAndTrackAccess,
-    sendAccessNotification,
-    isSecureAccess
+    validateAccess, 
+    trackView, 
+    isValidating 
   } = useSharedDiamondAccess();
 
   useEffect(() => {
@@ -37,19 +38,22 @@ export default function SecureDiamondPage() {
 
     try {
       setIsLoading(true);
-      const hasAccess = await validateAndTrackAccess(shareId);
+      const result = await validateAccess(shareId);
       
-      if (hasAccess) {
-        // In a real implementation, you'd fetch the diamond data
-        // For now, we'll simulate having access
+      if (result.success && result.diamond) {
+        setDiamond(result.diamond);
         setAccessGranted(true);
         
+        // Track the view
+        await trackView(shareId);
+        
         // Configure Telegram WebApp
-        if (webApp.isReady && webApp.webApp) {
-          webApp.webApp.expand?.();
+        if (webApp) {
+          webApp.expand();
+          webApp.ready();
         }
       } else {
-        setError('Access denied');
+        setError(result.error || 'Access denied');
       }
     } catch (err: any) {
       setError(err.message || 'Failed to validate access');
@@ -58,7 +62,7 @@ export default function SecureDiamondPage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isValidating) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
@@ -98,7 +102,6 @@ export default function SecureDiamondPage() {
     );
   }
 
-  
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 max-w-4xl">
