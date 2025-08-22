@@ -1,0 +1,30 @@
+
+export interface Diamond {
+  id: string;
+  diamondId?: string; // Add for backward compatibility
+  stockNumber?: string;
+  shape: string;
+  carat: number;
+  color: string;
+  color_type?: string; // Add for color type support
+  clarity: string;
+  cut?: string;
+  polish?: string;
+  symmetry?: string;
+  fluorescence?: string;
+  certificateNumber?: string; // Keep this for backward compatibility
+  certificateUrl?: string;
+  price?: number;
+  depth?: number;
+  table?: number;
+  measurements?: string;
+  lab?: string;
+  location?: string;
+  availability?: string;
+  comment?: string;
+  store_visible?: boolean;
+  picture?: string;
+  user_id?: number;
+  created_at?: string;
+  updated_at?: string;
+}
