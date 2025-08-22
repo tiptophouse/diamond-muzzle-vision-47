@@ -36,6 +36,13 @@ export const apiEndpoints = {
   // Reports
   createReport: () => `/api/v1/create-report`,
   getReport: (diamondId: string) => `/api/v1/get-report?diamond_id=${diamondId}`,
+  getReports: (userId: number) => `/api/v1/users/${userId}/reports`,
+  
+  // Market comparison
+  getMarketComparison: (params: any) => `/api/v1/market-comparison`,
+  
+  // Secure sharing
+  generateShareLink: (diamondId: string) => `/api/v1/diamonds/${diamondId}/share`,
   
   // Payment
   paymentRequest: () => `/api/v1/payment_request`,

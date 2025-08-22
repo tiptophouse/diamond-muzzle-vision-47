@@ -25,6 +25,8 @@ export interface Diamond {
   comment?: string;
   store_visible?: boolean;
   picture?: string;
+  imageUrl?: string; // Add for image filtering
+  gem360Url?: string; // Add for 360 view filtering
   user_id?: number;
   created_at?: string;
   updated_at?: string;

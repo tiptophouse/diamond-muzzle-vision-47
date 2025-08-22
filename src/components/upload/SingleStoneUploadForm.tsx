@@ -42,10 +42,6 @@ export function SingleStoneUploadForm() {
     
     try {
       await addDiamond(formData);
-      toast({
-        title: "Success",
-        description: "Diamond added successfully",
-      });
       
       // Reset form
       setFormData({
@@ -59,11 +55,7 @@ export function SingleStoneUploadForm() {
         status: 'Available',
       });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add diamond",
-        variant: "destructive",
-      });
+      // Error handling is done in the hook
     }
   };
 

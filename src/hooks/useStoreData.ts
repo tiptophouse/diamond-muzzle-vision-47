@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { Diamond } from '@/types/diamond';
 import { api, apiEndpoints } from '@/lib/api';
@@ -39,7 +40,7 @@ export function useStoreData(page: number = 1, limit: number = 20) {
 
       return response.data as StoreData;
     },
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
   });
 
   return {
@@ -47,5 +48,8 @@ export function useStoreData(page: number = 1, limit: number = 20) {
     isLoading,
     error,
     refetch,
+    // Add backward compatibility
+    diamonds: data?.diamonds || [],
+    loading: isLoading,
   };
 }

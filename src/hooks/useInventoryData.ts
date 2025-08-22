@@ -52,5 +52,8 @@ export function useInventoryData(page: number = 1, pageSize: number = 20) {
     data: query.data as InventoryResponse | undefined,
     // Add backward compatibility properties
     allDiamonds: query.data?.diamonds || [],
+    diamonds: query.data?.diamonds || [],
+    loading: query.isLoading,
+    fetchData: query.refetch,
   };
 }

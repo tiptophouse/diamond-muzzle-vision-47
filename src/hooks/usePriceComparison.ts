@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { api, apiEndpoints } from '@/lib/api';
 import { Diamond } from '@/types/diamond';
 
@@ -20,20 +20,19 @@ export function usePriceComparison(diamond: Diamond) {
 
       setLoading(true);
       try {
-        const response = await api.get(apiEndpoints.getMarketComparison, {
-          params: {
-            shape: diamond.shape,
-            carat_min: diamond.carat * 0.9,
-            carat_max: diamond.carat * 1.1,
-            color: diamond.color,
-            clarity: diamond.clarity
-          }
-        });
+        const response = await api.get(apiEndpoints.getMarketComparison({
+          shape: diamond.shape,
+          carat_min: diamond.carat * 0.9,
+          carat_max: diamond.carat * 1.1,
+          color: diamond.color,
+          clarity: diamond.clarity
+        }));
 
         if (response.data) {
+          const data = response.data as any;
           setMarketData({
-            count: response.data.count || 0,
-            prices: response.data.prices || []
+            count: data.count || 0,
+            prices: data.prices || []
           });
         }
       } catch (error) {
