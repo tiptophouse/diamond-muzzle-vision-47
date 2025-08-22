@@ -32,7 +32,7 @@ import { MarketComparison } from '@/components/insights/MarketComparison';
 import { InventoryVelocity } from '@/components/insights/InventoryVelocity';
 
 export default function InsightsPage() {
-  const { insights, isLoading } = useEnhancedInsights();
+  const { insights, isLoading, refetch } = useEnhancedInsights();
 
   if (isLoading) {
     return (
@@ -87,10 +87,17 @@ export default function InsightsPage() {
     );
   }
 
+  // Calculate total diamonds from topShapes
+  const totalDiamonds = insights.topShapes?.reduce((sum, shape) => sum + shape.count, 0) || 0;
+
   return (
     <TelegramLayout>
       <div className="p-4 space-y-6">
-        <InsightsHeader />
+        <InsightsHeader 
+          totalDiamonds={totalDiamonds}
+          loading={isLoading}
+          onRefresh={refetch}
+        />
         
         {/* Quick Stats Overview */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -99,7 +106,7 @@ export default function InsightsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-blue-600">Total Inventory</p>
-                  <p className="text-2xl font-bold text-blue-900">{insights.topShapes?.length || 0}</p>
+                  <p className="text-2xl font-bold text-blue-900">{totalDiamonds}</p>
                 </div>
                 <DiamondIcon className="h-6 w-6 text-blue-600" />
               </div>
@@ -182,7 +189,7 @@ export default function InsightsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-primary mb-2">
-              {insights.topShapes?.length || 0} active listings
+              {totalDiamonds} active listings
             </div>
             <p className="text-muted-foreground text-sm">
               Based on your current inventory data
@@ -230,7 +237,7 @@ export default function InsightsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground">{shape.count}</span>
-                      <Badge variant="outline">{((shape.count / insights.topShapes.reduce((sum, s) => sum + s.count, 0)) * 100).toFixed(1)}%</Badge>
+                      <Badge variant="outline">{((shape.count / totalDiamonds) * 100).toFixed(1)}%</Badge>
                     </div>
                   </div>
                 ))}
