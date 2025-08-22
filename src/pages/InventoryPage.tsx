@@ -99,7 +99,10 @@ export default function InventoryPage() {
     <TelegramLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <InventoryHeader totalCount={diamonds.length} />
+          <InventoryHeader 
+            totalCount={diamonds.length} 
+            onRefresh={() => refetch()}
+          />
           <Button onClick={() => setIsFormModalOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Add Diamond
