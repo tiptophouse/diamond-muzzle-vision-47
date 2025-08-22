@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,9 +17,12 @@ import { useNavigate } from 'react-router-dom';
 interface UploadWizardProps {
   onSuccess?: () => void;
   showBulkUpload?: boolean;
+  language?: 'en' | 'he';
+  onLanguageChange?: (lang: 'en' | 'he') => void;
+  onComplete?: () => void;
 }
 
-export function UploadWizard({ onSuccess, showBulkUpload = true }: UploadWizardProps) {
+export function UploadWizard({ onSuccess, showBulkUpload = true, language, onLanguageChange, onComplete }: UploadWizardProps) {
   const [currentStep, setCurrentStep] = useState<'upload' | 'preview' | 'processing' | 'complete'>('upload');
   const [csvData, setCsvData] = useState<any[]>([]);
   const [csvFile, setCsvFile] = useState<File | null>(null);
