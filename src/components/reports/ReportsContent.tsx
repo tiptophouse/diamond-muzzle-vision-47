@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Diamond } from '@/types/diamond';
 import { InventoryTable } from '@/components/inventory/InventoryTable';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,8 @@ interface ReportsContentProps {
 }
 
 export function ReportsContent({ diamonds, isLoading }: ReportsContentProps) {
+  const [selectedDiamonds, setSelectedDiamonds] = useState<string[]>([]);
+
   const handleEdit = (diamond: Diamond) => {
     // Handle edit functionality
     console.log('Edit diamond:', diamond);
@@ -47,6 +49,8 @@ export function ReportsContent({ diamonds, isLoading }: ReportsContentProps) {
         <InventoryTable
           diamonds={diamonds}
           isLoading={isLoading}
+          selectedDiamonds={selectedDiamonds}
+          onSelectionChange={setSelectedDiamonds}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onToggleVisibility={handleToggleVisibility}
