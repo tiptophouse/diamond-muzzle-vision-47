@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -150,26 +151,6 @@ export function MeetingInvitationSender() {
           const firstName = user.first_name || user.username || 'משתמש יקר';
           const personalizedMessage = message.replace('{firstName}', firstName);
           
-          console.log(`📤 Sending invitation to user ${user.telegram_id}`);
-          
-          // Use the Telegram edge function to send the message directly
-          const { data: telegramResult, error: telegramError } = await supabase.functions.invoke('send-telegram-message', {
-            body: {
-              telegramId: user.telegram_id,
-              message: personalizedMessage,
-              directMessage: true
-            }
-          });
-
-          if (telegramError) {
-            console.error(`❌ Error sending Telegram message to ${user.telegram_id}:`, telegramError);
-            errorCount++;
-            continue;
-          }
-
-          console.log(`✅ Telegram message sent to ${user.telegram_id}:`, telegramResult);
-
-          // Also store in notifications table for tracking
           const notificationData = {
             telegram_id: user.telegram_id,
             message_type: 'meeting_invitation',
@@ -184,8 +165,7 @@ export function MeetingInvitationSender() {
                 username: user.username
               },
               diamond_count: 0,
-              reason: 'no_diamonds_uploaded',
-              telegram_success: telegramResult?.success || false
+              reason: 'no_diamonds_uploaded'
             }
           };
 
@@ -194,11 +174,12 @@ export function MeetingInvitationSender() {
             .insert([notificationData]);
 
           if (insertError) {
-            console.error(`❌ Error storing notification for ${user.telegram_id}:`, insertError);
+            console.error(`❌ Error sending invitation to ${user.telegram_id}:`, insertError);
+            errorCount++;
+          } else {
+            console.log(`✅ Successfully sent invitation to ${user.telegram_id}`);
+            successCount++;
           }
-
-          successCount++;
-          
         } catch (userError) {
           console.error(`❌ Error processing user ${user.telegram_id}:`, userError);
           errorCount++;
@@ -316,7 +297,7 @@ export function MeetingInvitationSender() {
           
           <Button
             onClick={sendMeetingInvitations}
-            disabled={sending || selectedUsers.size === 0 || !message.trim()}
+            disabled={sending || selectedUsers.size === 0}
             className="flex items-center gap-2"
           >
             <Send className="h-4 w-4" />
