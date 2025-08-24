@@ -1,5 +1,5 @@
 
-import { api, apiEndpoints, getCurrentUserId } from "@/lib/api";
+import { secureApiClient } from "@/lib/api/secureClient";
 import { fetchMockInventoryData } from "./mockInventoryService";
 
 export interface FetchInventoryResult {
@@ -9,35 +9,41 @@ export interface FetchInventoryResult {
 }
 
 export async function fetchInventoryData(): Promise<FetchInventoryResult> {
-  const userId = getCurrentUserId() || 2138564172;
-  
-  console.log('🔍 INVENTORY SERVICE: Fetching data for user:', userId);
+  console.log('🔍 INVENTORY SERVICE: Fetching data using secure API client');
   
   const debugInfo = { 
-    step: 'Starting inventory fetch process', 
-    userId, 
+    step: 'Starting secure inventory fetch process', 
     timestamp: new Date().toISOString(),
     dataSource: 'unknown'
   };
   
   try {
-    // First, try to get data from FastAPI backend using get_all_stones
-    console.log('🔍 INVENTORY SERVICE: Attempting FastAPI connection...');
-    const endpoint = apiEndpoints.getAllStones(userId);
-    console.log('🔍 INVENTORY SERVICE: Using endpoint:', endpoint);
+    // Check if authenticated with secure client
+    if (!secureApiClient.isAuthenticated()) {
+      console.warn('⚠️ INVENTORY SERVICE: Not authenticated with secure client');
+      return {
+        error: 'Authentication required',
+        debugInfo: {
+          ...debugInfo,
+          step: 'ERROR: Not authenticated',
+          dataSource: 'none'
+        }
+      };
+    }
+
+    // Use secure API client to get all stones
+    console.log('🔍 INVENTORY SERVICE: Using secure FastAPI connection...');
+    const response = await secureApiClient.get('/api/v1/diamonds/');
     
-    const result = await api.get(endpoint);
-    
-    if (result.data && !result.error) {
+    if (response.success && response.data) {
       let dataArray: any[] = [];
       
-      // The FastAPI endpoint should return an array directly
-      if (Array.isArray(result.data)) {
-        dataArray = result.data;
-        console.log('✅ INVENTORY SERVICE: FastAPI returned array with', dataArray.length, 'diamonds');
-      } else if (typeof result.data === 'object' && result.data !== null) {
-        // Handle if the response is wrapped in an object
-        const dataObj = result.data as Record<string, any>;
+      // Handle response format
+      if (Array.isArray(response.data)) {
+        dataArray = response.data;
+        console.log('✅ INVENTORY SERVICE: Secure FastAPI returned array with', dataArray.length, 'diamonds');
+      } else if (typeof response.data === 'object' && response.data !== null) {
+        const dataObj = response.data as Record<string, any>;
         const possibleArrayKeys = ['data', 'diamonds', 'items', 'stones', 'results', 'inventory', 'records'];
         
         for (const key of possibleArrayKeys) {
@@ -50,92 +56,44 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       }
       
       if (dataArray && dataArray.length > 0) {
-        console.log('✅ INVENTORY SERVICE: Successfully fetched', dataArray.length, 'diamonds from FastAPI');
-        
-        // PHASE 4: Critical debugging - Log EXACTLY what FastAPI is sending
-        console.log('🚨 FASTAPI RESPONSE ANALYSIS:', {
-          totalCount: dataArray.length,
-          firstItem: {
-            id: dataArray[0].id,
-            stock_number: dataArray[0].stock_number,
-            stock: dataArray[0].stock,
-            picture: dataArray[0].picture,
-            Image: dataArray[0].Image,
-            image: dataArray[0].image,
-            imageUrl: dataArray[0].imageUrl,
-            photo_url: dataArray[0].photo_url,
-            diamond_image: dataArray[0].diamond_image,
-            'Video link': dataArray[0]['Video link'],
-            videoLink: dataArray[0].videoLink,
-            video_url: dataArray[0].video_url,
-            gem360Url: dataArray[0].gem360Url,
-            v360_url: dataArray[0].v360_url,
-            allFields: Object.keys(dataArray[0]).sort()
-          },
-          imageFieldsFound: Object.keys(dataArray[0]).filter(key => 
-            key.toLowerCase().includes('image') || 
-            key.toLowerCase().includes('picture') || 
-            key.toLowerCase().includes('photo') ||
-            key.toLowerCase().includes('img')
-          ),
-          videoFieldsFound: Object.keys(dataArray[0]).filter(key => 
-            key.toLowerCase().includes('video') || 
-            key.toLowerCase().includes('360') || 
-            key.toLowerCase().includes('3d') ||
-            key.toLowerCase().includes('viewer')
-          ),
-          sampleImageValues: {
-            picture: dataArray[0].picture,
-            Image: dataArray[0].Image,
-            imageUrl: dataArray[0].imageUrl,
-            photo_url: dataArray[0].photo_url
-          }
-        });
+        console.log('✅ INVENTORY SERVICE: Successfully fetched', dataArray.length, 'diamonds from secure FastAPI');
         console.log('📊 INVENTORY SERVICE: Sample diamond data:', dataArray[0]);
         
         return {
           data: dataArray,
           debugInfo: {
             ...debugInfo,
-            step: 'SUCCESS: FastAPI data fetched',
+            step: 'SUCCESS: Secure FastAPI data fetched',
             totalDiamonds: dataArray.length,
-            dataSource: 'fastapi',
-            endpoint: endpoint
+            dataSource: 'secure_fastapi'
           }
         };
       } else {
-        console.log('⚠️ INVENTORY SERVICE: FastAPI returned empty result');
+        console.log('⚠️ INVENTORY SERVICE: Secure FastAPI returned empty result');
       }
     } else {
-      console.log('❌ INVENTORY SERVICE: FastAPI returned error:', result.error);
+      console.log('❌ INVENTORY SERVICE: Secure FastAPI returned error:', response.error);
     }
     
-    // If FastAPI fails, try localStorage
-    console.log('🔄 INVENTORY SERVICE: FastAPI failed, checking localStorage...');
+    // Fallback to localStorage if secure API fails
+    console.log('🔄 INVENTORY SERVICE: Secure FastAPI failed, checking localStorage...');
     const localData = localStorage.getItem('diamond_inventory');
     
     if (localData) {
       try {
         const parsedData = JSON.parse(localData);
         if (Array.isArray(parsedData) && parsedData.length > 0) {
-          // Filter for current user
-          const userDiamonds = parsedData.filter(item => 
-            !item.user_id || item.user_id === userId
-          );
+          console.log('✅ INVENTORY SERVICE: Found', parsedData.length, 'diamonds in localStorage');
           
-          if (userDiamonds.length > 0) {
-            console.log('✅ INVENTORY SERVICE: Found', userDiamonds.length, 'diamonds in localStorage');
-            
-            return {
-              data: userDiamonds,
-              debugInfo: {
-                ...debugInfo,
-                step: 'SUCCESS: localStorage data found',
-                totalDiamonds: userDiamonds.length,
-                dataSource: 'localStorage'
-              }
-            };
-          }
+          return {
+            data: parsedData,
+            debugInfo: {
+              ...debugInfo,
+              step: 'SUCCESS: localStorage data found',
+              totalDiamonds: parsedData.length,
+              dataSource: 'localStorage'
+            }
+          };
         }
       } catch (parseError) {
         console.warn('❌ INVENTORY SERVICE: Failed to parse localStorage data:', parseError);
@@ -159,39 +117,14 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   } catch (error) {
     console.error("❌ INVENTORY SERVICE: Error occurred:", error);
     
-    // Try localStorage as emergency fallback
-    const localData = localStorage.getItem('diamond_inventory');
-    if (localData) {
-      try {
-        const parsedData = JSON.parse(localData);
-        if (Array.isArray(parsedData)) {
-          const userDiamonds = parsedData.filter(item => 
-            !item.user_id || item.user_id === userId
-          );
-          
-          return {
-            data: userDiamonds,
-            debugInfo: {
-              ...debugInfo,
-              step: 'EMERGENCY: localStorage fallback after error',
-              totalDiamonds: userDiamonds.length,
-              dataSource: 'localStorage_emergency'
-            }
-          };
-        }
-      } catch (parseError) {
-        console.warn('❌ INVENTORY SERVICE: Emergency localStorage parse failed:', parseError);
-      }
-    }
-    
-    // Ultimate fallback to mock data
+    // Emergency fallback to mock data
     const mockResult = await fetchMockInventoryData();
     return {
       ...mockResult,
       debugInfo: {
         ...debugInfo,
         ...mockResult.debugInfo,
-        step: 'ULTIMATE FALLBACK: Mock data after all failures',
+        step: 'EMERGENCY: Mock data after error',
         error: error instanceof Error ? error.message : String(error),
         dataSource: 'mock_emergency'
       }
