@@ -22,7 +22,7 @@ export function StoreVisibilityToggle({ stockNumber, isVisible, onToggle }: Stor
     setLoading(true);
     
     // Handle tutorial interaction
-    handleRequiredClick();
+    handleRequiredClick('store-visibility');
     
     try {
       const { error } = await supabase

@@ -11,10 +11,11 @@ interface TutorialContextType {
   waitingForClick: boolean;
   hasSeenTutorial: boolean;
   setLanguage: (lang: string) => void;
-  handleRequiredClick: (id: string) => void;
+  handleRequiredClick: (id?: string) => void;
   nextStep: () => void;
   prevStep: () => void;
   skipTutorial: () => void;
+  startTutorial: () => void;
   restartTutorial: () => void;
   createShareableLink: (diamond: any) => string;
 }
@@ -44,8 +45,8 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
     waitingForClick,
     hasSeenTutorial,
     setLanguage: setCurrentLanguage,
-    handleRequiredClick: (id: string) => {
-      console.log('Required click handled:', id);
+    handleRequiredClick: (id?: string) => {
+      console.log('Required click handled:', id || 'no-id');
       setWaitingForClick(false);
     },
     nextStep: () => setCurrentStep(prev => prev + 1),
@@ -53,6 +54,11 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
     skipTutorial: () => {
       setIsActive(false);
       setHasSeenTutorial(true);
+    },
+    startTutorial: () => {
+      setCurrentStep(0);
+      setIsActive(true);
+      setHasSeenTutorial(false);
     },
     restartTutorial: () => {
       setCurrentStep(0);
