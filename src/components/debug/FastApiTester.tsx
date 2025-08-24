@@ -64,7 +64,7 @@ export function FastApiTester() {
           method: 'POST',
           success: false,
           message: 'Authentication failed',
-          error: authResult.error
+          error: 'error' in authResult ? authResult.error : 'Unknown error'
         });
         return false;
       }
@@ -84,12 +84,12 @@ export function FastApiTester() {
     console.log('🧪 Testing get all diamonds...');
     
     try {
-      const response = await secureApiClient.get('/api/v1/diamonds/');
+      const response = await secureApiClient.get('/api/v1/get_all_stones');
       
       if (response.success) {
         const count = Array.isArray(response.data) ? response.data.length : 0;
         addResult({
-          endpoint: '/api/v1/diamonds/',
+          endpoint: '/api/v1/get_all_stones',
           method: 'GET',
           success: true,
           message: `Retrieved ${count} diamonds`,
@@ -98,7 +98,7 @@ export function FastApiTester() {
         return true;
       } else {
         addResult({
-          endpoint: '/api/v1/diamonds/',
+          endpoint: '/api/v1/get_all_stones',
           method: 'GET',
           success: false,
           message: 'Failed to get diamonds',
@@ -108,7 +108,7 @@ export function FastApiTester() {
       }
     } catch (error) {
       addResult({
-        endpoint: '/api/v1/diamonds/',
+        endpoint: '/api/v1/get_all_stones',
         method: 'GET',
         success: false,
         message: 'Get diamonds error',
@@ -144,7 +144,8 @@ export function FastApiTester() {
       certificate_comment: "API Test Diamond",
       rapnet: -10,
       price_per_carat: 5000,
-      picture: ""
+      picture: "",
+      store_visible: true
     };
 
     try {
@@ -158,6 +159,7 @@ export function FastApiTester() {
           message: 'Diamond added successfully',
           data: { stock: testDiamond.stock, id: response.data?.id }
         });
+        toast.success('Diamond added successfully');
         return response.data;
       } else {
         addResult({
@@ -167,6 +169,7 @@ export function FastApiTester() {
           message: 'Failed to add diamond',
           error: response.error
         });
+        toast.error('Failed to add diamond');
         return null;
       }
     } catch (error) {
@@ -177,49 +180,8 @@ export function FastApiTester() {
         message: 'Add diamond error',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
+      toast.error('Add diamond error');
       return null;
-    }
-  };
-
-  const testUpdateDiamond = async (diamondId: string) => {
-    console.log('🧪 Testing update diamond...');
-    
-    const updateData = {
-      price_per_carat: 5500,
-      certificate_comment: "Updated API Test Diamond"
-    };
-
-    try {
-      const response = await secureApiClient.put(`/api/v1/diamonds/${diamondId}`, updateData);
-      
-      if (response.success) {
-        addResult({
-          endpoint: `/api/v1/diamonds/${diamondId}`,
-          method: 'PUT',
-          success: true,
-          message: 'Diamond updated successfully',
-          data: { id: diamondId, updates: updateData }
-        });
-        return true;
-      } else {
-        addResult({
-          endpoint: `/api/v1/diamonds/${diamondId}`,
-          method: 'PUT',
-          success: false,
-          message: 'Failed to update diamond',
-          error: response.error
-        });
-        return false;
-      }
-    } catch (error) {
-      addResult({
-        endpoint: `/api/v1/diamonds/${diamondId}`,
-        method: 'PUT',
-        success: false,
-        message: 'Update diamond error',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-      return false;
     }
   };
 
@@ -227,35 +189,38 @@ export function FastApiTester() {
     console.log('🧪 Testing delete diamond...');
     
     try {
-      const response = await secureApiClient.delete(`/api/v1/diamonds/${diamondId}`);
+      const response = await secureApiClient.delete(`/api/v1/delete_stone/${diamondId}`);
       
       if (response.success) {
         addResult({
-          endpoint: `/api/v1/diamonds/${diamondId}`,
+          endpoint: `/api/v1/delete_stone/${diamondId}`,
           method: 'DELETE',
           success: true,
           message: 'Diamond deleted successfully',
           data: { id: diamondId }
         });
+        toast.success('Diamond deleted successfully');
         return true;
       } else {
         addResult({
-          endpoint: `/api/v1/diamonds/${diamondId}`,
+          endpoint: `/api/v1/delete_stone/${diamondId}`,
           method: 'DELETE',
           success: false,
           message: 'Failed to delete diamond',
           error: response.error
         });
+        toast.error('Failed to delete diamond');
         return false;
       }
     } catch (error) {
       addResult({
-        endpoint: `/api/v1/diamonds/${diamondId}`,
+        endpoint: `/api/v1/delete_stone/${diamondId}`,
         method: 'DELETE',
         success: false,
         message: 'Delete diamond error',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
+      toast.error('Delete diamond error');
       return false;
     }
   };
@@ -281,10 +246,7 @@ export function FastApiTester() {
       const newDiamond = await testAddDiamond();
       
       if (newDiamond?.id) {
-        // Test 4: Update diamond
-        await testUpdateDiamond(newDiamond.id);
-        
-        // Test 5: Delete diamond
+        // Test 4: Delete diamond
         await testDeleteDiamond(newDiamond.id);
       }
 

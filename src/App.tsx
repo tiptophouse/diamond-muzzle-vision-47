@@ -7,10 +7,8 @@ import NotFound from '@/pages/NotFound';
 import ProfilePage from '@/pages/ProfilePage';
 import InventoryPage from '@/pages/InventoryPage';
 import UploadPage from '@/pages/UploadPage';
-import StorePage from '@/pages/StorePage';
+import CatalogPage from '@/pages/CatalogPage';
 import SettingsPage from '@/pages/SettingsPage';
-import ReportsPage from '@/pages/ReportsPage';
-import AdminPage from '@/pages/AdminPage';
 import InsightsPage from '@/pages/InsightsPage';
 import ChatPage from '@/pages/ChatPage';
 import WishlistPage from '@/pages/WishlistPage';
@@ -38,10 +36,8 @@ function App() {
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/inventory" element={<InventoryPage />} />
               <Route path="/upload" element={<UploadPage />} />
-              <Route path="/store" element={<StorePage />} />
+              <Route path="/store" element={<CatalogPage />} />
               <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/reports" element={<ReportsPage />} />
-              <Route path="/admin" element={<AdminPage />} />
               <Route path="/insights" element={<InsightsPage />} />
               <Route path="/chat" element={<ChatPage />} />
               <Route path="/wishlist" element={<WishlistPage />} />

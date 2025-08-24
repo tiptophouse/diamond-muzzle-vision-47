@@ -16,6 +16,7 @@ export interface StoreDiamond {
   imageUrl?: string;
   certificateUrl?: string;
   store_visible: boolean;
+  status: string; // Add this required field
   lab?: string;
   certificateNumber?: string;
   polish?: string;
@@ -52,7 +53,7 @@ export function useStoreData() {
       
       console.log('🏪 STORE: Fetching diamonds using secure API client...');
       
-      const response = await secureApiClient.get('/api/v1/diamonds/');
+      const response = await secureApiClient.get('/api/v1/get_all_stones');
       
       if (response.success && response.data) {
         let diamondArray: any[] = [];
@@ -88,6 +89,7 @@ export function useStoreData() {
             imageUrl: item.picture || item.image_url || item.imageUrl,
             certificateUrl: item.certificate_url || item.certificateUrl,
             store_visible: item.store_visible !== false,
+            status: item.status || 'available', // Add default status
             lab: item.lab,
             certificateNumber: item.certificate_number?.toString(),
             polish: item.polish,
@@ -131,6 +133,7 @@ export function useStoreData() {
                 imageUrl: item.imageUrl || item.picture,
                 certificateUrl: item.certificateUrl,
                 store_visible: true,
+                status: item.status || 'available', // Add default status
                 lab: item.lab,
                 certificateNumber: item.certificateNumber,
                 polish: item.polish,
