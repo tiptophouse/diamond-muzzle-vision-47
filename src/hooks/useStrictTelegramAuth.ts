@@ -15,8 +15,8 @@ interface AuthState {
   jwtToken: string | null;
 }
 
-const JWT_SECRET = process.env.REACT_APP_JWT_SECRET || 'fallback-secret-key';
-const BOT_TOKEN = process.env.REACT_APP_BOT_TOKEN || '';
+const JWT_SECRET = import.meta.env.VITE_JWT_SECRET || 'fallback-secret-key';
+const BOT_TOKEN = import.meta.env.VITE_BOT_TOKEN || '';
 
 export function useStrictTelegramAuth(): AuthState {
   const [state, setState] = useState<AuthState>({
@@ -194,7 +194,7 @@ export function useStrictTelegramAuth(): AuthState {
     } catch (error) {
       console.error('❌ Authentication error:', error);
       
-      if (isGenuineTelegram) {
+      if (webApp && isReady) {
         hapticFeedback.notification('error');
       }
       
