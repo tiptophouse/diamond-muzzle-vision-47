@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { useTutorial } from '@/contexts/TutorialContext';
 import { Button } from '@/components/ui/button';
@@ -297,12 +296,19 @@ export function TutorialOverlay() {
               >
                 {isLastStep 
                   ? (currentLanguage === 'he' ? 'סגור' : 'Close')
-                  : (currentLanguage === 'he' ? 'דلג' : 'Skip')
+                  : (currentLanguage === 'he' ? 'דלג' : 'Skip')
                 }
               </Button>
               
               <Button
-                onClick={waitingForClick ? handleRequiredClick : nextStep}
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (waitingForClick) {
+                    handleRequiredClick();
+                  } else {
+                    nextStep();
+                  }
+                }}
                 disabled={waitingForClick && !currentStepData?.requireClick}
                 className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 h-auto active:scale-95 transition-all"
                 size="sm"
@@ -313,7 +319,7 @@ export function TutorialOverlay() {
                     ? (currentLanguage === 'he' ? 'קח אותי לשם' : 'Take Me There')
                     : isLastStep 
                       ? (currentLanguage === 'he' ? 'סיום' : 'Finish')
-                      : (currentLanguage === 'he' ? 'הبא' : 'Next')
+                      : (currentLanguage === 'he' ? 'הבא' : 'Next')
                 }
                 {!isLastStep && !waitingForClick && <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />}
               </Button>
