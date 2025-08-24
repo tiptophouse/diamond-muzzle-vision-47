@@ -1,51 +1,71 @@
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { InventoryData, formatCurrency } from "@/services/dashboardDataProcessor";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export interface MarketInsightsProps {
-  data: InventoryData[];
-  matchedPairs: number;
-  totalLeads: number;
-}
-
-export function MarketInsights({ data, matchedPairs, totalLeads }: MarketInsightsProps) {
+export function MarketInsights() {
   return (
-    <div className="bg-white rounded-lg border p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Market Insights</h3>
-        <div className="flex gap-4 text-sm text-muted-foreground">
-          <span>Matched Pairs: {matchedPairs}</span>
-          <span>Total Leads: {totalLeads}</span>
-        </div>
-      </div>
-      
-      {data.length > 0 ? (
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis 
-              dataKey="shape" 
-              tick={{ fontSize: 12 }}
-              angle={-45}
-              textAnchor="end"
-              height={80}
-            />
-            <YAxis tick={{ fontSize: 12 }} />
-            <Tooltip 
-              formatter={(value: number, name: string) => [
-                name === 'totalValue' ? formatCurrency(value) : value,
-                name === 'totalValue' ? 'Total Value' : 'Count'
-              ]}
-            />
-            <Bar dataKey="count" fill="#8884d8" />
-            <Bar dataKey="totalValue" fill="#82ca9d" />
-          </BarChart>
-        </ResponsiveContainer>
-      ) : (
-        <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-          No market data available
-        </div>
-      )}
+    <div className="grid gap-4 lg:grid-cols-3">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">Market Performance</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-sm text-muted-foreground">Portfolio Growth</span>
+              <span className="text-sm font-semibold text-green-600">+12.5%</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-muted-foreground">Market Index</span>
+              <span className="text-sm font-semibold text-blue-600">+8.2%</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-muted-foreground">Outperformance</span>
+              <span className="text-sm font-semibold text-purple-600">+4.3%</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <div className="text-sm">
+              <span className="font-medium">Best Performers:</span> Round, Princess
+            </div>
+            <div className="text-sm">
+              <span className="font-medium">Trending:</span> Fancy colors
+            </div>
+            <div className="text-sm">
+              <span className="font-medium">Recommend:</span> Increase 1-2ct inventory
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">Recent Activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span>New inquiry</span>
+              <span className="text-muted-foreground">2h ago</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Price updated</span>
+              <span className="text-muted-foreground">4h ago</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Inventory sync</span>
+              <span className="text-muted-foreground">6h ago</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
