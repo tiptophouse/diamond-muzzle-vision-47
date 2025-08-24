@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,66 +57,28 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
     return String(tg?.user?.id ?? tg?.user?.user_id ?? "");
   }
 
-  // Enhanced fetch wrapper with better error handling and CORS support
+  // Simple fetch wrapper with proper endpoint construction
   async function post<T>(endpoint: string, body: any): Promise<T> {
-    const headers: Record<string, string> = { 
-      "Content-Type": "application/json",
-      "Accept": "application/json"
-    };
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
     
     console.log('🚀 SFTP: Making request to:', endpoint);
     console.log('🚀 SFTP: Request body:', body);
     
-    try {
-      const response = await fetch(endpoint, { 
-        method: "POST", 
-        headers, 
-        body: JSON.stringify(body),
-        mode: 'cors',
-        credentials: 'omit'
-      });
-      
-      console.log('📡 SFTP: Response status:', response.status);
-      console.log('📡 SFTP: Response headers:', Object.fromEntries(response.headers.entries()));
-      
-      if (!response.ok) {
-        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-        
-        try {
-          const errorText = await response.text();
-          console.error('❌ SFTP: Error response text:', errorText);
-          
-          // Try to parse as JSON first
-          try {
-            const errorJson = JSON.parse(errorText);
-            errorMessage = errorJson.message || errorJson.detail || errorMessage;
-          } catch {
-            // If not JSON, use the text as is
-            errorMessage = errorText || errorMessage;
-          }
-        } catch (textError) {
-          console.error('❌ SFTP: Could not read error response:', textError);
-        }
-        
-        throw new Error(errorMessage);
-      }
-      
-      const result = await response.json();
-      console.log('✅ SFTP: Response received:', result);
-      return result as T;
-      
-    } catch (error) {
-      console.error('❌ SFTP: Request failed:', error);
-      
-      // Provide more specific error messages
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        throw new Error('Cannot connect to SFTP server. Please check your internet connection and try again.');
-      } else if (error instanceof Error) {
-        throw error;
-      } else {
-        throw new Error('Unknown error occurred while connecting to SFTP server');
-      }
+    const response = await fetch(endpoint, { 
+      method: "POST", 
+      headers, 
+      body: JSON.stringify(body) 
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => `HTTP ${response.status}`);
+      console.error('❌ SFTP: Request failed:', response.status, errorText);
+      throw new Error(errorText);
     }
+    
+    const result = await response.json();
+    console.log('✅ SFTP: Response received:', result);
+    return result as T;
   }
 
   // Test connection once
@@ -191,7 +154,7 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
     });
   }
 
-  // Generate SFTP credentials with enhanced error handling
+  // Generate SFTP credentials
   async function onGenerate() {
     const telegram_id = tgId();
     if (!telegram_id) {
@@ -233,26 +196,11 @@ export function SFTPSettings({ onConnectionResult }: SFTPSettingsProps = {}) {
       setStatus("failed");
       setLocked(true);
       
-      // Provide specific toast messages based on error type
-      if (errorMessage.includes('Cannot connect to SFTP server')) {
-        toast({
-          title: "❌ שגיאת חיבור",
-          description: "לא ניתן להתחבר לשרת SFTP. בדוק את החיבור לאינטרנט ונסה שוב.",
-          variant: "destructive",
-        });
-      } else if (errorMessage.includes('CORS')) {
-        toast({
-          title: "❌ שגיאת CORS",
-          description: "בעיה בהגדרות השרת. אנא פנה לתמיכה טכנית.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "❌ שגיאה ביצירת חשבון SFTP",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "❌ שגיאה ביצירת חשבון SFTP",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
