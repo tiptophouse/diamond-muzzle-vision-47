@@ -37,30 +37,30 @@ export function useOptimizedTelegramAuth(): AuthState {
   const isTelegramWebAppEnvironment = useCallback((): boolean => {
     if (typeof window === 'undefined') return false;
     
-    return !!(
-      window.Telegram?.WebApp && 
-      typeof window.Telegram.WebApp === 'object' &&
-      window.Telegram.WebApp.initData &&
-      window.Telegram.WebApp.initData.length > 0
-    );
+    if (!window.Telegram?.WebApp) return false;
+    
+    const tg = window.Telegram.WebApp;
+    const hasInitData = tg.initData && tg.initData.length > 0;
+    const hasInitDataUnsafe = tg.initDataUnsafe && tg.initDataUnsafe.user;
+    
+    return hasInitData || hasInitDataUnsafe;
   }, []);
 
   const authenticateUser = useCallback(async () => {
     if (initializedRef.current || !mountedRef.current) return;
 
-    console.log('🔒 Starting strict Telegram-only authentication...');
+    console.log('🔒 Starting Telegram authentication...');
     const authStartTime = Date.now();
     
     try {
       const isTelegram = isTelegramWebAppEnvironment();
       updateState({ isTelegramEnvironment: isTelegram });
 
-      // NO FALLBACKS - Must be in Telegram environment
       if (!isTelegram) {
-        console.error('🔒 Access denied: Not in Telegram environment');
+        console.error('🔒 Not in Telegram environment');
         updateState({
           isLoading: false,
-          error: 'This application can only be accessed through Telegram Mini App',
+          error: 'This application can only be accessed through Telegram',
           isAuthenticated: false,
           authTime: Date.now() - authStartTime
         });
@@ -68,12 +68,12 @@ export function useOptimizedTelegramAuth(): AuthState {
         return;
       }
 
-      // Perform strict authentication
+      // Perform authentication
       const authResult = await authService.authenticateStrictTelegramOnly();
       const totalAuthTime = Date.now() - authStartTime;
 
       if (authResult.success && authResult.user && authResult.token) {
-        console.log('✅ Strict authentication successful in:', totalAuthTime, 'ms');
+        console.log('✅ Authentication successful in:', totalAuthTime, 'ms');
         
         updateState({
           user: authResult.user,
@@ -86,7 +86,7 @@ export function useOptimizedTelegramAuth(): AuthState {
 
         setCurrentUserId(authResult.user.id);
       } else {
-        console.error('❌ Strict authentication failed:', authResult.error);
+        console.error('❌ Authentication failed:', authResult.error);
         
         updateState({
           isLoading: false,
@@ -114,21 +114,21 @@ export function useOptimizedTelegramAuth(): AuthState {
   useEffect(() => {
     mountedRef.current = true;
 
-    // Strict timeout - no emergency fallbacks
+    // Set a reasonable timeout
     const timeoutId = setTimeout(() => {
       if (state.isLoading && mountedRef.current && !initializedRef.current) {
-        console.error('🔒 Authentication timeout - access denied');
+        console.error('🔒 Authentication timeout');
         
         updateState({
           isLoading: false,
           error: 'Authentication timeout - please try again',
           isAuthenticated: false,
-          authTime: 3000
+          authTime: 10000
         });
 
         initializedRef.current = true;
       }
-    }, 3000);
+    }, 10000); // 10 second timeout
 
     authenticateUser();
 

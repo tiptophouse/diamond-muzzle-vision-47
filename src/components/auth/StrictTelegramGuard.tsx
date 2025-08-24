@@ -16,55 +16,33 @@ export function StrictTelegramGuard({ children }: StrictTelegramGuardProps) {
     isAuthenticated
   } = useOptimizedTelegramAuth();
 
-  // CRITICAL: Block any non-Telegram environment immediately
+  // Check if we're in a Telegram environment
   const isRealTelegramEnvironment = () => {
     if (typeof window === 'undefined') return false;
     
-    // Check 1: Must have Telegram WebApp object
+    // Must have Telegram WebApp object
     if (!window.Telegram?.WebApp) {
-      console.error('🔒 BLOCKED: No Telegram WebApp object detected');
+      console.error('🔒 No Telegram WebApp object detected');
       return false;
     }
     
-    // Check 2: Must have non-empty initData
-    if (!window.Telegram.WebApp.initData || window.Telegram.WebApp.initData.length === 0) {
-      console.error('🔒 BLOCKED: No initData found - not genuine Telegram environment');
+    // Must have some form of authentication data
+    const tg = window.Telegram.WebApp;
+    const hasInitData = tg.initData && tg.initData.length > 0;
+    const hasInitDataUnsafe = tg.initDataUnsafe && tg.initDataUnsafe.user;
+    
+    if (!hasInitData && !hasInitDataUnsafe) {
+      console.error('🔒 No Telegram authentication data found');
       return false;
     }
     
-    // Check 3: Validate initData structure
-    try {
-      const urlParams = new URLSearchParams(window.Telegram.WebApp.initData);
-      const hash = urlParams.get('hash');
-      const authDate = urlParams.get('auth_date');
-      const user = urlParams.get('user');
-      
-      if (!hash || !authDate || !user) {
-        console.error('🔒 BLOCKED: Invalid initData structure');
-        return false;
-      }
-      
-      // Check 4: Validate auth_date freshness (5 minutes max)
-      const authDateTime = parseInt(authDate) * 1000;
-      const now = Date.now();
-      const maxAge = 5 * 60 * 1000; // 5 minutes
-      
-      if (now - authDateTime > maxAge) {
-        console.error('🔒 BLOCKED: initData too old, possible replay attack');
-        return false;
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('🔒 BLOCKED: Error validating initData:', error);
-      return false;
-    }
+    return true;
   };
 
-  // Immediate environment check - no delays, no loading states
+  // Check environment
   const realTelegramCheck = isRealTelegramEnvironment();
   
-  // If not in real Telegram environment, block immediately
+  // If not in Telegram environment, block access
   if (!realTelegramCheck) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center px-4">
@@ -78,41 +56,36 @@ export function StrictTelegramGuard({ children }: StrictTelegramGuardProps) {
           </h2>
           
           <p className="text-red-700 mb-6">
-            This application ONLY works within the official Telegram Mini App environment. 
-            Access from web browsers or external sources is strictly prohibited.
+            This application can only be accessed through the official Telegram Mini App.
           </p>
           
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <h4 className="font-medium text-red-800 mb-3">Security Requirements:</h4>
+            <h4 className="font-medium text-red-800 mb-3">How to access:</h4>
             <ul className="text-red-700 text-sm space-y-2 text-left">
               <li className="flex items-start gap-2">
                 <span className="text-red-600 font-bold mt-0.5">•</span>
-                <span>Must be accessed through Telegram Mobile App</span>
+                <span>Open Telegram Mobile App</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-red-600 font-bold mt-0.5">•</span>
-                <span>Requires valid Telegram WebApp initData</span>
+                <span>Find the BrilliantBot Mini App</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-red-600 font-bold mt-0.5">•</span>
-                <span>NO web browser access allowed</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-red-600 font-bold mt-0.5">•</span>
-                <span>NO external website access permitted</span>
+                <span>Launch from within Telegram</span>
               </li>
             </ul>
           </div>
           
           <div className="text-xs text-red-600 bg-red-50 p-3 rounded border border-red-200">
-            🔒 STRICT SECURITY MODE: Only genuine Telegram Mini App access allowed
+            🔒 Telegram-only access required
           </div>
         </div>
       </div>
     );
   }
 
-  // Loading state (only after Telegram environment is confirmed)
+  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -121,8 +94,8 @@ export function StrictTelegramGuard({ children }: StrictTelegramGuardProps) {
             <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto"></div>
             <Shield className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-6 w-6 text-blue-600" />
           </div>
-          <h3 className="text-xl font-semibold text-blue-700 mb-2">Verifying Telegram Access...</h3>
-          <p className="text-blue-600 text-sm">Strict security validation in progress...</p>
+          <h3 className="text-xl font-semibold text-blue-700 mb-2">Authenticating...</h3>
+          <p className="text-blue-600 text-sm">Verifying your Telegram identity...</p>
         </div>
       </div>
     );
@@ -142,7 +115,7 @@ export function StrictTelegramGuard({ children }: StrictTelegramGuardProps) {
           </h2>
           
           <p className="text-gray-600 mb-6">
-            {error || 'Unable to verify your Telegram identity through the secure authentication process.'}
+            {error || 'Unable to verify your Telegram identity.'}
           </p>
           
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
@@ -172,7 +145,7 @@ export function StrictTelegramGuard({ children }: StrictTelegramGuardProps) {
           </button>
           
           <div className="mt-6 text-xs text-gray-500 bg-gray-50 p-3 rounded">
-            🔒 STRICT TELEGRAM-ONLY AUTHENTICATION ACTIVE
+            🔒 Telegram authentication required
           </div>
         </div>
       </div>
