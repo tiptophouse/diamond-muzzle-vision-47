@@ -2,7 +2,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import HomePage from '@/pages/HomePage';
 import NotFound from '@/pages/NotFound';
 import ProfilePage from '@/pages/ProfilePage';
@@ -32,7 +31,6 @@ function App() {
           </EnhancedTelegramLayout>
         </BrowserRouter>
       </TelegramAuthProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
 }
