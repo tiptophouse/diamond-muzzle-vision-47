@@ -46,51 +46,48 @@ serve(async (req) => {
 
     const botUsername = providedBotUsername || Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot';
     
-    // Enhanced Hebrew message
-    const defaultMessage = `💎 *פתח עסק יהלומים מצליח עם BrilliantBot*
+    // Enhanced default message
+    const defaultMessage = `💎 **העלו את העסק שלכם לרמה הבאה עם BrilliantBot!**
 
-🚀 *הפלטפורמה המתקדמת לסוחרי יהלומים:*
-• 📱 ניהול מלאי חכם ומתקדם
-• 🔍 חיפוש מהיר ויעיל ביהלומים
-• 💰 מעקב רווחיות ומחירים
-• 🎯 התאמה מושלמת ללקוחות
-• 📊 דוחות מכירות מפורטים
+🚀 **הבוט החכם ביותר לסוחרי יהלומים:**
+• 🔍 חיפוש מתקדם במלאי
+• 📊 ניתוחי שוק בזמן אמת
+• 💰 מעקב רווחיות חכם
+• 🎯 התאמות מושלמות ללקוחות
 
-⭐ *אלפי סוחרים כבר מרוויחים איתנו - הצטרף עכשיו!*
-
-🎁 *התחל חינם והעלה את העסק שלך לרמה הבאה*`;
+⭐ **אלפי סוחרים כבר משתמשים - הצטרפו עכשיו!**`;
 
     const finalMessage = message || defaultMessage;
 
-    // Create beautiful inline keyboard with functional routing
+    // Create dynamic inline keyboard with only web_app buttons (no mixing with other button types)
     let inlineKeyboard = [];
 
     if (useMultipleButtons) {
-      // Main CTA button - routes to main dashboard
+      // Main CTA button - routes to dashboard
       inlineKeyboard.push([{
-        text: '🏠 התחל עכשיו - מחוון ראשי',
+        text: '🏠 התחל במחוון הראשי',
         web_app: {
-          url: `https://diamondbot-store.vercel.app/?utm_source=group_cta&utm_campaign=main_dashboard&start=group_activation&button_clicked=main_dashboard&from=telegram_group`
+          url: `https://diamondbot-store.vercel.app/?utm_source=group_cta&utm_campaign=main_dashboard&start=group_activation&button_clicked=main_dashboard`
         }
       }]);
 
-      // Second row - Inventory and Store
+      // Secondary action buttons row
       const secondRow = [];
       
-      if (includeInventoryButton) {
+      if (includePremiumButton) {
         secondRow.push({
-          text: '📦 ניהול מלאי יהלומים',
+          text: '💎 תכונות פרמיום',
           web_app: {
-            url: `https://diamondbot-store.vercel.app/inventory?utm_source=group_cta&utm_campaign=inventory_demo&start=inventory_demo&button_clicked=inventory_management&from=telegram_group`
+            url: `https://diamondbot-store.vercel.app/dashboard?utm_source=group_cta&utm_campaign=premium_features&start=premium_features&focus=premium&button_clicked=premium_features`
           }
         });
       }
 
-      if (includePremiumButton) {
+      if (includeInventoryButton) {
         secondRow.push({
-          text: '💎 חנות יהלומים מקוונת',
+          text: '📦 ניהול מלאי',
           web_app: {
-            url: `https://diamondbot-store.vercel.app/store?utm_source=group_cta&utm_campaign=store_visit&start=store_demo&view=featured&button_clicked=online_store&from=telegram_group`
+            url: `https://diamondbot-store.vercel.app/inventory?utm_source=group_cta&utm_campaign=inventory_demo&start=inventory_demo&button_clicked=inventory_management`
           }
         });
       }
@@ -100,42 +97,37 @@ serve(async (req) => {
         inlineKeyboard.push(secondRow);
       }
 
-      // Third row - AI Chat and Upload
-      const thirdRow = [];
-
+      // Third row for AI chat button
       if (includeChatButton) {
-        thirdRow.push({
-          text: '🤖 יועץ AI חכם ליהלומים',
+        inlineKeyboard.push([{
+          text: '🤖 צ\'אט AI יועץ יהלומים',
           web_app: {
-            url: `https://diamondbot-store.vercel.app/chat?utm_source=group_cta&utm_campaign=ai_chat_demo&start=ai_chat_demo&welcome=true&button_clicked=ai_chat&from=telegram_group`
+            url: `https://diamondbot-store.vercel.app/chat?utm_source=group_cta&utm_campaign=ai_chat_demo&start=ai_chat_demo&welcome=true&button_clicked=ai_chat`
           }
-        });
+        }]);
       }
 
-      thirdRow.push({
-        text: '📤 העלאת יהלומים מהירה',
+      // Store button - direct to marketplace
+      inlineKeyboard.push([{
+        text: '🏪 חנות יהלומים מקוונת',
         web_app: {
-          url: `https://diamondbot-store.vercel.app/upload?utm_source=group_cta&utm_campaign=upload_demo&start=upload_demo&button_clicked=upload_diamonds&from=telegram_group`
+          url: `https://diamondbot-store.vercel.app/store?utm_source=group_cta&utm_campaign=store_visit&start=store_demo&view=featured&button_clicked=online_store`
         }
-      });
-
-      if (thirdRow.length > 0) {
-        inlineKeyboard.push(thirdRow);
-      }
+      }]);
 
     } else {
-      // Single button fallback - routes to main dashboard
+      // Single button fallback - routes to dashboard
       inlineKeyboard = [[
         {
           text: '🚀 התחל עם BrilliantBot',
           web_app: {
-            url: `https://diamondbot-store.vercel.app/?utm_source=group_cta&utm_campaign=single_button&start=group_activation&button_clicked=single_start&from=telegram_group`
+            url: `https://diamondbot-store.vercel.app/?utm_source=group_cta&utm_campaign=single_button&start=group_activation&button_clicked=single_start`
           }
         }
       ]];
     }
 
-    console.log('📤 Sending beautiful CTA message with', inlineKeyboard.length, 'button rows');
+    console.log('📤 Sending enhanced CTA message with intelligent routing and', inlineKeyboard.length, 'button rows');
     
     const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
@@ -163,16 +155,14 @@ serve(async (req) => {
       );
     }
 
-    console.log('✅ Enhanced Group CTA message with beautiful buttons sent successfully');
+    console.log('✅ Enhanced Group CTA message with intelligent routing sent successfully');
     return new Response(
       JSON.stringify({ 
         success: true, 
         messageId: result.result.message_id,
         groupId: groupId || -1001009290613,
         buttonsCount: inlineKeyboard.length,
-        beautifulDesign: true,
-        hebrewMessage: true,
-        functionalRouting: true,
+        intelligentRouting: true,
         features: {
           useMultipleButtons,
           includePremiumButton,

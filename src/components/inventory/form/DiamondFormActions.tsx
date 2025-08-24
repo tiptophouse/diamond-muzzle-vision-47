@@ -1,7 +1,7 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
-import { Diamond } from '@/types/diamond';
+import { Diamond } from '../InventoryTable';
 
 interface DiamondFormActionsProps {
   diamond?: Diamond;

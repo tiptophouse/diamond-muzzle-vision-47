@@ -1,119 +1,104 @@
 
-import React from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Diamond } from '@/types/diamond';
-import { Edit, Trash2, Eye, EyeOff } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+} from "@/components/ui/table";
+import { InventoryTableHeader } from "./InventoryTableHeader";
+import { InventoryTableRow } from "./InventoryTableRow";
+import { InventoryTableLoading } from "./InventoryTableLoading";
+import { InventoryTableEmpty } from "./InventoryTableEmpty";
+import { InventoryMobileCard } from "./InventoryMobileCard";
+import { useIsMobile } from "@/hooks/use-mobile";
 
-interface InventoryTableProps {
-  diamonds: Diamond[];
-  isLoading?: boolean;
-  selectedDiamonds: string[];
-  onSelectionChange: (selected: string[]) => void;
-  onEdit: (diamond: Diamond) => void;
-  onDelete: (diamond: Diamond) => void;
-  onToggleVisibility?: (diamond: Diamond) => void;
-  onViewDetails?: (diamond: Diamond) => void;
-  sortBy?: string;
-  sortOrder?: string;
-  onSort?: (field: string) => void;
+export interface Diamond {
+  id: string;
+  diamondId?: string;
+  stockNumber: string;
+  shape: string;
+  carat: number;
+  color: string;
+  color_type?: 'Fancy' | 'Standard'; // Add this field to differentiate fancy vs standard
+  clarity: string;
+  cut: string;
+  price: number;
+  status: string;
+  fluorescence?: string;
+  polish?: string;
+  symmetry?: string;
+  imageUrl?: string;
+  gem360Url?: string;
+  store_visible: boolean;
+  certificateNumber?: string;
+  lab?: string;
+  certificateUrl?: string;
+  // Add CSV-specific fields
+  Image?: string; // CSV Image field
+  image?: string; // Alternative image field
+  picture?: string; // Another possible image field
+  'Video link'?: string; // CSV Video link field
+  videoLink?: string; // Alternative video link field
 }
 
-export function InventoryTable({
-  diamonds,
-  isLoading = false,
-  selectedDiamonds,
-  onSelectionChange,
-  onEdit,
-  onDelete,
-  onToggleVisibility,
-  onViewDetails,
-  sortBy,
-  sortOrder,
-  onSort
-}: InventoryTableProps) {
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      onSelectionChange(diamonds.map(d => d.id));
-    } else {
-      onSelectionChange([]);
-    }
-  };
+interface InventoryTableProps {
+  data: Diamond[];
+  loading?: boolean;
+  onEdit?: (diamond: Diamond) => void;
+  onDelete?: (diamondId: string) => void;
+  onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
+  onImageUpdate?: () => void;
+}
 
-  const handleSelectDiamond = (diamondId: string, checked: boolean) => {
-    if (checked) {
-      onSelectionChange([...selectedDiamonds, diamondId]);
-    } else {
-      onSelectionChange(selectedDiamonds.filter(id => id !== diamondId));
-    }
-  };
+export function InventoryTable({ data, loading = false, onEdit, onDelete, onStoreToggle, onImageUpdate }: InventoryTableProps) {
+  const isMobile = useIsMobile();
 
-  if (isLoading) {
-    return <div className="text-center py-8">Loading...</div>;
+  if (loading) {
+    return <InventoryTableLoading />;
   }
 
+  if (isMobile) {
+    return (
+      <div className="w-full space-y-3 bg-background">
+        {data.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No diamonds found. Upload your inventory to get started.
+          </div>
+        ) : (
+          data.map((diamond) => (
+            <InventoryMobileCard 
+              key={diamond.id} 
+              diamond={diamond} 
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          ))
+        )}
+      </div>
+    );
+  }
+  
   return (
-    <div className="border rounded-lg">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-12">
-              <Checkbox
-                checked={selectedDiamonds.length === diamonds.length && diamonds.length > 0}
-                onCheckedChange={handleSelectAll}
-              />
-            </TableHead>
-            <TableHead>Stock Number</TableHead>
-            <TableHead>Shape</TableHead>
-            <TableHead>Carat</TableHead>
-            <TableHead>Color</TableHead>
-            <TableHead>Clarity</TableHead>
-            <TableHead>Price</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="w-32">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {diamonds.map((diamond) => (
-            <TableRow key={diamond.id}>
-              <TableCell>
-                <Checkbox
-                  checked={selectedDiamonds.includes(diamond.id)}
-                  onCheckedChange={(checked) => handleSelectDiamond(diamond.id, checked as boolean)}
+    <div className="w-full rounded-md border overflow-hidden bg-background">
+      <div className="w-full overflow-x-auto">
+        <Table className="w-full min-w-full">
+          <InventoryTableHeader />
+          <TableBody>
+            {data.length === 0 ? (
+              <InventoryTableEmpty />
+            ) : (
+              data.map((diamond) => (
+                <InventoryTableRow 
+                  key={diamond.id} 
+                  diamond={diamond} 
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onStoreToggle={onStoreToggle}
+                  onImageUpdate={onImageUpdate}
                 />
-              </TableCell>
-              <TableCell className="font-medium">{diamond.stockNumber}</TableCell>
-              <TableCell>{diamond.shape}</TableCell>
-              <TableCell>{diamond.carat}</TableCell>
-              <TableCell>{diamond.color}</TableCell>
-              <TableCell>{diamond.clarity}</TableCell>
-              <TableCell>{diamond.price ? `$${diamond.price.toLocaleString()}` : '-'}</TableCell>
-              <TableCell>{diamond.status || 'Available'}</TableCell>
-              <TableCell>
-                <div className="flex gap-1">
-                  <Button size="sm" variant="ghost" onClick={() => onEdit(diamond)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => onDelete(diamond)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                  {onToggleVisibility && (
-                    <Button size="sm" variant="ghost" onClick={() => onToggleVisibility(diamond)}>
-                      {diamond.store_visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                    </Button>
-                  )}
-                  {onViewDetails && (
-                    <Button size="sm" variant="ghost" onClick={() => onViewDetails(diamond)}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

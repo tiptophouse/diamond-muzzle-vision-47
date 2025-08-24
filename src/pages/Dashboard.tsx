@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
-  const { isLoading, allDiamonds, refetch } = useInventoryData();
+  const { loading, allDiamonds, fetchData } = useInventoryData();
   const verificationResult = getVerificationResult();
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
@@ -32,23 +32,23 @@ export default function Dashboard() {
       setSearchParams({});
       
       // Refresh inventory data to show newly uploaded diamonds
-      refetch();
+      fetchData();
     }
-  }, [searchParams, setSearchParams, toast, refetch]);
+  }, [searchParams, setSearchParams, toast, fetchData]);
 
   console.log('🔍 DASHBOARD DEBUG:');
   console.log('- Auth loading:', authLoading);
   console.log('- Is authenticated:', isAuthenticated);
   console.log('- User:', user);
   console.log('- FastAPI verification:', verificationResult);
-  console.log('- Inventory loading:', isLoading);
+  console.log('- Inventory loading:', loading);
   console.log('- Diamonds count:', allDiamonds.length);
 
   const handleEmergencyMode = () => {
     console.log('Emergency mode activated - skipping to basic dashboard');
   };
 
-  if (authLoading || isLoading) {
+  if (authLoading || loading) {
     return (
       <>
         <DashboardLoading onEmergencyMode={handleEmergencyMode} />
@@ -82,8 +82,8 @@ export default function Dashboard() {
       <div className="min-h-screen bg-gray-50">
         <DataDrivenDashboard 
           allDiamonds={allDiamonds} 
-          loading={isLoading}
-          fetchData={refetch} 
+          loading={loading}
+          fetchData={fetchData} 
         />
       </div>
       <SecurityMonitor />
