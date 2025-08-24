@@ -1,4 +1,3 @@
-
 import { API_BASE_URL } from '../api/config';
 import JWTTokenManager from './JWTTokenManager';
 import { TelegramUser } from '@/types/telegram';
@@ -63,8 +62,8 @@ class StrictTelegramOnlyAuthService {
     console.log('🔍 WebApp properties:');
     console.log('- initData length:', tg.initData?.length || 0);
     console.log('- initDataUnsafe:', !!tg.initDataUnsafe);
-    console.log('- version:', tg.version || 'unknown');
-    console.log('- platform:', tg.platform || 'unknown');
+    console.log('- version:', (tg as any).version || 'unknown');
+    console.log('- platform:', (tg as any).platform || 'unknown');
 
     // For Telegram WebApp v6.0 and newer, check multiple indicators
     const hasValidWebAppObject = typeof tg.ready === 'function' && typeof tg.expand === 'function';
@@ -251,8 +250,8 @@ class StrictTelegramOnlyAuthService {
           'X-Client-Version': '3.1.0',
           'X-Auth-Timestamp': Date.now().toString(),
           'X-Security-Level': 'STRICT-TELEGRAM-ENHANCED',
-          'X-Telegram-Version': tg.version || 'unknown',
-          'X-Telegram-Platform': tg.platform || 'unknown',
+          'X-Telegram-Version': (tg as any).version || 'unknown',
+          'X-Telegram-Platform': (tg as any).platform || 'unknown',
           'X-WebApp-Validation': 'ENHANCED',
         },
         mode: 'cors',
