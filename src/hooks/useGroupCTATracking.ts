@@ -1,5 +1,5 @@
-
 import { useState, useEffect } from 'react';
+import { useOptimizedTelegramAuthContext } from '@/context/OptimizedTelegramAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from './useTelegramAuth';
 import { useTelegramWebApp } from './useTelegramWebApp';
@@ -9,7 +9,7 @@ import { getBackendAccessToken } from '@/lib/api/secureConfig';
 import { getButtonClicked, isFastAPIResponse } from '@/types/groupCTA';
 
 export function useGroupCTATracking() {
-  const { user } = useTelegramAuth();
+  const { user } = useOptimizedTelegramAuthContext();
   const { webApp } = useTelegramWebApp();
   const [isLoading, setIsLoading] = useState(false);
 

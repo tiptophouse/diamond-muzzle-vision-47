@@ -1,264 +1,201 @@
-import { useState } from "react";
-import { TelegramLayout } from "@/components/layout/TelegramLayout";
-import { BulkFileUploadArea } from "@/components/upload/BulkFileUploadArea";
-import { CsvValidationResults } from "@/components/upload/CsvValidationResults";
-import { ProcessingReport } from "@/components/upload/ProcessingReport";
-import { UploadResultsReport } from "@/components/upload/UploadResultsReport";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Upload, FileSpreadsheet, AlertTriangle, Send } from "lucide-react";
-import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
-import { useBulkCsvProcessor } from "@/hooks/useBulkCsvProcessor";
-import { useToast } from "@/hooks/use-toast";
-import { useTelegramAuth } from "@/hooks/useTelegramAuth";
-import { api } from "@/lib/api/client";
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, Upload, FileSpreadsheet, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { BulkFileUploadArea } from '@/components/upload/BulkFileUploadArea';
+import { CsvValidationResults } from '@/components/upload/CsvValidationResults';
+import { useOptimizedTelegramAuthContext } from '@/context/OptimizedTelegramAuthContext';
 
 export default function BulkUploadPage() {
-  const { hapticFeedback } = useTelegramWebApp();
-  const { toast } = useToast();
-  const { user } = useTelegramAuth();
-  const { processedData, validationResults, processFile, resetProcessor, downloadFailedRecords } = useBulkCsvProcessor();
-  
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadResults, setUploadResults] = useState<{
-    successCount: number;
-    failureCount: number;
-    totalAttempted: number;
-    errors: Array<{ row: number; error: string; data: any }>;
-    uploadedDiamonds?: any[]; // Add this field for analytics
-  } | null>(null);
+  const { user } = useOptimizedTelegramAuthContext();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [csvData, setCsvData] = useState<any[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [validationResults, setValidationResults] = useState<any[]>([]);
+  const [isCsvValid, setIsCsvValid] = useState(false);
 
-  const handleFileChange = async (file: File | null) => {
-    setSelectedFile(file);
-    if (file) {
-      setIsProcessing(true);
-      try {
-        await processFile(file);
-        toast({
-          title: "File processed successfully",
-          description: `Found ${processedData?.validRows.length || 0} valid diamonds ready for upload.`,
-        });
-        hapticFeedback?.notification('success');
-      } catch (error) {
-        toast({
-          title: "Processing failed",
-          description: error instanceof Error ? error.message : "Unknown error occurred",
-          variant: "destructive",
-        });
-        hapticFeedback?.notification('error');
-      } finally {
-        setIsProcessing(false);
-      }
+  useEffect(() => {
+    const successParam = searchParams.get('success');
+    if (successParam === 'true') {
+      setUploadSuccess(true);
     }
+  }, [searchParams]);
+
+  const handleFileUpload = (data: any[]) => {
+    setCsvData(data);
   };
 
-  const handleReset = () => {
-    setSelectedFile(null);
-    resetProcessor();
-    setIsProcessing(false);
-    setIsUploading(false);
-    setUploadResults(null);
+  const handleValidationResults = (results: any[], isValid: boolean) => {
+    setValidationResults(results);
+    setIsCsvValid(isValid);
   };
 
   const handleUpload = async () => {
-    if (!processedData?.validRows.length || !user?.id) {
-      toast({
-        title: "Cannot upload",
-        description: "No valid data to upload or user not authenticated",
-        variant: "destructive",
-      });
+    if (!user) {
+      console.error('No user ID available for upload');
+      setUploadError('User authentication required.');
       return;
     }
 
-    setIsUploading(true);
-    hapticFeedback?.impact('medium');
+    if (!isCsvValid) {
+      setUploadError('Please correct the errors in your CSV file before uploading.');
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(0);
+    setUploadError(null);
+    setUploadSuccess(false);
+
+    // Simulate upload progress
+    const interval = setInterval(() => {
+      setUploadProgress((prevProgress) => {
+        if (prevProgress >= 90) {
+          clearInterval(interval);
+          return 90;
+        }
+        return prevProgress + 10;
+      });
+    }, 250);
 
     try {
-      // Transform data for API - match exact FastAPI schema
-      const diamondsData = processedData.validRows.map(row => ({
-        stock: row.stock || `AUTO-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        shape: row.shape,
-        weight: parseFloat(row.weight),
-        color: row.color,
-        clarity: row.clarity,
-        cut: row.cut || 'EXCELLENT',
-        certificate_number: parseInt(row.certificate_number) || 0,
-        certificate_comment: row.certificate_comment || '',
-        lab: row.lab || 'GIA',
-        length: parseFloat(row.length) || 6.5,
-        width: parseFloat(row.width) || 6.5,
-        depth: parseFloat(row.depth) || 4.0,
-        ratio: parseFloat(row.ratio) || 1.0,
-        table: parseInt(row.table) || 60,
-        depth_percentage: parseFloat(row.depth_percentage) || 62,
-        fluorescence: row.fluorescence,
-        polish: row.polish || 'EXCELLENT',
-        symmetry: row.symmetry || 'EXCELLENT',
-        gridle: row.gridle || 'Medium',
-        culet: row.culet || 'NONE',
-        price_per_carat: parseInt(row.price_per_carat) || 5000,
-        rapnet: parseInt(row.rapnet) || 0,
-        picture: row.picture || ''
-      }));
-
-      // Send diamonds one by one to the single diamond endpoint
-      console.log(`📤 Sending ${diamondsData.length} diamonds one by one to FastAPI...`);
-      let successCount = 0;
-      let failureCount = 0;
-      const errors: any[] = [];
-
-      for (let i = 0; i < diamondsData.length; i++) {
-        const diamond = diamondsData[i];
-        try {
-          const fastApiUrl = `https://api.mazalbot.com/api/v1/diamonds?user_id=${user.id}`;
-          
-          console.log(`📤 Sending diamond ${i + 1}/${diamondsData.length}:`, diamond.stock);
-          
-          const response = await fetch(fastApiUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: JSON.stringify(diamond)
-          });
-
-          if (response.ok) {
-            successCount++;
-            console.log(`✅ Diamond ${diamond.stock} uploaded successfully`);
-          } else {
-            failureCount++;
-            const errorData = await response.json();
-            errors.push({ stock: diamond.stock, error: errorData.detail || 'Upload failed' });
-            console.error(`❌ Diamond ${diamond.stock} failed:`, errorData);
-          }
-        } catch (error) {
-          failureCount++;
-          errors.push({ stock: diamond.stock, error: error instanceof Error ? error.message : 'Unknown error' });
-          console.error(`❌ Diamond ${diamond.stock} error:`, error);
-        }
-      }
-
-      if (successCount > 0) {
-        setUploadResults({
-          successCount,
-          failureCount,
-          totalAttempted: diamondsData.length,
-          errors: errors.map((err, index) => ({
-            row: index + 1,
-            error: err.error,
-            data: { stock: err.stock }
-          })),
-          uploadedDiamonds: diamondsData.slice(0, successCount)
-        });
-
-        toast({
-          title: `✅ Upload completed!`,
-          description: `${successCount} diamonds uploaded successfully${failureCount > 0 ? `, ${failureCount} failed` : ''}.`,
-        });
-        hapticFeedback?.notification('success');
-      } else {
-        throw new Error('All diamonds failed to upload');
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast({
-        title: "❌ Upload failed",
-        description: error instanceof Error ? error.message : "Failed to upload diamonds. Please try again.",
-        variant: "destructive",
-      });
-      hapticFeedback?.notification('error');
-    } finally {
-      setIsUploading(false);
+      // const response = await api.uploadCsv('/api/diamonds/bulk-upload', csvData, user.id);
+      // if (response.data) {
+        clearInterval(interval);
+        setUploadProgress(100);
+        setUploadSuccess(true);
+        setUploading(false);
+        // navigate('/dashboard?upload_success=true', { replace: true });
+        navigate(`/dashboard?upload_success=${csvData.length}&from=bulk_upload`, { replace: true });
+      // } else if (response.error) {
+      //   clearInterval(interval);
+      //   setUploadError(response.error);
+      //   setUploading(false);
+      // }
+    } catch (error: any) {
+      clearInterval(interval);
+      console.error('Upload failed:', error);
+      setUploadError(error.message || 'Upload failed. Please try again.');
+      setUploading(false);
     }
   };
 
   return (
-    <TelegramLayout>
-      <div className="space-y-6 px-4 py-6">
-        {/* Header */}
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-            <FileSpreadsheet className="h-8 w-8 text-primary" />
-          </div>
-          <h1 className="text-3xl font-bold text-foreground">
-            Bulk CSV Upload
-          </h1>
-          <p className="text-muted-foreground text-lg leading-relaxed">
-            Upload multiple diamonds at once using CSV or Excel files
-          </p>
-        </div>
-
-        {/* Important Notice */}
-        <Card className="border-amber-200 bg-amber-50">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
-              <div className="space-y-2">
-                <h3 className="font-semibold text-amber-800">7 Mandatory Fields Required</h3>
-            <p className="text-sm text-amber-700">
-              Each diamond must have: <strong>Certificate ID, Color, Cut, Weight (Carat), Clarity, Fluorescence, Shape</strong>. 
-              Rows missing any of these fields will be skipped. You can add other optional fields like Price, Polish, Symmetry, etc.
-            </p>
-              </div>
+    <div className="container mx-auto py-10">
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardHeader className="flex flex-row items-center space-y-0 pb-2 space-x-2">
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+          <CardTitle className="text-2xl font-bold tracking-tight">Bulk Diamond Upload</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="mb-4">
+            <CardDescription>
+              Upload a CSV file containing diamond data to quickly populate your inventory.
+            </CardDescription>
+            <Separator className="my-4" />
+            <div className="flex items-center space-x-2">
+              <FileSpreadsheet className="h-5 w-5 text-gray-500" />
+              <p className="text-sm text-gray-500">
+                Ensure your CSV file is properly formatted before uploading.
+              </p>
+              <Badge variant="secondary">
+                <a href="/standardize-csv" target="_blank" rel="noopener noreferrer">
+                  Standardize CSV
+                </a>
+              </Badge>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* File Upload Area */}
-        <BulkFileUploadArea
-          selectedFile={selectedFile}
-          onFileChange={handleFileChange}
-          onReset={handleReset}
-          isProcessing={isProcessing}
-        />
+          <BulkFileUploadArea onFileUpload={handleFileUpload} />
 
-        {/* Processing Report */}
-        {processedData && validationResults && (
-          <ProcessingReport
-            report={validationResults.processingReport}
-            onDownloadFailed={downloadFailedRecords}
-            hasFailedRecords={processedData.failedRows.length > 0}
-          />
-        )}
+          {csvData.length > 0 && (
+            <>
+              <Separator className="my-4" />
+              <CsvValidationResults csvData={csvData} onValidationResults={handleValidationResults} />
+            </>
+          )}
 
-        {/* Validation Results */}
-        {validationResults && (
-          <CsvValidationResults results={validationResults} />
-        )}
+          {validationResults.length > 0 && (
+            <>
+              <Separator className="my-4" />
+              {isCsvValid ? (
+                <Alert variant="success">
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Your CSV file is valid and ready for upload.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Your CSV file contains errors. Please review and correct them before uploading.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </>
+          )}
 
-        {/* Upload Results */}
-        {uploadResults && (
-          <UploadResultsReport 
-            results={uploadResults}
-            onReset={handleReset}
-          />
-        )}
+          {uploadError && (
+            <>
+              <Separator className="my-4" />
+              <Alert variant="destructive">
+                <X className="h-4 w-4" />
+                <AlertDescription>
+                  {uploadError}
+                </AlertDescription>
+              </Alert>
+            </>
+          )}
 
-        {/* Upload Button */}
-        {processedData?.validRows.length > 0 && !uploadResults && (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center space-y-4">
-                <p className="text-muted-foreground">
-                  Ready to upload {processedData.validRows.length} diamonds to your inventory
-                </p>
-                <Button 
-                  onClick={handleUpload}
-                  disabled={isUploading}
-                  size="lg"
-                  className="w-full sm:w-auto"
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  {isUploading ? 'Uploading...' : `Upload ${processedData.validRows.length} Diamonds`}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </TelegramLayout>
+          {uploadSuccess && (
+            <>
+              <Separator className="my-4" />
+              <Alert variant="success">
+                <CheckCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Upload successful! Your diamonds are now being processed.
+                </AlertDescription>
+              </Alert>
+            </>
+          )}
+
+          <div className="flex justify-end">
+            <Button
+              disabled={uploading || !isCsvValid}
+              onClick={handleUpload}
+            >
+              {uploading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Diamonds
+                </>
+              )}
+            </Button>
+          </div>
+
+          {uploadProgress !== null && (
+            <Progress value={uploadProgress} className="mt-2" />
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

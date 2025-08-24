@@ -1,6 +1,6 @@
-
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useTelegramAuth } from '@/hooks/useTelegramAuth';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useOptimizedTelegramAuthContext } from '@/context/OptimizedTelegramAuthContext';
+import { Diamond } from '@/types/diamond';
 
 interface WizardStep {
   id: string;
@@ -91,8 +91,8 @@ const wizardSteps: WizardStep[] = [
   }
 ];
 
-export function InteractiveWizardProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useTelegramAuth();
+export function InteractiveWizardProvider({ children }: { children: ReactNode }) {
+  const { user } = useOptimizedTelegramAuthContext();
   const [isActive, setIsActive] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [hasSeenWizard, setHasSeenWizard] = useState(false);
