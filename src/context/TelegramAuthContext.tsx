@@ -37,8 +37,18 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
   // Automatically persist user data when authenticated
   useUserDataPersistence(authState.user, authState.isTelegramEnvironment);
 
+  // Create the context value with signOut method
+  const contextValue: TelegramAuthContextType = {
+    user: authState.user,
+    isAuthenticated: authState.isAuthenticated,
+    isLoading: authState.isLoading,
+    error: authState.error,
+    isTelegramEnvironment: authState.isTelegramEnvironment,
+    signOut: authState.signOut
+  };
+
   return (
-    <TelegramAuthContext.Provider value={authState}>
+    <TelegramAuthContext.Provider value={contextValue}>
       {children}
     </TelegramAuthContext.Provider>
   );

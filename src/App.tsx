@@ -1,14 +1,11 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from 'react-query';
-import { ReactQueryDevtools } from 'react-query/devtools';
-import { ErrorBoundary } from 'react-error-boundary';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import HomePage from '@/pages/HomePage';
-import DiamondDetailsPage from '@/pages/DiamondDetailsPage';
-import NotFoundPage from '@/pages/NotFoundPage';
-import AccountPage from '@/pages/AccountPage';
-import DiamondEditPage from '@/pages/DiamondEditPage';
-import DiamondCreatePage from '@/pages/DiamondCreatePage';
+import NotFound from '@/pages/NotFound';
+import ProfilePage from '@/pages/ProfilePage';
 import { TelegramAuthProvider } from '@/context/TelegramAuthContext';
 import { EnhancedTelegramLayout } from '@/components/layout/EnhancedTelegramLayout';
 
@@ -26,20 +23,16 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TelegramAuthProvider>
         <BrowserRouter>
-          <ErrorBoundary>
-            <EnhancedTelegramLayout>
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/diamonds/:stockNumber" element={<DiamondDetailsPage />} />
-                <Route path="/account" element={<AccountPage />} />
-                <Route path="/diamonds/:stockNumber/edit" element={<DiamondEditPage />} />
-                <Route path="/diamonds/create" element={<DiamondCreatePage />} />
-                <Route path="*" element={<NotFoundPage />} />
-              </Routes>
-            </EnhancedTelegramLayout>
-          </ErrorBoundary>
+          <EnhancedTelegramLayout>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </EnhancedTelegramLayout>
         </BrowserRouter>
       </TelegramAuthProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
 }

@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { TelegramUser } from '@/types/telegram';
-import { telegramAuthService, TelegramAuthResponse } from '@/services/telegramAuth';
+import { telegramAuthService, TelegramAuthResponse, TelegramAuthError } from '@/services/telegramAuth';
 import { setCurrentUserId } from '@/lib/api/config';
 import { toast } from 'sonner';
 
@@ -13,7 +13,7 @@ interface AuthState {
   isTelegramEnvironment: boolean;
 }
 
-export function useSecureTelegramAuth(): AuthState {
+export function useSecureTelegramAuth(): AuthState & { signOut: () => void } {
   const [state, setState] = useState<AuthState>({
     user: null,
     isLoading: true,
@@ -123,15 +123,18 @@ export function useSecureTelegramAuth(): AuthState {
       console.log('🔐 Authenticating with FastAPI...');
       const authResult = await telegramAuthService.authenticateWithInitData(tg.initData);
 
+      // Type guard to check if it's an error response
       if (!authResult.success) {
-        console.error('❌ FastAPI authentication failed:', authResult.error);
+        const errorResponse = authResult as TelegramAuthError;
+        console.error('❌ FastAPI authentication failed:', errorResponse.error);
         toast.error('Authentication Failed', {
-          description: authResult.details || authResult.error
+          description: errorResponse.details || errorResponse.error
         });
         
-        throw new Error(authResult.error);
+        throw new Error(errorResponse.error);
       }
 
+      // It's a success response
       const authData = authResult as TelegramAuthResponse;
       console.log('✅ FastAPI authentication successful');
       
@@ -203,5 +206,5 @@ export function useSecureTelegramAuth(): AuthState {
   return {
     ...state,
     signOut
-  } as AuthState & { signOut: () => void };
+  };
 }
