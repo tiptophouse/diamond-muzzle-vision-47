@@ -1,7 +1,6 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useOptimizedTelegramAuth } from '@/hooks/useOptimizedTelegramAuth';
-import { useUserDataPersistence } from '@/hooks/useUserDataPersistence';
 
 interface TelegramUser {
   id: number;
@@ -29,15 +28,14 @@ const OptimizedTelegramAuthContext = createContext<OptimizedTelegramAuthContextT
 export function OptimizedTelegramAuthProvider({ children }: { children: ReactNode }) {
   const authState = useOptimizedTelegramAuth();
   
-  console.log('🔍 OptimizedTelegramAuthProvider - Auth state:', { 
+  console.log('🔒 StrictTelegramAuthProvider - Auth state:', { 
     user: authState.user?.first_name, 
     isAuthenticated: authState.isAuthenticated,
+    isTelegramEnvironment: authState.isTelegramEnvironment,
     authTime: authState.authTime ? `${authState.authTime}ms` : 'N/A',
-    hasToken: !!authState.token
+    hasToken: !!authState.token,
+    error: authState.error
   });
-  
-  // Automatically persist user data when authenticated
-  useUserDataPersistence(authState.user, authState.isTelegramEnvironment);
 
   return (
     <OptimizedTelegramAuthContext.Provider value={authState}>

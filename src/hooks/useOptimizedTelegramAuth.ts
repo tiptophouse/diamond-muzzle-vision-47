@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { TelegramUser } from '@/types/telegram';
-import OptimizedAuthService from '@/lib/auth/OptimizedAuthService';
+import StrictTelegramOnlyAuthService from '@/lib/auth/StrictTelegramOnlyAuthService';
 import { setCurrentUserId } from '@/lib/api/config';
 
 interface AuthState {
@@ -26,7 +26,7 @@ export function useOptimizedTelegramAuth(): AuthState {
 
   const mountedRef = useRef(true);
   const initializedRef = useRef(false);
-  const authService = useMemo(() => OptimizedAuthService.getInstance(), []);
+  const authService = useMemo(() => StrictTelegramOnlyAuthService.getInstance(), []);
 
   const updateState = useCallback((updates: Partial<AuthState>) => {
     if (mountedRef.current) {
@@ -40,97 +40,40 @@ export function useOptimizedTelegramAuth(): AuthState {
     return !!(
       window.Telegram?.WebApp && 
       typeof window.Telegram.WebApp === 'object' &&
-      window.Telegram.WebApp.initData
+      window.Telegram.WebApp.initData &&
+      window.Telegram.WebApp.initData.length > 0
     );
   }, []);
 
   const authenticateUser = useCallback(async () => {
     if (initializedRef.current || !mountedRef.current) return;
 
-    console.log('🚀 Starting optimized Telegram authentication...');
+    console.log('🔒 Starting strict Telegram-only authentication...');
     const authStartTime = Date.now();
     
     try {
       const isTelegram = isTelegramWebAppEnvironment();
       updateState({ isTelegramEnvironment: isTelegram });
 
-      // Quick check for cached authentication
-      if (authService.isAuthenticated()) {
-        const cachedToken = authService.getValidToken();
-        const cachedUserId = authService.getUserId();
-        
-        if (cachedToken && cachedUserId) {
-          console.log('⚡ Using cached authentication - took:', Date.now() - authStartTime, 'ms');
-          
-          const cachedUser: TelegramUser = {
-            id: cachedUserId,
-            first_name: 'User', // Would be stored in cache in full implementation
-            language_code: 'en'
-          };
-
-          updateState({
-            user: cachedUser,
-            isAuthenticated: true,
-            isLoading: false,
-            token: cachedToken,
-            error: null,
-            authTime: Date.now() - authStartTime
-          });
-
-          setCurrentUserId(cachedUserId);
-          initializedRef.current = true;
-          return;
-        }
-      }
-
-      let initData = '';
-
-      if (isTelegram && window.Telegram?.WebApp) {
-        const tg = window.Telegram.WebApp;
-        
-        // Initialize Telegram WebApp
-        try {
-          if (typeof tg.ready === 'function') tg.ready();
-          if (typeof tg.expand === 'function') tg.expand();
-        } catch (error) {
-          console.warn('⚠️ Telegram WebApp initialization warning:', error);
-        }
-
-        initData = tg.initData || '';
-      }
-
-      // Use admin fallback if no initData available
-      if (!initData) {
-        console.log('🔧 No initData available, using admin fallback');
-        const adminUser: TelegramUser = {
-          id: 2138564172,
-          first_name: 'Admin',
-          last_name: 'User',
-          username: 'admin',
-          language_code: 'en',
-          is_premium: true
-        };
-
+      // NO FALLBACKS - Must be in Telegram environment
+      if (!isTelegram) {
+        console.error('🔒 Access denied: Not in Telegram environment');
         updateState({
-          user: adminUser,
-          isAuthenticated: true,
           isLoading: false,
-          token: 'admin_fallback_token',
-          error: null,
+          error: 'This application can only be accessed through Telegram Mini App',
+          isAuthenticated: false,
           authTime: Date.now() - authStartTime
         });
-
-        setCurrentUserId(adminUser.id);
         initializedRef.current = true;
         return;
       }
 
-      // Perform optimized JWT authentication
-      const authResult = await authService.authenticateWithJWT(initData);
+      // Perform strict authentication
+      const authResult = await authService.authenticateStrictTelegramOnly();
       const totalAuthTime = Date.now() - authStartTime;
 
       if (authResult.success && authResult.user && authResult.token) {
-        console.log('✅ Optimized authentication successful in:', totalAuthTime, 'ms');
+        console.log('✅ Strict authentication successful in:', totalAuthTime, 'ms');
         
         updateState({
           user: authResult.user,
@@ -143,52 +86,26 @@ export function useOptimizedTelegramAuth(): AuthState {
 
         setCurrentUserId(authResult.user.id);
       } else {
-        console.error('❌ Authentication failed:', authResult.error);
+        console.error('❌ Strict authentication failed:', authResult.error);
         
-        // Fallback to admin user on failure
-        const fallbackUser: TelegramUser = {
-          id: 2138564172,
-          first_name: 'Fallback',
-          last_name: 'User',
-          username: 'fallback',
-          language_code: 'en'
-        };
-
         updateState({
-          user: fallbackUser,
-          isAuthenticated: true,
           isLoading: false,
-          token: 'fallback_token',
-          error: 'Used fallback authentication',
+          error: authResult.error || 'Authentication failed',
+          isAuthenticated: false,
           authTime: totalAuthTime
         });
-
-        setCurrentUserId(fallbackUser.id);
       }
 
     } catch (error) {
       const totalAuthTime = Date.now() - authStartTime;
-      console.error('❌ Authentication error after', totalAuthTime, 'ms:', error);
+      console.error('❌ Authentication error:', error);
       
-      // Emergency fallback
-      const emergencyUser: TelegramUser = {
-        id: 2138564172,
-        first_name: 'Emergency',
-        last_name: 'User',
-        username: 'emergency',
-        language_code: 'en'
-      };
-
       updateState({
-        user: emergencyUser,
-        isAuthenticated: true,
         isLoading: false,
-        token: 'emergency_token',
-        error: 'Emergency authentication fallback',
+        error: 'Authentication system error',
+        isAuthenticated: false,
         authTime: totalAuthTime
       });
-
-      setCurrentUserId(emergencyUser.id);
     } finally {
       initializedRef.current = true;
     }
@@ -197,34 +114,22 @@ export function useOptimizedTelegramAuth(): AuthState {
   useEffect(() => {
     mountedRef.current = true;
 
-    // Reduced timeout for faster fallback
+    // Strict timeout - no emergency fallbacks
     const timeoutId = setTimeout(() => {
       if (state.isLoading && mountedRef.current && !initializedRef.current) {
-        console.warn('⚠️ Authentication timeout - using emergency fallback');
+        console.error('🔒 Authentication timeout - access denied');
         
-        const timeoutUser: TelegramUser = {
-          id: 2138564172,
-          first_name: 'Timeout',
-          last_name: 'User',
-          username: 'timeout',
-          language_code: 'en'
-        };
-
         updateState({
-          user: timeoutUser,
-          isAuthenticated: true,
           isLoading: false,
-          token: 'timeout_token',
-          error: 'Authentication timeout',
-          authTime: 2000
+          error: 'Authentication timeout - please try again',
+          isAuthenticated: false,
+          authTime: 3000
         });
 
-        setCurrentUserId(timeoutUser.id);
         initializedRef.current = true;
       }
-    }, 2000); // Reduced from 5 seconds to 2 seconds
+    }, 3000);
 
-    // Start authentication immediately
     authenticateUser();
 
     return () => {
@@ -233,6 +138,5 @@ export function useOptimizedTelegramAuth(): AuthState {
     };
   }, [authenticateUser, updateState]);
 
-  // Memoize the return value to prevent unnecessary re-renders
   return useMemo(() => state, [state]);
 }
