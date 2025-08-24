@@ -1,7 +1,8 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useSecureTelegramAuth } from '@/hooks/useSecureTelegramAuth';
+import { useStrictTelegramAuth } from '@/hooks/useStrictTelegramAuth';
 import { useUserDataPersistence } from '@/hooks/useUserDataPersistence';
+import { SimpleLogin } from '@/components/auth/SimpleLogin';
 
 interface TelegramUser {
   id: number;
@@ -20,35 +21,38 @@ interface TelegramAuthContextType {
   isLoading: boolean;
   error: string | null;
   isTelegramEnvironment: boolean;
-  signOut: () => void;
+  accessDeniedReason: string | null;
 }
 
 const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(undefined);
 
 export function TelegramAuthProvider({ children }: { children: ReactNode }) {
-  const authState = useSecureTelegramAuth();
+  const authState = useStrictTelegramAuth();
   
   console.log('🔍 TelegramAuthProvider - Auth state:', { 
     user: authState.user, 
     isAuthenticated: authState.isAuthenticated,
-    isTelegramEnvironment: authState.isTelegramEnvironment 
+    isTelegramEnvironment: authState.isTelegramEnvironment,
+    showLogin: authState.showLogin
   });
   
   // Automatically persist user data when authenticated
   useUserDataPersistence(authState.user, authState.isTelegramEnvironment);
 
-  // Create the context value with signOut method
-  const contextValue: TelegramAuthContextType = {
-    user: authState.user,
-    isAuthenticated: authState.isAuthenticated,
-    isLoading: authState.isLoading,
-    error: authState.error,
-    isTelegramEnvironment: authState.isTelegramEnvironment,
-    signOut: authState.signOut
-  };
+  // Show login page if needed
+  if (authState.showLogin) {
+    return <SimpleLogin onLogin={authState.handleLoginSuccess} />;
+  }
 
   return (
-    <TelegramAuthContext.Provider value={contextValue}>
+    <TelegramAuthContext.Provider value={{
+      user: authState.user,
+      isAuthenticated: authState.isAuthenticated,
+      isLoading: authState.isLoading,
+      error: authState.error,
+      isTelegramEnvironment: authState.isTelegramEnvironment,
+      accessDeniedReason: authState.accessDeniedReason,
+    }}>
       {children}
     </TelegramAuthContext.Provider>
   );
