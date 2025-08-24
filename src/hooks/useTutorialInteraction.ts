@@ -11,7 +11,7 @@ export function useTutorialInteraction(elementSelector: string) {
       const element = document.querySelector(elementSelector) as HTMLElement;
       if (element) {
         const handleClick = () => {
-          handleRequiredClick(elementSelector);
+          handleRequiredClick();
         };
 
         element.addEventListener('click', handleClick);

@@ -1,186 +1,200 @@
 
-import React, { useState, useCallback } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Trash2, Upload, FileText, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { useOptimizedTelegramAuthContext } from '@/context/OptimizedTelegramAuthContext';
-import { useToast } from '@/components/ui/use-toast';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
+import { useTelegramMainButton } from "@/hooks/useTelegramMainButton";
+import { useTelegramAuth } from "@/hooks/useTelegramAuth";
+import { BulkFileUploadArea } from "./BulkFileUploadArea";
+import { CsvValidationResults } from "./CsvValidationResults";
+import { BulkUploadProgress } from "./BulkUploadProgress";
+import { ProcessingReport } from "./ProcessingReport";
+import { useBulkCsvProcessor } from "@/hooks/useBulkCsvProcessor";
 
-interface BulkUploadFormProps {
-  onUploadComplete?: (data: any[]) => void;
-}
-
-interface ProcessedData {
-  diamonds: any[];
-  errors: string[];
-}
-
-export function BulkUploadForm({ onUploadComplete }: BulkUploadFormProps) {
-  const { user } = useOptimizedTelegramAuthContext();
-  const { toast } = useToast();
-  
-  const [files, setFiles] = useState<File[]>([]);
+export function BulkUploadForm() {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [processedData, setProcessedData] = useState<ProcessedData | null>(null);
+  const { toast } = useToast();
+  const { hapticFeedback } = useTelegramWebApp();
+  const { user } = useTelegramAuth();
+  const { processedData, validationResults, processFile, resetProcessor, downloadFailedRecords } = useBulkCsvProcessor();
 
-  const handleFileSelect = useCallback((selectedFiles: FileList | null) => {
-    if (selectedFiles) {
-      const fileArray = Array.from(selectedFiles);
-      const csvFiles = fileArray.filter(file => 
-        file.name.toLowerCase().endsWith('.csv') || 
-        file.name.toLowerCase().endsWith('.xlsx') ||
-        file.name.toLowerCase().endsWith('.xls')
-      );
-      
-      if (csvFiles.length !== fileArray.length) {
-        toast({
-          title: "Invalid files detected",
-          description: "Please select only CSV or Excel files",
-          variant: "destructive"
-        });
-      }
-      
-      setFiles(csvFiles);
+  // All required fields for the API - every field must be present
+  const requiredFields = [
+    'stock', 'shape', 'weight', 'color', 'clarity', 'lab', 'certificate_number',
+    'length', 'width', 'depth', 'ratio', 'cut', 'polish', 'symmetry', 
+    'fluorescence', 'table', 'depth_percentage', 'gridle', 'culet', 
+    'certificate_comment', 'rapnet', 'price_per_carat', 'picture'
+  ];
+
+  async function handleBulkUpload() {
+    if (!processedData?.validRows.length) {
+      toast({
+        title: "❌ No Valid Data",
+        description: "No valid diamonds found. Please check your file contains the 7 mandatory fields.",
+        variant: "destructive",
+      });
+      return;
     }
-  }, [toast]);
 
-  const removeFile = (index: number) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const processFiles = async () => {
-    if (!user?.id || files.length === 0) return;
+    if (!user?.id) {
+      toast({
+        title: "❌ Authentication Error",
+        description: "Unable to identify user. Please try refreshing the page.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsProcessing(true);
+    hapticFeedback.impact('heavy');
+
     try {
-      // Simulate processing - replace with actual implementation
-      const mockProcessedData: ProcessedData = {
-        diamonds: files.map((file, index) => ({
-          id: index,
-          filename: file.name,
-          status: 'processed'
-        })),
-        errors: []
+      console.log(`📤 Uploading ${processedData.validRows.length} diamonds for user ${user.id}`);
+
+      // Build JSON payload with all valid diamonds
+      const payload = {
+        diamonds: processedData.validRows
       };
-      
-      setProcessedData(mockProcessedData);
-      
-      if (onUploadComplete && mockProcessedData.diamonds.length > 0) {
-        onUploadComplete(mockProcessedData.diamonds);
+
+      console.log('📤 Sending diamonds to batch API:', payload);
+
+      // Send POST request to the FastAPI endpoint with the actual user ID
+      const response = await fetch(
+        `https://api.mazalbot.com/api/v1/diamonds/batch?user_id=${user.id}`,
+        {
+          method: 'POST',
+          headers: {
+            'accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload)
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('❌ API Error:', result);
+        throw new Error(`Upload failed: ${result.detail || result.message || 'Unknown error'}`);
       }
 
+      console.log('✅ Batch upload result:', result);
+
+      hapticFeedback.notification('success');
       toast({
-        title: "Upload successful",
-        description: `${mockProcessedData.diamonds.length} files processed successfully`,
+        title: "✅ Upload Successful!",
+        description: `Successfully uploaded ${processedData.validRows.length} diamonds. ${processedData.failedRows.length} rows were skipped due to missing mandatory fields.`,
       });
+      
+      // Reset form
+      setSelectedFile(null);
+      resetProcessor();
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('❌ Batch upload failed:', error);
+      hapticFeedback.notification('error');
       toast({
-        title: "Upload failed",
-        description: "Failed to process files",
-        variant: "destructive"
+        title: "❌ Upload Failed",
+        description: error instanceof Error ? error.message : "Failed to upload diamonds",
+        variant: "destructive",
       });
     } finally {
       setIsProcessing(false);
     }
+  }
+
+  // Configure Telegram Main Button for upload
+  useTelegramMainButton({
+    text: processedData ? `Upload ${processedData.validRows.length} Diamonds` : "Select CSV File",
+    isVisible: !!selectedFile,
+    isEnabled: !!processedData && processedData.validRows.length > 0 && !isProcessing,
+    color: "#0088cc",
+    onClick: handleBulkUpload
+  });
+
+  async function handleFileChange(file: File | null) {
+    console.log('🔄 File change triggered:', file?.name);
+    
+    if (!file) {
+      setSelectedFile(null);
+      resetProcessor();
+      return;
+    }
+
+    setSelectedFile(file);
+    setIsProcessing(true);
+    hapticFeedback.impact('light');
+
+    try {
+      console.log('📂 Processing file:', file.name, 'Size:', file.size);
+      await processFile(file);
+      console.log('✅ File processed successfully');
+      
+      hapticFeedback.notification('success');
+      toast({
+        title: "File Processed",
+        description: `Found ${processedData?.validRows.length || 0} diamonds with all mandatory fields. ${processedData?.failedRows.length || 0} rows were skipped.`,
+      });
+    } catch (error) {
+      console.error('❌ File processing error:', error);
+      hapticFeedback.notification('error');
+      toast({
+        title: "Processing Failed",
+        description: error instanceof Error ? error.message : "Failed to process file",
+        variant: "destructive",
+      });
+      setSelectedFile(null);
+    } finally {
+      setIsProcessing(false);
+    }
+  }
+
+  const resetForm = () => {
+    setSelectedFile(null);
+    resetProcessor();
+    hapticFeedback.selection();
   };
 
   return (
     <div className="space-y-6">
       {/* File Upload Area */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-            <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Upload CSV or Excel Files</h3>
-            <p className="text-muted-foreground mb-4">
-              Drag and drop your files here, or click to browse
-            </p>
-            <input
-              type="file"
-              multiple
-              accept=".csv,.xlsx,.xls"
-              onChange={(e) => handleFileSelect(e.target.files)}
-              className="hidden"
-              id="file-upload"
-            />
-            <label htmlFor="file-upload">
-              <Button variant="outline" className="cursor-pointer">
-                <FileText className="h-4 w-4 mr-2" />
-                Select Files
-              </Button>
-            </label>
-          </div>
-        </CardContent>
-      </Card>
+      <BulkFileUploadArea
+        selectedFile={selectedFile}
+        onFileChange={handleFileChange}
+        onReset={resetForm}
+        isProcessing={isProcessing}
+      />
 
-      {/* Selected Files */}
-      {files.length > 0 && (
-        <Card>
-          <CardContent className="p-6">
-            <h3 className="font-semibold mb-4">Selected Files ({files.length})</h3>
-            <div className="space-y-2">
-              {files.map((file, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-4 w-4" />
-                    <span className="text-sm font-medium">{file.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      ({(file.size / 1024).toFixed(1)} KB)
-                    </span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeFile(index)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-            
-            <Button 
-              onClick={processFiles}
-              disabled={isProcessing || files.length === 0}
-              className="w-full mt-4"
-            >
-              {isProcessing ? 'Processing...' : 'Process Files'}
-            </Button>
-          </CardContent>
-        </Card>
+      {/* Processing Progress */}
+      {isProcessing && <BulkUploadProgress />}
+
+      {/* Processing Report */}
+      {processedData?.processingReport && !isProcessing && (
+        <ProcessingReport 
+          report={processedData.processingReport}
+          onDownloadFailed={downloadFailedRecords}
+          hasFailedRecords={processedData.failedRows?.length > 0}
+        />
       )}
 
-      {/* Processing Results */}
-      {processedData && (
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
-              <h3 className="font-semibold">Processing Complete</h3>
-            </div>
-            
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Successfully processed {processedData.diamonds.length} files
-              </p>
-              
-              {processedData.errors.length > 0 && (
-                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <AlertTriangle className="h-4 w-4 text-destructive" />
-                    <span className="text-sm font-medium text-destructive">
-                      {processedData.errors.length} errors found
-                    </span>
-                  </div>
-                  <ul className="text-xs text-destructive space-y-1">
-                    {processedData.errors.map((error, index) => (
-                      <li key={index}>• {error}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
+      {/* Validation Results */}
+      {validationResults && !isProcessing && (
+        <CsvValidationResults results={validationResults} />
+      )}
+
+      {/* Desktop Upload Button (Mobile uses Telegram Main Button) */}
+      {processedData && !isProcessing && (
+        <Card className="sm:block hidden">
+          <CardContent className="pt-6">
+            <Button
+              onClick={handleBulkUpload}
+              disabled={processedData.validRows.length === 0}
+              className="w-full"
+              size="lg"
+            >
+              Upload {processedData.validRows.length} Diamonds
+            </Button>
           </CardContent>
         </Card>
       )}

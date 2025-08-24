@@ -1,6 +1,6 @@
 
 import { ReactNode } from 'react';
-import { StrictTelegramGuard } from './StrictTelegramGuard';
+import { TelegramOnlyGuard } from './TelegramOnlyGuard';
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -9,8 +9,8 @@ interface AuthGuardProps {
 
 export function AuthGuard({ children }: AuthGuardProps) {
   return (
-    <StrictTelegramGuard>
+    <TelegramOnlyGuard>
       {children}
-    </StrictTelegramGuard>
+    </TelegramOnlyGuard>
   );
 }
