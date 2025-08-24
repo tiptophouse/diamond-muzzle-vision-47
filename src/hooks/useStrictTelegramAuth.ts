@@ -194,7 +194,7 @@ export function useStrictTelegramAuth(): AuthState {
     } catch (error) {
       console.error('❌ Authentication error:', error);
       
-      if (isGenuineTelegram) {
+      if (webApp && isReady) {
         hapticFeedback.notification('error');
       }
       
