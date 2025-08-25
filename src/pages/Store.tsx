@@ -4,10 +4,12 @@ import { EnhancedStoreGrid } from '@/components/store/EnhancedStoreGrid';
 import { TelegramLayout } from '@/components/layout/TelegramLayout';
 import { useStoreData } from '@/hooks/useStoreData';
 import { useStoreFilters } from '@/hooks/useStoreFilters';
+import { useState } from 'react';
 
 export default function Store() {
   const { diamonds, loading, error } = useStoreData();
-  const { filters, sortBy, setSortBy, setFilter, clearFilters } = useStoreFilters();
+  const { filters, clearFilters, updateFilter } = useStoreFilters();
+  const [sortBy, setSortBy] = useState('price_asc');
 
   const handleSortChange = (newSort: string) => {
     setSortBy(newSort);

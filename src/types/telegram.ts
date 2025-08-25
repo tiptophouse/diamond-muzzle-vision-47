@@ -7,12 +7,12 @@ export interface TelegramUser {
   username?: string;
   language_code?: string;
   is_premium?: boolean;
+  added_to_attachment_menu?: boolean;
+  allows_write_to_pm?: boolean;
   photo_url?: string;
-  phone_number?: string;
 }
 
 export interface TelegramInitData {
-  query_id?: string;
   user?: TelegramUser;
   receiver?: TelegramUser;
   chat?: {
@@ -38,12 +38,12 @@ export interface TelegramWebApp {
   colorScheme: 'light' | 'dark';
   themeParams: {
     bg_color?: string;
-    secondary_bg_color?: string;
     text_color?: string;
     hint_color?: string;
     link_color?: string;
     button_color?: string;
     button_text_color?: string;
+    secondary_bg_color?: string;
     header_bg_color?: string;
     accent_text_color?: string;
     section_bg_color?: string;
@@ -57,39 +57,43 @@ export interface TelegramWebApp {
   headerColor: string;
   backgroundColor: string;
   isClosingConfirmationEnabled: boolean;
+  isVerticalSwipesEnabled: boolean;
   
   // Methods
   ready(): void;
   expand(): void;
   close(): void;
-  setHeaderColor(color: `#${string}` | 'bg_color' | 'secondary_bg_color'): void;
-  setBackgroundColor(color: `#${string}` | 'bg_color' | 'secondary_bg_color'): void;
-  enableClosingConfirmation(): void;
-  disableClosingConfirmation(): void;
-  onEvent(eventType: string, callback: () => void): void;
-  offEvent(eventType: string, callback: () => void): void;
   sendData(data: string): void;
+  switchInlineQuery(query: string, choose_chat_types?: string[]): void;
   openLink(url: string, options?: { try_instant_view?: boolean }): void;
   openTelegramLink(url: string): void;
+  openInvoice(url: string, callback?: (status: string) => void): void;
   showPopup(params: {
     title?: string;
     message: string;
-    buttons?: Array<{
-      id?: string;
-      type?: 'default' | 'ok' | 'close' | 'cancel' | 'destructive';
-      text?: string;
-    }>;
+    buttons?: Array<{ id?: string; type?: string; text: string }>;
   }, callback?: (buttonId: string) => void): void;
   showAlert(message: string, callback?: () => void): void;
   showConfirm(message: string, callback?: (confirmed: boolean) => void): void;
-  showScanQrPopup(params: { text?: string }, callback?: (text: string) => void): void;
+  showScanQrPopup(params: {
+    text?: string;
+  }, callback?: (text: string) => void): void;
   closeScanQrPopup(): void;
   readTextFromClipboard(callback?: (text: string) => void): void;
   requestWriteAccess(callback?: (granted: boolean) => void): void;
-  requestContact(callback?: (granted: boolean, contact?: any) => void): void;
-  
-  // Buttons
-  MainButton: {
+  requestContact(callback?: (granted: boolean) => void): void;
+  invokeCustomMethod(method: string, params: any, callback?: (error: string, result: any) => void): void;
+  onEvent(eventType: string, eventHandler: () => void): void;
+  offEvent(eventType: string, eventHandler: () => void): void;
+  setHeaderColor(color: `#${string}`): void;
+  setBackgroundColor(color: `#${string}`): void;
+  enableClosingConfirmation(): void;
+  disableClosingConfirmation(): void;
+  enableVerticalSwipes(): void;
+  disableVerticalSwipes(): void;
+
+  // Main Button
+  MainButton?: {
     text: string;
     color: string;
     textColor: string;
@@ -112,32 +116,33 @@ export interface TelegramWebApp {
       is_visible?: boolean;
     }): void;
   };
-  
-  BackButton: {
+
+  // Back Button
+  BackButton?: {
     isVisible: boolean;
     onClick(callback: () => void): void;
     show(): void;
     hide(): void;
   };
-  
+
   // Haptic Feedback
-  HapticFeedback: {
-    impactOccurred(style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft'): void;
+  HapticFeedback?: {
+    impactOccurred(style: 'light' | 'medium' | 'heavy'): void;
     notificationOccurred(type: 'error' | 'success' | 'warning'): void;
     selectionChanged(): void;
   };
-  
-  // Additional features
-  CloudStorage: {
+
+  // Cloud Storage
+  CloudStorage?: {
     setItem(key: string, value: string, callback?: (error: string | null, success: boolean) => void): void;
-    getItem(key: string, callback?: (error: string | null, value: string) => void): void;
-    getItems(keys: string[], callback?: (error: string | null, values: Record<string, string>) => void): void;
+    getItem(key: string, callback: (error: string | null, value: string | null) => void): void;
+    getItems(keys: string[], callback: (error: string | null, values: Record<string, string>) => void): void;
     removeItem(key: string, callback?: (error: string | null, success: boolean) => void): void;
     removeItems(keys: string[], callback?: (error: string | null, success: boolean) => void): void;
-    getKeys(callback?: (error: string | null, keys: string[]) => void): void;
+    getKeys(callback: (error: string | null, keys: string[]) => void): void;
   };
-  
-  // Device features (optional)
+
+  // Accelerometer
   Accelerometer?: {
     start(params: { refresh_rate?: number }, callback?: () => void): void;
     stop(callback?: () => void): void;
@@ -145,7 +150,8 @@ export interface TelegramWebApp {
     y: number;
     z: number;
   };
-  
+
+  // Device Orientation
   DeviceOrientation?: {
     start(params: { refresh_rate?: number }, callback?: () => void): void;
     stop(callback?: () => void): void;
@@ -154,9 +160,9 @@ export interface TelegramWebApp {
     beta: number;
     gamma: number;
   };
-  
-  lockOrientation?(): void;
-  unlockOrientation?(): void;
+
+  lockOrientation(callback?: () => void): void;
+  unlockOrientation(callback?: () => void): void;
 }
 
 declare global {

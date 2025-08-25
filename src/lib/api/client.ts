@@ -1,99 +1,143 @@
-
-import axios, { AxiosRequestConfig } from 'axios';
-import { getAuthHeaders } from './auth';
-
-const getBaseUrl = () => {
-  if (typeof window !== 'undefined') {
-    return window.location.origin;
-  }
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-};
+import axios, { AxiosResponse } from 'axios';
+import { API_CONFIG } from './config';
 
 export interface ApiResponse<T> {
   data: T | null;
-  error: string | null;
-  status: number | null;
+  success: boolean;
+  status?: number;
+  error?: string;
 }
 
-export const api = {
+const handleApiError = <T>(error: any): ApiResponse<T> => {
+  if (axios.isAxiosError(error)) {
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.message || error.message || 'An unexpected error occurred';
+    console.error('API Error:', status, message);
+    return {
+      data: null,
+      success: false,
+      status: status,
+      error: message,
+    };
+  } else {
+    console.error('Non-Axios Error:', error);
+    return {
+      data: null,
+      success: false,
+      error: 'An unexpected error occurred',
+    };
+  }
+};
+
+const apiClient = axios.create({
+  baseURL: API_CONFIG.baseURL,
+  timeout: API_CONFIG.timeout,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+apiClient.interceptors.request.use(
+  (config) => {
+    // You can add authentication tokens or other headers here
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+apiClient.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+export interface ApiClient {
+  get: <T>(endpoint: string) => Promise<ApiResponse<T>>;
+  post: <T>(endpoint: string, body: Record<string, any>) => Promise<ApiResponse<T>>;
+  put: <T>(endpoint: string, body: Record<string, any>) => Promise<ApiResponse<T>>;
+  delete: <T>(endpoint: string) => Promise<ApiResponse<T>>;
+  uploadCsv: (file: File, userId: number) => Promise<ApiResponse<any>>;
+}
+
+export const api: ApiClient = {
   get: async <T>(endpoint: string): Promise<ApiResponse<T>> => {
     try {
-      const config: AxiosRequestConfig = {
-        headers: await getAuthHeaders(),
+      const response: AxiosResponse<T> = await apiClient.get(endpoint);
+      return {
+        data: response.data,
+        success: true,
+        status: response.status,
       };
-      const response = await axios.get(`${getBaseUrl()}${endpoint}`, config);
-      return { data: response.data as T, error: null, status: response.status };
     } catch (error: any) {
-      console.error('GET request failed:', error);
-      return { data: null, error: error.response?.data?.detail || error.message, status: error.response?.status || 500 };
+      return handleApiError<T>(error);
     }
   },
 
   post: async <T>(endpoint: string, body: Record<string, any>): Promise<ApiResponse<T>> => {
     try {
-      const config: AxiosRequestConfig = {
-        headers: await getAuthHeaders(),
+      const response: AxiosResponse<T> = await apiClient.post(endpoint, body);
+      return {
+        data: response.data,
+        success: true,
+        status: response.status,
       };
-      const response = await axios.post(`${getBaseUrl()}${endpoint}`, body, config);
-      return { data: response.data as T, error: null, status: response.status };
     } catch (error: any) {
-      console.error('POST request failed:', error);
-      return { data: null, error: error.response?.data?.detail || error.message, status: error.response?.status || 500 };
+      return handleApiError<T>(error);
     }
   },
 
   put: async <T>(endpoint: string, body: Record<string, any>): Promise<ApiResponse<T>> => {
     try {
-      const config: AxiosRequestConfig = {
-        headers: await getAuthHeaders(),
+      const response: AxiosResponse<T> = await apiClient.put(endpoint, body);
+      return {
+        data: response.data,
+        success: true,
+        status: response.status,
       };
-      const response = await axios.put(`${getBaseUrl()}${endpoint}`, body, config);
-      return { data: response.data as T, error: null, status: response.status };
     } catch (error: any) {
-      console.error('PUT request failed:', error);
-      return { data: null, error: error.response?.data?.detail || error.message, status: error.response?.status || 500 };
+      return handleApiError<T>(error);
     }
   },
 
   delete: async <T>(endpoint: string): Promise<ApiResponse<T>> => {
     try {
-      const config: AxiosRequestConfig = {
-        headers: await getAuthHeaders(),
+      const response: AxiosResponse<T> = await apiClient.delete(endpoint);
+      return {
+        data: response.data,
+        success: true,
+        status: response.status,
       };
-      const response = await axios.delete(`${getBaseUrl()}${endpoint}`, config);
-      return { data: response.data as T, error: null, status: response.status };
     } catch (error: any) {
-      console.error('DELETE request failed:', error);
-      return { data: null, error: error.response?.data?.detail || error.message, status: error.response?.status || 500 };
+      return handleApiError<T>(error);
     }
   },
 
-  uploadCsv: async <T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> => {
+  uploadCsv: async (file: File, userId: number): Promise<ApiResponse<any>> => {
     try {
-      const headers = await getAuthHeaders(false);
-      const response = await fetch(`${getBaseUrl()}${endpoint}`, {
-        method: 'POST',
-        body: formData,
-        headers,
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('userId', userId.toString());
+
+      const response = await apiClient.post('/upload/csv', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
-      const data = await response.json();
-      
-      if (!response.ok) {
-        return { data: null, error: data.detail || 'Upload failed', status: response.status };
-      }
-
-      return { data, error: null, status: response.status };
-    } catch (error) {
-      console.error('Upload error:', error);
-      return { 
-        data: null, 
-        error: error instanceof Error ? error.message : 'Upload failed', 
-        status: 500 
+      return {
+        data: response.data,
+        success: true,
+        status: response.status,
       };
+    } catch (error: any) {
+      return handleApiError<any>(error);
     }
   },
 };
 
-// Legacy function for backward compatibility
-export const fetchApi = api.get;
+export default api;

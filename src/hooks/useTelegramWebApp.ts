@@ -50,6 +50,7 @@ export function useTelegramWebApp() {
     webApp,
     user,
     isReady,
+    platform: webApp?.platform || 'unknown',
     hapticFeedback: {
       light: () => webApp?.HapticFeedback?.impactOccurred?.('light'),
       medium: () => webApp?.HapticFeedback?.impactOccurred?.('medium'),
@@ -59,6 +60,7 @@ export function useTelegramWebApp() {
       warning: () => webApp?.HapticFeedback?.notificationOccurred?.('warning'),
       impact: () => webApp?.HapticFeedback?.impactOccurred?.('medium'),
       notification: () => webApp?.HapticFeedback?.notificationOccurred?.('success'),
+      selection: () => webApp?.HapticFeedback?.selectionChanged?.(),
     },
     mainButton: {
       text: webApp?.MainButton?.text || '',
@@ -69,7 +71,12 @@ export function useTelegramWebApp() {
       isProgressVisible: webApp?.MainButton?.isProgressVisible || false,
       setText: (text: string) => webApp?.MainButton?.setText?.(text),
       onClick: (callback: () => void) => webApp?.MainButton?.onClick?.(callback),
-      show: () => webApp?.MainButton?.show?.(),
+      show: (text?: string, callback?: () => void, color?: string) => {
+        if (text) webApp?.MainButton?.setText?.(text);
+        if (callback) webApp?.MainButton?.onClick?.(callback);
+        if (color) webApp?.MainButton?.setParams?.({ color });
+        webApp?.MainButton?.show?.();
+      },
       hide: () => webApp?.MainButton?.hide?.(),
       enable: () => webApp?.MainButton?.enable?.(),
       disable: () => webApp?.MainButton?.disable?.(),
@@ -79,7 +86,10 @@ export function useTelegramWebApp() {
     backButton: {
       isVisible: webApp?.BackButton?.isVisible || false,
       onClick: (callback: () => void) => webApp?.BackButton?.onClick?.(callback),
-      show: () => webApp?.BackButton?.show?.(),
+      show: (callback?: () => void) => {
+        if (callback) webApp?.BackButton?.onClick?.(callback);
+        webApp?.BackButton?.show?.();
+      },
       hide: () => webApp?.BackButton?.hide?.(),
     },
     setHeaderColor,

@@ -5,7 +5,7 @@ import { useTelegramWebApp } from './useTelegramWebApp';
 
 export function useTelegramNavigation() {
   const navigate = useNavigate();
-  const { webApp, setHeaderColor, setBackgroundColor } = useTelegramWebApp();
+  const { webApp, setHeaderColor, setBackgroundColor, hapticFeedback } = useTelegramWebApp();
 
   const navigateWithColor = useCallback((path: string, headerColor?: string, bgColor?: string) => {
     if (headerColor && headerColor.startsWith('#')) {
@@ -58,5 +58,6 @@ export function useTelegramNavigation() {
     showBackButton,
     hideBackButton,
     webApp,
+    haptics: hapticFeedback,
   };
 }
