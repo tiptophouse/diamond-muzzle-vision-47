@@ -42,6 +42,15 @@ export default function Dashboard() {
     setSearchParams(newSearchParams);
   };
 
+  const handleEmergencyMode = () => {
+    console.log('Emergency mode activated');
+    toast({
+      title: "Emergency Mode",
+      description: "Emergency fallback activated",
+      variant: "destructive",
+    });
+  };
+
   // Enhanced logging for debugging
   console.log('🏠 Dashboard State:', {
     authLoading,
@@ -56,7 +65,7 @@ export default function Dashboard() {
   if (authLoading || !isReady) {
     return (
       <UnifiedLayout>
-        <DashboardLoading />
+        <DashboardLoading onEmergencyMode={handleEmergencyMode} />
       </UnifiedLayout>
     );
   }
@@ -78,7 +87,6 @@ export default function Dashboard() {
         )}
 
         <DataDrivenDashboard 
-          isAuthenticated={isAuthenticated}
           user={user}
           onDebugToggle={toggleDebugMode}
         />

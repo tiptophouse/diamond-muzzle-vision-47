@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { EnhancedTelegramLayout } from '@/components/layout/EnhancedTelegramLayout';
 import { InsightsHeader } from '@/components/insights/InsightsHeader';
 import { QuickStatsGrid } from '@/components/insights/QuickStatsGrid';
 import { MarketComparison } from '@/components/insights/MarketComparison';
@@ -12,11 +11,13 @@ import { GroupInsightsCard } from '@/components/insights/GroupInsightsCard';
 import { ShapeAnalysisCard } from '@/components/insights/ShapeAnalysisCard';
 import { MarketDemandCard } from '@/components/insights/MarketDemandCard';
 import { useEnhancedInsights } from '@/hooks/useEnhancedInsights';
+import { useInventoryData } from '@/hooks/useInventoryData';
 import { UnifiedLayout } from '@/components/layout/UnifiedLayout';
 import { useUnifiedTelegramNavigation } from '@/hooks/useUnifiedTelegramNavigation';
 
 export default function InsightsPage() {
-  const { insights, loading, error } = useEnhancedInsights();
+  const { allDiamonds, loading, error, fetchData } = useInventoryData();
+  const insights = useEnhancedInsights(allDiamonds);
   
   // Clear any navigation buttons for insights page
   useUnifiedTelegramNavigation();
@@ -46,25 +47,29 @@ export default function InsightsPage() {
   return (
     <UnifiedLayout>
       <div className="space-y-6 p-4">
-        <InsightsHeader />
+        <InsightsHeader 
+          totalDiamonds={allDiamonds.length}
+          loading={loading}
+          onRefresh={fetchData}
+        />
         
-        <QuickStatsGrid insights={insights} />
+        <QuickStatsGrid diamonds={allDiamonds} />
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <MarketComparison insights={insights} />
-          <ProfitabilityInsights insights={insights} />
+          <MarketComparison diamonds={allDiamonds} />
+          <ProfitabilityInsights diamonds={allDiamonds} />
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <InventoryVelocity insights={insights} />
-          <ShapeDistributionChart insights={insights} />
+          <InventoryVelocity diamonds={allDiamonds} />
+          <ShapeDistributionChart diamonds={allDiamonds} />
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <PersonalInsightsCard insights={insights} />
-          <GroupInsightsCard insights={insights} />
-          <ShapeAnalysisCard insights={insights} />
-          <MarketDemandCard insights={insights} />
+          <PersonalInsightsCard diamonds={allDiamonds} />
+          <GroupInsightsCard diamonds={allDiamonds} />
+          <ShapeAnalysisCard diamonds={allDiamonds} />
+          <MarketDemandCard diamonds={allDiamonds} />
         </div>
       </div>
     </UnifiedLayout>
