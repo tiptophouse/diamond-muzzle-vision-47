@@ -65,8 +65,8 @@ export default function InventoryPage() {
     setCurrentPage(page);
   };
 
-  const handleDeleteDiamond = async (diamond: Diamond) => {
-    console.log('Delete diamond:', diamond.id);
+  const handleDeleteDiamond = async (diamondId: string) => {
+    console.log('Delete diamond:', diamondId);
     // Implementation would go here
     await fetchData(); // Refresh after delete
   };

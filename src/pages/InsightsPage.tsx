@@ -14,10 +14,17 @@ import { useEnhancedInsights } from '@/hooks/useEnhancedInsights';
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { UnifiedLayout } from '@/components/layout/UnifiedLayout';
 import { useUnifiedTelegramNavigation } from '@/hooks/useUnifiedTelegramNavigation';
+import { useInsightsData } from '@/hooks/useInsightsData';
 
 export default function InsightsPage() {
   const { allDiamonds, loading, error, fetchData } = useInventoryData();
   const insights = useEnhancedInsights(allDiamonds);
+  const { 
+    personalInsights, 
+    groupInsights,
+    demandInsights,
+    marketTrends
+  } = useInsightsData();
   
   // Clear any navigation buttons for insights page
   useUnifiedTelegramNavigation();
@@ -67,9 +74,9 @@ export default function InsightsPage() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <PersonalInsightsCard diamonds={allDiamonds} />
-          <GroupInsightsCard diamonds={allDiamonds} />
+          <GroupInsightsCard groupInsights={groupInsights} />
           <ShapeAnalysisCard diamonds={allDiamonds} />
-          <MarketDemandCard diamonds={allDiamonds} />
+          <MarketDemandCard demandInsights={demandInsights} />
         </div>
       </div>
     </UnifiedLayout>
