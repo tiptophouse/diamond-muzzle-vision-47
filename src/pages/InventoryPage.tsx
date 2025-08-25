@@ -16,8 +16,8 @@ export default function InventoryPage() {
 
   const { allDiamonds, loading, error, fetchData } = useInventoryData();
   const {
-    searchTerm,
-    setSearchTerm,
+    searchQuery,
+    setSearchQuery,
     filteredDiamonds,
     sortBy,
     sortOrder,
@@ -27,7 +27,8 @@ export default function InventoryPage() {
     currentPage,
     setCurrentPage,
     totalPages,
-    paginatedDiamonds
+    paginatedDiamonds,
+    handleSearch
   } = useInventorySearch(allDiamonds);
 
   const handleRefresh = async () => {
@@ -44,7 +45,10 @@ export default function InventoryPage() {
     return (
       <UnifiedLayout>
         <div className="space-y-4">
-          <InventoryHeader onRefresh={handleRefresh} />
+          <InventoryHeader 
+            onRefresh={handleRefresh} 
+            totalCount={allDiamonds.length}
+          />
           <InventoryTableLoading />
         </div>
       </UnifiedLayout>
@@ -73,7 +77,10 @@ export default function InventoryPage() {
     return (
       <UnifiedLayout>
         <div className="space-y-4">
-          <InventoryHeader onRefresh={handleRefresh} />
+          <InventoryHeader 
+            onRefresh={handleRefresh} 
+            totalCount={allDiamonds.length}
+          />
           <InventoryTableEmpty />
         </div>
       </UnifiedLayout>
@@ -83,12 +90,14 @@ export default function InventoryPage() {
   return (
     <UnifiedLayout>
       <div className="space-y-4">
-        <InventoryHeader onRefresh={handleRefresh} />
+        <InventoryHeader 
+          onRefresh={handleRefresh} 
+          totalCount={allDiamonds.length}
+        />
         
         <InventoryTable
           data={paginatedDiamonds}
           onDelete={handleDeleteDiamond}
-          onUpdate={fetchData}
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}

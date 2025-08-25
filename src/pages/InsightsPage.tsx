@@ -58,6 +58,68 @@ export default function InsightsPage() {
     );
   }
 
+  // Prepare data for components
+  const marketComparisonData = {
+    yourPosition: {
+      avgPricePerCarat: insights.averagePrice,
+      marketRank: 'competitive' as const,
+      percentileRank: 65
+    },
+    shapeComparison: insights.topShapes.map(shape => ({
+      shape: shape.shape,
+      yourAvgPrice: shape.value / shape.count,
+      marketAvgPrice: (shape.value / shape.count) * 0.9,
+      difference: (shape.value / shape.count) * 0.1,
+      marketShare: (shape.count / insights.totalCount) * 100
+    })),
+    competitiveAdvantages: ['Premium Selection', 'Competitive Pricing'],
+    recommendations: ['Focus on popular shapes', 'Optimize pricing strategy']
+  };
+
+  const profitabilityData = {
+    totalInventoryValue: insights.totalValue,
+    averageMargin: insights.profitMargin,
+    topPerformingShapes: insights.topShapes.slice(0, 3).map(shape => ({
+      shape: shape.shape,
+      avgPrice: shape.value / shape.count,
+      margin: 0.25,
+      trend: 'up' as const
+    })),
+    underperformingStones: insights.topShapes.slice(-2).map(shape => ({
+      shape: shape.shape,
+      daysInInventory: 120,
+      priceAdjustmentSuggestion: -5.0
+    }))
+  };
+
+  const inventoryVelocityData = {
+    turnoverRate: insights.inventoryVelocity,
+    avgTimeToSell: 45,
+    velocityTrend: 'up' as const,
+    seasonalTrends: [
+      { month: 'Jan', turnoverRate: 0.15, avgDaysToSell: 45 },
+      { month: 'Feb', turnoverRate: 0.18, avgDaysToSell: 42 },
+      { month: 'Mar', turnoverRate: 0.22, avgDaysToSell: 38 }
+    ],
+    fastMovers: insights.topShapes.slice(0, 3).map(shape => ({
+      shape: shape.shape,
+      avgDaysToSell: 30,
+      volume: shape.count
+    })),
+    agingBreakdown: [
+      { category: '0-30 days', count: Math.floor(insights.totalCount * 0.4), value: 0, color: '#22c55e' },
+      { category: '31-60 days', count: Math.floor(insights.totalCount * 0.3), value: 0, color: '#eab308' },
+      { category: '61-90 days', count: Math.floor(insights.totalCount * 0.2), value: 0, color: '#f97316' },
+      { category: '90+ days', count: Math.floor(insights.totalCount * 0.1), value: 0, color: '#ef4444' }
+    ],
+    slowMovers: insights.topShapes.slice(-2).map(shape => ({
+      shape: shape.shape,
+      avgDaysInStock: 90,
+      count: shape.count
+    })),
+    recommendations: ['Focus on fast-moving shapes']
+  };
+
   return (
     <UnifiedLayout>
       <div className="space-y-6 p-4">
@@ -76,73 +138,24 @@ export default function InsightsPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <MarketComparison data={{
-            yourPosition: {
-              avgPricePerCarat: insights.averagePrice,
-              marketRank: 'competitive' as const,
-              percentileRank: 65
-            },
-            shapeComparison: insights.topShapes.map(shape => ({
-              shape: shape.shape,
-              yourCount: shape.count,
-              marketAverage: shape.count * 0.8,
-              percentage: (shape.count / insights.totalCount) * 100
-            })),
-            competitiveAdvantages: ['Premium Selection', 'Competitive Pricing'],
-            recommendations: ['Focus on popular shapes', 'Optimize pricing strategy']
-          }} />
-          <ProfitabilityInsights data={{
-            totalInventoryValue: insights.totalValue,
-            averageMargin: insights.profitMargin,
-            topPerformingShapes: insights.topShapes.slice(0, 3).map(shape => ({
-              shape: shape.shape,
-              avgPrice: shape.value / shape.count,
-              margin: 0.25,
-              trend: 'up' as const
-            })),
-            underperformingStones: insights.topShapes.slice(-2).map(shape => ({
-              stockNumber: `Sample-${shape.shape}`,
-              shape: shape.shape,
-              daysInInventory: 120,
-              suggestedAction: 'Price reduction'
-            }))
-          }} />
+          <MarketComparison data={marketComparisonData} />
+          <ProfitabilityInsights data={profitabilityData} />
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <InventoryVelocity data={{
-            turnoverRate: insights.inventoryVelocity,
-            avgTimeToSell: 45,
-            velocityTrend: 'up' as const,
-            fastMovers: insights.topShapes.slice(0, 3).map(shape => ({
-              shape: shape.shape,
-              avgDays: 30
-            })),
-            slowMovers: insights.topShapes.slice(-2).map(shape => ({
-              shape: shape.shape,
-              avgDays: 90
-            })),
-            agingBreakdown: [
-              { range: '0-30 days', count: Math.floor(insights.totalCount * 0.4) },
-              { range: '31-60 days', count: Math.floor(insights.totalCount * 0.3) },
-              { range: '61-90 days', count: Math.floor(insights.totalCount * 0.2) },
-              { range: '90+ days', count: Math.floor(insights.totalCount * 0.1) }
-            ],
-            seasonalTrends: [],
-            recommendations: ['Focus on fast-moving shapes']
-          }} />
+          <InventoryVelocity data={inventoryVelocityData} />
           <ShapeDistributionChart marketTrends={insightsData.marketTrends} />
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {insightsData.personalInsights && (
-            <PersonalInsightsCard data={insightsData.personalInsights} />
+            <PersonalInsightsCard personalInsights={insightsData.personalInsights} />
           )}
           {insightsData.groupInsights && (
-            <GroupInsightsCard data={insightsData.groupInsights} />
+            <GroupInsightsCard groupInsights={insightsData.groupInsights} />
           )}
           <ShapeAnalysisCard marketTrends={insightsData.marketTrends} />
-          <MarketDemandCard data={insightsData.demandInsights} />
+          <MarketDemandCard demandInsights={insightsData.demandInsights} />
         </div>
       </div>
     </UnifiedLayout>
