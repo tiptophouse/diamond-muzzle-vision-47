@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Upload, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -37,7 +38,7 @@ export function UserImageUpload({ diamond, onUpdate }: UserImageUploadProps) {
         gem_360_url: gem360Url
       };
 
-      const endpoint = apiEndpoints.updateDiamond(diamond.id, user.id);
+      const endpoint = apiEndpoints.updateDiamond(diamond.id);
       const response = await api.put(endpoint, updateData);
 
       if (response.data) {

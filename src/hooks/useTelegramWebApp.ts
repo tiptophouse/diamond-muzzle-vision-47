@@ -1,6 +1,38 @@
 
-import { useState, useEffect } from 'react';
-import { TelegramWebApp, TelegramUser } from '@/types/telegram';
+import { useEffect, useState } from 'react';
+
+interface TelegramWebApp {
+  ready: () => void;
+  close: () => void;
+  expand: () => void;
+  MainButton: {
+    setText: (text: string) => void;
+    show: () => void;
+    hide: () => void;
+    onClick: (callback: () => void) => void;
+    offClick: (callback: () => void) => void;
+  };
+  BackButton: {
+    show: () => void;
+    hide: () => void;
+    onClick: (callback: () => void) => void;
+    offClick: (callback: () => void) => void;
+  };
+  HapticFeedback: {
+    impactOccurred: (style?: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void;
+    notificationOccurred: (type?: 'error' | 'success' | 'warning') => void;
+    selectionChanged: () => void;
+  };
+  initDataUnsafe?: {
+    user?: {
+      id: number;
+      first_name: string;
+      last_name?: string;
+      username?: string;
+      language_code?: string;
+    };
+  };
+}
 
 declare global {
   interface Window {
@@ -12,87 +44,37 @@ declare global {
 
 export function useTelegramWebApp() {
   const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
-  const [user, setUser] = useState<TelegramUser | null>(null);
-  const [isReady, setIsReady] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      const app = window.Telegram.WebApp;
-      setWebApp(app);
-      setUser(app.initDataUnsafe?.user || null);
-      
-      app.ready();
-      setIsReady(true);
+      const tg = window.Telegram.WebApp;
+      setWebApp(tg);
+      setUser(tg.initDataUnsafe?.user || null);
+      tg.ready();
     }
   }, []);
 
-  const setHeaderColor = (color: string) => {
-    if (webApp && webApp.setHeaderColor) {
-      let formattedColor = color;
-      if (!color.startsWith('#')) {
-        formattedColor = `#${color}`;
-      }
-      webApp.setHeaderColor(formattedColor as `#${string}`);
-    }
+  const impactOccurred = (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft' = 'medium') => {
+    webApp?.HapticFeedback?.impactOccurred(style);
   };
 
-  const setBackgroundColor = (color: string) => {
-    if (webApp && webApp.setBackgroundColor) {
-      let formattedColor = color;
-      if (!color.startsWith('#')) {
-        formattedColor = `#${color}`;
-      }
-      webApp.setBackgroundColor(formattedColor as `#${string}`);
-    }
+  const notificationOccurred = (type: 'error' | 'success' | 'warning' = 'success') => {
+    webApp?.HapticFeedback?.notificationOccurred(type);
+  };
+
+  const selectionChanged = () => {
+    webApp?.HapticFeedback?.selectionChanged();
   };
 
   return {
     webApp,
     user,
-    isReady,
-    platform: webApp?.platform || 'unknown',
-    hapticFeedback: {
-      light: () => webApp?.HapticFeedback?.impactOccurred?.('light'),
-      medium: () => webApp?.HapticFeedback?.impactOccurred?.('medium'),
-      heavy: () => webApp?.HapticFeedback?.impactOccurred?.('heavy'),
-      success: () => webApp?.HapticFeedback?.notificationOccurred?.('success'),
-      error: () => webApp?.HapticFeedback?.notificationOccurred?.('error'),
-      warning: () => webApp?.HapticFeedback?.notificationOccurred?.('warning'),
-      impact: () => webApp?.HapticFeedback?.impactOccurred?.('medium'),
-      notification: () => webApp?.HapticFeedback?.notificationOccurred?.('success'),
-      selection: () => webApp?.HapticFeedback?.selectionChanged?.(),
-    },
-    mainButton: {
-      text: webApp?.MainButton?.text || '',
-      color: webApp?.MainButton?.color || '',
-      textColor: webApp?.MainButton?.textColor || '',
-      isVisible: webApp?.MainButton?.isVisible || false,
-      isActive: webApp?.MainButton?.isActive || false,
-      isProgressVisible: webApp?.MainButton?.isProgressVisible || false,
-      setText: (text: string) => webApp?.MainButton?.setText?.(text),
-      onClick: (callback: () => void) => webApp?.MainButton?.onClick?.(callback),
-      show: (text?: string, callback?: () => void, color?: string) => {
-        if (text) webApp?.MainButton?.setText?.(text);
-        if (callback) webApp?.MainButton?.onClick?.(callback);
-        if (color) webApp?.MainButton?.setParams?.({ color });
-        webApp?.MainButton?.show?.();
-      },
-      hide: () => webApp?.MainButton?.hide?.(),
-      enable: () => webApp?.MainButton?.enable?.(),
-      disable: () => webApp?.MainButton?.disable?.(),
-      showProgress: () => webApp?.MainButton?.showProgress?.(),
-      hideProgress: () => webApp?.MainButton?.hideProgress?.(),
-    },
-    backButton: {
-      isVisible: webApp?.BackButton?.isVisible || false,
-      onClick: (callback: () => void) => webApp?.BackButton?.onClick?.(callback),
-      show: (callback?: () => void) => {
-        if (callback) webApp?.BackButton?.onClick?.(callback);
-        webApp?.BackButton?.show?.();
-      },
-      hide: () => webApp?.BackButton?.hide?.(),
-    },
-    setHeaderColor,
-    setBackgroundColor,
+    isReady: !!webApp,
+    impactOccurred,
+    notificationOccurred,
+    selectionChanged,
+    close: () => webApp?.close(),
+    expand: () => webApp?.expand(),
   };
 }
