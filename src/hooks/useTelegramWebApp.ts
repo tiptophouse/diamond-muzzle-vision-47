@@ -19,7 +19,11 @@ export function useTelegramWebApp() {
     heavy: () => WebApp.HapticFeedback?.impactOccurred('heavy'),
     success: () => WebApp.HapticFeedback?.notificationOccurred('success'),
     error: () => WebApp.HapticFeedback?.notificationOccurred('error'),
+    warning: () => WebApp.HapticFeedback?.notificationOccurred('warning'),
     selection: () => WebApp.HapticFeedback?.selectionChanged(),
+    // Add aliases for common usage patterns
+    impact: (style: 'light' | 'medium' | 'heavy') => WebApp.HapticFeedback?.impactOccurred(style),
+    notification: (type: 'error' | 'success' | 'warning') => WebApp.HapticFeedback?.notificationOccurred(type),
   };
 
   const mainButton = {
