@@ -150,11 +150,23 @@ export const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: Optimize
           {/* Action Buttons */}
           <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <UserImageUpload diamond={diamond} onUpdate={onUpdate || (() => {})} />
-            <ShareButton 
-              diamond={diamond}
+            <Button
+              size="sm"
               variant="outline"
               className="h-8 w-8 p-0 bg-white/90 hover:bg-white"
-            />
+              onClick={() => {
+                // Simple share functionality - could be enhanced
+                if (navigator.share) {
+                  navigator.share({
+                    title: `${diamond.shape} ${diamond.carat}ct Diamond`,
+                    text: `Check out this ${diamond.shape} diamond - ${diamond.carat}ct ${diamond.color} ${diamond.clarity}`,
+                    url: window.location.href
+                  });
+                }
+              }}
+            >
+              <Share2 className="h-4 w-4" />
+            </Button>
           </div>
         </div>
 

@@ -58,65 +58,6 @@ export default function InsightsPage() {
     );
   }
 
-  // Transform data for components that expect different structures
-  const quickStatsData = {
-    totalDiamonds: allDiamonds.length,
-    totalValue: insights.totalValue,
-    averagePrice: insights.averagePrice,
-    topShape: insights.topShapes[0]?.shape || 'Round'
-  };
-
-  const marketComparisonData = {
-    yourPosition: 'Above Average',
-    shapeComparison: insights.topShapes.map(shape => ({
-      shape: shape.shape,
-      yourCount: shape.count,
-      marketAverage: shape.count * 0.8,
-      percentage: (shape.count / insights.totalCount) * 100
-    })),
-    competitiveAdvantages: ['Premium Selection', 'Competitive Pricing'],
-    recommendations: ['Focus on popular shapes', 'Optimize pricing strategy']
-  };
-
-  const profitabilityData = {
-    totalInventoryValue: insights.totalValue,
-    averageMargin: insights.profitMargin,
-    topPerformingShapes: insights.topShapes.slice(0, 3).map(shape => ({
-      shape: shape.shape,
-      margin: 0.25,
-      revenue: shape.value
-    })),
-    underperformingStones: insights.topShapes.slice(-2).map(shape => ({
-      stockNumber: `Sample-${shape.shape}`,
-      shape: shape.shape,
-      daysInInventory: 120,
-      suggestedAction: 'Price reduction'
-    }))
-  };
-
-  const velocityData = {
-    turnoverRate: insights.inventoryVelocity,
-    avgTimeToSell: 45,
-    fastMovers: insights.topShapes.slice(0, 3).map(shape => ({
-      shape: shape.shape,
-      avgDays: 30
-    })),
-    slowMovers: insights.topShapes.slice(-2).map(shape => ({
-      shape: shape.shape,
-      avgDays: 90
-    })),
-    seasonalTrends: [],
-    recommendations: ['Focus on fast-moving shapes']
-  };
-
-  const shapeDistributionData = {
-    distribution: insights.shapeDistribution.map(item => ({
-      shape: item.shape,
-      count: item.count,
-      percentage: item.percentage
-    }))
-  };
-
   return (
     <UnifiedLayout>
       <div className="space-y-6 p-4">
@@ -128,24 +69,80 @@ export default function InsightsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <QuickStatsGrid {...quickStatsData} />
+          <QuickStatsGrid 
+            totalDiamonds={allDiamonds.length}
+            marketTrends={insightsData.marketTrends}
+          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <MarketComparison data={marketComparisonData} />
-          <ProfitabilityInsights data={profitabilityData} />
+          <MarketComparison data={{
+            yourPosition: {
+              avgPricePerCarat: insights.averagePrice,
+              marketRank: 'competitive' as const,
+              percentileRank: 65
+            },
+            shapeComparison: insights.topShapes.map(shape => ({
+              shape: shape.shape,
+              yourCount: shape.count,
+              marketAverage: shape.count * 0.8,
+              percentage: (shape.count / insights.totalCount) * 100
+            })),
+            competitiveAdvantages: ['Premium Selection', 'Competitive Pricing'],
+            recommendations: ['Focus on popular shapes', 'Optimize pricing strategy']
+          }} />
+          <ProfitabilityInsights data={{
+            totalInventoryValue: insights.totalValue,
+            averageMargin: insights.profitMargin,
+            topPerformingShapes: insights.topShapes.slice(0, 3).map(shape => ({
+              shape: shape.shape,
+              avgPrice: shape.value / shape.count,
+              margin: 0.25,
+              trend: 'up' as const
+            })),
+            underperformingStones: insights.topShapes.slice(-2).map(shape => ({
+              stockNumber: `Sample-${shape.shape}`,
+              shape: shape.shape,
+              daysInInventory: 120,
+              suggestedAction: 'Price reduction'
+            }))
+          }} />
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <InventoryVelocity data={velocityData} />
-          <ShapeDistributionChart data={shapeDistributionData} />
+          <InventoryVelocity data={{
+            turnoverRate: insights.inventoryVelocity,
+            avgTimeToSell: 45,
+            velocityTrend: 'up' as const,
+            fastMovers: insights.topShapes.slice(0, 3).map(shape => ({
+              shape: shape.shape,
+              avgDays: 30
+            })),
+            slowMovers: insights.topShapes.slice(-2).map(shape => ({
+              shape: shape.shape,
+              avgDays: 90
+            })),
+            agingBreakdown: [
+              { range: '0-30 days', count: Math.floor(insights.totalCount * 0.4) },
+              { range: '31-60 days', count: Math.floor(insights.totalCount * 0.3) },
+              { range: '61-90 days', count: Math.floor(insights.totalCount * 0.2) },
+              { range: '90+ days', count: Math.floor(insights.totalCount * 0.1) }
+            ],
+            seasonalTrends: [],
+            recommendations: ['Focus on fast-moving shapes']
+          }} />
+          <ShapeDistributionChart marketTrends={insightsData.marketTrends} />
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <PersonalInsightsCard insights={insightsData.personalInsights} />
-          <GroupInsightsCard insights={insightsData.groupInsights} />
-          <ShapeAnalysisCard trends={insightsData.marketTrends} />
-          <MarketDemandCard demands={insightsData.demandInsights} />
+          {insightsData.personalInsights && (
+            <PersonalInsightsCard data={insightsData.personalInsights} />
+          )}
+          {insightsData.groupInsights && (
+            <GroupInsightsCard data={insightsData.groupInsights} />
+          )}
+          <ShapeAnalysisCard marketTrends={insightsData.marketTrends} />
+          <MarketDemandCard data={insightsData.demandInsights} />
         </div>
       </div>
     </UnifiedLayout>

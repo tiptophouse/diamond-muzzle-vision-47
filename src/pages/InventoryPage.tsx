@@ -34,20 +34,6 @@ export default function InventoryPage() {
     await fetchData();
   };
 
-  const handleSearch = (term: string) => {
-    setSearchTerm(term);
-    setCurrentPage(1); // Reset to first page when searching
-  };
-
-  const handleFilterChange = (newFilters: any) => {
-    setFilters(newFilters);
-    setCurrentPage(1); // Reset to first page when filtering
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
   const handleDeleteDiamond = async (diamondId: string) => {
     console.log('Delete diamond:', diamondId);
     // Implementation would go here
@@ -58,11 +44,7 @@ export default function InventoryPage() {
     return (
       <UnifiedLayout>
         <div className="space-y-4">
-          <InventoryHeader 
-            onRefresh={handleRefresh}
-            onFilterChange={handleFilterChange}
-            onSort={handleSort}
-          />
+          <InventoryHeader onRefresh={handleRefresh} />
           <InventoryTableLoading />
         </div>
       </UnifiedLayout>
@@ -91,11 +73,7 @@ export default function InventoryPage() {
     return (
       <UnifiedLayout>
         <div className="space-y-4">
-          <InventoryHeader 
-            onRefresh={handleRefresh}
-            onFilterChange={handleFilterChange}
-            onSort={handleSort}
-          />
+          <InventoryHeader onRefresh={handleRefresh} />
           <InventoryTableEmpty />
         </div>
       </UnifiedLayout>
@@ -105,22 +83,15 @@ export default function InventoryPage() {
   return (
     <UnifiedLayout>
       <div className="space-y-4">
-        <InventoryHeader 
-          onRefresh={handleRefresh}
-          onFilterChange={handleFilterChange}
-          onSort={handleSort}
-        />
+        <InventoryHeader onRefresh={handleRefresh} />
         
         <InventoryTable
           data={paginatedDiamonds}
-          onSort={handleSort}
-          sortBy={sortBy}
-          sortOrder={sortOrder}
           onDelete={handleDeleteDiamond}
           onUpdate={fetchData}
           currentPage={currentPage}
           totalPages={totalPages}
-          onPageChange={handlePageChange}
+          onPageChange={setCurrentPage}
         />
       </div>
     </UnifiedLayout>
