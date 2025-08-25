@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { InsightsHeader } from '@/components/insights/InsightsHeader';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { QuickStatsGrid } from '@/components/insights/QuickStatsGrid';
 import { MarketComparison } from '@/components/insights/MarketComparison';
 import { ProfitabilityInsights } from '@/components/insights/ProfitabilityInsights';
@@ -14,17 +14,10 @@ import { useEnhancedInsights } from '@/hooks/useEnhancedInsights';
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { UnifiedLayout } from '@/components/layout/UnifiedLayout';
 import { useUnifiedTelegramNavigation } from '@/hooks/useUnifiedTelegramNavigation';
-import { useInsightsData } from '@/hooks/useInsightsData';
 
 export default function InsightsPage() {
   const { allDiamonds, loading, error, fetchData } = useInventoryData();
   const insights = useEnhancedInsights(allDiamonds);
-  const { 
-    personalInsights, 
-    groupInsights,
-    demandInsights,
-    marketTrends
-  } = useInsightsData();
   
   // Clear any navigation buttons for insights page
   useUnifiedTelegramNavigation();
@@ -32,8 +25,15 @@ export default function InsightsPage() {
   if (loading) {
     return (
       <UnifiedLayout>
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="space-y-6 p-4">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-32 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
         </div>
       </UnifiedLayout>
     );
@@ -43,9 +43,11 @@ export default function InsightsPage() {
     return (
       <UnifiedLayout>
         <div className="p-4">
-          <div className="text-center text-red-600">
-            <p>Error loading insights: {error}</p>
-          </div>
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-red-600">Error loading insights: {error}</p>
+            </CardContent>
+          </Card>
         </div>
       </UnifiedLayout>
     );
@@ -54,29 +56,32 @@ export default function InsightsPage() {
   return (
     <UnifiedLayout>
       <div className="space-y-6 p-4">
-        <InsightsHeader 
-          totalDiamonds={allDiamonds.length}
-          loading={loading}
-          onRefresh={fetchData}
-        />
-        
-        <QuickStatsGrid diamonds={allDiamonds} />
-        
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Business Insights</h1>
+          <p className="text-muted-foreground">
+            Comprehensive analytics for your diamond inventory
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <QuickStatsGrid data={allDiamonds} />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <MarketComparison diamonds={allDiamonds} />
-          <ProfitabilityInsights diamonds={allDiamonds} />
+          <MarketComparison data={allDiamonds} />
+          <ProfitabilityInsights data={allDiamonds} />
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <InventoryVelocity diamonds={allDiamonds} />
-          <ShapeDistributionChart diamonds={allDiamonds} />
+          <InventoryVelocity data={allDiamonds} />
+          <ShapeDistributionChart data={allDiamonds} />
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <PersonalInsightsCard diamonds={allDiamonds} />
-          <GroupInsightsCard groupInsights={groupInsights} />
-          <ShapeAnalysisCard diamonds={allDiamonds} />
-          <MarketDemandCard demandInsights={demandInsights} />
+          <PersonalInsightsCard data={allDiamonds} />
+          <GroupInsightsCard data={allDiamonds} />
+          <ShapeAnalysisCard data={allDiamonds} />
+          <MarketDemandCard data={allDiamonds} />
         </div>
       </div>
     </UnifiedLayout>

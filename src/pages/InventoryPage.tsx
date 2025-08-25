@@ -1,64 +1,47 @@
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
+import { UnifiedLayout } from '@/components/layout/UnifiedLayout';
 import { InventoryHeader } from '@/components/inventory/InventoryHeader';
 import { InventoryTable } from '@/components/inventory/InventoryTable';
-import { InventoryTableEmpty } from '@/components/inventory/InventoryTableEmpty';
 import { InventoryTableLoading } from '@/components/inventory/InventoryTableLoading';
+import { InventoryTableEmpty } from '@/components/inventory/InventoryTableEmpty';
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { useInventorySearch } from '@/hooks/useInventorySearch';
-import { UnifiedLayout } from '@/components/layout/UnifiedLayout';
 import { useUnifiedTelegramNavigation } from '@/hooks/useUnifiedTelegramNavigation';
-import { useState } from 'react';
 import { Diamond } from '@/components/inventory/InventoryTable';
 
 export default function InventoryPage() {
+  // Clear any navigation buttons for inventory page
+  useUnifiedTelegramNavigation();
+
   const { allDiamonds, loading, error, fetchData } = useInventoryData();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filters, setFilters] = useState({});
-  const [sortBy, setSortBy] = useState('carat');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
-
-  const { filteredDiamonds } = useInventorySearch({
-    diamonds: allDiamonds,
+  const {
     searchTerm,
-    filters,
+    setSearchTerm,
+    filteredDiamonds,
     sortBy,
-    sortOrder
-  });
+    sortOrder,
+    handleSort,
+    filters,
+    setFilters,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    paginatedDiamonds
+  } = useInventorySearch(allDiamonds);
 
-  const totalPages = Math.ceil(filteredDiamonds.length / itemsPerPage);
-  const paginatedDiamonds = filteredDiamonds.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  // Set up Telegram navigation
-  useUnifiedTelegramNavigation({
-    showMainButton: true,
-    mainButtonText: 'Add Diamond',
-    mainButtonColor: '#059669'
-  });
+  const handleRefresh = async () => {
+    await fetchData();
+  };
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset to first page when searching
   };
 
   const handleFilterChange = (newFilters: any) => {
     setFilters(newFilters);
-    setCurrentPage(1);
-  };
-
-  const handleSort = (field: string) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('desc');
-    }
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset to first page when filtering
   };
 
   const handlePageChange = (page: number) => {
@@ -71,32 +54,77 @@ export default function InventoryPage() {
     await fetchData(); // Refresh after delete
   };
 
-  const handleEditDiamond = (diamond: Diamond) => {
-    console.log('Edit diamond:', diamond.id);
-    // Implementation would go here
-  };
+  if (loading) {
+    return (
+      <UnifiedLayout>
+        <div className="space-y-4">
+          <InventoryHeader 
+            onRefresh={handleRefresh}
+            onSearch={handleSearch}
+            onFilterChange={handleFilterChange}
+            onSort={handleSort}
+          />
+          <InventoryTableLoading />
+        </div>
+      </UnifiedLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <UnifiedLayout>
+        <div className="p-4">
+          <div className="text-center py-8">
+            <p className="text-red-600 mb-4">Error loading inventory: {error}</p>
+            <button 
+              onClick={handleRefresh}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </UnifiedLayout>
+    );
+  }
+
+  if (allDiamonds.length === 0) {
+    return (
+      <UnifiedLayout>
+        <div className="space-y-4">
+          <InventoryHeader 
+            onRefresh={handleRefresh}
+            onSearch={handleSearch}
+            onFilterChange={handleFilterChange}
+            onSort={handleSort}
+          />
+          <InventoryTableEmpty />
+        </div>
+      </UnifiedLayout>
+    );
+  }
 
   return (
     <UnifiedLayout>
-      <div className="space-y-6 p-4">
+      <div className="space-y-4">
         <InventoryHeader 
-          totalCount={allDiamonds.length}
-          onRefresh={fetchData}
-          loading={loading}
+          onRefresh={handleRefresh}
+          onSearch={handleSearch}
+          onFilterChange={handleFilterChange}
+          onSort={handleSort}
         />
-
-        {loading ? (
-          <InventoryTableLoading />
-        ) : allDiamonds.length === 0 ? (
-          <InventoryTableEmpty />
-        ) : (
-          <InventoryTable
-            data={paginatedDiamonds}
-            loading={loading}
-            onEdit={handleEditDiamond}
-            onDelete={handleDeleteDiamond}
-          />
-        )}
+        
+        <InventoryTable
+          diamonds={paginatedDiamonds}
+          onSort={handleSort}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onDelete={handleDeleteDiamond}
+          onUpdate={fetchData}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
       </div>
     </UnifiedLayout>
   );
