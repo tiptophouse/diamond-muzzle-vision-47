@@ -6,6 +6,8 @@ import { Diamond } from "./InventoryTable";
 import { Edit, Trash, ImageIcon, Upload } from "lucide-react";
 import { StoreVisibilityToggle } from "./StoreVisibilityToggle";
 import { UserImageUpload } from "./UserImageUpload";
+import { useToast } from "@/components/ui/use-toast";
+import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 
 interface InventoryTableRowProps {
   diamond: Diamond & { store_visible?: boolean; picture?: string };
@@ -16,6 +18,33 @@ interface InventoryTableRowProps {
 }
 
 export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle, onImageUpdate }: InventoryTableRowProps) {
+  const { toast } = useToast();
+  const { notificationOccurred } = useTelegramHapticFeedback();
+
+  const handleDelete = async () => {
+    if (!onDelete) return;
+    
+    try {
+      notificationOccurred('warning');
+      await onDelete(diamond.id);
+      
+      toast({
+        title: "Diamond deleted successfully",
+        description: `Diamond ${diamond.stockNumber} has been removed from your inventory.`,
+      });
+      
+      notificationOccurred('success');
+    } catch (error) {
+      console.error('Delete failed:', error);
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete the diamond. Please try again.",
+        variant: "destructive",
+      });
+      notificationOccurred('error');
+    }
+  };
+
   return (
     <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-800">
       <TableCell className="w-16">
@@ -106,7 +135,7 @@ export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle, on
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onDelete(diamond.id)}
+              onClick={handleDelete}
               className="h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400"
             >
               <Trash className="h-4 w-4" />
