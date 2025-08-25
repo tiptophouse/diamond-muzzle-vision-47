@@ -2,6 +2,7 @@
 export const apiEndpoints = {
   // Authentication
   verifyTelegram: () => '/auth/telegram/verify',
+  signIn: () => '/auth/signin',
   
   // Diamond inventory management
   getUserDiamonds: (userId: number) => `/diamonds/${userId}`,
@@ -25,7 +26,7 @@ export const apiEndpoints = {
   getUsers: () => '/admin/users',
   getUserStats: () => '/admin/stats',
   
-  // Missing endpoints that are being used in hooks
+  // Health check
   alive: () => '/health',
   getAllStones: () => '/diamonds/all',
   getDashboardStats: (userId: number) => `/dashboard/stats/${userId}`,

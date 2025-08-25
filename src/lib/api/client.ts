@@ -1,3 +1,4 @@
+
 import axios, { AxiosRequestConfig } from 'axios';
 import { getAuthHeaders } from './auth';
 
@@ -18,7 +19,7 @@ export const api = {
   get: async <T>(endpoint: string): Promise<ApiResponse<T>> => {
     try {
       const config: AxiosRequestConfig = {
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
       };
       const response = await axios.get(`${getBaseUrl()}${endpoint}`, config);
       return { data: response.data as T, error: null, status: response.status };
@@ -31,7 +32,7 @@ export const api = {
   post: async <T>(endpoint: string, body: Record<string, any>): Promise<ApiResponse<T>> => {
     try {
       const config: AxiosRequestConfig = {
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
       };
       const response = await axios.post(`${getBaseUrl()}${endpoint}`, body, config);
       return { data: response.data as T, error: null, status: response.status };
@@ -44,7 +45,7 @@ export const api = {
   put: async <T>(endpoint: string, body: Record<string, any>): Promise<ApiResponse<T>> => {
     try {
       const config: AxiosRequestConfig = {
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
       };
       const response = await axios.put(`${getBaseUrl()}${endpoint}`, body, config);
       return { data: response.data as T, error: null, status: response.status };
@@ -57,7 +58,7 @@ export const api = {
   delete: async <T>(endpoint: string): Promise<ApiResponse<T>> => {
     try {
       const config: AxiosRequestConfig = {
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
       };
       const response = await axios.delete(`${getBaseUrl()}${endpoint}`, config);
       return { data: response.data as T, error: null, status: response.status };
@@ -67,13 +68,13 @@ export const api = {
     }
   },
 
-  // Add missing upload methods
   uploadCsv: async <T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> => {
     try {
+      const headers = await getAuthHeaders(false);
       const response = await fetch(`${getBaseUrl()}${endpoint}`, {
         method: 'POST',
         body: formData,
-        headers: getAuthHeaders(false), // Don't include Content-Type for FormData
+        headers,
       });
 
       const data = await response.json();
@@ -93,3 +94,6 @@ export const api = {
     }
   },
 };
+
+// Legacy function for backward compatibility
+export const fetchApi = api.get;

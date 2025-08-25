@@ -1,49 +1,113 @@
 
-import WebApp from '@twa-dev/sdk';
+import { TelegramWebApp, TelegramUser } from '@/types/telegram';
+
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp: TelegramWebApp;
+    };
+  }
+}
 
 export const telegramWebApp = {
-  init: () => {
-    if (WebApp) {
-      WebApp.ready();
-      WebApp.expand();
+  isAvailable: () => {
+    return typeof window !== 'undefined' && window.Telegram?.WebApp;
+  },
+
+  getWebApp: () => {
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+      return window.Telegram.WebApp;
+    }
+    return null;
+  },
+
+  getUser: (): TelegramUser | null => {
+    const webApp = telegramWebApp.getWebApp();
+    return webApp?.initDataUnsafe?.user || null;
+  },
+
+  getUserId: (): number | null => {
+    const user = telegramWebApp.getUser();
+    return user?.id || null;
+  },
+
+  ready: () => {
+    const webApp = telegramWebApp.getWebApp();
+    if (webApp) {
+      webApp.ready();
     }
   },
-  
-  isInitialized: () => Boolean(WebApp),
-  
-  getWebApp: () => WebApp,
-  
-  haptics: {
-    light: () => WebApp.HapticFeedback?.impactOccurred('light'),
-    medium: () => WebApp.HapticFeedback?.impactOccurred('medium'),
-    heavy: () => WebApp.HapticFeedback?.impactOccurred('heavy'),
-    success: () => WebApp.HapticFeedback?.notificationOccurred('success'),
-    error: () => WebApp.HapticFeedback?.notificationOccurred('error'),
-    warning: () => WebApp.HapticFeedback?.notificationOccurred('warning'),
-    selection: () => WebApp.HapticFeedback?.selectionChanged(),
+
+  expand: () => {
+    const webApp = telegramWebApp.getWebApp();
+    if (webApp) {
+      webApp.expand();
+    }
   },
-  
-  mainButton: {
-    show: () => WebApp.MainButton?.show(),
-    hide: () => WebApp.MainButton?.hide(),
-    setText: (text: string) => WebApp.MainButton?.setText(text),
-    onClick: (callback: () => void) => WebApp.MainButton?.onClick(callback),
-    setColor: (color: string) => {
-      if (WebApp.MainButton && color.startsWith('#')) {
-        WebApp.MainButton.color = color;
+
+  close: () => {
+    const webApp = telegramWebApp.getWebApp();
+    if (webApp) {
+      webApp.close();
+    }
+  },
+
+  setHeaderColor: (color: string) => {
+    const webApp = telegramWebApp.getWebApp();
+    if (webApp && webApp.setHeaderColor) {
+      const formattedColor = color.startsWith('#') ? color : `#${color}`;
+      webApp.setHeaderColor(formattedColor as `#${string}`);
+    }
+  },
+
+  setBackgroundColor: (color: string) => {
+    const webApp = telegramWebApp.getWebApp();
+    if (webApp && webApp.setBackgroundColor) {
+      const formattedColor = color.startsWith('#') ? color : `#${color}`;
+      webApp.setBackgroundColor(formattedColor as `#${string}`);
+    }
+  },
+
+  haptics: {
+    light: () => {
+      const webApp = telegramWebApp.getWebApp();
+      if (webApp?.HapticFeedback?.impactOccurred) {
+        webApp.HapticFeedback.impactOccurred('light');
       }
     },
-  },
-  
-  backButton: {
-    show: () => WebApp.BackButton?.show(),
-    hide: () => WebApp.BackButton?.hide(),
-    onClick: (callback: () => void) => WebApp.BackButton?.onClick(callback),
-  },
-  
-  getUser: () => WebApp.initDataUnsafe?.user,
-  getUserId: () => WebApp.initDataUnsafe?.user?.id,
+    medium: () => {
+      const webApp = telegramWebApp.getWebApp();
+      if (webApp?.HapticFeedback?.impactOccurred) {
+        webApp.HapticFeedback.impactOccurred('medium');
+      }
+    },
+    heavy: () => {
+      const webApp = telegramWebApp.getWebApp();
+      if (webApp?.HapticFeedback?.impactOccurred) {
+        webApp.HapticFeedback.impactOccurred('heavy');
+      }
+    },
+    success: () => {
+      const webApp = telegramWebApp.getWebApp();
+      if (webApp?.HapticFeedback?.notificationOccurred) {
+        webApp.HapticFeedback.notificationOccurred('success');
+      }
+    },
+    error: () => {
+      const webApp = telegramWebApp.getWebApp();
+      if (webApp?.HapticFeedback?.notificationOccurred) {
+        webApp.HapticFeedback.notificationOccurred('error');
+      }
+    },
+    warning: () => {
+      const webApp = telegramWebApp.getWebApp();
+      if (webApp?.HapticFeedback?.notificationOccurred) {
+        webApp.HapticFeedback.notificationOccurred('warning');
+      }
+    }
+  }
 };
 
-// Export alias for compatibility
-export const getTelegramWebApp = () => telegramWebApp;
+// Legacy exports for backward compatibility
+export const getTelegramWebApp = telegramWebApp.getWebApp;
+export default telegramWebApp;

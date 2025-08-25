@@ -1,41 +1,62 @@
-import { useState, useEffect, useCallback } from 'react';
-import { telegramWebApp } from '@/utils/telegramWebApp';
+
+import { useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTelegramWebApp } from './useTelegramWebApp';
 
 export function useTelegramNavigation() {
-  const [webApp, setWebApp] = useState(telegramWebApp.getWebApp());
+  const navigate = useNavigate();
+  const { webApp, setHeaderColor, setBackgroundColor } = useTelegramWebApp();
 
-  useEffect(() => {
-    setWebApp(telegramWebApp.getWebApp());
-  }, []);
-
-  const setHeaderColor = useCallback((color: string) => {
-    if (!webApp) return;
-    
-    try {
-      // Ensure color starts with # for hex format
-      const hexColor = color.startsWith('#') ? color : `#${color}`;
-      webApp.setHeaderColor(hexColor);
-      console.log('🎨 Header color set to:', hexColor);
-    } catch (error) {
-      console.error('Failed to set header color:', error);
+  const navigateWithColor = useCallback((path: string, headerColor?: string, bgColor?: string) => {
+    if (headerColor && headerColor.startsWith('#')) {
+      setHeaderColor(headerColor);
     }
-  }, [webApp]);
+    if (bgColor && bgColor.startsWith('#')) {
+      setBackgroundColor(bgColor);
+    }
+    navigate(path);
+  }, [navigate, setHeaderColor, setBackgroundColor]);
 
-  const setBackgroundColor = useCallback((color: string) => {
-    if (!webApp) return;
+  const setThemeColors = useCallback((headerColor?: string, bgColor?: string) => {
+    if (headerColor && headerColor.startsWith('#')) {
+      setHeaderColor(headerColor);
+    }
+    if (bgColor && bgColor.startsWith('#')) {
+      setBackgroundColor(bgColor);
+    }
+  }, [setHeaderColor, setBackgroundColor]);
 
-    try {
-      // Ensure color starts with # for hex format
-      const hexColor = color.startsWith('#') ? color : `#${color}`;
-      webApp.setBackgroundColor(hexColor);
-      console.log('🎨 Background color set to:', hexColor);
-    } catch (error) {
-      console.error('Failed to set background color:', error);
+  const goBack = useCallback(() => {
+    if (webApp?.BackButton?.isVisible) {
+      webApp.BackButton.hide();
+    }
+    navigate(-1);
+  }, [navigate, webApp]);
+
+  const showBackButton = useCallback((callback?: () => void) => {
+    if (webApp?.BackButton) {
+      webApp.BackButton.show();
+      if (callback) {
+        webApp.BackButton.onClick(callback);
+      } else {
+        webApp.BackButton.onClick(goBack);
+      }
+    }
+  }, [webApp, goBack]);
+
+  const hideBackButton = useCallback(() => {
+    if (webApp?.BackButton) {
+      webApp.BackButton.hide();
     }
   }, [webApp]);
 
   return {
-    setHeaderColor,
-    setBackgroundColor,
+    navigate,
+    navigateWithColor,
+    setThemeColors,
+    goBack,
+    showBackButton,
+    hideBackButton,
+    webApp,
   };
 }
