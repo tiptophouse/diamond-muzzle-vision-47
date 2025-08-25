@@ -152,7 +152,7 @@ export const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: Optimize
             <UserImageUpload diamond={diamond} onUpdate={onUpdate || (() => {})} />
             <ShareButton 
               diamond={diamond}
-              variant="icon"
+              variant="outline"
               className="h-8 w-8 p-0 bg-white/90 hover:bg-white"
             />
           </div>
@@ -177,7 +177,10 @@ export const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: Optimize
 
           {/* Properties */}
           <div className="flex flex-wrap gap-1">
-            <FancyColorBadge color={diamond.color} colorType={diamond.color_type} />
+            <FancyColorBadge 
+              color={diamond.color} 
+              colorType={diamond.color_type} 
+            />
             <Badge variant="outline" className="text-xs">
               {diamond.clarity}
             </Badge>

@@ -60,7 +60,6 @@ export default function InventoryPage() {
         <div className="space-y-4">
           <InventoryHeader 
             onRefresh={handleRefresh}
-            onSearch={handleSearch}
             onFilterChange={handleFilterChange}
             onSort={handleSort}
           />
@@ -94,7 +93,6 @@ export default function InventoryPage() {
         <div className="space-y-4">
           <InventoryHeader 
             onRefresh={handleRefresh}
-            onSearch={handleSearch}
             onFilterChange={handleFilterChange}
             onSort={handleSort}
           />
@@ -109,13 +107,12 @@ export default function InventoryPage() {
       <div className="space-y-4">
         <InventoryHeader 
           onRefresh={handleRefresh}
-          onSearch={handleSearch}
           onFilterChange={handleFilterChange}
           onSort={handleSort}
         />
         
         <InventoryTable
-          diamonds={paginatedDiamonds}
+          data={paginatedDiamonds}
           onSort={handleSort}
           sortBy={sortBy}
           sortOrder={sortOrder}

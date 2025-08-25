@@ -1,14 +1,17 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Gem, Award, Zap } from "lucide-react";
-import { FancyColorInfo } from "@/utils/fancyColorUtils";
+import { FancyColorInfo, parseFancyColor } from "@/utils/fancyColorUtils";
 
 interface FancyColorBadgeProps {
-  colorInfo: FancyColorInfo;
+  color: string;
+  colorType?: "Fancy" | "Standard";
   className?: string;
 }
 
-export function FancyColorBadge({ colorInfo, className = "" }: FancyColorBadgeProps) {
+export function FancyColorBadge({ color, colorType, className = "" }: FancyColorBadgeProps) {
+  const colorInfo = parseFancyColor(color, colorType);
+  
   if (!colorInfo.isFancyColor) {
     return (
       <Badge className={`text-xs font-medium bg-gray-100 text-gray-700 border-gray-300 ${className}`}>

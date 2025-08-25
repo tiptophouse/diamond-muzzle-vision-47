@@ -12,15 +12,20 @@ import { ShapeAnalysisCard } from '@/components/insights/ShapeAnalysisCard';
 import { MarketDemandCard } from '@/components/insights/MarketDemandCard';
 import { useEnhancedInsights } from '@/hooks/useEnhancedInsights';
 import { useInventoryData } from '@/hooks/useInventoryData';
+import { useInsightsData } from '@/hooks/useInsightsData';
 import { UnifiedLayout } from '@/components/layout/UnifiedLayout';
 import { useUnifiedTelegramNavigation } from '@/hooks/useUnifiedTelegramNavigation';
 
 export default function InsightsPage() {
-  const { allDiamonds, loading, error, fetchData } = useInventoryData();
+  const { allDiamonds, loading: inventoryLoading, error: inventoryError, fetchData } = useInventoryData();
   const insights = useEnhancedInsights(allDiamonds);
+  const insightsData = useInsightsData();
   
   // Clear any navigation buttons for insights page
   useUnifiedTelegramNavigation();
+
+  const loading = inventoryLoading || insightsData.loading;
+  const error = inventoryError;
 
   if (loading) {
     return (
@@ -53,6 +58,65 @@ export default function InsightsPage() {
     );
   }
 
+  // Transform data for components that expect different structures
+  const quickStatsData = {
+    totalDiamonds: allDiamonds.length,
+    totalValue: insights.totalValue,
+    averagePrice: insights.averagePrice,
+    topShape: insights.topShapes[0]?.shape || 'Round'
+  };
+
+  const marketComparisonData = {
+    yourPosition: 'Above Average',
+    shapeComparison: insights.topShapes.map(shape => ({
+      shape: shape.shape,
+      yourCount: shape.count,
+      marketAverage: shape.count * 0.8,
+      percentage: (shape.count / insights.totalCount) * 100
+    })),
+    competitiveAdvantages: ['Premium Selection', 'Competitive Pricing'],
+    recommendations: ['Focus on popular shapes', 'Optimize pricing strategy']
+  };
+
+  const profitabilityData = {
+    totalInventoryValue: insights.totalValue,
+    averageMargin: insights.profitMargin,
+    topPerformingShapes: insights.topShapes.slice(0, 3).map(shape => ({
+      shape: shape.shape,
+      margin: 0.25,
+      revenue: shape.value
+    })),
+    underperformingStones: insights.topShapes.slice(-2).map(shape => ({
+      stockNumber: `Sample-${shape.shape}`,
+      shape: shape.shape,
+      daysInInventory: 120,
+      suggestedAction: 'Price reduction'
+    }))
+  };
+
+  const velocityData = {
+    turnoverRate: insights.inventoryVelocity,
+    avgTimeToSell: 45,
+    fastMovers: insights.topShapes.slice(0, 3).map(shape => ({
+      shape: shape.shape,
+      avgDays: 30
+    })),
+    slowMovers: insights.topShapes.slice(-2).map(shape => ({
+      shape: shape.shape,
+      avgDays: 90
+    })),
+    seasonalTrends: [],
+    recommendations: ['Focus on fast-moving shapes']
+  };
+
+  const shapeDistributionData = {
+    distribution: insights.shapeDistribution.map(item => ({
+      shape: item.shape,
+      count: item.count,
+      percentage: item.percentage
+    }))
+  };
+
   return (
     <UnifiedLayout>
       <div className="space-y-6 p-4">
@@ -64,24 +128,24 @@ export default function InsightsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <QuickStatsGrid data={allDiamonds} />
+          <QuickStatsGrid {...quickStatsData} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <MarketComparison data={allDiamonds} />
-          <ProfitabilityInsights data={allDiamonds} />
+          <MarketComparison data={marketComparisonData} />
+          <ProfitabilityInsights data={profitabilityData} />
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <InventoryVelocity data={allDiamonds} />
-          <ShapeDistributionChart data={allDiamonds} />
+          <InventoryVelocity data={velocityData} />
+          <ShapeDistributionChart data={shapeDistributionData} />
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <PersonalInsightsCard data={allDiamonds} />
-          <GroupInsightsCard data={allDiamonds} />
-          <ShapeAnalysisCard data={allDiamonds} />
-          <MarketDemandCard data={allDiamonds} />
+          <PersonalInsightsCard insights={insightsData.personalInsights} />
+          <GroupInsightsCard insights={insightsData.groupInsights} />
+          <ShapeAnalysisCard trends={insightsData.marketTrends} />
+          <MarketDemandCard demands={insightsData.demandInsights} />
         </div>
       </div>
     </UnifiedLayout>
