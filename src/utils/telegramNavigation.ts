@@ -1,98 +1,185 @@
+// Telegram WebApp Navigation utilities
+export interface TelegramNavigationOptions {
+  enableBackButton?: boolean;
+  showMainButton?: boolean;
+  mainButtonText?: string;
+  mainButtonColor?: string;
+  onMainButtonClick?: () => void;
+  onBackButtonClick?: () => void;
+}
 
-import { TelegramWebApp } from '@/types/telegram';
+export class TelegramNavigationManager {
+  private tg: any = null;
+  private backButtonCallback: (() => void) | null = null;
+  private mainButtonCallback: (() => void) | null = null;
 
-export const PAGE_CONFIGS = {
-  diamond_detail: {
-    headerColor: '#ffffff',
-    backgroundColor: '#f8fafc',
-    showBackButton: true,
-    allowClose: true,
-  },
-  store: {
-    headerColor: '#ffffff',
-    backgroundColor: '#ffffff',
-    showBackButton: false,
-    allowClose: true,
-  },
-  inventory: {
-    headerColor: '#ffffff',
-    backgroundColor: '#f8fafc',
-    showBackButton: false,
-    allowClose: true,
-  },
-  upload: {
-    headerColor: '#4f46e5',
-    backgroundColor: '#ffffff',
-    showBackButton: true,
-    allowClose: true,
-  },
-};
-
-export const telegramNavigation = {
-  setHeaderColor: (color: string) => {
+  constructor() {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      const webApp = window.Telegram.WebApp;
-      if (webApp.setHeaderColor) {
-        const formattedColor = color.startsWith('#') ? color : `#${color}`;
-        webApp.setHeaderColor(formattedColor as `#${string}`);
-      }
+      this.tg = window.Telegram.WebApp;
     }
-  },
-
-  setBackgroundColor: (color: string) => {
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      const webApp = window.Telegram.WebApp;
-      if (webApp.setBackgroundColor) {
-        const formattedColor = color.startsWith('#') ? color : `#${color}`;
-        webApp.setBackgroundColor(formattedColor as `#${string}`);
-      }
-    }
-  },
-
-  showBackButton: (callback?: () => void) => {
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      const webApp = window.Telegram.WebApp;
-      if (webApp.BackButton) {
-        webApp.BackButton.show();
-        if (callback) {
-          webApp.BackButton.onClick(callback);
-        }
-      }
-    }
-  },
-
-  hideBackButton: () => {
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      const webApp = window.Telegram.WebApp;
-      if (webApp.BackButton) {
-        webApp.BackButton.hide();
-      }
-    }
-  },
-
-  configurePage: (pageType: keyof typeof PAGE_CONFIGS) => {
-    const config = PAGE_CONFIGS[pageType];
-    if (config) {
-      telegramNavigation.setHeaderColor(config.headerColor);
-      telegramNavigation.setBackgroundColor(config.backgroundColor);
-      
-      if (config.showBackButton) {
-        telegramNavigation.showBackButton();
-      } else {
-        telegramNavigation.hideBackButton();
-      }
-    }
-  },
-
-  impactFeedback: (style: 'light' | 'medium' | 'heavy' = 'medium') => {
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp?.HapticFeedback) {
-      window.Telegram.WebApp.HapticFeedback.impactOccurred(style);
-    }
-  },
-
-  cleanup: () => {
-    telegramNavigation.hideBackButton();
   }
-};
 
-export default telegramNavigation;
+  // Configure navigation for a specific page
+  configurePage(options: TelegramNavigationOptions) {
+    if (!this.tg) return;
+
+    // Configure back button
+    if (options.enableBackButton) {
+      this.showBackButton(options.onBackButtonClick);
+    } else {
+      this.hideBackButton();
+    }
+
+    // Configure main button
+    if (options.showMainButton && options.mainButtonText) {
+      this.showMainButton({
+        text: options.mainButtonText,
+        color: options.mainButtonColor || '#2481cc',
+        onClick: options.onMainButtonClick
+      });
+    } else {
+      this.hideMainButton();
+    }
+  }
+
+  // Back button methods
+  showBackButton(callback?: () => void) {
+    if (!this.tg?.BackButton) return;
+
+    // Detach previous handler if any
+    if (this.backButtonCallback && this.tg.BackButton.offClick) {
+      try {
+        this.tg.BackButton.offClick(this.backButtonCallback);
+      } catch {}
+      this.backButtonCallback = null;
+    }
+
+    if (callback) {
+      this.backButtonCallback = callback;
+      this.tg.BackButton.onClick(this.backButtonCallback);
+    }
+    
+    this.tg.BackButton.show();
+  }
+
+  hideBackButton() {
+    if (!this.tg?.BackButton) return;
+    
+    if (this.backButtonCallback && this.tg.BackButton.offClick) {
+      try {
+        this.tg.BackButton.offClick(this.backButtonCallback);
+      } catch {}
+      this.backButtonCallback = null;
+    }
+    
+    this.tg.BackButton.hide();
+  }
+
+  // Main button methods
+  showMainButton(options: {
+    text: string;
+    color?: string;
+    onClick?: () => void;
+  }) {
+    if (!this.tg?.MainButton) return;
+
+    // Detach previous handler if any
+    if (this.mainButtonCallback && this.tg.MainButton.offClick) {
+      try {
+        this.tg.MainButton.offClick(this.mainButtonCallback);
+      } catch {}
+      this.mainButtonCallback = null;
+    }
+
+    this.tg.MainButton.setText(options.text);
+    
+    if (options.color) {
+      this.tg.MainButton.color = options.color;
+    }
+
+    if (options.onClick) {
+      this.mainButtonCallback = options.onClick;
+      this.tg.MainButton.onClick(this.mainButtonCallback);
+    }
+
+    this.tg.MainButton.show();
+  }
+
+  hideMainButton() {
+    if (!this.tg?.MainButton) return;
+    
+    if (this.mainButtonCallback && this.tg.MainButton.offClick) {
+      try {
+        this.tg.MainButton.offClick(this.mainButtonCallback);
+      } catch {}
+      this.mainButtonCallback = null;
+    }
+    
+    this.tg.MainButton.hide();
+  }
+
+  // Haptic feedback
+  impactFeedback(style: 'light' | 'medium' | 'heavy' = 'medium') {
+    if (this.tg?.HapticFeedback) {
+      this.tg.HapticFeedback.impactOccurred(style);
+    }
+  }
+
+  selectionFeedback() {
+    if (this.tg?.HapticFeedback) {
+      this.tg.HapticFeedback.selectionChanged();
+    }
+  }
+
+  notificationFeedback(type: 'error' | 'success' | 'warning' = 'success') {
+    if (this.tg?.HapticFeedback) {
+      this.tg.HapticFeedback.notificationOccurred(type);
+    }
+  }
+
+  // Cleanup
+  cleanup() {
+    this.hideBackButton();
+    this.hideMainButton();
+  }
+}
+
+// Create singleton instance
+export const telegramNavigation = new TelegramNavigationManager();
+
+// Hook for easy React integration
+export function useTelegramNavigation() {
+  return telegramNavigation;
+}
+
+// Predefined page configurations
+export const PAGE_CONFIGS = {
+  DIAMOND_DETAIL: {
+    enableBackButton: true,
+    showMainButton: false
+  },
+  INVENTORY: {
+    enableBackButton: false,
+    showMainButton: true,
+    mainButtonText: 'Add Diamond',
+    mainButtonColor: '#059669'
+  },
+  STORE: {
+    enableBackButton: false,
+    showMainButton: false
+  },
+  UPLOAD: {
+    enableBackButton: true,
+    showMainButton: true,
+    mainButtonText: 'Save Diamond',
+    mainButtonColor: '#3b82f6'
+  },
+  CHAT: {
+    enableBackButton: false,
+    showMainButton: false
+  },
+  SETTINGS: {
+    enableBackButton: true,
+    showMainButton: false
+  }
+} as const;

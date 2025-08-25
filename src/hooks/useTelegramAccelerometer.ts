@@ -1,5 +1,5 @@
-
 import { useEffect, useState, useCallback } from 'react';
+import { TelegramWebApp } from '../types/telegram';
 
 interface AccelerometerData {
   x: number;
@@ -37,8 +37,8 @@ export function useTelegramAccelerometer(enabled: boolean = false, refreshRate: 
 
   // Start accelerometer
   const startAccelerometer = useCallback(() => {
-    const tg = (window as any).Telegram?.WebApp;
-    if (tg?.Accelerometer) {
+    const tg = window.Telegram?.WebApp as TelegramWebApp;
+    if (tg?.Accelerometer && !tg.Accelerometer.isStarted) {
       try {
         tg.Accelerometer.start({ refresh_rate: refreshRate });
         tg.DeviceOrientation?.start({ refresh_rate: refreshRate });
@@ -52,8 +52,8 @@ export function useTelegramAccelerometer(enabled: boolean = false, refreshRate: 
 
   // Stop accelerometer
   const stopAccelerometer = useCallback(() => {
-    const tg = (window as any).Telegram?.WebApp;
-    if (tg?.Accelerometer) {
+    const tg = window.Telegram?.WebApp as TelegramWebApp;
+    if (tg?.Accelerometer && tg.Accelerometer.isStarted) {
       try {
         tg.Accelerometer.stop();
         tg.DeviceOrientation?.stop();
@@ -66,12 +66,12 @@ export function useTelegramAccelerometer(enabled: boolean = false, refreshRate: 
   }, []);
 
   // Lock orientation for better motion control
-  const lockOrientation = useCallback(() => {
-    const tg = (window as any).Telegram?.WebApp;
+  const lockOrientation = useCallback((orientation: 'portrait' | 'landscape') => {
+    const tg = window.Telegram?.WebApp as TelegramWebApp;
     if (tg?.lockOrientation) {
       try {
-        tg.lockOrientation();
-        console.log('🔒 Orientation locked');
+        tg.lockOrientation(orientation);
+        console.log('🔒 Orientation locked to:', orientation);
       } catch (error) {
         console.error('Failed to lock orientation:', error);
       }
@@ -80,7 +80,7 @@ export function useTelegramAccelerometer(enabled: boolean = false, refreshRate: 
 
   // Unlock orientation
   const unlockOrientation = useCallback(() => {
-    const tg = (window as any).Telegram?.WebApp;
+    const tg = window.Telegram?.WebApp as TelegramWebApp;
     if (tg?.unlockOrientation) {
       try {
         tg.unlockOrientation();
@@ -93,7 +93,7 @@ export function useTelegramAccelerometer(enabled: boolean = false, refreshRate: 
 
   // Initialize
   useEffect(() => {
-    const tg = (window as any).Telegram?.WebApp;
+    const tg = window.Telegram?.WebApp as TelegramWebApp;
     if (tg?.Accelerometer) {
       setIsSupported(true);
       

@@ -1,5 +1,18 @@
 
-import { TelegramWebApp, TelegramUser } from '@/types/telegram';
+// Telegram WebApp utility functions for secure authentication
+export interface TelegramWebApp {
+  initData: string;
+  initDataUnsafe: any;
+  ready: () => void;
+  expand: () => void;
+  themeParams: any;
+  BackButton?: {
+    show: () => void;
+    hide: () => void;
+    onClick: (callback: () => void) => void;
+  };
+  close?: () => void;
+}
 
 declare global {
   interface Window {
@@ -9,105 +22,98 @@ declare global {
   }
 }
 
-export const telegramWebApp = {
-  isAvailable: () => {
-    return typeof window !== 'undefined' && window.Telegram?.WebApp;
-  },
+export function isTelegramWebAppEnvironment(): boolean {
+  if (typeof window === 'undefined') return false;
+  
+  return !!(
+    window.Telegram?.WebApp && 
+    typeof window.Telegram.WebApp === 'object'
+  );
+}
 
-  getWebApp: () => {
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      return window.Telegram.WebApp;
-    }
+export function getTelegramWebApp(): TelegramWebApp | null {
+  if (!isTelegramWebAppEnvironment()) {
     return null;
-  },
-
-  getUser: (): TelegramUser | null => {
-    const webApp = telegramWebApp.getWebApp();
-    return webApp?.initDataUnsafe?.user || null;
-  },
-
-  getUserId: (): number | null => {
-    const user = telegramWebApp.getUser();
-    return user?.id || null;
-  },
-
-  ready: () => {
-    const webApp = telegramWebApp.getWebApp();
-    if (webApp) {
-      webApp.ready();
-    }
-  },
-
-  expand: () => {
-    const webApp = telegramWebApp.getWebApp();
-    if (webApp) {
-      webApp.expand();
-    }
-  },
-
-  close: () => {
-    const webApp = telegramWebApp.getWebApp();
-    if (webApp) {
-      webApp.close();
-    }
-  },
-
-  setHeaderColor: (color: string) => {
-    const webApp = telegramWebApp.getWebApp();
-    if (webApp && webApp.setHeaderColor) {
-      const formattedColor = color.startsWith('#') ? color : `#${color}`;
-      webApp.setHeaderColor(formattedColor as `#${string}`);
-    }
-  },
-
-  setBackgroundColor: (color: string) => {
-    const webApp = telegramWebApp.getWebApp();
-    if (webApp && webApp.setBackgroundColor) {
-      const formattedColor = color.startsWith('#') ? color : `#${color}`;
-      webApp.setBackgroundColor(formattedColor as `#${string}`);
-    }
-  },
-
-  haptics: {
-    light: () => {
-      const webApp = telegramWebApp.getWebApp();
-      if (webApp?.HapticFeedback?.impactOccurred) {
-        webApp.HapticFeedback.impactOccurred('light');
-      }
-    },
-    medium: () => {
-      const webApp = telegramWebApp.getWebApp();
-      if (webApp?.HapticFeedback?.impactOccurred) {
-        webApp.HapticFeedback.impactOccurred('medium');
-      }
-    },
-    heavy: () => {
-      const webApp = telegramWebApp.getWebApp();
-      if (webApp?.HapticFeedback?.impactOccurred) {
-        webApp.HapticFeedback.impactOccurred('heavy');
-      }
-    },
-    success: () => {
-      const webApp = telegramWebApp.getWebApp();
-      if (webApp?.HapticFeedback?.notificationOccurred) {
-        webApp.HapticFeedback.notificationOccurred('success');
-      }
-    },
-    error: () => {
-      const webApp = telegramWebApp.getWebApp();
-      if (webApp?.HapticFeedback?.notificationOccurred) {
-        webApp.HapticFeedback.notificationOccurred('error');
-      }
-    },
-    warning: () => {
-      const webApp = telegramWebApp.getWebApp();
-      if (webApp?.HapticFeedback?.notificationOccurred) {
-        webApp.HapticFeedback.notificationOccurred('warning');
-      }
-    }
   }
-};
+  
+  return window.Telegram!.WebApp;
+}
 
-// Legacy exports for backward compatibility
-export const getTelegramWebApp = telegramWebApp.getWebApp;
-export default telegramWebApp;
+export function parseTelegramInitData(initData: string) {
+  try {
+    const urlParams = new URLSearchParams(initData);
+    const userParam = urlParams.get('user');
+    
+    if (!userParam) {
+      return null;
+    }
+    
+    const user = JSON.parse(decodeURIComponent(userParam));
+    
+    return {
+      user: {
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        username: user.username,
+        language_code: user.language_code,
+        is_premium: user.is_premium,
+        photo_url: user.photo_url
+      },
+      auth_date: urlParams.get('auth_date'),
+      hash: urlParams.get('hash')
+    };
+  } catch (error) {
+    console.error('Failed to parse Telegram initData:', error);
+    return null;
+  }
+}
+
+export function validateTelegramInitData(initData: string): boolean {
+  try {
+    const urlParams = new URLSearchParams(initData);
+    const authDate = urlParams.get('auth_date');
+    const hash = urlParams.get('hash');
+    
+    if (!authDate || !hash) {
+      return false;
+    }
+    
+    // Check if the data is not too old (within 1 minute)
+    const authDateTime = parseInt(authDate) * 1000;
+    const now = Date.now();
+    const maxAge = 60 * 1000; // 1 minute
+    
+    return (now - authDateTime) <= maxAge;
+  } catch (error) {
+    console.error('Failed to validate Telegram initData:', error);
+    return false;
+  }
+}
+
+export async function initializeTelegramWebApp(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (!isTelegramWebAppEnvironment()) {
+      resolve(false);
+      return;
+    }
+    
+    try {
+      const tg = getTelegramWebApp();
+      if (tg) {
+        if (typeof tg.ready === 'function') {
+          tg.ready();
+        }
+        if (typeof tg.expand === 'function') {
+          tg.expand();
+        }
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+    } catch (error) {
+      console.error('Failed to initialize Telegram WebApp:', error);
+      resolve(false);
+    }
+  });
+}

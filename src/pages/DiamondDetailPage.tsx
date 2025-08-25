@@ -1,201 +1,574 @@
+import { useEffect, useState, useMemo, useCallback, memo } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
+import { useStoreData } from "@/hooks/useStoreData";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import { telegramNavigation, PAGE_CONFIGS } from "@/utils/telegramNavigation";
+import { Diamond } from "@/components/inventory/InventoryTable";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Share2, ExternalLink, Camera, Award, Gem, Palette, Eye, MessageSquare, Upload, X, Sparkles } from "lucide-react";
+import { V360Viewer } from "@/components/store/V360Viewer";
+import { Gem360Viewer } from "@/components/store/Gem360Viewer";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-import React, { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, X } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
-import { useSharedDiamondAccess } from '@/hooks/useSharedDiamondAccess';
-import { api } from '@/lib/api/client';
-
-interface Diamond {
-  id: string;
-  stock_number: string;
-  carat: number;
-  shape: string;
-  color: string;
-  clarity: string;
-  cut: string;
-  image_url?: string;
-  price?: number;
-}
-
-export default function DiamondDetailPage() {
-  const { id } = useParams<{ id: string }>();
+function DiamondDetailPage() {
+  const { stockNumber: diamondId } = useParams<{ stockNumber: string }>();
   const navigate = useNavigate();
-  const { webApp, hapticFeedback, backButton } = useTelegramWebApp();
-  const { validateAndTrackAccess } = useSharedDiamondAccess();
+  const { diamonds, loading, refetch } = useStoreData();
+  const { user, isAuthenticated } = useTelegramAuth();
+  const { toast } = useToast();
+  const [isContactLoading, setIsContactLoading] = useState(false);
+  const [isImageUploading, setIsImageUploading] = useState(false);
+  const [showImageUpload, setShowImageUpload] = useState(false);
 
-  // Always show back button and close options for navigation
+  // Configure Telegram navigation for diamond detail page
   useEffect(() => {
-    if (webApp) {
-      // Set colors for better visibility
-      webApp.setHeaderColor('#ffffff');
-      webApp.setBackgroundColor('#f8fafc');
-      
-      // Always show back button
-      backButton.show(() => {
-        hapticFeedback.light();
+    telegramNavigation.configurePage({
+      ...PAGE_CONFIGS.DIAMOND_DETAIL,
+      onBackButtonClick: () => {
+        telegramNavigation.impactFeedback('medium');
         navigate(-1);
-      });
-    }
+      }
+    });
 
     return () => {
-      backButton.hide();
+      telegramNavigation.cleanup();
     };
-  }, [webApp, backButton, hapticFeedback, navigate]);
+  }, [navigate]);
 
-  const { data: diamond, isLoading, error } = useQuery({
-    queryKey: ['diamond', id],
-    queryFn: async () => {
-      if (!id) throw new Error('Diamond ID is required');
-      
-      // Validate access for shared diamonds
-      const hasAccess = await validateAndTrackAccess(id);
-      if (!hasAccess) {
-        throw new Error('Access denied');
-      }
+  // Memoized admin check
+  const isAdmin = useMemo(() => user?.id === 2138564172, [user?.id]);
 
-      // Use API instead of direct Supabase call
-      const response = await api.get<Diamond>(`/diamonds/detail/${id}`);
-      if (!response.success || !response.data) {
-        throw new Error(response.error || 'Diamond not found');
-      }
-      
-      return response.data;
-    },
-    enabled: !!id,
-  });
+  // Memoized diamond finding with early return optimization
+  const diamond = useMemo(() => {
+    if (!diamonds || !diamondId) return null;
+    return diamonds.find(d => d.id === diamondId) || null;
+  }, [diamonds, diamondId]);
 
-  const handleGoBack = () => {
-    hapticFeedback.light();
-    navigate(-1);
-  };
+  // Memoized price formatting to avoid recreation
+  const formatPrice = useCallback((price: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(price);
+  }, []);
 
-  const handleClose = () => {
-    hapticFeedback.light();
-    if (webApp) {
-      webApp.close();
-    } else {
-      navigate('/');
+  // Memoized meta data for better performance
+  const metaData = useMemo(() => {
+    if (!diamond) return null;
+    
+    const title = `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond - Mazalbot`;
+    const description = `Premium ${diamond.cut} cut ${diamond.shape} diamond. ${diamond.color} color, ${diamond.clarity} clarity. Stock #${diamond.stockNumber}. Price: $${diamond.price.toLocaleString()}`;
+    const imageUrl = diamond.imageUrl || `https://miniapp.mazalbot.com/api/diamond-image/${diamond.stockNumber}`;
+    const url = `https://miniapp.mazalbot.com/diamond/${diamond.stockNumber}`;
+    
+    return { title, description, imageUrl, url };
+  }, [diamond]);
+
+  useEffect(() => {
+    if (!loading && !diamond && diamondId) {
+      console.log('❌ Diamond not found, redirecting to store');
+      // Diamond not found, redirect to store
+      navigate('/store');
     }
-  };
+  }, [diamond, loading, diamondId, navigate]);
 
-  if (isLoading) {
+  const handleShare = useCallback(async () => {
+    if (!diamond) return;
+    
+    const currentUrl = window.location.href;
+    
+    // Create comprehensive diamond information
+    const diamondInfo = `💎 ${diamond.carat}ct ${diamond.shape} Diamond
+
+🔸 Shape: ${diamond.shape}
+⚖️ Weight: ${diamond.carat}ct
+🎨 Color: ${diamond.color}
+💎 Clarity: ${diamond.clarity}
+✂️ Cut: ${diamond.cut}
+💰 Price: ${formatPrice(diamond.price)}
+📋 Stock #: ${diamond.stockNumber}
+${diamond.lab ? `🏛️ Lab: ${diamond.lab}` : ''}
+${diamond.certificateNumber ? `🆔 Certificate: ${diamond.certificateNumber}` : ''}
+
+${diamond.gem360Url ? `🌐 360° View: ${diamond.gem360Url}` : ''}
+${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}
+
+View full details: ${currentUrl}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond - Stock #${diamond.stockNumber}`,
+          text: diamondInfo,
+          url: currentUrl,
+        });
+        toast({ title: "Diamond details shared!" });
+      } catch (error) {
+        // Fallback to clipboard with comprehensive info
+        navigator.clipboard.writeText(diamondInfo);
+        toast({ title: "Diamond details copied to clipboard!" });
+      }
+    } else {
+      navigator.clipboard.writeText(diamondInfo);
+      toast({ title: "Diamond details copied to clipboard!" });
+    }
+  }, [diamond, toast, formatPrice]);
+
+  const handleContact = useCallback(async () => {
+    if (!isAuthenticated || !user || !diamond) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to contact the diamond owner",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsContactLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-diamond-contact', {
+        body: {
+          diamondData: {
+            stockNumber: diamond.stockNumber,
+            shape: diamond.shape,
+            carat: diamond.carat,
+            color: diamond.color,
+            clarity: diamond.clarity,
+            cut: diamond.cut,
+            price: diamond.price,
+            lab: diamond.lab,
+            certificateNumber: diamond.certificateNumber,
+            imageUrl: diamond.imageUrl,
+            certificateUrl: diamond.certificateUrl
+          },
+          visitorInfo: {
+            telegramId: user.id,
+            firstName: user.first_name,
+            lastName: user.last_name,
+            username: user.username
+          },
+          ownerTelegramId: 2138564172 // Default to admin as diamond owner
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Message Sent!",
+        description: "The diamond owner has been notified of your interest",
+      });
+    } catch (error) {
+      console.error('Contact error:', error);
+      toast({
+        title: "Failed to Send Message",
+        description: "Please try again or contact us directly",
+        variant: "destructive"
+      });
+    } finally {
+      setIsContactLoading(false);
+    }
+  }, [isAuthenticated, user, diamond, toast]);
+
+  const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !diamond) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please select an image file",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsImageUploading(true);
+    try {
+      // Upload to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `diamond-${diamond.stockNumber}-${Date.now()}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('diamond-images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('diamond-images')
+        .getPublicUrl(fileName);
+
+      // Update diamond record with new image URL
+      const { error: updateError } = await supabase
+        .from('inventory')
+        .update({ picture: publicUrl })
+        .eq('stock_number', diamond.stockNumber)
+        .eq('user_id', 2138564172); // Admin telegram ID
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Image Uploaded Successfully",
+        description: "The diamond image has been updated",
+      });
+
+      // Refresh the data
+      refetch();
+      setShowImageUpload(false);
+    } catch (error) {
+      console.error('Image upload error:', error);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsImageUploading(false);
+    }
+  }, [diamond, toast, refetch]);
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p>Loading diamond details...</p>
-        </div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  if (error || !diamond) {
+  if (!diamond) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Diamond Not Found</h2>
-          <p className="text-gray-600 mb-6">
-            {error instanceof Error ? error.message : 'The requested diamond could not be found.'}
-          </p>
-          <div className="flex gap-3 justify-center">
-            <Button onClick={handleGoBack} variant="outline">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Go Back
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex items-center justify-center">
+        <Card className="max-w-md mx-auto">
+          <CardContent className="pt-6 text-center">
+            <h2 className="text-xl font-semibold mb-4">Diamond Not Found</h2>
+            <p className="text-muted-foreground mb-4">The diamond you're looking for doesn't exist or is no longer available.</p>
+            <Link to="/store">
+              <Button>Back to Store</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+
+  return (
+    <>
+      {/* Dynamic Meta Tags for Link Previews */}
+      {metaData && (
+        <Helmet>
+          <title>{metaData.title}</title>
+          <meta name="description" content={metaData.description} />
+          
+          {/* Open Graph / Facebook */}
+          <meta property="og:type" content="product" />
+          <meta property="og:title" content={metaData.title} />
+          <meta property="og:description" content={metaData.description} />
+          <meta property="og:image" content={metaData.imageUrl} />
+          <meta property="og:url" content={metaData.url} />
+          <meta property="og:site_name" content="Mazalbot Diamond Store" />
+          
+          {/* Twitter */}
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={metaData.title} />
+          <meta name="twitter:description" content={metaData.description} />
+          <meta name="twitter:image" content={metaData.imageUrl} />
+          
+          {/* Product Schema */}
+          <meta name="keywords" content={`diamond, ${diamond.shape}, ${diamond.color}, ${diamond.clarity}, ${diamond.cut}, jewelry, precious stones`} />
+          <meta property="product:price:amount" content={diamond.price.toString()} />
+          <meta property="product:price:currency" content="USD" />
+          <meta property="product:availability" content="in stock" />
+        </Helmet>
+      )}
+
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+        {/* Header */}
+        <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b">
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="flex items-center gap-2"
+              onClick={() => navigate(-1)}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
             </Button>
-            <Button onClick={handleClose}>
-              <X className="w-4 h-4 mr-2" />
-              Close
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="flex items-center gap-2"
+              onClick={handleShare}
+            >
+              <Share2 className="h-4 w-4" />
+              Share
             </Button>
           </div>
         </div>
-      </div>
-    );
-  }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Fixed Header with Navigation */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200">
-        <div className="flex items-center justify-between p-4">
-          <Button variant="ghost" size="sm" onClick={handleGoBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-          <h1 className="font-semibold text-gray-900 truncate mx-4">
-            {diamond.carat}ct {diamond.shape}
-          </h1>
-          <Button variant="ghost" size="sm" onClick={handleClose}>
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
+        <div className="container mx-auto px-4 py-8 max-w-6xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Enhanced Image/360° Section */}
+            <div className="space-y-4">
+              <Card className="overflow-hidden">
+                <div className="aspect-square bg-gradient-to-br from-slate-100 to-slate-200 relative">
+                  {/* PRIORITY 1: Show v360.in viewer if available */}
+                  {diamond.gem360Url && diamond.gem360Url.includes('v360.in') ? (
+                    <div className="relative w-full h-full">
+                      <V360Viewer 
+                        v360Url={diamond.gem360Url}
+                        stockNumber={diamond.stockNumber}
+                        isInline={false}
+                      />
+                      <div className="absolute top-4 left-4">
+                        <Badge className="bg-gradient-to-r from-emerald-600 to-green-600 text-white border-0 px-3 py-1 text-sm font-medium flex items-center gap-2">
+                          <Sparkles className="h-4 w-4" />
+                          v360.in Interactive
+                        </Badge>
+                      </div>
+                    </div>
+                  ) : diamond.gem360Url ? (
+                    /* PRIORITY 2: Show other 360° viewers */
+                    <div className="relative w-full h-full">
+                      <Gem360Viewer 
+                        gem360Url={diamond.gem360Url}
+                        stockNumber={diamond.stockNumber}
+                        isInline={false}
+                      />
+                      <div className="absolute top-4 left-4">
+                        <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0 px-3 py-1 text-sm font-medium flex items-center gap-2">
+                          <Sparkles className="h-4 w-4" />
+                          360° Interactive
+                        </Badge>
+                      </div>
+                    </div>
+                  ) : diamond.imageUrl ? (
+                    /* PRIORITY 3: Show static image */
+                    <img 
+                      src={diamond.imageUrl} 
+                      alt={`${diamond.shape} Diamond`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    /* PRIORITY 4: Placeholder */
+                    <div className="w-full h-full flex items-center justify-center text-center">
+                      <div>
+                        <Gem className="h-24 w-24 text-slate-400 mx-auto mb-4" />
+                        <p className="text-slate-500">Diamond Image</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Admin Image Upload Button */}
+                  {isAdmin && (
+                    <div className="absolute top-2 right-2">
+                      <Button 
+                        size="sm" 
+                        variant="secondary"
+                        onClick={() => setShowImageUpload(!showImageUpload)}
+                        className="bg-white/90 hover:bg-white"
+                      >
+                        <Upload className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Image Upload Interface */}
+                {isAdmin && showImageUpload && (
+                  <div className="p-4 border-t bg-slate-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium">Upload Diamond Image</h4>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => setShowImageUpload(false)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={isImageUploading}
+                      className="w-full p-2 border rounded-md"
+                    />
+                    {isImageUploading && (
+                      <p className="text-sm text-muted-foreground mt-2">Uploading...</p>
+                    )}
+                  </div>
+                )}
+              </Card>
 
-      {/* Content */}
-      <div className="pt-16 pb-4">
-        <div className="container mx-auto p-4 max-w-4xl">
-          {/* Diamond Image */}
-          {diamond.image_url && (
-            <div className="mb-6">
-              <img
-                src={diamond.image_url}
-                alt={`${diamond.carat}ct ${diamond.shape} diamond`}
-                className="w-full max-w-md mx-auto rounded-lg shadow-lg"
-              />
-            </div>
-          )}
-
-          {/* Diamond Details */}
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              {diamond.carat} Carat {diamond.shape} Diamond
-            </h2>
-            
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="font-medium text-gray-600">Stock Number:</span>
-                <span className="ml-2">{diamond.stock_number}</span>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600">Color:</span>
-                <span className="ml-2">{diamond.color}</span>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600">Clarity:</span>
-                <span className="ml-2">{diamond.clarity}</span>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600">Cut:</span>
-                <span className="ml-2">{diamond.cut}</span>
-              </div>
-              {diamond.price && (
-                <div className="col-span-2">
-                  <span className="font-medium text-gray-600">Price:</span>
-                  <span className="ml-2 text-lg font-bold text-green-600">
-                    ${diamond.price.toLocaleString()}
-                  </span>
+              {/* Enhanced Action Buttons - Only show if no 360° viewer displayed */}
+              {!diamond.gem360Url && (
+                <div className="grid grid-cols-2 gap-4">
+                  {diamond.certificateUrl && (
+                    <Button asChild variant="outline" className="h-12">
+                      <a href={diamond.certificateUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Certificate
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              )}
+              
+              {/* Additional 360° Options - Show as secondary options */}
+              {diamond.gem360Url && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">360° View Options</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button asChild variant="outline" size="sm">
+                      <a href={diamond.gem360Url} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        Open Direct
+                      </a>
+                    </Button>
+                    {diamond.certificateUrl && (
+                      <Button asChild variant="outline" size="sm">
+                        <a href={diamond.certificateUrl} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          Certificate
+                        </a>
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Bottom Navigation */}
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
-            <div className="flex gap-3 max-w-4xl mx-auto">
-              <Button variant="outline" onClick={handleGoBack} className="flex-1">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Store
-              </Button>
-              <Button onClick={handleClose} className="flex-1">
-                <X className="w-4 h-4 mr-2" />
-                Close
-              </Button>
+            {/* Details Section */}
+            <div className="space-y-6">
+              {/* Title & Price */}
+              <div>
+                <h1 className="text-3xl font-bold mb-2">
+                  {diamond.carat}ct {diamond.shape} Diamond
+                </h1>
+                <div className="flex items-center gap-4 mb-4">
+                  <span className="text-3xl font-bold text-primary">
+                    {formatPrice(diamond.price)}
+                  </span>
+                  <Badge variant="secondary">Stock #{diamond.stockNumber}</Badge>
+                </div>
+              </div>
+
+              {/* Main Specs */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Award className="h-5 w-5" />
+                    Diamond Specifications
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Shape</label>
+                    <p className="text-lg font-semibold">{diamond.shape}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Carat</label>
+                    <p className="text-lg font-semibold">{diamond.carat}ct</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Color</label>
+                    <p className="text-lg font-semibold">{diamond.color}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Clarity</label>
+                    <p className="text-lg font-semibold">{diamond.clarity}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Cut</label>
+                    <div className="flex items-center gap-2">
+                      <p className="text-lg font-semibold">{diamond.cut}</p>
+                      <Button
+                        onClick={handleShare}
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0 opacity-70 hover:opacity-100"
+                      >
+                        <Share2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  {diamond.fluorescence && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Fluorescence</label>
+                      <p className="text-lg font-semibold">{diamond.fluorescence}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Certificate Info */}
+              {(diamond.lab || diamond.certificateNumber) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Camera className="h-5 w-5" />
+                      Certificate Details
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {diamond.lab && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Grading Lab</label>
+                        <p className="text-lg font-semibold">{diamond.lab}</p>
+                      </div>
+                    )}
+                    {diamond.certificateNumber && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Certificate Number</label>
+                        <p className="text-lg font-semibold">{diamond.certificateNumber}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Contact CTA */}
+              <Card className="bg-primary/5 border-primary/20">
+                <CardContent className="pt-6">
+                  <h3 className="text-xl font-semibold mb-2">Interested in this diamond?</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Contact us for more information, additional images, or to schedule a viewing.
+                  </p>
+                  <div className="flex gap-3">
+                    <Button 
+                      size="lg" 
+                      className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all duration-200" 
+                      onClick={handleContact}
+                      disabled={isContactLoading}
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      {isContactLoading ? "Sending..." : "Contact Us"}
+                    </Button>
+                    <Button 
+                      onClick={handleShare} 
+                      size="lg"
+                      variant="outline"
+                      className="px-4 border-2 border-primary/20 bg-gradient-to-r from-background to-muted/30 hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 shadow-md hover:shadow-lg transition-all duration-200"
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
+
+export default memo(DiamondDetailPage);

@@ -1,29 +1,58 @@
 
-import React, { createContext, useContext } from 'react';
-import { useTelegramAuth as useTelegramAuthHook } from '@/hooks/useTelegramAuth';
+import React, { createContext, useContext, ReactNode } from 'react';
+import { useStrictTelegramAuth } from '@/hooks/useStrictTelegramAuth';
+import { useUserDataPersistence } from '@/hooks/useUserDataPersistence';
+import { SimpleLogin } from '@/components/auth/SimpleLogin';
+
+interface TelegramUser {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  language_code?: string;
+  is_premium?: boolean;
+  photo_url?: string;
+  phone_number?: string;
+}
 
 interface TelegramAuthContextType {
-  user: any;
+  user: TelegramUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  jwtToken: string | null;
   isTelegramEnvironment: boolean;
+  accessDeniedReason: string | null;
 }
 
 const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(undefined);
 
-export function TelegramAuthProvider({ children }: { children: React.ReactNode }) {
-  const authData = useTelegramAuthHook();
+export function TelegramAuthProvider({ children }: { children: ReactNode }) {
+  const authState = useStrictTelegramAuth();
   
-  // Add isTelegramEnvironment check
-  const contextValue = {
-    ...authData,
-    isTelegramEnvironment: typeof window !== 'undefined' && !!window.Telegram?.WebApp
-  };
+  console.log('🔍 TelegramAuthProvider - Auth state:', { 
+    user: authState.user, 
+    isAuthenticated: authState.isAuthenticated,
+    isTelegramEnvironment: authState.isTelegramEnvironment,
+    showLogin: authState.showLogin
+  });
   
+  // Automatically persist user data when authenticated
+  useUserDataPersistence(authState.user, authState.isTelegramEnvironment);
+
+  // Show login page if needed
+  if (authState.showLogin) {
+    return <SimpleLogin onLogin={authState.handleLoginSuccess} />;
+  }
+
   return (
-    <TelegramAuthContext.Provider value={contextValue}>
+    <TelegramAuthContext.Provider value={{
+      user: authState.user,
+      isAuthenticated: authState.isAuthenticated,
+      isLoading: authState.isLoading,
+      error: authState.error,
+      isTelegramEnvironment: authState.isTelegramEnvironment,
+      accessDeniedReason: authState.accessDeniedReason,
+    }}>
       {children}
     </TelegramAuthContext.Provider>
   );
@@ -32,15 +61,7 @@ export function TelegramAuthProvider({ children }: { children: React.ReactNode }
 export function useTelegramAuth() {
   const context = useContext(TelegramAuthContext);
   if (context === undefined) {
-    // Fallback to the actual hook
-    const hookData = useTelegramAuthHook();
-    return {
-      ...hookData,
-      isTelegramEnvironment: typeof window !== 'undefined' && !!window.Telegram?.WebApp
-    };
+    throw new Error('useTelegramAuth must be used within a TelegramAuthProvider');
   }
   return context;
 }
-
-// Export for backward compatibility
-export { TelegramAuthContext };

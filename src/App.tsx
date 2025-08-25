@@ -1,61 +1,77 @@
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { Toaster } from "@/components/ui/toaster";
-import { TelegramAuthGuard } from "@/components/auth/TelegramAuthGuard";
-import { TelegramLayout } from "@/components/layout/TelegramLayout";
-import { TelegramAuthProvider } from "@/context/TelegramAuthContext";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-
-// Import pages with correct names
-import Dashboard from "@/pages/Dashboard";
-import InventoryPage from "@/pages/InventoryPage";
-import Store from "@/pages/Store";
-import Chat from "@/pages/Chat";
-import Insights from "@/pages/Insights";
-import Settings from "@/pages/Settings";
-import UploadSingleStone from "@/pages/UploadSingleStone";
-import DiamondDetail from "@/pages/DiamondDetail";
-import Admin from "@/pages/Admin";
-
-import "./App.css";
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      retry: 1,
-    },
-  },
-});
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { TelegramAuthProvider } from './context/TelegramAuthContext';
+import { TutorialProvider } from './contexts/TutorialContext';
+import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
+import Index from './pages/Index';
+import Dashboard from './pages/Dashboard';
+import InventoryPage from './pages/InventoryPage';
+import CatalogPage from './pages/CatalogPage';
+import UploadPage from './pages/UploadPage';
+import UploadSingleStonePage from './pages/UploadSingleStonePage';
+import InsightsPage from './pages/InsightsPage';
+import ChatPage from './pages/ChatPage';
+import NotificationsPage from './pages/NotificationsPage';
+import ProfilePage from './pages/ProfilePage';
+import SettingsPage from './pages/SettingsPage';
+import WishlistPage from './pages/WishlistPage';
+import Admin from './pages/Admin';
+import AdminAnalytics from './pages/AdminAnalytics';
+import DiamondDetailPage from './pages/DiamondDetailPage';
+import SecureDiamondPage from './pages/SecureDiamondPage';
+import DiamondSwipe from './pages/DiamondSwipe';
+import NotFound from './pages/NotFound';
+import StandardizeCsvPage from './pages/StandardizeCsvPage';
+import BulkUploadPage from './pages/BulkUploadPage';
 
 function App() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+      },
+    },
+  });
+  
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <TelegramAuthProvider>
-          <BrowserRouter>
-            <TelegramAuthGuard>
-              <TelegramLayout>
+    <QueryClientProvider client={queryClient}>
+      <TelegramAuthProvider>
+        <Router>
+          <TutorialProvider>
+            <InteractiveWizardProvider>
+              <div className="min-h-screen bg-background">
                 <Routes>
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/" element={<Index />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/inventory" element={<InventoryPage />} />
-                  <Route path="/store" element={<Store />} />
-                  <Route path="/chat" element={<Chat />} />
-                  <Route path="/insights" element={<Insights />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/upload-single-stone" element={<UploadSingleStone />} />
-                  <Route path="/diamond/:stockNumber" element={<DiamondDetail />} />
+                  <Route path="/catalog" element={<CatalogPage />} />
+                  <Route path="/store" element={<CatalogPage />} />
+                  <Route path="/upload" element={<UploadPage />} />
+                  <Route path="/upload/bulk" element={<BulkUploadPage />} />
+                  <Route path="/upload-single-stone" element={<UploadSingleStonePage />} />
+                  <Route path="/insights" element={<InsightsPage />} />
+                  <Route path="/chat" element={<ChatPage />} />
+                  <Route path="/notifications" element={<NotificationsPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="/wishlist" element={<WishlistPage />} />
                   <Route path="/admin" element={<Admin />} />
+                  <Route path="/admin/analytics" element={<AdminAnalytics />} />
+                  <Route path="/diamond/:stockNumber" element={<DiamondDetailPage />} />
+                  <Route path="/secure-diamond/:encryptedData" element={<SecureDiamondPage />} />
+                  <Route path="/swipe" element={<DiamondSwipe />} />
+                  <Route path="/standardize-csv" element={<StandardizeCsvPage />} />
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
-              </TelegramLayout>
-            </TelegramAuthGuard>
-            <Toaster />
-          </BrowserRouter>
-        </TelegramAuthProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+              </div>
+            </InteractiveWizardProvider>
+          </TutorialProvider>
+        </Router>
+      </TelegramAuthProvider>
+    </QueryClientProvider>
   );
 }
 
