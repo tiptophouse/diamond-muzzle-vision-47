@@ -1,19 +1,19 @@
 
-import { useEffect, useState } from 'react';
 import WebApp from '@twa-dev/sdk';
 
-export function useTelegramWebApp() {
-  const [webApp, setWebApp] = useState<typeof WebApp | null>(null);
-
-  useEffect(() => {
+export const telegramWebApp = {
+  init: () => {
     if (WebApp) {
       WebApp.ready();
       WebApp.expand();
-      setWebApp(WebApp);
     }
-  }, []);
-
-  const hapticFeedback = {
+  },
+  
+  isInitialized: () => Boolean(WebApp),
+  
+  getWebApp: () => WebApp,
+  
+  haptics: {
     light: () => WebApp.HapticFeedback?.impactOccurred('light'),
     medium: () => WebApp.HapticFeedback?.impactOccurred('medium'),
     heavy: () => WebApp.HapticFeedback?.impactOccurred('heavy'),
@@ -21,12 +21,9 @@ export function useTelegramWebApp() {
     error: () => WebApp.HapticFeedback?.notificationOccurred('error'),
     warning: () => WebApp.HapticFeedback?.notificationOccurred('warning'),
     selection: () => WebApp.HapticFeedback?.selectionChanged(),
-    // Simplified aliases - no parameters to match usage
-    impact: () => WebApp.HapticFeedback?.impactOccurred('medium'),
-    notification: () => WebApp.HapticFeedback?.notificationOccurred('success'),
-  };
-
-  const mainButton = {
+  },
+  
+  mainButton: {
     show: () => WebApp.MainButton?.show(),
     hide: () => WebApp.MainButton?.hide(),
     setText: (text: string) => WebApp.MainButton?.setText(text),
@@ -36,18 +33,14 @@ export function useTelegramWebApp() {
         WebApp.MainButton.color = color;
       }
     },
-  };
-
-  const backButton = {
+  },
+  
+  backButton: {
     show: () => WebApp.BackButton?.show(),
     hide: () => WebApp.BackButton?.hide(),
     onClick: (callback: () => void) => WebApp.BackButton?.onClick(callback),
-  };
-
-  return { 
-    webApp, 
-    hapticFeedback,
-    mainButton,
-    backButton 
-  };
-}
+  },
+  
+  getUser: () => WebApp.initDataUnsafe?.user,
+  getUserId: () => WebApp.initDataUnsafe?.user?.id,
+};

@@ -23,4 +23,19 @@ export const apiEndpoints = {
   // Admin operations
   getUsers: () => '/admin/users',
   getUserStats: () => '/admin/stats',
+  
+  // Missing endpoints that are being used in hooks
+  alive: () => '/health',
+  getAllStones: () => '/diamonds/all',
+  getDashboardStats: (userId: number) => `/dashboard/stats/${userId}`,
+  getAllClients: () => '/admin/clients',
+  deleteAllInventory: (userId: number) => `/diamonds/${userId}/all`,
+  updateAllInventory: (userId: number) => `/diamonds/${userId}/bulk`,
+  blockUser: () => '/admin/users/block',
+  unblockUser: (userId: number) => `/admin/users/${userId}/unblock`,
+  sendMessageToUser: () => '/admin/messages/send',
+  removeUserPayments: () => '/admin/payments/user/remove',
+  removeAllPayments: () => '/admin/payments/all/remove',
+  getUserPayments: () => '/admin/payments/user',
+  getPaymentStats: () => '/admin/payments/stats',
 } as const;
