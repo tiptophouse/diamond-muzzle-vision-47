@@ -16,8 +16,8 @@ export default function InventoryPage() {
 
   const { allDiamonds, loading, error, fetchData } = useInventoryData();
   const {
-    searchQuery,
-    setSearchQuery,
+    searchTerm,
+    setSearchTerm,
     filteredDiamonds,
     sortBy,
     sortOrder,
@@ -27,8 +27,7 @@ export default function InventoryPage() {
     currentPage,
     setCurrentPage,
     totalPages,
-    paginatedDiamonds,
-    handleSearch
+    paginatedDiamonds
   } = useInventorySearch(allDiamonds);
 
   const handleRefresh = async () => {
@@ -98,9 +97,6 @@ export default function InventoryPage() {
         <InventoryTable
           data={paginatedDiamonds}
           onDelete={handleDeleteDiamond}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
         />
       </div>
     </UnifiedLayout>

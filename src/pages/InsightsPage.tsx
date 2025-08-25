@@ -58,7 +58,16 @@ export default function InsightsPage() {
     );
   }
 
-  // Prepare data for components
+  // Prepare quick stats data
+  const quickStatsData = {
+    totalDiamonds: allDiamonds.length,
+    totalValue: insights.totalValue,
+    averagePrice: insights.averagePrice,
+    topShape: insights.topShapes[0]?.shape || 'N/A',
+    marketTrends: insightsData.marketTrends
+  };
+
+  // Prepare market comparison data
   const marketComparisonData = {
     yourPosition: {
       avgPricePerCarat: insights.averagePrice,
@@ -76,6 +85,7 @@ export default function InsightsPage() {
     recommendations: ['Focus on popular shapes', 'Optimize pricing strategy']
   };
 
+  // Prepare profitability data
   const profitabilityData = {
     totalInventoryValue: insights.totalValue,
     averageMargin: insights.profitMargin,
@@ -92,11 +102,11 @@ export default function InsightsPage() {
     }))
   };
 
+  // Prepare inventory velocity data
   const inventoryVelocityData = {
     turnoverRate: insights.inventoryVelocity,
     avgTimeToSell: 45,
-    velocityTrend: 'up' as const,
-    seasonalTrends: [
+    velocityTrend: [
       { month: 'Jan', turnoverRate: 0.15, avgDaysToSell: 45 },
       { month: 'Feb', turnoverRate: 0.18, avgDaysToSell: 42 },
       { month: 'Mar', turnoverRate: 0.22, avgDaysToSell: 38 }
@@ -131,10 +141,7 @@ export default function InsightsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <QuickStatsGrid 
-            totalDiamonds={allDiamonds.length}
-            marketTrends={insightsData.marketTrends}
-          />
+          <QuickStatsGrid {...quickStatsData} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
