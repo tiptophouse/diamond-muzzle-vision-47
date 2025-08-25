@@ -93,7 +93,7 @@ export interface TelegramWebApp {
   disableVerticalSwipes(): void;
 
   // Main Button
-  MainButton?: {
+  MainButton: {
     text: string;
     color: string;
     textColor: string;
@@ -118,7 +118,7 @@ export interface TelegramWebApp {
   };
 
   // Back Button
-  BackButton?: {
+  BackButton: {
     isVisible: boolean;
     onClick(callback: () => void): void;
     show(): void;
@@ -126,9 +126,9 @@ export interface TelegramWebApp {
   };
 
   // Haptic Feedback
-  HapticFeedback?: {
-    impactOccurred(style: 'light' | 'medium' | 'heavy'): void;
-    notificationOccurred(type: 'error' | 'success' | 'warning'): void;
+  HapticFeedback: {
+    impactOccurred(style?: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft'): void;
+    notificationOccurred(type?: 'error' | 'success' | 'warning'): void;
     selectionChanged(): void;
   };
 
