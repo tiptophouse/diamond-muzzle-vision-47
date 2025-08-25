@@ -49,10 +49,13 @@ export function useUserTracking() {
     }
   }, [isAuthenticated, isLoading]);
 
-  // Return tracking utilities if needed
+  // Return tracking utilities with the correct method names
   return {
     trackPageView: (page: string) => {
       console.log('📊 Page view:', page);
+    },
+    trackPageVisit: (page: string, title?: string) => {
+      console.log('📊 Page visit:', page, title);
     },
     trackEvent: (event: string, data?: any) => {
       console.log('📊 Event:', event, data);
