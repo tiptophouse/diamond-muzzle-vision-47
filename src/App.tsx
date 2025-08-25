@@ -5,15 +5,15 @@ import { Toaster } from "@/components/ui/toaster";
 import { TelegramAuthGuard } from "@/components/auth/TelegramAuthGuard";
 import { TelegramLayout } from "@/components/layout/TelegramLayout";
 
-// Import pages
+// Import pages with correct names
 import Dashboard from "@/pages/Dashboard";
-import Inventory from "@/pages/Inventory";
-import Store from "@/pages/Store";
-import Chat from "@/pages/Chat";
-import Insights from "@/pages/Insights";
-import Settings from "@/pages/Settings";
-import UploadSingleStone from "@/pages/UploadSingleStone";
-import DiamondDetail from "@/pages/DiamondDetail";
+import InventoryPage from "@/pages/InventoryPage";
+import StorePage from "@/pages/Store";
+import ChatPage from "@/pages/ChatPage";
+import InsightsPage from "@/pages/InsightsPage";
+import SettingsPage from "@/pages/SettingsPage";
+import UploadSingleStonePage from "@/pages/UploadSingleStonePage";
+import DiamondDetailPage from "@/pages/DiamondDetailPage";
 import Admin from "@/pages/Admin";
 
 import "./App.css";
@@ -36,13 +36,13 @@ function App() {
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/inventory" element={<Inventory />} />
-              <Route path="/store" element={<Store />} />
-              <Route path="/chat" element={<Chat />} />
-              <Route path="/insights" element={<Insights />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/upload-single-stone" element={<UploadSingleStone />} />
-              <Route path="/diamond/:stockNumber" element={<DiamondDetail />} />
+              <Route path="/inventory" element={<InventoryPage />} />
+              <Route path="/store" element={<StorePage />} />
+              <Route path="/chat" element={<ChatPage />} />
+              <Route path="/insights" element={<InsightsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/upload-single-stone" element={<UploadSingleStonePage />} />
+              <Route path="/diamond/:stockNumber" element={<DiamondDetailPage />} />
               <Route path="/admin" element={<Admin />} />
             </Routes>
           </TelegramLayout>

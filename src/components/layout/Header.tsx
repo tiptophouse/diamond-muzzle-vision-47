@@ -1,5 +1,5 @@
 
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { TutorialTrigger } from '@/components/tutorial/TutorialTrigger';
 import { Diamond } from 'lucide-react';
 
