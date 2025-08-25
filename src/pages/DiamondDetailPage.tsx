@@ -6,7 +6,19 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { useSharedDiamondAccess } from '@/hooks/useSharedDiamondAccess';
-import { supabase } from '@/integrations/supabase/client';
+import { api } from '@/lib/api/client';
+
+interface Diamond {
+  id: string;
+  stock_number: string;
+  carat: number;
+  shape: string;
+  color: string;
+  clarity: string;
+  cut: string;
+  image_url?: string;
+  price?: number;
+}
 
 export default function DiamondDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -23,13 +35,13 @@ export default function DiamondDetailPage() {
       
       // Always show back button
       backButton.show(() => {
-        hapticFeedback.light?.();
+        hapticFeedback.light();
         navigate(-1);
       });
     }
 
     return () => {
-      backButton.hide?.();
+      backButton.hide();
     };
   }, [webApp, backButton, hapticFeedback, navigate]);
 
@@ -44,25 +56,24 @@ export default function DiamondDetailPage() {
         throw new Error('Access denied');
       }
 
-      const { data, error } = await supabase
-        .from('user_diamonds')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-      return data;
+      // Use API instead of direct Supabase call
+      const response = await api.get<Diamond>(`/diamonds/detail/${id}`);
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Diamond not found');
+      }
+      
+      return response.data;
     },
     enabled: !!id,
   });
 
   const handleGoBack = () => {
-    hapticFeedback.light?.();
+    hapticFeedback.light();
     navigate(-1);
   };
 
   const handleClose = () => {
-    hapticFeedback.light?.();
+    hapticFeedback.light();
     if (webApp) {
       webApp.close();
     } else {

@@ -1,3 +1,4 @@
+
 import axios, { AxiosResponse } from 'axios';
 import { API_CONFIG } from './config';
 
@@ -39,7 +40,6 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
-    // You can add authentication tokens or other headers here
     return config;
   },
   (error) => {
