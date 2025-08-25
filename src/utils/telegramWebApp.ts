@@ -44,3 +44,6 @@ export const telegramWebApp = {
   getUser: () => WebApp.initDataUnsafe?.user,
   getUserId: () => WebApp.initDataUnsafe?.user?.id,
 };
+
+// Export alias for compatibility
+export const getTelegramWebApp = () => telegramWebApp;

@@ -21,7 +21,7 @@ export function useTelegramWebApp() {
     error: () => WebApp.HapticFeedback?.notificationOccurred('error'),
     warning: () => WebApp.HapticFeedback?.notificationOccurred('warning'),
     selection: () => WebApp.HapticFeedback?.selectionChanged(),
-    // Simplified aliases - no parameters to match usage
+    // Simplified aliases to match expected signatures
     impact: () => WebApp.HapticFeedback?.impactOccurred('medium'),
     notification: () => WebApp.HapticFeedback?.notificationOccurred('success'),
   };
@@ -44,10 +44,14 @@ export function useTelegramWebApp() {
     onClick: (callback: () => void) => WebApp.BackButton?.onClick(callback),
   };
 
+  // Add user access from WebApp
+  const user = WebApp.initDataUnsafe?.user;
+
   return { 
     webApp, 
     hapticFeedback,
     mainButton,
-    backButton 
+    backButton,
+    user
   };
 }

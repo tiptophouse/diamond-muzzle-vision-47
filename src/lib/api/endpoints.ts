@@ -16,6 +16,7 @@ export const apiEndpoints = {
   // File uploads
   uploadCsv: () => '/upload/csv',
   uploadSingleDiamond: () => '/upload/single',
+  uploadInventory: () => '/upload/inventory',
   
   // Analytics
   getAnalytics: (userId: number) => `/analytics/${userId}`,

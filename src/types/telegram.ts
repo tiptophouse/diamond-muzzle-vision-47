@@ -43,6 +43,17 @@ declare global {
           button_color?: string;
           button_text_color?: string;
         };
+        Accelerometer?: {
+          start(options?: { refresh_rate?: number }): void;
+          stop(): void;
+          isStarted: boolean;
+        };
+        DeviceOrientation?: {
+          start(options?: { refresh_rate?: number }): void;
+          stop(): void;
+        };
+        lockOrientation?(orientation: 'portrait' | 'landscape'): void;
+        unlockOrientation?(): void;
       };
     };
   }
@@ -105,6 +116,17 @@ export interface TelegramWebApp {
     button_color?: string;
     button_text_color?: string;
   };
+  Accelerometer?: {
+    start(options?: { refresh_rate?: number }): void;
+    stop(): void;
+    isStarted: boolean;
+  };
+  DeviceOrientation?: {
+    start(options?: { refresh_rate?: number }): void;
+    stop(): void;
+  };
+  lockOrientation?(orientation: 'portrait' | 'landscape'): void;
+  unlockOrientation?(): void;
 }
 
 export {};
