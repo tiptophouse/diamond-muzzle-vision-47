@@ -87,8 +87,9 @@ export default function Dashboard() {
         )}
 
         <DataDrivenDashboard 
-          user={user}
-          onDebugToggle={toggleDebugMode}
+          allDiamonds={allDiamonds}
+          loading={loading}
+          fetchData={fetchData}
         />
       </div>
     </UnifiedLayout>

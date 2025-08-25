@@ -9,6 +9,7 @@ import { useInventorySearch } from '@/hooks/useInventorySearch';
 import { UnifiedLayout } from '@/components/layout/UnifiedLayout';
 import { useUnifiedTelegramNavigation } from '@/hooks/useUnifiedTelegramNavigation';
 import { useState } from 'react';
+import { Diamond } from '@/components/inventory/InventoryTable';
 
 export default function InventoryPage() {
   const { allDiamonds, loading, error, fetchData } = useInventoryData();
@@ -64,35 +65,24 @@ export default function InventoryPage() {
     setCurrentPage(page);
   };
 
-  const handleDeleteDiamond = async (diamondId: string) => {
-    console.log('Delete diamond:', diamondId);
+  const handleDeleteDiamond = async (diamond: Diamond) => {
+    console.log('Delete diamond:', diamond.id);
     // Implementation would go here
     await fetchData(); // Refresh after delete
   };
 
-  const handleEditDiamond = (diamondId: string) => {
-    console.log('Edit diamond:', diamondId);
+  const handleEditDiamond = (diamond: Diamond) => {
+    console.log('Edit diamond:', diamond.id);
     // Implementation would go here
-  };
-
-  const handleToggleVisibility = async (diamondId: string) => {
-    console.log('Toggle visibility:', diamondId);
-    // Implementation would go here
-    await fetchData(); // Refresh after toggle
   };
 
   return (
     <UnifiedLayout>
       <div className="space-y-6 p-4">
         <InventoryHeader 
+          totalCount={allDiamonds.length}
           onRefresh={fetchData}
-          searchTerm={searchTerm}
-          onSearch={handleSearch}
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          sortBy={sortBy}
-          sortOrder={sortOrder}
-          onSort={handleSort}
+          loading={loading}
         />
 
         {loading ? (
@@ -101,13 +91,10 @@ export default function InventoryPage() {
           <InventoryTableEmpty />
         ) : (
           <InventoryTable
-            diamonds={paginatedDiamonds}
-            onDelete={handleDeleteDiamond}
+            data={paginatedDiamonds}
+            loading={loading}
             onEdit={handleEditDiamond}
-            onToggleVisibility={handleToggleVisibility}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
+            onDelete={handleDeleteDiamond}
           />
         )}
       </div>
