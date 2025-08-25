@@ -13,7 +13,7 @@ const mockDiamonds: Diamond[] = [
     price: 8500,
     status: "Available",
     imageUrl: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop&crop=center",
-    gem360Url: "https://v360.in/demo/round",
+    gem360Url: "https://s3.eu-west-1.amazonaws.com/my360.fab/160731.html",
     picture: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop&crop=center",
     store_visible: true
   },
@@ -28,6 +28,7 @@ const mockDiamonds: Diamond[] = [
     price: 6200,
     status: "Available",
     imageUrl: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop&crop=center",
+    gem360Url: "https://s3.eu-west-1.amazonaws.com/my360.fab/160732.html",
     picture: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop&crop=center",
     store_visible: true
   },
@@ -42,6 +43,7 @@ const mockDiamonds: Diamond[] = [
     price: 7800,
     status: "Available",
     imageUrl: "https://images.unsplash.com/photo-1544997845-3e191bf75b3c?w=400&h=400&fit=crop&crop=center",
+    gem360Url: "https://s3.eu-west-1.amazonaws.com/my360.fab/160733.html",
     picture: "https://images.unsplash.com/photo-1544997845-3e191bf75b3c?w=400&h=400&fit=crop&crop=center",
     store_visible: true
   },
@@ -56,6 +58,7 @@ const mockDiamonds: Diamond[] = [
     price: 15000,
     status: "Available",
     imageUrl: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop&crop=center&auto=format&q=75",
+    gem360Url: "https://s3.eu-west-1.amazonaws.com/my360.fab/160734.html",
     picture: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop&crop=center&auto=format&q=75",
     store_visible: true
   },
@@ -70,6 +73,7 @@ const mockDiamonds: Diamond[] = [
     price: 12500,
     status: "Available",
     imageUrl: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop&crop=center&auto=format&q=75",
+    gem360Url: "https://s3.eu-west-1.amazonaws.com/my360.fab/160735.html",
     picture: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop&crop=center&auto=format&q=75",
     store_visible: true
   }
@@ -82,9 +86,10 @@ export interface MockInventoryResult {
 }
 
 export async function fetchMockInventoryData(): Promise<MockInventoryResult> {
-  console.warn('⚠️ MOCK SERVICE: Using fallback mock data - this is why you see only 5 diamonds instead of your 500 real diamonds');
+  console.warn('⚠️ MOCK SERVICE: Using fallback mock data with your 360° URLs - this is why you see only 5 diamonds instead of your 500 real diamonds');
   console.warn('⚠️ MOCK SERVICE: Your real diamonds are in the FastAPI backend but connection failed');
   console.warn('⚠️ MOCK SERVICE: Check FastAPI server status and connectivity to access your 500 diamonds');
+  console.log('✨ MOCK SERVICE: Now testing your my360.fab URL format');
   
   // Simulate a small delay like a real API
   await new Promise(resolve => setTimeout(resolve, 500));
@@ -92,13 +97,14 @@ export async function fetchMockInventoryData(): Promise<MockInventoryResult> {
   return {
     data: mockDiamonds,
     debugInfo: {
-      step: 'FALLBACK: Mock data provided (NOT YOUR REAL DATA)',
+      step: 'FALLBACK: Mock data with your 360° URLs (NOT YOUR REAL DATA)',
       totalDiamonds: mockDiamonds.length,
       source: 'mock_service',
       timestamp: new Date().toISOString(),
       warning: 'This is NOT your real 500 diamonds - FastAPI connection failed',
       realDataLocation: 'FastAPI backend database',
-      expectedDiamonds: 500
+      expectedDiamonds: 500,
+      my360FabUrlsAdded: 5
     }
   };
 }
