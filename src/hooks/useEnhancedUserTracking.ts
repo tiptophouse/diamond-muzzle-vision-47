@@ -234,7 +234,7 @@ export function useEnhancedUserTracking() {
       const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-      // Get total sessions
+      // Get total sessions with proper type casting
       const { data: allSessions, error: sessionsError } = await supabase
         .from('user_sessions')
         .select('*')
@@ -242,7 +242,7 @@ export function useEnhancedUserTracking() {
 
       if (sessionsError) throw sessionsError;
 
-      // Get total page visits
+      // Get total page visits with proper type casting
       const { data: allPageVisits, error: pageVisitsError } = await supabase
         .from('page_visits')
         .select('*')
@@ -250,32 +250,46 @@ export function useEnhancedUserTracking() {
 
       if (pageVisitsError) throw pageVisitsError;
 
+      // Transform sessions data with proper type casting
+      const transformedSessions: UserSession[] = (allSessions || []).map(session => ({
+        ...session,
+        total_duration: session.total_duration ? String(session.total_duration) : null,
+        pages_visited: session.pages_visited || 0,
+        is_active: session.is_active || false
+      }));
+
+      // Transform page visits data with proper type casting
+      const transformedPageVisits: PageVisit[] = (allPageVisits || []).map(visit => ({
+        ...visit,
+        time_spent: visit.time_spent ? String(visit.time_spent) : null
+      }));
+
       // Calculate analytics
-      const totalSessions = allSessions?.length || 0;
-      const totalPageViews = allPageVisits?.length || 0;
-      const uniqueUsers = new Set(allSessions?.map(s => s.telegram_id)).size;
+      const totalSessions = transformedSessions.length;
+      const totalPageViews = transformedPageVisits.length;
+      const uniqueUsers = new Set(transformedSessions.map(s => s.telegram_id)).size;
 
       // Last 24 hours
-      const sessions24h = allSessions?.filter(s => 
+      const sessions24h = transformedSessions.filter(s => 
         new Date(s.created_at) > last24Hours
-      ).length || 0;
-      const pageViews24h = allPageVisits?.filter(p => 
+      ).length;
+      const pageViews24h = transformedPageVisits.filter(p => 
         new Date(p.visit_timestamp) > last24Hours
-      ).length || 0;
+      ).length;
       const uniqueUsers24h = new Set(
-        allSessions?.filter(s => new Date(s.created_at) > last24Hours)
+        transformedSessions.filter(s => new Date(s.created_at) > last24Hours)
           .map(s => s.telegram_id)
       ).size;
 
       // Last 7 days
-      const sessions7d = allSessions?.filter(s => 
+      const sessions7d = transformedSessions.filter(s => 
         new Date(s.created_at) > last7Days
-      ).length || 0;
-      const pageViews7d = allPageVisits?.filter(p => 
+      ).length;
+      const pageViews7d = transformedPageVisits.filter(p => 
         new Date(p.visit_timestamp) > last7Days
-      ).length || 0;
+      ).length;
       const uniqueUsers7d = new Set(
-        allSessions?.filter(s => new Date(s.created_at) > last7Days)
+        transformedSessions.filter(s => new Date(s.created_at) > last7Days)
           .map(s => s.telegram_id)
       ).size;
 
@@ -296,8 +310,8 @@ export function useEnhancedUserTracking() {
       };
 
       setAnalytics(summary);
-      setSessions(allSessions || []);
-      setPageVisits(allPageVisits || []);
+      setSessions(transformedSessions);
+      setPageVisits(transformedPageVisits);
 
       console.log('📊 Analytics summary:', summary);
       
