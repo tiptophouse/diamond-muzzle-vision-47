@@ -8,6 +8,8 @@ import { InventoryTableEmpty } from '@/components/inventory/InventoryTableEmpty'
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { useInventorySearch } from '@/hooks/useInventorySearch';
 import { useUnifiedTelegramNavigation } from '@/hooks/useUnifiedTelegramNavigation';
+import { useDeleteDiamond } from '@/hooks/inventory/useDeleteDiamond';
+import { useInventoryState } from '@/hooks/inventory/useInventoryState';
 import { Diamond } from '@/components/inventory/InventoryTable';
 
 export default function InventoryPage() {
@@ -15,6 +17,12 @@ export default function InventoryPage() {
   useUnifiedTelegramNavigation();
 
   const { allDiamonds, loading, error, fetchData } = useInventoryData();
+  const { deleteDiamond, isDeleting } = useDeleteDiamond();
+  const { 
+    removeDiamondFromState, 
+    restoreDiamondToState 
+  } = useInventoryState();
+  
   const {
     searchTerm,
     setSearchTerm,
@@ -35,9 +43,25 @@ export default function InventoryPage() {
   };
 
   const handleDeleteDiamond = async (diamondId: string) => {
-    console.log('Delete diamond:', diamondId);
-    // Implementation would go here
-    await fetchData(); // Refresh after delete
+    console.log('🗑️ INVENTORY PAGE: Delete diamond requested:', diamondId);
+    
+    // Find the diamond to delete for potential restoration
+    const diamondToDelete = allDiamonds.find(d => d.id === diamondId);
+    
+    const success = await deleteDiamond(
+      diamondId,
+      removeDiamondFromState,  // Optimistic removal
+      restoreDiamondToState,   // Restoration on error
+      diamondToDelete          // Original diamond data
+    );
+    
+    if (success) {
+      console.log('✅ INVENTORY PAGE: Diamond deleted successfully');
+      // Refresh data to ensure consistency
+      await fetchData();
+    } else {
+      console.log('❌ INVENTORY PAGE: Diamond deletion failed');
+    }
   };
 
   if (loading) {
@@ -97,6 +121,7 @@ export default function InventoryPage() {
         <InventoryTable
           data={paginatedDiamonds}
           onDelete={handleDeleteDiamond}
+          isDeleting={isDeleting}
         />
       </div>
     </UnifiedLayout>
