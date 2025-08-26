@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -25,6 +24,7 @@ import DiamondSwipe from './pages/DiamondSwipe';
 import NotFound from './pages/NotFound';
 import StandardizeCsvPage from './pages/StandardizeCsvPage';
 import BulkUploadPage from './pages/BulkUploadPage';
+import AnalyticsPage from "./pages/AnalyticsPage";
 
 function App() {
   const queryClient = new QueryClient({
@@ -64,6 +64,7 @@ function App() {
                   <Route path="/secure-diamond/:encryptedData" element={<SecureDiamondPage />} />
                   <Route path="/swipe" element={<DiamondSwipe />} />
                   <Route path="/standardize-csv" element={<StandardizeCsvPage />} />
+                  <Route path="/analytics" element={<AnalyticsPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </div>

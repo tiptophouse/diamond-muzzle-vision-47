@@ -37,6 +37,20 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
   // Automatically persist user data when authenticated
   useUserDataPersistence(authState.user, authState.isTelegramEnvironment);
 
+  // Enhanced logging for analytics debugging
+  React.useEffect(() => {
+    if (authState.isAuthenticated && authState.user) {
+      console.log('✅ User authenticated - analytics tracking should initialize');
+      console.log('👤 User details:', {
+        id: authState.user.id,
+        name: authState.user.first_name,
+        telegram: authState.isTelegramEnvironment
+      });
+    } else {
+      console.log('❌ User not authenticated - analytics tracking disabled');
+    }
+  }, [authState.isAuthenticated, authState.user, authState.isTelegramEnvironment]);
+
   return (
     <TelegramAuthContext.Provider value={authState}>
       {children}
