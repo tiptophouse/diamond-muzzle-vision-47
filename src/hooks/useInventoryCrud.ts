@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { Diamond } from '@/types/diamond';
+import { Diamond } from '@/components/inventory/InventoryTable';
 import { useAddDiamond } from './inventory/useAddDiamond';
 import { useUpdateDiamond } from './inventory/useUpdateDiamond';
 import { useDeleteDiamond } from './inventory/useDeleteDiamond';
@@ -13,32 +13,6 @@ interface UseInventoryCrudProps {
   onSuccess?: () => void;
   removeDiamondFromState?: (diamondId: string) => void;
   restoreDiamondToState?: (diamond: Diamond) => void;
-}
-
-interface DiamondCreateData {
-  stock: string;
-  shape: string;
-  weight: number;
-  color: string;
-  clarity: string;
-  certificate_number: number;
-  lab?: string;
-  length?: number;
-  width?: number;
-  depth?: number;
-  ratio?: number;
-  cut: string;
-  polish: string;
-  symmetry: string;
-  fluorescence: string;
-  table: number;
-  depth_percentage: number;
-  gridle: string;
-  culet: string;
-  certificate_comment?: string;
-  rapnet?: number;
-  price_per_carat: number;
-  picture?: string;
 }
 
 export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDiamondToState }: UseInventoryCrudProps = {}) {
@@ -53,9 +27,13 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     if (onSuccess) onSuccess();
   };
 
-  const { addDiamond: addDiamondFn } = useAddDiamond();
-  const { updateDiamond: updateDiamondFn } = useUpdateDiamond();
-  const { deleteDiamond: deleteDiamondFn } = useDeleteDiamond();
+  const { addDiamond: addDiamondFn } = useAddDiamond(successHandler);
+  const { updateDiamond: updateDiamondFn } = useUpdateDiamond(successHandler);
+  const { deleteDiamond: deleteDiamondFn } = useDeleteDiamond({ 
+    onSuccess: successHandler, 
+    removeDiamondFromState, 
+    restoreDiamondToState 
+  });
 
   const sendTelegramNotification = async (stoneData: DiamondFormData) => {
     if (!user?.id) {
@@ -66,12 +44,15 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     try {
       console.log('📱 Sending Telegram notification for stone:', stoneData.stockNumber);
       
+      // Use production URL - miniapp.mazalbot.com
       let baseUrl = window.location.origin;
       
+      // If it's a development/preview URL, replace with the production URL
       if (baseUrl.includes('lovable.dev') || baseUrl.includes('lovableproject.com')) {
         baseUrl = 'https://miniapp.mazalbot.com';
       }
       
+      // Build URL with diamond parameters (like the share function)
       const params = new URLSearchParams({
         carat: stoneData.carat.toString(),
         color: stoneData.color,
@@ -82,6 +63,7 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
         price: (stoneData.pricePerCarat * stoneData.carat).toString(),
       });
 
+      // Add optional parameters if they exist
       if (stoneData.fluorescence) params.set('fluorescence', stoneData.fluorescence);
       if (stoneData.picture) params.set('imageUrl', stoneData.picture);
       if (stoneData.certificateUrl) params.set('certificateUrl', stoneData.certificateUrl);
@@ -135,43 +117,13 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     }
   };
 
-  // Transform DiamondFormData to DiamondCreateData for FastAPI
-  const transformFormDataToCreateData = (data: DiamondFormData): DiamondCreateData => {
-    return {
-      stock: data.stockNumber,
-      shape: data.shape,
-      weight: data.carat,
-      color: data.color,
-      clarity: data.clarity,
-      certificate_number: data.certificateNumber ? parseInt(data.certificateNumber) : Date.now(),
-      lab: data.lab,
-      length: data.length,
-      width: data.width,
-      depth: data.depth,
-      ratio: data.ratio,
-      cut: data.cut,
-      polish: data.polish,
-      symmetry: data.symmetry,
-      fluorescence: data.fluorescence,
-      table: data.tablePercentage || 0,
-      depth_percentage: data.depthPercentage || 0,
-      gridle: data.gridle || '',
-      culet: data.culet || 'NONE',
-      certificate_comment: data.certificateComment,
-      rapnet: data.rapnet,
-      price_per_carat: data.pricePerCarat,
-      picture: data.picture,
-    };
-  };
-
   const addDiamond = async (data: DiamondFormData) => {
     console.log('➕ CRUD: Starting add diamond operation');
     setIsLoading(true);
     try {
-      const createData = transformFormDataToCreateData(data);
-      const result = await addDiamondFn(createData);
+      const result = await addDiamondFn(data);
       if (result) {
-        successHandler();
+        // Send Telegram notification on successful upload
         await sendTelegramNotification(data);
       }
       return result;
@@ -187,10 +139,8 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     console.log('📝 CRUD: Starting update diamond operation for:', diamondId);
     setIsLoading(true);
     try {
-      const updateData = transformFormDataToCreateData(data);
-      const result = await updateDiamondFn(diamondId, updateData);
+      const result = await updateDiamondFn(diamondId, data);
       if (result) {
-        successHandler();
         console.log('✅ CRUD: Diamond updated successfully');
         toast({
           title: "✅ Diamond Updated",
@@ -215,14 +165,8 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     console.log('🗑️ CRUD: Starting delete diamond operation for:', diamondId);
     setIsLoading(true);
     try {
-      const result = await deleteDiamondFn(
-        diamondId, 
-        removeDiamondFromState, 
-        restoreDiamondToState, 
-        diamondData
-      );
+      const result = await deleteDiamondFn(diamondId, diamondData);
       if (result) {
-        successHandler();
         console.log('✅ CRUD: Diamond deleted successfully');
         toast({
           title: "✅ Diamond Deleted",

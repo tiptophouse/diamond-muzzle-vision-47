@@ -1,25 +1,14 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Camera, FileText } from "lucide-react";
 
 interface MediaPriorityBadgeProps {
-  has360: boolean;
+  hasGem360: boolean;
   hasImage: boolean;
-  is3D?: boolean;
   className?: string;
 }
 
-export function MediaPriorityBadge({ has360, hasImage, is3D, className }: MediaPriorityBadgeProps) {
-  if (has360) {
-    return (
-      <Badge variant="default" className={`gap-1 ${className}`}>
-        <Sparkles className="h-3 w-3" />
-        360° View
-      </Badge>
-    );
-  }
-  
-  if (is3D && hasImage) {
+export function MediaPriorityBadge({ hasGem360, hasImage, className }: MediaPriorityBadgeProps) {
+  if (hasGem360) {
     return (
       <Badge variant="default" className={`gap-1 ${className}`}>
         <Sparkles className="h-3 w-3" />

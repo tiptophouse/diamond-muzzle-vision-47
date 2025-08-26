@@ -21,10 +21,10 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   };
   
   try {
-    // First, try to get data from FastAPI backend using the CORRECT endpoint
+    // First, try to get data from FastAPI backend using get_all_stones
     console.log('🔍 INVENTORY SERVICE: Attempting FastAPI connection...');
     const endpoint = apiEndpoints.getAllStones(userId);
-    console.log('🔍 INVENTORY SERVICE: Using CORRECTED endpoint:', endpoint);
+    console.log('🔍 INVENTORY SERVICE: Using endpoint:', endpoint);
     
     const result = await api.get(endpoint);
     
@@ -57,19 +57,19 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
           totalCount: dataArray.length,
           firstItem: {
             id: dataArray[0].id,
-            stock_number: dataArray[0].stock_number || dataArray[0].stock,
+            stock_number: dataArray[0].stock_number,
+            stock: dataArray[0].stock,
             picture: dataArray[0].picture,
             Image: dataArray[0].Image,
             image: dataArray[0].image,
             imageUrl: dataArray[0].imageUrl,
             photo_url: dataArray[0].photo_url,
             diamond_image: dataArray[0].diamond_image,
-            video_url: dataArray[0].video_url,
             'Video link': dataArray[0]['Video link'],
             videoLink: dataArray[0].videoLink,
+            video_url: dataArray[0].video_url,
             gem360Url: dataArray[0].gem360Url,
             v360_url: dataArray[0].v360_url,
-            my360_fab_url: dataArray[0].my360_fab_url,
             allFields: Object.keys(dataArray[0]).sort()
           },
           imageFieldsFound: Object.keys(dataArray[0]).filter(key => 
@@ -82,22 +82,13 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
             key.toLowerCase().includes('video') || 
             key.toLowerCase().includes('360') || 
             key.toLowerCase().includes('3d') ||
-            key.toLowerCase().includes('viewer') ||
-            key.toLowerCase().includes('my360') ||
-            key.toLowerCase().includes('fab')
+            key.toLowerCase().includes('viewer')
           ),
           sampleImageValues: {
             picture: dataArray[0].picture,
             Image: dataArray[0].Image,
             imageUrl: dataArray[0].imageUrl,
             photo_url: dataArray[0].photo_url
-          },
-          sample360Values: {
-            video_url: dataArray[0].video_url,
-            'Video link': dataArray[0]['Video link'],
-            videoLink: dataArray[0].videoLink,
-            v360_url: dataArray[0].v360_url,
-            my360_fab_url: dataArray[0].my360_fab_url
           }
         });
         console.log('📊 INVENTORY SERVICE: Sample diamond data:', dataArray[0]);
