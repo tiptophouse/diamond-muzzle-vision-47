@@ -4,7 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* CSS Custom Properties for Telegram WebApp */
+/* Force light theme */
 :root {
   --background: 0 0% 100%;
   --foreground: 222.2 84% 4.9%;
@@ -26,32 +26,6 @@
   --input: 214.3 31.8% 91.4%;
   --ring: 221.2 83.2% 53.3%;
   --radius: 0.5rem;
-  
-  /* Telegram WebApp Variables */
-  --tg-viewport-height: 100vh;
-  --tg-stable-height: 100vh;
-  --tg-safe-area-top: 0px;
-  --tg-safe-area-bottom: 0px;
-  --vh: 1vh;
-  
-  /* Safe Area Variables */
-  --safe-area-inset-top: 0px;
-  --safe-area-inset-bottom: 0px;
-  --safe-area-inset-left: 0px;
-  --safe-area-inset-right: 0px;
-}
-
-/* Base Styles */
-* {
-  box-sizing: border-box;
-}
-
-html {
-  height: 100%;
-  height: calc(var(--vh, 1vh) * 100);
-  overflow-x: hidden;
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
 }
 
 body {
@@ -62,18 +36,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  height: 100%;
-  height: calc(var(--vh, 1vh) * 100);
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-  overscroll-behavior: none;
-}
-
-#root {
-  height: 100%;
-  height: calc(var(--vh, 1vh) * 100);
-  overflow-x: hidden;
 }
 
 /* Enhanced image loading optimizations */
@@ -116,39 +78,21 @@ img {
   }
 }
 
-/* iPhone and iOS specific fixes */
+/* iOS specific fixes for Telegram WebApp */
 @supports (-webkit-touch-callout: none) {
-  /* iOS Safari and WebView specific styles */
-  html {
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    height: calc(var(--vh, 1vh) * 100);
-    overflow: hidden;
-  }
-  
+  /* iOS Safari specific styles */
   body {
     position: fixed;
-    width: 100%;
-    height: 100%;
-    height: calc(var(--vh, 1vh) * 100);
     overflow: hidden;
-    overscroll-behavior: none;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  #root {
-    position: relative;
     width: 100%;
-    height: 100%;
-    height: calc(var(--vh, 1vh) * 100);
-    overflow: hidden;
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for iOS */
   }
   
   /* Fix for iOS back button jumping */
   .tg-viewport {
-    height: 100%;
-    height: calc(var(--vh, 1vh) * 100);
+    height: 100vh;
+    height: 100dvh;
     overflow: hidden;
     position: relative;
   }
@@ -161,91 +105,27 @@ img {
     -moz-osx-font-smoothing: grayscale;
   }
   
+  /* Fix for viewport meta tag issues on iOS */
+  html {
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  
   /* Smooth scroll fix for iOS */
   .smooth-scroll {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
   }
   
-  /* Prevent zoom on input focus */
-  input, select, textarea {
-    font-size: 16px !important;
+  /* Safe area handling for iOS */
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 16px);
   }
   
-  /* Fix for viewport units on iOS */
-  .h-screen {
-    height: calc(var(--vh, 1vh) * 100) !important;
+  .pt-safe {
+    padding-top: max(env(safe-area-inset-top), 16px);
   }
-  
-  .min-h-screen {
-    min-height: calc(var(--vh, 1vh) * 100) !important;
-  }
-}
-
-/* Safe area handling utilities */
-.pt-safe {
-  padding-top: max(var(--safe-area-inset-top), 16px);
-}
-
-.pb-safe {
-  padding-bottom: max(var(--safe-area-inset-bottom), 16px);
-}
-
-.pl-safe {
-  padding-left: max(var(--safe-area-inset-left), 16px);
-}
-
-.pr-safe {
-  padding-right: max(var(--safe-area-inset-right), 16px);
-}
-
-.mt-safe {
-  margin-top: max(var(--safe-area-inset-top), 0px);
-}
-
-.mb-safe {
-  margin-bottom: max(var(--safe-area-inset-bottom), 0px);
-}
-
-/* Telegram-specific viewport utilities */
-.h-tg-viewport {
-  height: var(--tg-viewport-height);
-}
-
-.h-tg-stable {
-  height: var(--tg-stable-height);
-}
-
-.min-h-tg-viewport {
-  min-height: var(--tg-viewport-height);
-}
-
-.min-h-tg-stable {
-  min-height: var(--tg-stable-height);
-}
-
-/* Touch-friendly interactions */
-.touch-manipulation {
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Better button interactions on mobile */
-button, [role="button"] {
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-/* Improved focus states for mobile */
-button:focus-visible,
-[role="button"]:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  outline: 2px solid hsl(var(--primary));
-  outline-offset: 2px;
 }
 
 /* Ensure light theme always */
@@ -269,39 +149,4 @@ textarea:focus-visible {
   --border: 214.3 31.8% 91.4%;
   --input: 214.3 31.8% 91.4%;
   --ring: 221.2 83.2% 53.3%;
-}
-
-/* Mobile-first responsive grid improvements */
-@media (max-width: 768px) {
-  .responsive-grid {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1rem;
-  }
-  
-  .mobile-padding {
-    padding: 1rem;
-  }
-  
-  .mobile-text-sm {
-    font-size: 0.875rem;
-  }
-}
-
-/* Telegram WebApp container */
-.telegram-container {
-  height: 100%;
-  height: calc(var(--vh, 1vh) * 100);
-  width: 100%;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Scrollable content area */
-.telegram-scrollable {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: var(--safe-area-inset-bottom);
 }
