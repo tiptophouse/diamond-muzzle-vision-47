@@ -27,13 +27,9 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     if (onSuccess) onSuccess();
   };
 
-  const { addDiamond: addDiamondFn } = useAddDiamond(successHandler);
-  const { updateDiamond: updateDiamondFn } = useUpdateDiamond(successHandler);
-  const { deleteDiamond: deleteDiamondFn } = useDeleteDiamond({ 
-    onSuccess: successHandler, 
-    removeDiamondFromState, 
-    restoreDiamondToState 
-  });
+  const { addDiamond: addDiamondFn } = useAddDiamond();
+  const { updateDiamond: updateDiamondFn } = useUpdateDiamond();
+  const { deleteDiamond: deleteDiamondFn } = useDeleteDiamond();
 
   const sendTelegramNotification = async (stoneData: DiamondFormData) => {
     if (!user?.id) {
@@ -117,12 +113,43 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     }
   };
 
+  // Transform DiamondFormData to DiamondCreateData for FastAPI
+  const transformFormDataToCreateData = (data: DiamondFormData) => {
+    return {
+      stock: data.stockNumber,
+      shape: data.shape,
+      weight: data.carat,
+      color: data.color,
+      clarity: data.clarity,
+      certificate_number: data.certificateNumber ? parseInt(data.certificateNumber) : Date.now(),
+      lab: data.lab,
+      length: data.length,
+      width: data.width,
+      depth: data.depth,
+      ratio: data.ratio,
+      cut: data.cut,
+      polish: data.polish,
+      symmetry: data.symmetry,
+      fluorescence: data.fluorescence,
+      table: data.tablePercentage || 0,
+      depth_percentage: data.depthPercentage || 0,
+      gridle: data.gridle || '',
+      culet: data.culet || 'NONE',
+      certificate_comment: data.certificateComment,
+      rapnet: data.rapnet,
+      price_per_carat: data.pricePerCarat,
+      picture: data.picture,
+    };
+  };
+
   const addDiamond = async (data: DiamondFormData) => {
     console.log('➕ CRUD: Starting add diamond operation');
     setIsLoading(true);
     try {
-      const result = await addDiamondFn(data);
+      const createData = transformFormDataToCreateData(data);
+      const result = await addDiamondFn(createData);
       if (result) {
+        successHandler();
         // Send Telegram notification on successful upload
         await sendTelegramNotification(data);
       }
@@ -139,8 +166,10 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     console.log('📝 CRUD: Starting update diamond operation for:', diamondId);
     setIsLoading(true);
     try {
-      const result = await updateDiamondFn(diamondId, data);
+      const updateData = transformFormDataToCreateData(data);
+      const result = await updateDiamondFn(diamondId, updateData);
       if (result) {
+        successHandler();
         console.log('✅ CRUD: Diamond updated successfully');
         toast({
           title: "✅ Diamond Updated",
@@ -165,8 +194,14 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     console.log('🗑️ CRUD: Starting delete diamond operation for:', diamondId);
     setIsLoading(true);
     try {
-      const result = await deleteDiamondFn(diamondId, diamondData);
+      const result = await deleteDiamondFn(
+        diamondId, 
+        removeDiamondFromState, 
+        restoreDiamondToState, 
+        diamondData
+      );
       if (result) {
+        successHandler();
         console.log('✅ CRUD: Diamond deleted successfully');
         toast({
           title: "✅ Diamond Deleted",

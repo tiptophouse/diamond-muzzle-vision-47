@@ -37,7 +37,13 @@ export function UserImageUpload({ diamond, onUpdate }: UserImageUploadProps) {
         gem_360_url: gem360Url
       };
 
-      const endpoint = apiEndpoints.updateDiamond(diamond.id, user.id);
+      // Convert string ID to number for FastAPI
+      const numericDiamondId = parseInt(diamond.id);
+      if (isNaN(numericDiamondId)) {
+        throw new Error("Invalid diamond ID");
+      }
+
+      const endpoint = apiEndpoints.updateDiamond(numericDiamondId, user.id);
       const response = await api.put(endpoint, updateData);
 
       if (response.data) {
@@ -106,7 +112,7 @@ export function UserImageUpload({ diamond, onUpdate }: UserImageUploadProps) {
               id="gem360Url"
               value={gem360Url}
               onChange={(e) => setGem360Url(e.target.value)}
-              placeholder="https://v360.in/diamondview.aspx?cid=YBDB&d=C1-0K732361"
+              placeholder="https://v360.in/diamondview.aspx?cid=YBDB&d=CERTIFICATE_ID"
             />
             <p className="text-xs text-muted-foreground mt-1">
               Format: https://v360.in/diamondview.aspx?cid=YBDB&d=CERTIFICATE_ID
