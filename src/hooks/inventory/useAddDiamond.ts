@@ -1,124 +1,83 @@
-
 import { useState } from 'react';
-import { api, apiEndpoints, getCurrentUserId } from '@/lib/api';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/use-toast';
+import { API_BASE_URL } from '@/lib/api/config';
+import { getAuthHeaders } from '@/lib/api/auth';
 
-interface DiamondCreateData {
-  stock: string;
+interface DiamondFormData {
+  stock_number: string;
   shape: string;
   weight: number;
   color: string;
   clarity: string;
-  certificate_number: number;
-  lab?: string;
-  length?: number;
-  width?: number;
-  depth?: number;
-  ratio?: number;
-  cut?: string;
+  cut: string;
   polish: string;
   symmetry: string;
   fluorescence: string;
-  table: number;
-  depth_percentage: number;
-  gridle: string;
-  culet: string;
-  certificate_comment?: string;
-  rapnet?: number;
-  price_per_carat?: number;
-  picture?: string;
+  price_per_carat: number;
+  lab: string;
+  certificate_number: string;
+  is_visible: boolean;
 }
 
 export function useAddDiamond() {
-  const [isAdding, setIsAdding] = useState(false);
-  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const addDiamond = async (diamondData: DiamondCreateData): Promise<boolean> => {
-    const userId = getCurrentUserId();
-    
-    if (!userId) {
-      toast({
-        title: "❌ Authentication Error",
-        description: "Please log in to add diamonds",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    console.log('➕ ADD: Starting diamond creation:', {
-      userId,
-      diamondData,
-      endpoint: apiEndpoints.addDiamond(userId)
-    });
-
-    setIsAdding(true);
+  const addDiamond = async (diamondData: DiamondFormData): Promise<{ success: boolean; data?: any; error?: string }> => {
+    setIsLoading(true);
+    setError(null);
 
     try {
-      // Use the correct FastAPI POST endpoint with proper request body
-      const response = await api.post(
-        apiEndpoints.addDiamond(userId),
-        diamondData
-      );
-      
-      console.log('➕ ADD: FastAPI response:', response);
-
-      if (response.error) {
-        console.error('➕ ADD: FastAPI error:', response.error);
-        toast({
-          title: "❌ Add Failed",
-          description: `Failed to add diamond: ${response.error}`,
-          variant: "destructive",
-        });
-        return false;
-      }
-      
-      console.log('✅ ADD: Diamond successfully created in FastAPI');
-      
-      // Also add to localStorage as fallback
-      try {
-        const localData = localStorage.getItem('diamond_inventory');
-        const parsedData = localData ? JSON.parse(localData) : [];
-        
-        if (Array.isArray(parsedData)) {
-          const newDiamond = {
-            ...diamondData,
-            id: response.data?.id || Date.now(),
-            user_id: userId,
-            created_at: new Date().toISOString()
-          };
-          
-          parsedData.push(newDiamond);
-          localStorage.setItem('diamond_inventory', JSON.stringify(parsedData));
-          console.log('➕ ADD: Also added to localStorage');
-        }
-      } catch (localError) {
-        console.warn('➕ ADD: Failed to update localStorage:', localError);
-      }
-      
-      toast({
-        title: "✅ Diamond Added",
-        description: "Diamond has been successfully added to your inventory",
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${API_BASE_URL}/api/v1/add_stone`, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(diamondData),
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to add diamond: ${response.status} ${errorText}`);
+      }
+
+      const result = await response.json();
       
-      return true;
-    } catch (error) {
-      console.error('➕ ADD: Unexpected error:', error);
+      // Check if result has the expected structure
+      if (!result || typeof result !== 'object') {
+        throw new Error('Invalid response from server');
+      }
+
+      // Safely access the id property
+      const diamondId = result.id || result.stock_number || 'unknown';
       
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.log('✅ Diamond added successfully:', diamondId);
+
       toast({
-        title: "❌ Add Failed",
-        description: `Failed to add diamond: ${errorMessage}`,
+        title: "יהלום נוסף בהצלחה",
+        description: `היהלום ${diamondId} נוסף למלאי שלך`,
+      });
+
+      return { success: true, data: result };
+    } catch (err: any) {
+      console.error('❌ Error adding diamond:', err);
+      setError(err.message || 'Failed to add diamond');
+      toast({
+        title: "שגיאה בהוספת יהלום",
+        description: err.message || 'Failed to add diamond',
         variant: "destructive",
       });
-      
-      return false;
+      return { success: false, error: err.message || 'Failed to add diamond' };
     } finally {
-      setIsAdding(false);
+      setIsLoading(false);
     }
   };
 
   return {
     addDiamond,
-    isAdding,
+    isLoading,
+    error,
   };
 }
