@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Diamond } from "@/types/diamond";
+import { Diamond } from "@/components/inventory/InventoryTable";
 
 export function useInventoryState() {
   const [loading, setLoading] = useState(false);

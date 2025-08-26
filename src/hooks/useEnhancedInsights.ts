@@ -1,156 +1,87 @@
 
-import { useState, useEffect } from 'react';
-import { api, apiEndpoints } from '@/lib/api';
-import { useToast } from '@/hooks/use-toast';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useMemo } from 'react';
+import { Diamond } from '@/components/inventory/InventoryTable';
 
-interface InsightsData {
-  totalValue: number;
-  averagePrice: number;
-  topShapes: Array<{ shape: string; count: number }>;
-  priceRanges: Array<{ range: string; count: number }>;
+interface ShapeGroup {
+  totalPrice: number;
+  count: number;
 }
 
-interface Diamond {
-  id?: string;
-  shape?: string;
-  weight?: number;
-  carat?: number;
-  price_per_carat?: number;
-  owners?: number[];
-  owner_id?: number;
+interface ShapeGroups {
+  [shape: string]: ShapeGroup;
 }
 
-export function useEnhancedInsights() {
-  const [insights, setInsights] = useState<InsightsData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
-  const { user } = useTelegramAuth();
-
-  const fetchInsights = async () => {
-    if (!user?.id) {
-      setIsLoading(false);
-      return;
-    }
-    
-    try {
-      console.log('📊 Fetching diamonds data to generate insights...');
-      const response = await api.get<Diamond[]>(apiEndpoints.getAllStones(user.id));
-      
-      if (response.error) {
-        throw new Error(response.error);
-      }
-
-      const diamonds = response.data || [];
-      console.log('📊 Received diamonds data:', diamonds.length, 'items');
-      
-      // Filter diamonds for current user
-      const userDiamonds = diamonds.filter(diamond => 
-        diamond.owners?.includes(user.id) || diamond.owner_id === user.id
-      );
-
-      console.log('📊 User diamonds after filtering:', userDiamonds.length);
-
-      if (userDiamonds.length === 0) {
-        setInsights({
-          totalValue: 0,
-          averagePrice: 0,
-          topShapes: [],
-          priceRanges: []
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Calculate insights from actual data
-      const totalValue = userDiamonds.reduce((sum, diamond) => {
-        const weight = diamond.weight || diamond.carat || 0;
-        const pricePerCarat = diamond.price_per_carat || 0;
-        return sum + (weight * pricePerCarat);
-      }, 0);
-
-      const averagePrice = totalValue / userDiamonds.length;
-
-      // Calculate top shapes
-      const shapeCount = new Map<string, number>();
-      userDiamonds.forEach(diamond => {
-        if (diamond.shape) {
-          shapeCount.set(diamond.shape, (shapeCount.get(diamond.shape) || 0) + 1);
-        }
-      });
-
-      const topShapes = Array.from(shapeCount.entries())
-        .map(([shape, count]) => ({ shape, count }))
-        .sort((a, b) => b.count - a.count);
-
-      // Calculate price ranges
-      const priceRanges = [
-        { range: '$0 - $5,000', count: 0 },
-        { range: '$5,001 - $10,000', count: 0 },
-        { range: '$10,001 - $25,000', count: 0 },
-        { range: '$25,001+', count: 0 }
-      ];
-
-      userDiamonds.forEach(diamond => {
-        const weight = diamond.weight || diamond.carat || 0;
-        const pricePerCarat = diamond.price_per_carat || 0;
-        const totalPrice = weight * pricePerCarat;
-
-        if (totalPrice <= 5000) {
-          priceRanges[0].count++;
-        } else if (totalPrice <= 10000) {
-          priceRanges[1].count++;
-        } else if (totalPrice <= 25000) {
-          priceRanges[2].count++;
-        } else {
-          priceRanges[3].count++;
-        }
-      });
-
-      const insightsData: InsightsData = {
-        totalValue,
-        averagePrice,
-        topShapes,
-        priceRanges: priceRanges.filter(range => range.count > 0)
-      };
-
-      console.log('📊 Generated insights:', insightsData);
-      setInsights(insightsData);
-      
-      toast({
-        title: "Insights Updated",
-        description: `Analyzed ${userDiamonds.length} diamonds from your inventory.`,
-      });
-
-    } catch (error) {
-      console.error('❌ Error fetching insights:', error);
-      toast({
-        title: "Unable to Load Insights",
-        description: "Using fallback data while we resolve the connection issue.",
-        variant: "destructive",
-      });
-      
-      // Fallback data
-      setInsights({
+export function useEnhancedInsights(diamonds: Diamond[]) {
+  const insights = useMemo(() => {
+    if (!diamonds || diamonds.length === 0) {
+      return {
         totalValue: 0,
         averagePrice: 0,
+        totalCount: 0,
+        shapeDistribution: [],
         topShapes: [],
-        priceRanges: []
-      });
-    } finally {
-      setIsLoading(false);
+        priceRanges: [],
+        inventoryVelocity: 0,
+        profitMargin: 0,
+      };
     }
-  };
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchInsights();
-    }
-  }, [user?.id]);
+    // Calculate total value and count
+    const totalValue = diamonds.reduce((sum, diamond) => sum + (diamond.price || 0), 0);
+    const totalCount = diamonds.length;
+    const averagePrice = totalCount > 0 ? totalValue / totalCount : 0;
 
-  return {
-    insights,
-    isLoading,
-    refetch: fetchInsights,
-  };
+    // Shape distribution analysis
+    const shapeGroups: ShapeGroups = diamonds.reduce((groups, diamond) => {
+      const shape = diamond.shape || 'Unknown';
+      if (!groups[shape]) {
+        groups[shape] = { totalPrice: 0, count: 0 };
+      }
+      groups[shape].totalPrice += diamond.price || 0;
+      groups[shape].count += 1;
+      return groups;
+    }, {} as ShapeGroups);
+
+    const shapeDistribution = Object.entries(shapeGroups).map(([shape, data]) => ({
+      shape,
+      count: data.count,
+      value: data.totalPrice,
+      percentage: (data.count / totalCount) * 100,
+    }));
+
+    // Top shapes by count
+    const topShapes = Object.entries(shapeGroups)
+      .sort(([, a], [, b]) => b.count - a.count)
+      .slice(0, 5)
+      .map(([shape, data]) => ({
+        shape,
+        count: data.count,
+        value: data.totalPrice,
+      }));
+
+    // Price ranges
+    const priceRanges = [
+      { range: '$0 - $1,000', count: diamonds.filter(d => d.price < 1000).length },
+      { range: '$1,000 - $5,000', count: diamonds.filter(d => d.price >= 1000 && d.price < 5000).length },
+      { range: '$5,000 - $10,000', count: diamonds.filter(d => d.price >= 5000 && d.price < 10000).length },
+      { range: '$10,000+', count: diamonds.filter(d => d.price >= 10000).length },
+    ];
+
+    // Mock calculations for velocity and profit margin
+    const inventoryVelocity = Math.random() * 0.3 + 0.1; // 10-40% turnover
+    const profitMargin = Math.random() * 0.2 + 0.15; // 15-35% profit
+
+    return {
+      totalValue,
+      averagePrice,
+      totalCount,
+      shapeDistribution,
+      topShapes,
+      priceRanges,
+      inventoryVelocity,
+      profitMargin,
+    };
+  }, [diamonds]);
+
+  return insights;
 }

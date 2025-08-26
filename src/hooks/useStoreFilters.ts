@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
-import { Diamond } from '@/types/diamond';
+
+import { useState, useMemo } from "react";
+import { Diamond } from "@/components/inventory/InventoryTable";
 
 interface StoreFilters {
   shapes: string[];

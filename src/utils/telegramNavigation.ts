@@ -1,84 +1,185 @@
-
-// DEPRECATED: This file is being phased out in favor of NavigationManager
-// Use useCentralizedNavigation hook instead
-
-import WebApp from '@twa-dev/sdk';
-
-// Legacy interface for backward compatibility
-interface PageConfig {
-  showBackButton?: boolean;
-  onBackButtonClick?: () => void;
+// Telegram WebApp Navigation utilities
+export interface TelegramNavigationOptions {
+  enableBackButton?: boolean;
   showMainButton?: boolean;
   mainButtonText?: string;
   mainButtonColor?: string;
   onMainButtonClick?: () => void;
+  onBackButtonClick?: () => void;
 }
 
-class TelegramNavigation {
-  private static instance: TelegramNavigation;
-  
-  private constructor() {
-    console.warn('⚠️ TelegramNavigation is deprecated. Use NavigationManager instead.');
-  }
+export class TelegramNavigationManager {
+  private tg: any = null;
+  private backButtonCallback: (() => void) | null = null;
+  private mainButtonCallback: (() => void) | null = null;
 
-  static getInstance(): TelegramNavigation {
-    if (!TelegramNavigation.instance) {
-      TelegramNavigation.instance = new TelegramNavigation();
-    }
-    return TelegramNavigation.instance;
-  }
-
-  // Legacy method - now takes no arguments for backward compatibility
-  impactFeedback(): void {
-    try {
-      if (WebApp.HapticFeedback && WebApp.HapticFeedback.impactOccurred) {
-        WebApp.HapticFeedback.impactOccurred('medium');
-      }
-    } catch (error) {
-      console.warn('Haptic feedback not available:', error);
+  constructor() {
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+      this.tg = window.Telegram.WebApp;
     }
   }
 
-  // Legacy method - now takes no arguments for backward compatibility  
-  cleanup(): void {
-    try {
-      WebApp.BackButton.hide();
-      WebApp.MainButton.hide();
-    } catch (error) {
-      console.warn('Telegram navigation cleanup warning:', error);
+  // Configure navigation for a specific page
+  configurePage(options: TelegramNavigationOptions) {
+    if (!this.tg) return;
+
+    // Configure back button
+    if (options.enableBackButton) {
+      this.showBackButton(options.onBackButtonClick);
+    } else {
+      this.hideBackButton();
+    }
+
+    // Configure main button
+    if (options.showMainButton && options.mainButtonText) {
+      this.showMainButton({
+        text: options.mainButtonText,
+        color: options.mainButtonColor || '#2481cc',
+        onClick: options.onMainButtonClick
+      });
+    } else {
+      this.hideMainButton();
     }
   }
 
-  // Legacy method for backward compatibility
-  configurePage(config: PageConfig): void {
-    console.warn('⚠️ configurePage is deprecated. Use NavigationManager instead.');
-    try {
-      if (config.showBackButton && config.onBackButtonClick) {
-        WebApp.BackButton.onClick(config.onBackButtonClick);
-        WebApp.BackButton.show();
-      }
+  // Back button methods
+  showBackButton(callback?: () => void) {
+    if (!this.tg?.BackButton) return;
 
-      if (config.showMainButton && config.mainButtonText) {
-        WebApp.MainButton.setText(config.mainButtonText);
-        if (config.mainButtonColor) {
-          WebApp.MainButton.color = config.mainButtonColor as `#${string}`;
-        }
-        if (config.onMainButtonClick) {
-          WebApp.MainButton.onClick(config.onMainButtonClick);
-        }
-        WebApp.MainButton.show();
-      }
-    } catch (error) {
-      console.error('Page configuration failed:', error);
+    // Detach previous handler if any
+    if (this.backButtonCallback && this.tg.BackButton.offClick) {
+      try {
+        this.tg.BackButton.offClick(this.backButtonCallback);
+      } catch {}
+      this.backButtonCallback = null;
     }
+
+    if (callback) {
+      this.backButtonCallback = callback;
+      this.tg.BackButton.onClick(this.backButtonCallback);
+    }
+    
+    this.tg.BackButton.show();
+  }
+
+  hideBackButton() {
+    if (!this.tg?.BackButton) return;
+    
+    if (this.backButtonCallback && this.tg.BackButton.offClick) {
+      try {
+        this.tg.BackButton.offClick(this.backButtonCallback);
+      } catch {}
+      this.backButtonCallback = null;
+    }
+    
+    this.tg.BackButton.hide();
+  }
+
+  // Main button methods
+  showMainButton(options: {
+    text: string;
+    color?: string;
+    onClick?: () => void;
+  }) {
+    if (!this.tg?.MainButton) return;
+
+    // Detach previous handler if any
+    if (this.mainButtonCallback && this.tg.MainButton.offClick) {
+      try {
+        this.tg.MainButton.offClick(this.mainButtonCallback);
+      } catch {}
+      this.mainButtonCallback = null;
+    }
+
+    this.tg.MainButton.setText(options.text);
+    
+    if (options.color) {
+      this.tg.MainButton.color = options.color;
+    }
+
+    if (options.onClick) {
+      this.mainButtonCallback = options.onClick;
+      this.tg.MainButton.onClick(this.mainButtonCallback);
+    }
+
+    this.tg.MainButton.show();
+  }
+
+  hideMainButton() {
+    if (!this.tg?.MainButton) return;
+    
+    if (this.mainButtonCallback && this.tg.MainButton.offClick) {
+      try {
+        this.tg.MainButton.offClick(this.mainButtonCallback);
+      } catch {}
+      this.mainButtonCallback = null;
+    }
+    
+    this.tg.MainButton.hide();
+  }
+
+  // Haptic feedback
+  impactFeedback(style: 'light' | 'medium' | 'heavy' = 'medium') {
+    if (this.tg?.HapticFeedback) {
+      this.tg.HapticFeedback.impactOccurred(style);
+    }
+  }
+
+  selectionFeedback() {
+    if (this.tg?.HapticFeedback) {
+      this.tg.HapticFeedback.selectionChanged();
+    }
+  }
+
+  notificationFeedback(type: 'error' | 'success' | 'warning' = 'success') {
+    if (this.tg?.HapticFeedback) {
+      this.tg.HapticFeedback.notificationOccurred(type);
+    }
+  }
+
+  // Cleanup
+  cleanup() {
+    this.hideBackButton();
+    this.hideMainButton();
   }
 }
 
-// Legacy constants for backward compatibility
+// Create singleton instance
+export const telegramNavigation = new TelegramNavigationManager();
+
+// Hook for easy React integration
+export function useTelegramNavigation() {
+  return telegramNavigation;
+}
+
+// Predefined page configurations
 export const PAGE_CONFIGS = {
   DIAMOND_DETAIL: {
-    showBackButton: true,
+    enableBackButton: true,
+    showMainButton: false
+  },
+  INVENTORY: {
+    enableBackButton: false,
+    showMainButton: true,
+    mainButtonText: 'Add Diamond',
+    mainButtonColor: '#059669'
+  },
+  STORE: {
+    enableBackButton: false,
+    showMainButton: false
+  },
+  UPLOAD: {
+    enableBackButton: true,
+    showMainButton: true,
+    mainButtonText: 'Save Diamond',
+    mainButtonColor: '#3b82f6'
+  },
+  CHAT: {
+    enableBackButton: false,
+    showMainButton: false
+  },
+  SETTINGS: {
+    enableBackButton: true,
+    showMainButton: false
   }
-};
-
-export const telegramNavigation = TelegramNavigation.getInstance();
+} as const;

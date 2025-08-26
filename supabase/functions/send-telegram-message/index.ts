@@ -1,122 +1,113 @@
-
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface TelegramRequest {
-  telegramId: number;
-  message?: string;
-  stoneData?: any;
-  storeUrl?: string;
-  directMessage?: boolean;
+interface StoneData {
+  stockNumber: string;
+  shape: string;
+  carat: number;
+  color: string;
+  clarity: string;
+  cut?: string;
+  polish: string;
+  symmetry: string;
+  fluorescence: string;
+  pricePerCarat?: number;
+  lab?: string;
+  certificateNumber?: string;
 }
 
-const handler = async (req: Request): Promise<Response> => {
+function generateStoneSummary(stone: StoneData): string {
+  const priceInfo = stone.pricePerCarat ? `\n💰 Price: $${stone.pricePerCarat}/ct` : '';
+  const cutInfo = stone.cut ? `\n✂️ Cut: ${stone.cut}` : '';
+  const certInfo = stone.certificateNumber ? `\n📋 Cert: ${stone.certificateNumber}` : '';
+  const labInfo = stone.lab ? ` (${stone.lab})` : '';
+  
+  return `💎 **Stone Uploaded Successfully!**
+
+📊 **Details:**
+🔸 Stock: ${stone.stockNumber}
+🔹 Shape: ${stone.shape}
+⚖️ Weight: ${stone.carat}ct
+🎨 Color: ${stone.color}
+💎 Clarity: ${stone.clarity}${cutInfo}
+✨ Polish: ${stone.polish}
+🔄 Symmetry: ${stone.symmetry}
+🌟 Fluorescence: ${stone.fluorescence}${priceInfo}${certInfo}${labInfo}`;
+}
+
+serve(async (req) => {
   console.log('🚀 Telegram message function invoked');
   
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const body: TelegramRequest = await req.json();
-    console.log('📥 Request data:', {
-      telegramId: body.telegramId,
-      hasMessage: !!body.message,
-      hasStoneData: !!body.stoneData,
-      hasStoreUrl: !!body.storeUrl,
-      directMessage: body.directMessage
-    });
+    const { telegramId, stoneData, storeUrl } = await req.json();
+    console.log('📥 Request data:', { telegramId, stoneData: !!stoneData, storeUrl });
+    
+    if (!telegramId || !stoneData) {
+      console.error('❌ Missing required fields');
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    const botToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
+    const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
     if (!botToken) {
-      throw new Error("TELEGRAM_BOT_TOKEN not configured");
+      console.error('❌ Bot token not configured');
+      return new Response(
+        JSON.stringify({ error: 'Bot token not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    let messageText: string;
-
-    // Handle direct messages (like OTP) without stone data wrapper
-    if (body.directMessage && body.message) {
-      messageText = body.message;
-    } else if (body.storeUrl && !body.stoneData) {
-      // Store sharing message
-      messageText = body.storeUrl;
-    } else if (body.stoneData && typeof body.stoneData === 'object') {
-      // Stone upload notification
-      const stone = body.stoneData;
-      messageText = `💎 Stone Uploaded Successfully!
-
-📊 Details:
-🔸 Stock: ${stone.stockNumber || 'N/A'}
-🔹 Shape: ${stone.shape || 'N/A'}
-⚖️ Weight: ${stone.carat || 0}ct
-🎨 Color: ${stone.color || 'N/A'}
-💎 Clarity: ${stone.clarity || 'N/A'}
-✨ Polish: ${stone.polish || 'N/A'}
-🔄 Symmetry: ${stone.symmetry || 'N/A'}
-🌟 Fluorescence: ${stone.fluorescence || 'N/A'}
-📋 Cert: ${stone.certificateNumber || 'N/A'}
-
-${body.storeUrl || '🔗 View in Store'}`;
-    } else {
-      // Fallback message
-      messageText = body.message || body.storeUrl || "New notification from BrilliantBot";
-    }
+    const summary = generateStoneSummary(stoneData);
+    const storeLink = storeUrl ? `\n\n🔗 [View in Store](${storeUrl})` : '';
+    const message = `${summary}${storeLink}`;
 
     console.log('📤 Sending message to Telegram...');
-    
-    const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
-    const telegramResponse = await fetch(telegramUrl, {
+    const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        chat_id: body.telegramId,
-        text: messageText,
-        parse_mode: 'Markdown'
+        chat_id: telegramId,
+        text: message,
+        parse_mode: 'Markdown',
+        disable_web_page_preview: false
       }),
     });
 
-    const responseData = await telegramResponse.json();
-    console.log('📨 Telegram API response:', responseData);
-
+    const result = await telegramResponse.json();
+    console.log('📨 Telegram API response:', result);
+    
     if (!telegramResponse.ok) {
-      throw new Error(`Telegram API error: ${responseData.description || 'Unknown error'}`);
+      console.error('❌ Telegram API error:', result);
+      return new Response(
+        JSON.stringify({ error: 'Failed to send Telegram message', details: result }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log('✅ Message sent successfully');
-
-    return new Response(JSON.stringify({ 
-      success: true, 
-      messageId: responseData.result?.message_id 
-    }), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
-    });
-  } catch (error: any) {
-    console.error('❌ Error in send-telegram-message function:', error);
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        success: false 
-      }),
-      {
-        status: 500,
-        headers: { 
-          "Content-Type": "application/json", 
-          ...corsHeaders 
-        },
-      }
+      JSON.stringify({ success: true, messageId: result.result.message_id }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('❌ Error sending Telegram message:', error);
+    return new Response(
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
-};
-
-serve(handler);
+});

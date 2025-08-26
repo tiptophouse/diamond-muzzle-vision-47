@@ -15,18 +15,15 @@ export function GroupCTASender() {
   const { testCTAClickWithRegistration, isRegistering } = useGroupCTARegistration();
   
   const [formData, setFormData] = useState({
-    message: `💎 *פתח עסק יהלומים מצליח עם BrilliantBot*
+    message: `💎 **העלו את העסק שלכם לרמה הבאה עם BrilliantBot!**
 
-🚀 *הפלטפורמה המתקדמת לסוחרי יהלומים:*
-• 📱 ניהול מלאי חכם ומתקדם
-• 🔍 חיפוש מהיר ויעיל ביהלומים
-• 💰 מעקב רווחיות ומחירים
-• 🎯 התאמה מושלמת ללקוחות
-• 📊 דוחות מכירות מפורטים
+🚀 **הבוט החכם ביותר לסוחרי יהלומים:**
+• 🔍 חיפוש מתקדם במלאי
+• 📊 ניתוחי שוק בזמן אמת
+• 💰 מעקב רווחיות חכם
+• 🎯 התאמות מושלמות ללקוחות
 
-⭐ *אלפי סוחרים כבר מרוויחים איתנו - הצטרף עכשיו!*
-
-🎁 *התחל חינם והעלה את העסק שלך לרמה הבאה*`,
+⭐ **אלפי סוחרים כבר משתמשים - הצטרפו עכשיו!**`,
     groupId: '-1001009290613',
     botUsername: 'diamondmazalbot',
     useMultipleButtons: true,
@@ -47,7 +44,7 @@ export function GroupCTASender() {
     });
 
     if (success) {
-      console.log('✅ הודעת CTA קבוצתית נשלחה בהצלחה');
+      console.log('✅ הודעת CTA קבוצתית חכמה נשלחה בהצלחה');
     }
   };
 
@@ -62,44 +59,52 @@ export function GroupCTASender() {
     // Main dashboard button
     routes.push({
       icon: <Home className="h-3 w-3" />,
-      text: '🏠 התחל עכשיו - מחוון ראשי',
+      text: '🏠 התחל במחוון הראשי',
       route: '/?utm_source=group_cta&start=group_activation',
-      color: 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800'
+      color: 'bg-blue-600 hover:bg-blue-700'
     });
-
-    if (formData.includeInventoryButton) {
-      routes.push({
-        icon: <Store className="h-3 w-3" />,
-        text: '📦 ניהול מלאי יהלומים',
-        route: '/inventory?start=inventory_demo',
-        color: 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800'
-      });
-    }
 
     if (formData.includePremiumButton) {
       routes.push({
         icon: <Diamond className="h-3 w-3" />,
-        text: '💎 חנות יהלומים מקוונת',
-        route: '/store?start=store_demo&view=featured',
-        color: 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800'
+        text: '💎 תכונות פרמיום',
+        route: '/dashboard?start=premium_features&focus=premium',
+        color: 'bg-yellow-500 hover:bg-yellow-600'
+      });
+    }
+
+    if (formData.includeInventoryButton) {
+      routes.push({
+        icon: <Store className="h-3 w-3" />,
+        text: '📦 ניהול מלאי',
+        route: '/inventory?start=inventory_demo',
+        color: 'bg-blue-500 hover:bg-blue-600'
       });
     }
 
     if (formData.includeChatButton) {
       routes.push({
         icon: <Bot className="h-3 w-3" />,
-        text: '🤖 יועץ AI חכם ליהלומים',
+        text: '🤖 צ\'אט AI יועץ יהלומים',
         route: '/chat?start=ai_chat_demo&welcome=true',
-        color: 'bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800'
+        color: 'bg-green-500 hover:bg-green-600'
       });
     }
 
-    // Upload button
+    // Store button
+    routes.push({
+      icon: <Store className="h-3 w-3" />,
+      text: '🏪 חנות יהלומים מקוונת',
+      route: '/store?start=store_demo&view=featured',
+      color: 'bg-purple-500 hover:bg-purple-600'
+    });
+
+    // Share button
     routes.push({
       icon: <Share className="h-3 w-3" />,
-      text: '📤 העלאת יהלומים מהירה',
-      route: '/upload?start=upload_demo',
-      color: 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800'
+      text: '📢 שתף עם חברים סוחרים',
+      route: 'share_action',
+      color: 'bg-gray-500 hover:bg-gray-600'
     });
 
     return routes;
@@ -110,10 +115,10 @@ export function GroupCTASender() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-blue-900" dir="rtl">
           <MessageSquare className="h-6 w-6" />
-          שליחת הודעת קרא לפעולה מתקדמת לקבוצה
+          שליחת הודעת קרא לפעולה חכמה לקבוצה
         </CardTitle>
         <CardDescription dir="rtl" className="text-blue-700">
-          שלח הודעה מעוררת עניין עם כפתורים חכמים המובילים ישירות לדפים השונים במערכת
+          שלח הודעה מעוררת עניין עם ניתוב חכם לדפים שונים במערכת כדי למקסם את מעורבות המשתמשים
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -152,7 +157,7 @@ export function GroupCTASender() {
             />
             <Label htmlFor="multipleButtons" className="flex items-center gap-2 font-semibold">
               <Sparkles className="h-5 w-5 text-blue-600" />
-              הפעל כפתורים חכמים מתקדמים
+              השתמש בכפתורים חכמים עם ניתוב מתקדם
             </Label>
           </div>
 
@@ -160,25 +165,25 @@ export function GroupCTASender() {
             <div className="mr-6 space-y-3 border-r-2 border-blue-200 pr-4" dir="rtl">
               <div className="flex items-center space-x-2 space-x-reverse">
                 <Switch
-                  id="inventoryButton"
-                  checked={formData.includeInventoryButton}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, includeInventoryButton: checked }))}
-                />
-                <Label htmlFor="inventoryButton" className="flex items-center gap-2">
-                  <Store className="h-4 w-4 text-green-500" />
-                  כפתור ניהול מלאי → דף המלאי
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <Switch
                   id="premiumButton"
                   checked={formData.includePremiumButton}
                   onCheckedChange={(checked) => setFormData(prev => ({ ...prev, includePremiumButton: checked }))}
                 />
                 <Label htmlFor="premiumButton" className="flex items-center gap-2">
-                  <Diamond className="h-4 w-4 text-purple-500" />
-                  כפתור חנות יהלומים → דף החנות
+                  <Diamond className="h-4 w-4 text-yellow-500" />
+                  כפתור תכונות פרמיום → מחוון
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <Switch
+                  id="inventoryButton"
+                  checked={formData.includeInventoryButton}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, includeInventoryButton: checked }))}
+                />
+                <Label htmlFor="inventoryButton" className="flex items-center gap-2">
+                  <Store className="h-4 w-4 text-blue-500" />
+                  כפתור ניהול מלאי → דף מלאי
                 </Label>
               </div>
 
@@ -189,8 +194,8 @@ export function GroupCTASender() {
                   onCheckedChange={(checked) => setFormData(prev => ({ ...prev, includeChatButton: checked }))}
                 />
                 <Label htmlFor="chatButton" className="flex items-center gap-2">
-                  <Bot className="h-4 w-4 text-orange-500" />
-                  כפתור יועץ AI → דף הצ'אט
+                  <Bot className="h-4 w-4 text-green-500" />
+                  כפתור עוזר צ'אט AI → דף צ'אט
                 </Label>
               </div>
             </div>
@@ -198,16 +203,16 @@ export function GroupCTASender() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="message" dir="rtl" className="font-semibold">הודעה מעוצבת</Label>
+          <Label htmlFor="message" dir="rtl" className="font-semibold">הודעה משופרת</Label>
           <Textarea
             id="message"
             value={formData.message}
             onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
             placeholder="הכנס את הודעת הקרא לפעולה שלך"
-            rows={10}
+            rows={8}
             maxLength={2000}
             dir="rtl"
-            className="text-right border-blue-200 focus:border-blue-400 font-medium"
+            className="text-right border-blue-200 focus:border-blue-400"
           />
           <p className="text-xs text-blue-600" dir="rtl">{formData.message.length}/2000 תווים</p>
         </div>
@@ -215,7 +220,7 @@ export function GroupCTASender() {
         <div className="bg-white/90 p-6 rounded-lg border-2 border-blue-200 shadow-sm">
           <h4 className="font-bold mb-4 text-blue-900 flex items-center gap-2" dir="rtl">
             <ExternalLink className="h-5 w-5" />
-            תצוגה מקדימה של ההודעה:
+            תצוגה מקדימה עם ניתוב חכם:
           </h4>
           <div className="text-sm space-y-4" dir="rtl">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-blue-700">
@@ -224,23 +229,21 @@ export function GroupCTASender() {
             </div>
             
             <div className="bg-white p-4 rounded-lg border border-blue-100 shadow-sm">
-              <pre className="whitespace-pre-wrap text-right text-sm mb-4 text-gray-800 leading-relaxed font-medium">{formData.message}</pre>
+              <pre className="whitespace-pre-wrap text-right text-sm mb-4 text-gray-800 leading-relaxed">{formData.message}</pre>
               
               {formData.useMultipleButtons && (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <p className="text-xs font-semibold text-blue-600 border-b border-blue-100 pb-1">
-                    כפתורים אינטראקטיביים:
+                    כפתורים חכמים עם ניתוב אוטומטי:
                   </p>
                   <div className="grid grid-cols-1 gap-2">
                     {getButtonRoutes().map((button, index) => (
-                      <div key={index} className={`${button.color} text-white px-4 py-3 rounded-lg text-center font-semibold shadow-md transition-all hover:shadow-lg hover:scale-105`}>
-                        <div className="flex items-center justify-center gap-2">
-                          {button.icon}
-                          <span>{button.text}</span>
-                        </div>
-                        <div className="text-xs opacity-80 mt-1">
-                          → {button.route}
-                        </div>
+                      <div key={index} className={`${button.color} text-white px-4 py-2 rounded-lg text-sm text-center flex items-center justify-center gap-2 shadow-sm transition-all hover:shadow-md`}>
+                        {button.icon}
+                        <span>{button.text}</span>
+                        {button.route !== 'share_action' && (
+                          <span className="text-xs opacity-75">→ {button.route}</span>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -265,7 +268,7 @@ export function GroupCTASender() {
             ) : (
               <>
                 <TestTube className="h-4 w-4 ml-2" />
-                בדוק רישום משתמש
+                בדוק רישום משתמש מלא
               </>
             )}
           </Button>
@@ -273,17 +276,17 @@ export function GroupCTASender() {
           <Button 
             onClick={handleSend} 
             disabled={isLoading || !formData.groupId || !formData.message}
-            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 font-semibold shadow-md flex-1 md:flex-none"
+            className="bg-blue-600 hover:bg-blue-700 font-semibold shadow-sm flex-1 md:flex-none"
           >
             {isLoading ? (
               <>
                 <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                שולח הודעה...
+                שולח הודעת CTA חכמה...
               </>
             ) : (
               <>
                 <Send className="h-5 w-5 mr-2" />
-                שלח הודעת CTA מתקדמת
+                שלח הודעת CTA חכמה לקבוצה
               </>
             )}
           </Button>

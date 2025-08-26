@@ -1,24 +1,26 @@
-import React from 'react';
-import { Search } from 'lucide-react';
-import { Diamond } from '@/types/diamond';
-import { Input } from '@/components/ui/input';
+
+import { InventoryAutocomplete } from "./InventoryAutocomplete";
+import { Diamond } from "./InventoryTable";
 
 interface InventorySearchProps {
-  searchTerm: string;
-  onSearchChange: (term: string) => void;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
+  onSubmit: (e: React.FormEvent) => void;
+  allDiamonds: Diamond[];
 }
 
-export function InventorySearch({ searchTerm, onSearchChange }: InventorySearchProps) {
+export function InventorySearch({ 
+  searchQuery, 
+  onSearchChange, 
+  onSubmit, 
+  allDiamonds 
+}: InventorySearchProps) {
   return (
-    <div className="relative">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-      <Input
-        type="search"
-        placeholder="Search inventory..."
-        className="pl-9"
-        value={searchTerm}
-        onChange={(e) => onSearchChange(e.target.value)}
-      />
-    </div>
+    <InventoryAutocomplete
+      searchQuery={searchQuery}
+      onSearchChange={onSearchChange}
+      onSubmit={onSubmit}
+      allDiamonds={allDiamonds}
+    />
   );
 }

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +11,6 @@ import { formatDistanceToNow } from 'date-fns';
 import { ZeroDiamondUsersNotifier } from './ZeroDiamondUsersNotifier';
 import { TestNotificationSender } from './TestNotificationSender';
 import { SelectiveNotificationSender } from './SelectiveNotificationSender';
-import { TelegramTestSender } from './TelegramTestSender';
 
 interface NotificationData {
   id: string;
@@ -117,9 +117,6 @@ export function NotificationCenter({ notifications, onRefresh }: NotificationCen
 
   return (
     <div className="space-y-6">
-      {/* Telegram Bot API Test */}
-      <TelegramTestSender />
-      
       {/* Test Notification Sender */}
       <TestNotificationSender />
       

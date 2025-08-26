@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,10 +15,6 @@ import { useBulkCsvProcessor } from "@/hooks/useBulkCsvProcessor";
 export function BulkUploadForm() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadedCount, setUploadedCount] = useState(0);
-  const [failedCount, setFailedCount] = useState(0);
-  const [errors, setErrors] = useState<string[]>([]);
   const { toast } = useToast();
   const { hapticFeedback } = useTelegramWebApp();
   const { user } = useTelegramAuth();
@@ -156,10 +153,6 @@ export function BulkUploadForm() {
   const resetForm = () => {
     setSelectedFile(null);
     resetProcessor();
-    setUploadProgress(0);
-    setUploadedCount(0);
-    setFailedCount(0);
-    setErrors([]);
     hapticFeedback.selection();
   };
 
@@ -174,16 +167,7 @@ export function BulkUploadForm() {
       />
 
       {/* Processing Progress */}
-      {isProcessing && (
-        <BulkUploadProgress 
-          progress={uploadProgress}
-          uploadedCount={uploadedCount}
-          totalCount={processedData?.validRows.length || 0}
-          failedCount={failedCount}
-          errors={errors}
-          isUploading={isProcessing}
-        />
-      )}
+      {isProcessing && <BulkUploadProgress />}
 
       {/* Processing Report */}
       {processedData?.processingReport && !isProcessing && (
