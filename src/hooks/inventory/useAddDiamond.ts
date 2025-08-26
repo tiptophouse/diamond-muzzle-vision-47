@@ -1,75 +1,89 @@
-import { useState } from 'react';
-import { toast } from '@/components/ui/use-toast';
-import { API_BASE_URL } from '@/lib/api/config';
-import { getAuthHeaders } from '@/lib/api/auth';
 
-interface DiamondFormData {
-  stock_number: string;
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { api, apiEndpoints, getCurrentUserId } from '@/lib/api';
+
+interface DiamondCreateData {
+  stock: string;
   shape: string;
   weight: number;
   color: string;
   clarity: string;
+  certificate_number: number;
+  lab?: string;
+  length?: number;
+  width?: number;
+  depth?: number;
+  ratio?: number;
   cut: string;
   polish: string;
   symmetry: string;
   fluorescence: string;
+  table: number;
+  depth_percentage: number;
+  gridle: string;
+  culet: string;
+  certificate_comment?: string;
+  rapnet?: number;
   price_per_carat: number;
-  lab: string;
-  certificate_number: string;
-  is_visible: boolean;
+  picture?: string;
 }
 
 export function useAddDiamond() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  const addDiamond = async (diamondData: DiamondFormData): Promise<{ success: boolean; data?: any; error?: string }> => {
+  const addDiamond = async (diamondData: DiamondCreateData): Promise<{ success: boolean; data?: any; error?: string }> => {
     setIsLoading(true);
     setError(null);
 
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`${API_BASE_URL}/api/v1/add_stone`, {
-        method: 'POST',
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(diamondData),
+    const userId = getCurrentUserId();
+    if (!userId) {
+      const errorMsg = 'User not authenticated';
+      setError(errorMsg);
+      toast({
+        title: "❌ Authentication Error",
+        description: errorMsg,
+        variant: "destructive",
       });
+      return { success: false, error: errorMsg };
+    }
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to add diamond: ${response.status} ${errorText}`);
-      }
-
-      const result = await response.json();
+    try {
+      console.log('➕ Adding diamond via FastAPI:', diamondData);
       
-      // Check if result has the expected structure
-      if (!result || typeof result !== 'object') {
-        throw new Error('Invalid response from server');
-      }
+      const response = await api.post(
+        apiEndpoints.addDiamond(userId),
+        diamondData
+      );
 
-      // Safely access the id property
-      const diamondId = result.id || result.stock_number || 'unknown';
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      
+      const diamondId = response.data?.id || response.data?.stock || 'unknown';
       
       console.log('✅ Diamond added successfully:', diamondId);
 
       toast({
-        title: "יהלום נוסף בהצלחה",
-        description: `היהלום ${diamondId} נוסף למלאי שלך`,
+        title: "✅ Diamond Added",
+        description: `Diamond ${diamondId} added to your inventory successfully`,
       });
 
-      return { success: true, data: result };
+      return { success: true, data: response.data };
     } catch (err: any) {
       console.error('❌ Error adding diamond:', err);
-      setError(err.message || 'Failed to add diamond');
+      const errorMessage = err.message || 'Failed to add diamond';
+      setError(errorMessage);
+      
       toast({
-        title: "שגיאה בהוספת יהלום",
-        description: err.message || 'Failed to add diamond',
+        title: "❌ Failed to Add Diamond",
+        description: errorMessage,
         variant: "destructive",
       });
-      return { success: false, error: err.message || 'Failed to add diamond' };
+      
+      return { success: false, error: errorMessage };
     } finally {
       setIsLoading(false);
     }

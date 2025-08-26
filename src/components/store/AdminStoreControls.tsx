@@ -1,44 +1,45 @@
+
 import React, { useState } from 'react';
-import { Button } from "@/components/ui/button"
-import { toast } from "@/components/ui/use-toast"
-import { API_BASE_URL } from '@/lib/api/config';
-import { getAuthHeaders } from '@/lib/api/auth';
+import { Button } from "@/components/ui/button";
+import { Eye, EyeOff, Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { api, apiEndpoints, getCurrentUserId } from '@/lib/api';
+import { Diamond } from '@/types/diamond';
 
 interface AdminStoreControlsProps {
-  stockNumber: string;
-  isVisible: boolean;
-  onVisibilityChange: (isVisible: boolean) => void;
-  onDelete: () => void;
+  diamond: Diamond;
+  onUpdate?: () => void;
+  onDelete?: () => void;
 }
 
-export function AdminStoreControls() {
+export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreControlsProps) {
   const [isToggling, setIsToggling] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const { toast } = useToast();
 
-  const handleToggleVisibility = async (stockNumber: string) => {
+  const handleToggleVisibility = async () => {
+    const userId = getCurrentUserId();
+    if (!userId) return;
+
     setIsToggling(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/toggle_store_visibility/${parseInt(stockNumber)}`, {
-        method: 'POST',
-        headers: await getAuthHeaders(),
-      });
+      const numericDiamondId = parseInt(diamond.id);
+      const response = await api.put(
+        apiEndpoints.updateDiamond(numericDiamondId, userId),
+        { store_visible: !diamond.store_visible }
+      );
 
-      if (!response.ok) {
-        throw new Error(`Failed to toggle visibility: ${response.statusText}`);
+      if (!response.error) {
+        toast({
+          title: "✅ Visibility Updated",
+          description: diamond.store_visible ? "Hidden from store" : "Added to store",
+        });
+        onUpdate?.();
       }
-
-      const result = await response.json();
-      
+    } catch (error) {
       toast({
-        title: "Visibility Toggled",
-        description: result.message || "Visibility updated successfully.",
-      });
-
-    } catch (error: any) {
-      console.error('Error toggling visibility:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to toggle visibility.",
+        title: "❌ Error",
+        description: "Failed to toggle visibility",
         variant: "destructive",
       });
     } finally {
@@ -46,30 +47,28 @@ export function AdminStoreControls() {
     }
   };
 
-  const handleDelete = async (stockNumber: string) => {
+  const handleDelete = async () => {
+    const userId = getCurrentUserId();
+    if (!userId) return;
+
     setIsDeleting(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/delete_stone/${parseInt(stockNumber)}`, {
-        method: 'DELETE',
-        headers: await getAuthHeaders(),
-      });
+      const numericDiamondId = parseInt(diamond.id);
+      const response = await api.delete(
+        apiEndpoints.deleteDiamond(numericDiamondId, userId)
+      );
 
-      if (!response.ok) {
-        throw new Error(`Failed to delete stone: ${response.statusText}`);
+      if (!response.error) {
+        toast({
+          title: "✅ Diamond Deleted",
+          description: "Diamond removed successfully",
+        });
+        onDelete?.();
       }
-
-      const result = await response.json();
-      
+    } catch (error) {
       toast({
-        title: "Stone Deleted",
-        description: result.message || "Stone deleted successfully.",
-      });
-
-    } catch (error: any) {
-      console.error('Error deleting stone:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete stone.",
+        title: "❌ Error",
+        description: "Failed to delete diamond",
         variant: "destructive",
       });
     } finally {
@@ -77,10 +76,33 @@ export function AdminStoreControls() {
     }
   };
 
-  return {
-    handleToggleVisibility,
-    handleDelete,
-    isDeleting,
-    isToggling
-  };
+  return (
+    <div className="flex gap-2">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleToggleVisibility}
+        disabled={isToggling}
+        className={`h-8 w-8 p-0 ${
+          diamond.store_visible 
+            ? 'text-green-600 hover:bg-green-100' 
+            : 'text-slate-400 hover:bg-slate-100'
+        }`}
+        title={diamond.store_visible ? 'Hide from store' : 'Show in store'}
+      >
+        {diamond.store_visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+      </Button>
+      
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleDelete}
+        disabled={isDeleting}
+        className="h-8 w-8 p-0 text-red-600 hover:bg-red-100"
+        title="Delete diamond"
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  );
 }

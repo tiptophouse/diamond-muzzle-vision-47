@@ -1,7 +1,9 @@
+
 import React, { useState } from 'react';
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Upload } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -9,10 +11,9 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { API_BASE_URL, getAuthHeaders } from '@/lib/api/config';
-import { toast } from '@/components/ui/use-toast';
-import { ReloadIcon } from '@radix-ui/react-icons';
+} from "@/components/ui/card";
+import { api, apiEndpoints, getCurrentUserId } from '@/lib/api';
+import { useToast } from "@/hooks/use-toast";
 
 interface AdminImageUploadProps {
   stockNumber: string;
@@ -27,6 +28,7 @@ export function AdminImageUpload({
 }: AdminImageUploadProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -37,51 +39,46 @@ export function AdminImageUpload({
   const handleUpload = async () => {
     if (!file || !stockNumber) return;
 
+    const userId = getCurrentUserId();
+    if (!userId) return;
+
     setIsUploading(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await fetch(`${API_BASE_URL}/api/v1/upload_image/${parseInt(stockNumber)}`, {
-        method: 'POST',
-        headers: await getAuthHeaders(),
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`);
-      }
-
-      const result = await response.json();
+      // Upload to Supabase storage first
+      const { supabase } = await import('@/integrations/supabase/client');
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${stockNumber}-${Date.now()}.${fileExt}`;
       
-      if (result.image_url) {
-        toast({
-          title: "Image Uploaded",
-          description: "Image uploaded successfully!",
-        });
-        onImageUpdate(result.image_url);
-      } else {
-        toast({
-          title: "Upload Error",
-          description: "Image upload failed. Please try again.",
-          variant: "destructive",
-        });
-      }
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('diamond-images')
+        .upload(fileName, file);
 
-      const updateResponse = await fetch(`${API_BASE_URL}/api/v1/update_stone/${parseInt(stockNumber)}`, {
-        method: 'PUT',
-        headers: await getAuthHeaders(),
-        body: JSON.stringify({ picture: result.image_url }),
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('diamond-images')
+        .getPublicUrl(fileName);
+
+      // Update diamond with new image URL
+      const numericStockNumber = parseInt(stockNumber);
+      await api.put(
+        apiEndpoints.updateDiamond(numericStockNumber, userId),
+        { picture: publicUrl }
+      );
+
+      toast({
+        title: "✅ Image Uploaded",
+        description: "Image uploaded successfully!",
       });
-
-      if (!updateResponse.ok) {
-        console.error('Failed to update stone with new image URL');
-      }
-
+      
+      onImageUpdate(publicUrl);
     } catch (error: any) {
       console.error('Upload error:', error);
       toast({
-        title: "Upload Error",
+        title: "❌ Upload Error",
         description: error.message || "Failed to upload image. Please try again.",
         variant: "destructive",
       });
@@ -99,7 +96,7 @@ export function AdminImageUpload({
       <CardContent className="grid gap-4">
         <div className="flex items-center space-x-2">
           <Label htmlFor="picture">Upload picture</Label>
-          <Input id="picture" type="file" onChange={handleFileChange} />
+          <Input id="picture" type="file" accept="image/*" onChange={handleFileChange} />
         </div>
         {currentImageUrl && (
           <div>
@@ -109,8 +106,8 @@ export function AdminImageUpload({
         )}
       </CardContent>
       <CardFooter>
-        <Button onClick={handleUpload} disabled={isUploading}>
-          {isUploading && <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />}
+        <Button onClick={handleUpload} disabled={isUploading || !file}>
+          {isUploading && <Upload className="mr-2 h-4 w-4 animate-spin" />}
           {isUploading ? "Uploading..." : "Upload Image"}
         </Button>
       </CardFooter>

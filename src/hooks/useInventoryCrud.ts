@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DiamondFormData } from '@/components/inventory/form/types';
-import { Diamond } from '@/components/inventory/InventoryTable';
+import { Diamond } from '@/types/diamond';
 import { useAddDiamond } from './inventory/useAddDiamond';
 import { useUpdateDiamond } from './inventory/useUpdateDiamond';
 import { useDeleteDiamond } from './inventory/useDeleteDiamond';
@@ -13,6 +13,32 @@ interface UseInventoryCrudProps {
   onSuccess?: () => void;
   removeDiamondFromState?: (diamondId: string) => void;
   restoreDiamondToState?: (diamond: Diamond) => void;
+}
+
+interface DiamondCreateData {
+  stock: string;
+  shape: string;
+  weight: number;
+  color: string;
+  clarity: string;
+  certificate_number: number;
+  lab?: string;
+  length?: number;
+  width?: number;
+  depth?: number;
+  ratio?: number;
+  cut: string;
+  polish: string;
+  symmetry: string;
+  fluorescence: string;
+  table: number;
+  depth_percentage: number;
+  gridle: string;
+  culet: string;
+  certificate_comment?: string;
+  rapnet?: number;
+  price_per_carat: number;
+  picture?: string;
 }
 
 export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDiamondToState }: UseInventoryCrudProps = {}) {
@@ -40,15 +66,12 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
     try {
       console.log('📱 Sending Telegram notification for stone:', stoneData.stockNumber);
       
-      // Use production URL - miniapp.mazalbot.com
       let baseUrl = window.location.origin;
       
-      // If it's a development/preview URL, replace with the production URL
       if (baseUrl.includes('lovable.dev') || baseUrl.includes('lovableproject.com')) {
         baseUrl = 'https://miniapp.mazalbot.com';
       }
       
-      // Build URL with diamond parameters (like the share function)
       const params = new URLSearchParams({
         carat: stoneData.carat.toString(),
         color: stoneData.color,
@@ -59,7 +82,6 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
         price: (stoneData.pricePerCarat * stoneData.carat).toString(),
       });
 
-      // Add optional parameters if they exist
       if (stoneData.fluorescence) params.set('fluorescence', stoneData.fluorescence);
       if (stoneData.picture) params.set('imageUrl', stoneData.picture);
       if (stoneData.certificateUrl) params.set('certificateUrl', stoneData.certificateUrl);
@@ -114,7 +136,7 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
   };
 
   // Transform DiamondFormData to DiamondCreateData for FastAPI
-  const transformFormDataToCreateData = (data: DiamondFormData) => {
+  const transformFormDataToCreateData = (data: DiamondFormData): DiamondCreateData => {
     return {
       stock: data.stockNumber,
       shape: data.shape,
@@ -150,7 +172,6 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
       const result = await addDiamondFn(createData);
       if (result) {
         successHandler();
-        // Send Telegram notification on successful upload
         await sendTelegramNotification(data);
       }
       return result;
