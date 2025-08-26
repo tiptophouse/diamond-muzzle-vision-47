@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { convertDiamondsToInventoryFormat } from "@/services/diamondAnalytics";
-import { Diamond } from "@/components/inventory/InventoryTable";
+import { Diamond } from "@/types/diamond";
 import { getCurrentUserId } from "@/lib/api";
 
 export function useInventoryProcessor() {

@@ -1,192 +1,237 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { DiamondFormData } from './form/types';
-import { DiamondDetailsSection } from '../upload/form/DiamondDetailsSection';
-import { CertificateSection } from '../upload/form/CertificateSection';
-import { MeasurementsSection } from '../upload/form/MeasurementsSection';
-import { DetailedGradingSection } from '../upload/form/DetailedGradingSection';
-import { BusinessInfoSection } from '../upload/form/BusinessInfoSection';
-import { ImageUploadSection } from '../upload/form/ImageUploadSection';
-import { DiamondFormActions } from './form/DiamondFormActions';
-import { Diamond } from './InventoryTable';
-import { roundToInteger } from '@/utils/numberUtils';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Diamond } from '@/types/diamond';
+
+const diamondSchema = z.object({
+  shape: z.string().min(1, { message: "Shape is required" }),
+  carat: z.number().min(0.1, { message: "Carat must be greater than 0" }),
+  color: z.string().min(1, { message: "Color is required" }),
+  clarity: z.string().min(1, { message: "Clarity is required" }),
+  cut: z.string().optional(),
+  polish: z.string().optional(),
+  symmetry: z.string().optional(),
+  fluorescence: z.string().optional(),
+  certificateNumber: z.string().optional(),
+  certificateUrl: z.string().optional(),
+  price: z.number().min(1, { message: "Price must be greater than 0" }),
+  depth: z.number().optional(),
+  table: z.number().optional(),
+  measurements: z.string().optional(),
+  lab: z.string().optional(),
+  location: z.string().optional(),
+  availability: z.string().optional(),
+  comment: z.string().optional(),
+  store_visible: z.boolean().default(false),
+  picture: z.string().optional(),
+  color_type: z.string().optional(),
+});
+
+type DiamondFormValues = z.infer<typeof diamondSchema>;
 
 interface DiamondFormProps {
-  diamond?: Diamond;
-  onSubmit: (data: DiamondFormData) => void;
+  initialData?: Diamond | null;
+  onSubmit: (values: DiamondFormValues) => Promise<void>;
   onCancel: () => void;
-  isLoading?: boolean;
+  isLoading: boolean;
 }
 
-export function DiamondForm({ diamond, onSubmit, onCancel, isLoading = false }: DiamondFormProps) {
-  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<DiamondFormData>({
-    defaultValues: diamond ? {
-      stockNumber: diamond.stockNumber || '',
-      shape: diamond.shape || 'Round',
-      carat: diamond.carat || 1,
-      color: diamond.color || 'G',
-      clarity: diamond.clarity || 'VS1',
-      cut: diamond.cut || 'Excellent',
-      price: roundToInteger(diamond.price || 0),
-      status: diamond.status || 'Available',
-      picture: diamond.imageUrl || '',
-      certificateNumber: String((diamond as any).certificateNumber || ''),
-      lab: (diamond as any).lab || 'GIA',
-      fluorescence: (diamond as any).fluorescence || 'None',
-      polish: (diamond as any).polish || 'Excellent',
-      symmetry: (diamond as any).symmetry || 'Excellent',
-      gridle: (diamond as any).gridle || 'Medium',
-      culet: (diamond as any).culet || 'None',
-      storeVisible: (diamond as any).store_visible || false,
-    } : {
-      stockNumber: '',
-      carat: 1,
-      price: 0,
-      status: 'Available',
-      picture: '',
-      shape: 'Round',
-      color: 'G',
-      clarity: 'VS1',
-      cut: 'Excellent',
-      fluorescence: 'None',
-      polish: 'Excellent',
-      symmetry: 'Excellent',
-      lab: 'GIA',
-      gridle: 'Medium',
-      culet: 'None',
-      storeVisible: false
-    }
+export function DiamondForm({ initialData, onSubmit, onCancel, isLoading }: DiamondFormProps) {
+  const form = useForm<DiamondFormValues>({
+    resolver: zodResolver(diamondSchema),
+    defaultValues: {
+      shape: initialData?.shape || "",
+      carat: initialData?.carat || 0,
+      color: initialData?.color || "",
+      clarity: initialData?.clarity || "",
+      cut: initialData?.cut || "",
+      polish: initialData?.polish || "",
+      symmetry: initialData?.symmetry || "",
+      fluorescence: initialData?.fluorescence || "",
+      certificateNumber: initialData?.certificateNumber || "",
+      certificateUrl: initialData?.certificateUrl || "",
+      price: initialData?.price || 0,
+      depth: initialData?.depth || 0,
+      table: initialData?.table || 0,
+      measurements: initialData?.measurements || "",
+      lab: initialData?.lab || "",
+      location: initialData?.location || "",
+      availability: initialData?.availability || "",
+      comment: initialData?.comment || "",
+      store_visible: initialData?.store_visible || false,
+      picture: initialData?.picture || "",
+      color_type: initialData?.color_type || "",
+    },
+    mode: "onChange",
   });
 
-  React.useEffect(() => {
-    if (diamond && diamond.id) {
-      console.log('🔄 DiamondForm: Resetting form with diamond data:', diamond);
-      reset({
-        stockNumber: diamond.stockNumber || '',
-        shape: diamond.shape || 'Round',
-        carat: diamond.carat || 1,
-        color: diamond.color || 'G',
-        clarity: diamond.clarity || 'VS1',
-        cut: diamond.cut || 'Excellent',
-        price: roundToInteger(diamond.price || 0),
-        status: diamond.status || 'Available',
-        picture: diamond.imageUrl || '',
-        certificateNumber: String((diamond as any).certificateNumber || ''),
-        lab: (diamond as any).lab || 'GIA',
-        fluorescence: (diamond as any).fluorescence || 'None',
-        polish: (diamond as any).polish || 'Excellent',
-        symmetry: (diamond as any).symmetry || 'Excellent',
-        gridle: (diamond as any).gridle || 'Medium',
-        culet: (diamond as any).culet || 'None',
-        storeVisible: (diamond as any).store_visible || false,
-      });
-    }
-  }, [diamond?.id, reset]);
-
-  const handleFormSubmit = (data: DiamondFormData) => {
-    console.log('📝 DiamondForm: Form submitted with data:', data);
-    
-    // Validate required fields
-    if (!data.stockNumber || data.stockNumber.trim() === '') {
-      console.error('❌ DiamondForm: Stock number is required');
-      return;
-    }
-    
-    if (!data.carat || data.carat <= 0) {
-      console.error('❌ DiamondForm: Valid carat weight is required');
-      return;
-    }
-    
-    if (data.price < 0) {
-      console.error('❌ DiamondForm: Price cannot be negative');
-      return;
-    }
-    
-    const formattedData = {
-      ...data,
-      stockNumber: data.stockNumber.trim(),
-      carat: Number(data.carat),
-      price: roundToInteger(Number(data.price)),
-      shape: data.shape || 'Round',
-      color: data.color || 'G',
-      clarity: data.clarity || 'VS1',
-      cut: data.cut || 'Excellent',
-      status: data.status || 'Available',
-      picture: data.picture?.trim() || '',
-      certificateNumber: data.certificateNumber ? String(data.certificateNumber).trim() : '',
-      certificateUrl: data.certificateUrl?.trim() || '',
-      certificateComment: data.certificateComment?.trim() || '',
-      lab: data.lab || 'GIA',
-      length: data.length ? Number(data.length) : undefined,
-      width: data.width ? Number(data.width) : undefined,
-      depth: data.depth ? Number(data.depth) : undefined,
-      ratio: data.ratio ? Number(data.ratio) : undefined,
-      tablePercentage: data.tablePercentage ? Number(data.tablePercentage) : undefined,
-      depthPercentage: data.depthPercentage ? Number(data.depthPercentage) : undefined,
-      fluorescence: data.fluorescence || 'None',
-      polish: data.polish || 'Excellent',
-      symmetry: data.symmetry || 'Excellent',
-      gridle: data.gridle || 'Medium',
-      culet: data.culet || 'None',
-      pricePerCarat: data.pricePerCarat ? roundToInteger(Number(data.pricePerCarat)) : undefined,
-      rapnet: data.rapnet ? Number(data.rapnet) : undefined,
-      storeVisible: data.storeVisible || false,
-    };
-    
-    console.log('✅ DiamondForm: Formatted form data (all integers):', formattedData);
-    onSubmit(formattedData);
-  };
-
-  const currentShape = watch('shape');
-  const showCutField = currentShape === 'Round';
+  const { handleSubmit } = form;
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-      <DiamondDetailsSection
-        register={register}
-        setValue={setValue}
-        watch={watch}
-        errors={errors}
-      />
+    <Card>
+      <CardHeader>
+        <CardTitle>Diamond Details</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="shape">Shape</Label>
+              <Input id="shape" type="text" {...form.register("shape")} />
+              {form.formState.errors.shape && (
+                <p className="text-sm text-red-500">{form.formState.errors.shape.message}</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="carat">Carat</Label>
+              <Input id="carat" type="number" step="0.01" {...form.register("carat", { valueAsNumber: true })} />
+              {form.formState.errors.carat && (
+                <p className="text-sm text-red-500">{form.formState.errors.carat.message}</p>
+              )}
+            </div>
+          </div>
 
-      <CertificateSection
-        register={register}
-        setValue={setValue}
-        watch={watch}
-        errors={errors}
-      />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="color">Color</Label>
+              <Input id="color" type="text" {...form.register("color")} />
+              {form.formState.errors.color && (
+                <p className="text-sm text-red-500">{form.formState.errors.color.message}</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="clarity">Clarity</Label>
+              <Input id="clarity" type="text" {...form.register("clarity")} />
+              {form.formState.errors.clarity && (
+                <p className="text-sm text-red-500">{form.formState.errors.clarity.message}</p>
+              )}
+            </div>
+          </div>
 
-      <MeasurementsSection
-        register={register}
-        watch={watch}
-        errors={errors}
-      />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="cut">Cut</Label>
+              <Select onValueChange={form.setValue.bind(null, 'cut')}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select Cut" defaultValue={initialData?.cut || ""}/>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Excellent">Excellent</SelectItem>
+                  <SelectItem value="Very Good">Very Good</SelectItem>
+                  <SelectItem value="Good">Good</SelectItem>
+                  <SelectItem value="Fair">Fair</SelectItem>
+                  <SelectItem value="Poor">Poor</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="polish">Polish</Label>
+              <Input id="polish" type="text" {...form.register("polish")} />
+            </div>
+          </div>
 
-      <DetailedGradingSection
-        register={register}
-        setValue={setValue}
-        watch={watch}
-        errors={errors}
-      />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="symmetry">Symmetry</Label>
+              <Input id="symmetry" type="text" {...form.register("symmetry")} />
+            </div>
+            <div>
+              <Label htmlFor="fluorescence">Fluorescence</Label>
+              <Input id="fluorescence" type="text" {...form.register("fluorescence")} />
+            </div>
+          </div>
 
-      <BusinessInfoSection
-        register={register}
-        setValue={setValue}
-        watch={watch}
-        errors={errors}
-      />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="certificateNumber">Certificate Number</Label>
+              <Input id="certificateNumber" type="text" {...form.register("certificateNumber")} />
+            </div>
+            <div>
+              <Label htmlFor="certificateUrl">Certificate URL</Label>
+              <Input id="certificateUrl" type="text" {...form.register("certificateUrl")} />
+            </div>
+          </div>
 
-      <ImageUploadSection
-        setValue={setValue}
-        watch={watch}
-      />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="price">Price</Label>
+              <Input id="price" type="number" step="0.01" {...form.register("price", { valueAsNumber: true })} />
+              {form.formState.errors.price && (
+                <p className="text-sm text-red-500">{form.formState.errors.price.message}</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="depth">Depth</Label>
+              <Input id="depth" type="number" step="0.01" {...form.register("depth", { valueAsNumber: true })} />
+            </div>
+          </div>
 
-      <DiamondFormActions
-        diamond={diamond}
-        isLoading={isLoading}
-        onCancel={onCancel}
-      />
-    </form>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="table">Table</Label>
+              <Input id="table" type="number" step="0.01" {...form.register("table", { valueAsNumber: true })} />
+            </div>
+            <div>
+              <Label htmlFor="measurements">Measurements</Label>
+              <Input id="measurements" type="text" {...form.register("measurements")} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="lab">Lab</Label>
+              <Input id="lab" type="text" {...form.register("lab")} />
+            </div>
+            <div>
+              <Label htmlFor="location">Location</Label>
+              <Input id="location" type="text" {...form.register("location")} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="availability">Availability</Label>
+              <Input id="availability" type="text" {...form.register("availability")} />
+            </div>
+            <div>
+              <Label htmlFor="color_type">Color Type</Label>
+              <Input id="color_type" type="text" {...form.register("color_type")} />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="comment">Comment</Label>
+            <Textarea id="comment" {...form.register("comment")} />
+          </div>
+
+          <div>
+            <Label htmlFor="picture">Picture URL</Label>
+            <Input id="picture" type="text" {...form.register("picture")} />
+          </div>
+
+          <div>
+            <Label htmlFor="store_visible">Store Visible</Label>
+            <Switch id="store_visible" checked={form.watch("store_visible")} onCheckedChange={form.setValue.bind(null, 'store_visible')} />
+          </div>
+
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="ghost" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Submitting..." : "Submit"}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

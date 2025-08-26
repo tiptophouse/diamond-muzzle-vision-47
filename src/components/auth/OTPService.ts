@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export class OTPService {
@@ -23,26 +22,15 @@ export class OTPService {
     try {
       console.log('📱 Sending OTP via Telegram to admin:', this.ADMIN_TELEGRAM_ID);
       
-      const stoneData = {
-        stockNumber: 'OTP-REQUEST',
-        shape: 'Authentication',
-        carat: 0,
-        color: 'Security',
-        clarity: 'Admin Access',
-        cut: '',
-        polish: 'Login',
-        symmetry: 'Request',
-        fluorescence: 'OTP',
-        pricePerCarat: 0,
-        lab: '',
-        certificateNumber: otp
-      };
+      // Send clear OTP message without stone data wrapper
+      const otpMessage = `🔐 **Admin Login OTP**\n\nYour one-time password: **${otp}**\n\nValid for 10 minutes.\n\nDo not share this code with anyone.`;
 
       const { data, error } = await supabase.functions.invoke('send-telegram-message', {
         body: {
           telegramId: this.ADMIN_TELEGRAM_ID,
-          stoneData: stoneData,
-          storeUrl: `🔐 **Admin Login OTP**\n\nYour one-time password: **${otp}**\n\nValid for 10 minutes.\n\nDo not share this code with anyone.`
+          message: otpMessage,
+          // Don't use stoneData wrapper - send direct message
+          directMessage: true
         }
       });
 

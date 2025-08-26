@@ -39,7 +39,7 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
   // Automatically persist user data when authenticated
   useUserDataPersistence(authState.user, authState.isTelegramEnvironment);
 
-  // Show login page if needed
+  // Show OTP login for non-Telegram users or when explicitly needed
   if (authState.showLogin) {
     return <SimpleLogin onLogin={authState.handleLoginSuccess} />;
   }

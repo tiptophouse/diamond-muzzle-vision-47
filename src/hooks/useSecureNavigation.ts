@@ -1,114 +1,51 @@
-import { useEffect, useCallback, useRef } from 'react';
+
+import { useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useEnhancedTelegramWebApp } from './useEnhancedTelegramWebApp';
-
-interface NavigationState {
-  backButtonHandler: (() => void) | null;
-  mainButtonHandler: (() => void) | null;
-}
+import { useCentralizedNavigation } from './useCentralizedNavigation';
 
 export function useSecureNavigation() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { webApp, isInitialized, navigation, haptics } = useEnhancedTelegramWebApp();
-  const navigationState = useRef<NavigationState>({ backButtonHandler: null, mainButtonHandler: null });
-
-  // Secure cleanup function to prevent button state conflicts
-  const cleanupNavigation = useCallback(() => {
-    try {
-      if (navigationState.current.backButtonHandler) {
-        navigation.hideBackButton();
-        navigationState.current.backButtonHandler = null;
-      }
-      if (navigationState.current.mainButtonHandler) {
-        navigation.hideMainButton();
-        navigationState.current.mainButtonHandler = null;
-      }
-    } catch (error) {
-      console.warn('Navigation cleanup warning:', error);
-    }
-  }, [navigation]);
+  const { haptics, isInitialized } = useEnhancedTelegramWebApp();
+  const { configureNavigation, releaseNavigation, isReady } = useCentralizedNavigation();
 
   // Enhanced back button with proper cleanup
   const showSecureBackButton = useCallback((onClick?: () => void) => {
-    if (!isInitialized) return;
-
-    cleanupNavigation();
+    if (!isInitialized) return '';
 
     const handler = onClick || (() => {
       haptics.light();
       navigate(-1);
     });
 
-    navigationState.current.backButtonHandler = handler;
-    navigation.showBackButton(handler);
-  }, [isInitialized, cleanupNavigation, haptics, navigate, navigation]);
+    return configureNavigation({
+      showBackButton: true,
+      onBackClick: handler,
+      priority: 3 // Higher priority for manual configuration
+    });
+  }, [isInitialized, haptics, navigate, configureNavigation]);
 
   // Enhanced main button with proper cleanup
   const showSecureMainButton = useCallback((text: string, onClick?: () => void, color?: string) => {
-    if (!isInitialized) return;
+    if (!isInitialized) return '';
 
-    // Only cleanup main button, keep back button if present
-    if (navigationState.current.mainButtonHandler) {
-      navigation.hideMainButton();
-    }
-
-    navigationState.current.mainButtonHandler = onClick || (() => {});
-    navigation.showMainButton(text, onClick, color);
-  }, [isInitialized, navigation]);
-
-  // Auto-configure navigation based on route with iPhone optimizations
-  useEffect(() => {
-    if (!isInitialized) return;
-
-    const currentPath = location.pathname;
-    
-    // Clean slate approach - clear all navigation first
-    cleanupNavigation();
-
-    // Configure based on current route
-    switch (true) {
-      case currentPath.startsWith('/diamond/'):
-      case currentPath === '/upload-single-stone':
-      case currentPath === '/upload':
-      case currentPath === '/standardize-csv':
-      case currentPath === '/settings':
-        showSecureBackButton();
-        break;
-
-      case currentPath === '/inventory':
-        showSecureMainButton('Add Diamond', () => {
-          haptics.medium();
-          navigate('/upload-single-stone');
-        }, '#059669');
-        break;
-
-      case currentPath === '/store':
-        // No navigation buttons for store
-        break;
-
-      default:
-        // Clear navigation for other pages
-        break;
-    }
-
-    // Cleanup on unmount or route change
-    return cleanupNavigation;
-  }, [location.pathname, isInitialized, cleanupNavigation, showSecureBackButton, showSecureMainButton, haptics, navigate]);
+    return configureNavigation({
+      showMainButton: true,
+      mainButtonText: text,
+      mainButtonColor: color || '#007AFF',
+      onMainClick: onClick,
+      priority: 3 // Higher priority for manual configuration
+    });
+  }, [isInitialized, configureNavigation]);
 
   return {
     showBackButton: showSecureBackButton,
-    hideBackButton: () => {
-      navigation.hideBackButton();
-      navigationState.current.backButtonHandler = null;
-    },
+    hideBackButton: (id: string) => releaseNavigation(id),
     showMainButton: showSecureMainButton,
-    hideMainButton: () => {
-      navigation.hideMainButton();
-      navigationState.current.mainButtonHandler = null;
-    },
-    cleanupNavigation,
+    hideMainButton: (id: string) => releaseNavigation(id),
+    cleanupNavigation: () => {}, // No longer needed with centralized system
     haptics,
-    isReady: isInitialized
+    isReady
   };
 }

@@ -1,82 +1,95 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Filter, ChevronDown, ChevronUp } from "lucide-react";
-import { PremiumStoreFilters } from "./PremiumStoreFilters";
-import { Diamond as DiamondType } from "@/components/inventory/InventoryTable";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Diamond } from '@/types/diamond';
+import { ChevronDown, ChevronUp, Filter } from 'lucide-react';
 
 interface CollapsibleFiltersProps {
-  filters: {
-    shapes: string[];
-    colors: string[];
-    clarities: string[];
-    cuts: string[];
-    fluorescence: string[];
-    caratRange: [number, number];
-    priceRange: [number, number];
-  };
-  onUpdateFilter: (key: string, value: any) => void;
+  onApplyFilters: (filters: any) => void;
   onClearFilters: () => void;
-  diamonds: DiamondType[];
 }
 
-export function CollapsibleFilters({ 
-  filters, 
-  onUpdateFilter, 
-  onClearFilters, 
-  diamonds 
-}: CollapsibleFiltersProps) {
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+export function CollapsibleFilters({ onApplyFilters, onClearFilters }: CollapsibleFiltersProps) {
+  const [shape, setShape] = useState('');
+  const [color, setColor] = useState('');
+  const [clarity, setClarity] = useState('');
 
-  const activeFiltersCount = 
-    filters.shapes.length + 
-    filters.colors.length + 
-    filters.clarities.length + 
-    filters.cuts.length + 
-    filters.fluorescence.length + 
-    (filters.caratRange[0] > 0 || filters.caratRange[1] < 10 ? 1 : 0) +
-    (filters.priceRange[0] > 0 || filters.priceRange[1] < 100000 ? 1 : 0);
+  const handleApplyFilters = () => {
+    const filters = {
+      shape,
+      color,
+      clarity,
+    };
+    onApplyFilters(filters);
+  };
+
+  const handleClearFilters = () => {
+    setShape('');
+    setColor('');
+    setClarity('');
+    onClearFilters();
+  };
 
   return (
-    <div className="bg-background rounded-xl border shadow-sm">
-      {/* Filter Toggle Button - Telegram style */}
-      <div className="p-4">
-        <Button
-          variant="ghost"
-          onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-          className="w-full flex items-center justify-between text-foreground hover:bg-muted/50 min-h-[48px] touch-target rounded-xl"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center">
-              <Filter className="h-5 w-5 text-primary-foreground" />
+    <Card className="w-full">
+      <Collapsible>
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" className="w-full justify-between">
+            Filters
+            <Filter className="w-4 h-4 mr-2" />
+            <ChevronDown className="w-4 h-4" />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="border-t border-border p-4">
+          <div className="grid gap-4">
+            <div>
+              <label htmlFor="shape" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
+                Shape
+              </label>
+              <input
+                type="text"
+                id="shape"
+                value={shape}
+                onChange={(e) => setShape(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
             </div>
-            <div className="text-left">
-              <span className="font-semibold text-base">💎 Filter Diamonds</span>
-              {activeFiltersCount > 0 && (
-                <div className="flex items-center gap-1 mt-1">
-                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">
-                    {activeFiltersCount} active
-                  </span>
-                </div>
-              )}
+            <div>
+              <label htmlFor="color" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
+                Color
+              </label>
+              <input
+                type="text"
+                id="color"
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+            <div>
+              <label htmlFor="clarity" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
+                Clarity
+              </label>
+              <input
+                type="text"
+                id="clarity"
+                value={clarity}
+                onChange={(e) => setClarity(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={handleClearFilters}>
+                Clear
+              </Button>
+              <Button size="sm" onClick={handleApplyFilters}>
+                Apply
+              </Button>
             </div>
           </div>
-          <div className="text-muted-foreground">
-            {isFiltersOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-          </div>
-        </Button>
-      </div>
-
-      {/* Collapsible Filter Content */}
-      {isFiltersOpen && (
-        <div className="border-t">
-          <PremiumStoreFilters
-            filters={filters}
-            onUpdateFilter={onUpdateFilter}
-            onClearFilters={onClearFilters}
-            diamonds={diamonds}
-          />
-        </div>
-      )}
-    </div>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
   );
 }

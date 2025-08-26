@@ -1,4 +1,3 @@
-
 export const apiEndpoints = {
   // Health check
   alive: () => `/api/v1/alive`,
@@ -11,6 +10,12 @@ export const apiEndpoints = {
     }
     return endpoint;
   },
+
+  // Get all diamonds - same as getAllStones but different endpoint name for compatibility
+  getAllDiamonds: (userId: number) => `/api/v1/get_all_stones?user_id=${userId}`,
+  
+  // Get single diamond by ID
+  getDiamondById: (diamondId: string) => `/api/v1/diamonds/${diamondId}`,
   
   // Create diamond - POST /api/v1/diamonds?user_id={user_id}
   addDiamond: (userId: number) => `/api/v1/diamonds?user_id=${userId}`,
@@ -33,6 +38,13 @@ export const apiEndpoints = {
   // Reports
   createReport: () => `/api/v1/create-report`,
   getReport: (diamondId: string) => `/api/v1/get-report?diamond_id=${diamondId}`,
+  getReports: (userId: number) => `/api/v1/users/${userId}/reports`,
+  
+  // Market comparison
+  getMarketComparison: (params: any) => `/api/v1/market-comparison`,
+  
+  // Secure sharing
+  generateShareLink: (diamondId: string) => `/api/v1/diamonds/${diamondId}/share`,
   
   // Payment
   paymentRequest: () => `/api/v1/payment_request`,
@@ -46,6 +58,10 @@ export const apiEndpoints = {
   getInventoryByShape: (userId: number) => `/api/v1/users/${userId}/inventory/by-shape`,
   getRecentSales: (userId: number) => `/api/v1/users/${userId}/sales/recent`,
   getInventory: (userId: number, page: number = 1, limit: number = 10) => `/api/v1/users/${userId}/inventory?page=${page}&limit=${limit}`,
+  getUserInsights: (userId: number) => `/api/v1/users/${userId}/insights`,
+  
+  // Store endpoints
+  getStoreDiamonds: (userId: number) => `/api/v1/users/${userId}/store/diamonds`,
   
   // Payment management endpoints
   removeUserPayments: (userId: number) => `/api/v1/users/${userId}/payments/remove`,

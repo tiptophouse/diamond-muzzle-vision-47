@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Send, Users, Clock } from 'lucide-react';
+import { Calendar, Send, Users, Clock, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Textarea } from '@/components/ui/textarea';
@@ -41,49 +40,54 @@ export function MeetingInvitationSender() {
 
   const [message, setMessage] = useState(defaultMessage);
 
-  const predefinedTelegramIds = [
-    407257458, 1094583058, 459335857, 1098392267, 7185658377, 166061347, 31938623, 851117787,
-    219540839, 5638216124, 565348343, 191985686, 1547977121, 146786072, 7980263791, 290747817,
-    816684685, 299303085, 125724542, 131112573, 1774808969, 7661396252, 247961355, 6328816442,
-    259613412, 157850874, 459466461, 791559324, 6702124868, 362740339, 781492003, 203555051,
-    1395318066, 37226932, 1050059218, 504152563, 321406246, 37822062, 205324965, 608907728,
-    5228664590, 501928605, 5864205153, 351591647, 211414349, 37220053, 1016146739, 1397126724,
-    221428001, 27197168, 414710632, 1586162788, 1128966406, 1115142554, 6301609905, 6499134069,
-    204803871, 481547993, 1784060582, 25517331, 173056785, 599801379, 6060737011, 315642972,
-    349492743, 583512006, 357027836, 599440471, 351937475, 430947198, 300551886, 538414092,
-    7602268977, 5786789221, 188838452, 359846796, 5916784425, 5145559049, 725612578, 499196465,
-    314532104, 476162733, 138350912, 530055516, 941142244, 139767109, 976803458, 655107366,
-    376677644, 761840256, 36514706, 37680275, 773880190, 1131026884, 1491998978, 180264348,
-    750731120, 2105870530, 5163648472, 609472329, 66858946, 161389691, 317301692, 1016203357,
-    156440200, 868350884, 2084882603, 215605918, 174230606, 363600108, 819441864, 1021878792,
-    291063886, 67414578, 5945056045, 223604456, 215251646, 7348943395, 1933311874, 812263552,
-    843225749, 15178583, 158952076, 2138564172
-  ].filter(id => id !== 0); // Remove the 0 ID
-
   const fetchUsersWithoutDiamonds = async () => {
     setLoading(true);
     try {
-      // Get all users from the predefined list
+      console.log('📊 Fetching users without diamonds...');
+      
+      // First, get all user profiles
       const { data: allUsers, error: usersError } = await supabase
         .from('user_profiles')
         .select('telegram_id, first_name, last_name, username, created_at')
-        .in('telegram_id', predefinedTelegramIds);
+        .not('telegram_id', 'eq', 0)
+        .order('created_at', { ascending: false });
 
-      if (usersError) throw usersError;
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+        throw usersError;
+      }
+
+      console.log(`📝 Found ${allUsers?.length || 0} total users`);
+
+      if (!allUsers || allUsers.length === 0) {
+        setUsers([]);
+        setSelectedUsers(new Set());
+        return;
+      }
 
       // For each user, check if they have diamonds
       const usersWithDiamondStatus = await Promise.all(
-        (allUsers || []).map(async (user) => {
-          const { count } = await supabase
-            .from('inventory')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.telegram_id)
-            .is('deleted_at', null);
+        allUsers.map(async (user) => {
+          try {
+            const { count, error: countError } = await supabase
+              .from('inventory')
+              .select('*', { count: 'exact', head: true })
+              .eq('user_id', user.telegram_id)
+              .is('deleted_at', null);
 
-          return {
-            ...user,
-            hasDiamonds: (count || 0) > 0
-          };
+            if (countError) {
+              console.error(`Error checking diamonds for user ${user.telegram_id}:`, countError);
+              return { ...user, hasDiamonds: false };
+            }
+
+            return {
+              ...user,
+              hasDiamonds: (count || 0) > 0
+            };
+          } catch (error) {
+            console.error(`Error processing user ${user.telegram_id}:`, error);
+            return { ...user, hasDiamonds: false };
+          }
         })
       );
 
@@ -92,18 +96,22 @@ export function MeetingInvitationSender() {
         .filter(user => !user.hasDiamonds)
         .map(({ hasDiamonds, ...user }) => user);
 
+      console.log(`💎 Found ${usersWithoutDiamonds.length} users without diamonds`);
+      
       setUsers(usersWithoutDiamonds);
       
       // Auto-select all users
       setSelectedUsers(new Set(usersWithoutDiamonds.map(u => u.telegram_id)));
 
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('❌ Error fetching users:', error);
       toast({
         title: 'שגיאה בטעינת נתונים',
-        description: 'לא ניתן לטעון את רשימת המשתמשים',
+        description: 'לא ניתן לטעון את רשימת המשתמשים. אנא נסה שוב.',
         variant: 'destructive',
       });
+      setUsers([]);
+      setSelectedUsers(new Set());
     } finally {
       setLoading(false);
     }
@@ -120,52 +128,106 @@ export function MeetingInvitationSender() {
   };
 
   const sendMeetingInvitations = async () => {
+    if (selectedUsers.size === 0) {
+      toast({
+        title: 'אין משתמשים נבחרים',
+        description: 'אנא בחר לפחות משתמש אחד לשליחת הזמנה',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setSending(true);
+    let successCount = 0;
+    let errorCount = 0;
+
     try {
       const selectedUsersList = users.filter(user => selectedUsers.has(user.telegram_id));
+      console.log(`📧 Sending invitations to ${selectedUsersList.length} users`);
       
-      const notifications = selectedUsersList.map(user => {
-        const firstName = user.first_name || user.username || 'משתמש יקר';
-        const personalizedMessage = message.replace('{firstName}', firstName);
-        
-        return {
-          telegram_id: user.telegram_id,
-          message_type: 'meeting_invitation',
-          message_content: personalizedMessage,
-          status: 'sent',
-          metadata: {
-            title: '📅 הזמנה לפגישה אישית - BrilliantBot',
-            calendly_url: 'https://calendly.com/avtipoos',
-            user_info: {
-              first_name: user.first_name,
-              last_name: user.last_name,
-              username: user.username
-            },
-            diamond_count: 0,
-            reason: 'no_diamonds_uploaded'
+      for (const user of selectedUsersList) {
+        try {
+          const firstName = user.first_name || user.username || 'משתמש יקר';
+          const personalizedMessage = message.replace('{firstName}', firstName);
+          
+          console.log(`📤 Sending invitation to user ${user.telegram_id}`);
+          
+          // Use the Telegram edge function to send the message directly
+          const { data: telegramResult, error: telegramError } = await supabase.functions.invoke('send-telegram-message', {
+            body: {
+              telegramId: user.telegram_id,
+              message: personalizedMessage,
+              directMessage: true
+            }
+          });
+
+          if (telegramError) {
+            console.error(`❌ Error sending Telegram message to ${user.telegram_id}:`, telegramError);
+            errorCount++;
+            continue;
           }
-        };
-      });
 
-      const { error } = await supabase
-        .from('notifications')
-        .insert(notifications);
+          console.log(`✅ Telegram message sent to ${user.telegram_id}:`, telegramResult);
 
-      if (error) throw error;
+          // Also store in notifications table for tracking
+          const notificationData = {
+            telegram_id: user.telegram_id,
+            message_type: 'meeting_invitation',
+            message_content: personalizedMessage,
+            status: 'sent',
+            metadata: {
+              title: '📅 הזמנה לפגישה אישית - BrilliantBot',
+              calendly_url: 'https://calendly.com/avtipoos',
+              user_info: {
+                first_name: user.first_name,
+                last_name: user.last_name,
+                username: user.username
+              },
+              diamond_count: 0,
+              reason: 'no_diamonds_uploaded',
+              telegram_success: telegramResult?.success || false
+            }
+          };
 
-      toast({
-        title: 'הזמנות נשלחו בהצלחה! 📅',
-        description: `נשלחו ${selectedUsersList.length} הזמנות לפגישה אישית`,
-      });
+          const { error: insertError } = await supabase
+            .from('notifications')
+            .insert([notificationData]);
 
-      // Refresh the list
+          if (insertError) {
+            console.error(`❌ Error storing notification for ${user.telegram_id}:`, insertError);
+          }
+
+          successCount++;
+          
+        } catch (userError) {
+          console.error(`❌ Error processing user ${user.telegram_id}:`, userError);
+          errorCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        toast({
+          title: `הזמנות נשלחו בהצלחה! 📅`,
+          description: `נשלחו ${successCount} הזמנות לפגישה אישית${errorCount > 0 ? `, ${errorCount} נכשלו` : ''}`,
+        });
+      }
+
+      if (errorCount > 0 && successCount === 0) {
+        toast({
+          title: 'שגיאה בשליחת ההזמנות',
+          description: `כל ${errorCount} ההזמנות נכשלו. אנא נסה שוב.`,
+          variant: 'destructive',
+        });
+      }
+
+      // Refresh the list after sending
       await fetchUsersWithoutDiamonds();
 
     } catch (error) {
-      console.error('Error sending meeting invitations:', error);
+      console.error('❌ Error in sending process:', error);
       toast({
         title: 'שגיאה בשליחת ההזמנות',
-        description: 'אנא נסה שוב',
+        description: 'אירעה שגיאה במהלך שליחת ההזמנות. אנא נסה שוב.',
         variant: 'destructive',
       });
     } finally {
@@ -182,7 +244,7 @@ export function MeetingInvitationSender() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+            <RefreshCw className="h-5 w-5 animate-spin" />
             טוען משתמשים...
           </CardTitle>
         </CardHeader>
@@ -190,6 +252,7 @@ export function MeetingInvitationSender() {
           <div className="animate-pulse space-y-2">
             <div className="h-4 bg-muted rounded w-3/4"></div>
             <div className="h-4 bg-muted rounded w-1/2"></div>
+            <div className="h-4 bg-muted rounded w-2/3"></div>
           </div>
         </CardContent>
       </Card>
@@ -199,9 +262,20 @@ export function MeetingInvitationSender() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-blue-500" />
-          הזמנות לפגישות אישיות ({users.length})
+        <CardTitle className="flex items-center gap-2 justify-between">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-blue-500" />
+            הזמנות לפגישות אישיות ({users.length})
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchUsersWithoutDiamonds}
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            רענן
+          </Button>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -219,13 +293,14 @@ export function MeetingInvitationSender() {
           </p>
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <Badge variant="outline">{selectedUsers.size} נבחרו</Badge>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setSelectedUsers(new Set(users.map(u => u.telegram_id)))}
+              disabled={users.length === 0}
             >
               בחר הכל
             </Button>
@@ -233,6 +308,7 @@ export function MeetingInvitationSender() {
               variant="outline"
               size="sm"
               onClick={() => setSelectedUsers(new Set())}
+              disabled={selectedUsers.size === 0}
             >
               בטל בחירה
             </Button>
@@ -240,7 +316,7 @@ export function MeetingInvitationSender() {
           
           <Button
             onClick={sendMeetingInvitations}
-            disabled={sending || selectedUsers.size === 0}
+            disabled={sending || selectedUsers.size === 0 || !message.trim()}
             className="flex items-center gap-2"
           >
             <Send className="h-4 w-4" />
@@ -251,7 +327,9 @@ export function MeetingInvitationSender() {
         {users.length === 0 ? (
           <div className="text-center py-8">
             <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">כל המשתמשים כבר העלו יהלומים! 🎉</p>
+            <p className="text-muted-foreground">
+              {loading ? 'טוען...' : 'כל המשתמשים כבר העלו יהלומים! 🎉'}
+            </p>
           </div>
         ) : (
           <div className="max-h-80 overflow-y-auto space-y-2">

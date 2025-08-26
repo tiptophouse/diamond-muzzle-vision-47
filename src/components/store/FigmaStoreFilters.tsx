@@ -1,232 +1,201 @@
-import { Diamond as DiamondType } from "@/components/inventory/InventoryTable";
-import { FilterSectionHeader } from "./filters/FilterSectionHeader";
-import { ShapeFilter } from "./filters/ShapeFilter";
-import { PriceRangeFilter } from "./filters/PriceRangeFilter";
-import { CaratRangeFilter } from "./filters/CaratRangeFilter";
-import { ColorFilter } from "./filters/ColorFilter";
-import { ClarityFilter } from "./filters/ClarityFilter";
-import { CutFilter } from "./filters/CutFilter";
-import { FluorescenceFilter } from "./filters/FluorescenceFilter";
-import { PolishFilter } from "./filters/PolishFilter";
-import { SymmetryFilter } from "./filters/SymmetryFilter";
-import { DepthFilter } from "./filters/DepthFilter";
-import { TableFilter } from "./filters/TableFilter";
-import { Button } from "@/components/ui/button";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Diamond } from '@/types/diamond';
 
 interface FigmaStoreFiltersProps {
-  filters: {
-    shapes: string[];
-    colors: string[];
-    clarities: string[];
-    cuts: string[];
-    fluorescence: string[];
-    polish: string[];
-    symmetry: string[];
-    caratRange: [number, number];
-    priceRange: [number, number];
-    depthRange: [number, number];
-    tableRange: [number, number];
-  };
-  onUpdateFilter: (key: string, value: any) => void;
-  onClearFilters: () => void;
-  onApplyFilters: () => void;
-  diamonds: DiamondType[];
+  diamonds: Diamond[];
+  onFilter: (filters: any) => void;
 }
 
-export function FigmaStoreFilters({ 
-  filters, 
-  onUpdateFilter, 
-  onClearFilters,
-  onApplyFilters,
-  diamonds
-}: FigmaStoreFiltersProps) {
-  const getMinMaxValues = () => {
-    if (!diamonds || diamonds.length === 0) {
-      return { 
-        minCarat: 0, maxCarat: 10, 
-        minPrice: 0, maxPrice: 100000,
-        minDepth: 0, maxDepth: 100,
-        minTable: 0, maxTable: 100
-      };
-    }
-    
-    const carats = diamonds.map(d => d.carat);
-    const prices = diamonds.map(d => d.price);
-    // Note: depth_percentage and table_percentage may not exist in current Diamond type
-    // Using default ranges for now
-    const depths = [50, 60, 70, 80]; // Default depth range
-    const tables = [45, 55, 65, 75]; // Default table range
-    
-    return {
-      minCarat: Math.min(...carats),
-      maxCarat: Math.max(...carats),
-      minPrice: Math.min(...prices),
-      maxPrice: Math.max(...prices),
-      minDepth: depths.length > 0 ? Math.min(...depths) : 0,
-      maxDepth: depths.length > 0 ? Math.max(...depths) : 100,
-      minTable: tables.length > 0 ? Math.min(...tables) : 0,
-      maxTable: tables.length > 0 ? Math.max(...tables) : 100
+export function FigmaStoreFilters({ diamonds, onFilter }: FigmaStoreFiltersProps) {
+  const [priceRange, setPriceRange] = useState<number[]>([0, 10000]);
+  const [caratRange, setCaratRange] = useState<number[]>([0, 5]);
+  const [shapeFilters, setShapeFilters] = useState<string[]>([]);
+  const [colorFilters, setColorFilters] = useState<string[]>([]);
+  const [clarityFilters, setClarityFilters] = useState<string[]>([]);
+
+  const handlePriceChange = (value: number[]) => {
+    setPriceRange(value);
+  };
+
+  const handleCaratChange = (value: number[]) => {
+    setCaratRange(value);
+  };
+
+  const handleShapeChange = (shape: string) => {
+    setShapeFilters((prev) =>
+      prev.includes(shape) ? prev.filter((s) => s !== shape) : [...prev, shape]
+    );
+  };
+
+  const handleColorChange = (color: string) => {
+    setColorFilters((prev) =>
+      prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]
+    );
+  };
+
+  const handleClarityChange = (clarity: string) => {
+    setClarityFilters((prev) =>
+      prev.includes(clarity) ? prev.filter((c) => c !== clarity) : [...prev, clarity]
+    );
+  };
+
+  const applyFilters = () => {
+    const filters = {
+      priceRange,
+      caratRange,
+      shapes: shapeFilters,
+      colors: colorFilters,
+      clarities: clarityFilters,
     };
+    onFilter(filters);
   };
 
-  const { minCarat, maxCarat, minPrice, maxPrice, minDepth, maxDepth, minTable, maxTable } = getMinMaxValues();
-
-  const toggleFilter = (type: string, value: string) => {
-    const currentValues = filters[type as keyof typeof filters] as string[];
-    const newValues = currentValues.includes(value)
-      ? currentValues.filter(v => v !== value)
-      : [...currentValues, value];
-    onUpdateFilter(type, newValues);
+  const resetFilters = () => {
+    setPriceRange([0, 10000]);
+    setCaratRange([0, 5]);
+    setShapeFilters([]);
+    setColorFilters([]);
+    setClarityFilters([]);
+    applyFilters();
   };
 
-  const activeFiltersCount = 
-    filters.shapes.length + 
-    filters.colors.length + 
-    filters.clarities.length + 
-    filters.cuts.length + 
-    filters.fluorescence.length +
-    filters.polish.length +
-    filters.symmetry.length +
-    (filters.caratRange[0] > minCarat || filters.caratRange[1] < maxCarat ? 1 : 0) +
-    (filters.priceRange[0] > minPrice || filters.priceRange[1] < maxPrice ? 1 : 0) +
-    (filters.depthRange[0] > minDepth || filters.depthRange[1] < maxDepth ? 1 : 0) +
-    (filters.tableRange[0] > minTable || filters.tableRange[1] < maxTable ? 1 : 0);
+  const allShapes = Array.from(new Set(diamonds.map((d) => d.shape)));
+  const allColors = Array.from(new Set(diamonds.map((d) => d.color)));
+  const allClarities = Array.from(new Set(diamonds.map((d) => d.clarity)));
 
   return (
-    <div className="max-h-[70vh] overflow-y-auto">
-      <div className="p-4 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-slate-900">Filters</h3>
-          {activeFiltersCount > 0 && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onClearFilters}
-              className="text-primary hover:text-primary-dark"
-            >
-              Clear ({activeFiltersCount})
-            </Button>
-          )}
-        </div>
-
-        {/* Diamond Shape */}
-        <div className="space-y-3">
-          <FilterSectionHeader label="Diamond shape" />
-          <ShapeFilter
-            selectedShapes={filters.shapes}
-            onShapeToggle={(shape) => toggleFilter('shapes', shape)}
+    <Card className="w-full">
+      <CardContent className="space-y-6">
+        <div className="space-y-2">
+          <h4 className="text-sm font-semibold">Price Range</h4>
+          <div className="flex items-center space-x-2">
+            <Input
+              type="number"
+              value={priceRange[0]}
+              onChange={(e) =>
+                setPriceRange([parseInt(e.target.value), priceRange[1]])
+              }
+              className="w-24"
+            />
+            <span>-</span>
+            <Input
+              type="number"
+              value={priceRange[1]}
+              onChange={(e) =>
+                setPriceRange([priceRange[0], parseInt(e.target.value)])
+              }
+              className="w-24"
+            />
+          </div>
+          <Slider
+            min={0}
+            max={10000}
+            step={100}
+            value={priceRange}
+            onValueChange={handlePriceChange}
           />
         </div>
 
-        {/* Price Range */}
-        <div className="space-y-3">
-          <FilterSectionHeader label="Price range" />
-          <PriceRangeFilter
-            priceRange={filters.priceRange}
-            minPrice={minPrice}
-            maxPrice={maxPrice}
-            onPriceRangeChange={(range) => onUpdateFilter('priceRange', range)}
+        <div className="space-y-2">
+          <h4 className="text-sm font-semibold">Carat Range</h4>
+          <div className="flex items-center space-x-2">
+            <Input
+              type="number"
+              value={caratRange[0]}
+              onChange={(e) =>
+                setCaratRange([parseInt(e.target.value), caratRange[1]])
+              }
+              className="w-20"
+            />
+            <span>-</span>
+            <Input
+              type="number"
+              value={caratRange[1]}
+              onChange={(e) =>
+                setCaratRange([caratRange[0], parseInt(e.target.value)])
+              }
+              className="w-20"
+            />
+          </div>
+          <Slider
+            min={0}
+            max={5}
+            step={0.1}
+            value={caratRange}
+            onValueChange={handleCaratChange}
           />
         </div>
 
-        {/* Carat Weight */}
-        <div className="space-y-3">
-          <FilterSectionHeader label="Carat weight" />
-          <CaratRangeFilter
-            caratRange={filters.caratRange}
-            minCarat={minCarat}
-            maxCarat={maxCarat}
-            onCaratRangeChange={(range) => onUpdateFilter('caratRange', range)}
-          />
+        <div className="space-y-2">
+          <h4 className="text-sm font-semibold">Shape</h4>
+          <ScrollArea className="h-40">
+            <div className="space-y-1">
+              {allShapes.map((shape) => (
+                <div key={shape} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`shape-${shape}`}
+                    checked={shapeFilters.includes(shape)}
+                    onCheckedChange={() => handleShapeChange(shape)}
+                  />
+                  <Label htmlFor={`shape-${shape}`}>{shape}</Label>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
         </div>
 
-        {/* Color */}
-        <div className="space-y-3">
-          <FilterSectionHeader label="Color" />
-          <ColorFilter
-            selectedColors={filters.colors}
-            onColorToggle={(color) => toggleFilter('colors', color)}
-          />
+        <div className="space-y-2">
+          <h4 className="text-sm font-semibold">Color</h4>
+          <ScrollArea className="h-40">
+            <div className="space-y-1">
+              {allColors.map((color) => (
+                <div key={color} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`color-${color}`}
+                    checked={colorFilters.includes(color)}
+                    onCheckedChange={() => handleColorChange(color)}
+                  />
+                  <Label htmlFor={`color-${color}`}>{color}</Label>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
         </div>
 
-        {/* Clarity */}
-        <div className="space-y-3">
-          <FilterSectionHeader label="Clarity" />
-          <ClarityFilter
-            selectedClarities={filters.clarities}
-            onClarityToggle={(clarity) => toggleFilter('clarities', clarity)}
-          />
+        <div className="space-y-2">
+          <h4 className="text-sm font-semibold">Clarity</h4>
+          <ScrollArea className="h-40">
+            <div className="space-y-1">
+              {allClarities.map((clarity) => (
+                <div key={clarity} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`clarity-${clarity}`}
+                    checked={clarityFilters.includes(clarity)}
+                    onCheckedChange={() => handleClarityChange(clarity)}
+                  />
+                  <Label htmlFor={`clarity-${clarity}`}>{clarity}</Label>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
         </div>
 
-        {/* Cut */}
-        <div className="space-y-3">
-          <FilterSectionHeader label="Cut" />
-          <CutFilter
-            selectedCuts={filters.cuts}
-            onCutToggle={(cut) => toggleFilter('cuts', cut)}
-          />
-        </div>
-
-        {/* Fluorescence */}
-        <div className="space-y-3">
-          <FilterSectionHeader label="Fluorescence" />
-          <FluorescenceFilter
-            selectedFluorescence={filters.fluorescence}
-            onFluorescenceToggle={(fluorescence) => toggleFilter('fluorescence', fluorescence)}
-          />
-        </div>
-
-        {/* Symmetry */}
-        <div className="space-y-3">
-          <FilterSectionHeader label="Symmetry" />
-          <SymmetryFilter
-            selectedSymmetry={filters.symmetry}
-            onSymmetryToggle={(symmetry) => toggleFilter('symmetry', symmetry)}
-          />
-        </div>
-
-        {/* Polish */}
-        <div className="space-y-3">
-          <FilterSectionHeader label="Polish" />
-          <PolishFilter
-            selectedPolish={filters.polish}
-            onPolishToggle={(polish) => toggleFilter('polish', polish)}
-          />
-        </div>
-
-        {/* Total Depth */}
-        <div className="space-y-3">
-          <FilterSectionHeader label="Total depth (%)" />
-          <DepthFilter
-            depthRange={filters.depthRange}
-            minDepth={minDepth}
-            maxDepth={maxDepth}
-            onDepthRangeChange={(range) => onUpdateFilter('depthRange', range)}
-          />
-        </div>
-
-        {/* Table */}
-        <div className="space-y-3">
-          <FilterSectionHeader label="Table (%)" />
-          <TableFilter
-            tableRange={filters.tableRange}
-            minTable={minTable}
-            maxTable={maxTable}
-            onTableRangeChange={(range) => onUpdateFilter('tableRange', range)}
-          />
-        </div>
-
-        {/* Apply Button */}
-        <div className="pt-4 border-t">
-          <Button 
-            onClick={onApplyFilters} 
-            className="w-full bg-primary hover:bg-primary-dark text-white h-12 font-semibold"
-          >
-            Apply
+        <div className="flex justify-between">
+          <Button variant="outline" size="sm" onClick={resetFilters}>
+            Reset
+          </Button>
+          <Button size="sm" onClick={applyFilters}>
+            Apply Filters
           </Button>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
