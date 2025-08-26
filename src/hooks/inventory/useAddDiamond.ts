@@ -29,6 +29,14 @@ interface DiamondCreateData {
   picture?: string;
 }
 
+interface AddDiamondResponse {
+  id?: string | number;
+  stock?: string;
+  stock_number?: string;
+  diamond_id?: string | number;
+  message?: string;
+}
+
 export function useAddDiamond() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +70,9 @@ export function useAddDiamond() {
         throw new Error(response.error);
       }
       
-      const diamondId = response.data?.id || response.data?.stock || 'unknown';
+      // Safely extract diamond ID with proper type checking
+      const responseData = response.data as AddDiamondResponse;
+      const diamondId = responseData?.id || responseData?.stock || responseData?.stock_number || responseData?.diamond_id || 'unknown';
       
       console.log('✅ Diamond added successfully:', diamondId);
 

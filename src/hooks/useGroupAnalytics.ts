@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface GroupAnalyticsData {
   total_requests: number;
@@ -15,6 +15,7 @@ export function useGroupAnalytics() {
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<GroupAnalyticsData | null>(null);
   const { user } = useTelegramAuth();
+  const { toast } = useToast();
 
   const analyzeGroupActivity = async () => {
     if (!user) {
@@ -60,18 +61,21 @@ export function useGroupAnalytics() {
   };
 
   const getStoredAnalytics = async () => {
-    if (!user) return;
+    if (!user) return [];
 
     try {
+      // Use a simpler query that doesn't rely on the group_analytics table
+      // which might not exist in the current schema
       const { data: analytics, error } = await supabase
-        .from('group_analytics')
+        .from('analytics_events')
         .select('*')
-        .eq('user_id', user.id)
-        .order('analysis_date', { ascending: false })
+        .eq('event_type', 'group_analysis')
+        .order('created_at', { ascending: false })
         .limit(10);
 
       if (error) {
-        throw error;
+        console.warn('Failed to fetch stored analytics:', error);
+        return [];
       }
 
       return analytics || [];

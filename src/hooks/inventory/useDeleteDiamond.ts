@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { api, apiEndpoints, getCurrentUserId } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { Diamond } from '@/components/inventory/InventoryTable';
+import { Diamond } from '@/types/diamond';
 
 export function useDeleteDiamond() {
   const [isDeleting, setIsDeleting] = useState(false);
@@ -50,7 +50,7 @@ export function useDeleteDiamond() {
     }
 
     try {
-      // Use the correct FastAPI DELETE endpoint
+      // Use the correct FastAPI DELETE endpoint: /api/v1/delete_stone/{diamond_id}?user_id={user_id}
       const response = await api.delete(apiEndpoints.deleteDiamond(numericDiamondId, userId));
       
       console.log('🗑️ DELETE: FastAPI response:', response);
@@ -72,25 +72,7 @@ export function useDeleteDiamond() {
       }
       
       // Success - diamond is already removed from UI
-      console.log('✅ DELETE: Diamond successfully deleted from FastAPI');
-      
-      // Also remove from localStorage as fallback
-      try {
-        const localData = localStorage.getItem('diamond_inventory');
-        if (localData) {
-          const parsedData = JSON.parse(localData);
-          if (Array.isArray(parsedData)) {
-            const updatedData = parsedData.filter(item => 
-              String(item.id) !== diamondId && 
-              String(item.diamond_id) !== diamondId
-            );
-            localStorage.setItem('diamond_inventory', JSON.stringify(updatedData));
-            console.log('🗑️ DELETE: Also removed from localStorage');
-          }
-        }
-      } catch (localError) {
-        console.warn('🗑️ DELETE: Failed to update localStorage:', localError);
-      }
+      console.log('✅ DELETE: Diamond successfully deleted from FastAPI backend');
       
       toast({
         title: "✅ Diamond Deleted",

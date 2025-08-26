@@ -5,6 +5,7 @@ import { InventoryFilters } from '@/components/inventory/InventoryFilters';
 import { InventoryTable } from '@/components/inventory/InventoryTable';
 import { InventoryTableEmpty } from '@/components/inventory/InventoryTableEmpty';
 import { InventoryTableLoading } from '@/components/inventory/InventoryTableLoading';
+import { EnhancedDiamondDetailModal } from '@/components/inventory/EnhancedDiamondDetailModal';
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { useInventoryCrud } from '@/hooks/useInventoryCrud';
 import { Diamond } from '@/types/diamond';
@@ -14,6 +15,8 @@ export default function InventoryPage() {
   const [shapeFilter, setShapeFilter] = useState('all');
   const [sortBy, setSortBy] = useState('updated_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [selectedDiamond, setSelectedDiamond] = useState<Diamond | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   
   const { diamonds, loading, error, handleRefresh } = useInventoryData();
   const { deleteDiamond, isLoading: isDeleting } = useInventoryCrud();
@@ -38,6 +41,11 @@ export default function InventoryPage() {
     } catch (error) {
       console.error('Failed to delete diamond:', error);
     }
+  };
+
+  const handleDiamondDetails = (diamond: Diamond) => {
+    setSelectedDiamond(diamond);
+    setIsDetailModalOpen(true);
   };
 
   const clearFilters = () => {
@@ -116,7 +124,7 @@ export default function InventoryPage() {
       />
       
       <InventoryFilters
-        searchTerm={searchQuery}
+        searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         selectedShape={shapeFilter}
         onShapeChange={setShapeFilter}
@@ -134,9 +142,19 @@ export default function InventoryPage() {
         <InventoryTable 
           data={sortedDiamonds} 
           onDelete={handleDelete}
+          onEdit={handleDiamondDetails}
           loading={isDeleting}
         />
       )}
+
+      <EnhancedDiamondDetailModal
+        diamond={selectedDiamond}
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedDiamond(null);
+        }}
+      />
     </div>
   );
 }

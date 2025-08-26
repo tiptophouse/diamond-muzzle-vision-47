@@ -1,117 +1,139 @@
 
-import { TableCell, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Diamond } from "./InventoryTable";
-import { Edit, Trash, ImageIcon, Upload } from "lucide-react";
-import { StoreVisibilityToggle } from "./StoreVisibilityToggle";
-import { UserImageUpload } from "./UserImageUpload";
+import React from 'react';
+import { TableCell, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Eye, Edit, Trash2, ExternalLink } from 'lucide-react';
+import { Diamond } from '@/types/diamond';
+import { StoreVisibilityToggle } from './StoreVisibilityToggle';
+import { UserImageUpload } from './UserImageUpload';
 
 interface InventoryTableRowProps {
-  diamond: Diamond & { store_visible?: boolean; picture?: string };
+  diamond: Diamond;
   onEdit?: (diamond: Diamond) => void;
   onDelete?: (diamondId: string) => void;
   onStoreToggle?: (stockNumber: string, isVisible: boolean) => void;
   onImageUpdate?: () => void;
 }
 
-export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle, onImageUpdate }: InventoryTableRowProps) {
+export function InventoryTableRow({ 
+  diamond, 
+  onEdit, 
+  onDelete, 
+  onStoreToggle, 
+  onImageUpdate 
+}: InventoryTableRowProps) {
+  const stockNumber = diamond.stockNumber || diamond.stock_number || '';
+  const imageUrl = diamond.imageUrl || diamond.picture || diamond.Image || diamond.image;
+  const totalPrice = (diamond.price_per_carat || diamond.price || 0) * (diamond.carat || diamond.weight || 1);
+
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit(diamond);
+    }
+  };
+
+  const handleDelete = () => {
+    if (onDelete && diamond.id) {
+      onDelete(diamond.id);
+    }
+  };
+
   return (
-    <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-800">
-      <TableCell className="w-16">
-        {diamond.imageUrl || diamond.picture ? (
-          <img 
-            src={diamond.imageUrl || diamond.picture} 
-            alt={`Diamond ${diamond.stockNumber}`}
-            className="w-12 h-12 object-cover rounded border border-slate-200 dark:border-slate-600"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              const placeholderDiv = e.currentTarget.nextElementSibling as HTMLElement;
-              if (placeholderDiv) {
-                placeholderDiv.classList.remove('hidden');
-              }
-            }}
-          />
-        ) : null}
-        <div className={`w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 flex items-center justify-center ${diamond.imageUrl || diamond.picture ? 'hidden' : ''}`}>
-          <ImageIcon className="h-4 w-4 text-slate-400" />
-        </div>
+    <TableRow className="hover:bg-muted/50">
+      <TableCell className="font-mono text-sm">
+        {stockNumber}
       </TableCell>
-      <TableCell className="font-mono text-xs font-medium text-slate-600 dark:text-slate-400">
-        {diamond.diamondId || 'N/A'}
-      </TableCell>
-      <TableCell className="font-mono text-xs font-medium text-slate-900 dark:text-slate-100">
-        {diamond.stockNumber}
-      </TableCell>
-      <TableCell className="font-medium text-slate-900 dark:text-slate-100">{diamond.shape}</TableCell>
-      <TableCell className="text-right font-medium text-slate-900 dark:text-slate-100">
-        {diamond.carat.toFixed(2)}
-      </TableCell>
+      
       <TableCell>
-        <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">
-          {diamond.color}
-        </Badge>
-      </TableCell>
-      <TableCell>
-        <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">
-          {diamond.clarity}
-        </Badge>
-      </TableCell>
-      <TableCell>
-        <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">
-          {diamond.cut}
-        </Badge>
-      </TableCell>
-      <TableCell className="text-right font-bold text-slate-900 dark:text-slate-100">
-        ${diamond.price.toLocaleString()}
-      </TableCell>
-      <TableCell>
-        <Badge 
-          className={`${
-            diamond.status === "Available" 
-              ? "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900 dark:text-emerald-200" 
-              : diamond.status === "Reserved" 
-              ? "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900 dark:text-blue-200" 
-              : "bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-700 dark:text-slate-200"
-          }`}
-          variant="outline"
-        >
-          {diamond.status}
-        </Badge>
-      </TableCell>
-      <TableCell>
-        <div className="flex gap-1">
-          {onStoreToggle && (
-            <StoreVisibilityToggle 
-              stockNumber={diamond.stockNumber}
-              isVisible={diamond.store_visible || false}
-              onToggle={onStoreToggle}
+        <div className="flex items-center gap-2">
+          {imageUrl && (
+            <img 
+              src={imageUrl} 
+              alt={stockNumber}
+              className="w-8 h-8 rounded object-cover"
+              loading="lazy"
             />
           )}
+          <div>
+            <div className="font-medium">{diamond.shape}</div>
+            <div className="text-sm text-muted-foreground">
+              {diamond.carat || diamond.weight}ct
+            </div>
+          </div>
+        </div>
+      </TableCell>
+
+      <TableCell>
+        <div className="space-y-1">
+          <Badge variant="outline" className="text-xs">
+            {diamond.color}
+          </Badge>
+          <div className="text-xs text-muted-foreground">
+            {diamond.clarity}
+          </div>
+        </div>
+      </TableCell>
+
+      <TableCell>
+        <div className="space-y-1">
+          <div className="text-xs text-muted-foreground">
+            {diamond.cut}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {diamond.polish} / {diamond.symmetry}
+          </div>
+        </div>
+      </TableCell>
+
+      <TableCell className="text-right">
+        <div className="space-y-1">
+          <div className="font-medium">
+            ${(diamond.price_per_carat || 0).toLocaleString()}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Total: ${totalPrice.toLocaleString()}
+          </div>
+        </div>
+      </TableCell>
+
+      <TableCell>
+        <Badge variant={diamond.store_visible ? "default" : "secondary"}>
+          {diamond.store_visible ? "Visible" : "Hidden"}
+        </Badge>
+      </TableCell>
+
+      <TableCell>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleEdit}
+            className="h-8 w-8 p-0 hover:bg-blue-100 dark:hover:bg-blue-900"
+            title="View Details"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+
           <UserImageUpload 
-            diamond={diamond}
-            onUpdate={onImageUpdate || (() => {})}
+            diamond={diamond} 
+            onUpdate={onImageUpdate || (() => {})} 
           />
-          {onEdit && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onEdit(diamond)}
-              className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700"
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-          )}
-          {onDelete && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onDelete(diamond.id)}
-              className="h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400"
-            >
-              <Trash className="h-4 w-4" />
-            </Button>
-          )}
+
+          <StoreVisibilityToggle
+            diamond={diamond}
+            onToggle={onStoreToggle}
+          />
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleDelete}
+            className="h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900 text-red-600"
+            title="Delete Diamond"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
       </TableCell>
     </TableRow>
