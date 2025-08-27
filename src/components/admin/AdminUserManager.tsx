@@ -11,6 +11,7 @@ import { AdminStatsGrid } from './AdminStatsGrid';
 import { AdminUserTable } from './AdminUserTable';
 import { NotificationSender } from './NotificationSender';
 import { BulkUserAdder } from './BulkUserAdder';
+import { BulkSubscriptionManager } from './BulkSubscriptionManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -275,14 +276,19 @@ export function AdminUserManager({}: AdminUserManagerProps) {
         />
 
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6 bg-white">
+          <TabsList className="grid w-full grid-cols-4 mb-6 bg-white">
             <TabsTrigger value="users" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               User Management ({allUsers.length} users total)
             </TabsTrigger>
             <TabsTrigger value="bulk-add" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               הוספה בכמות
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Send Notifications</TabsTrigger>
+            <TabsTrigger value="bulk-subscriptions" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              ניהול מנויים
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              Send Notifications
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="users">
@@ -302,6 +308,12 @@ export function AdminUserManager({}: AdminUserManagerProps) {
           <TabsContent value="bulk-add">
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <BulkUserAdder onUsersAdded={refetch} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="bulk-subscriptions">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <BulkSubscriptionManager onComplete={refetch} />
             </div>
           </TabsContent>
           
