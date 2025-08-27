@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, CreditCard, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { Users, UserPlus, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -60,8 +60,6 @@ interface ProcessingStats {
   totalUsers: number;
   existingProfiles: number;
   newProfiles: number;
-  existingSubscriptions: number;
-  newSubscriptions: number;
   errors: number;
 }
 
@@ -71,21 +69,19 @@ export function BulkSubscriptionManager({ onComplete }: { onComplete?: () => voi
   const [currentStep, setCurrentStep] = useState('');
   const { toast } = useToast();
 
-  const processSubscriptions = async () => {
+  const processUsers = async () => {
     setIsProcessing(true);
     setStats(null);
     setCurrentStep('Initializing...');
 
     try {
-      console.log(`🚀 Starting bulk subscription processing for ${TELEGRAM_IDS.length} users...`);
+      console.log(`🚀 Starting bulk user processing for ${TELEGRAM_IDS.length} users...`);
 
       // Initialize stats
       const processingStats: ProcessingStats = {
         totalUsers: TELEGRAM_IDS.length,
         existingProfiles: 0,
         newProfiles: 0,
-        existingSubscriptions: 0,
-        newSubscriptions: 0,
         errors: 0
       };
 
@@ -104,19 +100,19 @@ export function BulkSubscriptionManager({ onComplete }: { onComplete?: () => voi
       
       console.log(`📊 Found ${processingStats.existingProfiles} existing profiles, ${processingStats.newProfiles} new users to add`);
 
-      // Step 2: Create missing user profiles
+      // Step 2: Create missing user profiles as FREE users
       if (newUserIds.length > 0) {
-        setCurrentStep(`Creating ${newUserIds.length} new user profiles...`);
+        setCurrentStep(`Creating ${newUserIds.length} new FREE user profiles...`);
         
         const userProfiles = newUserIds.map(telegramId => ({
           telegram_id: telegramId,
-          first_name: 'Premium',
-          last_name: `Client ${telegramId}`,
+          first_name: 'Free',
+          last_name: `User ${telegramId}`,
           username: null,
           phone_number: null,
-          is_premium: true,
+          is_premium: false, // Set as FREE users
           status: 'active',
-          subscription_plan: 'premium',
+          subscription_plan: 'free', // Free plan
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }));
@@ -138,60 +134,7 @@ export function BulkSubscriptionManager({ onComplete }: { onComplete?: () => voi
         }
       }
 
-      // Step 3: Check existing subscriptions
-      setCurrentStep('Checking existing subscriptions...');
-      const { data: existingSubscriptions } = await supabase
-        .from('subscriptions')
-        .select('telegram_id')
-        .in('telegram_id', TELEGRAM_IDS)
-        .eq('status', 'active');
-
-      const existingSubscriptionIds = new Set(existingSubscriptions?.map(s => s.telegram_id) || []);
-      const newSubscriptionIds = TELEGRAM_IDS.filter(id => !existingSubscriptionIds.has(id));
-      
-      processingStats.existingSubscriptions = existingSubscriptionIds.size;
-      processingStats.newSubscriptions = newSubscriptionIds.length;
-
-      console.log(`💳 Found ${processingStats.existingSubscriptions} existing subscriptions, ${processingStats.newSubscriptions} new subscriptions to create`);
-
-      // Step 4: Create missing subscriptions
-      if (newSubscriptionIds.length > 0) {
-        setCurrentStep(`Creating ${newSubscriptionIds.length} new subscriptions...`);
-        
-        const oneYearFromNow = new Date();
-        oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
-        
-        const subscriptionData = newSubscriptionIds.map(telegramId => ({
-          telegram_id: telegramId,
-          plan_name: 'Premium Diamond Trading',
-          status: 'active',
-          amount: 75,
-          currency: 'USD',
-          billing_cycle: 'monthly',
-          start_date: new Date().toISOString(),
-          end_date: oneYearFromNow.toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }));
-
-        // Insert subscriptions in batches
-        for (let i = 0; i < subscriptionData.length; i += BATCH_SIZE) {
-          const batch = subscriptionData.slice(i, i + BATCH_SIZE);
-          
-          const { error: subscriptionError } = await supabase
-            .from('subscriptions')
-            .insert(batch);
-
-          if (subscriptionError) {
-            console.error('Error inserting subscription batch:', subscriptionError);
-            processingStats.errors += batch.length;
-          } else {
-            console.log(`✅ Created subscription batch: ${i + batch.length}/${subscriptionData.length}`);
-          }
-        }
-      }
-
-      // Step 5: Create analytics for all users
+      // Step 3: Create analytics for all users (free plan)
       setCurrentStep('Setting up user analytics...');
       const analyticsData = TELEGRAM_IDS.map(telegramId => ({
         telegram_id: telegramId,
@@ -199,10 +142,10 @@ export function BulkSubscriptionManager({ onComplete }: { onComplete?: () => voi
         api_calls_count: 0,
         storage_used_mb: 0,
         cost_per_user: 0,
-        revenue_per_user: 75,
-        profit_loss: 75,
-        lifetime_value: 75,
-        subscription_status: 'premium',
+        revenue_per_user: 0, // No revenue for free users
+        profit_loss: 0,
+        lifetime_value: 0,
+        subscription_status: 'free', // Free subscription status
         last_active: new Date().toISOString(),
         total_time_spent: '00:00:00'
       }));
@@ -223,21 +166,21 @@ export function BulkSubscriptionManager({ onComplete }: { onComplete?: () => voi
       setStats(processingStats);
       setCurrentStep('✅ Processing complete!');
 
-      console.log(`🎉 Bulk subscription processing completed!`, processingStats);
+      console.log(`🎉 Bulk user processing completed!`, processingStats);
 
       toast({
-        title: "✅ Bulk Subscriptions Created Successfully!",
-        description: `Processed ${TELEGRAM_IDS.length} users: ${processingStats.newProfiles} new profiles, ${processingStats.newSubscriptions} new subscriptions`,
+        title: "✅ Free Users Created Successfully!",
+        description: `Processed ${TELEGRAM_IDS.length} users: ${processingStats.newProfiles} new FREE profiles created`,
       });
 
       onComplete?.();
 
     } catch (error: any) {
-      console.error('❌ Error in bulk subscription processing:', error);
+      console.error('❌ Error in bulk user processing:', error);
       setCurrentStep('❌ Error occurred during processing');
       toast({
         title: "❌ Processing Failed",
-        description: error.message || "An error occurred during bulk subscription processing",
+        description: error.message || "An error occurred during bulk user processing",
         variant: "destructive",
       });
     } finally {
@@ -249,11 +192,11 @@ export function BulkSubscriptionManager({ onComplete }: { onComplete?: () => voi
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <CreditCard className="h-5 w-5" />
-          ניהול מנויים בכמות - Bulk Subscription Manager
+          <UserPlus className="h-5 w-5" />
+          ניהול משתמשים בכמות - Bulk User Manager
         </CardTitle>
         <CardDescription>
-          רישום {TELEGRAM_IDS.length} לקוחות כמנויי פרמיום פעילים
+          רישום {TELEGRAM_IDS.length} משתמשים חדשים כמשתמשי FREE
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -264,15 +207,14 @@ export function BulkSubscriptionManager({ onComplete }: { onComplete?: () => voi
           </div>
           <ul className="text-sm space-y-1 text-blue-700">
             <li>• בדיקת {TELEGRAM_IDS.length} Telegram IDs</li>
-            <li>• יצירת פרופילי משתמש חסרים</li>
-            <li>• יצירת מנויי פרמיום פעילים לכל המשתמשים</li>
+            <li>• יצירת פרופילי משתמש חסרים כמשתמשי FREE</li>
             <li>• הגדרת אנליטיקה למשתמשים</li>
-            <li>• מחיר מנוי: $75/חודש לכל משתמש</li>
+            <li>• סטטוס מנוי: FREE (ללא תשלום)</li>
           </ul>
         </div>
 
         {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-green-50 p-3 rounded-lg text-center">
               <div className="text-2xl font-bold text-green-600">{stats.totalUsers}</div>
               <div className="text-sm text-green-700">סה"כ משתמשים</div>
@@ -281,17 +223,9 @@ export function BulkSubscriptionManager({ onComplete }: { onComplete?: () => voi
               <div className="text-2xl font-bold text-blue-600">{stats.newProfiles}</div>
               <div className="text-sm text-blue-700">פרופילים חדשים</div>
             </div>
-            <div className="bg-purple-50 p-3 rounded-lg text-center">
-              <div className="text-2xl font-bold text-purple-600">{stats.newSubscriptions}</div>
-              <div className="text-sm text-purple-700">מנויים חדשים</div>
-            </div>
             <div className="bg-orange-50 p-3 rounded-lg text-center">
               <div className="text-2xl font-bold text-orange-600">{stats.existingProfiles}</div>
               <div className="text-sm text-orange-700">פרופילים קיימים</div>
-            </div>
-            <div className="bg-indigo-50 p-3 rounded-lg text-center">
-              <div className="text-2xl font-bold text-indigo-600">{stats.existingSubscriptions}</div>
-              <div className="text-sm text-indigo-700">מנויים קיימים</div>
             </div>
             {stats.errors > 0 && (
               <div className="bg-red-50 p-3 rounded-lg text-center">
@@ -315,7 +249,7 @@ export function BulkSubscriptionManager({ onComplete }: { onComplete?: () => voi
         )}
 
         <Button 
-          onClick={processSubscriptions} 
+          onClick={processUsers} 
           disabled={isProcessing}
           className="w-full"
           size="lg"
@@ -327,8 +261,8 @@ export function BulkSubscriptionManager({ onComplete }: { onComplete?: () => voi
             </>
           ) : (
             <>
-              <CreditCard className="h-4 w-4 mr-2" />
-              רישום {TELEGRAM_IDS.length} לקוחות כמנויי פרמיום
+              <UserPlus className="h-4 w-4 mr-2" />
+              רישום {TELEGRAM_IDS.length} משתמשי FREE
             </>
           )}
         </Button>
@@ -340,7 +274,7 @@ export function BulkSubscriptionManager({ onComplete }: { onComplete?: () => voi
               <span className="font-semibold">העיבוד הושלם בהצלחה!</span>
             </div>
             <div className="text-sm text-green-700 mt-2">
-              כעת תוכל לשלוח הודעות לכל {stats.totalUsers} הלקוחות הפעילים
+              כעת יש לך {stats.totalUsers} משתמשי FREE פעילים במערכת
             </div>
           </div>
         )}
