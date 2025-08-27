@@ -8,6 +8,9 @@ interface GroupCTAOptions {
   groupId?: string | number;
   botUsername?: string;
   useButtons?: boolean;
+  buttonText?: string;
+  buttonUrl?: string;
+  withButtons?: boolean;
 }
 
 export function useGroupCTA() {
@@ -24,7 +27,9 @@ export function useGroupCTA() {
           message: options.message,
           groupId: options.groupId || -1001009290613,
           botUsername: options.botUsername,
-          useButtons: options.useButtons ?? false
+          useButtons: options.useButtons ?? options.withButtons ?? false,
+          buttonText: options.buttonText,
+          buttonUrl: options.buttonUrl
         }
       });
 

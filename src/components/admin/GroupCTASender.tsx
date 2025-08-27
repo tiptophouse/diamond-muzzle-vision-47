@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -37,7 +36,7 @@ export function GroupCTASender({ onSendNotification }: { onSendNotification?: (n
         message: message,
         buttonText: buttonText || undefined,
         buttonUrl: buttonUrl || undefined,
-        withButtons: !!(buttonText && buttonUrl)
+        useButtons: !!(buttonText && buttonUrl)
       });
 
       // Clear form
@@ -65,7 +64,7 @@ export function GroupCTASender({ onSendNotification }: { onSendNotification?: (n
       await sendGroupCTA({
         groupId: groupId,
         message: growthMessage,
-        withButtons: false
+        useButtons: false
       });
 
       onSendNotification?.({
