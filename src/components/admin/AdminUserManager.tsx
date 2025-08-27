@@ -12,7 +12,6 @@ import { NotificationSender } from './NotificationSender';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { FastAPIUserSync } from './FastAPIUserSync';
 
 interface AdminUserManagerProps {}
 
@@ -266,9 +265,6 @@ export function AdminUserManager({}: AdminUserManagerProps) {
             📊 Showing {allUsers.length} total users from database
           </div>
         </div>
-
-        {/* Add FastAPI Users Sync Card */}
-        <FastAPIUserSync />
 
         <AdminStatsGrid 
           stats={stats} 
