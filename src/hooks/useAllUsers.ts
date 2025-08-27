@@ -10,10 +10,10 @@ export function useAllUsers() {
 
   const fetchAllUsers = async () => {
     try {
-      console.log('Fetching all users from database...');
+      console.log('🔍 Fetching ALL users from user_profiles table...');
       
-      // Get all users from user_profiles
-      const { data: profiles, error: profileError } = await supabase
+      // Get ALL users from user_profiles - no filters
+      const { data: profiles, error: profileError, count } = await supabase
         .from('user_profiles')
         .select(`
           *,
@@ -29,15 +29,16 @@ export function useAllUsers() {
             last_active,
             total_time_spent
           )
-        `)
+        `, { count: 'exact' })
         .order('created_at', { ascending: false });
 
       if (profileError) {
-        console.error('Error fetching profiles:', profileError);
+        console.error('❌ Error fetching user profiles:', profileError);
         throw profileError;
       }
 
-      console.log(`Found ${profiles?.length || 0} total users in database`);
+      console.log(`✅ Successfully fetched ${profiles?.length || 0} users from user_profiles`);
+      console.log(`📊 Total count from query: ${count}`);
 
       // Transform the data to flatten analytics
       const transformedUsers = profiles?.map(profile => ({
@@ -55,13 +56,13 @@ export function useAllUsers() {
         total_time_spent: profile.user_analytics?.[0]?.total_time_spent || '00:00:00'
       })) || [];
 
-      console.log('Transformed users:', transformedUsers.length);
+      console.log(`📈 Final transformed users count: ${transformedUsers.length}`);
       setAllUsers(transformedUsers);
     } catch (error: any) {
-      console.error('Error fetching all users:', error);
+      console.error('❌ Error fetching all users:', error);
       toast({
         title: "Error",
-        description: "Failed to load user data",
+        description: "Failed to load user data from database",
         variant: "destructive",
       });
       setAllUsers([]);
@@ -118,6 +119,7 @@ export function useAllUsers() {
   };
 
   useEffect(() => {
+    console.log('🚀 useAllUsers hook initialized, fetching users...');
     fetchAllUsers();
   }, []);
 

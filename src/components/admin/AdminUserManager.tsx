@@ -30,7 +30,8 @@ export function AdminUserManager({}: AdminUserManagerProps) {
 
   const stats = getUserStats();
 
-  console.log(`👥 AdminUserManager: Showing ${allUsers.length} total users from useAllUsers hook`);
+  console.log(`👥 AdminUserManager: Total users loaded: ${allUsers.length}`);
+  console.log(`📊 User stats:`, stats);
 
   const filteredUsers = allUsers.filter(user => {
     // Create a comprehensive search that includes real names
@@ -57,7 +58,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
     );
   });
 
-  console.log(`📊 User Management Stats: Total Users: ${stats.totalUsers}, Filtered: ${filteredUsers.length}`);
+  console.log(`🔍 Filtered users: ${filteredUsers.length} out of ${allUsers.length} total`);
 
   const handleViewUser = (user: any) => {
     setSelectedUser(user);
@@ -238,7 +239,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
             <Settings className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-blue-600" />
           </div>
           <div className="text-xl font-semibold text-gray-900">Loading user management...</div>
-          <div className="text-sm text-gray-600 mt-2">Fetching all users from database...</div>
+          <div className="text-sm text-gray-600 mt-2">Fetching all users from user_profiles table...</div>
         </div>
       </div>
     );
@@ -260,6 +261,9 @@ export function AdminUserManager({}: AdminUserManagerProps) {
           >
             Delete All Mock Data
           </button>
+          <div className="text-sm text-gray-600 flex items-center">
+            📊 Showing {allUsers.length} total users from database
+          </div>
         </div>
 
         <AdminStatsGrid 
@@ -270,7 +274,9 @@ export function AdminUserManager({}: AdminUserManagerProps) {
 
         <Tabs defaultValue="users" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6 bg-white">
-            <TabsTrigger value="users" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">User Management ({stats.totalUsers} users)</TabsTrigger>
+            <TabsTrigger value="users" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              User Management ({allUsers.length} users total)
+            </TabsTrigger>
             <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Send Notifications</TabsTrigger>
           </TabsList>
           
