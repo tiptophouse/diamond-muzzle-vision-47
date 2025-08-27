@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { Settings } from 'lucide-react';
-import { useEnhancedAnalytics } from '@/hooks/useEnhancedAnalytics';
+import { useAllUsers } from '@/hooks/useAllUsers';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
 import { UserDetailsModal } from './UserDetailsModal';
 import { AddUserModal } from './AddUserModal';
@@ -17,7 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface AdminUserManagerProps {}
 
 export function AdminUserManager({}: AdminUserManagerProps) {
-  const { enhancedUsers, isLoading, getUserEngagementScore, getUserStats, refetch } = useEnhancedAnalytics();
+  const { allUsers, isLoading, getUserEngagementScore, getUserStats, refetch } = useAllUsers();
   const { isUserBlocked, blockUser, unblockUser, blockedUsers } = useBlockedUsers();
   const { toast } = useToast();
   
@@ -31,7 +30,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
 
   const stats = getUserStats();
 
-  const filteredUsers = enhancedUsers.filter(user => {
+  const filteredUsers = allUsers.filter(user => {
     // Create a comprehensive search that includes real names
     const searchLower = searchTerm.toLowerCase();
     
@@ -55,6 +54,8 @@ export function AdminUserManager({}: AdminUserManagerProps) {
       (user.username && `@${username}`.includes(searchLower))
     );
   });
+
+  console.log(`📊 User Management Stats: Total Users: ${stats.totalUsers}, Filtered: ${filteredUsers.length}`);
 
   const handleViewUser = (user: any) => {
     setSelectedUser(user);
@@ -234,14 +235,15 @@ export function AdminUserManager({}: AdminUserManagerProps) {
             <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto mb-6"></div>
             <Settings className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-blue-600" />
           </div>
-          <div className="text-xl font-semibold text-gray-900">Loading dashboard...</div>
+          <div className="text-xl font-semibold text-gray-900">Loading user management...</div>
+          <div className="text-sm text-gray-600 mt-2">Fetching all {stats.totalUsers} users...</div>
         </div>
       </div>
     );
   }
 
-  const averageEngagement = enhancedUsers.length > 0 
-    ? Math.round(enhancedUsers.reduce((sum, u) => sum + getUserEngagementScore(u), 0) / enhancedUsers.length)
+  const averageEngagement = allUsers.length > 0 
+    ? Math.round(allUsers.reduce((sum, u) => sum + getUserEngagementScore(u), 0) / allUsers.length)
     : 0;
 
   return (
@@ -266,7 +268,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
 
         <Tabs defaultValue="users" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6 bg-white">
-            <TabsTrigger value="users" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">User Management</TabsTrigger>
+            <TabsTrigger value="users" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">User Management ({stats.totalUsers} users)</TabsTrigger>
             <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Send Notifications</TabsTrigger>
           </TabsList>
           
