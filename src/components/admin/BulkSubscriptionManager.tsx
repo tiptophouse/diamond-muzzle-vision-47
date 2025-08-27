@@ -54,6 +54,8 @@ const TELEGRAM_IDS = [
   86406741, 1190576324
 ];
 
+const BATCH_SIZE = 100; // Declare batch size constant
+
 interface ProcessingStats {
   totalUsers: number;
   existingProfiles: number;
@@ -119,10 +121,9 @@ export function BulkSubscriptionManager({ onComplete }: { onComplete?: () => voi
           updated_at: new Date().toISOString()
         }));
 
-        // Insert profiles in batches of 100
-        const batchSize = 100;
-        for (let i = 0; i < userProfiles.length; i += batchSize) {
-          const batch = userProfiles.slice(i, i + batchSize);
+        // Insert profiles in batches
+        for (let i = 0; i < userProfiles.length; i += BATCH_SIZE) {
+          const batch = userProfiles.slice(i, i + BATCH_SIZE);
           
           const { error: profileError } = await supabase
             .from('user_profiles')
@@ -174,8 +175,8 @@ export function BulkSubscriptionManager({ onComplete }: { onComplete?: () => voi
         }));
 
         // Insert subscriptions in batches
-        for (let i = 0; i < subscriptionData.length; i += batchSize) {
-          const batch = subscriptionData.slice(i, i + batchSize);
+        for (let i = 0; i < subscriptionData.length; i += BATCH_SIZE) {
+          const batch = subscriptionData.slice(i, i + BATCH_SIZE);
           
           const { error: subscriptionError } = await supabase
             .from('subscriptions')
@@ -207,8 +208,8 @@ export function BulkSubscriptionManager({ onComplete }: { onComplete?: () => voi
       }));
 
       // Insert analytics in batches (ignore conflicts for existing users)
-      for (let i = 0; i < analyticsData.length; i += batchSize) {
-        const batch = analyticsData.slice(i, i + batchSize);
+      for (let i = 0; i < analyticsData.length; i += BATCH_SIZE) {
+        const batch = analyticsData.slice(i, i + BATCH_SIZE);
         
         const { error: analyticsError } = await supabase
           .from('user_analytics')
