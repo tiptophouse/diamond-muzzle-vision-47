@@ -1,4 +1,3 @@
-
 import { TelegramLayout } from '@/components/layout/TelegramLayout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { AdminStatsGrid } from '@/components/admin/AdminStatsGrid';
@@ -12,6 +11,7 @@ import { PaymentManagement } from '@/components/admin/PaymentManagement';
 import { SessionUsersDisplay } from '@/components/admin/SessionUsersDisplay';
 import { UserUploadAnalysis } from '@/components/admin/UserUploadAnalysis';
 import { UserDiamondCounts } from '@/components/admin/UserDiamondCounts';
+import { ForceRefreshButton } from '@/components/admin/ForceRefreshButton';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
@@ -24,7 +24,7 @@ export default function Admin() {
   const { toast } = useToast();
   const [notifications, setNotifications] = useState([]);
 
-  // Real bot usage stats
+  // Real bot usage stats - Updated to refresh more frequently
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
@@ -40,6 +40,10 @@ export default function Admin() {
     weeklyLogins: 0,
     monthlyLogins: 0
   });
+  const [subscriptionStats, setSubscriptionStats] = useState({
+    activeSubscriptions: 0,
+    totalRevenue: 0
+  });
 
   useEffect(() => {
     console.log('🔍 Admin page mounted');
@@ -49,73 +53,98 @@ export default function Admin() {
     
     // Load real bot usage statistics
     loadBotUsageStats();
+    
+    // Set up auto-refresh every 30 seconds
+    const interval = setInterval(loadBotUsageStats, 30000);
+    
+    return () => clearInterval(interval);
   }, [user, isAuthenticated, isLoading]);
 
   const loadBotUsageStats = async () => {
     try {
-      // Get actual user counts
-      const { data: totalUsersData } = await supabase
+      console.log('📊 Loading fresh stats from database...');
+      
+      // Get actual user counts with fresh queries
+      const { data: totalUsersData, count: totalUsersCount } = await supabase
         .from('user_profiles')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false });
 
-      const { data: activeUsersData } = await supabase
+      const { data: activeUsersData, count: activeUsersCount } = await supabase
         .from('user_profiles')
-        .select('*', { count: 'exact', head: true })
+        .select('*', { count: 'exact' })
         .gte('last_login', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
-      const { data: premiumUsersData } = await supabase
+      const { data: premiumUsersData, count: premiumUsersCount } = await supabase
         .from('user_profiles')
-        .select('*', { count: 'exact', head: true })
+        .select('*', { count: 'exact' })
         .eq('is_premium', true);
 
-      const { data: blockedData } = await supabase
+      const { data: subscriptionsData, count: subscriptionsCount } = await supabase
+        .from('subscriptions')
+        .select('amount', { count: 'exact' })
+        .eq('status', 'active');
+
+      const { data: blockedData, count: blockedCount } = await supabase
         .from('blocked_users')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact' });
+
+      // Calculate total revenue from active subscriptions
+      const totalRevenue = subscriptionsData?.reduce((sum, sub) => sum + (sub.amount || 0), 0) || 0;
 
       // Get login statistics
-      const { data: todayLoginsData } = await supabase
+      const { count: todayLoginsCount } = await supabase
         .from('user_logins')
         .select('*', { count: 'exact', head: true })
         .gte('login_timestamp', new Date().toISOString().split('T')[0]);
 
-      const { data: weeklyLoginsData } = await supabase
+      const { count: weeklyLoginsCount } = await supabase
         .from('user_logins')
         .select('*', { count: 'exact', head: true })
         .gte('login_timestamp', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
-      const { data: monthlyLoginsData } = await supabase
+      const { count: monthlyLoginsCount } = await supabase
         .from('user_logins')
         .select('*', { count: 'exact', head: true })
         .gte('login_timestamp', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
 
+      // Update all stats
       setStats({
-        totalUsers: totalUsersData?.length || 0,
-        activeUsers: activeUsersData?.length || 0,
-        premiumUsers: premiumUsersData?.length || 0,
-        totalRevenue: 0, // TODO: Calculate from subscriptions
-        totalCosts: 0,   // TODO: Calculate from cost_tracking
-        profit: 0
+        totalUsers: totalUsersCount || 0,
+        activeUsers: activeUsersCount || 0,
+        premiumUsers: premiumUsersCount || 0,
+        totalRevenue,
+        totalCosts: 0,
+        profit: totalRevenue
       });
 
-      setBlockedUsersCount(blockedData?.length || 0);
+      setSubscriptionStats({
+        activeSubscriptions: subscriptionsCount || 0,
+        totalRevenue
+      });
+
+      setBlockedUsersCount(blockedCount || 0);
       setRealTimeStats({
-        todayLogins: todayLoginsData?.length || 0,
-        weeklyLogins: weeklyLoginsData?.length || 0,
-        monthlyLogins: monthlyLoginsData?.length || 0
+        todayLogins: todayLoginsCount || 0,
+        weeklyLogins: weeklyLoginsCount || 0,
+        monthlyLogins: monthlyLoginsCount || 0
       });
 
-      console.log('📊 Real bot usage stats:', {
-        totalUsers: totalUsersData?.length || 0,
-        activeUsers: activeUsersData?.length || 0,
-        todayLogins: todayLoginsData?.length || 0,
-        weeklyLogins: weeklyLoginsData?.length || 0
+      console.log('📊 Updated stats:', {
+        totalUsers: totalUsersCount || 0,
+        activeUsers: activeUsersCount || 0,
+        premiumUsers: premiumUsersCount || 0,
+        activeSubscriptions: subscriptionsCount || 0,
+        totalRevenue,
+        todayLogins: todayLoginsCount || 0,
+        weeklyLogins: weeklyLoginsCount || 0
       });
 
     } catch (error) {
       console.error('❌ Error loading bot usage stats:', error);
       toast({
         title: "Error",
-        description: "Failed to load real usage statistics",
+        description: "Failed to load usage statistics",
         variant: "destructive"
       });
     }
@@ -173,7 +202,7 @@ export default function Admin() {
 
   return (
     <TelegramLayout>
-      {/* Clean Admin Header */}
+      {/* Clean Admin Header with Force Refresh */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
@@ -182,6 +211,7 @@ export default function Admin() {
               <p className="text-gray-600 mt-1">Welcome back, {user.first_name || 'Admin'}</p>
             </div>
             <div className="flex items-center gap-3">
+              <ForceRefreshButton />
               <Settings className="h-5 w-5 text-gray-400" />
               <span className="text-sm text-gray-500">System Status: Online</span>
             </div>
@@ -189,11 +219,25 @@ export default function Admin() {
         </div>
       </div>
 
-      {/* Real Bot Usage Stats */}
+      {/* Enhanced Real-Time Stats */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <h3 className="font-semibold text-blue-900 mb-2">📊 Real-Time Bot Usage</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <span className="font-medium">Total Users:</span> <span className="text-blue-700 font-bold">{stats.totalUsers}</span>
+            </div>
+            <div>
+              <span className="font-medium">Premium Users:</span> <span className="text-green-700 font-bold">{stats.premiumUsers}</span>
+            </div>
+            <div>
+              <span className="font-medium">Active Subscriptions:</span> <span className="text-purple-700 font-bold">{subscriptionStats.activeSubscriptions}</span>
+            </div>
+            <div>
+              <span className="font-medium">Monthly Revenue:</span> <span className="text-emerald-700 font-bold">${subscriptionStats.totalRevenue.toFixed(2)}</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mt-2">
             <div>
               <span className="font-medium">Today's Logins:</span> {realTimeStats.todayLogins}
             </div>
@@ -358,6 +402,9 @@ export default function Admin() {
               <p>Username: {user.username}</p>
               <p>Authenticated: {isAuthenticated ? 'Yes' : 'No'}</p>
               <p>Loading: {isLoading ? 'Yes' : 'No'}</p>
+              <p>Total Users in DB: {stats.totalUsers}</p>
+              <p>Premium Users: {stats.premiumUsers}</p>
+              <p>Active Subscriptions: {subscriptionStats.activeSubscriptions}</p>
               <p>Page Rendered: {new Date().toLocaleTimeString()}</p>
             </div>
           </div>
