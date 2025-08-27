@@ -30,6 +30,8 @@ export function AdminUserManager({}: AdminUserManagerProps) {
 
   const stats = getUserStats();
 
+  console.log(`👥 AdminUserManager: Showing ${allUsers.length} total users from useAllUsers hook`);
+
   const filteredUsers = allUsers.filter(user => {
     // Create a comprehensive search that includes real names
     const searchLower = searchTerm.toLowerCase();
@@ -236,7 +238,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
             <Settings className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-blue-600" />
           </div>
           <div className="text-xl font-semibold text-gray-900">Loading user management...</div>
-          <div className="text-sm text-gray-600 mt-2">Fetching all {stats.totalUsers} users...</div>
+          <div className="text-sm text-gray-600 mt-2">Fetching all users from database...</div>
         </div>
       </div>
     );
