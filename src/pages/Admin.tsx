@@ -18,6 +18,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Users, Settings, MessageSquare, CreditCard, Upload, BarChart3, Diamond, Send } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
+import { IndividualMessageSender } from '@/components/admin/IndividualMessageSender';
 
 export default function Admin() {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
@@ -259,75 +260,74 @@ export default function Admin() {
 
       {/* Main Admin Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-        <Tabs defaultValue="diamond-counts" className="w-full">
-          <div className="overflow-x-auto mb-6">
-            <TabsList className="grid grid-cols-8 bg-white border border-gray-200 rounded-lg p-1 min-w-fit w-full">
-              <TabsTrigger 
-                value="diamond-counts" 
-                className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
-              >
-                <Diamond className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                <span className="hidden xs:inline sm:inline">Diamond Counts</span>
-                <span className="xs:hidden sm:hidden">Diamonds</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="upload-analysis" 
-                className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
-              >
-                <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                <span className="hidden xs:inline sm:inline">Upload Analysis</span>
-                <span className="xs:hidden sm:hidden">Analysis</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="users" 
-                className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
-              >
-                <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                <span className="hidden xs:inline sm:inline">User Management</span>
-                <span className="xs:hidden sm:hidden">Users</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="sessions" 
-                className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
-              >
-                <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                <span className="hidden xs:inline sm:inline">Session Users</span>
-                <span className="xs:hidden sm:hidden">Sessions</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="payments" 
-                className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
-              >
-                <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                <span className="hidden xs:inline sm:inline">Payments</span>
-                <span className="xs:hidden sm:hidden">Pay</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="group-cta" 
-                className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
-              >
-                <Send className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                <span className="hidden xs:inline sm:inline">Group CTA</span>
-                <span className="xs:hidden sm:hidden">CTA</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="notifications" 
-                className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
-              >
-                <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                <span className="hidden xs:inline sm:inline">Messages</span>
-                <span className="xs:hidden sm:hidden">Msg</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="settings" 
-                className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
-              >
-                <Settings className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                <span className="hidden xs:inline sm:inline">Settings</span>
-                <span className="xs:hidden sm:hidden">Set</span>
-              </TabsTrigger>
-            </TabsList>
-          </div>
+        <Tabs defaultValue="users" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-8">
+            <TabsTrigger 
+              value="diamond-counts" 
+              className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
+            >
+              <Diamond className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="hidden xs:inline sm:inline">Diamond Counts</span>
+              <span className="xs:hidden sm:hidden">Diamonds</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="upload-analysis" 
+              className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
+            >
+              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="hidden xs:inline sm:inline">Upload Analysis</span>
+              <span className="xs:hidden sm:hidden">Analysis</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="users" 
+              className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
+            >
+              <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="hidden xs:inline sm:inline">User Management</span>
+              <span className="xs:hidden sm:hidden">Users</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="sessions" 
+              className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
+            >
+              <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="hidden xs:inline sm:inline">Session Users</span>
+              <span className="xs:hidden sm:hidden">Sessions</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="payments" 
+              className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
+            >
+              <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="hidden xs:inline sm:inline">Payments</span>
+              <span className="xs:hidden sm:hidden">Pay</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="group-cta" 
+              className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
+            >
+              <Send className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="hidden xs:inline sm:inline">Group CTA</span>
+              <span className="xs:hidden sm:hidden">CTA</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="notifications" 
+              className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
+            >
+              <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="hidden xs:inline sm:inline">Messages</span>
+              <span className="xs:hidden sm:hidden">Msg</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="settings" 
+              className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
+            >
+              <Settings className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="hidden xs:inline sm:inline">Settings</span>
+              <span className="xs:hidden sm:hidden">Set</span>
+            </TabsTrigger>
+            <TabsTrigger value="individual-messages">הודעות אישיות</TabsTrigger>
+          </TabsList>
           
           <div className="mt-6">
             <TabsContent value="diamond-counts" className="space-y-0">
@@ -386,6 +386,10 @@ export default function Admin() {
                 <h3 className="text-lg font-semibold mb-4">System Settings</h3>
                 <p className="text-gray-600">Admin settings panel coming soon...</p>
               </div>
+            </TabsContent>
+
+            <TabsContent value="individual-messages" className="space-y-4">
+              <IndividualMessageSender />
             </TabsContent>
           </div>
         </Tabs>
