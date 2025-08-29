@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Server, Key, Copy, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
+import { api, apiEndpoints } from '@/lib/api';
 
 interface SFTPAccount {
   id: string;
@@ -94,21 +95,16 @@ export function SFTPSettings() {
     try {
       console.log('📤 Requesting SFTP provision for user:', user.id);
       
-      const response = await fetch('/api/v1/sftp/provision', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({ telegram_id: user.id }),
-      });
+      const response = await api.post<FastAPIResponse>(
+        apiEndpoints.sftpProvision(),
+        { telegram_id: user.id }
+      );
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      if (response.error || !response.data) {
+        throw new Error(response.error || 'Failed to provision SFTP account');
       }
 
-      const data: FastAPIResponse = await response.json();
+      const data: FastAPIResponse = response.data;
       console.log('✅ SFTP account created successfully:', data);
       
       // Update state with new account and credentials
