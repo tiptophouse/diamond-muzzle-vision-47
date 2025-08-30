@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,67 +7,18 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useToast } from '@/components/ui/use-toast';
-import { Server, Key, Copy, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
+import { Server, Key, Copy, RefreshCw, AlertCircle, CheckCircle, TestTube } from 'lucide-react';
 import { provisionSftp, type SFTPCredentials } from '@/api/sftp';
 import { supabase } from '@/integrations/supabase/client';
-
-interface SFTPAccount {
-  id: string;
-  ftp_username: string;
-  ftp_folder_path: string;
-  status: string;
-  created_at: string;
-  last_used_at?: string;
-  expires_at?: string;
-}
 
 export function SFTPSettings() {
   const { user } = useTelegramAuth();
   const { toast } = useToast();
   
-  const [sftpAccount, setSftpAccount] = useState<SFTPAccount | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [credentials, setCredentials] = useState<SFTPCredentials | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'success' | 'failed' | null>(null);
-
-  // Load existing SFTP account
-  useEffect(() => {
-    const loadSFTPAccount = async () => {
-      if (!user?.id) return;
-      
-      try {
-        console.log('🔍 Loading SFTP account for user:', user.id);
-        
-        const response = await fetch(`/api/v1/sftp/status/${user.id}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log('✅ Found existing SFTP account:', data);
-          setSftpAccount(data);
-        } else if (response.status === 404) {
-          console.log('ℹ️ No existing SFTP account found');
-          setSftpAccount(null);
-        } else {
-          throw new Error(`HTTP ${response.status}`);
-        }
-      } catch (error) {
-        console.error('❌ Error loading SFTP account:', error);
-        setSftpAccount(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadSFTPAccount();
-  }, [user]);
 
   const sendTelegramNotification = async (message: string) => {
     if (!user?.id) return;
@@ -103,19 +54,8 @@ export function SFTPSettings() {
       
       console.log('✅ SFTP account created successfully:', sftpCredentials);
       
-      // Create a mock account object for UI compatibility
-      const mockAccount: SFTPAccount = {
-        id: `sftp_${user.id}`,
-        ftp_username: sftpCredentials.username,
-        ftp_folder_path: sftpCredentials.folder_path,
-        status: sftpCredentials.test_result ? 'active' : 'inactive',
-        created_at: new Date().toISOString(),
-      };
-      
-      // Update state with new account and credentials
-      setSftpAccount(mockAccount);
+      // Update state with new credentials
       setCredentials(sftpCredentials);
-      setShowPassword(true);
       setConnectionStatus(sftpCredentials.test_result ? 'success' : 'failed');
 
       const successMessage = `🎉 <b>חשבון SFTP נוצר בהצלחה!</b>
@@ -125,15 +65,17 @@ export function SFTPSettings() {
 👤 <b>משתמש:</b> <code>${sftpCredentials.username}</code>
 📁 <b>תיקייה:</b> <code>${sftpCredentials.folder_path}</code>
 🔌 <b>פורט:</b> <code>${sftpCredentials.port}</code>
+🔑 <b>סיסמה:</b> <code>${sftpCredentials.password}</code>
 📊 <b>סטטוס:</b> ${sftpCredentials.test_result ? '✅ פעיל' : '❌ לא פעיל'}
 
-🔑 הסיסמה נשמרה באפליקציה - אנא שמור אותה במקום בטוח!`;
+⚠️ <b>חשוב:</b> זוהי הפעם היחידה שבה תראה את הסיסמה - שמור אותה במקום בטוח!
+🔄 לחיצה חוזרת על הכפתור תיצור סיסמה חדשה ותבטל את הקודמת.`;
 
       await sendTelegramNotification(successMessage);
 
       toast({
         title: "SFTP חשבון נוצר בהצלחה",
-        description: "פרטי הגישה שלך מוכנים לשימוש",
+        description: "פרטי הגישה נשלחו אליך בטלגרם",
       });
       
     } catch (error) {
@@ -251,64 +193,6 @@ export function SFTPSettings() {
     });
   };
 
-  const deactivateAccount = async () => {
-    if (!user?.id) return;
-
-    try {
-      console.log('🗑️ Deactivating SFTP account for user:', user.id);
-      
-      const response = await fetch('/api/v1/sftp/deactivate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({ telegram_id: user.id }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      console.log('✅ SFTP account deactivated successfully');
-      
-      setSftpAccount(null);
-      setCredentials(null);
-      setShowPassword(false);
-      setConnectionStatus(null);
-
-      toast({
-        title: "חשבון SFTP הושבת",
-        description: "החשבון הושבת בהצלחה",
-      });
-    } catch (error) {
-      console.error('❌ Error deactivating SFTP account:', error);
-      toast({
-        title: "שגיאה",
-        description: "לא ניתן להשבית את החשבון",
-        variant: "destructive",
-      });
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Server className="h-5 w-5" />
-            הגדרות SFTP
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <RefreshCw className="h-6 w-6 animate-spin" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card>
       <CardHeader>
@@ -321,7 +205,7 @@ export function SFTPSettings() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {!sftpAccount ? (
+        {!credentials ? (
           <div className="text-center space-y-4">
             <div className="bg-muted/50 rounded-lg p-6">
               <Server className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -377,8 +261,8 @@ export function SFTPSettings() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={sftpAccount.status === 'active' ? 'default' : 'secondary'} className="bg-green-100 text-green-800">
-                    {sftpAccount.status === 'active' ? '✅ פעיל' : '⚠️ לא פעיל'}
+                  <Badge variant={credentials.test_result ? 'default' : 'secondary'} className="bg-green-100 text-green-800">
+                    {credentials.test_result ? '✅ פעיל' : '⚠️ לא פעיל'}
                   </Badge>
                   {connectionStatus === 'success' && (
                     <Badge variant="default" className="bg-green-500">
@@ -412,14 +296,14 @@ export function SFTPSettings() {
                   </Label>
                   <div className="flex gap-2">
                     <Input
-                      value={credentials?.host || "טוען..."}
+                      value={credentials.host}
                       readOnly
                       className="bg-gray-50 border-gray-200 font-mono text-sm"
                     />
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => copyToClipboard(credentials?.host || "", 'כתובת השרת')}
+                      onClick={() => copyToClipboard(credentials.host, 'כתובת השרת')}
                       className="shrink-0"
                     >
                       <Copy className="h-4 w-4" />
@@ -435,14 +319,14 @@ export function SFTPSettings() {
                   </Label>
                   <div className="flex gap-2">
                     <Input
-                      value={credentials?.username || sftpAccount.ftp_username || "טוען..."}
+                      value={credentials.username}
                       readOnly
                       className="bg-gray-50 border-gray-200 font-mono text-sm"
                     />
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => copyToClipboard(credentials?.username || sftpAccount.ftp_username || "", 'שם המשתמש')}
+                      onClick={() => copyToClipboard(credentials.username, 'שם המשתמש')}
                       className="shrink-0"
                     >
                       <Copy className="h-4 w-4" />
@@ -455,14 +339,14 @@ export function SFTPSettings() {
                   <Label className="text-sm font-medium text-gray-700">פורט</Label>
                   <div className="flex gap-2">
                     <Input
-                      value={credentials?.port?.toString() || "22"}
+                      value={credentials.port.toString()}
                       readOnly
                       className="bg-gray-50 border-gray-200 font-mono text-sm"
                     />
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => copyToClipboard(String(credentials?.port || "22"), 'הפורט')}
+                      onClick={() => copyToClipboard(String(credentials.port), 'הפורט')}
                       className="shrink-0"
                     >
                       <Copy className="h-4 w-4" />
@@ -507,14 +391,14 @@ export function SFTPSettings() {
                 <Label className="text-sm font-medium text-gray-700">תיקיית העלאה</Label>
                 <div className="relative">
                   <Input
-                    value={credentials?.folder_path || sftpAccount.ftp_folder_path || "טוען..."}
+                    value={credentials.folder_path}
                     readOnly
                     className="bg-gray-50 border-gray-200 font-mono text-sm pr-10"
                   />
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => copyToClipboard(credentials?.folder_path || sftpAccount.ftp_folder_path || "", 'תיקיית העלאה')}
+                    onClick={() => copyToClipboard(credentials.folder_path, 'תיקיית העלאה')}
                     className="absolute left-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
                   >
                     <Copy className="h-3 w-3" />
@@ -525,39 +409,37 @@ export function SFTPSettings() {
                 </p>
               </div>
 
-              {/* Password - Special handling */}
-              {showPassword && credentials?.password && (
-                <div className="space-y-2 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                  <Label className="flex items-center gap-2 text-amber-800 font-medium">
-                    <AlertCircle className="h-4 w-4 text-amber-600" />
-                    סיסמה - שמור בבטחה!
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={credentials.password}
-                      type="text"
-                      readOnly
-                      className="bg-white border-amber-300 font-mono text-sm text-amber-900"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => copyToClipboard(credentials.password, 'הסיסמה')}
-                      className="shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="bg-amber-100 p-3 rounded border border-amber-300">
-                    <p className="text-sm text-amber-800 font-medium">
-                      ⚠️ זוהי הפעם האחרונה שתוכל לראות את הסיסמה!
-                    </p>
-                    <p className="text-xs text-amber-700 mt-1">
-                      העתק ושמור את הסיסמה במקום בטוח לפני שתעזוב את הדף
-                    </p>
-                  </div>
+              {/* Password - Always show when credentials exist */}
+              <div className="space-y-2 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <Label className="flex items-center gap-2 text-amber-800 font-medium">
+                  <AlertCircle className="h-4 w-4 text-amber-600" />
+                  סיסמה - שמור בבטחה!
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={credentials.password}
+                    type="text"
+                    readOnly
+                    className="bg-white border-amber-300 font-mono text-sm text-amber-900"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyToClipboard(credentials.password, 'הסיסמה')}
+                    className="shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
                 </div>
-              )}
+                <div className="bg-amber-100 p-3 rounded border border-amber-300">
+                  <p className="text-sm text-amber-800 font-medium">
+                    ⚠️ לחיצה חוזרת על "יצור חשבון SFTP" תיצור סיסמה חדשה ותבטל את הקודמת!
+                  </p>
+                  <p className="text-xs text-amber-700 mt-1">
+                    שמור את הסיסמה במקום בטוח - היא לא נשמרת בשרת
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="bg-muted/50 rounded-lg p-4 space-y-2">
@@ -583,16 +465,16 @@ export function SFTPSettings() {
                   </>
                 ) : (
                   <>
-                    <Server className="h-4 w-4 mr-2" />
+                    <TestTube className="h-4 w-4 mr-2" />
                     בדוק חיבור
                   </>
                 )}
               </Button>
               <Button
-                variant="destructive"
-                onClick={deactivateAccount}
+                variant="secondary"
+                onClick={() => setCredentials(null)}
               >
-                השבת חשבון
+                צור חשבון חדש
               </Button>
             </div>
           </div>
