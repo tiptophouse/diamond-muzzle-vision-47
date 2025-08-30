@@ -129,7 +129,6 @@ img {
   
   .pt-safe {
     padding-top: max(env(safe-area-inset-top), 16px);
-  }
 }
 
 /* Telegram Mini App Optimizations */

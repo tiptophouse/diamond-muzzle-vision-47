@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { Home, Package, Store, MessageCircle, BarChart3, X } from 'lucide-react';
+import { Home, Package, Store, MessageCircle, BarChart3 } from 'lucide-react';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
-import { HamburgerMenu } from '@/components/ui/hamburger-menu';
 import { cn } from '@/lib/utils';
 
 interface TelegramMiniAppLayoutProps {
@@ -47,7 +46,6 @@ export function TelegramMiniAppLayout({ children }: TelegramMiniAppLayoutProps) 
   const location = useLocation();
   const { selectionChanged, impactOccurred } = useTelegramHapticFeedback();
   const { webApp, isReady } = useTelegramWebApp();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (isReady && webApp) {
@@ -88,12 +86,6 @@ export function TelegramMiniAppLayout({ children }: TelegramMiniAppLayoutProps) 
   const handleNavClick = () => {
     selectionChanged();
     impactOccurred('light');
-    setSidebarOpen(false); // Close sidebar on navigation
-  };
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-    impactOccurred('medium');
   };
 
   return (
@@ -105,101 +97,6 @@ export function TelegramMiniAppLayout({ children }: TelegramMiniAppLayoutProps) 
         color: 'var(--tg-text-color, hsl(var(--foreground)))'
       }}
     >
-      {/* Top Header with Hamburger Menu */}
-      <header 
-        className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 backdrop-blur-md border-b"
-        style={{ 
-          backgroundColor: 'var(--tg-secondary-bg-color, hsl(var(--background)))',
-          borderBottomColor: 'var(--tg-hint-color, hsl(var(--border)))'
-        }}
-      >
-        <HamburgerMenu 
-          isOpen={sidebarOpen}
-          onClick={toggleSidebar}
-          size="lg"
-          variant="blue"
-          className="shadow-lg"
-        />
-        <h1 className="text-lg font-semibold" style={{ color: 'var(--tg-text-color, hsl(var(--foreground)))' }}>
-          Diamond Muzzle
-        </h1>
-        <div className="w-12" /> {/* Spacer for balance */}
-      </header>
-
-      {/* Sidebar Overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside 
-        className={cn(
-          "fixed top-0 left-0 z-50 h-full w-80 transform transition-transform duration-300 ease-in-out",
-          "border-r backdrop-blur-md",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-        style={{ 
-          backgroundColor: 'var(--tg-bg-color, hsl(var(--background)))',
-          borderRightColor: 'var(--tg-hint-color, hsl(var(--border)))'
-        }}
-      >
-        <div className="flex flex-col h-full">
-          {/* Sidebar Header */}
-          <div className="flex items-center justify-between p-4 border-b" style={{ borderBottomColor: 'var(--tg-hint-color, hsl(var(--border)))' }}>
-            <h2 className="text-xl font-bold" style={{ color: 'var(--tg-text-color, hsl(var(--foreground)))' }}>
-              Navigation
-            </h2>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="p-2 rounded-lg hover:bg-gray-100/50 transition-colors"
-            >
-              <X className="h-6 w-6" style={{ color: 'var(--tg-hint-color, hsl(var(--muted-foreground)))' }} />
-            </button>
-          </div>
-
-          {/* Navigation Items */}
-          <nav className="flex-1 p-4">
-            <ul className="space-y-2">
-              {navigationItems.map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item.activePattern);
-                
-                return (
-                  <li key={item.to}>
-                    <Link
-                      to={item.to}
-                      onClick={handleNavClick}
-                      className={cn(
-                        "flex items-center gap-3 p-3 rounded-lg transition-all duration-200",
-                        "hover:bg-gray-100/50 active:scale-98",
-                        active && "bg-blue-50 border border-blue-200"
-                      )}
-                      style={{
-                        color: active 
-                          ? 'var(--tg-link-color, hsl(var(--primary)))' 
-                          : 'var(--tg-text-color, hsl(var(--foreground)))'
-                      }}
-                    >
-                      <Icon 
-                        className="h-6 w-6" 
-                        strokeWidth={active ? 2.5 : 2}
-                      />
-                      <span className="font-medium">{item.label}</span>
-                      {active && (
-                        <div className="ml-auto w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                      )}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-        </div>
-      </aside>
-
       {/* Main Content Area with proper spacing for navigation */}
       <main className="flex-1 overflow-y-auto pb-[80px] relative">
         <div className="min-h-full">
