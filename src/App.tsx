@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TelegramAuthProvider } from './context/TelegramAuthContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
+import { TelegramMiniAppLayout } from './components/layout/TelegramMiniAppLayout';
 import Index from './pages/Index';
 import Dashboard from './pages/Dashboard';
 import InventoryPage from './pages/InventoryPage';
@@ -42,7 +43,7 @@ function App() {
         <Router>
           <TutorialProvider>
             <InteractiveWizardProvider>
-              <div className="min-h-screen bg-background">
+              <TelegramMiniAppLayout>
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/dashboard" element={<Dashboard />} />
@@ -67,7 +68,7 @@ function App() {
                   <Route path="/analytics" element={<AnalyticsPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-              </div>
+              </TelegramMiniAppLayout>
             </InteractiveWizardProvider>
           </TutorialProvider>
         </Router>

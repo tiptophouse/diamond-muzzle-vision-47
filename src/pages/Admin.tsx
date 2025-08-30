@@ -1,4 +1,4 @@
-import { TelegramLayout } from '@/components/layout/TelegramLayout';
+
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { AdminStatsGrid } from '@/components/admin/AdminStatsGrid';
 import { AdminUserManager } from '@/components/admin/AdminUserManager';
@@ -177,32 +177,28 @@ export default function Admin() {
 
   if (isLoading) {
     return (
-      <TelegramLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading admin panel...</p>
-          </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading admin panel...</p>
         </div>
-      </TelegramLayout>
+      </div>
     );
   }
 
   if (!isAuthenticated || !user) {
     return (
-      <TelegramLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
-            <p className="text-gray-600">You need to be authenticated to access the admin panel.</p>
-          </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-gray-600">You need to be authenticated to access the admin panel.</p>
         </div>
-      </TelegramLayout>
+      </div>
     );
   }
 
   return (
-    <TelegramLayout>
+    <div>
       {/* Clean Admin Header with Force Refresh */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -414,6 +410,6 @@ export default function Admin() {
           </div>
         </div>
       )}
-    </TelegramLayout>
+    </div>
   );
 }
