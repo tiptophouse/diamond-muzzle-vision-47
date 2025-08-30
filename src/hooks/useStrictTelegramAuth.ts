@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { TelegramUser } from '@/types/telegram';
-import { verifyTelegramUser, signInToBackend } from '@/lib/api/auth';
+import { signInToBackend, verifyTelegramUser } from '@/lib/api/auth';
 
 interface AuthState {
   user: TelegramUser | null;
