@@ -32,43 +32,72 @@ export function useStrictTelegramAuth(): AuthState {
   };
 
   const isGenuineTelegramEnvironment = (): boolean => {
-    if (typeof window === 'undefined') return false;
+    if (typeof window === 'undefined') {
+      console.log('❌ Server-side environment - blocking access');
+      return false;
+    }
     
+    // STRICT: Block web browser access - only allow Telegram WebApp
+    const userAgent = navigator.userAgent;
+    const isWebBrowser = !userAgent.includes('TelegramBot') && 
+                        !userAgent.includes('Telegram') &&
+                        !window.location.href.includes('tgWebAppData');
+    
+    if (isWebBrowser && !window.Telegram?.WebApp) {
+      console.log('❌ Web browser detected without Telegram WebApp - blocking access');
+      return false;
+    }
+
     // Check for Telegram WebApp object
     if (!window.Telegram?.WebApp) {
-      console.log('❌ No Telegram WebApp object found');
+      console.log('❌ No Telegram WebApp object found - blocking access');
       return false;
     }
 
     const tg = window.Telegram.WebApp;
     
-    // Check for initData - genuine Telegram apps will have this
+    // CRITICAL: Check for initData - genuine Telegram apps will have this
     if (!tg.initData || tg.initData.length === 0) {
-      console.log('❌ No initData found - not a genuine Telegram app');
+      console.log('❌ No initData found - not a genuine Telegram app - blocking access');
       return false;
     }
 
-    // Check for platform info (optional check)
+    // Validate initData structure
+    try {
+      const urlParams = new URLSearchParams(tg.initData);
+      const userParam = urlParams.get('user');
+      const authDate = urlParams.get('auth_date');
+      const hash = urlParams.get('hash');
+      
+      if (!userParam || !authDate || !hash) {
+        console.log('❌ Invalid initData structure - blocking access');
+        return false;
+      }
+    } catch (error) {
+      console.log('❌ Failed to parse initData - blocking access');
+      return false;
+    }
+
+    // Check for platform info (block unknown platforms)
     const platform = (tg as any).platform;
     if (platform && platform === 'unknown') {
-      console.log('❌ Platform unknown - likely not genuine Telegram');
-      return false;
-    }
-
-    // Check for version (optional check)
-    const version = (tg as any).version;
-    if (version && version === '1.0') {
-      console.log('❌ Invalid version - likely not genuine Telegram');
+      console.log('❌ Unknown platform - likely not genuine Telegram - blocking access');
       return false;
     }
 
     // Additional security: check for Telegram-specific properties
     if (typeof tg.ready !== 'function' || typeof tg.expand !== 'function') {
-      console.log('❌ Missing Telegram WebApp methods');
+      console.log('❌ Missing Telegram WebApp methods - blocking access');
       return false;
     }
 
-    console.log('✅ Genuine Telegram environment detected');
+    // Check if running in iframe (Telegram WebApps run in iframes)
+    if (window.self === window.top) {
+      console.log('❌ Not running in iframe - likely not genuine Telegram - blocking access');
+      return false;
+    }
+
+    console.log('✅ Genuine Telegram environment verified');
     return true;
   };
 
@@ -84,17 +113,17 @@ export function useStrictTelegramAuth(): AuthState {
         return false;
       }
       
-      // Check timestamp validity (within 5 minutes for security)
+      // STRICT: Check timestamp validity (within 2 minutes for maximum security)
       const authDateTime = parseInt(authDate) * 1000;
       const now = Date.now();
-      const maxAge = 5 * 60 * 1000; // 5 minutes
+      const maxAge = 2 * 60 * 1000; // 2 minutes only
       
       if (now - authDateTime > maxAge) {
         console.log('❌ Telegram data too old - possible replay attack');
         return false;
       }
       
-      // Parse user data
+      // Parse and validate user data
       const user = JSON.parse(decodeURIComponent(userParam));
       if (!user.id || !user.first_name) {
         console.log('❌ Invalid user data in Telegram initData');
@@ -114,133 +143,95 @@ export function useStrictTelegramAuth(): AuthState {
       return;
     }
 
-    console.log('🔐 Starting strict Telegram-only authentication...');
+    console.log('🔐 Starting STRICT Telegram-only authentication...');
     
     try {
-      // Check if in genuine Telegram environment
+      // STEP 1: Verify genuine Telegram environment
       const isGenuineTelegram = isGenuineTelegramEnvironment();
 
       updateState({ isTelegramEnvironment: isGenuineTelegram });
 
-      let authenticatedUser: TelegramUser | null = null;
-
-      if (isGenuineTelegram) {
-        const tg = window.Telegram!.WebApp;
-        
-        // Initialize Telegram WebApp
-        try {
-          if (typeof tg.ready === 'function') tg.ready();
-          if (typeof tg.expand === 'function') tg.expand();
-          console.log('✅ Telegram WebApp ready() and expand() called');
-        } catch (error) {
-          console.warn('⚠️ Telegram WebApp initialization warning:', error);
-        }
-
-        console.log('🔍 InitData available:', !!tg.initData);
-        console.log('🔍 InitData length:', tg.initData?.length || 0);
-        console.log('🔍 InitDataUnsafe:', tg.initDataUnsafe);
-
-        // Try to extract user data from initData or initDataUnsafe
-        if (tg.initData && validateTelegramData(tg.initData)) {
-          // Step 1: Sign in to backend to get auth token
-          try {
-            console.log('🔐 Signing in to backend first...');
-            const backendToken = await signInToBackend(tg.initData);
-            if (backendToken) {
-              console.log('✅ Backend sign-in successful, token stored');
-            } else {
-              console.warn('⚠️ Backend sign-in failed, continuing with verification...');
-            }
-          } catch (error) {
-            console.warn('⚠️ Backend sign-in error:', error);
-          }
-
-          // Step 2: Try backend verification 
-          try {
-            const verificationResult = await verifyTelegramUser(tg.initData);
-            if (verificationResult && verificationResult.success) {
-              authenticatedUser = {
-                id: verificationResult.user_id,
-                first_name: verificationResult.user_data?.first_name || 'User',
-                last_name: verificationResult.user_data?.last_name,
-                username: verificationResult.user_data?.username,
-                language_code: verificationResult.user_data?.language_code || 'en',
-                is_premium: verificationResult.user_data?.is_premium,
-                photo_url: verificationResult.user_data?.photo_url,
-                phone_number: verificationResult.user_data?.phone_number
-              };
-              console.log('✅ Backend verification successful');
-            }
-          } catch (error) {
-            console.warn('⚠️ Backend verification failed, trying client-side:', error);
-          }
-        }
-
-        // Fallback to client-side validation if backend fails
-        if (!authenticatedUser && tg.initDataUnsafe?.user) {
-          const unsafeUser = tg.initDataUnsafe.user;
-          if (unsafeUser.id && unsafeUser.first_name) {
-            authenticatedUser = {
-              id: unsafeUser.id,
-              first_name: unsafeUser.first_name,
-              last_name: unsafeUser.last_name,
-              username: unsafeUser.username,
-              language_code: unsafeUser.language_code || 'en',
-              is_premium: unsafeUser.is_premium,
-              photo_url: unsafeUser.photo_url,
-              phone_number: (unsafeUser as any).phone_number
-            };
-            console.log('✅ Client-side authentication successful');
-          }
-        }
-
-        // If no Telegram data available, use fallback
-        if (!authenticatedUser) {
-          console.warn('⚠️ No initData available, using fallback auth');
-        }
-      } else {
-        console.log('🔍 Not in Telegram environment, checking for WebApp object...');
-        // Not in genuine Telegram but WebApp might exist
-        if (window.Telegram?.WebApp) {
-          const tg = window.Telegram.WebApp;
-          console.log('🔍 Telegram WebApp exists, checking for user data...');
-          
-          if (tg.initDataUnsafe?.user) {
-            const unsafeUser = tg.initDataUnsafe.user;
-            authenticatedUser = {
-              id: unsafeUser.id,
-              first_name: unsafeUser.first_name,
-              last_name: unsafeUser.last_name,
-              username: unsafeUser.username,
-              language_code: unsafeUser.language_code || 'en',
-              is_premium: unsafeUser.is_premium,
-              photo_url: unsafeUser.photo_url,
-              phone_number: (unsafeUser as any).phone_number
-            };
-            console.log('✅ Used initDataUnsafe for authentication');
-          }
-        }
+      // BLOCK: If not genuine Telegram, deny access immediately
+      if (!isGenuineTelegram) {
+        console.log('🚫 ACCESS DENIED: Not a genuine Telegram environment');
+        updateState({
+          isLoading: false,
+          accessDeniedReason: 'not_telegram',
+          error: 'Access denied: Telegram Mini App only'
+        });
+        return;
       }
 
-      // If no real user data, use admin user as primary fallback
-      if (!authenticatedUser) {
-        console.log('🆘 Using admin user for auth fallback');
-        
-        // Primary admin user
-        authenticatedUser = {
-          id: 2138564172, // Your admin ID
-          first_name: 'Admin',
-          last_name: 'User',
-          username: 'admin',
-          language_code: 'en',
-          is_premium: true,
-          photo_url: undefined,
-          phone_number: undefined
-        };
-        console.log('👑 Admin user created for access:', authenticatedUser.first_name);
+      const tg = window.Telegram!.WebApp;
+
+      // Initialize Telegram WebApp
+      try {
+        if (typeof tg.ready === 'function') tg.ready();
+        if (typeof tg.expand === 'function') tg.expand();
+        console.log('✅ Telegram WebApp initialized');
+      } catch (error) {
+        console.warn('⚠️ Telegram WebApp initialization warning:', error);
       }
 
-      // Success
+      console.log('🔍 InitData available:', !!tg.initData);
+      console.log('🔍 InitData length:', tg.initData?.length || 0);
+
+      // STEP 2: Validate initData
+      if (!tg.initData || !validateTelegramData(tg.initData)) {
+        console.log('🚫 ACCESS DENIED: Invalid or missing Telegram initData');
+        updateState({
+          isLoading: false,
+          accessDeniedReason: 'invalid_telegram_data',
+          error: 'Access denied: Invalid Telegram data'
+        });
+        return;
+      }
+
+      // STEP 3: Sign in to FastAPI backend to get JWT
+      console.log('🔐 Signing in to FastAPI backend with Telegram initData...');
+      const jwtToken = await signInToBackend(tg.initData);
+      
+      if (!jwtToken) {
+        console.log('🚫 ACCESS DENIED: FastAPI authentication failed');
+        updateState({
+          isLoading: false,
+          accessDeniedReason: 'authentication_failed',
+          error: 'Access denied: Authentication failed'
+        });
+        return;
+      }
+
+      console.log('✅ FastAPI JWT authentication successful');
+
+      // STEP 4: Verify with backend using JWT
+      const verificationResult = await verifyTelegramUser(tg.initData);
+      
+      if (!verificationResult || !verificationResult.success) {
+        console.log('🚫 ACCESS DENIED: Backend verification failed');
+        updateState({
+          isLoading: false,
+          accessDeniedReason: 'authentication_failed',
+          error: 'Access denied: Verification failed'
+        });
+        return;
+      }
+
+      // STEP 5: Create authenticated user
+      const authenticatedUser: TelegramUser = {
+        id: verificationResult.user_id,
+        first_name: verificationResult.user_data?.first_name || 'User',
+        last_name: verificationResult.user_data?.last_name,
+        username: verificationResult.user_data?.username,
+        language_code: verificationResult.user_data?.language_code || 'en',
+        is_premium: verificationResult.user_data?.is_premium,
+        photo_url: verificationResult.user_data?.photo_url,
+        phone_number: verificationResult.user_data?.phone_number
+      };
+
+      console.log('✅ STRICT TELEGRAM AUTHENTICATION SUCCESSFUL');
+      console.log('👤 Authenticated user:', authenticatedUser.first_name, 'ID:', authenticatedUser.id);
+
+      // SUCCESS: Grant access
       updateState({
         user: authenticatedUser,
         isAuthenticated: true,
@@ -264,18 +255,18 @@ export function useStrictTelegramAuth(): AuthState {
   useEffect(() => {
     mountedRef.current = true;
     
-    // Timeout for authentication
+    // Timeout for authentication (shorter for security)
     const timeoutId = setTimeout(() => {
       if (state.isLoading && mountedRef.current && !initializedRef.current) {
-        console.warn('⚠️ Authentication timeout');
+        console.warn('⚠️ Authentication timeout - blocking access');
         updateState({
           isLoading: false,
           accessDeniedReason: 'timeout',
-          error: 'Authentication timeout - please try again'
+          error: 'Authentication timeout'
         });
         initializedRef.current = true;
       }
-    }, 5000);
+    }, 3000); // 3 seconds max
 
     authenticateUser();
 

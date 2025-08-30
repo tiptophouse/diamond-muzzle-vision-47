@@ -1,7 +1,7 @@
 
 import { ReactNode } from 'react';
 import { useStrictTelegramAuth } from '@/hooks/useStrictTelegramAuth';
-import { Shield, Smartphone, ExternalLink, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Shield, Smartphone, ExternalLink, RefreshCw, AlertTriangle, Ban } from 'lucide-react';
 
 interface TelegramOnlyGuardProps {
   children: ReactNode;
@@ -27,7 +27,7 @@ export function TelegramOnlyGuard({ children }: TelegramOnlyGuardProps) {
             <Shield className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-6 w-6 text-blue-600" />
           </div>
           <h3 className="text-xl font-semibold text-blue-700 mb-2">Verifying Telegram Access...</h3>
-          <p className="text-blue-600 text-sm">Checking authentication...</p>
+          <p className="text-blue-600 text-sm">Strict authentication in progress...</p>
         </div>
       </div>
     );
@@ -37,79 +37,103 @@ export function TelegramOnlyGuard({ children }: TelegramOnlyGuardProps) {
   if (!isAuthenticated || accessDeniedReason) {
     const getAccessDeniedContent = () => {
       switch (accessDeniedReason) {
-        case 'web_access_blocked':
         case 'not_telegram':
           return {
-            icon: <Smartphone className="h-12 w-12 text-blue-600" />,
-            title: 'Telegram Mini App Only',
-            message: 'This application can only be accessed through Telegram Mini App.',
+            icon: <Ban className="h-12 w-12 text-red-600" />,
+            title: 'Access Blocked',
+            message: 'This application is ONLY accessible through Telegram Mini App. Web browser access is not permitted.',
             instructions: [
               'Open Telegram on your mobile device',
-              'Search for our bot or use the link provided',
+              'Search for our bot',
               'Start the Mini App from within Telegram',
-              'Do not access via web browser'
+              'Web browser access is strictly prohibited'
             ],
-            showTelegramButton: true
+            showTelegramButton: true,
+            severity: 'error'
           };
         
         case 'invalid_telegram_data':
           return {
             icon: <AlertTriangle className="h-12 w-12 text-orange-600" />,
-            title: 'Invalid Telegram Data',
-            message: 'The Telegram authentication data is invalid or expired.',
+            title: 'Invalid Telegram Authentication',
+            message: 'The Telegram authentication data is invalid, expired, or tampered with.',
             instructions: [
-              'Close and reopen the Mini App',
+              'Close and reopen the Mini App in Telegram',
               'Make sure you\'re using the latest version of Telegram',
-              'Try restarting Telegram if the issue persists'
+              'Do not attempt to access via web browser',
+              'Contact support if the issue persists'
             ],
-            showRefreshButton: true
+            showRefreshButton: true,
+            severity: 'warning'
           };
         
         case 'authentication_failed':
           return {
             icon: <Shield className="h-12 w-12 text-red-600" />,
             title: 'Authentication Failed',
-            message: 'Unable to verify your Telegram identity.',
+            message: 'Unable to verify your Telegram identity with our secure backend.',
             instructions: [
-              'Make sure you\'re logged into Telegram',
+              'Ensure you\'re logged into Telegram',
               'Try closing and reopening the Mini App',
+              'Make sure you have a stable internet connection',
               'Contact support if the issue continues'
             ],
-            showRefreshButton: true
+            showRefreshButton: true,
+            severity: 'error'
+          };
+        
+        case 'timeout':
+          return {
+            icon: <AlertTriangle className="h-12 w-12 text-orange-600" />,
+            title: 'Authentication Timeout',
+            message: 'Authentication took too long to complete.',
+            instructions: [
+              'Check your internet connection',
+              'Try refreshing the Mini App',
+              'Make sure Telegram has proper network access'
+            ],
+            showRefreshButton: true,
+            severity: 'warning'
           };
         
         default:
           return {
-            icon: <AlertTriangle className="h-12 w-12 text-gray-600" />,
+            icon: <Ban className="h-12 w-12 text-red-600" />,
             title: 'Access Denied',
-            message: error || 'Unable to access the application.',
+            message: 'Access to this application is strictly limited to authenticated Telegram users only.',
             instructions: [
-              'Please try again',
-              'Make sure you\'re using Telegram Mini App'
+              'Use Telegram Mini App only',
+              'Ensure proper Telegram authentication',
+              'Web browser access is not permitted'
             ],
-            showRefreshButton: true
+            showRefreshButton: true,
+            severity: 'error'
           };
       }
     };
 
     const content = getAccessDeniedContent();
+    const borderColor = content.severity === 'error' ? 'border-red-200' : 'border-orange-200';
+    const bgColor = content.severity === 'error' ? 'bg-red-50' : 'bg-orange-50';
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center px-4">
-        <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md w-full border">
-          <div className="bg-blue-50 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+        <div className={`text-center p-8 bg-white rounded-xl shadow-xl max-w-md w-full border-2 ${borderColor}`}>
+          <div className={`${bgColor} rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6`}>
             {content.icon}
           </div>
           
           <h2 className="text-2xl font-bold text-gray-900 mb-4">{content.title}</h2>
-          <p className="text-gray-600 mb-6">{content.message}</p>
+          <p className="text-gray-600 mb-6 font-medium">{content.message}</p>
           
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <h4 className="font-medium text-blue-800 mb-3">How to Access:</h4>
-            <ul className="text-blue-700 text-sm space-y-2 text-left">
+          <div className={`${bgColor} border ${content.severity === 'error' ? 'border-red-200' : 'border-orange-200'} rounded-lg p-4 mb-6`}>
+            <h4 className={`font-medium mb-3 ${content.severity === 'error' ? 'text-red-800' : 'text-orange-800'}`}>
+              Required Steps:
+            </h4>
+            <ul className={`text-sm space-y-2 text-left ${content.severity === 'error' ? 'text-red-700' : 'text-orange-700'}`}>
               {content.instructions.map((instruction, index) => (
                 <li key={index} className="flex items-start gap-2">
-                  <span className="text-blue-600 font-bold mt-0.5">•</span>
+                  <span className={`font-bold mt-0.5 ${content.severity === 'error' ? 'text-red-600' : 'text-orange-600'}`}>•</span>
                   <span>{instruction}</span>
                 </li>
               ))}
@@ -123,7 +147,7 @@ export function TelegramOnlyGuard({ children }: TelegramOnlyGuardProps) {
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
               >
                 <RefreshCw size={18} />
-                Try Again
+                Retry Authentication
               </button>
             )}
             
@@ -131,7 +155,7 @@ export function TelegramOnlyGuard({ children }: TelegramOnlyGuardProps) {
               <button
                 onClick={() => {
                   // Try to open in Telegram if possible
-                  const telegramUrl = `tg://resolve?domain=your_bot_username`;
+                  const telegramUrl = `tg://resolve?domain=MazalBotSupport`;
                   window.open(telegramUrl, '_blank');
                 }}
                 className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
@@ -140,6 +164,14 @@ export function TelegramOnlyGuard({ children }: TelegramOnlyGuardProps) {
                 Open in Telegram
               </button>
             )}
+          </div>
+          
+          {/* Security notice */}
+          <div className="mt-6 p-3 bg-gray-100 rounded-lg">
+            <p className="text-xs text-gray-600">
+              🔒 <strong>Security Notice:</strong> This application uses strict Telegram-only authentication 
+              to protect user data and ensure secure access.
+            </p>
           </div>
           
           {/* Debug info in development */}
@@ -153,6 +185,9 @@ export function TelegramOnlyGuard({ children }: TelegramOnlyGuardProps) {
                 <div>User ID: {user?.id || 'None'}</div>
                 <div>Access Denied Reason: {accessDeniedReason || 'None'}</div>
                 <div>Error: {error || 'None'}</div>
+                <div>User Agent: {navigator.userAgent.substring(0, 50)}...</div>
+                <div>In Iframe: {window.self !== window.top ? 'Yes' : 'No'}</div>
+                <div>Has InitData: {!!window.Telegram?.WebApp?.initData ? 'Yes' : 'No'}</div>
               </div>
             </div>
           )}
@@ -161,6 +196,7 @@ export function TelegramOnlyGuard({ children }: TelegramOnlyGuardProps) {
     );
   }
 
-  // User is authenticated - show the app
+  // User is authenticated via strict Telegram verification - show the app
+  console.log('✅ Access granted to authenticated Telegram user:', user?.first_name);
   return <>{children}</>;
 }
