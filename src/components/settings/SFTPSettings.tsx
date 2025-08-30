@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Server, Key, Copy, RefreshCw, AlertCircle, CheckCircle, TestTube, Bug } from 'lucide-react';
-import { provisionSftp, type SFTPCredentials } from '@/api/sftp';
+import { provisionSftp, getSftpStatus, type SFTPCredentials } from '@/api/sftp';
 import { supabase } from '@/integrations/supabase/client';
 import { signInToBackend, getBackendAuthToken } from '@/lib/api/auth';
 import { getBackendAccessToken } from '@/lib/api/secureConfig';
@@ -20,6 +20,7 @@ export function SFTPSettings() {
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
+  const [isLoadingCredentials, setIsLoadingCredentials] = useState(true);
   const [credentials, setCredentials] = useState<SFTPCredentials | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'success' | 'failed' | null>(null);
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
@@ -270,6 +271,35 @@ export function SFTPSettings() {
     }
   };
 
+  const loadExistingCredentials = async () => {
+    if (!user?.id) return;
+    
+    setIsLoadingCredentials(true);
+    addDebugLog('🔍 Checking for existing SFTP credentials...');
+    
+    try {
+      const existingCredentials = await getSftpStatus(user.id);
+      if (existingCredentials) {
+        addDebugLog('✅ Found existing SFTP credentials');
+        setCredentials(existingCredentials);
+        setConnectionStatus(existingCredentials.test_result ? 'success' : 'failed');
+      } else {
+        addDebugLog('ℹ️ No existing SFTP credentials found');
+      }
+    } catch (error) {
+      console.error('❌ Error loading SFTP credentials:', error);
+      addDebugLog(`❌ Failed to load credentials: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsLoadingCredentials(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.id) {
+      loadExistingCredentials();
+    }
+  }, [user?.id]);
+
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     toast({
@@ -313,7 +343,17 @@ export function SFTPSettings() {
           </div>
         )}
 
-        {!credentials ? (
+        {isLoadingCredentials ? (
+          <div className="text-center space-y-4">
+            <div className="bg-muted/50 rounded-lg p-6">
+              <RefreshCw className="h-12 w-12 mx-auto mb-4 text-muted-foreground animate-spin" />
+              <h3 className="text-lg font-semibold mb-2">טוען פרטי SFTP...</h3>
+              <p className="text-muted-foreground">
+                בודק אם יש לך כבר חשבון SFTP קיים
+              </p>
+            </div>
+          </div>
+        ) : !credentials ? (
           <div className="text-center space-y-4">
             <div className="bg-muted/50 rounded-lg p-6">
               <Server className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />

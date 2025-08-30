@@ -18,6 +18,44 @@ export type SFTPCredentials = {
   test_result: boolean;
 };
 
+export async function getSftpStatus(telegramId: number): Promise<SFTPCredentials | null> {
+  console.log('🔍 SFTP: Checking existing SFTP status for user:', telegramId);
+  
+  const jwtToken = getBackendAuthToken();
+  if (!jwtToken) {
+    console.error('❌ SFTP: No JWT token available for SFTP status check');
+    throw new Error('JWT authentication required for SFTP status check');
+  }
+  
+  const response = await api.get<SFTPProvisionResponse>(`/api/v1/sftp/status/${telegramId}`);
+  
+  if (response.error) {
+    console.log('ℹ️ SFTP: No existing credentials found or error:', response.error);
+    return null;
+  }
+  
+  if (!response.data) {
+    console.log('ℹ️ SFTP: No existing credentials found');
+    return null;
+  }
+  
+  const data = response.data;
+  console.log('✅ SFTP: Existing credentials found:', {
+    server: data.sftp_server,
+    username: data.username,
+    testResult: data.test_result
+  });
+  
+  return {
+    host: data.sftp_server,
+    port: 22,
+    username: data.username,
+    password: data.password,
+    folder_path: `/home/${data.username}/inbox`,
+    test_result: data.test_result
+  };
+}
+
 export async function provisionSftp(telegramId: number): Promise<SFTPCredentials> {
   console.log('🔐 SFTP: Starting JWT authenticated SFTP provision for user:', telegramId);
   
