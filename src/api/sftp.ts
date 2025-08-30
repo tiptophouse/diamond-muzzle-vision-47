@@ -1,7 +1,6 @@
 
-// src/api/sftp.ts
 import { api } from "@/lib/api";
-import { getAuthHeaders } from "@/lib/api/auth";
+import { getAuthHeaders, getBackendAuthToken } from "@/lib/api/auth";
 
 export type SFTPProvisionResponse = {
   sftp_server: string;
@@ -20,26 +19,33 @@ export type SFTPCredentials = {
 };
 
 export async function provisionSftp(telegramId: number): Promise<SFTPCredentials> {
-  console.log('🔐 SFTP: Provisioning SFTP account for user:', telegramId);
+  console.log('🔐 SFTP: Starting JWT authenticated SFTP provision for user:', telegramId);
   
-  // Get proper authentication headers
+  // CRITICAL: Ensure JWT authentication is available
+  const jwtToken = getBackendAuthToken();
+  if (!jwtToken) {
+    console.error('❌ SFTP: No JWT token available for SFTP provision');
+    throw new Error('JWT authentication required for SFTP provision');
+  }
+  
+  console.log('✅ SFTP: JWT token available for authenticated request');
+  
+  // Get proper JWT authentication headers
   const authHeaders = await getAuthHeaders();
-  console.log('🔐 SFTP: Auth headers prepared:', {
-    hasAuth: !!authHeaders.Authorization,
-    headerKeys: Object.keys(authHeaders)
-  });
+  console.log('🔐 SFTP: JWT authentication headers prepared for SFTP endpoint');
   
+  // Make JWT authenticated request to SFTP provision endpoint
   const response = await api.post<SFTPProvisionResponse>('/api/v1/sftp/provision', {
     telegram_id: telegramId
   });
   
   if (response.error || !response.data) {
-    console.error('❌ SFTP: Provision failed:', response.error);
-    throw new Error(response.error || 'Failed to provision SFTP account');
+    console.error('❌ SFTP: JWT authenticated provision failed:', response.error);
+    throw new Error(response.error || 'Failed to provision SFTP account with JWT authentication');
   }
   
   const data = response.data;
-  console.log('✅ SFTP: Provision response received:', {
+  console.log('✅ SFTP: JWT authenticated provision response received:', {
     server: data.sftp_server,
     username: data.username,
     hasPassword: !!data.password,
@@ -56,7 +62,7 @@ export async function provisionSftp(telegramId: number): Promise<SFTPCredentials
     test_result: data.test_result
   };
   
-  console.log('✅ SFTP: Account provisioned successfully:', {
+  console.log('✅ SFTP: JWT authenticated account provisioned successfully:', {
     host: credentials.host,
     username: credentials.username,
     folder_path: credentials.folder_path,
