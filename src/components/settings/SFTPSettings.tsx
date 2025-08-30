@@ -7,9 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useToast } from '@/components/ui/use-toast';
-import { Server, Key, Copy, RefreshCw, AlertCircle, CheckCircle, TestTube } from 'lucide-react';
+import { Server, Key, Copy, RefreshCw, AlertCircle, CheckCircle, TestTube, Bug } from 'lucide-react';
 import { provisionSftp, type SFTPCredentials } from '@/api/sftp';
 import { supabase } from '@/integrations/supabase/client';
+import { signInToBackend, getBackendAuthToken } from '@/lib/api/auth';
+import { getBackendAccessToken } from '@/lib/api/secureConfig';
+import { getTelegramWebApp } from '@/utils/telegramWebApp';
 
 export function SFTPSettings() {
   const { user } = useTelegramAuth();
@@ -19,6 +22,15 @@ export function SFTPSettings() {
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [credentials, setCredentials] = useState<SFTPCredentials | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'success' | 'failed' | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string[]>([]);
+  const [showDebug, setShowDebug] = useState(false);
+
+  const addDebugLog = (message: string) => {
+    const timestamp = new Date().toISOString();
+    const logEntry = `[${timestamp}] ${message}`;
+    console.log('🔍 SFTP Debug:', logEntry);
+    setDebugInfo(prev => [...prev.slice(-9), logEntry]); // Keep last 10 entries
+  };
 
   const sendTelegramNotification = async (message: string) => {
     if (!user?.id) return;
@@ -33,7 +45,59 @@ export function SFTPSettings() {
       });
     } catch (error) {
       console.error('❌ Error sending Telegram notification:', error);
+      addDebugLog(`Telegram notification failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  };
+
+  const ensureAuthentication = async (): Promise<string | null> => {
+    addDebugLog('🔐 Starting authentication check...');
+    
+    if (!user?.id) {
+      addDebugLog('❌ No user ID available');
+      throw new Error('User not authenticated');
+    }
+
+    addDebugLog(`👤 User ID: ${user.id}, Name: ${user.first_name}`);
+
+    // Step 1: Check if we already have a backend token
+    let backendToken = getBackendAuthToken();
+    addDebugLog(`🎫 Existing backend token: ${backendToken ? 'Found' : 'Not found'}`);
+
+    if (!backendToken) {
+      // Step 2: Try to get Telegram initData for backend sign-in
+      const tg = getTelegramWebApp();
+      addDebugLog(`📱 Telegram WebApp: ${tg ? 'Available' : 'Not available'}`);
+      
+      if (tg?.initData) {
+        addDebugLog(`📝 InitData length: ${tg.initData.length}`);
+        try {
+          backendToken = await signInToBackend(tg.initData);
+          addDebugLog(`✅ Backend sign-in result: ${backendToken ? 'Success' : 'Failed'}`);
+        } catch (error) {
+          addDebugLog(`❌ Backend sign-in error: ${error instanceof Error ? error.message : 'Unknown'}`);
+        }
+      } else {
+        addDebugLog('⚠️ No Telegram initData available for backend sign-in');
+      }
+    }
+
+    // Step 3: Fallback to secure config token if no backend token
+    if (!backendToken) {
+      try {
+        backendToken = await getBackendAccessToken();
+        addDebugLog(`🔑 Secure config token: ${backendToken ? 'Retrieved' : 'Failed'}`);
+      } catch (error) {
+        addDebugLog(`❌ Secure config token error: ${error instanceof Error ? error.message : 'Unknown'}`);
+      }
+    }
+
+    if (!backendToken) {
+      addDebugLog('❌ No authentication token available');
+      throw new Error('Unable to obtain authentication token');
+    }
+
+    addDebugLog('✅ Authentication successful');
+    return backendToken;
   };
 
   const generateSFTPCredentials = async () => {
@@ -47,12 +111,22 @@ export function SFTPSettings() {
     }
     
     setIsGenerating(true);
+    setDebugInfo([]);
+    addDebugLog('🚀 Starting SFTP provision process');
+    
     try {
-      console.log('📤 Requesting SFTP provision for user:', user.id);
+      // Step 1: Ensure authentication
+      const authToken = await ensureAuthentication();
+      
+      // Step 2: Make the SFTP provision request
+      addDebugLog('📤 Making SFTP provision request');
+      addDebugLog(`🎯 Endpoint: https://api.mazalbot.com/api/v1/sftp/provision`);
+      addDebugLog(`👤 User ID: ${user.id}`);
       
       const sftpCredentials = await provisionSftp(user.id);
       
-      console.log('✅ SFTP account created successfully:', sftpCredentials);
+      addDebugLog('✅ SFTP provision successful');
+      addDebugLog(`📊 Response: ${JSON.stringify(sftpCredentials, null, 2)}`);
       
       // Update state with new credentials
       setCredentials(sftpCredentials);
@@ -81,6 +155,7 @@ export function SFTPSettings() {
     } catch (error) {
       console.error('❌ Error generating SFTP credentials:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      addDebugLog(`❌ SFTP provision failed: ${errorMessage}`);
       
       const failureMessage = `❌ <b>שגיאה ביצירת חשבון SFTP</b>
 
@@ -106,27 +181,35 @@ export function SFTPSettings() {
 
     setIsTestingConnection(true);
     setConnectionStatus('checking');
+    addDebugLog('🔄 Starting SFTP connection test');
 
     try {
-      console.log('🔄 Testing SFTP connection for user:', user.id);
+      const authToken = await ensureAuthentication();
       
-      const response = await fetch('/api/v1/sftp/test-connection', {
+      addDebugLog('🧪 Testing SFTP connection');
+      addDebugLog(`🎯 Test endpoint: https://api.mazalbot.com/api/v1/sftp/test-connection`);
+      
+      const response = await fetch('https://api.mazalbot.com/api/v1/sftp/test-connection', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify({ telegram_id: user.id }),
       });
+
+      addDebugLog(`📡 Test response status: ${response.status}`);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
 
       const data = await response.json();
+      addDebugLog(`📊 Test response: ${JSON.stringify(data, null, 2)}`);
       
       if (data.status === 'success') {
-        console.log('✅ SFTP connection test successful');
+        addDebugLog('✅ SFTP connection test successful');
         setConnectionStatus('success');
         
         const successMessage = `✅ <b>בדיקת חיבור SFTP הושלמה בהצלחה!</b>
@@ -144,7 +227,7 @@ export function SFTPSettings() {
           description: "החשבון שלך פעיל ומוכן לשימוש",
         });
       } else {
-        console.log('❌ SFTP connection test failed:', data);
+        addDebugLog(`❌ SFTP connection test failed: ${data.message || 'Unknown error'}`);
         setConnectionStatus('failed');
         
         const failureMessage = `❌ <b>בדיקת חיבור SFTP נכשלה</b>
@@ -164,16 +247,18 @@ export function SFTPSettings() {
       }
     } catch (error) {
       console.error('❌ Error testing SFTP connection:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      addDebugLog(`❌ Connection test failed: ${errorMessage}`);
       setConnectionStatus('failed');
       
-      const errorMessage = `🔧 <b>שגיאה בבדיקת חיבור SFTP</b>
+      const errorMsg = `🔧 <b>שגיאה בבדיקת חיבור SFTP</b>
 
 ⚠️ אירעה שגיאה טכנית בבדיקת החיבור
 🔄 אנא נסה שוב מאוחר יותר
 
 אם הבעיה נמשכת, פנה לתמיכה.`;
 
-      await sendTelegramNotification(errorMessage);
+      await sendTelegramNotification(errorMsg);
       
       toast({
         title: "שגיאה בבדיקת חיבור",
@@ -199,12 +284,35 @@ export function SFTPSettings() {
         <CardTitle className="flex items-center gap-2">
           <Server className="h-5 w-5" />
           הגדרות SFTP
+          <Button
+            variant="ghost" 
+            size="sm"
+            onClick={() => setShowDebug(!showDebug)}
+            className="ml-auto"
+          >
+            <Bug className="h-4 w-4" />
+          </Button>
         </CardTitle>
         <CardDescription>
           נהל את פרטי הגישה ל-SFTP עבור העלאת קבצי יהלומים
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Debug Panel */}
+        {showDebug && debugInfo.length > 0 && (
+          <div className="bg-gray-100 rounded-lg p-4 border">
+            <h4 className="font-semibold mb-2 flex items-center gap-2">
+              <Bug className="h-4 w-4" />
+              מידע דיבוג
+            </h4>
+            <div className="text-xs font-mono max-h-40 overflow-y-auto space-y-1">
+              {debugInfo.map((log, i) => (
+                <div key={i} className="text-gray-700">{log}</div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {!credentials ? (
           <div className="text-center space-y-4">
             <div className="bg-muted/50 rounded-lg p-6">
