@@ -9,6 +9,7 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Server, Key, Copy, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
 import { provisionSftp, type SFTPCredentials } from '@/api/sftp';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SFTPAccount {
   id: string;
@@ -68,6 +69,22 @@ export function SFTPSettings() {
     loadSFTPAccount();
   }, [user]);
 
+  const sendTelegramNotification = async (message: string) => {
+    if (!user?.id) return;
+    
+    try {
+      await supabase.functions.invoke('send-telegram-message', {
+        body: {
+          telegram_id: user.id,
+          message,
+          parse_mode: 'HTML'
+        }
+      });
+    } catch (error) {
+      console.error('❌ Error sending Telegram notification:', error);
+    }
+  };
+
   const generateSFTPCredentials = async () => {
     if (!user?.id) {
       toast({
@@ -101,6 +118,19 @@ export function SFTPSettings() {
       setShowPassword(true);
       setConnectionStatus(sftpCredentials.test_result ? 'success' : 'failed');
 
+      const successMessage = `🎉 <b>חשבון SFTP נוצר בהצלחה!</b>
+
+📊 <b>פרטי החשבון:</b>
+🏠 <b>שרת:</b> <code>${sftpCredentials.host}</code>
+👤 <b>משתמש:</b> <code>${sftpCredentials.username}</code>
+📁 <b>תיקייה:</b> <code>${sftpCredentials.folder_path}</code>
+🔌 <b>פורט:</b> <code>${sftpCredentials.port}</code>
+📊 <b>סטטוס:</b> ${sftpCredentials.test_result ? '✅ פעיל' : '❌ לא פעיל'}
+
+🔑 הסיסמה נשמרה באפליקציה - אנא שמור אותה במקום בטוח!`;
+
+      await sendTelegramNotification(successMessage);
+
       toast({
         title: "SFTP חשבון נוצר בהצלחה",
         description: "פרטי הגישה שלך מוכנים לשימוש",
@@ -109,6 +139,15 @@ export function SFTPSettings() {
     } catch (error) {
       console.error('❌ Error generating SFTP credentials:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      const failureMessage = `❌ <b>שגיאה ביצירת חשבון SFTP</b>
+
+🚫 לא הצלחנו ליצור חשבון SFTP עבורך.
+📝 <b>פרטי השגיאה:</b> ${errorMessage}
+
+אנא נסה שוב או פנה לתמיכה.`;
+
+      await sendTelegramNotification(failureMessage);
       
       toast({
         title: "שגיאה ביצירת חשבון SFTP",
@@ -147,6 +186,17 @@ export function SFTPSettings() {
       if (data.status === 'success') {
         console.log('✅ SFTP connection test successful');
         setConnectionStatus('success');
+        
+        const successMessage = `✅ <b>בדיקת חיבור SFTP הושלמה בהצלחה!</b>
+
+🎯 החשבון שלך פעיל ומוכן לשימוש
+📁 ניתן להעלות קבצים לתיקיית: <code>${credentials?.folder_path || 'inbox'}</code>
+🚀 הקבצים יעובדו אוטומטי תוך מספר דקות
+
+💡 <b>טיפ:</b> השתמש ב-FileZilla או WinSCP להעלאת קבצים`;
+
+        await sendTelegramNotification(successMessage);
+        
         toast({
           title: "חיבור SFTP מוצלח",
           description: "החשבון שלך פעיל ומוכן לשימוש",
@@ -154,6 +204,16 @@ export function SFTPSettings() {
       } else {
         console.log('❌ SFTP connection test failed:', data);
         setConnectionStatus('failed');
+        
+        const failureMessage = `❌ <b>בדיקת חיבור SFTP נכשלה</b>
+
+🚫 לא הצלחנו להתחבר לחשבון ה-SFTP שלך
+📝 <b>סיבה:</b> ${data.message || 'שגיאה לא ידועה'}
+
+🔧 אנא בדוק את פרטי החיבור או נסה שוב מאוחר יותר.`;
+
+        await sendTelegramNotification(failureMessage);
+        
         toast({
           title: "בדיקת חיבור נכשלה",
           description: data.message || "לא ניתן להתחבר לשרת SFTP",
@@ -163,6 +223,16 @@ export function SFTPSettings() {
     } catch (error) {
       console.error('❌ Error testing SFTP connection:', error);
       setConnectionStatus('failed');
+      
+      const errorMessage = `🔧 <b>שגיאה בבדיקת חיבור SFTP</b>
+
+⚠️ אירעה שגיאה טכנית בבדיקת החיבור
+🔄 אנא נסה שוב מאוחר יותר
+
+אם הבעיה נמשכת, פנה לתמיכה.`;
+
+      await sendTelegramNotification(errorMessage);
+      
       toast({
         title: "שגיאה בבדיקת חיבור",
         description: "לא ניתן לבדוק את החיבור כרגע",
