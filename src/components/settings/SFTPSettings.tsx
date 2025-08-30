@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Server, Key, Copy, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
-import { api, apiEndpoints } from '@/lib/api';
+import { provisionSftp, type SFTPCredentials } from '@/api/sftp';
 
 interface SFTPAccount {
   id: string;
@@ -18,19 +18,6 @@ interface SFTPAccount {
   created_at: string;
   last_used_at?: string;
   expires_at?: string;
-}
-
-interface SFTPCredentials {
-  host: string;
-  port: number;
-  username: string;
-  password: string;
-  folder_path: string;
-}
-
-interface FastAPIResponse {
-  credentials: SFTPCredentials;
-  account: SFTPAccount;
 }
 
 export function SFTPSettings() {
@@ -95,32 +82,29 @@ export function SFTPSettings() {
     try {
       console.log('📤 Requesting SFTP provision for user:', user.id);
       
-      const response = await api.post<FastAPIResponse>(
-        apiEndpoints.sftpProvision(),
-        { telegram_id: user.id }
-      );
-
-      if (response.error || !response.data) {
-        throw new Error(response.error || 'Failed to provision SFTP account');
-      }
-
-      const data: FastAPIResponse = response.data;
-      console.log('✅ SFTP account created successfully:', data);
+      const sftpCredentials = await provisionSftp(user.id);
+      
+      console.log('✅ SFTP account created successfully:', sftpCredentials);
+      
+      // Create a mock account object for UI compatibility
+      const mockAccount: SFTPAccount = {
+        id: `sftp_${user.id}`,
+        ftp_username: sftpCredentials.username,
+        ftp_folder_path: sftpCredentials.folder_path,
+        status: sftpCredentials.test_result ? 'active' : 'inactive',
+        created_at: new Date().toISOString(),
+      };
       
       // Update state with new account and credentials
-      setSftpAccount(data.account);
-      setCredentials(data.credentials);
+      setSftpAccount(mockAccount);
+      setCredentials(sftpCredentials);
       setShowPassword(true);
+      setConnectionStatus(sftpCredentials.test_result ? 'success' : 'failed');
 
       toast({
         title: "SFTP חשבון נוצר בהצלחה",
         description: "פרטי הגישה שלך מוכנים לשימוש",
       });
-
-      // Start connection testing after showing credentials
-      setTimeout(() => {
-        testConnection();
-      }, 2000);
       
     } catch (error) {
       console.error('❌ Error generating SFTP credentials:', error);
@@ -437,7 +421,7 @@ export function SFTPSettings() {
                   <>
                     <Server className="h-4 w-4 mr-2" />
                     בדוק חיבור
-                  </>
+                  </Server>
                 )}
               </Button>
               <Button
