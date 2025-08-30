@@ -325,145 +325,239 @@ export function SFTPSettings() {
           <div className="text-center space-y-4">
             <div className="bg-muted/50 rounded-lg p-6">
               <Server className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">אין חשבון SFTP פעיל</h3>
+              <h3 className="text-lg font-semibold mb-2">יצירת חשבון SFTP</h3>
               <p className="text-muted-foreground mb-4">
-                צור חשבון SFTP כדי להעלות קבצי יהלומים באופן אוטומטי
+                לחץ על הכפתור כדי ליצור חשבון SFTP ולקבל את כל פרטי הגישה
               </p>
               <Button 
                 onClick={generateSFTPCredentials}
                 disabled={isGenerating}
-                className="bg-primary hover:bg-primary/90"
+                size="lg"
+                className="bg-primary hover:bg-primary/90 min-w-[200px]"
               >
                 {isGenerating ? (
                   <>
                     <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    יוצר חשבון...
+                    מייצר חשבון SFTP...
                   </>
                 ) : (
                   <>
                     <Key className="h-4 w-4 mr-2" />
-                    צור חשבון SFTP
+                    יצור חשבון SFTP
                   </>
                 )}
               </Button>
+              {isGenerating && (
+                <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center justify-center space-x-2">
+                    <RefreshCw className="h-5 w-5 animate-spin text-blue-600" />
+                    <span className="text-blue-800 font-medium">
+                      מחכה לתגובה מהשרת...
+                    </span>
+                  </div>
+                  <p className="text-sm text-blue-600 mt-2 text-center">
+                    יוצר את חשבון ה-SFTP שלך וקובל את כל הפרטים
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">פרטי חשבון SFTP</h3>
-              <div className="flex items-center gap-2">
-                <Badge variant={sftpAccount.status === 'active' ? 'default' : 'secondary'}>
-                  {sftpAccount.status === 'active' ? 'פעיל' : 'לא פעיל'}
-                </Badge>
-                {connectionStatus === 'success' && (
-                  <Badge variant="default" className="bg-green-500">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    מחובר
+          <div className="space-y-6">
+            {/* Header with Status */}
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4 border border-green-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 rounded-full">
+                    <Server className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-green-800">חשבון SFTP נוצר בהצלחה!</h3>
+                    <p className="text-sm text-green-600">כל הפרטים מוכנים לשימוש</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={sftpAccount.status === 'active' ? 'default' : 'secondary'} className="bg-green-100 text-green-800">
+                    {sftpAccount.status === 'active' ? '✅ פעיל' : '⚠️ לא פעיל'}
                   </Badge>
-                )}
-                {connectionStatus === 'failed' && (
-                  <Badge variant="destructive">
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                    לא מחובר
-                  </Badge>
-                )}
+                  {connectionStatus === 'success' && (
+                    <Badge variant="default" className="bg-green-500">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      מחובר
+                    </Badge>
+                  )}
+                  {connectionStatus === 'failed' && (
+                    <Badge variant="destructive">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      לא מחובר
+                    </Badge>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-2">
-                <Label>שרת SFTP</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={credentials?.host || "טוען..."}
-                    readOnly
-                    className="bg-muted"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => copyToClipboard(credentials?.host || "", 'כתובת השרת')}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+            {/* SFTP Details */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Key className="h-5 w-5 text-blue-600" />
+                פרטי הגישה ל-SFTP
+              </h4>
 
-              <div className="space-y-2">
-                <Label>שם משתמש</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={credentials?.username || sftpAccount.ftp_username || "טוען..."}
-                    readOnly
-                    className="bg-muted"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => copyToClipboard(credentials?.username || sftpAccount.ftp_username || "", 'שם המשתמש')}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              {showPassword && credentials?.password && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Host */}
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-amber-500" />
-                    סיסמה (שמור בבטחה!)
+                  <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <Server className="h-4 w-4" />
+                    שרת SFTP
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={credentials?.host || "טוען..."}
+                      readOnly
+                      className="bg-gray-50 border-gray-200 font-mono text-sm"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(credentials?.host || "", 'כתובת השרת')}
+                      className="shrink-0"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Username */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <Key className="h-4 w-4" />
+                    שם משתמש
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={credentials?.username || sftpAccount.ftp_username || "טוען..."}
+                      readOnly
+                      className="bg-gray-50 border-gray-200 font-mono text-sm"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(credentials?.username || sftpAccount.ftp_username || "", 'שם המשתמש')}
+                      className="shrink-0"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Port */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">פורט</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={credentials?.port?.toString() || "22"}
+                      readOnly
+                      className="bg-gray-50 border-gray-200 font-mono text-sm"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(String(credentials?.port || "22"), 'הפורט')}
+                      className="shrink-0"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Status */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">סטטוס חיבור</Label>
+                  <div className="flex items-center gap-2">
+                    {connectionStatus === null && (
+                      <Badge variant="secondary">
+                        <RefreshCw className="h-3 w-3 mr-1" />
+                        טרם נבדק
+                      </Badge>
+                    )}
+                    {connectionStatus === 'checking' && (
+                      <Badge variant="secondary">
+                        <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                        בודק...
+                      </Badge>
+                    )}
+                    {connectionStatus === 'success' && (
+                      <Badge variant="default" className="bg-green-500">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        פעיל ומחובר
+                      </Badge>
+                    )}
+                    {connectionStatus === 'failed' && (
+                      <Badge variant="destructive">
+                        <AlertCircle className="h-3 w-3 mr-1" />
+                        חיבור נכשל
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Folder Path - Full Width */}
+              <div className="space-y-2 pt-4 border-t border-gray-200">
+                <Label className="text-sm font-medium text-gray-700">תיקיית העלאה</Label>
+                <div className="relative">
+                  <Input
+                    value={credentials?.folder_path || sftpAccount.ftp_folder_path || "טוען..."}
+                    readOnly
+                    className="bg-gray-50 border-gray-200 font-mono text-sm pr-10"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard(credentials?.folder_path || sftpAccount.ftp_folder_path || "", 'תיקיית העלאה')}
+                    className="absolute left-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  📁 תיקייה ייחודית לטלגרם ID: {user?.id}
+                </p>
+              </div>
+
+              {/* Password - Special handling */}
+              {showPassword && credentials?.password && (
+                <div className="space-y-2 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <Label className="flex items-center gap-2 text-amber-800 font-medium">
+                    <AlertCircle className="h-4 w-4 text-amber-600" />
+                    סיסמה - שמור בבטחה!
                   </Label>
                   <div className="flex gap-2">
                     <Input
                       value={credentials.password}
                       type="text"
                       readOnly
-                      className="bg-amber-50 border-amber-200 font-mono"
+                      className="bg-white border-amber-300 font-mono text-sm text-amber-900"
                     />
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => copyToClipboard(credentials.password, 'הסיסמה')}
+                      className="shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100"
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
                   </div>
-                  <p className="text-sm text-amber-600">
-                    ⚠️ זוהי הפעם האחרונה שתוכל לראות את הסיסמה. שמור אותה במקום בטוח!
-                  </p>
+                  <div className="bg-amber-100 p-3 rounded border border-amber-300">
+                    <p className="text-sm text-amber-800 font-medium">
+                      ⚠️ זוהי הפעם האחרונה שתוכל לראות את הסיסמה!
+                    </p>
+                    <p className="text-xs text-amber-700 mt-1">
+                      העתק ושמור את הסיסמה במקום בטוח לפני שתעזוב את הדף
+                    </p>
+                  </div>
                 </div>
               )}
-
-              <div className="space-y-2">
-                <Label>תיקיית העלאה</Label>
-                <Input
-                  value={credentials?.folder_path || sftpAccount.ftp_folder_path || "טוען..."}
-                  readOnly
-                  className="bg-muted font-mono text-sm"
-                />
-                <p className="text-xs text-muted-foreground">
-                  📁 תיקייה ייחודית לטלגרם ID: {user?.id}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label>פורט</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={credentials?.port?.toString() || "22"}
-                    readOnly
-                    className="bg-muted"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => copyToClipboard(String(credentials?.port || "22"), 'הפורט')}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
             </div>
 
             <div className="bg-muted/50 rounded-lg p-4 space-y-2">
