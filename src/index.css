@@ -4,12 +4,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Telegram Mini App Variables */
+/* Force light theme */
 :root {
-  --vh: 1vh;
-  --tg-color-scheme: light;
-  
-  /* Original theme variables */
   --background: 0 0% 100%;
   --foreground: 222.2 84% 4.9%;
   --card: 0 0% 100%;
@@ -129,47 +125,6 @@ img {
   
   .pt-safe {
     padding-top: max(env(safe-area-inset-top), 16px);
-}
-
-/* Telegram Mini App Optimizations */
-.telegram-mini-app {
-  height: calc(var(--vh, 1vh) * 100);
-  overflow: hidden;
-  position: relative;
-}
-
-/* Smooth transitions for Telegram theme switching */
-* {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-}
-
-/* Touch optimizations for mobile */
-@media (hover: none) and (pointer: coarse) {
-  /* Increase touch targets */
-  button, [role="button"], a {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  
-  /* Remove hover states on touch devices */
-  .hover\\:scale-105:hover {
-    transform: none;
-  }
-  
-  /* Use active states instead */
-  .active\\:scale-95:active {
-    transform: scale(0.95);
-  }
-}
-
-/* Telegram WebApp safe area */
-@supports(padding: max(0px)) {
-  .safe-area-bottom {
-    padding-bottom: max(env(safe-area-inset-bottom), 16px);
-  }
-  
-  .safe-area-top {
-    padding-top: max(env(safe-area-inset-top), 8px);
   }
 }
 
