@@ -1,4 +1,3 @@
-
 interface DiamondData {
   id?: number;
   shape?: string;
@@ -6,6 +5,7 @@ interface DiamondData {
   clarity?: string;
   weight?: number;
   carat?: number;
+  cut?: string;
   price?: number;
   price_per_carat?: number;
   stock?: string;
@@ -19,6 +19,11 @@ interface DiamondData {
   'Video link'?: string;
   videoLink?: string;
   gem360Url?: string;
+  polish?: string;
+  symmetry?: string;
+  certificateNumber?: string;
+  lab?: string;
+  certificateUrl?: string;
 }
 
 interface DashboardStats {
