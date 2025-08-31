@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,47 +43,45 @@ export function SFTPSettings() {
   const [credentials, setCredentials] = useState<SFTPProvisionResponse | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'success' | 'failed' | null>(null);
 
-  // Get Telegram init data for authentication
+  // Get real Telegram init data
   const getTelegramInitData = (): string | null => {
-    if (typeof window === 'undefined') return null;
+    if (typeof window === 'undefined') {
+      console.log('🔍 Window not available');
+      return null;
+    }
     
     try {
+      // Check if we're in Telegram WebApp environment
       if (window.Telegram?.WebApp?.initData) {
-        console.log('🔍 Found Telegram initData:', window.Telegram.WebApp.initData.length, 'chars');
-        return window.Telegram.WebApp.initData;
+        const initData = window.Telegram.WebApp.initData;
+        console.log('🔍 Found real Telegram initData:', initData.length, 'characters');
+        console.log('🔍 InitData preview:', initData.substring(0, 100) + '...');
+        return initData;
       }
       
-      console.warn('⚠️ No Telegram initData available, using fallback');
-      // Create a fallback initData-like string for development
-      const fallbackInitData = new URLSearchParams({
-        user: JSON.stringify({
-          id: user?.id || 2138564172,
-          first_name: user?.first_name || 'Dev',
-          last_name: user?.last_name || 'User',
-          username: user?.username || 'devuser',
-          language_code: user?.language_code || 'en'
-        }),
-        auth_date: Math.floor(Date.now() / 1000).toString(),
-        hash: 'dev_hash_' + Date.now()
-      }).toString();
-      
-      return fallbackInitData;
+      console.warn('⚠️ No Telegram WebApp initData available');
+      return null;
     } catch (error) {
       console.error('❌ Error getting Telegram initData:', error);
       return null;
     }
   };
 
-  // Sign in to get authentication token
-  const signInToAPI = async (): Promise<string | null> => {
+  // Sign in to FastAPI backend using Telegram InitData
+  const signInToBackend = async (): Promise<string | null> => {
     try {
       const initData = getTelegramInitData();
       if (!initData) {
-        console.error('❌ No initData available for sign-in');
+        console.error('❌ No Telegram initData available for authentication');
+        toast({
+          title: "שגיאת אימות",
+          description: "לא ניתן לאמת את הזהות דרך Telegram",
+          variant: "destructive",
+        });
         return null;
       }
 
-      console.log('🔐 Signing in to API with initData...');
+      console.log('🔐 Signing in to FastAPI with Telegram initData...');
       
       const response = await fetch(`${API_BASE_URL}/api/v1/sign-in/`, {
         method: 'POST',
@@ -96,33 +95,48 @@ export function SFTPSettings() {
         }),
       });
 
-      console.log('🔐 Sign-in response status:', response.status);
+      console.log('🔐 FastAPI sign-in response status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Sign-in failed:', response.status, errorText);
+        console.error('❌ FastAPI sign-in failed:', response.status, errorText);
+        toast({
+          title: "שגיאת אימות",
+          description: `לא ניתן להתחבר לשרת: ${response.status}`,
+          variant: "destructive",
+        });
         return null;
       }
 
       const result = await response.json();
-      console.log('✅ Sign-in successful, received token');
+      console.log('✅ FastAPI sign-in successful');
       
-      return result.token || null;
+      if (!result.token) {
+        console.error('❌ No token received from FastAPI');
+        return null;
+      }
+      
+      return result.token;
     } catch (error: any) {
-      console.error('❌ Sign-in error:', error);
+      console.error('❌ FastAPI sign-in error:', error);
+      toast({
+        title: "שגיאת חיבור",
+        description: "לא ניתן להתחבר לשרת כרגע",
+        variant: "destructive",
+      });
       return null;
     }
   };
 
-  // Provision SFTP with proper authentication
+  // Provision SFTP using FastAPI with authentication token
   const provisionSFTPWithAuth = async (token: string): Promise<SFTPProvisionResponse | null> => {
     try {
       if (!user?.id) {
-        console.error('❌ No user ID available');
+        console.error('❌ No user ID available for SFTP provision');
         return null;
       }
 
-      console.log('🚀 Provisioning SFTP for user:', user.id, 'with auth token');
+      console.log('🚀 Provisioning SFTP with FastAPI for user:', user.id);
       
       const response = await fetch(`${API_BASE_URL}/api/v1/sftp/provision`, {
         method: 'POST',
@@ -142,6 +156,11 @@ export function SFTPSettings() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ SFTP provision failed:', response.status, errorText);
+        toast({
+          title: "שגיאה ביצירת חשבון SFTP",
+          description: `לא ניתן ליצור חשבון: ${response.status}`,
+          variant: "destructive",
+        });
         return null;
       }
 
@@ -151,6 +170,11 @@ export function SFTPSettings() {
       return result;
     } catch (error: any) {
       console.error('❌ SFTP provision error:', error);
+      toast({
+        title: "שגיאת חיבור",
+        description: "לא ניתן ליצור חשבון SFTP כרגע",
+        variant: "destructive",
+      });
       return null;
     }
   };
@@ -174,7 +198,7 @@ export function SFTPSettings() {
         console.error('❌ SFTP: Error loading account:', error);
         
         if (error.message?.includes('404') || error.message?.includes('Not Found')) {
-          console.log('ℹ️ SFTP: No existing account found (this is normal for first-time users)');
+          console.log('ℹ️ SFTP: No existing account found (normal for first-time users)');
           setSftpAccount(null);
         } else {
           toast({
@@ -193,42 +217,52 @@ export function SFTPSettings() {
   }, [user?.id, toast]);
 
   const generateSFTPCredentials = async () => {
-    console.log('🚀 SFTP: Generate button clicked!');
+    console.log('🚀 SFTP: Generate button clicked');
     
     if (!user?.id) {
-      console.error('❌ SFTP: No user ID available - user:', user);
+      console.error('❌ SFTP: No user ID available');
       toast({
         title: "שגיאה",
-        description: "לא ניתן לזהות את המשתמש. נא לוודא שאתה מחובר דרך Telegram",
+        description: "לא ניתן לזהות את המשתמש",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isTelegramEnvironment) {
+      console.error('❌ SFTP: Not in Telegram environment');
+      toast({
+        title: "שגיאה",
+        description: "יש להשתמש באפליקציה דרך Telegram",
         variant: "destructive",
       });
       return;
     }
     
     setIsGenerating(true);
-    console.log('🔐 SFTP: Starting authentication flow...');
+    console.log('🔐 SFTP: Starting FastAPI authentication flow...');
     
     try {
-      // Step 1: Sign in to get token
-      const token = await signInToAPI();
+      // Step 1: Sign in to FastAPI using Telegram initData
+      const token = await signInToBackend();
       if (!token) {
-        throw new Error('Failed to authenticate with API');
+        throw new Error('Failed to authenticate with FastAPI');
       }
       
-      // Step 2: Provision SFTP with the token
+      // Step 2: Provision SFTP with the authentication token
       const data = await provisionSFTPWithAuth(token);
       if (!data) {
         throw new Error('Failed to provision SFTP account');
       }
       
-      console.log('✅ SFTP: Credentials received:', Object.keys(data));
+      console.log('✅ SFTP: Credentials received from FastAPI');
       
       // Update state with new credentials
       setCredentials(data);
-      console.log('✅ SFTP: Credentials state updated');
+      setShowPassword(true);
       
-      // Also update the account info from the response
-      const accountInfo = {
+      // Also update the account info
+      const accountInfo: SFTPStatusResponse = {
         id: data.id || `sftp_${user.id}`,
         ftp_username: data.ftp_username || data.username,
         ftp_folder_path: data.folder_path,
@@ -238,20 +272,15 @@ export function SFTPSettings() {
         expires_at: data.expires_at
       };
       
-      console.log('✅ SFTP: Account info updated');
       setSftpAccount(accountInfo);
-      
-      setShowPassword(true);
-      console.log('✅ SFTP: Password visibility enabled, credentials should now be displayed');
 
       toast({
-        title: "✅ SFTP חשבון נוצר בהצלחה",
+        title: "✅ חשבון SFTP נוצר בהצלחה",
         description: "פרטי הגישה שלך מוכנים לשימוש",
       });
 
-      // Start connection testing after showing credentials
+      // Test connection automatically
       setTimeout(() => {
-        console.log('🔄 SFTP: Starting automatic connection test...');
         testConnection();
       }, 2000);
       
@@ -265,7 +294,6 @@ export function SFTPSettings() {
       });
     } finally {
       setIsGenerating(false);
-      console.log('🏁 SFTP: Generation process completed');
     }
   };
 
@@ -277,24 +305,20 @@ export function SFTPSettings() {
 
     setIsTestingConnection(true);
     setConnectionStatus('checking');
-    console.log('🔄 SFTP: Testing connection for user:', user.id);
 
     try {
       const data = await testSftpConnection(user.id);
-      console.log('📡 SFTP: Connection test result:', data);
       
       if (data.status === 'success') {
-        console.log('✅ SFTP: Connection test successful');
         setConnectionStatus('success');
         toast({
-          title: "חיבור SFTP מוצלח",
+          title: "✅ חיבור SFTP מוצלח",
           description: "החשבון שלך פעיל ומוכן לשימוש",
         });
       } else {
-        console.log('❌ SFTP: Connection test failed:', data);
         setConnectionStatus('failed');
         toast({
-          title: "בדיקת חיבור נכשלה",
+          title: "❌ בדיקת חיבור נכשלה",
           description: data.message || "לא ניתן להתחבר לשרת SFTP",
           variant: "destructive",
         });
@@ -321,16 +345,10 @@ export function SFTPSettings() {
   };
 
   const deactivateAccount = async () => {
-    if (!user?.id) {
-      console.error('❌ SFTP: No user ID for deactivation');
-      return;
-    }
+    if (!user?.id) return;
 
     try {
-      console.log('🗑️ SFTP: Deactivating account for user:', user.id);
-      
       const result = await deactivateSftp(user.id);
-      console.log('✅ SFTP: Account deactivated successfully:', result);
       
       setSftpAccount(null);
       setCredentials(null);
@@ -338,13 +356,13 @@ export function SFTPSettings() {
       setConnectionStatus(null);
 
       toast({
-        title: "חשבון SFTP הושבת",
+        title: "✅ חשבון SFTP הושבת",
         description: result.message || "החשבון הושבת בהצלחה",
       });
     } catch (error: any) {
       console.error('❌ SFTP: Deactivation error:', error);
       toast({
-        title: "שגיאה",
+        title: "❌ שגיאה",
         description: `לא ניתן להשבית את החשבון: ${error.message}`,
         variant: "destructive",
       });
@@ -389,9 +407,17 @@ export function SFTPSettings() {
               <p className="text-muted-foreground mb-4">
                 צור חשבון SFTP כדי להעלות קבצי יהלומים באופן אוטומטי
               </p>
+              {!isTelegramEnvironment && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                  <AlertCircle className="h-5 w-5 text-amber-600 inline mr-2" />
+                  <span className="text-amber-800">
+                    יש להשתמש באפליקציה דרך Telegram למטרות אבטחה
+                  </span>
+                </div>
+              )}
               <Button 
                 onClick={generateSFTPCredentials}
-                disabled={isGenerating}
+                disabled={isGenerating || !isTelegramEnvironment}
                 className="bg-primary hover:bg-primary/90"
               >
                 {isGenerating ? (
@@ -406,18 +432,6 @@ export function SFTPSettings() {
                   </>
                 )}
               </Button>
-              
-              {/* Debug info for development */}
-              {process.env.NODE_ENV === 'development' && (
-                <div className="mt-4 p-3 bg-gray-100 rounded text-sm text-left">
-                  <strong>Debug Info:</strong>
-                  <br />User ID: {user?.id || 'Not available'}
-                  <br />User Name: {user?.first_name || 'Not available'}
-                  <br />Is Generating: {isGenerating.toString()}
-                  <br />Has Credentials: {(!!credentials).toString()}
-                  <br />Show Password: {showPassword.toString()}
-                </div>
-              )}
             </div>
           </div>
         ) : (
@@ -514,9 +528,6 @@ export function SFTPSettings() {
                   readOnly
                   className="bg-muted font-mono text-sm"
                 />
-                <p className="text-xs text-muted-foreground">
-                  📁 תיקייה ייחודית לטלגרם ID: {user?.id}
-                </p>
               </div>
 
               <div className="space-y-2">
@@ -563,9 +574,7 @@ export function SFTPSettings() {
                   <>
                     <Server className="h-4 w-4 mr-2" />
                     בדוק חיבור
-                  </>
-                )}
-              </Button>
+                  </Button>
               <Button
                 variant="destructive"
                 onClick={deactivateAccount}
