@@ -32,8 +32,24 @@ export async function signInToBackend(initData: string): Promise<string | null> 
       return null;
     }
 
-    // Use the ONLY correct sign-in endpoint
+    // 🐛 DEBUG: Log detailed request information
     const signInUrl = `${API_BASE_URL}/api/v1/sign-in/`;
+    const requestBody = { init_data: initData };
+    
+    console.log('🐛 BACKEND REQUEST DEBUG:', {
+      url: signInUrl,
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      bodyData: {
+        init_data_length: initData.length,
+        init_data_preview: initData.substring(0, 100) + '...',
+        full_request_body: requestBody
+      }
+    });
+
     console.log('🔐 API: Using sign-in URL:', signInUrl);
 
     const response = await fetch(signInUrl, {
@@ -43,23 +59,44 @@ export async function signInToBackend(initData: string): Promise<string | null> 
         'Content-Type': 'application/json',
       },
       mode: 'cors',
-      body: JSON.stringify({
-        init_data: initData
-      }),
+      body: JSON.stringify(requestBody),
+    });
+
+    // 🐛 DEBUG: Log response details
+    console.log('🐛 BACKEND RESPONSE DEBUG:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      headers: Object.fromEntries([...response.headers.entries()]),
+      url: response.url
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('🔐 API: Backend sign-in failed:', response.status, errorText);
+      console.log('🐛 ERROR RESPONSE BODY:', errorText);
       return null;
     }
 
     const result = await response.json();
     
+    // 🐛 DEBUG: Log successful response
+    console.log('🐛 SUCCESS RESPONSE DEBUG:', {
+      responseKeys: Object.keys(result),
+      hasAccessToken: !!(result.access_token),
+      hasToken: !!(result.token),
+      hasUserId: !!(result.user_id),
+      fullResponse: result
+    });
+    
     if (result.access_token || result.token) {
       // Handle both possible response formats
       backendAuthToken = result.access_token || result.token;
       console.log('✅ API: Backend sign-in successful, JWT token stored');
+      console.log('🐛 TOKEN DEBUG:', {
+        tokenLength: backendAuthToken.length,
+        tokenPreview: backendAuthToken.substring(0, 50) + '...'
+      });
       
       // Set current user ID if available in response
       if (result.user_id) {
@@ -73,6 +110,11 @@ export async function signInToBackend(initData: string): Promise<string | null> 
     }
   } catch (error) {
     console.error('❌ API: Backend sign-in error:', error);
+    console.log('🐛 FETCH ERROR DEBUG:', {
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : 'No stack trace'
+    });
     return null;
   }
 }

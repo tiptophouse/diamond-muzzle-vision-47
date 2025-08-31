@@ -54,6 +54,38 @@ export function useStrictTelegramAuth(): AuthState {
       const tg = window.Telegram.WebApp;
       updateState({ isTelegramEnvironment: true });
 
+      // 🐛 DEBUG: Log complete Telegram WebApp environment
+      console.log('🔍 TELEGRAM WEBAPP DEBUG INFO:', {
+        telegram_available: !!window.Telegram,
+        webApp_available: !!window.Telegram.WebApp,
+        version: tg.version,
+        platform: tg.platform,
+        colorScheme: tg.colorScheme,
+        isExpanded: tg.isExpanded,
+        viewportHeight: tg.viewportHeight,
+        headerColor: tg.headerColor,
+        backgroundColor: tg.backgroundColor
+      });
+
+      // 🐛 DEBUG: Log detailed initData information
+      console.log('🔍 INIT DATA DETAILED DEBUG:');
+      console.log('📋 Raw initData:', {
+        value: tg.initData,
+        type: typeof tg.initData,
+        length: tg.initData?.length || 0,
+        isEmpty: !tg.initData || tg.initData.length === 0,
+        firstChars: tg.initData?.substring(0, 50) || 'EMPTY'
+      });
+
+      // 🐛 DEBUG: Log initDataUnsafe details
+      console.log('📋 InitDataUnsafe:', {
+        value: tg.initDataUnsafe,
+        type: typeof tg.initDataUnsafe,
+        keys: Object.keys(tg.initDataUnsafe || {}),
+        hasUser: !!(tg.initDataUnsafe?.user),
+        user: tg.initDataUnsafe?.user || null
+      });
+
       // Initialize Telegram WebApp
       try {
         if (typeof tg.ready === 'function') tg.ready();
@@ -66,6 +98,16 @@ export function useStrictTelegramAuth(): AuthState {
       // Check for initData - REQUIRED
       if (!tg.initData || tg.initData.length === 0) {
         console.error('❌ No Telegram initData found - access denied');
+        console.log('🐛 EMPTY INIT DATA DEBUG:', {
+          initDataExists: !!tg.initData,
+          initDataType: typeof tg.initData,
+          initDataValue: tg.initData,
+          initDataUnsafeExists: !!tg.initDataUnsafe,
+          initDataUnsafeKeys: Object.keys(tg.initDataUnsafe || {}),
+          windowTelegramKeys: Object.keys(window.Telegram || {}),
+          webAppKeys: Object.keys(tg || {})
+        });
+
         updateState({
           isLoading: false,
           accessDeniedReason: 'no_init_data',
@@ -75,9 +117,20 @@ export function useStrictTelegramAuth(): AuthState {
       }
 
       console.log('🔍 Found Telegram initData, length:', tg.initData.length);
+      console.log('🐛 INIT DATA CONTENT DEBUG:', {
+        rawInitData: tg.initData,
+        parsedAsUrl: new URLSearchParams(tg.initData),
+        urlParamsEntries: [...new URLSearchParams(tg.initData).entries()]
+      });
 
       // Step 1: Sign in to FastAPI backend using initData
       console.log('🔐 Signing in to FastAPI backend...');
+      console.log('🐛 BACKEND REQUEST DEBUG - Sending initData:', {
+        initDataLength: tg.initData.length,
+        initDataPreview: tg.initData.substring(0, 100) + '...',
+        requestBody: { init_data: tg.initData }
+      });
+
       const jwtToken = await signInToBackend(tg.initData);
       
       if (!jwtToken) {
@@ -97,6 +150,8 @@ export function useStrictTelegramAuth(): AuthState {
 
       if (tg.initDataUnsafe?.user) {
         const unsafeUser = tg.initDataUnsafe.user;
+        console.log('🐛 USER DATA FROM UNSAFE DEBUG:', unsafeUser);
+        
         if (unsafeUser.id && unsafeUser.first_name) {
           authenticatedUser = {
             id: unsafeUser.id,
@@ -118,8 +173,15 @@ export function useStrictTelegramAuth(): AuthState {
           const urlParams = new URLSearchParams(tg.initData);
           const userParam = urlParams.get('user');
           
+          console.log('🐛 PARSING INIT DATA FOR USER:', {
+            hasUserParam: !!userParam,
+            userParamValue: userParam
+          });
+          
           if (userParam) {
             const user = JSON.parse(decodeURIComponent(userParam));
+            console.log('🐛 PARSED USER FROM INIT DATA:', user);
+            
             if (user.id && user.first_name) {
               authenticatedUser = {
                 id: user.id,
