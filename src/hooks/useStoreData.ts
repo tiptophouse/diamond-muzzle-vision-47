@@ -30,23 +30,24 @@ export function useStoreData() {
     return 0;
   }, []);
 
-  // Enhanced 360° URL detection with priority for my360.fab and HTML viewers
+  // Enhanced 360° URL detection with PRIORITY for your my360.fab domain
   const detect360Url = useCallback((item: any): string | undefined => {
-    // All possible fields that might contain 360° URLs
+    // All possible fields that might contain 360° URLs - PRIORITIZING YOUR FORMAT
     const potential360Fields = [
+      item.my360_fab_url,       // YOUR SPECIFIC FIELD - HIGHEST PRIORITY
       item.picture,           
+      item.video_url,           // LIKELY YOUR MAIN FIELD
+      item['Video link'],       // CSV format
+      item.videoLink,           
       item.image_url,         
       item.imageUrl,          
       item.img_url,           
       item.imgUrl,            
       item.v360_url,          
       item.gem360_url,        
-      item.video_url,         
       item.video360_url,      
       item.three_d_url,       
       item.rotation_url,      
-      item['Video link'],     
-      item.videoLink,         
       item.video_link,        
       item.view360_url,       
       item.view360Url,        
@@ -68,9 +69,10 @@ export function useStoreData() {
       if (field && typeof field === 'string' && field.trim()) {
         const url = field.trim();
         
-        // Enhanced detection patterns for 360° formats
+        // Enhanced detection patterns with HIGHEST PRIORITY for your my360.fab format
         const is360Url = 
-          url.includes('my360.fab') ||          
+          url.includes('my360.fab') ||          // YOUR FORMAT - ABSOLUTE HIGHEST PRIORITY
+          url.includes('s3.eu-west-1.amazonaws.com') || // Your S3 domain
           url.includes('my360.sela') ||         
           url.includes('v360.in') ||            
           url.includes('diamondview.aspx') ||   
@@ -79,8 +81,8 @@ export function useStoreData() {
           url.includes('360') ||                
           url.includes('3d') ||                 
           url.includes('rotate') ||             
-          url.includes('.html') ||              
-          url.match(/DAN\d+-\d+[A-Z]?\.jpg$/i); 
+          url.includes('.html') ||              // HTML viewers like yours
+          url.match(/DAN\d+-\d+[A-Z]?\.jpg$/i);
 
         if (is360Url) {
           let processedUrl = url;
@@ -88,7 +90,9 @@ export function useStoreData() {
             processedUrl = `https://${processedUrl}`;
           }
           
-          console.log('✨ DETECTED 360° URL for', item.stock_number || item.stock || 'unknown', ':', processedUrl);
+          console.log('✨ DETECTED 360° URL for', item.stock_number || item.stock || 'unknown', ':', processedUrl, 
+            url.includes('my360.fab') ? '(🎯 YOUR my360.fab FORMAT DETECTED!)' : 
+            url.includes('s3.eu-west-1.amazonaws.com') ? '(🎯 YOUR AWS S3 DOMAIN!)' : '');
           return processedUrl;
         }
       }
@@ -123,7 +127,7 @@ export function useStoreData() {
         trimmedUrl.includes('360') ||
         trimmedUrl.includes('3d') ||
         trimmedUrl.includes('rotate')) {
-      console.log('🔄 SKIPPING 360° URL in image field:', trimmedUrl);
+      console.log('🔄 SKIPPING 360° URL in image field (will be processed as 360°):', trimmedUrl);
       return undefined;
     }
 
@@ -150,16 +154,17 @@ export function useStoreData() {
   // Direct data transformation with enhanced media processing
   const transformData = useCallback((rawData: any[]): Diamond[] => {
     console.log('🔧 TRANSFORM DATA: Processing', rawData.length, 'items from FastAPI');
+    console.log('🎯 PRIORITIZING YOUR my360.fab URLs...');
     
     const transformedData = rawData
       .map((item, index) => {
-        // PHASE 1: Detect 360° URLs first (highest priority)
+        // PHASE 1: Detect 360° URLs first (highest priority) - YOUR my360.fab format
         const final360Url = detect360Url(item);
         
         // PHASE 2: Process regular image URLs (excluding 360° URLs)
         let finalImageUrl = undefined;
         const imageFields = [
-          item.picture,          
+          item.picture,          // LIKELY YOUR MAIN IMAGE FIELD
           item.imageUrl,         
           item.image_url,        
           item.Image,            
@@ -226,20 +231,17 @@ export function useStoreData() {
           certificateUrl: item.certificate_url || item.certificateUrl || undefined,
         };
 
-        // Debug first few items
+        // Debug first few items with focus on your my360.fab URLs
         if (index < 3) {
           console.log(`🔧 TRANSFORM DEBUG [${index}]:`, {
             stockNumber: result.stockNumber,
             hasImage: !!result.imageUrl,
             has360: !!result.gem360Url,
+            is_my360Fab: result.gem360Url?.includes('my360.fab'),
+            is_your_S3: result.gem360Url?.includes('s3.eu-west-1.amazonaws.com'),
+            gem360Url: result.gem360Url,
             price: result.price,
-            priceSource: totalPrice > 0 ? 'total_price' : pricePerCarat > 0 ? 'calculated' : 'none',
-            rawPriceData: {
-              total_price: item.price,
-              price_per_carat: item.price_per_carat,
-              weight: item.weight,
-              calculated: pricePerCarat * weight
-            }
+            priceSource: totalPrice > 0 ? 'total_price' : pricePerCarat > 0 ? 'calculated' : 'none'
           });
         }
 
@@ -257,14 +259,28 @@ export function useStoreData() {
         return isVisible && isAvailable;
       });
 
-    console.log('🎯 FINAL TRANSFORM RESULT:', {
+    const my360FabCount = transformedData.filter(d => d.gem360Url?.includes('my360.fab')).length;
+    const yourS3Count = transformedData.filter(d => d.gem360Url?.includes('s3.eu-west-1.amazonaws.com')).length;
+    
+    console.log('🎯 FINAL TRANSFORM RESULT FOR YOUR DIAMONDS:', {
       originalCount: rawData.length,
       transformedCount: transformedData.length,
       filteredOut: rawData.length - transformedData.length,
       withImages: transformedData.filter(d => d.imageUrl).length,
       with360: transformedData.filter(d => d.gem360Url).length,
+      withMy360Fab: my360FabCount,
+      withYourS3Domain: yourS3Count,
       withPrices: transformedData.filter(d => d.price > 0).length
     });
+
+    if (my360FabCount > 0 || yourS3Count > 0) {
+      console.log('🎉 SUCCESS: Found', (my360FabCount + yourS3Count), 'diamonds with your 360° URLs!');
+      console.log('🎯 my360.fab URLs:', my360FabCount);
+      console.log('🎯 Your S3 domain URLs:', yourS3Count);
+    } else {
+      console.warn('⚠️ WARNING: No my360.fab or S3 360° URLs detected - check field mapping in FastAPI response');
+      console.warn('🔍 Available fields in first item:', Object.keys(rawData[0] || {}));
+    }
 
     return transformedData;
   }, [processImageUrl, detect360Url, parseNumber]);

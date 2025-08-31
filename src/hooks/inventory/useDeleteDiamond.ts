@@ -1,111 +1,108 @@
 
+import { useState } from 'react';
+import { api, apiEndpoints, getCurrentUserId } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { api, apiEndpoints } from '@/lib/api';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { Diamond } from '@/components/inventory/InventoryTable';
+import { Diamond } from '@/types/diamond';
 
-interface UseDeleteDiamondProps {
-  onSuccess?: () => void;
-  removeDiamondFromState?: (diamondId: string) => void;
-  restoreDiamondToState?: (diamond: Diamond) => void;
-}
-
-export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDiamondToState }: UseDeleteDiamondProps) {
+export function useDeleteDiamond() {
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
-  const { user } = useTelegramAuth();
 
-  const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
-    if (!user?.id) {
+  const deleteDiamond = async (
+    diamondId: string, 
+    optimisticRemove?: (id: string) => void,
+    optimisticRestore?: (diamond: Diamond) => void,
+    originalDiamond?: Diamond
+  ) => {
+    const userId = getCurrentUserId();
+    
+    if (!userId) {
       toast({
+        title: "❌ Authentication Error",
+        description: "Please log in to delete diamonds",
         variant: "destructive",
-        title: "Error",
-        description: "User not authenticated",
       });
       return false;
     }
 
-    console.log('🗑️ DELETE: Starting delete for diamond:', diamondId);
-    
-    // Use the actual FastAPI diamond ID if available
-    const fastApiDiamondId = diamondData?.diamondId || diamondId;
-    console.log('🗑️ DELETE: Using FastAPI diamond ID:', fastApiDiamondId);
+    // Convert string ID to number for FastAPI
+    const numericDiamondId = parseInt(diamondId);
+    if (isNaN(numericDiamondId)) {
+      toast({
+        title: "❌ Invalid Diamond ID",
+        description: "Cannot delete diamond with invalid ID",
+        variant: "destructive",
+      });
+      return false;
+    }
 
-    // Optimistically remove from UI
-    if (removeDiamondFromState) {
-      removeDiamondFromState(diamondId);
+    console.log('🗑️ DELETE: Starting diamond deletion:', {
+      diamondId: numericDiamondId,
+      userId,
+      endpoint: apiEndpoints.deleteDiamond(numericDiamondId, userId)
+    });
+
+    setIsDeleting(true);
+
+    // Optimistic UI update
+    if (optimisticRemove) {
+      optimisticRemove(diamondId);
     }
 
     try {
-      // Try FastAPI first - DELETE /api/v1/delete_stone/{diamond_id}?user_id={user_id}&diamond_id={diamond_id}
-      try {
-        const endpoint = apiEndpoints.deleteDiamond(fastApiDiamondId.toString(), user.id);
-        console.log('🗑️ DELETE: Using endpoint:', endpoint);
+      // Use the correct FastAPI DELETE endpoint: /api/v1/delete_stone/{diamond_id}?user_id={user_id}
+      const response = await api.delete(apiEndpoints.deleteDiamond(numericDiamondId, userId));
+      
+      console.log('🗑️ DELETE: FastAPI response:', response);
+
+      if (response.error) {
+        console.error('🗑️ DELETE: FastAPI error:', response.error);
         
-        const response = await api.delete(endpoint);
-        
-        if (response.error) {
-          throw new Error(response.error);
+        // Restore diamond to UI on error
+        if (optimisticRestore && originalDiamond) {
+          optimisticRestore(originalDiamond);
         }
-
-        console.log('✅ DELETE: FastAPI response:', response.data);
-
+        
         toast({
-          title: "✅ Diamond Deleted Successfully",
-          description: "Diamond has been removed from your inventory, dashboard, and store",
-        });
-        
-        if (onSuccess) onSuccess();
-        return true;
-        
-      } catch (apiError) {
-        console.error('❌ DELETE: FastAPI delete failed:', apiError);
-        
-        // Show user-friendly error message about API connection
-        toast({
+          title: "❌ Delete Failed",
+          description: `Failed to delete diamond: ${response.error}`,
           variant: "destructive",
-          title: "⚠️ API Connection Issue",
-          description: "Unable to connect to server. Diamond will be removed locally until connection is restored.",
         });
-        
-        // Fallback to localStorage with user notification
-        console.log('🔄 DELETE: Falling back to localStorage...');
-        const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
-        const filteredData = existingData.filter((item: any) => item.id !== diamondId);
-        
-        if (filteredData.length < existingData.length) {
-          localStorage.setItem('diamond_inventory', JSON.stringify(filteredData));
-          
-          toast({
-            title: "✅ Diamond Deleted Locally",
-            description: "Diamond has been removed offline and will sync when server connection is restored",
-          });
-          
-          if (onSuccess) onSuccess();
-          return true;
-        } else {
-          throw new Error('Diamond not found in local or remote storage');
-        }
+        return false;
       }
       
-    } catch (error) {
-      console.error('❌ DELETE: Unexpected error:', error);
-      
-      // Restore diamond to UI on error
-      if (restoreDiamondToState && diamondData) {
-        restoreDiamondToState(diamondData);
-      }
-      
-      const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond. Please try again.";
+      // Success - diamond is already removed from UI
+      console.log('✅ DELETE: Diamond successfully deleted from FastAPI backend');
       
       toast({
-        variant: "destructive",
+        title: "✅ Diamond Deleted",
+        description: "Diamond has been successfully removed from your inventory",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('🗑️ DELETE: Unexpected error:', error);
+      
+      // Restore diamond to UI on error
+      if (optimisticRestore && originalDiamond) {
+        optimisticRestore(originalDiamond);
+      }
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast({
         title: "❌ Delete Failed",
-        description: "Failed to delete diamond. Please try again.",
+        description: `Failed to delete diamond: ${errorMessage}`,
+        variant: "destructive",
       });
       
       return false;
+    } finally {
+      setIsDeleting(false);
     }
   };
 
-  return { deleteDiamond };
+  return {
+    deleteDiamond,
+    isDeleting,
+  };
 }

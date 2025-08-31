@@ -7,10 +7,10 @@ interface GroupCTAOptions {
   message?: string;
   groupId?: string | number;
   botUsername?: string;
-  useButtons?: boolean;
-  buttonText?: string;
-  buttonUrl?: string;
-  withButtons?: boolean;
+  useMultipleButtons?: boolean;
+  includePremiumButton?: boolean;
+  includeInventoryButton?: boolean;
+  includeChatButton?: boolean;
 }
 
 export function useGroupCTA() {
@@ -20,45 +20,46 @@ export function useGroupCTA() {
     setIsLoading(true);
     
     try {
-      console.log('🚀 Sending group message...');
+      console.log('🚀 Sending enhanced group CTA message...');
       
       const { data, error } = await supabase.functions.invoke('send-group-cta', {
         body: {
           message: options.message,
           groupId: options.groupId || -1001009290613,
           botUsername: options.botUsername,
-          useButtons: options.useButtons ?? options.withButtons ?? false,
-          buttonText: options.buttonText,
-          buttonUrl: options.buttonUrl
+          useMultipleButtons: options.useMultipleButtons ?? true,
+          includePremiumButton: options.includePremiumButton ?? true,
+          includeInventoryButton: options.includeInventoryButton ?? true,
+          includeChatButton: options.includeChatButton ?? true
         }
       });
 
       if (error) {
-        console.error('❌ Error sending group message:', error);
+        console.error('❌ Error sending enhanced group CTA:', error);
         toast({
-          title: "שגיאה",
-          description: "נכשל בשליחת הודעה לקבוצה",
+          title: "Error",
+          description: "Failed to send enhanced group call-to-action message",
           variant: "destructive",
         });
         return false;
       }
 
-      console.log('✅ Group message sent successfully:', data);
+      console.log('✅ Enhanced Group CTA sent successfully:', data);
       
-      const messageType = data?.messageType || 'text_only';
-      const userCount = data?.userCount || '400+';
+      const buttonCount = data?.buttonsCount || 1;
+      const features = data?.features || {};
       
       toast({
-        title: "הצלחה! 🎉",
-        description: `הודעת צמיחה נשלחה לקבוצה - ${userCount} משתמשים!`,
+        title: "Success! 🚀",
+        description: `Enhanced group CTA sent with ${buttonCount} button rows and multiple engagement options!`,
       });
       
       return true;
     } catch (err) {
-      console.error('❌ Group CTA hook error:', err);
+      console.error('❌ Enhanced Group CTA hook error:', err);
       toast({
-        title: "שגיאה",
-        description: "נכשל בשליחת הודעה לקבוצה",
+        title: "Error",
+        description: "Failed to send enhanced group message",
         variant: "destructive",
       });
       return false;

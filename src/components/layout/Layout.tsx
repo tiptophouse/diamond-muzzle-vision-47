@@ -28,8 +28,8 @@ export function Layout({
       </div>
       
       <div className="flex-1 w-full min-w-0 flex flex-col bg-background lg:ml-0">
-        {/* Mobile header with menu button */}
-        <div className="lg:hidden flex items-center justify-between h-14 sm:h-16 px-3 sm:px-4 border-b border-border/20 bg-card/80 backdrop-blur-md">
+        {/* Mobile header with menu button - moved down to avoid Telegram native buttons */}
+        <div className="lg:hidden flex items-center justify-between h-14 sm:h-16 px-3 sm:px-4 border-b border-border/20 bg-card/80 backdrop-blur-md mt-12">
           <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)} className="p-2 rounded-xl hover:bg-accent/50 transition-colors min-w-[44px] min-h-[44px]">
             <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>

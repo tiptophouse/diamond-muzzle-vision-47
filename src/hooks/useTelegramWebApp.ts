@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef } from 'react';
 import WebApp from '@twa-dev/sdk';
 
@@ -57,6 +58,12 @@ interface TelegramWebApp {
   isExpanded: boolean;
   viewportHeight: number;
   viewportStableHeight: number;
+  safeAreaInset?: {
+    top: number;
+    bottom: number;
+    left: number;
+    right: number;
+  };
   headerColor: string;
   backgroundColor: string;
   setHeaderColor: (color: string) => void;
@@ -101,14 +108,38 @@ export function useTelegramWebApp() {
       tg.setHeaderColor('#ffffff');
       tg.setBackgroundColor('#f8fafc');
       
+      // iPhone-specific optimizations
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      
       // Handle viewport changes for better responsiveness
       const handleViewportChange = () => {
         // Update CSS custom properties for responsive design
-        if (tg.viewportHeight) {
-          document.documentElement.style.setProperty('--tg-viewport-height', `${tg.viewportHeight}px`);
-        }
-        if (tg.viewportStableHeight) {
-          document.documentElement.style.setProperty('--tg-stable-height', `${tg.viewportStableHeight}px`);
+        const viewportHeight = tg.viewportHeight || window.innerHeight;
+        const stableHeight = tg.viewportStableHeight || viewportHeight;
+        const safeAreaTop = tg.safeAreaInset?.top || 0;
+        const safeAreaBottom = tg.safeAreaInset?.bottom || 0;
+        
+        document.documentElement.style.setProperty('--tg-viewport-height', `${viewportHeight}px`);
+        document.documentElement.style.setProperty('--tg-stable-height', `${stableHeight}px`);
+        document.documentElement.style.setProperty('--tg-safe-area-top', `${safeAreaTop}px`);
+        document.documentElement.style.setProperty('--tg-safe-area-bottom', `${safeAreaBottom}px`);
+        
+        // iPhone-specific fixes
+        if (isIOS) {
+          // Fix for iPhone's dynamic viewport
+          document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+          
+          // Prevent zoom on input focus
+          const metaViewport = document.querySelector('meta[name=viewport]');
+          if (metaViewport) {
+            metaViewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+          }
+          
+          // Handle safe areas for iPhone
+          document.documentElement.style.setProperty('--safe-area-inset-top', `env(safe-area-inset-top, ${safeAreaTop}px)`);
+          document.documentElement.style.setProperty('--safe-area-inset-bottom', `env(safe-area-inset-bottom, ${safeAreaBottom}px)`);
+          document.documentElement.style.setProperty('--safe-area-inset-left', `env(safe-area-inset-left, 0px)`);
+          document.documentElement.style.setProperty('--safe-area-inset-right', `env(safe-area-inset-right, 0px)`);
         }
         
         // Force re-render of components that depend on viewport
@@ -117,6 +148,17 @@ export function useTelegramWebApp() {
       
       // Listen for viewport changes
       tg.onEvent('viewportChanged', handleViewportChange);
+      
+      // Handle window resize for better responsiveness
+      const handleResize = () => {
+        if (isIOS) {
+          document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+        }
+        handleViewportChange();
+      };
+      
+      window.addEventListener('resize', handleResize);
+      window.addEventListener('orientationchange', handleViewportChange);
       
       // Set initial viewport
       handleViewportChange();
@@ -128,11 +170,13 @@ export function useTelegramWebApp() {
       // Enable closing confirmation for better UX
       tg.enableClosingConfirmation();
       
-      console.log('🚀 Telegram WebApp initialized:', {
+      console.log('🚀 Enhanced Telegram WebApp initialized:', {
         version: tg.version,
         platform: tg.platform,
         viewportHeight: tg.viewportHeight,
         viewportStableHeight: tg.viewportStableHeight,
+        safeAreaInset: tg.safeAreaInset,
+        isIOS,
         user: tg.initDataUnsafe?.user,
         themeParams: tg.themeParams
       });
@@ -140,12 +184,20 @@ export function useTelegramWebApp() {
       // Cleanup function
       return () => {
         tg.offEvent('viewportChanged', handleViewportChange);
+        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('orientationchange', handleViewportChange);
       };
     } else {
       // Fallback for development - set reasonable defaults
       console.log('📱 Running outside Telegram, using mock data');
-      document.documentElement.style.setProperty('--tg-viewport-height', '100vh');
-      document.documentElement.style.setProperty('--tg-stable-height', '100vh');
+      
+      const mockViewportHeight = window.innerHeight;
+      document.documentElement.style.setProperty('--tg-viewport-height', `${mockViewportHeight}px`);
+      document.documentElement.style.setProperty('--tg-stable-height', `${mockViewportHeight}px`);
+      document.documentElement.style.setProperty('--vh', `${mockViewportHeight * 0.01}px`);
+      document.documentElement.style.setProperty('--tg-safe-area-top', '0px');
+      document.documentElement.style.setProperty('--tg-safe-area-bottom', '0px');
+      
       setIsReady(true);
     }
   }, []);
@@ -177,6 +229,9 @@ export function useTelegramWebApp() {
         webApp.MainButton.color = color;
         webApp.MainButton.onClick(onClick);
         webApp.MainButton.show();
+        
+        // Add haptic feedback
+        hapticFeedback.selection();
       }
     },
     hide: () => {
@@ -214,6 +269,9 @@ export function useTelegramWebApp() {
 
         webApp.BackButton.onClick(onClick);
         webApp.BackButton.show();
+        
+        // Add haptic feedback
+        hapticFeedback.selection();
       }
     },
     hide: () => {
@@ -230,11 +288,13 @@ export function useTelegramWebApp() {
   };
 
   const showAlert = (message: string) => {
+    hapticFeedback.impact('light');
     webApp?.showAlert(message);
   };
 
   const showConfirm = (message: string) => {
     return new Promise<boolean>((resolve) => {
+      hapticFeedback.impact('medium');
       if (webApp?.showConfirm) {
         webApp.showConfirm(message);
         // Note: Telegram doesn't provide promise-based confirm, this is simplified
@@ -248,6 +308,7 @@ export function useTelegramWebApp() {
   const share = async (text: string, url?: string) => {
     if (webApp) {
       try {
+        hapticFeedback.impact('light');
         const shareText = url ? `${text}\n${url}` : text;
         webApp.switchInlineQuery(shareText);
       } catch (error) {
@@ -260,6 +321,7 @@ export function useTelegramWebApp() {
   };
 
   const openLink = (url: string) => {
+    hapticFeedback.impact('light');
     webApp?.openLink(url, { try_instant_view: true });
   };
 
@@ -276,6 +338,9 @@ export function useTelegramWebApp() {
     openLink,
     themeParams: webApp?.themeParams || {},
     platform: webApp?.platform || 'unknown',
-    version: webApp?.version || '1.0'
+    version: webApp?.version || '1.0',
+    // iPhone-specific helpers
+    isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
+    safeAreaInset: webApp?.safeAreaInset || { top: 0, bottom: 0, left: 0, right: 0 }
   };
 }

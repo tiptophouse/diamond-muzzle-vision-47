@@ -3,14 +3,8 @@ export const apiEndpoints = {
   // Health check
   alive: () => `/api/v1/alive`,
   
-  // Stone/Diamond management
-  getAllStones: (userId?: number) => {
-    const endpoint = `/api/v1/get_all_stones`;
-    if (userId) {
-      return `${endpoint}?user_id=${userId}`;
-    }
-    return endpoint;
-  },
+  // Stone/Diamond management - FIXED TO MATCH YOUR FASTAPI SCHEMA
+  getAllStones: (userId: number) => `/api/v1/get_all_stones?user_id=${userId}`,
   
   // Create diamond - POST /api/v1/diamonds?user_id={user_id}
   addDiamond: (userId: number) => `/api/v1/diamonds?user_id=${userId}`,
@@ -19,10 +13,10 @@ export const apiEndpoints = {
   addDiamondsBatch: (userId: number) => `/api/v1/diamonds/batch?user_id=${userId}`,
   
   // Update diamond - PUT /api/v1/diamonds/{diamond_id}?user_id={user_id}
-  updateDiamond: (diamondId: string, userId: number) => `/api/v1/diamonds/${diamondId}?user_id=${userId}`,
+  updateDiamond: (diamondId: number, userId: number) => `/api/v1/diamonds/${diamondId}?user_id=${userId}`,
   
-  // Delete diamond - DELETE /api/v1/delete_stone/{diamond_id}?user_id={user_id}&diamond_id={diamond_id}
-  deleteDiamond: (diamondId: string, userId: number) => `/api/v1/delete_stone/${diamondId}?user_id=${userId}&diamond_id=${diamondId}`,
+  // Delete diamond - DELETE /api/v1/delete_stone/{diamond_id}?user_id={user_id}
+  deleteDiamond: (diamondId: number, userId: number) => `/api/v1/delete_stone/${diamondId}?user_id=${userId}`,
   
   // SFTP endpoints
   sftpProvision: () => `/api/v1/sftp/provision`,
@@ -37,7 +31,7 @@ export const apiEndpoints = {
   // Payment
   paymentRequest: () => `/api/v1/payment_request`,
   
-  // Authentication endpoints
+  // Authentication endpoints - FIXED TO MATCH YOUR SCHEMA
   signIn: () => `/api/v1/sign-in/`,
   verifyTelegram: () => `/api/v1/verify-telegram`,
   uploadInventory: () => `/api/v1/upload-inventory`,
