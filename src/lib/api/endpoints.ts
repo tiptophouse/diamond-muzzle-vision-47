@@ -1,9 +1,16 @@
+
 export const apiEndpoints = {
   // Health check
   alive: () => `/api/v1/alive`,
   
-  // Stone/Diamond management - CORRECTED to match FastAPI spec
-  getAllStones: (userId: number) => `/api/v1/get_all_stones?user_id=${userId}`,
+  // Stone/Diamond management
+  getAllStones: (userId?: number) => {
+    const endpoint = `/api/v1/get_all_stones`;
+    if (userId) {
+      return `${endpoint}?user_id=${userId}`;
+    }
+    return endpoint;
+  },
   
   // Create diamond - POST /api/v1/diamonds?user_id={user_id}
   addDiamond: (userId: number) => `/api/v1/diamonds?user_id=${userId}`,
@@ -14,10 +21,10 @@ export const apiEndpoints = {
   // Update diamond - PUT /api/v1/diamonds/{diamond_id}?user_id={user_id}
   updateDiamond: (diamondId: string, userId: number) => `/api/v1/diamonds/${diamondId}?user_id=${userId}`,
   
-  // CORRECTED Delete diamond endpoint to match FastAPI spec
-  deleteDiamond: (diamondId: string, userId: number) => `/api/v1/delete_stone/${diamondId}?user_id=${userId}`,
+  // Delete diamond - DELETE /api/v1/delete_stone/{diamond_id}?user_id={user_id}&diamond_id={diamond_id}
+  deleteDiamond: (diamondId: string, userId: number) => `/api/v1/delete_stone/${diamondId}?user_id=${userId}&diamond_id=${diamondId}`,
   
-  // SFTP endpoints - CORRECTED to include proper auth
+  // SFTP endpoints
   sftpProvision: () => `/api/v1/sftp/provision`,
   sftpStatus: (telegramId: number) => `/api/v1/sftp/status/${telegramId}`,
   sftpTestConnection: () => `/api/v1/sftp/test-connection`,
@@ -30,10 +37,8 @@ export const apiEndpoints = {
   // Payment
   paymentRequest: () => `/api/v1/payment_request`,
   
-  // CORRECTED Authentication endpoint
+  // Authentication endpoints
   signIn: () => `/api/v1/sign-in/`,
-  
-  // Legacy endpoints (keeping for compatibility)
   verifyTelegram: () => `/api/v1/verify-telegram`,
   uploadInventory: () => `/api/v1/upload-inventory`,
   soldDiamond: () => `/api/v1/sold`,

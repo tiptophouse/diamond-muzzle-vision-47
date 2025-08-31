@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,11 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { signInToBackend } from '@/lib/api/auth';
 import { provisionSftp, testSftpConnection } from '@/api/sftp';
-import { useFastApiHealth } from '@/hooks/useFastApiHealth';
 import { 
   Server, 
   Upload, 
@@ -21,9 +21,7 @@ import {
   RefreshCw,
   Lock,
   Folder,
-  Database,
-  Wifi,
-  WifiOff
+  Database
 } from 'lucide-react';
 
 interface SFTPCredentials {
@@ -40,63 +38,17 @@ interface SFTPCredentials {
   expires_at?: string;
 }
 
-type ErrorType = 'network' | 'auth' | 'server' | 'timeout' | 'unknown';
-
-interface DetailedError {
-  type: ErrorType;
-  message: string;
-  suggestion: string;
-}
-
 export function SFTPSettings() {
-  const { user, isTelegramEnvironment } = useTelegramAuth();
+  const { user } = useTelegramAuth();
   const { toast } = useToast();
-  const { isHealthy: isBackendHealthy, isChecking: isCheckingHealth, checkHealth } = useFastApiHealth();
   
   const [credentials, setCredentials] = useState<SFTPCredentials | null>(null);
   const [isProvisioning, setIsProvisioning] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
-  const [detailedError, setDetailedError] = useState<DetailedError | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [showCredentials, setShowCredentials] = useState(false);
   const [lastProvisionTime, setLastProvisionTime] = useState<Date | null>(null);
   const [connectionTestResult, setConnectionTestResult] = useState<{ status: 'success' | 'failed'; message?: string } | null>(null);
-
-  // Analyze error type and provide specific guidance
-  const analyzeError = (error: any): DetailedError => {
-    const errorMessage = error?.message || String(error);
-    
-    if (errorMessage.includes('timeout') || errorMessage.includes('זמן קצוב')) {
-      return {
-        type: 'timeout',
-        message: 'הבקשה נכשלה עקב זמן קצוב',
-        suggestion: 'השרת עמוס או חיבור האינטרנט איטי. נסה שוב בעוד כמה רגעים.'
-      };
-    } else if (errorMessage.includes('Failed to fetch') || errorMessage.includes('לא ניתן להתחבר')) {
-      return {
-        type: 'network',
-        message: 'בעיה בחיבור לשרת',
-        suggestion: 'בדוק את חיבור האינטרנט שלך ונסה שוב. אם הבעיה נמשכת, השרת עשוי להיות במצב תחזוקה.'
-      };
-    } else if (errorMessage.includes('Authentication') || errorMessage.includes('אימות') || errorMessage.includes('JWT')) {
-      return {
-        type: 'auth',
-        message: 'בעיה באימות',
-        suggestion: 'נסה לרענן את האפליקציה ולהיכנס מחדש.'
-      };
-    } else if (errorMessage.includes('500') || errorMessage.includes('502') || errorMessage.includes('503')) {
-      return {
-        type: 'server',
-        message: 'שגיאת שרת זמנית',
-        suggestion: 'השרת נתקל בבעיה זמנית. נסה שוב בעוד כמה דקות.'
-      };
-    } else {
-      return {
-        type: 'unknown',
-        message: errorMessage,
-        suggestion: 'אם הבעיה נמשכת, פנה לתמיכה טכנית.'
-      };
-    }
-  };
 
   const provisionSFTPAccount = async () => {
     if (!user) {
@@ -108,39 +60,20 @@ export function SFTPSettings() {
       return;
     }
 
-    if (!isTelegramEnvironment) {
-      toast({
-        title: "שגיאה",
-        description: "האפליקציה פועלת רק בתוך טלגרם",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check backend health first
-    if (isBackendHealthy === false) {
-      toast({
-        title: "השרת אינו זמין",
-        description: "השרת אינו זמין כרגע. אנא נסה שוב מאוחר יותר.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsProvisioning(true);
-    setDetailedError(null);
+    setError(null);
     setConnectionTestResult(null);
 
     try {
       console.log('🚀 Starting SFTP provisioning for user:', user.id);
       
-      // Get Telegram initData - REQUIRED
+      // Step 1: Sign in to FastAPI backend using unified auth
       const initData = window.Telegram?.WebApp?.initData;
       if (!initData) {
         throw new Error('Telegram WebApp data not available');
       }
 
-      console.log('🔐 Ensuring JWT token is available...');
+      console.log('🔐 Signing in to FastAPI backend...');
       const token = await signInToBackend(initData);
       
       if (!token) {
@@ -149,7 +82,7 @@ export function SFTPSettings() {
 
       console.log('✅ Authentication successful, provisioning SFTP...');
       
-      // Provision SFTP account using authenticated API
+      // Step 2: Provision SFTP account using unified API
       const sftpData = await provisionSftp(user.id);
       console.log('✅ SFTP provisioning successful:', sftpData);
 
@@ -163,7 +96,7 @@ export function SFTPSettings() {
         description: `שם משתמש: ${sftpData.ftp_username} | תיקיית העלאה: ${sftpData.folder_path}`,
       });
 
-      // Auto-test connection
+      // Step 3: Auto-test connection
       console.log('🧪 Auto-testing SFTP connection...');
       setIsTestingConnection(true);
       
@@ -185,11 +118,10 @@ export function SFTPSettings() {
         }
       } catch (testError: any) {
         console.error('❌ Connection test error:', testError);
-        const testErrorDetails = analyzeError(testError);
-        setConnectionTestResult({ status: 'failed', message: testErrorDetails.message });
+        setConnectionTestResult({ status: 'failed', message: testError.message });
         toast({
           title: "⚠️ שגיאה בבדיקת החיבור",
-          description: testErrorDetails.message,
+          description: testError.message,
           variant: "destructive",
         });
       } finally {
@@ -198,12 +130,10 @@ export function SFTPSettings() {
 
     } catch (error: any) {
       console.error('❌ SFTP provisioning error:', error);
-      const errorDetails = analyzeError(error);
-      setDetailedError(errorDetails);
-      
+      setError(error.message);
       toast({
         title: "שגיאה ביצירת חשבון SFTP",
-        description: errorDetails.message,
+        description: error.message,
         variant: "destructive",
       });
     } finally {
@@ -223,29 +153,6 @@ export function SFTPSettings() {
     }
   };
 
-  const retryOperation = async () => {
-    // Clear error state and retry
-    setDetailedError(null);
-    await checkHealth(); // Refresh health status
-    if (isBackendHealthy !== false) {
-      await provisionSFTPAccount();
-    }
-  };
-
-  // Show error if not in Telegram environment
-  if (!isTelegramEnvironment) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center text-muted-foreground">
-            <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>האפליקציה פועלת רק בתוך טלגרם</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   if (!user) {
     return (
       <Card>
@@ -261,65 +168,6 @@ export function SFTPSettings() {
 
   return (
     <div className="space-y-6">
-      {/* Backend Health Status */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {isBackendHealthy === true ? (
-                <>
-                  <Wifi className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-green-600">השרת מחובר ותקין</span>
-                </>
-              ) : isBackendHealthy === false ? (
-                <>
-                  <WifiOff className="h-4 w-4 text-red-600" />
-                  <span className="text-sm text-red-600">השרת אינו זמין</span>
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-4 w-4 animate-spin text-yellow-600" />
-                  <span className="text-sm text-yellow-600">בודק חיבור לשרת...</span>
-                </>
-              )}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={checkHealth}
-              disabled={isCheckingHealth}
-            >
-              {isCheckingHealth ? (
-                <RefreshCw className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Detailed Error Display */}
-      {detailedError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="space-y-2">
-            <div className="font-medium">{detailedError.message}</div>
-            <div className="text-sm opacity-80">{detailedError.suggestion}</div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={retryOperation}
-              className="mt-2"
-              disabled={isProvisioning || isBackendHealthy === false}
-            >
-              <RefreshCw className="mr-1 h-3 w-3" />
-              נסה שוב
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
       {/* SFTP Account Overview */}
       <Card>
         <CardHeader>
@@ -351,7 +199,7 @@ export function SFTPSettings() {
 
               <Button 
                 onClick={provisionSFTPAccount} 
-                disabled={isProvisioning || isBackendHealthy === false}
+                disabled={isProvisioning}
                 className="w-full"
                 size="lg"
               >
@@ -367,12 +215,6 @@ export function SFTPSettings() {
                   </>
                 )}
               </Button>
-
-              {isBackendHealthy === false && (
-                <p className="text-sm text-muted-foreground text-center">
-                  השרת אינו זמין כרגע. אנא נסה שוב מאוחר יותר.
-                </p>
-              )}
             </div>
           ) : (
             <div className="space-y-4">
@@ -487,7 +329,7 @@ export function SFTPSettings() {
                 <Button
                   variant="outline"
                   onClick={provisionSFTPAccount}
-                  disabled={isProvisioning || isBackendHealthy === false}
+                  disabled={isProvisioning}
                 >
                   {isProvisioning ? (
                     <>
@@ -503,6 +345,13 @@ export function SFTPSettings() {
                 </Button>
               </div>
             </div>
+          )}
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
         </CardContent>
       </Card>
