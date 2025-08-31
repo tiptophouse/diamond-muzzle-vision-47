@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useToast } from '@/components/ui/use-toast';
-import { Server, Key, Copy, RefreshCw, AlertCircle, CheckCircle, TestTube, Bug, Shield } from 'lucide-react';
+import { Server, Key, Copy, RefreshCw, AlertCircle, CheckCircle, TestTube, Bug } from 'lucide-react';
 import { provisionSftp, getSftpStatus, type SFTPCredentials } from '@/api/sftp';
 import { supabase } from '@/integrations/supabase/client';
 import { signInToBackend, getBackendAuthToken } from '@/lib/api/auth';
@@ -14,7 +15,7 @@ import { getBackendAccessToken } from '@/lib/api/secureConfig';
 import { getTelegramWebApp } from '@/utils/telegramWebApp';
 
 export function SFTPSettings() {
-  const { user, isTelegramEnvironment } = useTelegramAuth();
+  const { user } = useTelegramAuth();
   const { toast } = useToast();
   
   const [isGenerating, setIsGenerating] = useState(false);
@@ -24,7 +25,6 @@ export function SFTPSettings() {
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'success' | 'failed' | null>(null);
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
   const [showDebug, setShowDebug] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
 
   const addDebugLog = (message: string) => {
     const timestamp = new Date().toISOString();
@@ -52,18 +52,10 @@ export function SFTPSettings() {
 
   const ensureAuthentication = async (): Promise<string | null> => {
     addDebugLog('🔐 Starting authentication check...');
-    setAuthError(null);
     
     if (!user?.id) {
       addDebugLog('❌ No user ID available');
-      setAuthError('User not authenticated');
       throw new Error('User not authenticated');
-    }
-
-    if (!isTelegramEnvironment) {
-      addDebugLog('❌ Not in Telegram environment');
-      setAuthError('This feature only works in Telegram WebApp');
-      throw new Error('This feature only works in Telegram WebApp');
     }
 
     addDebugLog(`👤 User ID: ${user.id}, Name: ${user.first_name}`);
@@ -84,11 +76,9 @@ export function SFTPSettings() {
           addDebugLog(`✅ Backend sign-in result: ${backendToken ? 'Success' : 'Failed'}`);
         } catch (error) {
           addDebugLog(`❌ Backend sign-in error: ${error instanceof Error ? error.message : 'Unknown'}`);
-          setAuthError('Failed to authenticate with backend');
         }
       } else {
         addDebugLog('⚠️ No Telegram initData available for backend sign-in');
-        setAuthError('No Telegram authentication data available');
       }
     }
 
@@ -104,7 +94,6 @@ export function SFTPSettings() {
 
     if (!backendToken) {
       addDebugLog('❌ No authentication token available');
-      setAuthError('Unable to obtain authentication token');
       throw new Error('Unable to obtain authentication token');
     }
 
@@ -124,7 +113,6 @@ export function SFTPSettings() {
     
     setIsGenerating(true);
     setDebugInfo([]);
-    setAuthError(null);
     addDebugLog('🚀 Starting SFTP provision process');
     
     try {
@@ -170,11 +158,6 @@ ${sftpCredentials.expires_at ? `⏰ <b>תפוגה:</b> <code>${new Date(sftpCred
       console.error('❌ Error generating SFTP credentials:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       addDebugLog(`❌ SFTP provision failed: ${errorMessage}`);
-      
-      // Check if it's an authentication error
-      if (errorMessage.includes('authentication') || errorMessage.includes('JWT') || errorMessage.includes('Telegram')) {
-        setAuthError(errorMessage);
-      }
       
       const failureMessage = `❌ <b>שגיאה ביצירת חשבון SFTP</b>
 
@@ -346,22 +329,6 @@ ${sftpCredentials.expires_at ? `⏰ <b>תפוגה:</b> <code>${new Date(sftpCred
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Authentication Error Alert */}
-        {authError && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex items-center gap-2 text-red-800">
-              <Shield className="h-5 w-5" />
-              <span className="font-semibold">שגיאת אימות</span>
-            </div>
-            <p className="text-sm text-red-700 mt-1">{authError}</p>
-            {!isTelegramEnvironment && (
-              <p className="text-xs text-red-600 mt-2">
-                💡 פתח את האפליקציה דרך טלגרם כדי לגשת לתכונה זו
-              </p>
-            )}
-          </div>
-        )}
-
         {/* Debug Panel */}
         {showDebug && debugInfo.length > 0 && (
           <div className="bg-gray-100 rounded-lg p-4 border">
@@ -397,7 +364,7 @@ ${sftpCredentials.expires_at ? `⏰ <b>תפוגה:</b> <code>${new Date(sftpCred
               </p>
               <Button 
                 onClick={generateSFTPCredentials}
-                disabled={isGenerating || !isTelegramEnvironment}
+                disabled={isGenerating}
                 size="lg"
                 className="bg-primary hover:bg-primary/90 min-w-[200px]"
               >
@@ -413,11 +380,6 @@ ${sftpCredentials.expires_at ? `⏰ <b>תפוגה:</b> <code>${new Date(sftpCred
                   </>
                 )}
               </Button>
-              {!isTelegramEnvironment && (
-                <p className="text-sm text-amber-600 mt-3">
-                  ⚠️ תכונה זו זמינה רק בטלגרם WebApp
-                </p>
-              )}
               {isGenerating && (
                 <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
                   <div className="flex items-center justify-center space-x-2">
