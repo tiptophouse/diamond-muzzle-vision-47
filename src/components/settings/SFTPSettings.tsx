@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +38,7 @@ interface SFTPCredentials {
 }
 
 export function SFTPSettings() {
-  const { user } = useTelegramAuth();
+  const { user, isTelegramEnvironment } = useTelegramAuth();
   const { toast } = useToast();
   
   const [credentials, setCredentials] = useState<SFTPCredentials | null>(null);
@@ -60,6 +59,16 @@ export function SFTPSettings() {
       return;
     }
 
+    // Ensure we're in Telegram environment
+    if (!isTelegramEnvironment) {
+      toast({
+        title: "שגיאה",
+        description: "האפליקציה פועלת רק בתוך טלגרם",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsProvisioning(true);
     setError(null);
     setConnectionTestResult(null);
@@ -67,13 +76,13 @@ export function SFTPSettings() {
     try {
       console.log('🚀 Starting SFTP provisioning for user:', user.id);
       
-      // Step 1: Sign in to FastAPI backend using unified auth
+      // Get Telegram initData - REQUIRED
       const initData = window.Telegram?.WebApp?.initData;
       if (!initData) {
         throw new Error('Telegram WebApp data not available');
       }
 
-      console.log('🔐 Signing in to FastAPI backend...');
+      console.log('🔐 Ensuring JWT token is available...');
       const token = await signInToBackend(initData);
       
       if (!token) {
@@ -82,7 +91,7 @@ export function SFTPSettings() {
 
       console.log('✅ Authentication successful, provisioning SFTP...');
       
-      // Step 2: Provision SFTP account using unified API
+      // Provision SFTP account using authenticated API
       const sftpData = await provisionSftp(user.id);
       console.log('✅ SFTP provisioning successful:', sftpData);
 
@@ -96,7 +105,7 @@ export function SFTPSettings() {
         description: `שם משתמש: ${sftpData.ftp_username} | תיקיית העלאה: ${sftpData.folder_path}`,
       });
 
-      // Step 3: Auto-test connection
+      // Auto-test connection
       console.log('🧪 Auto-testing SFTP connection...');
       setIsTestingConnection(true);
       
@@ -152,6 +161,20 @@ export function SFTPSettings() {
       console.error('Failed to copy:', error);
     }
   };
+
+  // Show error if not in Telegram environment
+  if (!isTelegramEnvironment) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center text-muted-foreground">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>האפליקציה פועלת רק בתוך טלגרם</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!user) {
     return (
