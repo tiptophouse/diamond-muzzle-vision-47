@@ -1,4 +1,3 @@
-
 import { API_BASE_URL } from './config';
 import { setCurrentUserId } from './config';
 
@@ -83,15 +82,13 @@ export async function signInToBackend(initData: string): Promise<string | null> 
     // 🐛 DEBUG: Log successful response
     console.log('🐛 SUCCESS RESPONSE DEBUG:', {
       responseKeys: Object.keys(result),
-      hasAccessToken: !!(result.access_token),
       hasToken: !!(result.token),
-      hasUserId: !!(result.user_id),
       fullResponse: result
     });
     
-    if (result.access_token || result.token) {
-      // Handle both possible response formats
-      backendAuthToken = result.access_token || result.token;
+    // API docs show response format: { "token": "string" }
+    if (result.token) {
+      backendAuthToken = result.token;
       console.log('✅ API: Backend sign-in successful, JWT token stored');
       console.log('🐛 TOKEN DEBUG:', {
         tokenLength: backendAuthToken.length,

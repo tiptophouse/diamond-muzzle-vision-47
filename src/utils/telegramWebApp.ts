@@ -6,6 +6,14 @@ export interface TelegramWebApp {
   ready: () => void;
   expand: () => void;
   themeParams: any;
+  version?: string;
+  platform?: string;
+  colorScheme?: 'light' | 'dark';
+  isExpanded?: boolean;
+  viewportHeight?: number;
+  viewportStableHeight?: number;
+  headerColor?: string;
+  backgroundColor?: string;
   BackButton?: {
     show: () => void;
     hide: () => void;

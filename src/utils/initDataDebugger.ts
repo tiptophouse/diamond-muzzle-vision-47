@@ -21,15 +21,15 @@ export function logTelegramEnvironment() {
   if (window.Telegram?.WebApp) {
     const wa = window.Telegram.WebApp;
     console.log('🔍 WebApp properties:', {
-      version: wa.version,
-      platform: wa.platform,
-      colorScheme: wa.colorScheme,
+      version: wa.version || 'unknown',
+      platform: wa.platform || 'unknown', 
+      colorScheme: wa.colorScheme || 'unknown',
       themeParams: wa.themeParams,
-      isExpanded: wa.isExpanded,
-      viewportHeight: wa.viewportHeight,
-      viewportStableHeight: wa.viewportStableHeight,
-      headerColor: wa.headerColor,
-      backgroundColor: wa.backgroundColor
+      isExpanded: wa.isExpanded || false,
+      viewportHeight: wa.viewportHeight || 0,
+      viewportStableHeight: wa.viewportStableHeight || 0,
+      headerColor: wa.headerColor || 'unknown',
+      backgroundColor: wa.backgroundColor || 'unknown'
     });
 
     console.log('🔍 WebApp init data:', {

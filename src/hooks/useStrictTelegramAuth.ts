@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { TelegramUser } from '@/types/telegram';
 import { signInToBackend } from '@/lib/api/auth';
+import { generateMockInitData } from '@/utils/initDataDebugger';
 
 interface AuthState {
   user: TelegramUser | null;
@@ -41,7 +42,32 @@ export function useStrictTelegramAuth(): AuthState {
     try {
       // Check for Telegram WebApp environment
       if (typeof window === 'undefined' || !window.Telegram?.WebApp) {
-        console.error('❌ Not in Telegram WebApp environment - access denied');
+        console.error('❌ Not in Telegram WebApp environment - checking if development');
+        
+        // Development mode fallback
+        if (window.location.hostname === 'localhost' || 
+            window.location.hostname.includes('lovableproject.com')) {
+          console.log('🔧 Development environment detected - using mock authentication');
+          
+          const mockUser: TelegramUser = {
+            id: 2138564172,
+            first_name: "Dev",
+            last_name: "User",
+            username: "devuser",
+            language_code: "en"
+          };
+          
+          updateState({
+            user: mockUser,
+            isAuthenticated: true,
+            isLoading: false,
+            isTelegramEnvironment: false,
+            error: null,
+            accessDeniedReason: null
+          });
+          return;
+        }
+        
         updateState({
           isLoading: false,
           isTelegramEnvironment: false,
@@ -58,13 +84,13 @@ export function useStrictTelegramAuth(): AuthState {
       console.log('🔍 TELEGRAM WEBAPP DEBUG INFO:', {
         telegram_available: !!window.Telegram,
         webApp_available: !!window.Telegram.WebApp,
-        version: tg.version,
-        platform: tg.platform,
-        colorScheme: tg.colorScheme,
-        isExpanded: tg.isExpanded,
-        viewportHeight: tg.viewportHeight,
-        headerColor: tg.headerColor,
-        backgroundColor: tg.backgroundColor
+        version: tg.version || 'unknown',
+        platform: tg.platform || 'unknown',
+        colorScheme: tg.colorScheme || 'unknown',
+        isExpanded: tg.isExpanded || false,
+        viewportHeight: tg.viewportHeight || 0,
+        headerColor: tg.headerColor || 'unknown',
+        backgroundColor: tg.backgroundColor || 'unknown'
       });
 
       // 🐛 DEBUG: Log detailed initData information
@@ -97,7 +123,7 @@ export function useStrictTelegramAuth(): AuthState {
 
       // Check for initData - REQUIRED
       if (!tg.initData || tg.initData.length === 0) {
-        console.error('❌ No Telegram initData found - access denied');
+        console.error('❌ No Telegram initData found');
         console.log('🐛 EMPTY INIT DATA DEBUG:', {
           initDataExists: !!tg.initData,
           initDataType: typeof tg.initData,
@@ -107,6 +133,37 @@ export function useStrictTelegramAuth(): AuthState {
           windowTelegramKeys: Object.keys(window.Telegram || {}),
           webAppKeys: Object.keys(tg || {})
         });
+
+        // For development/testing, use mock initData
+        if (window.location.hostname === 'localhost' || 
+            window.location.hostname.includes('lovableproject.com')) {
+          console.log('🔧 Using mock initData for development testing');
+          const mockInitData = generateMockInitData(2138564172, "Dev User");
+          
+          try {
+            const jwtToken = await signInToBackend(mockInitData);
+            if (jwtToken) {
+              const mockUser: TelegramUser = {
+                id: 2138564172,
+                first_name: "Dev",
+                last_name: "User",
+                username: "devuser",
+                language_code: "en"
+              };
+              
+              updateState({
+                user: mockUser,
+                isAuthenticated: true,
+                isLoading: false,
+                error: null,
+                accessDeniedReason: null
+              });
+              return;
+            }
+          } catch (error) {
+            console.warn('⚠️ Mock authentication failed:', error);
+          }
+        }
 
         updateState({
           isLoading: false,
