@@ -1,5 +1,6 @@
 
 import { getBackendAuthToken } from "@/lib/api/auth";
+import { toast } from "@/components/ui/use-toast";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.mazalbot.com";
 
@@ -21,7 +22,7 @@ async function testBackendHealth(): Promise<boolean> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
     
-    const response = await fetch(`${API_BASE_URL}/`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/alive`, {
       method: 'GET',
       mode: 'cors',
       headers: { 'Accept': 'application/json' },
@@ -30,7 +31,7 @@ async function testBackendHealth(): Promise<boolean> {
     
     clearTimeout(timeoutId);
     
-    const isHealthy = response.ok || response.status === 404;
+    const isHealthy = response.ok;
     console.log('🏥 HTTP: Backend health result:', isHealthy, 'Status:', response.status);
     
     // Cache the result
@@ -65,66 +66,57 @@ function getDetailedError(error: any, response?: Response): string {
   return errorDetails.join(' | ');
 }
 
-// Retry mechanism with exponential backoff
-async function retryRequest<T>(
-  requestFn: () => Promise<Response>,
-  maxRetries: number = 2,
-  baseDelay: number = 1000
-): Promise<Response> {
-  let lastError: any;
-  
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      console.log(`🔄 HTTP: Attempt ${attempt + 1}/${maxRetries + 1}`);
-      return await requestFn();
-    } catch (error) {
-      lastError = error;
-      console.error(`❌ HTTP: Attempt ${attempt + 1} failed:`, error);
-      
-      if (attempt < maxRetries) {
-        const delay = baseDelay * Math.pow(2, attempt);
-        console.log(`⏳ HTTP: Waiting ${delay}ms before retry...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-  }
-  
-  throw lastError;
-}
-
 export async function http<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  // Check authentication first
+  const fullUrl = `${API_BASE_URL}${endpoint}`;
+  const method = options.method || 'GET';
+  
+  console.log('🔑 HTTP: Making request to:', fullUrl, 'Method:', method);
+
+  // Check authentication for protected endpoints (most endpoints require auth according to OpenAPI spec)
   const token = getBackendAuthToken();
   
-  if (!token) {
-    console.error('❌ HTTP: No JWT token available for:', endpoint);
-    throw new Error('אנא התחבר מחדש לאפליקציה');
+  if (!token && !endpoint.includes('/api/v1/sign-in/')) {
+    console.error('❌ HTTP: No JWT token available for protected endpoint:', endpoint);
+    const error = new Error('נדרש אימות. אנא התחבר מחדש לאפליקציה');
+    
+    toast({
+      title: "🔐 Authentication Required",
+      description: "אנא התחבר מחדש לאפליקציה",
+      variant: "destructive",
+    });
+    
+    throw error;
   }
 
-  // Test backend health first
-  const isBackendHealthy = await testBackendHealth();
-  if (!isBackendHealthy) {
-    console.error('❌ HTTP: Backend is not healthy for:', endpoint);
-    throw new Error('השרת אינו זמין כרגע. אנא נסה שוב מאוחר יותר.');
+  // Test backend health for non-auth requests
+  if (!endpoint.includes('/api/v1/sign-in/')) {
+    const isBackendHealthy = await testBackendHealth();
+    if (!isBackendHealthy) {
+      console.error('❌ HTTP: Backend is not healthy for:', endpoint);
+      
+      toast({
+        title: "🔌 Server Offline",
+        description: "השרת אינו זמין כרגע. אנא נסה שוב מאוחר יותר.",
+        variant: "destructive",
+      });
+      
+      throw new Error('השרת אינו זמין כרגע. אנא נסה שוב מאוחר יותר.');
+    }
   }
 
   const config: RequestInit = {
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
       "Accept": "application/json",
       "Origin": window.location.origin,
       "X-Client-Timestamp": Date.now().toString(),
+      ...(token && { "Authorization": `Bearer ${token}` }),
       ...options.headers,
     },
     mode: 'cors',
     credentials: 'omit',
     ...options,
   };
-
-  const fullUrl = `${API_BASE_URL}${endpoint}`;
-  console.log('🔑 HTTP: Making authenticated request to:', fullUrl);
-  console.log('🔑 HTTP: Request method:', config.method || 'GET');
 
   const requestFn = async () => {
     const controller = new AbortController();
@@ -141,10 +133,9 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
   };
 
   try {
-    const response = await retryRequest(requestFn, 2, 1000);
+    const response = await requestFn();
     
     console.log('📡 HTTP: Response status:', response.status);
-    console.log('📡 HTTP: Response headers:', Object.fromEntries(response.headers.entries()));
     
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
@@ -159,11 +150,56 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
         console.error('❌ HTTP: Server error text:', errorText);
       }
       
-      console.error('❌ HTTP: Request failed:', errorMessage);
+      // Show specific error messages for different operations
+      if (method === 'DELETE') {
+        toast({
+          title: "❌ Deletion Failed",
+          description: `לא ניתן למחוק את הפריט: ${errorMessage}`,
+          variant: "destructive",
+        });
+      } else if (method === 'POST') {
+        toast({
+          title: "❌ Creation Failed", 
+          description: `לא ניתן ליצור את הפריט: ${errorMessage}`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "❌ Request Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
+      
       throw new Error(errorMessage);
     }
     
     const data = await response.json();
+    
+    // Show success messages for write operations
+    if (method === 'DELETE') {
+      console.log('✅ HTTP: Delete successful');
+      toast({
+        title: "✅ נמחק בהצלחה",
+        description: "הפריט נמחק מהמערכת",
+        variant: "default",
+      });
+    } else if (method === 'POST') {
+      console.log('✅ HTTP: Create successful');
+      toast({
+        title: "✅ נוסף בהצלחה",
+        description: "הפריט נוסף למערכת",
+        variant: "default",
+      });
+    } else if (method === 'PUT') {
+      console.log('✅ HTTP: Update successful');
+      toast({
+        title: "✅ עודכן בהצלחה",
+        description: "הפריט עודכן במערכת",
+        variant: "default",
+      });
+    }
+    
     console.log('✅ HTTP: Request successful');
     return data;
     
@@ -171,16 +207,24 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
     const detailedError = getDetailedError(error);
     console.error('❌ HTTP: Request error:', detailedError);
     
-    // Throw user-friendly Hebrew error messages
+    // Show user-friendly error messages
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
+        toast({
+          title: "⏱️ Timeout",
+          description: "הבקשה נכשלה עקב זמן קצוב. אנא נסה שוב.",
+          variant: "destructive",
+        });
         throw new Error('הבקשה נכשלה עקב זמן קצוב. אנא נסה שוב.');
       } else if (error.message.includes('Failed to fetch')) {
+        toast({
+          title: "🌐 Connection Error",
+          description: "לא ניתן להתחבר לשרת. בדוק את חיבור האינטרנט ונסה שוב.",
+          variant: "destructive",
+        });
         throw new Error('לא ניתן להתחבר לשרת. בדוק את חיבור האינטרנט ונסה שוב.');
-      } else if (error.message.includes('CORS')) {
-        throw new Error('בעיה בהגדרות השרת. אנא פנה לתמיכה טכנית.');
       } else {
-        throw error; // Re-throw as-is for server errors
+        throw error; // Re-throw server errors as-is
       }
     }
     

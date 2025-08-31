@@ -68,17 +68,27 @@ export async function signInToBackend(initData: string): Promise<string | null> 
     const result = await response.json();
     console.log('🔐 MAIN AUTH: Response data keys:', Object.keys(result));
     
-    // Handle both possible token field names
-    const token = result.access_token || result.token;
+    // FIXED: According to OpenAPI spec, the field is "token", not "access_token"
+    const token = result.token;
     
     if (token) {
       backendAuthToken = token;
       console.log('✅ MAIN AUTH: JWT token received and stored');
       
-      // Set current user ID if available
-      if (result.user_id) {
-        setCurrentUserId(result.user_id);
-        console.log('✅ MAIN AUTH: User ID set:', result.user_id);
+      // Extract user ID from initData since the API doesn't return user_id
+      try {
+        const urlParams = new URLSearchParams(initData);
+        const userParam = urlParams.get('user');
+        
+        if (userParam) {
+          const user = JSON.parse(decodeURIComponent(userParam));
+          if (user.id) {
+            setCurrentUserId(user.id);
+            console.log('✅ MAIN AUTH: User ID extracted from initData:', user.id);
+          }
+        }
+      } catch (error) {
+        console.error('🔐 MAIN AUTH: Failed to extract user ID from initData:', error);
       }
       
       return backendAuthToken;
@@ -92,7 +102,7 @@ export async function signInToBackend(initData: string): Promise<string | null> 
   }
 }
 
-// Get auth headers with JWT token
+// Get auth headers with JWT token for protected endpoints
 export async function getAuthHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -102,10 +112,11 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
   };
   
   if (backendAuthToken) {
+    // FIXED: Use proper Bearer token format as required by FastAPI
     headers["Authorization"] = `Bearer ${backendAuthToken}`;
-    console.log('🔑 AUTH HEADERS: Added Bearer token');
+    console.log('🔑 AUTH HEADERS: Added Bearer token for protected endpoint');
   } else {
-    console.warn('⚠️ AUTH HEADERS: No JWT token available');
+    console.warn('⚠️ AUTH HEADERS: No JWT token available - this will fail for protected endpoints');
   }
   
   return headers;
