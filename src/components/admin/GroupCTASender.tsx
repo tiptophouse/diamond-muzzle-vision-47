@@ -1,297 +1,303 @@
-
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Send, Users, MessageSquare, Loader2, Sparkles, Diamond, Store, Zap, TestTube, Home, Bot, Share, ExternalLink } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useGroupCTA } from '@/hooks/useGroupCTA';
-import { useGroupCTARegistration } from '@/hooks/useGroupCTARegistration';
+import { useToast } from '@/components/ui/use-toast';
+import { Send, Users, TrendingUp, Zap, DollarSign } from 'lucide-react';
+import { GroupLaunchMessage } from './GroupLaunchMessage';
 
-export function GroupCTASender() {
-  const { sendGroupCTA, isLoading } = useGroupCTA();
-  const { testCTAClickWithRegistration, isRegistering } = useGroupCTARegistration();
+export function GroupCTASender({ onSendNotification }: { onSendNotification?: (notification: any) => void }) {
+  const [message, setMessage] = useState('');
+  const [buttonText, setButtonText] = useState('');
+  const [buttonUrl, setButtonUrl] = useState('https://t.me/diamondmazalbot?startapp=profile');
+  const [groupId, setGroupId] = useState('-1001009290613');
+  const [isSending, setIsSending] = useState(false);
   
-  const [formData, setFormData] = useState({
-    message: `💎 **העלו את העסק שלכם לרמה הבאה עם BrilliantBot!**
+  const { sendGroupCTA } = useGroupCTA();
+  const { toast } = useToast();
 
-🚀 **הבוט החכם ביותר לסוחרי יהלומים:**
-• 🔍 חיפוש מתקדם במלאי
-• 📊 ניתוחי שוק בזמן אמת
-• 💰 מעקב רווחיות חכם
-• 🎯 התאמות מושלמות ללקוחות
+  // Killer CTA messages with 400+ users
+  const ctaTemplates = [
+    {
+      icon: <TrendingUp className="h-5 w-5" />,
+      title: "המהפכה החדשה - 400+ סוחרים",
+      message: `🚀 המהפכה החדשה כאן!
 
-⭐ **אלפי סוחרים כבר משתמשים - הצטרפו עכשיו!**`,
-    groupId: '-1001009290613',
-    botUsername: 'diamondmazalbot',
-    useMultipleButtons: true,
-    includePremiumButton: true,
-    includeInventoryButton: true,
-    includeChatButton: true
-  });
+💎 400+ סוחרי יהלומים כבר מרוויחים בכל יום
+📈 רווחים של 50% בחודש - לא חלום, מציאות!
+⏰ הזמן להצטרף רק עכשיו - לפני שהמקומות ייגמרו
 
-  const handleSend = async () => {
-    const success = await sendGroupCTA({
-      message: formData.message,
-      groupId: formData.groupId,
-      botUsername: formData.botUsername?.replace('@',''),
-      useMultipleButtons: formData.useMultipleButtons,
-      includePremiumButton: formData.includePremiumButton,
-      includeInventoryButton: formData.includeInventoryButton,
-      includeChatButton: formData.includeChatButton
-    });
+🔥 בזמן שאתה חושב, הם כבר מרוויחים...`,
+      buttonText: "💰 אני רוצה לרווח יותר!",
+    },
+    {
+      icon: <Users className="h-5 w-5" />,
+      title: "הוכחה חברתית - 400+ מצליחים",
+      message: `👑 400+ סוחרי יהלומים בוחרים בנו!
 
-    if (success) {
-      console.log('✅ הודעת CTA קבוצתית חכמה נשלחה בהצלחה');
+✅ כל יום מצטרפים 50+ סוחרים חדשים
+💰 הממוצע: 50% רווח בחודש
+🎯 98% שיעור הצלחה מדווח
+
+⚡ הם לא מחכים - למה אתה כן?`,
+      buttonText: "🚀 הצטרף ל-400+ הסוחרים",
+    },
+    {
+      icon: <DollarSign className="h-5 w-5" />,
+      title: "רווח מוכח - 400+ עדויות",
+      message: `💎 400+ סוחרים מרוויחים ברמה אחרת!
+
+📊 ממוצע של $15,000 רווח בחודש
+🏆 המערכת #1 לסוחרי יהלומים בישראל
+⏳ רק 100 מקומות נותרו השבוע
+
+🔥 זה או לא זה - החלט עכשיו!`,
+      buttonText: "💎 מה החשבון שלי?",
+    },
+    {
+      icon: <Zap className="h-5 w-5" />,
+      title: "דחיפות מקסימלית - 400+ פעילים",
+      message: `⚠️ אזהרה: 400+ סוחרים כבר בפנים!
+
+🔥 בזמן שאתה קורא את זה:
+• 127 עסקאות בוצעו בשעה האחרונה
+• $2.3M מחזור ביממה
+• רק 67 מקומות נותרו
+
+⏰ כל דקה שאתה מחכה = כסף שאתה מפסיד`,
+      buttonText: "🏃‍♂️ בואו נתחיל עכשיו!",
+    }
+  ];
+
+  const handleSendCTA = async () => {
+    if (!message.trim()) {
+      toast({
+        title: "שגיאה",
+        description: "נא להכניס הודעה",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      await sendGroupCTA({
+        groupId: Number(groupId) || -1001009290613,
+        message: message,
+        buttonText: buttonText || undefined,
+        buttonUrl: buttonUrl || undefined,
+        useButtons: !!(buttonText && buttonUrl)
+      });
+
+      // Clear form
+      setMessage('');
+      setButtonText('');
+      setButtonUrl('https://t.me/diamondmazalbot?startapp=profile');
+
+      toast({
+        title: "הודעה נשלחה בהצלחה!",
+        description: "ההודעה נשלחה לקבוצה עם 400+ הסוחרים",
+      });
+
+      onSendNotification?.({
+        type: 'group_cta',
+        message: message,
+        timestamp: new Date().toISOString(),
+        groupId: groupId,
+        userCount: '400+'
+      });
+    } catch (error: any) {
+      console.error('Error sending group CTA:', error);
+      toast({
+        title: "שגיאה בשליחה",
+        description: error.message || "נכשל בשליחת ההודעה",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSending(false);
     }
   };
 
-  const handleTestClick = async () => {
-    await testCTAClickWithRegistration();
+  const handleQuickGrowthMessage = async () => {
+    const growthMessage = `🚀 עדכון: 400+ סוחרי יהלומים פעילים!
+
+💰 הרווחים שלנו השבוע:
+• $2.8M מחזור עסקאות 
+• 89% רווחיות ממוצעת
+• 156 עסקאות מוצלחות ביממה
+
+⚡ הקהילה הגדולה ביותר של סוחרי יהלומים בישראל!
+
+🔥 עדיין לא בפנים? אתה מפסיד...`;
+
+    setIsSending(true);
+    try {
+      await sendGroupCTA({
+        groupId: groupId,
+        message: growthMessage,
+        useButtons: false
+      });
+
+      onSendNotification?.({
+        type: 'growth_update',
+        message: growthMessage,
+        timestamp: new Date().toISOString(),
+        groupId: groupId,
+        userCount: '400+'
+      });
+
+      toast({
+        title: "עדכון צמיחה נשלח!",
+        description: "הודעה עם 400+ משתמשים נשלחה בהצלחה",
+      });
+    } catch (error: any) {
+      console.error('Error sending growth message:', error);
+      toast({
+        title: "שגיאה",
+        description: error.message || "נכשל בשליחת הודעת הצמיחה",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSending(false);
+    }
   };
 
-  // Smart routing configuration for preview
-  const getButtonRoutes = () => {
-    const routes = [];
-    
-    // Main dashboard button
-    routes.push({
-      icon: <Home className="h-3 w-3" />,
-      text: '🏠 התחל במחוון הראשי',
-      route: '/?utm_source=group_cta&start=group_activation',
-      color: 'bg-blue-600 hover:bg-blue-700'
-    });
-
-    if (formData.includePremiumButton) {
-      routes.push({
-        icon: <Diamond className="h-3 w-3" />,
-        text: '💎 תכונות פרמיום',
-        route: '/dashboard?start=premium_features&focus=premium',
-        color: 'bg-yellow-500 hover:bg-yellow-600'
-      });
-    }
-
-    if (formData.includeInventoryButton) {
-      routes.push({
-        icon: <Store className="h-3 w-3" />,
-        text: '📦 ניהול מלאי',
-        route: '/inventory?start=inventory_demo',
-        color: 'bg-blue-500 hover:bg-blue-600'
-      });
-    }
-
-    if (formData.includeChatButton) {
-      routes.push({
-        icon: <Bot className="h-3 w-3" />,
-        text: '🤖 צ\'אט AI יועץ יהלומים',
-        route: '/chat?start=ai_chat_demo&welcome=true',
-        color: 'bg-green-500 hover:bg-green-600'
-      });
-    }
-
-    // Store button
-    routes.push({
-      icon: <Store className="h-3 w-3" />,
-      text: '🏪 חנות יהלומים מקוונת',
-      route: '/store?start=store_demo&view=featured',
-      color: 'bg-purple-500 hover:bg-purple-600'
-    });
-
-    // Share button
-    routes.push({
-      icon: <Share className="h-3 w-3" />,
-      text: '📢 שתף עם חברים סוחרים',
-      route: 'share_action',
-      color: 'bg-gray-500 hover:bg-gray-600'
-    });
-
-    return routes;
+  const useTemplate = (template: typeof ctaTemplates[0]) => {
+    setMessage(template.message);
+    setButtonText(template.buttonText);
+    setButtonUrl('https://t.me/diamondmazalbot?startapp=profile');
   };
 
   return (
-    <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-50">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-blue-900" dir="rtl">
-          <MessageSquare className="h-6 w-6" />
-          שליחת הודעת קרא לפעולה חכמה לקבוצה
-        </CardTitle>
-        <CardDescription dir="rtl" className="text-blue-700">
-          שלח הודעה מעוררת עניין עם ניתוב חכם לדפים שונים במערכת כדי למקסם את מעורבות המשתמשים
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="groupId" dir="rtl" className="font-semibold">מזהה קבוצה</Label>
+    <div className="space-y-6">
+      {/* Special Launch Message */}
+      <GroupLaunchMessage />
+
+      {/* Regular CTA Sender */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Send className="h-5 w-5" />
+            שלח CTA לקבוצה (400+ משתמשים)
+          </CardTitle>
+          <CardDescription>
+            שלח הודעות מותאמות אישית לקבוצה עם 400+ סוחרי יהלומים פעילים
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Quick Actions */}
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              onClick={handleQuickGrowthMessage}
+              disabled={isSending}
+              variant="outline"
+              size="sm"
+            >
+              <TrendingUp className="h-4 w-4 mr-2" />
+              עדכון צמיחה (400+)
+            </Button>
+          </div>
+
+          {/* Group ID */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">מזהה קבוצה</label>
             <Input
-              id="groupId"
-              value={formData.groupId}
-              onChange={(e) => setFormData(prev => ({ ...prev, groupId: e.target.value }))}
-              placeholder="הכנס מזהה קבוצה (לדוגמה: -1001009290613)"
-              dir="ltr"
-              className="border-blue-200 focus:border-blue-400"
+              value={groupId}
+              onChange={(e) => setGroupId(e.target.value)}
+              placeholder="-1001009290613"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="botUsername" dir="rtl" className="font-semibold">שם משתמש של הבוט</Label>
-            <Input
-              id="botUsername"
-              value={formData.botUsername}
-              onChange={(e) => setFormData(prev => ({ ...prev, botUsername: e.target.value.replace('@','') }))}
-              placeholder="לדוגמה: diamondmazalbot (ללא @)"
-              dir="ltr"
-              className="border-blue-200 focus:border-blue-400"
+          {/* Message */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">הודעה (400+ משתמשים יראו)</label>
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="כתוב הודעה עם 400+ משתמשים..."
+              rows={6}
             />
           </div>
-        </div>
 
-        <div className="space-y-4 bg-white/70 p-4 rounded-lg border border-blue-200">
-          <div className="flex items-center space-x-2 space-x-reverse" dir="rtl">
-            <Switch
-              id="multipleButtons"
-              checked={formData.useMultipleButtons}
-              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, useMultipleButtons: checked }))}
-            />
-            <Label htmlFor="multipleButtons" className="flex items-center gap-2 font-semibold">
-              <Sparkles className="h-5 w-5 text-blue-600" />
-              השתמש בכפתורים חכמים עם ניתוב מתקדם
-            </Label>
-          </div>
-
-          {formData.useMultipleButtons && (
-            <div className="mr-6 space-y-3 border-r-2 border-blue-200 pr-4" dir="rtl">
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <Switch
-                  id="premiumButton"
-                  checked={formData.includePremiumButton}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, includePremiumButton: checked }))}
-                />
-                <Label htmlFor="premiumButton" className="flex items-center gap-2">
-                  <Diamond className="h-4 w-4 text-yellow-500" />
-                  כפתור תכונות פרמיום → מחוון
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <Switch
-                  id="inventoryButton"
-                  checked={formData.includeInventoryButton}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, includeInventoryButton: checked }))}
-                />
-                <Label htmlFor="inventoryButton" className="flex items-center gap-2">
-                  <Store className="h-4 w-4 text-blue-500" />
-                  כפתור ניהול מלאי → דף מלאי
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <Switch
-                  id="chatButton"
-                  checked={formData.includeChatButton}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, includeChatButton: checked }))}
-                />
-                <Label htmlFor="chatButton" className="flex items-center gap-2">
-                  <Bot className="h-4 w-4 text-green-500" />
-                  כפתור עוזר צ'אט AI → דף צ'אט
-                </Label>
-              </div>
+          {/* Button Settings */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">טקסט הכפתור</label>
+              <Input
+                value={buttonText}
+                onChange={(e) => setButtonText(e.target.value)}
+                placeholder="💰 הצטרף ל-400+ הסוחרים"
+              />
             </div>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="message" dir="rtl" className="font-semibold">הודעה משופרת</Label>
-          <Textarea
-            id="message"
-            value={formData.message}
-            onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
-            placeholder="הכנס את הודעת הקרא לפעולה שלך"
-            rows={8}
-            maxLength={2000}
-            dir="rtl"
-            className="text-right border-blue-200 focus:border-blue-400"
-          />
-          <p className="text-xs text-blue-600" dir="rtl">{formData.message.length}/2000 תווים</p>
-        </div>
-
-        <div className="bg-white/90 p-6 rounded-lg border-2 border-blue-200 shadow-sm">
-          <h4 className="font-bold mb-4 text-blue-900 flex items-center gap-2" dir="rtl">
-            <ExternalLink className="h-5 w-5" />
-            תצוגה מקדימה עם ניתוב חכם:
-          </h4>
-          <div className="text-sm space-y-4" dir="rtl">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-blue-700">
-              <p><strong>מזהה קבוצה:</strong> {formData.groupId}</p>
-              <p><strong>בוט:</strong> @{formData.botUsername}</p>
+            <div>
+              <label className="text-sm font-medium mb-2 block">קישור הכפתור</label>
+              <Input
+                value={buttonUrl}
+                onChange={(e) => setButtonUrl(e.target.value)}
+                placeholder="https://t.me/diamondmazalbot?startapp=profile"
+              />
             </div>
-            
-            <div className="bg-white p-4 rounded-lg border border-blue-100 shadow-sm">
-              <pre className="whitespace-pre-wrap text-right text-sm mb-4 text-gray-800 leading-relaxed">{formData.message}</pre>
-              
-              {formData.useMultipleButtons && (
-                <div className="space-y-3">
-                  <p className="text-xs font-semibold text-blue-600 border-b border-blue-100 pb-1">
-                    כפתורים חכמים עם ניתוב אוטומטי:
-                  </p>
-                  <div className="grid grid-cols-1 gap-2">
-                    {getButtonRoutes().map((button, index) => (
-                      <div key={index} className={`${button.color} text-white px-4 py-2 rounded-lg text-sm text-center flex items-center justify-center gap-2 shadow-sm transition-all hover:shadow-md`}>
-                        {button.icon}
-                        <span>{button.text}</span>
-                        {button.route !== 'share_action' && (
-                          <span className="text-xs opacity-75">→ {button.route}</span>
-                        )}
-                      </div>
-                    ))}
+          </div>
+
+          <Button 
+            onClick={handleSendCTA} 
+            disabled={isSending || !message.trim()}
+            className="w-full"
+            size="lg"
+          >
+            {isSending ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                שולח ל-400+ משתמשים...
+              </>
+            ) : (
+              <>
+                <Send className="mr-2 h-4 w-4" />
+                שלח ל-400+ סוחרי יהלומים
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* CTA Templates */}
+      <Card>
+        <CardHeader>
+          <CardTitle>תבניות CTA עם 400+ משתמשים</CardTitle>
+          <CardDescription>
+            הודעות מוכנות מראש שמדגישות את קהילת 400+ הסוחרים שלך
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4">
+            {ctaTemplates.map((template, index) => (
+              <div key={index} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    {template.icon}
+                    <h3 className="font-medium">{template.title}</h3>
                   </div>
+                  <Button
+                    onClick={() => useTemplate(template)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    השתמש בתבנית
+                  </Button>
                 </div>
-              )}
-            </div>
+                <div className="text-sm text-muted-foreground whitespace-pre-line bg-muted p-3 rounded">
+                  {template.message}
+                </div>
+                <div className="mt-2 text-xs text-blue-600">
+                  כפתור: "{template.buttonText}"
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
-
-        <div className="flex justify-between items-center pt-4 gap-4">
-          <Button 
-            onClick={handleTestClick}
-            disabled={isRegistering}
-            variant="outline"
-            className="bg-green-50 hover:bg-green-100 border-green-300 text-green-700 font-semibold shadow-sm"
-          >
-            {isRegistering ? (
-              <>
-                <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                בודק רישום...
-              </>
-            ) : (
-              <>
-                <TestTube className="h-4 w-4 ml-2" />
-                בדוק רישום משתמש מלא
-              </>
-            )}
-          </Button>
-          
-          <Button 
-            onClick={handleSend} 
-            disabled={isLoading || !formData.groupId || !formData.message}
-            className="bg-blue-600 hover:bg-blue-700 font-semibold shadow-sm flex-1 md:flex-none"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                שולח הודעת CTA חכמה...
-              </>
-            ) : (
-              <>
-                <Send className="h-5 w-5 mr-2" />
-                שלח הודעת CTA חכמה לקבוצה
-              </>
-            )}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

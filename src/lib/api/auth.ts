@@ -17,191 +17,171 @@ export interface TelegramVerificationResponse {
   };
 }
 
-// Store only the JWT token from FastAPI
+// Store verification result and backend auth token
+let verificationResult: TelegramVerificationResponse | null = null;
 let backendAuthToken: string | null = null;
+
+export function getVerificationResult(): TelegramVerificationResponse | null {
+  return verificationResult;
+}
 
 export function getBackendAuthToken(): string | null {
   return backendAuthToken;
 }
 
-export function setBackendAuthToken(token: string | null) {
-  backendAuthToken = token;
-  console.log('🔐 Backend auth token', token ? 'set' : 'cleared');
-}
-
-// Enhanced backend sign-in function that returns JWT token
+// Backend sign-in function - FIXED to use correct endpoint
 export async function signInToBackend(initData: string): Promise<string | null> {
   try {
-    console.log('🔐 API: Signing in to FastAPI with initData');
-    console.log('📤 API: Raw initData being sent to backend:', initData);
-    console.log('📤 API: InitData length:', initData.length);
+    console.log('🔐 API: Signing in to unified FastAPI backend with initData');
     
     if (!initData || initData.length === 0) {
       console.error('🔐 API: No initData provided for sign-in');
-      throw new Error('No Telegram authentication data provided');
+      return null;
     }
 
-    // Log the parsed structure for debugging
-    try {
-      const urlParams = new URLSearchParams(initData);
-      const parsedStructure = {
-        user: urlParams.get('user'),
-        auth_date: urlParams.get('auth_date'),
-        hash: urlParams.get('hash'),
-        query_id: urlParams.get('query_id'),
-        allKeys: Array.from(urlParams.keys()),
-        totalParams: urlParams.size
-      };
-      console.log('🔍 API: Parsed initData structure before sending:', parsedStructure);
-    } catch (err) {
-      console.warn('⚠️ API: Could not parse initData structure:', err);
-    }
+    // Use the correct sign-in endpoint from apiEndpoints
+    const signInUrl = `${API_BASE_URL}${apiEndpoints.signIn()}`;
+    console.log('🔐 API: Using sign-in URL:', signInUrl);
 
-    // Validate initData format
-    const urlParams = new URLSearchParams(initData);
-    const requiredParams = ['user', 'auth_date', 'hash'];
-    for (const param of requiredParams) {
-      if (!urlParams.get(param)) {
-        console.error(`🔐 API: Missing required parameter: ${param}`);
-        throw new Error(`Invalid Telegram data: missing ${param}`);
-      }
-    }
-
-    const requestBody = {
-      init_data: initData
-    };
-    
-    console.log('📤 API: Request body being sent to FastAPI:', requestBody);
-    console.log('📤 API: Sending authentication request to FastAPI endpoint:', `${API_BASE_URL}${apiEndpoints.signIn()}`);
-    
-    const response = await fetch(`${API_BASE_URL}${apiEndpoints.signIn()}`, {
+    const response = await fetch(signInUrl, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'X-Client-Platform': 'telegram-webapp',
-        'X-Client-Version': '2.0.0',
-      },
-      mode: 'cors',
-      body: JSON.stringify(requestBody),
-    });
-
-    console.log('📡 API: FastAPI response status:', response.status);
-    console.log('📡 API: FastAPI response headers:', Object.fromEntries(response.headers.entries()));
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ API: FastAPI sign-in failed:', response.status, errorText);
-      
-      let errorMessage = `Authentication failed (${response.status})`;
-      try {
-        const errorJson = JSON.parse(errorText);
-        errorMessage = errorJson.detail || errorJson.message || errorMessage;
-      } catch {
-        // Use default error message if JSON parsing fails
-      }
-      
-      throw new Error(errorMessage);
-    }
-
-    const result = await response.json();
-    console.log('✅ API: FastAPI sign-in successful');
-    
-    if (!result.token) {
-      console.error('❌ API: No JWT token in FastAPI response');
-      throw new Error('Authentication successful but no token received');
-    }
-
-    // Store the JWT token
-    backendAuthToken = result.token;
-    
-    // Extract user ID from the response or initData for current user tracking
-    try {
-      const userParam = urlParams.get('user');
-      if (userParam) {
-        const userData = JSON.parse(decodeURIComponent(userParam));
-        if (userData.id) {
-          setCurrentUserId(userData.id);
-          console.log('👤 API: Current user ID set to:', userData.id);
-        }
-      }
-    } catch (error) {
-      console.warn('⚠️ API: Could not extract user ID for tracking:', error);
-    }
-
-    console.log('🎫 API: JWT token received and stored');
-    return result.token;
-  } catch (error) {
-    console.error('❌ API: Backend sign-in error:', error);
-    throw error; // Re-throw to let caller handle the error
-  }
-}
-
-// Strict Telegram verification - now only used for additional validation if needed
-export async function verifyTelegramUser(initData: string): Promise<TelegramVerificationResponse | null> {
-  try {
-    console.log('🔐 API: Additional Telegram verification (if needed)');
-    
-    if (!initData || initData.length === 0) {
-      console.error('🔐 API: No initData provided for verification');
-      return null;
-    }
-    
-    const backendToken = await getBackendAccessToken();
-    if (!backendToken) {
-      console.error('🔐 API: No backend access token available for verification');
-      return null;
-    }
-    
-    const response = await fetch(`${API_BASE_URL}${apiEndpoints.verifyTelegram()}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${backendToken}`,
       },
       mode: 'cors',
       body: JSON.stringify({
-        init_data: initData,
-        client_timestamp: Date.now(),
-        security_level: 'strict',
+        init_data: initData
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('🔐 API: Verification failed:', response.status, errorText);
+      console.error('🔐 API: Backend sign-in failed:', response.status, errorText);
+      return null;
+    }
+
+    const result = await response.json();
+    
+    if (result.access_token || result.token) {
+      // Handle both possible response formats
+      backendAuthToken = result.access_token || result.token;
+      console.log('✅ API: Backend sign-in successful, token stored');
+      return backendAuthToken;
+    } else {
+      console.error('🔐 API: No token in sign-in response:', Object.keys(result));
+      return null;
+    }
+  } catch (error) {
+    console.error('❌ API: Backend sign-in error:', error);
+    return null;
+  }
+}
+
+// Strict Telegram verification - no fallbacks
+export async function verifyTelegramUser(initData: string): Promise<TelegramVerificationResponse | null> {
+  try {
+    console.log('🔐 API: Strict Telegram verification starting');
+    
+    if (!initData || initData.length === 0) {
+      console.error('🔐 API: No initData provided');
+      return null;
+    }
+    
+    // Strict validation checks
+    const urlParams = new URLSearchParams(initData);
+    const authDate = urlParams.get('auth_date');
+    const hash = urlParams.get('hash');
+    const userParam = urlParams.get('user');
+    
+    if (!authDate || !hash || !userParam) {
+      console.error('🔐 API: Missing required initData parameters');
+      return null;
+    }
+
+    // Strict timestamp validation (5 minutes max)
+    const authDateTime = parseInt(authDate) * 1000;
+    const now = Date.now();
+    const maxAge = 5 * 60 * 1000; // 5 minutes (stricter than before)
+    
+    if (now - authDateTime > maxAge) {
+      console.error('🔐 API: InitData too old for strict validation:', (now - authDateTime) / 1000, 'seconds');
+      return null;
+    }
+    
+    // Get secure backend access token
+    const backendToken = await getBackendAccessToken();
+    if (!backendToken) {
+      console.error('🔐 API: No backend access token available');
+      return null;
+    }
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${backendToken}`,
+      'X-Timestamp': now.toString(),
+      'X-Client-Version': '2.0.0',
+      'X-Security-Level': 'strict'
+    };
+    
+    console.log('🔐 API: Sending strict verification request');
+    
+    const response = await fetch(`${API_BASE_URL}${apiEndpoints.verifyTelegram()}`, {
+      method: 'POST',
+      headers,
+      mode: 'cors',
+      body: JSON.stringify({
+        init_data: initData,
+        client_timestamp: now,
+        security_level: 'strict',
+        validation_mode: 'production'
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('🔐 API: Strict verification failed:', response.status, errorText);
       return null;
     }
 
     const result: TelegramVerificationResponse = await response.json();
-    console.log('✅ API: Additional verification successful');
+    
+    if (!result.success) {
+      console.error('🔐 API: Backend rejected verification:', result.message);
+      return null;
+    }
+    
+    console.log('✅ API: Strict Telegram verification successful');
+    
+    verificationResult = result;
+    if (result.user_id) {
+      setCurrentUserId(result.user_id);
+    }
     
     return result;
   } catch (error) {
-    console.error('❌ API: Verification error:', error);
+    console.error('❌ API: Strict verification error:', error);
     return null;
   }
 }
 
 export async function getAuthHeaders(): Promise<Record<string, string>> {
+  // Use backend auth token if available, otherwise fallback to secure config token
+  const authToken = backendAuthToken || await getBackendAccessToken();
+  
   const headers: Record<string, string> = {
     "X-Client-Timestamp": Date.now().toString(),
-    "X-Security-Level": "strict",
-    "X-Client-Platform": "telegram-webapp"
+    "X-Security-Level": "strict"
   };
   
-  // Use JWT token from FastAPI if available
-  if (backendAuthToken) {
-    headers["Authorization"] = `Bearer ${backendAuthToken}`;
-    console.log('🎫 API: Using JWT token for authorization');
-  } else {
-    // Fallback to secure config token if JWT not available
-    const fallbackToken = await getBackendAccessToken();
-    if (fallbackToken) {
-      headers["Authorization"] = `Bearer ${fallbackToken}`;
-      console.log('🔑 API: Using fallback token for authorization');
-    }
+  if (authToken) {
+    headers["Authorization"] = `Bearer ${authToken}`;
+  }
+  
+  if (verificationResult && verificationResult.success) {
+    const telegramAuth = `telegram_verified_${verificationResult.user_id}_${Date.now()}`;
+    headers["X-Telegram-Auth"] = telegramAuth;
   }
   
   return headers;
@@ -209,16 +189,9 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
 
 export function getSecurityMetrics() {
   return {
-    lastAuthentication: backendAuthToken ? new Date().toISOString() : null,
-    authenticationStatus: !!backendAuthToken,
-    tokenPresent: !!backendAuthToken,
-    securityLevel: 'strict',
-    platform: 'telegram-webapp'
+    lastVerification: verificationResult ? new Date().toISOString() : null,
+    verificationStatus: verificationResult?.success || false,
+    securityInfo: verificationResult?.security_info || null,
+    securityLevel: 'strict'
   };
-}
-
-// Clear authentication state (for logout)
-export function clearAuthState() {
-  backendAuthToken = null;
-  console.log('🔐 API: Authentication state cleared');
 }

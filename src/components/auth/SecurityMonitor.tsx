@@ -8,8 +8,8 @@ interface SecurityMetrics {
   cachedHashes: number;
   maxAge: number;
   cleanupInterval: number;
-  lastAuthentication: string | null;
-  authenticationStatus: boolean;
+  lastVerification: string | null;
+  verificationStatus: boolean;
   attemptTimestamp: number;
   environment: string;
   hasInitData: boolean;
@@ -33,8 +33,8 @@ export function SecurityMonitor() {
         cachedHashes: 0,
         maxAge: 300,
         cleanupInterval: 60000,
-        lastAuthentication: apiMetrics.lastAuthentication,
-        authenticationStatus: apiMetrics.authenticationStatus,
+        lastVerification: apiMetrics.lastVerification,
+        verificationStatus: apiMetrics.verificationStatus,
         attemptTimestamp: authMetrics.attemptTimestamp,
         environment: authMetrics.environment,
         hasInitData: authMetrics.hasInitData,
@@ -92,18 +92,18 @@ export function SecurityMonitor() {
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-2 text-gray-600">
                 <Activity size={14} />
-                Authentication
+                Verification
               </span>
-              <span className={`font-mono ${metrics.authenticationStatus ? 'text-green-600' : 'text-red-600'}`}>
-                {metrics.authenticationStatus ? 'Valid' : 'Invalid'}
+              <span className={`font-mono ${metrics.verificationStatus ? 'text-green-600' : 'text-red-600'}`}>
+                {metrics.verificationStatus ? 'Valid' : 'Invalid'}
               </span>
             </div>
             
-            {metrics.lastAuthentication && (
+            {metrics.lastVerification && (
               <div className="pt-2 border-t border-gray-200">
-                <span className="text-gray-600 text-xs">Last Authentication:</span>
+                <span className="text-gray-600 text-xs">Last Verification:</span>
                 <div className="font-mono text-xs text-gray-500 mt-1">
-                  {new Date(metrics.lastAuthentication).toLocaleTimeString()}
+                  {new Date(metrics.lastVerification).toLocaleTimeString()}
                 </div>
               </div>
             )}
