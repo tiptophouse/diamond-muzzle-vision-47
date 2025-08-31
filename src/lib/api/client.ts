@@ -1,7 +1,7 @@
-
 import { toast } from "@/components/ui/use-toast";
 import { API_BASE_URL, getCurrentUserId } from './config';
 import { getAuthHeaders } from './auth';
+import { getBackendAccessToken } from './secureConfig';
 
 interface ApiResponse<T> {
   data?: T;
@@ -12,7 +12,7 @@ interface ApiResponse<T> {
 let connectivityCache: { isConnected: boolean; lastChecked: number } | null = null;
 const CONNECTIVITY_CACHE_DURATION = 30000; // 30 seconds
 
-// Fast backend connectivity test with timeout - MUST use JWT
+// Fast backend connectivity test with timeout
 async function testBackendConnectivity(): Promise<boolean> {
   // Check cache first
   if (connectivityCache && (Date.now() - connectivityCache.lastChecked < CONNECTIVITY_CACHE_DURATION)) {
@@ -21,29 +21,28 @@ async function testBackendConnectivity(): Promise<boolean> {
   }
 
   try {
-    console.log('🔍 API: Testing FastAPI backend connectivity with JWT authentication');
+    console.log('🔍 API: Testing FastAPI backend connectivity to:', API_BASE_URL);
     
-    // CRITICAL: Always use JWT for backend communication
-    const authHeaders = await getAuthHeaders();
-    if (!authHeaders.Authorization) {
-      console.error('❌ API: No JWT token available for connectivity test');
+    const backendToken = await getBackendAccessToken();
+    if (!backendToken) {
+      console.error('❌ API: No secure backend access token available for connectivity test');
       connectivityCache = { isConnected: false, lastChecked: Date.now() };
       return false;
     }
     
-    // Fast connectivity test with JWT authentication
+    // Fast connectivity test with 2 second timeout
     const testUrl = `${API_BASE_URL}/`;
-    console.log('🔍 API: Testing root endpoint with JWT authentication:', testUrl);
+    console.log('🔍 API: Testing root endpoint with 2s timeout:', testUrl);
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
+    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
     
     const response = await fetch(testUrl, {
       method: 'GET',
       mode: 'cors',
       headers: {
         'Accept': 'application/json',
-        ...authHeaders, // Always include JWT
+        'Authorization': `Bearer ${backendToken}`,
       },
       signal: controller.signal,
     });
@@ -51,20 +50,20 @@ async function testBackendConnectivity(): Promise<boolean> {
     clearTimeout(timeoutId);
     
     const isConnected = response.ok || response.status === 404;
-    console.log('🔍 API: JWT authenticated connectivity test result:', isConnected);
+    console.log('🔍 API: Fast connectivity test result:', isConnected);
     
     // Cache the result
     connectivityCache = { isConnected, lastChecked: Date.now() };
     
     if (isConnected) {
-      console.log('✅ API: FastAPI backend is reachable with JWT authentication');
+      console.log('✅ API: FastAPI backend is reachable - your diamonds should be accessible');
     } else {
       console.log('❌ API: FastAPI backend not reachable - status:', response.status);
     }
     
     return isConnected;
   } catch (error) {
-    console.error('❌ API: JWT authenticated connectivity test failed:', error);
+    console.error('❌ API: Fast connectivity test failed:', error);
     connectivityCache = { isConnected: false, lastChecked: Date.now() };
     return false;
   }
@@ -77,32 +76,31 @@ export async function fetchApi<T>(
   const url = `${API_BASE_URL}${endpoint}`;
   
   try {
-    console.log('🚀 API: Making authenticated FastAPI request:', url);
+    console.log('🚀 API: Making FastAPI request:', url);
     console.log('🚀 API: Method:', options.method || 'GET');
-    console.log('🚀 API: Current user ID:', getCurrentUserId());
+    console.log('🚀 API: Current user ID:', getCurrentUserId(), 'type:', typeof getCurrentUserId());
     
-    // CRITICAL: Test JWT authenticated connectivity first
+    if (options.method === 'POST') {
+      console.log('📤 API: This is a POST request (CREATE diamond)');
+      console.log('📤 API: Should create diamond in FastAPI backend');
+    } else {
+      console.log('🚀 API: This should return your 500+ diamonds, not mock data');
+    }
+    
+    // Test connectivity first
     const isBackendReachable = await testBackendConnectivity();
     if (!isBackendReachable) {
-      const errorMsg = 'FastAPI backend server is not reachable with JWT authentication. Please check server and authentication.';
-      console.error('❌ API: JWT authenticated backend unreachable');
+      const errorMsg = 'FastAPI backend server is not reachable. Please check if the server is running at ' + API_BASE_URL;
+      console.error('❌ API: Backend unreachable - this forces fallback to 5 mock diamonds');
       throw new Error(errorMsg);
     }
     
-    // CRITICAL: Always get and use JWT authentication headers
     const authHeaders = await getAuthHeaders();
-    if (!authHeaders.Authorization) {
-      console.error('❌ API: No JWT Bearer token available for request');
-      throw new Error('Authentication required: No JWT token available');
-    }
-    
-    console.log('🔐 API: Using JWT Bearer authentication for request');
-    
     let headers: Record<string, string> = {
       "Content-Type": "application/json",
       "Accept": "application/json",
       "Origin": window.location.origin,
-      ...authHeaders, // CRITICAL: Always include JWT Bearer token
+      ...authHeaders,
       ...options.headers as Record<string, string>,
     };
     
@@ -110,19 +108,20 @@ export async function fetchApi<T>(
       ...options,
       headers,
       mode: 'cors',
-      credentials: 'omit', // Don't use cookies, only JWT
+      credentials: 'omit',
     };
     
-    console.log('🚀 API: Request with JWT authentication:', {
+    console.log('🚀 API: Fetch options for real data:', {
       url,
       method: fetchOptions.method || 'GET',
-      hasJWT: !!headers.Authorization,
-      authType: headers.Authorization ? 'Bearer JWT' : 'None',
+      hasAuth: !!headers.Authorization,
+      hasBody: !!fetchOptions.body,
+      headers: Object.keys(headers),
     });
     
-    // Add timeout to main request
+    // Add timeout to main request too
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for main request
     
     const response = await fetch(url, {
       ...fetchOptions,
@@ -131,23 +130,37 @@ export async function fetchApi<T>(
     
     clearTimeout(timeoutId);
 
-    console.log('📡 API: JWT authenticated response status:', response.status);
-
-    // Handle authentication errors specifically
-    if (response.status === 401 || response.status === 403) {
-      console.error('❌ API: Authentication failed - JWT token invalid or expired');
-      throw new Error('Authentication failed: JWT token invalid or expired');
-    }
+    console.log('📡 API: FastAPI Response status:', response.status);
+    console.log('📡 API: Response headers:', Object.fromEntries(response.headers.entries()));
 
     let data;
     const contentType = response.headers.get('content-type');
     
     if (contentType && contentType.includes('application/json')) {
       data = await response.json();
-      console.log('📡 API: JWT authenticated JSON response received');
+      console.log('📡 API: JSON response received from FastAPI');
+      console.log('📡 API: Data type:', typeof data, 'is array:', Array.isArray(data));
+      if (Array.isArray(data)) {
+        console.log('📡 API: SUCCESS! Array length:', data.length, '(expecting ~500 diamonds)');
+        if (data.length < 100) {
+          console.warn('⚠️ API: Expected 500+ diamonds but got', data.length, '- check your backend database');
+        }
+        console.log('📡 API: Sample diamond:', data.slice(0, 1));
+      } else {
+        console.log('📡 API: Response data structure:', Object.keys(data || {}));
+        if (data && typeof data === 'object') {
+          const possibleArrays = Object.keys(data).filter(key => Array.isArray(data[key]));
+          if (possibleArrays.length > 0) {
+            console.log('📡 API: Found arrays in properties:', possibleArrays);
+            possibleArrays.forEach(key => {
+              console.log(`📡 API: ${key} has ${data[key].length} items`);
+            });
+          }
+        }
+      }
     } else {
       const text = await response.text();
-      console.log('📡 API: JWT authenticated non-JSON response:', text.substring(0, 200));
+      console.log('📡 API: Non-JSON response from FastAPI:', text.substring(0, 200));
       data = text;
     }
 
@@ -160,27 +173,40 @@ export async function fetchApi<T>(
         errorMessage = data || errorMessage;
       }
       
-      console.error('❌ API: JWT authenticated request failed:', errorMessage);
+      console.error('❌ API: FastAPI request failed - this causes fallback to mock data:', errorMessage);
       throw new Error(errorMessage);
     }
 
-    console.log('✅ API: JWT authenticated request successful');
+    console.log('✅ API: FastAPI request successful - should have your real diamond data now');
     return { data: data as T };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error('❌ API: JWT authenticated request error:', errorMessage);
+    console.error('❌ API: FastAPI request error - this is why you see 5 mock diamonds instead of 500 real ones:', errorMessage);
+    console.error('❌ API: Error details:', error);
     
-    // Show specific authentication error messages
-    if (errorMessage.includes('Authentication failed') || errorMessage.includes('JWT token')) {
-      toast({
-        title: "🔐 Authentication Error",
-        description: "JWT token invalid or expired. Please refresh the app.",
-        variant: "destructive",
-      });
-    } else if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+    // Show specific toast messages for different error types
+    if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
       toast({
         title: "🌐 Connection Error",
-        description: "Cannot reach FastAPI server. Please check your connection.",
+        description: `Cannot reach FastAPI server at ${API_BASE_URL}. Your 500 diamonds are not accessible. Please check if the server is running.`,
+        variant: "destructive",
+      });
+    } else if (errorMessage.includes('not reachable')) {
+      toast({
+        title: "🔌 FastAPI Server Offline",
+        description: `The FastAPI backend at ${API_BASE_URL} is not responding. This is why you see 5 mock diamonds instead of your 500 real diamonds.`,
+        variant: "destructive",
+      });
+    } else if (errorMessage.includes('CORS')) {
+      toast({
+        title: "🚫 CORS Issue",
+        description: "FastAPI server CORS configuration issue. Please check server settings to access your real diamond data.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "❌ FastAPI Error",
+        description: `FastAPI request failed: ${errorMessage}. Falling back to mock data (5 diamonds).`,
         variant: "destructive",
       });
     }
@@ -193,9 +219,10 @@ export const api = {
   get: <T>(endpoint: string) => fetchApi<T>(endpoint, { method: "GET" }),
   
   post: <T>(endpoint: string, body: Record<string, any>) => {
-    console.log('📤 API: POST request with JWT authentication');
+    console.log('📤 API: POST request initiated');
     console.log('📤 API: Endpoint:', endpoint);
-    console.log('📤 API: Body data for JWT authenticated request');
+    console.log('📤 API: Body data:', JSON.stringify(body, null, 2));
+    console.log('📤 API: This should be a CREATE diamond request to FastAPI');
     
     return fetchApi<T>(endpoint, {
       method: "POST",
@@ -219,7 +246,7 @@ export const api = {
     fetchApi<T>(endpoint, { method: "DELETE" }),
     
   uploadCsv: async <T>(endpoint: string, csvData: any[], userId: number): Promise<ApiResponse<T>> => {
-    console.log('📤 API: Uploading CSV with JWT authentication:', { endpoint, dataLength: csvData.length, userId });
+    console.log('📤 API: Uploading CSV data to FastAPI:', { endpoint, dataLength: csvData.length, userId });
     
     return fetchApi<T>(endpoint, {
       method: "POST",
