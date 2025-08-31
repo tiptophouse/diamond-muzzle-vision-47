@@ -1,3 +1,4 @@
+
 // Utility functions for fancy color diamond detection and formatting
 
 export interface FancyColorInfo {
@@ -95,8 +96,6 @@ export function detectFancyColor(colorValue: string, colorType?: string): FancyC
 
   return { isFancyColor: false, colorDescription: colorValue };
 }
-
-export const parseFancyColor = detectFancyColor;
 
 export function formatFancyColorDescription(colorInfo: FancyColorInfo): string {
   if (!colorInfo.isFancyColor) {

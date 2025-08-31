@@ -1,136 +1,107 @@
 
-import { useState } from 'react';
-import { api, apiEndpoints, getCurrentUserId } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { Diamond } from '@/components/inventory/InventoryTable';
+import { api, apiEndpoints } from '@/lib/api';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { DiamondFormData } from '@/components/inventory/form/types';
+import { roundToInteger } from '@/utils/numberUtils';
 
-interface DiamondUpdateData {
-  stock?: string;
-  shape?: string;
-  weight?: number;
-  color?: string;
-  clarity?: string;
-  lab?: string;
-  certificate_number?: number;
-  length?: number;
-  width?: number;
-  depth?: number;
-  ratio?: number;
-  cut?: string;
-  polish?: string;
-  symmetry?: string;
-  fluorescence?: string;
-  table?: number;
-  depth_percentage?: number;
-  gridle?: string;
-  culet?: string;
-  certificate_comment?: string;
-  rapnet?: number;
-  price_per_carat?: number;
-  picture?: string;
-}
-
-export function useUpdateDiamond() {
-  const [isUpdating, setIsUpdating] = useState(false);
+export function useUpdateDiamond(onSuccess?: () => void) {
   const { toast } = useToast();
+  const { user } = useTelegramAuth();
 
-  const updateDiamond = async (diamondId: string, updateData: DiamondUpdateData): Promise<boolean> => {
-    const userId = getCurrentUserId();
-    
-    if (!userId) {
+  const updateDiamond = async (diamondId: string, data: DiamondFormData) => {
+    if (!user?.id) {
+      console.error('❌ UPDATE: User not authenticated');
       toast({
-        title: "❌ Authentication Error",
-        description: "Please log in to update diamonds",
         variant: "destructive",
+        title: "Error",
+        description: "User not authenticated",
       });
       return false;
     }
-
-    // Convert string ID to number for FastAPI
-    const numericDiamondId = parseInt(diamondId);
-    if (isNaN(numericDiamondId)) {
-      toast({
-        title: "❌ Invalid Diamond ID",
-        description: "Cannot update diamond with invalid ID",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    console.log('✏️ UPDATE: Starting diamond update:', {
-      diamondId: numericDiamondId,
-      userId,
-      updateData,
-      endpoint: apiEndpoints.updateDiamond(numericDiamondId, userId)
-    });
-
-    setIsUpdating(true);
 
     try {
-      // Use the correct FastAPI PUT endpoint with proper request body
-      const response = await api.put(
-        apiEndpoints.updateDiamond(numericDiamondId, userId),
-        updateData
-      );
+      console.log('📝 UPDATE: Starting update for diamond:', diamondId);
+      console.log('📝 UPDATE: Form data received:', data);
       
-      console.log('✏️ UPDATE: FastAPI response:', response);
+      // Use the FastAPI diamond ID if it's a number, otherwise use the provided ID
+      const fastApiDiamondId = /^\d+$/.test(diamondId) ? diamondId : diamondId;
+      const endpoint = apiEndpoints.updateDiamond(fastApiDiamondId, user.id);
+      console.log('📝 UPDATE: Using endpoint:', endpoint);
+      console.log('📝 UPDATE: User ID:', user.id, 'type:', typeof user.id);
+      
+      // Prepare update data according to FastAPI schema - ensure all numbers are integers
+      const updateData = {
+        stock: data.stockNumber,
+        shape: data.shape?.toLowerCase(),
+        weight: Number(data.carat),
+        color: data.color,
+        clarity: data.clarity,
+        cut: data.cut?.toUpperCase(),
+        polish: data.polish?.toUpperCase(),
+        symmetry: data.symmetry?.toUpperCase(),
+        fluorescence: data.fluorescence?.toUpperCase(),
+        price_per_carat: data.carat > 0 ? roundToInteger(Number(data.price) / Number(data.carat)) : roundToInteger(Number(data.price)),
+        status: data.status,
+        store_visible: data.storeVisible,
+        picture: data.picture,
+        certificate_url: data.certificateUrl,
+        certificate_comment: data.certificateComment,
+        lab: data.lab,
+        certificate_number: data.certificateNumber ? parseInt(String(data.certificateNumber)) : null,
+        length: data.length ? Number(data.length) : null,
+        width: data.width ? Number(data.width) : null,
+        depth: data.depth ? Number(data.depth) : null,
+        ratio: data.ratio ? Number(data.ratio) : null,
+        table: data.tablePercentage ? Number(data.tablePercentage) : null,
+        depth_percentage: data.depthPercentage ? Number(data.depthPercentage) : null,
+        gridle: data.gridle,
+        culet: data.culet?.toUpperCase(),
+        rapnet: data.rapnet ? Number(data.rapnet) : null,
+        // Add the total price field that FastAPI expects
+        price: roundToInteger(Number(data.price)),
+      };
 
-      if (response.error) {
-        console.error('✏️ UPDATE: FastAPI error:', response.error);
-        toast({
-          title: "❌ Update Failed",
-          description: `Failed to update diamond: ${response.error}`,
-          variant: "destructive",
-        });
-        return false;
-      }
-      
-      console.log('✅ UPDATE: Diamond successfully updated in FastAPI');
-      
-      // Also update localStorage as fallback
-      try {
-        const localData = localStorage.getItem('diamond_inventory');
-        if (localData) {
-          const parsedData = JSON.parse(localData);
-          if (Array.isArray(parsedData)) {
-            const updatedData = parsedData.map(item => {
-              if (String(item.id) === diamondId || String(item.diamond_id) === diamondId) {
-                return { ...item, ...updateData };
-              }
-              return item;
-            });
-            localStorage.setItem('diamond_inventory', JSON.stringify(updatedData));
-            console.log('✏️ UPDATE: Also updated in localStorage');
-          }
+      // Remove null/undefined values
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key] === null || updateData[key] === undefined || updateData[key] === '') {
+          delete updateData[key];
         }
-      } catch (localError) {
-        console.warn('✏️ UPDATE: Failed to update localStorage:', localError);
-      }
+      });
+
+      console.log('📝 UPDATE: Sending data to FastAPI (all integers):', updateData);
       
+      const response = await api.put(endpoint, updateData);
+      
+      if (response.error) {
+        console.error('❌ UPDATE: FastAPI returned error:', response.error);
+        throw new Error(response.error);
+      }
+
+      console.log('✅ UPDATE: FastAPI response successful:', response.data);
+
       toast({
-        title: "✅ Diamond Updated",
-        description: "Diamond has been successfully updated in your inventory",
+        title: "✅ Success",
+        description: "Diamond updated successfully",
       });
       
+      if (onSuccess) onSuccess();
       return true;
+        
     } catch (error) {
-      console.error('✏️ UPDATE: Unexpected error:', error);
+      console.error('❌ UPDATE: API update failed:', error);
       
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      const errorMessage = error instanceof Error ? error.message : "Failed to update diamond. Please try again.";
+      
       toast({
-        title: "❌ Update Failed",
-        description: `Failed to update diamond: ${errorMessage}`,
         variant: "destructive",
+        title: "❌ Failed to Update Diamond",
+        description: errorMessage,
       });
       
       return false;
-    } finally {
-      setIsUpdating(false);
     }
   };
 
-  return {
-    updateDiamond,
-    isUpdating,
-  };
+  return { updateDiamond };
 }

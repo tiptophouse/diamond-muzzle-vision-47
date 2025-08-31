@@ -1,97 +1,92 @@
 
-import React from 'react';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useInventoryData } from '@/hooks/useInventoryData';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DataDrivenDashboard } from '@/components/dashboard/DataDrivenDashboard';
 import { DashboardLoading } from '@/components/dashboard/DashboardLoading';
 import { SecurityMonitor } from '@/components/auth/SecurityMonitor';
-import { UnifiedLayout } from '@/components/layout/UnifiedLayout';
-import { useUnifiedTelegramNavigation } from '@/hooks/useUnifiedTelegramNavigation';
+import { getVerificationResult } from '@/lib/api';
 import { useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Dashboard() {
-  const { user, isAuthenticated, isLoading: authLoading, jwtToken } = useTelegramAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
   const { loading, allDiamonds, fetchData } = useInventoryData();
-  const { isReady } = useUnifiedTelegramNavigation();
+  const verificationResult = getVerificationResult();
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
 
-  // Handle debug mode
+  // Check for upload success notification
   useEffect(() => {
-    const debug = searchParams.get('debug');
-    if (debug === 'true') {
+    const uploadSuccess = searchParams.get('upload_success');
+    const fromBulkUpload = searchParams.get('from');
+    
+    if (uploadSuccess && fromBulkUpload === 'bulk_upload') {
       toast({
-        title: "Debug Mode Enabled",
-        description: "Security monitor and detailed logs are now visible.",
-        duration: 3000,
+        title: `🎉 Bulk Upload Successful!`,
+        description: `${uploadSuccess} diamonds have been added to your inventory and are now visible in your dashboard.`,
+        duration: 5000,
       });
+      
+      // Clear the search parameters after showing the notification
+      setSearchParams({});
+      
+      // Refresh inventory data to show newly uploaded diamonds
+      fetchData();
     }
-  }, [searchParams, toast]);
+  }, [searchParams, setSearchParams, toast, fetchData]);
 
-  const isDebugMode = searchParams.get('debug') === 'true';
-
-  const toggleDebugMode = () => {
-    const newSearchParams = new URLSearchParams(searchParams);
-    if (isDebugMode) {
-      newSearchParams.delete('debug');
-    } else {
-      newSearchParams.set('debug', 'true');
-    }
-    setSearchParams(newSearchParams);
-  };
+  console.log('🔍 DASHBOARD DEBUG:');
+  console.log('- Auth loading:', authLoading);
+  console.log('- Is authenticated:', isAuthenticated);
+  console.log('- User:', user);
+  console.log('- FastAPI verification:', verificationResult);
+  console.log('- Inventory loading:', loading);
+  console.log('- Diamonds count:', allDiamonds.length);
 
   const handleEmergencyMode = () => {
-    console.log('Emergency mode activated');
-    toast({
-      title: "Emergency Mode",
-      description: "Emergency fallback activated",
-      variant: "destructive",
-    });
+    console.log('Emergency mode activated - skipping to basic dashboard');
   };
 
-  // Enhanced logging for debugging
-  console.log('🏠 Dashboard State:', {
-    authLoading,
-    isAuthenticated,
-    user: user ? `${user.first_name} (${user.id})` : null,
-    jwtToken: !!jwtToken,
-    inventoryLoading: loading,
-    diamondsCount: allDiamonds.length,
-    telegramReady: isReady
-  });
-
-  if (authLoading || !isReady) {
+  if (authLoading || loading) {
     return (
-      <UnifiedLayout>
+      <>
         <DashboardLoading onEmergencyMode={handleEmergencyMode} />
-      </UnifiedLayout>
+        <SecurityMonitor />
+      </>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return (
+      <>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Enhanced Authentication Required</h2>
+            <p className="text-gray-600 mb-4">Please authenticate through Telegram to access your dashboard.</p>
+            <div className="text-sm text-gray-500 space-y-1">
+              <p>Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
+              <p>Is Authenticated: {isAuthenticated ? 'Yes' : 'No'}</p>
+              <p>User: {user ? `${user.first_name} (${user.id})` : 'None'}</p>
+              <p>Enhanced Verification: {verificationResult ? 'Success' : 'Failed'}</p>
+            </div>
+          </div>
+        </div>
+        <SecurityMonitor />
+      </>
     );
   }
 
   return (
-    <UnifiedLayout>
-      <div className="p-4 space-y-6">
-        {isDebugMode && (
-          <div className="space-y-4">
-            <SecurityMonitor />
-            <div className="bg-card rounded-lg border p-4">
-              <h3 className="font-semibold mb-2">Debug Information</h3>
-              <p>Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
-              <p>Is Authenticated: {isAuthenticated ? 'Yes' : 'No'}</p>
-              <p>User: {user ? `${user.first_name} (${user.id})` : 'None'}</p>
-              <p>JWT Token: {jwtToken ? 'Present' : 'Missing'}</p>
-            </div>
-          </div>
-        )}
-
+    <>
+      <div className="min-h-screen bg-gray-50">
         <DataDrivenDashboard 
-          allDiamonds={allDiamonds}
+          allDiamonds={allDiamonds} 
           loading={loading}
-          fetchData={fetchData}
+          fetchData={fetchData} 
         />
       </div>
-    </UnifiedLayout>
+      <SecurityMonitor />
+    </>
   );
 }

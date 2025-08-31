@@ -2,24 +2,21 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useTutorial } from "@/contexts/TutorialContext";
-import { Diamond } from "@/types/diamond";
 
 interface StoreVisibilityToggleProps {
-  diamond: Diamond;
-  onToggle?: (stockNumber: string, isVisible: boolean) => void;
+  stockNumber: string;
+  isVisible: boolean;
+  onToggle: (stockNumber: string, isVisible: boolean) => void;
 }
 
-export function StoreVisibilityToggle({ diamond, onToggle }: StoreVisibilityToggleProps) {
+export function StoreVisibilityToggle({ stockNumber, isVisible, onToggle }: StoreVisibilityToggleProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const tutorial = useTutorial();
   const handleRequiredClick = tutorial?.handleRequiredClick || (() => {});
-
-  const stockNumber = diamond.stockNumber || diamond.stock_number || '';
-  const isVisible = diamond.store_visible;
 
   const handleToggle = async () => {
     setLoading(true);
@@ -35,9 +32,7 @@ export function StoreVisibilityToggle({ diamond, onToggle }: StoreVisibilityTogg
 
       if (error) throw error;
 
-      if (onToggle) {
-        onToggle(stockNumber, !isVisible);
-      }
+      onToggle(stockNumber, !isVisible);
       
       toast({
         title: isVisible ? "Hidden from store" : "Added to store",

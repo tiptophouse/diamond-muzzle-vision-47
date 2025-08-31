@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef, memo } from 'react';
 import { Maximize2, RotateCcw, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,26 +23,16 @@ const Gem360Viewer = memo(({ gem360Url, stockNumber, isInline = false, className
   const isDragging = useRef(false);
   const lastTouch = useRef({ x: 0, y: 0 });
 
-  // Enhanced URL processing for different 360° formats, especially my360.fab
+  // Enhanced URL processing for different 360° formats
   const processedUrl = (() => {
     if (gem360Url.startsWith('http')) return gem360Url;
     if (gem360Url.startsWith('//')) return `https:${gem360Url}`;
     return `https://${gem360Url}`;
   })();
 
-  // Check if it's your my360.fab format or other static 360° image formats
+  // Check if it's a static 360° image that needs manual rotation
   const isStaticImage = gem360Url.match(/\.(jpg|jpeg|png)(\?.*)?$/i) && 
     (gem360Url.includes('my360.sela') || gem360Url.includes('DAN'));
-  
-  const isMy360Fab = gem360Url.includes('my360.fab');
-
-  console.log('🎯 GEM360 VIEWER:', {
-    stockNumber,
-    originalUrl: gem360Url,
-    processedUrl,
-    isMy360Fab,
-    isStaticImage
-  });
 
   // Handle device motion for tilt control
   useEffect(() => {
@@ -83,7 +74,7 @@ const Gem360Viewer = memo(({ gem360Url, stockNumber, isInline = false, className
   };
 
   const handleIframeLoad = () => {
-    console.log('✅ 360° VIEWER LOADED for', stockNumber, isMy360Fab ? '(my360.fab format)' : '');
+    console.log('✅ 360° VIEWER LOADED for', stockNumber);
     setIsLoading(false);
     setLoadError(false);
   };
@@ -94,27 +85,17 @@ const Gem360Viewer = memo(({ gem360Url, stockNumber, isInline = false, className
     setLoadError(true);
   };
 
-  // Auto-hide loading after timeout with special handling for my360.fab
+  // Auto-hide loading after timeout
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (isLoading) {
-        console.warn('⚠️ 360° VIEWER TIMEOUT for', stockNumber, isMy360Fab ? '(my360.fab may need more time)' : '');
-        // Give my360.fab more time as HTML viewers can be slower
-        if (isMy360Fab) {
-          // Extended timeout for my360.fab
-          setTimeout(() => {
-            if (isLoading) {
-              setIsLoading(false);
-            }
-          }, 5000);
-        } else {
-          setIsLoading(false);
-        }
+        console.warn('⚠️ 360° VIEWER TIMEOUT for', stockNumber);
+        setIsLoading(false);
       }
-    }, isMy360Fab ? 12000 : 8000); // Longer timeout for my360.fab
+    }, 8000);
 
     return () => clearTimeout(timeout);
-  }, [isLoading, stockNumber, isMy360Fab]);
+  }, [isLoading, stockNumber]);
 
   const toggleFullscreen = () => {
     setIsFullscreen(true);
@@ -137,9 +118,6 @@ const Gem360Viewer = memo(({ gem360Url, stockNumber, isInline = false, className
             <RotateCcw className="h-6 w-6 text-red-600" />
           </div>
           <p className="text-sm text-gray-600">360° View Unavailable</p>
-          <p className="text-xs text-gray-500 mb-3">
-            {isMy360Fab ? 'my360.fab viewer failed to load' : 'Interactive viewer failed'}
-          </p>
           <Button 
             variant="outline" 
             size="sm" 
@@ -168,15 +146,12 @@ const Gem360Viewer = memo(({ gem360Url, stockNumber, isInline = false, className
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Enhanced loading state with my360.fab specific messaging */}
+        {/* Loading state */}
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center z-20 bg-gradient-to-br from-gray-50 to-gray-100">
             <div className="text-center text-gray-600">
               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
               <p className="text-sm">Loading 360° View...</p>
-              {isMy360Fab && (
-                <p className="text-xs text-gray-500 mt-1">my360.fab interactive viewer</p>
-              )}
             </div>
           </div>
         )}
@@ -199,7 +174,7 @@ const Gem360Viewer = memo(({ gem360Url, stockNumber, isInline = false, className
             />
           </div>
         ) : (
-          // Interactive iframe viewer with enhanced settings for my360.fab
+          /* Interactive iframe viewer */
           <iframe
             ref={iframeRef}
             src={processedUrl}
@@ -208,18 +183,14 @@ const Gem360Viewer = memo(({ gem360Url, stockNumber, isInline = false, className
             }`}
             onLoad={handleIframeLoad}
             onError={handleIframeError}
-            allow="accelerometer; gyroscope; vr; xr-spatial-tracking; autoplay; encrypted-media; fullscreen"
-            sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals allow-top-navigation-by-user-activation"
+            allow="accelerometer; gyroscope; vr; xr-spatial-tracking"
+            sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
             referrerPolicy="no-referrer-when-downgrade"
             title={`360° View of Diamond ${stockNumber}`}
-            style={{
-              colorScheme: 'light',
-              background: 'transparent'
-            }}
           />
         )}
 
-        {/* Controls overlay with my360.fab specific labeling */}
+        {/* Controls overlay */}
         {isInline && (
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center">
@@ -242,7 +213,7 @@ const Gem360Viewer = memo(({ gem360Url, stockNumber, isInline = false, className
                 </Button>
               </div>
               <div className="bg-black/70 text-white px-2 py-1 rounded text-xs font-medium">
-                360° Interactive • {isMy360Fab ? 'my360.fab' : isStaticImage ? 'Touch & Tilt' : 'Embedded'}
+                360° Interactive • {isStaticImage ? 'Touch & Tilt' : 'Embedded'}
               </div>
             </div>
           </div>
@@ -255,7 +226,6 @@ const Gem360Viewer = memo(({ gem360Url, stockNumber, isInline = false, className
           <DialogHeader className="pb-2">
             <DialogTitle className="text-base">
               360° Interactive View - Diamond {stockNumber}
-              {isMy360Fab && <span className="text-sm text-gray-500 ml-2">(my360.fab)</span>}
             </DialogTitle>
           </DialogHeader>
           
@@ -276,8 +246,8 @@ const Gem360Viewer = memo(({ gem360Url, stockNumber, isInline = false, className
               <iframe
                 src={processedUrl}
                 className="w-full h-full border-0"
-                allow="accelerometer; gyroscope; vr; xr-spatial-tracking; autoplay; encrypted-media; fullscreen"
-                sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals allow-top-navigation-by-user-activation"
+                allow="accelerometer; gyroscope; vr; xr-spatial-tracking"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
                 referrerPolicy="no-referrer-when-downgrade"
                 title={`360° Fullscreen View of Diamond ${stockNumber}`}
               />
