@@ -526,6 +526,51 @@ export type Database = {
         }
         Relationships: []
       }
+      ftp_accounts: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          ftp_folder_path: string
+          ftp_username: string
+          id: string
+          last_used_at: string | null
+          password_changed_at: string | null
+          password_hash: string
+          status: string
+          telegram_id: number
+          updated_at: string
+          user_id: number
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          ftp_folder_path: string
+          ftp_username: string
+          id?: string
+          last_used_at?: string | null
+          password_changed_at?: string | null
+          password_hash: string
+          status?: string
+          telegram_id: number
+          updated_at?: string
+          user_id: number
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          ftp_folder_path?: string
+          ftp_username?: string
+          id?: string
+          last_used_at?: string | null
+          password_changed_at?: string | null
+          password_hash?: string
+          status?: string
+          telegram_id?: number
+          updated_at?: string
+          user_id?: number
+        }
+        Relationships: []
+      }
       group_cta_clicks: {
         Row: {
           clicked_at: string | null
@@ -1310,6 +1355,7 @@ export type Database = {
           error_message: string | null
           file_size_bytes: number | null
           filename: string
+          ftp_account_id: string
           id: string
           processing_completed_at: string | null
           processing_started_at: string | null
@@ -1324,6 +1370,7 @@ export type Database = {
           error_message?: string | null
           file_size_bytes?: number | null
           filename: string
+          ftp_account_id: string
           id?: string
           processing_completed_at?: string | null
           processing_started_at?: string | null
@@ -1338,6 +1385,7 @@ export type Database = {
           error_message?: string | null
           file_size_bytes?: number | null
           filename?: string
+          ftp_account_id?: string
           id?: string
           processing_completed_at?: string | null
           processing_started_at?: string | null
@@ -1345,7 +1393,15 @@ export type Database = {
           updated_at?: string
           user_id?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "upload_jobs_ftp_account_id_fkey"
+            columns: ["ftp_account_id"]
+            isOneToOne: false
+            referencedRelation: "ftp_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_activity_log: {
         Row: {
