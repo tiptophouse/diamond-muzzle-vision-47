@@ -74,8 +74,10 @@ export function SFTPSettings() {
   }, [user?.id, toast]);
 
   const generateSFTPCredentials = async () => {
+    console.log('🚀 SFTP: Generate button clicked!');
+    
     if (!user?.id) {
-      console.error('❌ SFTP: No user ID available for provisioning');
+      console.error('❌ SFTP: No user ID available for provisioning - user:', user);
       toast({
         title: "שגיאה",
         description: "לא ניתן לזהות את המשתמש. נא לוודא שאתה מחובר דרך Telegram",
@@ -86,18 +88,25 @@ export function SFTPSettings() {
     
     setIsGenerating(true);
     console.log('🚀 SFTP: Starting provision request for user ID:', user.id);
+    console.log('🚀 SFTP: User object:', JSON.stringify(user, null, 2));
     
     try {
-      console.log('📤 SFTP: Calling provisionSftp API...');
+      console.log('📤 SFTP: About to call provisionSftp API...');
+      console.log('📤 SFTP: API endpoint should be: /api/v1/sftp/provision');
+      console.log('📤 SFTP: Request body will be:', JSON.stringify({ telegram_id: user.id }));
       
       const data = await provisionSftp(user.id);
-      console.log('✅ SFTP: Provision successful! Response:', data);
+      
+      console.log('✅ SFTP: Raw API response received:', JSON.stringify(data, null, 2));
+      console.log('✅ SFTP: Response type:', typeof data);
+      console.log('✅ SFTP: Response keys:', Object.keys(data || {}));
       
       // Update state with new credentials
       setCredentials(data);
+      console.log('✅ SFTP: Credentials state updated');
       
       // Also update the account info from the response
-      setSftpAccount({
+      const accountInfo = {
         id: data.id || `sftp_${user.id}`,
         ftp_username: data.ftp_username || data.username,
         ftp_folder_path: data.folder_path,
@@ -105,48 +114,77 @@ export function SFTPSettings() {
         created_at: data.created_at || new Date().toISOString(),
         last_used_at: data.last_used_at,
         expires_at: data.expires_at
-      });
+      };
+      
+      console.log('✅ SFTP: Account info to set:', JSON.stringify(accountInfo, null, 2));
+      setSftpAccount(accountInfo);
       
       setShowPassword(true);
-      console.log('✅ SFTP: Credentials displayed successfully');
+      console.log('✅ SFTP: Password visibility enabled, credentials should now be displayed');
 
       toast({
-        title: "SFTP חשבון נוצר בהצלחה",
+        title: "✅ SFTP חשבון נוצר בהצלחה",
         description: "פרטי הגישה שלך מוכנים לשימוש",
       });
 
       // Start connection testing after showing credentials
       setTimeout(() => {
+        console.log('🔄 SFTP: Starting automatic connection test...');
         testConnection();
       }, 2000);
       
     } catch (error: any) {
-      console.error('❌ SFTP: Provision failed:', error);
+      console.error('❌ SFTP: Provision failed with error:', error);
+      console.error('❌ SFTP: Error message:', error.message);
+      console.error('❌ SFTP: Error stack:', error.stack);
       
-      if (error.message?.includes('403') || error.message?.includes('Not authenticated')) {
-        console.error('❌ SFTP: Authentication error during provision');
+      // More detailed error analysis
+      if (error.message?.includes('HTTP 401') || error.message?.includes('Unauthorized')) {
+        console.error('❌ SFTP: Authentication error (401) - JWT token issue');
         toast({
-          title: "שגיאת אישור",
-          description: "נא לוודא שאתה מחובר דרך Telegram WebApp כדי ליצור חשבון SFTP",
+          title: "❌ שגיאת אישור (401)",
+          description: "נא לוודא שאתה מחובר דרך Telegram WebApp. ייתכן שהטוקן פג תוקף.",
+          variant: "destructive",
+        });
+      } else if (error.message?.includes('HTTP 403') || error.message?.includes('Forbidden')) {
+        console.error('❌ SFTP: Permission denied (403)');
+        toast({
+          title: "❌ אין הרשאה (403)",
+          description: "אין לך הרשאה ליצור חשבון SFTP. נא לפנות לתמיכה.",
+          variant: "destructive",
+        });
+      } else if (error.message?.includes('HTTP 404') || error.message?.includes('Not Found')) {
+        console.error('❌ SFTP: API endpoint not found (404)');
+        toast({
+          title: "❌ שרת לא זמין (404)",
+          description: "API endpoint /api/v1/sftp/provision לא נמצא. בדוק את תצורת השרת.",
+          variant: "destructive",
+        });
+      } else if (error.message?.includes('HTTP 500') || error.message?.includes('Internal Server Error')) {
+        console.error('❌ SFTP: Server error (500)');
+        toast({
+          title: "❌ שגיאת שרת (500)",
+          description: "שגיאה פנימית בשרת. נסה שוב מאוחר יותר או פנה לתמיכה.",
           variant: "destructive",
         });
       } else if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
-        console.error('❌ SFTP: Network error during provision');
+        console.error('❌ SFTP: Network connectivity issue');
         toast({
-          title: "שגיאת רשת",
-          description: "לא ניתן להתחבר לשרת. נא לבדוק את החיבור לאינטרנט ולנסות שוב",
+          title: "❌ שגיאת רשת",
+          description: "לא ניתן להתחבר לשרת. בדוק חיבור לאינטרנט ונסה שוב.",
           variant: "destructive",
         });
       } else {
-        console.error('❌ SFTP: Unexpected provision error');
+        console.error('❌ SFTP: Unknown error type');
         toast({
-          title: "שגיאה ביצירת חשבון SFTP",
-          description: `לא ניתן ליצור חשבון: ${error.message}`,
+          title: "❌ שגיאה לא צפויה",
+          description: `${error.message}`,
           variant: "destructive",
         });
       }
     } finally {
       setIsGenerating(false);
+      console.log('🏁 SFTP: Generation process completed, loading state cleared');
     }
   };
 
@@ -287,6 +325,18 @@ export function SFTPSettings() {
                   </>
                 )}
               </Button>
+              
+              {/* Debug info for development */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="mt-4 p-3 bg-gray-100 rounded text-sm text-left">
+                  <strong>Debug Info:</strong>
+                  <br />User ID: {user?.id || 'Not available'}
+                  <br />User Name: {user?.first_name || 'Not available'}
+                  <br />Is Generating: {isGenerating.toString()}
+                  <br />Has Credentials: {(!!credentials).toString()}
+                  <br />Show Password: {showPassword.toString()}
+                </div>
+              )}
             </div>
           </div>
         ) : (
