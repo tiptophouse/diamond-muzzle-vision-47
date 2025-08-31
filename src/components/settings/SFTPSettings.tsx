@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Server, Key, Copy, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
 import { 
   provisionSftp, 
@@ -31,56 +31,69 @@ export function SFTPSettings() {
   // Load existing SFTP account
   useEffect(() => {
     const loadSFTPAccount = async () => {
-      if (!user?.id) return;
+      if (!user?.id) {
+        console.log('❌ SFTP: No user ID available for loading account');
+        setIsLoading(false);
+        return;
+      }
       
       try {
-        console.log('🔍 Loading SFTP account for user:', user.id);
+        console.log('🔍 SFTP: Loading account for user ID:', user.id);
         
         const data = await getSftpStatus(user.id);
-        console.log('✅ Found existing SFTP account:', data);
+        console.log('✅ SFTP: Found existing account:', data);
         setSftpAccount(data);
       } catch (error: any) {
+        console.error('❌ SFTP: Error loading account:', error);
+        
         if (error.message?.includes('404') || error.message?.includes('Not Found')) {
-          console.log('ℹ️ No existing SFTP account found');
+          console.log('ℹ️ SFTP: No existing account found (this is normal for first-time users)');
           setSftpAccount(null);
+        } else if (error.message?.includes('403') || error.message?.includes('Not authenticated')) {
+          console.error('❌ SFTP: Authentication failed - user may not be properly logged in');
+          toast({
+            title: "אין אישור גישה",
+            description: "נא לפתוח את האפליקציה דרך Telegram WebApp כדי לגשת לפונקצית SFTP",
+            variant: "destructive",
+          });
         } else {
-          console.error('❌ Error loading SFTP account:', error);
-          setSftpAccount(null);
-          
-          if (error.message?.includes('403') || error.message?.includes('Not authenticated')) {
-            toast({
-              title: "אין אישור גישה",
-              description: "נא לפתוח את האפליקציה דרך Telegram WebApp כדי לגשת לפונקצית SFTP",
-              variant: "destructive",
-            });
-          }
+          console.error('❌ SFTP: Unexpected error:', error.message);
+          toast({
+            title: "שגיאה בטעינת חשבון SFTP",
+            description: `לא ניתן לטעון את פרטי החשבון: ${error.message}`,
+            variant: "destructive",
+          });
         }
+        setSftpAccount(null);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadSFTPAccount();
-  }, [user]);
+  }, [user?.id, toast]);
 
   const generateSFTPCredentials = async () => {
     if (!user?.id) {
+      console.error('❌ SFTP: No user ID available for provisioning');
       toast({
         title: "שגיאה",
-        description: "לא ניתן לזהות את המשתמש",
+        description: "לא ניתן לזהות את המשתמש. נא לוודא שאתה מחובר דרך Telegram",
         variant: "destructive",
       });
       return;
     }
     
     setIsGenerating(true);
+    console.log('🚀 SFTP: Starting provision request for user ID:', user.id);
+    
     try {
-      console.log('📤 Requesting SFTP provision for user:', user.id);
+      console.log('📤 SFTP: Calling provisionSftp API...');
       
       const data = await provisionSftp(user.id);
-      console.log('✅ SFTP account created successfully:', data);
+      console.log('✅ SFTP: Provision successful! Response:', data);
       
-      // Update state with new credentials (flat response format)
+      // Update state with new credentials
       setCredentials(data);
       
       // Also update the account info from the response
@@ -95,6 +108,7 @@ export function SFTPSettings() {
       });
       
       setShowPassword(true);
+      console.log('✅ SFTP: Credentials displayed successfully');
 
       toast({
         title: "SFTP חשבון נוצר בהצלחה",
@@ -107,15 +121,24 @@ export function SFTPSettings() {
       }, 2000);
       
     } catch (error: any) {
-      console.error('❌ Error generating SFTP credentials:', error);
+      console.error('❌ SFTP: Provision failed:', error);
       
       if (error.message?.includes('403') || error.message?.includes('Not authenticated')) {
+        console.error('❌ SFTP: Authentication error during provision');
         toast({
           title: "שגיאת אישור",
-          description: "נא לפתוח את האפליקציה דרך Telegram WebApp כדי ליצור חשבון SFTP",
+          description: "נא לוודא שאתה מחובר דרך Telegram WebApp כדי ליצור חשבון SFTP",
+          variant: "destructive",
+        });
+      } else if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
+        console.error('❌ SFTP: Network error during provision');
+        toast({
+          title: "שגיאת רשת",
+          description: "לא ניתן להתחבר לשרת. נא לבדוק את החיבור לאינטרנט ולנסות שוב",
           variant: "destructive",
         });
       } else {
+        console.error('❌ SFTP: Unexpected provision error');
         toast({
           title: "שגיאה ביצירת חשבון SFTP",
           description: `לא ניתן ליצור חשבון: ${error.message}`,
@@ -128,25 +151,28 @@ export function SFTPSettings() {
   };
 
   const testConnection = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      console.error('❌ SFTP: No user ID for connection test');
+      return;
+    }
 
     setIsTestingConnection(true);
     setConnectionStatus('checking');
+    console.log('🔄 SFTP: Testing connection for user:', user.id);
 
     try {
-      console.log('🔄 Testing SFTP connection for user:', user.id);
-      
       const data = await testSftpConnection(user.id);
+      console.log('📡 SFTP: Connection test result:', data);
       
       if (data.status === 'success') {
-        console.log('✅ SFTP connection test successful');
+        console.log('✅ SFTP: Connection test successful');
         setConnectionStatus('success');
         toast({
           title: "חיבור SFTP מוצלח",
           description: "החשבון שלך פעיל ומוכן לשימוש",
         });
       } else {
-        console.log('❌ SFTP connection test failed:', data);
+        console.log('❌ SFTP: Connection test failed:', data);
         setConnectionStatus('failed');
         toast({
           title: "בדיקת חיבור נכשלה",
@@ -155,7 +181,7 @@ export function SFTPSettings() {
         });
       }
     } catch (error: any) {
-      console.error('❌ Error testing SFTP connection:', error);
+      console.error('❌ SFTP: Connection test error:', error);
       setConnectionStatus('failed');
       toast({
         title: "שגיאה בבדיקת חיבור",
@@ -176,13 +202,16 @@ export function SFTPSettings() {
   };
 
   const deactivateAccount = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      console.error('❌ SFTP: No user ID for deactivation');
+      return;
+    }
 
     try {
-      console.log('🗑️ Deactivating SFTP account for user:', user.id);
+      console.log('🗑️ SFTP: Deactivating account for user:', user.id);
       
       const result = await deactivateSftp(user.id);
-      console.log('✅ SFTP account deactivated successfully:', result);
+      console.log('✅ SFTP: Account deactivated successfully:', result);
       
       setSftpAccount(null);
       setCredentials(null);
@@ -191,13 +220,13 @@ export function SFTPSettings() {
 
       toast({
         title: "חשבון SFTP הושבת",
-        description: "החשבון הושבת בהצלחה",
+        description: result.message || "החשבון הושבת בהצלחה",
       });
     } catch (error: any) {
-      console.error('❌ Error deactivating SFTP account:', error);
+      console.error('❌ SFTP: Deactivation error:', error);
       toast({
         title: "שגיאה",
-        description: "לא ניתן להשבית את החשבון",
+        description: `לא ניתן להשבית את החשבון: ${error.message}`,
         variant: "destructive",
       });
     }
