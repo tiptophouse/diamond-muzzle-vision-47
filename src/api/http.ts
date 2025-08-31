@@ -11,36 +11,33 @@ const CONNECTIVITY_CACHE_DURATION = 30000; // 30 seconds
 async function testBackendHealth(): Promise<boolean> {
   // Check cache first
   if (connectivityCache && (Date.now() - connectivityCache.lastChecked < CONNECTIVITY_CACHE_DURATION)) {
-    console.log('🔍 Using cached backend health status:', connectivityCache.isHealthy);
+    console.log('🔍 HTTP: Using cached backend health status:', connectivityCache.isHealthy);
     return connectivityCache.isHealthy;
   }
 
   try {
-    console.log('🏥 Testing FastAPI backend health at:', API_BASE_URL);
+    console.log('🏥 HTTP: Testing FastAPI backend health at:', API_BASE_URL);
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
     
     const response = await fetch(`${API_BASE_URL}/`, {
       method: 'GET',
       mode: 'cors',
-      headers: {
-        'Accept': 'application/json',
-      },
+      headers: { 'Accept': 'application/json' },
       signal: controller.signal,
     });
     
     clearTimeout(timeoutId);
     
-    const isHealthy = response.ok || response.status === 404; // 404 is fine, means server is reachable
-    console.log('🏥 Backend health check result:', isHealthy, 'Status:', response.status);
+    const isHealthy = response.ok || response.status === 404;
+    console.log('🏥 HTTP: Backend health result:', isHealthy, 'Status:', response.status);
     
     // Cache the result
     connectivityCache = { isHealthy, lastChecked: Date.now() };
-    
     return isHealthy;
   } catch (error) {
-    console.error('🏥 Backend health check failed:', error);
+    console.error('🏥 HTTP: Backend health check failed:', error);
     connectivityCache = { isHealthy: false, lastChecked: Date.now() };
     return false;
   }
@@ -54,7 +51,7 @@ function getDetailedError(error: any, response?: Response): string {
     errorDetails.push('Request timeout (server took too long to respond)');
   } else if (error.message?.includes('Failed to fetch')) {
     errorDetails.push('Network connection failed');
-    errorDetails.push('Possible causes: Server is down, CORS issue, or DNS problem');
+    errorDetails.push('Check: Server status, CORS configuration, DNS resolution');
   } else if (error.message?.includes('NetworkError')) {
     errorDetails.push('Network error occurred');
   } else if (error.message) {
@@ -78,15 +75,15 @@ async function retryRequest<T>(
   
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`🔄 Attempt ${attempt + 1}/${maxRetries + 1} for request`);
+      console.log(`🔄 HTTP: Attempt ${attempt + 1}/${maxRetries + 1}`);
       return await requestFn();
     } catch (error) {
       lastError = error;
-      console.error(`❌ Attempt ${attempt + 1} failed:`, error);
+      console.error(`❌ HTTP: Attempt ${attempt + 1} failed:`, error);
       
       if (attempt < maxRetries) {
         const delay = baseDelay * Math.pow(2, attempt);
-        console.log(`⏳ Waiting ${delay}ms before retry...`);
+        console.log(`⏳ HTTP: Waiting ${delay}ms before retry...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
@@ -95,29 +92,29 @@ async function retryRequest<T>(
   throw lastError;
 }
 
-export async function http<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
+export async function http<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  // Check authentication first
   const token = getBackendAuthToken();
   
   if (!token) {
-    console.error('❌ No JWT token available for API call:', endpoint);
-    throw new Error('לא ניתן להתחבר - נדרש טוקן אימות');
+    console.error('❌ HTTP: No JWT token available for:', endpoint);
+    throw new Error('אנא התחבר מחדש לאפליקציה');
   }
-  
+
   // Test backend health first
   const isBackendHealthy = await testBackendHealth();
   if (!isBackendHealthy) {
+    console.error('❌ HTTP: Backend is not healthy for:', endpoint);
     throw new Error('השרת אינו זמין כרגע. אנא נסה שוב מאוחר יותר.');
   }
-  
+
   const config: RequestInit = {
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${token}`,
       "Accept": "application/json",
       "Origin": window.location.origin,
+      "X-Client-Timestamp": Date.now().toString(),
       ...options.headers,
     },
     mode: 'cors',
@@ -125,15 +122,16 @@ export async function http<T>(
     ...options,
   };
 
-  console.log('🔑 Making authenticated API call to:', `${API_BASE_URL}${endpoint}`);
-  console.log('🔑 Request headers:', Object.keys(config.headers || {}));
+  const fullUrl = `${API_BASE_URL}${endpoint}`;
+  console.log('🔑 HTTP: Making authenticated request to:', fullUrl);
+  console.log('🔑 HTTP: Request method:', config.method || 'GET');
 
   const requestFn = async () => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
     
     try {
-      return await fetch(`${API_BASE_URL}${endpoint}`, {
+      return await fetch(fullUrl, {
         ...config,
         signal: controller.signal,
       });
@@ -145,8 +143,8 @@ export async function http<T>(
   try {
     const response = await retryRequest(requestFn, 2, 1000);
     
-    console.log('📡 Response status:', response.status);
-    console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+    console.log('📡 HTTP: Response status:', response.status);
+    console.log('📡 HTTP: Response headers:', Object.fromEntries(response.headers.entries()));
     
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
@@ -154,22 +152,24 @@ export async function http<T>(
       try {
         const errorData = await response.json();
         errorMessage = errorData.detail || errorData.message || errorMessage;
+        console.error('❌ HTTP: Server error response:', errorData);
       } catch {
         const errorText = await response.text();
         errorMessage = errorText || errorMessage;
+        console.error('❌ HTTP: Server error text:', errorText);
       }
       
-      console.error('❌ API request failed:', errorMessage);
+      console.error('❌ HTTP: Request failed:', errorMessage);
       throw new Error(errorMessage);
     }
     
     const data = await response.json();
-    console.log('✅ API request successful');
+    console.log('✅ HTTP: Request successful');
     return data;
     
   } catch (error) {
     const detailedError = getDetailedError(error);
-    console.error('❌ API request error:', detailedError);
+    console.error('❌ HTTP: Request error:', detailedError);
     
     // Throw user-friendly Hebrew error messages
     if (error instanceof Error) {
@@ -180,7 +180,7 @@ export async function http<T>(
       } else if (error.message.includes('CORS')) {
         throw new Error('בעיה בהגדרות השרת. אנא פנה לתמיכה טכנית.');
       } else {
-        throw new Error(error.message || 'אירעה שגיאה לא צפויה');
+        throw error; // Re-throw as-is for server errors
       }
     }
     

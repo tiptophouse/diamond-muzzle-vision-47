@@ -1,7 +1,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { TelegramUser } from '@/types/telegram';
-import { signInToBackend } from '@/lib/api/auth';
+import { signInToBackend, clearBackendAuthToken } from '@/lib/api/auth';
+import { setCurrentUserId } from '@/lib/api/config';
 
 interface AuthState {
   user: TelegramUser | null;
@@ -36,12 +37,15 @@ export function useStrictTelegramAuth(): AuthState {
       return;
     }
 
-    console.log('🔐 Starting STRICT Telegram-only authentication...');
+    console.log('🔐 STRICT AUTH: Starting Telegram-only authentication flow');
     
     try {
-      // Check for Telegram WebApp environment
+      // Clear any existing token first
+      clearBackendAuthToken();
+      
+      // Step 1: Check for Telegram WebApp environment
       if (typeof window === 'undefined' || !window.Telegram?.WebApp) {
-        console.error('❌ Not in Telegram WebApp environment - access denied');
+        console.error('❌ STRICT AUTH: Not in Telegram WebApp environment');
         updateState({
           isLoading: false,
           isTelegramEnvironment: false,
@@ -54,18 +58,18 @@ export function useStrictTelegramAuth(): AuthState {
       const tg = window.Telegram.WebApp;
       updateState({ isTelegramEnvironment: true });
 
-      // Initialize Telegram WebApp
+      // Step 2: Initialize Telegram WebApp
       try {
         if (typeof tg.ready === 'function') tg.ready();
         if (typeof tg.expand === 'function') tg.expand();
-        console.log('✅ Telegram WebApp initialized');
+        console.log('✅ STRICT AUTH: Telegram WebApp initialized');
       } catch (error) {
-        console.warn('⚠️ Telegram WebApp initialization warning:', error);
+        console.warn('⚠️ STRICT AUTH: WebApp initialization warning:', error);
       }
 
-      // Check for initData - REQUIRED
+      // Step 3: Check for initData - REQUIRED
       if (!tg.initData || tg.initData.length === 0) {
-        console.error('❌ No Telegram initData found - access denied');
+        console.error('❌ STRICT AUTH: No Telegram initData found');
         updateState({
           isLoading: false,
           accessDeniedReason: 'no_init_data',
@@ -74,27 +78,28 @@ export function useStrictTelegramAuth(): AuthState {
         return;
       }
 
-      console.log('🔍 Found Telegram initData, length:', tg.initData.length);
+      console.log('🔍 STRICT AUTH: Found initData, length:', tg.initData.length);
 
-      // Step 1: Sign in to FastAPI backend using initData
-      console.log('🔐 Signing in to FastAPI backend...');
+      // Step 4: Authenticate with FastAPI backend using initData
+      console.log('🔐 STRICT AUTH: Authenticating with FastAPI backend...');
       const jwtToken = await signInToBackend(tg.initData);
       
       if (!jwtToken) {
-        console.error('❌ Backend sign-in failed - access denied');
+        console.error('❌ STRICT AUTH: FastAPI authentication failed');
         updateState({
           isLoading: false,
           accessDeniedReason: 'backend_auth_failed',
-          error: 'Failed to authenticate with backend'
+          error: 'Failed to authenticate with backend server'
         });
         return;
       }
 
-      console.log('✅ JWT token received from backend');
+      console.log('✅ STRICT AUTH: JWT token received from FastAPI');
 
-      // Step 2: Extract user data from initDataUnsafe (if available)
+      // Step 5: Extract user data from Telegram
       let authenticatedUser: TelegramUser | null = null;
 
+      // Try initDataUnsafe first
       if (tg.initDataUnsafe?.user) {
         const unsafeUser = tg.initDataUnsafe.user;
         if (unsafeUser.id && unsafeUser.first_name) {
@@ -108,11 +113,11 @@ export function useStrictTelegramAuth(): AuthState {
             photo_url: unsafeUser.photo_url,
             phone_number: (unsafeUser as any).phone_number
           };
-          console.log('✅ User data extracted from initDataUnsafe');
+          console.log('✅ STRICT AUTH: User data from initDataUnsafe');
         }
       }
 
-      // If no user data from initDataUnsafe, try parsing initData
+      // If no user from initDataUnsafe, try parsing initData
       if (!authenticatedUser && tg.initData) {
         try {
           const urlParams = new URLSearchParams(tg.initData);
@@ -131,17 +136,17 @@ export function useStrictTelegramAuth(): AuthState {
                 photo_url: user.photo_url,
                 phone_number: user.phone_number
               };
-              console.log('✅ User data parsed from initData');
+              console.log('✅ STRICT AUTH: User data parsed from initData');
             }
           }
         } catch (error) {
-          console.error('❌ Failed to parse user data from initData:', error);
+          console.error('❌ STRICT AUTH: Failed to parse user data:', error);
         }
       }
 
-      // If still no user data, authentication failed
+      // Step 6: Final validation
       if (!authenticatedUser) {
-        console.error('❌ No user data found in Telegram initData - access denied');
+        console.error('❌ STRICT AUTH: No user data found');
         updateState({
           isLoading: false,
           accessDeniedReason: 'no_user_data',
@@ -150,8 +155,12 @@ export function useStrictTelegramAuth(): AuthState {
         return;
       }
 
-      // Success - user authenticated via Telegram + JWT
-      console.log('✅ Authentication successful for user:', authenticatedUser.first_name, 'ID:', authenticatedUser.id);
+      // Step 7: Success - Set user ID and complete authentication
+      setCurrentUserId(authenticatedUser.id);
+      
+      console.log('✅ STRICT AUTH: Authentication successful');
+      console.log('👤 STRICT AUTH: User:', authenticatedUser.first_name, 'ID:', authenticatedUser.id);
+      
       updateState({
         user: authenticatedUser,
         isAuthenticated: true,
@@ -161,7 +170,7 @@ export function useStrictTelegramAuth(): AuthState {
       });
       
     } catch (error) {
-      console.error('❌ Authentication error:', error);
+      console.error('❌ STRICT AUTH: Authentication error:', error);
       updateState({
         isLoading: false,
         accessDeniedReason: 'system_error',
@@ -175,10 +184,10 @@ export function useStrictTelegramAuth(): AuthState {
   useEffect(() => {
     mountedRef.current = true;
     
-    // Timeout for authentication (5 seconds)
+    // Authentication timeout (10 seconds)
     const timeoutId = setTimeout(() => {
       if (state.isLoading && mountedRef.current && !initializedRef.current) {
-        console.error('❌ Authentication timeout - access denied');
+        console.error('❌ STRICT AUTH: Authentication timeout');
         updateState({
           isLoading: false,
           accessDeniedReason: 'timeout',
@@ -186,13 +195,17 @@ export function useStrictTelegramAuth(): AuthState {
         });
         initializedRef.current = true;
       }
-    }, 5000);
+    }, 10000);
 
-    authenticateUser();
+    // Start authentication
+    const initTimer = setTimeout(() => {
+      authenticateUser();
+    }, 100);
 
     return () => {
       mountedRef.current = false;
       clearTimeout(timeoutId);
+      clearTimeout(initTimer);
     };
   }, []);
 
