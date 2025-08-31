@@ -4,7 +4,6 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DataDrivenDashboard } from '@/components/dashboard/DataDrivenDashboard';
 import { DashboardLoading } from '@/components/dashboard/DashboardLoading';
 import { SecurityMonitor } from '@/components/auth/SecurityMonitor';
-import { getVerificationResult } from '@/lib/api';
 import { useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -12,7 +11,6 @@ import { useToast } from '@/hooks/use-toast';
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
   const { loading, allDiamonds, fetchData } = useInventoryData();
-  const verificationResult = getVerificationResult();
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
 
@@ -40,7 +38,6 @@ export default function Dashboard() {
   console.log('- Auth loading:', authLoading);
   console.log('- Is authenticated:', isAuthenticated);
   console.log('- User:', user);
-  console.log('- FastAPI verification:', verificationResult);
   console.log('- Inventory loading:', loading);
   console.log('- Diamonds count:', allDiamonds.length);
 
@@ -68,7 +65,6 @@ export default function Dashboard() {
               <p>Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
               <p>Is Authenticated: {isAuthenticated ? 'Yes' : 'No'}</p>
               <p>User: {user ? `${user.first_name} (${user.id})` : 'None'}</p>
-              <p>Enhanced Verification: {verificationResult ? 'Success' : 'Failed'}</p>
             </div>
           </div>
         </div>

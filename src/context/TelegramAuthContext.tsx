@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useJWTAuth } from '@/hooks/useJWTAuth';
+import { useStrictTelegramAuth } from '@/hooks/useStrictTelegramAuth';
 import { useUserDataPersistence } from '@/hooks/useUserDataPersistence';
 
 interface TelegramUser {
@@ -20,40 +20,36 @@ interface TelegramAuthContextType {
   isLoading: boolean;
   error: string | null;
   isTelegramEnvironment: boolean;
-  accessToken: string | null;
+  accessDeniedReason: string | null;
 }
 
 const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(undefined);
 
 export function TelegramAuthProvider({ children }: { children: ReactNode }) {
-  const authState = useJWTAuth();
+  const authState = useStrictTelegramAuth();
   
-  console.log('🔍 TelegramAuthProvider - JWT Auth state:', { 
+  console.log('🔍 TelegramAuthProvider - Auth state:', { 
     user: authState.user, 
     isAuthenticated: authState.isAuthenticated,
-    hasToken: !!authState.accessToken,
     isTelegramEnvironment: authState.isTelegramEnvironment 
   });
   
   // Automatically persist user data when authenticated
   useUserDataPersistence(authState.user, authState.isTelegramEnvironment);
 
-  // Enhanced logging for JWT flow
+  // Enhanced logging for analytics debugging
   React.useEffect(() => {
-    if (authState.isAuthenticated && authState.user && authState.accessToken) {
-      console.log('✅ JWT Authentication complete - user authenticated with token');
+    if (authState.isAuthenticated && authState.user) {
+      console.log('✅ User authenticated - analytics tracking should initialize');
       console.log('👤 User details:', {
         id: authState.user.id,
         name: authState.user.first_name,
-        telegram: authState.isTelegramEnvironment,
-        hasJWT: !!authState.accessToken
+        telegram: authState.isTelegramEnvironment
       });
-    } else if (authState.error) {
-      console.log('❌ JWT Authentication failed:', authState.error);
-    } else if (authState.isLoading) {
-      console.log('🔄 JWT Authentication in progress...');
+    } else {
+      console.log('❌ User not authenticated - analytics tracking disabled');
     }
-  }, [authState.isAuthenticated, authState.user, authState.accessToken, authState.error, authState.isLoading, authState.isTelegramEnvironment]);
+  }, [authState.isAuthenticated, authState.user, authState.isTelegramEnvironment]);
 
   return (
     <TelegramAuthContext.Provider value={authState}>
