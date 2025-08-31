@@ -96,7 +96,7 @@ export function GroupLaunchMessage() {
           groupId: -1001009290613, // Your group ID
           useButtons: true,
           buttonText: '🚀 כנסו ל-BrilliantBot עכשיו',
-          buttonUrl: 'https://t.me/diamondmazalbot?startapp=store&utm_source=group_launch&utm_campaign=1700_members'
+          buttonUrl: 'https://t.me/diamondmazalbot?startapp=profile&utm_source=group_launch&utm_campaign=1700_members'
         }
       });
 
@@ -140,28 +140,16 @@ export function GroupLaunchMessage() {
           </div>
         </div>
 
-        {/* Updated Buttons Preview with Correct URLs */}
+        {/* Buttons Preview */}
         <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
           <h4 className="font-semibold mb-3 text-green-700 dark:text-green-300">כפתורים אינטראקטיביים שיישלחו:</h4>
-          <div className="grid grid-cols-1 gap-2 text-xs">
-            <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded text-blue-700 dark:text-blue-300">
-              🏪 חנות וירטואלית → /store
-            </div>
-            <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded text-purple-700 dark:text-purple-300">
-              📊 דשבורד מנהלים → /dashboard
-            </div>
-            <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded text-green-700 dark:text-green-300">
-              📦 ניהול מלאי חכם → /inventory
-            </div>
-            <div className="bg-orange-100 dark:bg-orange-900/30 p-2 rounded text-orange-700 dark:text-orange-300">
-              💬 יועץ AI אישי → /chat
-            </div>
-            <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded text-red-700 dark:text-red-300">
-              📈 תובנות עסקיות → /insights
-            </div>
-            <div className="bg-yellow-100 dark:bg-yellow-900/30 p-2 rounded text-yellow-700 dark:text-yellow-300">
-              🎯 הצטרפות VIP מיידית → /profile (with promo code)
-            </div>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded text-blue-700 dark:text-blue-300">🏪 חנות וירטואלית</div>
+            <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded text-purple-700 dark:text-purple-300">📊 דשבורד מנהלים</div>
+            <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded text-green-700 dark:text-green-300">📦 ניהול מלאי חכם</div>
+            <div className="bg-orange-100 dark:bg-orange-900/30 p-2 rounded text-orange-700 dark:text-orange-300">💬 יועץ AI אישי</div>
+            <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded text-red-700 dark:text-red-300">📈 תובנות עסקיות</div>
+            <div className="bg-yellow-100 dark:bg-yellow-900/30 p-2 rounded text-yellow-700 dark:text-yellow-300">🎯 הצטרפות VIP מיידית</div>
           </div>
         </div>
 

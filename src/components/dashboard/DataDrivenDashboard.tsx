@@ -1,18 +1,19 @@
 
-import React, { useEffect, memo } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { processDiamondDataForDashboard } from '@/services/diamondAnalytics';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { InventoryChart } from '@/components/dashboard/InventoryChart';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { RealTimeUserCount } from '@/components/dashboard/RealTimeUserCount';
+import { WelcomeBanner } from '@/components/tutorial/WelcomeBanner';
+import { Layout } from '@/components/layout/Layout';
 import { Gem, Users, TrendingUp, Star, Plus, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
+import { useEffect } from 'react';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { useNavigate } from 'react-router-dom';
-import { useUnifiedTelegramWebApp } from '@/hooks/useUnifiedTelegramWebApp';
-import { logger } from '@/utils/logger';
 
 interface DataDrivenDashboardProps {
   allDiamonds: Diamond[];
@@ -20,27 +21,25 @@ interface DataDrivenDashboardProps {
   fetchData: () => void;
 }
 
-export const DataDrivenDashboard = memo(function DataDrivenDashboard({ 
-  allDiamonds, 
-  loading, 
-  fetchData 
-}: DataDrivenDashboardProps) {
+export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDrivenDashboardProps) {
   const { user } = useTelegramAuth();
   const { subscribeToInventoryChanges } = useInventoryDataSync();
-  const { haptics } = useUnifiedTelegramWebApp();
   const navigate = useNavigate();
 
-  logger.log('🔍 Dashboard: Processing data for user:', user?.id, 'Diamonds:', allDiamonds.length);
+  console.log('🔍 DataDrivenDashboard: Processing data for user:', user?.id, 'Diamonds:', allDiamonds.length);
 
+  // Listen for inventory changes and refresh dashboard data immediately
   useEffect(() => {
     const unsubscribe = subscribeToInventoryChanges(() => {
-      logger.log('🔄 Dashboard: Inventory changed detected, refreshing...');
+      console.log('🔄 Dashboard: Inventory changed detected, refreshing dashboard data...');
       fetchData();
     });
+
     return unsubscribe;
   }, [subscribeToInventoryChanges, fetchData]);
 
-  const { stats, inventoryByShape } = allDiamonds.length > 0 
+  // Process the data only if we have diamonds
+  const { stats, inventoryByShape, salesByCategory } = allDiamonds.length > 0 
     ? processDiamondDataForDashboard(
         allDiamonds.map(d => ({
           id: parseInt(d.id || '0'),
@@ -60,183 +59,228 @@ export const DataDrivenDashboard = memo(function DataDrivenDashboard({
           totalLeads: 0, 
           activeSubscriptions: 0 
         }, 
-        inventoryByShape: [],
+        inventoryByShape: [], 
         salesByCategory: [] 
       };
 
-  const calculateMetrics = () => {
+  // Calculate actual metrics from real data with realistic bounds
+  const calculateTotalValue = () => {
+    const total = allDiamonds.reduce((sum, diamond) => {
+      // Ensure price is reasonable (between $100 and $500k per diamond)
+      const price = diamond.price;
+      if (price > 0 && price < 500000) {
+        return sum + price;
+      }
+      return sum;
+    }, 0);
+    
+    console.log('💰 Total value calculated:', total);
+    return total;
+  };
+
+  const calculateAvgPricePerCarat = () => {
     const validDiamonds = allDiamonds.filter(d => 
       d.price > 0 && d.price < 500000 && d.carat > 0 && d.carat < 20
     );
     
+    if (validDiamonds.length === 0) return 0;
+    
     const totalValue = validDiamonds.reduce((sum, d) => sum + d.price, 0);
     const totalCarats = validDiamonds.reduce((sum, d) => sum + d.carat, 0);
     
-    return {
-      totalValue,
-      availableDiamonds: allDiamonds.filter(d => d.status === 'Available').length,
-      avgPricePerCarat: totalCarats > 0 ? Math.round(totalValue / totalCarats) : 0
-    };
+    const avgPricePerCarat = Math.round(totalValue / totalCarats);
+    console.log('💎 Avg price per carat calculated:', avgPricePerCarat, 'from', validDiamonds.length, 'valid diamonds');
+    
+    return avgPricePerCarat;
   };
 
-  const { totalValue, availableDiamonds, avgPricePerCarat } = calculateMetrics();
+  const totalValue = calculateTotalValue();
+  const availableDiamonds = allDiamonds.filter(d => d.status === 'Available').length;
+  const storeVisibleDiamonds = allDiamonds.filter(d => d.store_visible).length;
+  const avgPricePerCarat = calculateAvgPricePerCarat();
 
-  const handleNavigation = (path: string) => {
-    haptics.light();
-    navigate(path);
-  };
-
+  // Show empty state when no diamonds
   if (!loading && allDiamonds.length === 0) {
     return (
-      <div className="min-h-screen bg-background">
-        <DashboardHeader emergencyMode={false} />
-        
-        <div className="p-4 flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
-          <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
-            <Gem className="h-8 w-8 text-primary-foreground" />
-          </div>
+      <Layout>
+        <div className="min-h-screen bg-background">
+          <DashboardHeader emergencyMode={false} />
           
-          <div className="space-y-2">
-            <h2 className="text-lg font-semibold text-foreground">Welcome to Diamond Inventory</h2>
-            <p className="text-sm text-muted-foreground max-w-sm">
-              Get started by uploading your diamond inventory or adding individual stones
-            </p>
-          </div>
-          
-          <div className="space-y-3 w-full max-w-xs">
-            <Button 
-              onClick={() => handleNavigation('/upload')} 
-              className="w-full"
-              size="lg"
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Upload CSV File
-            </Button>
+          <div className="p-4 flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
+            <div className="w-16 h-16 bg-[#0088cc] rounded-full flex items-center justify-center">
+              <Gem className="h-8 w-8 text-white" />
+            </div>
             
-            <Button 
-              onClick={() => handleNavigation('/upload-single-stone')} 
-              variant="outline"
-              className="w-full"
-              size="lg"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Single Diamond
-            </Button>
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold text-foreground">Welcome to Diamond Inventory</h2>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                Get started by uploading your diamond inventory or adding individual stones
+              </p>
+            </div>
+            
+            <div className="space-y-3 w-full max-w-xs">
+              <Button 
+                onClick={() => navigate('/upload')} 
+                className="w-full bg-[#0088cc] hover:bg-[#0088cc]/90"
+                size="lg"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload CSV File
+              </Button>
+              
+              <Button 
+                onClick={() => navigate('/upload')} 
+                variant="outline"
+                className="w-full"
+                size="lg"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Single Diamond
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardHeader emergencyMode={false} />
-      
-      <div className="p-4 space-y-4">
-        {/* Stats Grid - Optimized for mobile */}
-        <div className="grid grid-cols-2 gap-3">
-          <StatCard
-            title="Inventory"
-            value={allDiamonds.length}
-            icon={Gem}
-            loading={loading}
-            description="Total stones"
-            trend={12}
-          />
-          <StatCard
-            title="Value"
-            value={Math.round(totalValue / 1000)}
-            prefix="$"
-            suffix="K"
-            icon={Star}
-            loading={loading}
-            description="Portfolio"
-            trend={8}
-          />
-          <StatCard
-            title="Available"
-            value={availableDiamonds}
-            icon={Users}
-            loading={loading}
-            description="Ready to sell"
-            trend={5}
-          />
-          <StatCard
-            title="Price/Ct"
-            value={avgPricePerCarat}
-            prefix="$"
-            icon={TrendingUp}
-            loading={loading}
-            description="Average"
-            trend={-2}
-          />
-        </div>
+    <Layout>
+      <div className="min-h-screen bg-background">
+        <DashboardHeader emergencyMode={false} />
+        
+        {/* Primary Stats - 2x2 Grid for Mobile */}
+        <div className="p-4 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <StatCard
+              title="Inventory"
+              value={allDiamonds.length}
+              icon={Gem}
+              loading={loading}
+              description="Total stones"
+              trend={12}
+            />
+            <StatCard
+              title="Value"
+              value={Math.round(totalValue / 1000)}
+              prefix="$"
+              suffix="K"
+              icon={Star}
+              loading={loading}
+              description="Portfolio"
+              trend={8}
+            />
+            <StatCard
+              title="Available"
+              value={availableDiamonds}
+              icon={Users}
+              loading={loading}
+              description="Ready to sell"
+              trend={5}
+            />
+            <StatCard
+              title="Price/Ct"
+              value={avgPricePerCarat}
+              prefix="$"
+              icon={TrendingUp}
+              loading={loading}
+              description="Average"
+              trend={-2}
+            />
+          </div>
 
-        <RealTimeUserCount />
+          {/* Real-time User Count */}
+          <RealTimeUserCount />
 
-        {/* Charts Section */}
-        <div className="space-y-4">
+          {/* Charts Section */}
+          <div className="space-y-4">
+            <div className="bg-card rounded-lg border border-border">
+              <div className="p-4 border-b border-border">
+                <h3 className="text-sm font-medium text-foreground">Inventory Overview</h3>
+              </div>
+              <div className="p-4">
+                <InventoryChart
+                  data={inventoryByShape.length > 0 ? inventoryByShape : [
+                    { name: 'Round', value: allDiamonds.filter(d => d.shape === 'Round').length },
+                    { name: 'Princess', value: allDiamonds.filter(d => d.shape === 'Princess').length },
+                    { name: 'Emerald', value: allDiamonds.filter(d => d.shape === 'Emerald').length },
+                    { name: 'Oval', value: allDiamonds.filter(d => d.shape === 'Oval').length },
+                    { name: 'Other', value: allDiamonds.filter(d => !['Round', 'Princess', 'Emerald', 'Oval'].includes(d.shape)).length }
+                  ].filter(item => item.value > 0)}
+                  title=""
+                  loading={loading}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Actions - Telegram List Style */}
           <div className="bg-card rounded-lg border border-border">
             <div className="p-4 border-b border-border">
-              <h3 className="text-sm font-medium text-foreground">Inventory Overview</h3>
+              <h3 className="text-sm font-medium text-foreground">Quick Actions</h3>
             </div>
-            <div className="p-4">
-              <InventoryChart
-                data={inventoryByShape.length > 0 ? inventoryByShape : [
-                  { name: 'Round', value: allDiamonds.filter(d => d.shape === 'Round').length },
-                  { name: 'Princess', value: allDiamonds.filter(d => d.shape === 'Princess').length },
-                  { name: 'Emerald', value: allDiamonds.filter(d => d.shape === 'Emerald').length },
-                  { name: 'Oval', value: allDiamonds.filter(d => d.shape === 'Oval').length },
-                  { name: 'Other', value: allDiamonds.filter(d => !['Round', 'Princess', 'Emerald', 'Oval'].includes(d.shape)).length }
-                ].filter(item => item.value > 0)}
-                title=""
-                loading={loading}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-card rounded-lg border border-border">
-          <div className="p-4 border-b border-border">
-            <h3 className="text-sm font-medium text-foreground">Quick Actions</h3>
-          </div>
-          <div className="divide-y divide-border">
-            {[
-              { icon: Gem, title: 'View Inventory', desc: 'Manage all diamonds', path: '/inventory' },
-              { icon: Upload, title: 'Upload Data', desc: 'Add new diamonds', path: '/upload' },
-              { icon: Star, title: 'Store View', desc: 'Public catalog', path: '/store' }
-            ].map((action) => (
-              <button
-                key={action.path}
-                onClick={() => handleNavigation(action.path)}
-                className="w-full p-4 flex items-center justify-between hover:bg-accent/50 transition-colors active:scale-[0.98] touch-manipulation"
+            <div className="divide-y divide-border">
+              <button 
+                onClick={() => navigate('/inventory')}
+                className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                    <action.icon className="h-4 w-4 text-primary" />
+                  <div className="w-8 h-8 bg-[#0088cc]/10 rounded-full flex items-center justify-center">
+                    <Gem className="h-4 w-4 text-[#0088cc]" />
                   </div>
                   <div className="text-left">
-                    <p className="text-sm font-medium text-foreground">{action.title}</p>
-                    <p className="text-xs text-muted-foreground">{action.desc}</p>
+                    <p className="text-sm font-medium text-foreground">View Inventory</p>
+                    <p className="text-xs text-muted-foreground">Manage all diamonds</p>
                   </div>
                 </div>
                 <div className="text-xs text-muted-foreground">→</div>
               </button>
-            ))}
+              
+              <button 
+                onClick={() => navigate('/upload')}
+                className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-[#0088cc]/10 rounded-full flex items-center justify-center">
+                    <Upload className="h-4 w-4 text-[#0088cc]" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-foreground">Upload Data</p>
+                    <p className="text-xs text-muted-foreground">Add new diamonds</p>
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground">→</div>
+              </button>
+              
+              <button 
+                onClick={() => navigate('/store')}
+                className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-[#0088cc]/10 rounded-full flex items-center justify-center">
+                    <Star className="h-4 w-4 text-[#0088cc]" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-foreground">Store View</p>
+                    <p className="text-xs text-muted-foreground">Public catalog</p>
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground">→</div>
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* Live Status */}
-        <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
-          <div className="flex items-center gap-2 text-xs text-primary">
-            <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></div>
-            <span className="font-medium">
-              Live • {allDiamonds.length} diamonds • ${Math.round(totalValue / 1000)}K value
-            </span>
+          {/* Status Indicator */}
+          <div className="bg-[#0088cc]/5 border border-[#0088cc]/20 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-xs text-[#0088cc]">
+              <div className="w-1.5 h-1.5 bg-[#0088cc] rounded-full animate-pulse"></div>
+              <span className="font-medium">
+                Live data • {allDiamonds.length} diamonds • ${Math.round(totalValue / 1000)}K value
+              </span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </Layout>
   );
-});
+}
