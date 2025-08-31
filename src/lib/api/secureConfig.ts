@@ -34,3 +34,11 @@ export async function getSecureHeaders(): Promise<Record<string, string>> {
   
   return headers;
 }
+
+// Get admin Telegram ID from secure configuration
+export async function getAdminTelegramId(): Promise<number> {
+  // In production, this would come from secure backend configuration
+  // For now, using the hardcoded admin ID
+  console.log('🔐 Getting admin Telegram ID from secure config');
+  return 2138564172;
+}
