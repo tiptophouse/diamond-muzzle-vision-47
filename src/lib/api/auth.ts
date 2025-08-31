@@ -15,120 +15,89 @@ export interface TelegramVerificationResponse {
   };
 }
 
-// Store backend auth token in memory
+// Store backend auth token
 let backendAuthToken: string | null = null;
 
 export function getBackendAuthToken(): string | null {
-  console.log('🔑 Getting backend auth token:', backendAuthToken ? 'EXISTS' : 'NULL');
   return backendAuthToken;
 }
 
-export function clearBackendAuthToken(): void {
-  console.log('🔑 Clearing backend auth token');
-  backendAuthToken = null;
-}
-
-// THE ONLY TRUE AUTHENTICATION METHOD: Telegram initData → FastAPI sign-in → JWT
+// ONLY TRUE AUTHENTICATION METHOD: Telegram initData → FastAPI sign-in → JWT
 export async function signInToBackend(initData: string): Promise<string | null> {
   try {
-    console.log('🔐 MAIN AUTH: Starting FastAPI backend authentication');
-    console.log('🔐 MAIN AUTH: InitData length:', initData?.length || 0);
+    console.log('🔐 API: Signing in to FastAPI backend with Telegram initData');
     
     if (!initData || initData.length === 0) {
-      console.error('🔐 MAIN AUTH: No initData provided');
+      console.error('🔐 API: No initData provided for sign-in');
       return null;
     }
 
+    // Use the ONLY correct sign-in endpoint
     const signInUrl = `${API_BASE_URL}/api/v1/sign-in/`;
-    console.log('🔐 MAIN AUTH: Sign-in URL:', signInUrl);
+    console.log('🔐 API: Using sign-in URL:', signInUrl);
 
     const response = await fetch(signInUrl, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Origin': window.location.origin,
       },
       mode: 'cors',
-      credentials: 'omit',
       body: JSON.stringify({
         init_data: initData
       }),
     });
 
-    console.log('🔐 MAIN AUTH: Response status:', response.status);
-    console.log('🔐 MAIN AUTH: Response headers:', Object.fromEntries(response.headers.entries()));
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('🔐 MAIN AUTH: Sign-in failed:', response.status, errorText);
+      console.error('🔐 API: Backend sign-in failed:', response.status, errorText);
       return null;
     }
 
     const result = await response.json();
-    console.log('🔐 MAIN AUTH: Response data keys:', Object.keys(result));
     
-    // FIXED: According to OpenAPI spec, the field is "token", not "access_token"
-    const token = result.token;
-    
-    if (token) {
-      backendAuthToken = token;
-      console.log('✅ MAIN AUTH: JWT token received and stored');
+    if (result.access_token || result.token) {
+      // Handle both possible response formats
+      backendAuthToken = result.access_token || result.token;
+      console.log('✅ API: Backend sign-in successful, JWT token stored');
       
-      // Extract user ID from initData since the API doesn't return user_id
-      try {
-        const urlParams = new URLSearchParams(initData);
-        const userParam = urlParams.get('user');
-        
-        if (userParam) {
-          const user = JSON.parse(decodeURIComponent(userParam));
-          if (user.id) {
-            setCurrentUserId(user.id);
-            console.log('✅ MAIN AUTH: User ID extracted from initData:', user.id);
-          }
-        }
-      } catch (error) {
-        console.error('🔐 MAIN AUTH: Failed to extract user ID from initData:', error);
+      // Set current user ID if available in response
+      if (result.user_id) {
+        setCurrentUserId(result.user_id);
       }
       
       return backendAuthToken;
     } else {
-      console.error('🔐 MAIN AUTH: No token in response:', Object.keys(result));
+      console.error('🔐 API: No token in sign-in response:', Object.keys(result));
       return null;
     }
   } catch (error) {
-    console.error('❌ MAIN AUTH: Sign-in error:', error);
+    console.error('❌ API: Backend sign-in error:', error);
     return null;
   }
 }
 
-// Get auth headers with JWT token for protected endpoints
+// Get auth headers with JWT token
 export async function getAuthHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "Accept": "application/json",
-    "Origin": window.location.origin,
     "X-Client-Timestamp": Date.now().toString(),
+    "X-Security-Level": "strict"
   };
   
   if (backendAuthToken) {
-    // FIXED: Use proper Bearer token format as required by FastAPI
     headers["Authorization"] = `Bearer ${backendAuthToken}`;
-    console.log('🔑 AUTH HEADERS: Added Bearer token for protected endpoint');
-  } else {
-    console.warn('⚠️ AUTH HEADERS: No JWT token available - this will fail for protected endpoints');
   }
   
   return headers;
 }
 
-// Legacy function for compatibility - redirects to main auth
+// Legacy verification function - remove if not used elsewhere
 export async function verifyTelegramUser(initData: string): Promise<TelegramVerificationResponse | null> {
-  console.warn('⚠️ LEGACY AUTH: verifyTelegramUser called - redirecting to signInToBackend');
+  console.warn('⚠️ verifyTelegramUser is deprecated - use signInToBackend instead');
   
   const token = await signInToBackend(initData);
   if (!token) {
-    return { success: false, user_id: 0, user_data: null, message: 'Authentication failed' };
+    return { success: false, user_id: 0, user_data: null, message: 'Sign-in failed' };
   }
   
   // Extract user data from initData for compatibility
@@ -142,7 +111,7 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
         success: true,
         user_id: user.id,
         user_data: user,
-        message: 'Success via main auth flow'
+        message: 'Success via sign-in'
       };
     }
   } catch (error) {
