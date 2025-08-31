@@ -15,11 +15,10 @@ import { ForceRefreshButton } from '@/components/admin/ForceRefreshButton';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { Users, Settings, MessageSquare, CreditCard, Upload, BarChart3, Diamond, Send, Shield } from 'lucide-react';
+import { Users, Settings, MessageSquare, CreditCard, Upload, BarChart3, Diamond, Send } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { IndividualMessageSender } from '@/components/admin/IndividualMessageSender';
-import { BlockedUsersManager } from '@/components/admin/BlockedUsersManager';
 
 export default function Admin() {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
@@ -258,15 +257,7 @@ export default function Admin() {
       {/* Main Admin Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <Tabs defaultValue="users" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-9">
-            <TabsTrigger 
-              value="blocked-users" 
-              className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-red-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
-            >
-              <Shield className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-              <span className="hidden xs:inline sm:inline">Block Bot</span>
-              <span className="xs:hidden sm:hidden">Block</span>
-            </TabsTrigger>
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger 
               value="diamond-counts" 
               className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
@@ -335,14 +326,6 @@ export default function Admin() {
           </TabsList>
           
           <div className="mt-6">
-            <TabsContent value="blocked-users" className="space-y-0">
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <div className="p-6">
-                  <BlockedUsersManager />
-                </div>
-              </div>
-            </TabsContent>
-            
             <TabsContent value="diamond-counts" className="space-y-0">
               <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                 <UserDiamondCounts />
