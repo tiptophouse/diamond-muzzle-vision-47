@@ -29,6 +29,10 @@ interface SFTPProvisionResponse {
   id?: string;
   last_used_at?: string;
   expires_at?: string;
+  connection_test_result?: {
+    status: 'success' | 'failed';
+    message?: string;
+  };
 }
 
 export function SFTPSettings() {
@@ -38,10 +42,10 @@ export function SFTPSettings() {
   const [sftpAccount, setSftpAccount] = useState<SFTPStatusResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [credentials, setCredentials] = useState<SFTPProvisionResponse | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'success' | 'failed' | null>(null);
+  const [fastApiToken, setFastApiToken] = useState<string | null>(null);
 
   // Get real Telegram init data
   const getTelegramInitData = (): string | null => {
@@ -51,11 +55,9 @@ export function SFTPSettings() {
     }
     
     try {
-      // Check if we're in Telegram WebApp environment
       if (window.Telegram?.WebApp?.initData) {
         const initData = window.Telegram.WebApp.initData;
         console.log('🔍 Found real Telegram initData:', initData.length, 'characters');
-        console.log('🔍 InitData preview:', initData.substring(0, 100) + '...');
         return initData;
       }
       
@@ -129,6 +131,7 @@ export function SFTPSettings() {
   };
 
   // Provision SFTP using FastAPI with authentication token
+  // This now generates new credentials each time and invalidates old ones
   const provisionSFTPWithAuth = async (token: string): Promise<SFTPProvisionResponse | null> => {
     try {
       if (!user?.id) {
@@ -137,6 +140,7 @@ export function SFTPSettings() {
       }
 
       console.log('🚀 Provisioning SFTP with FastAPI for user:', user.id);
+      console.log('🔄 New password will be generated, old one will be invalidated');
       
       const response = await fetch(`${API_BASE_URL}/api/v1/sftp/provision`, {
         method: 'POST',
@@ -167,6 +171,18 @@ export function SFTPSettings() {
       const result = await response.json();
       console.log('✅ SFTP provision successful:', result);
       
+      // Validate expected username format: ftp_<telegram_id>
+      const expectedUsername = `ftp_${user.id}`;
+      if (result.username !== expectedUsername) {
+        console.warn('⚠️ Username format mismatch. Expected:', expectedUsername, 'Got:', result.username);
+      }
+      
+      // Validate expected folder path: /sftp/<telegram_id>/upload
+      const expectedFolderPath = `/sftp/${user.id}/upload`;
+      if (result.folder_path !== expectedFolderPath) {
+        console.warn('⚠️ Folder path mismatch. Expected:', expectedFolderPath, 'Got:', result.folder_path);
+      }
+      
       return result;
     } catch (error: any) {
       console.error('❌ SFTP provision error:', error);
@@ -179,7 +195,7 @@ export function SFTPSettings() {
     }
   };
 
-  // Load existing SFTP account
+  // Load existing SFTP account status
   useEffect(() => {
     const loadSFTPAccount = async () => {
       if (!user?.id) {
@@ -189,10 +205,10 @@ export function SFTPSettings() {
       }
       
       try {
-        console.log('🔍 SFTP: Loading account for user ID:', user.id);
+        console.log('🔍 SFTP: Loading account status for user ID:', user.id);
         
         const data = await getSftpStatus(user.id);
-        console.log('✅ SFTP: Found existing account:', data);
+        console.log('✅ SFTP: Found existing account status:', data);
         setSftpAccount(data);
       } catch (error: any) {
         console.error('❌ SFTP: Error loading account:', error);
@@ -217,7 +233,7 @@ export function SFTPSettings() {
   }, [user?.id, toast]);
 
   const generateSFTPCredentials = async () => {
-    console.log('🚀 SFTP: Generate button clicked');
+    console.log('🚀 SFTP: Generate button clicked - will create new password and invalidate old one');
     
     if (!user?.id) {
       console.error('❌ SFTP: No user ID available');
@@ -249,13 +265,18 @@ export function SFTPSettings() {
         throw new Error('Failed to authenticate with FastAPI');
       }
       
+      // Store token for other operations
+      setFastApiToken(token);
+      
       // Step 2: Provision SFTP with the authentication token
+      // This will generate new credentials and invalidate old ones
       const data = await provisionSFTPWithAuth(token);
       if (!data) {
         throw new Error('Failed to provision SFTP account');
       }
       
-      console.log('✅ SFTP: Credentials received from FastAPI');
+      console.log('✅ SFTP: New credentials received from FastAPI');
+      console.log('🔒 SFTP: Old password has been invalidated');
       
       // Update state with new credentials
       setCredentials(data);
@@ -274,15 +295,33 @@ export function SFTPSettings() {
       
       setSftpAccount(accountInfo);
 
-      toast({
-        title: "✅ חשבון SFTP נוצר בהצלחה",
-        description: "פרטי הגישה שלך מוכנים לשימוש",
-      });
+      // Check if automatic connection test was performed
+      if (data.connection_test_result) {
+        if (data.connection_test_result.status === 'success') {
+          setConnectionStatus('success');
+          toast({
+            title: "✅ חשבון SFTP נוצר והחיבור נבדק בהצלחה",
+            description: "פרטי הגישה שלך מוכנים לשימוש",
+          });
+        } else {
+          setConnectionStatus('failed');
+          toast({
+            title: "⚠️ חשבון SFTP נוצר אך בדיקת החיבור נכשלה",
+            description: data.connection_test_result.message || "נסה לבדוק את החיבור באופן ידני",
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "✅ חשבון SFTP נוצר בהצלחה",
+          description: "פרטי הגישה שלך מוכנים לשימוש",
+        });
 
-      // Test connection automatically
-      setTimeout(() => {
-        testConnection();
-      }, 2000);
+        // Manual connection test if automatic test wasn't performed
+        setTimeout(() => {
+          testConnection();
+        }, 2000);
+      }
       
     } catch (error: any) {
       console.error('❌ SFTP: Generation failed:', error);
@@ -307,7 +346,40 @@ export function SFTPSettings() {
     setConnectionStatus('checking');
 
     try {
-      const data = await testSftpConnection(user.id);
+      // Use stored FastAPI token if available, otherwise get new one
+      let token = fastApiToken;
+      if (!token) {
+        console.log('🔐 SFTP: Getting new token for connection test');
+        token = await signInToBackend();
+        if (!token) {
+          throw new Error('Failed to authenticate for connection test');
+        }
+        setFastApiToken(token);
+      }
+
+      console.log('🧪 SFTP: Testing connection with FastAPI token');
+      
+      // Use direct fetch with same authentication as provision
+      const response = await fetch(`${API_BASE_URL}/api/v1/sftp/test-connection`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        mode: 'cors',
+        body: JSON.stringify({
+          telegram_id: user.id
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ SFTP: Connection test failed:', response.status, errorText);
+        throw new Error(`Connection test failed: ${response.status}`);
+      }
+
+      const data = await response.json();
       
       if (data.status === 'success') {
         setConnectionStatus('success');
@@ -328,7 +400,7 @@ export function SFTPSettings() {
       setConnectionStatus('failed');
       toast({
         title: "שגיאה בבדיקת חיבור",
-        description: "לא ניתן לבדוק את החיבור כרגע",
+        description: error.message || "לא ניתן לבדוק את החיבור כרגע",
         variant: "destructive",
       });
     } finally {
@@ -348,12 +420,41 @@ export function SFTPSettings() {
     if (!user?.id) return;
 
     try {
-      const result = await deactivateSftp(user.id);
+      // Use stored FastAPI token if available, otherwise get new one
+      let token = fastApiToken;
+      if (!token) {
+        token = await signInToBackend();
+        if (!token) {
+          throw new Error('Failed to authenticate for deactivation');
+        }
+      }
+
+      // Use direct fetch with FastAPI authentication
+      const response = await fetch(`${API_BASE_URL}/api/v1/sftp/deactivate`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        mode: 'cors',
+        body: JSON.stringify({
+          telegram_id: user.id
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Deactivation failed: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
       
       setSftpAccount(null);
       setCredentials(null);
       setShowPassword(false);
       setConnectionStatus(null);
+      setFastApiToken(null);
 
       toast({
         title: "✅ חשבון SFTP הושבת",
@@ -395,7 +496,7 @@ export function SFTPSettings() {
           הגדרות SFTP
         </CardTitle>
         <CardDescription>
-          נהל את פרטי הגישה ל-SFTP עבור העלאת קבצי יהלומים
+          נהל את פרטי הגישה ל-SFTP עבור העלאת קבצי יהלומים. כל לחיצה על "צור חשבון" תייצר סיסמה חדשה ותבטל את הקודמת.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -477,12 +578,12 @@ export function SFTPSettings() {
               </div>
 
               <div className="space-y-2">
-                <Label>שם משתמש</Label>
+                <Label>שם משתמש (ftp_{user?.id})</Label>
                 <div className="flex gap-2">
                   <Input
                     value={credentials?.username || sftpAccount.ftp_username || "טוען..."}
                     readOnly
-                    className="bg-muted"
+                    className="bg-muted font-mono"
                   />
                   <Button
                     variant="outline"
@@ -498,7 +599,7 @@ export function SFTPSettings() {
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
                     <AlertCircle className="h-4 w-4 text-amber-500" />
-                    סיסמה (שמור בבטחה!)
+                    סיסמה חדשה (הישנה בוטלה!)
                   </Label>
                   <div className="flex gap-2">
                     <Input
@@ -522,7 +623,7 @@ export function SFTPSettings() {
               )}
 
               <div className="space-y-2">
-                <Label>תיקיית העלאה</Label>
+                <Label>תיקיית העלאה (/sftp/{user?.id}/upload)</Label>
                 <Input
                   value={credentials?.folder_path || sftpAccount.ftp_folder_path || "טוען..."}
                   readOnly
@@ -553,9 +654,10 @@ export function SFTPSettings() {
               <h4 className="font-medium">הוראות שימוש:</h4>
               <ul className="text-sm space-y-1 text-muted-foreground">
                 <li>• השתמש בלקוח SFTP כמו FileZilla או WinSCP</li>
-                <li>• העלה קבצי CSV לתיקיית inbox</li>
-                <li>• הקבצים יעובדו אוטומטית תוך מספר דקות</li>
-                <li>• תקבל הודעה כשהעיבוד יסתיים</li>
+                <li>• העלה קבצי CSV לתיקיית upload</li>
+                <li>• הקבצים יעובדו אוטומטית דרך /api/v1/diamonds/batch</li>
+                <li>• תקבל הודעה עם פרטים על הצלחות ושגיאות</li>
+                <li>• כל חשבון מבודד בתיקיה נפרדת עם הגבלות גישה</li>
               </ul>
             </div>
 
@@ -574,6 +676,23 @@ export function SFTPSettings() {
                   <>
                     <Server className="h-4 w-4 mr-2" />
                     בדוק חיבור
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={generateSFTPCredentials}
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    מחדש סיסמה...
+                  </>
+                ) : (
+                  <>
+                    <Key className="h-4 w-4 mr-2" />
+                    חדש סיסמה
                   </>
                 )}
               </Button>
