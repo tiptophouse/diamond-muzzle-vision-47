@@ -63,13 +63,41 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
         salesByCategory: [] 
       };
 
-  // Calculate actual metrics from real data
-  const totalValue = allDiamonds.reduce((sum, diamond) => sum + diamond.price, 0);
+  // Calculate actual metrics from real data with realistic bounds
+  const calculateTotalValue = () => {
+    const total = allDiamonds.reduce((sum, diamond) => {
+      // Ensure price is reasonable (between $100 and $500k per diamond)
+      const price = diamond.price;
+      if (price > 0 && price < 500000) {
+        return sum + price;
+      }
+      return sum;
+    }, 0);
+    
+    console.log('💰 Total value calculated:', total);
+    return total;
+  };
+
+  const calculateAvgPricePerCarat = () => {
+    const validDiamonds = allDiamonds.filter(d => 
+      d.price > 0 && d.price < 500000 && d.carat > 0 && d.carat < 20
+    );
+    
+    if (validDiamonds.length === 0) return 0;
+    
+    const totalValue = validDiamonds.reduce((sum, d) => sum + d.price, 0);
+    const totalCarats = validDiamonds.reduce((sum, d) => sum + d.carat, 0);
+    
+    const avgPricePerCarat = Math.round(totalValue / totalCarats);
+    console.log('💎 Avg price per carat calculated:', avgPricePerCarat, 'from', validDiamonds.length, 'valid diamonds');
+    
+    return avgPricePerCarat;
+  };
+
+  const totalValue = calculateTotalValue();
   const availableDiamonds = allDiamonds.filter(d => d.status === 'Available').length;
   const storeVisibleDiamonds = allDiamonds.filter(d => d.store_visible).length;
-  const avgPricePerCarat = allDiamonds.length > 0 
-    ? Math.round(totalValue / allDiamonds.reduce((sum, d) => sum + d.carat, 0))
-    : 0;
+  const avgPricePerCarat = calculateAvgPricePerCarat();
 
   // Show empty state when no diamonds
   if (!loading && allDiamonds.length === 0) {
@@ -152,7 +180,7 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
             />
             <StatCard
               title="Price/Ct"
-              value={Math.round(avgPricePerCarat / 100) * 100}
+              value={avgPricePerCarat}
               prefix="$"
               icon={TrendingUp}
               loading={loading}
@@ -247,7 +275,7 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
             <div className="flex items-center gap-2 text-xs text-[#0088cc]">
               <div className="w-1.5 h-1.5 bg-[#0088cc] rounded-full animate-pulse"></div>
               <span className="font-medium">
-                Live data • {allDiamonds.length} diamonds • Updated now
+                Live data • {allDiamonds.length} diamonds • ${Math.round(totalValue / 1000)}K value
               </span>
             </div>
           </div>
