@@ -133,15 +133,16 @@ export function SFTPSettings() {
       setCredentials(sftpCredentials);
       setConnectionStatus(sftpCredentials.test_result ? 'success' : 'failed');
 
-      const successMessage = `🎉 <b>חשבון SFTP נוצר בהצלחה!</b>
+const successMessage = `🎉 <b>חשבון SFTP נוצר בהצלחה!</b>
 
 📊 <b>פרטי החשבון:</b>
 🏠 <b>שרת:</b> <code>${sftpCredentials.host}</code>
 👤 <b>משתמש:</b> <code>${sftpCredentials.username}</code>
-📁 <b>תיקייה:</b> <code>${sftpCredentials.folder_path}</code>
+📁 <b>תיקייה:</b> <code>${sftpCredentials.upload_dir || sftpCredentials.folder_path}</code>
 🔌 <b>פורט:</b> <code>${sftpCredentials.port}</code>
 🔑 <b>סיסמה:</b> <code>${sftpCredentials.password}</code>
-📊 <b>סטטוס:</b> ${sftpCredentials.test_result ? '✅ פעיל' : '❌ לא פעיל'}
+📊 <b>סטטוס:</b> ${sftpCredentials.status === 'success' ? '✅ פעיל' : sftpCredentials.test_result ? '✅ פעיל' : '❌ לא פעיל'}
+${sftpCredentials.expires_at ? `⏰ <b>תפוגה:</b> <code>${new Date(sftpCredentials.expires_at).toLocaleDateString('he-IL')}</code>` : ''}
 
 ⚠️ <b>חשוב:</b> זוהי הפעם היחידה שבה תראה את הסיסמה - שמור אותה במקום בטוח!
 🔄 לחיצה חוזרת על הכפתור תיצור סיסמה חדשה ותבטל את הקודמת.`;
@@ -504,35 +505,102 @@ export function SFTPSettings() {
 
                 {/* Status */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">סטטוס חיבור</Label>
+                  <Label className="text-sm font-medium text-gray-700">סטטוס</Label>
                   <div className="flex items-center gap-2">
-                    {connectionStatus === null && (
-                      <Badge variant="secondary">
-                        <RefreshCw className="h-3 w-3 mr-1" />
-                        טרם נבדק
+                    {credentials.status === 'success' && (
+                      <Badge variant="default" className="bg-green-500">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        פעיל
                       </Badge>
                     )}
-                    {connectionStatus === 'checking' && (
+                    {credentials.status === 'failed' && (
+                      <Badge variant="destructive">
+                        <AlertCircle className="h-3 w-3 mr-1" />
+                        כשל
+                      </Badge>
+                    )}
+                    {!credentials.status && connectionStatus === 'checking' && (
                       <Badge variant="secondary">
                         <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
                         בודק...
                       </Badge>
                     )}
-                    {connectionStatus === 'success' && (
+                    {!credentials.status && connectionStatus === 'success' && (
                       <Badge variant="default" className="bg-green-500">
                         <CheckCircle className="h-3 w-3 mr-1" />
-                        פעיל ומחובר
+                        מחובר
                       </Badge>
                     )}
-                    {connectionStatus === 'failed' && (
+                    {!credentials.status && connectionStatus === 'failed' && (
                       <Badge variant="destructive">
                         <AlertCircle className="h-3 w-3 mr-1" />
                         חיבור נכשל
                       </Badge>
                     )}
+                    {!credentials.status && !connectionStatus && (
+                      <Badge variant="secondary">
+                        <RefreshCw className="h-3 w-3 mr-1" />
+                        טרם נבדק
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </div>
+
+              {/* Additional Info Row for Expiration and Upload Directory */}
+              {(credentials.expires_at || credentials.upload_dir) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 mt-4 border-t border-gray-200">
+                  {/* Expiration Date */}
+                  {credentials.expires_at && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-700">תאריך תפוגה</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          value={new Date(credentials.expires_at).toLocaleDateString('he-IL', {
+                            day: '2-digit',
+                            month: '2-digit', 
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                          readOnly
+                          className="bg-gray-50 border-gray-200 font-mono text-sm"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => copyToClipboard(credentials.expires_at!, 'תאריך התפוגה')}
+                          className="shrink-0"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Upload Directory */}
+                  {credentials.upload_dir && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-700">תיקיית העלאה ייעודית</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          value={credentials.upload_dir}
+                          readOnly
+                          className="bg-gray-50 border-gray-200 font-mono text-sm"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => copyToClipboard(credentials.upload_dir!, 'תיקיית העלאה')}
+                          className="shrink-0"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Folder Path - Full Width */}
               <div className="space-y-2 pt-4 border-t border-gray-200">

@@ -3,10 +3,17 @@ import { api } from "@/lib/api";
 import { getAuthHeaders, getBackendAuthToken } from "@/lib/api/auth";
 
 export type SFTPProvisionResponse = {
-  sftp_server: string;
   username: string;
   password: string;
-  test_result: boolean;
+  host: string;
+  port: number;
+  upload_dir: string;
+  expires_at: string;
+  status: string;
+  connection_test: boolean;
+  // Backward compatibility with old API format
+  sftp_server?: string;
+  test_result?: boolean;
 };
 
 export type SFTPCredentials = {
@@ -15,6 +22,9 @@ export type SFTPCredentials = {
   username: string;
   password: string;
   folder_path: string;
+  upload_dir?: string;
+  expires_at?: string;
+  status?: string;
   test_result: boolean;
 };
 
@@ -47,12 +57,15 @@ export async function getSftpStatus(telegramId: number): Promise<SFTPCredentials
   });
   
   return {
-    host: data.sftp_server,
-    port: 22,
+    host: data.host || data.sftp_server || 'sftp.brilliantbot.com',
+    port: data.port || 22,
     username: data.username,
     password: data.password,
-    folder_path: `/home/${data.username}/inbox`,
-    test_result: data.test_result
+    folder_path: data.upload_dir || `/home/${data.username}/inbox`,
+    upload_dir: data.upload_dir,
+    expires_at: data.expires_at,
+    status: data.status,
+    test_result: data.connection_test ?? data.test_result ?? false
   };
 }
 
@@ -84,20 +97,25 @@ export async function provisionSftp(telegramId: number): Promise<SFTPCredentials
   
   const data = response.data;
   console.log('✅ SFTP: JWT authenticated provision response received:', {
-    server: data.sftp_server,
+    host: data.host || data.sftp_server,
     username: data.username,
     hasPassword: !!data.password,
-    testResult: data.test_result
+    status: data.status,
+    expires_at: data.expires_at,
+    connection_test: data.connection_test
   });
   
   // Map the FastAPI response to our expected format
   const credentials: SFTPCredentials = {
-    host: data.sftp_server,
-    port: 22, // Default SFTP port
+    host: data.host || data.sftp_server || 'sftp.brilliantbot.com',
+    port: data.port || 22,
     username: data.username,
     password: data.password,
-    folder_path: `/home/${data.username}/inbox`, // Derive folder path from username
-    test_result: data.test_result
+    folder_path: data.upload_dir || `/home/${data.username}/inbox`,
+    upload_dir: data.upload_dir,
+    expires_at: data.expires_at,
+    status: data.status,
+    test_result: data.connection_test ?? data.test_result ?? false
   };
   
   console.log('✅ SFTP: JWT authenticated account provisioned successfully:', {
