@@ -127,6 +127,27 @@ export function useSecureTelegramAuth(): AuthState {
     try {
       console.log('🔐 Authenticating with FastAPI using initData');
       console.log('📤 InitData length:', initData.length);
+      console.log('📤 Raw initData being sent to backend:', initData);
+      
+      // Parse and show structured data if available
+      if (initData && initData.length > 0) {
+        try {
+          const urlParams = new URLSearchParams(initData);
+          const parsedData = {
+            user: urlParams.get('user'),
+            auth_date: urlParams.get('auth_date'),
+            hash: urlParams.get('hash'),
+            query_id: urlParams.get('query_id'),
+            start_param: urlParams.get('start_param'),
+            allParams: Object.fromEntries(urlParams.entries())
+          };
+          console.log('🔍 Parsed initData structure:', parsedData);
+        } catch (parseErr) {
+          console.warn('⚠️ Could not parse initData as URL params:', parseErr);
+        }
+      } else {
+        console.warn('⚠️ Empty initData - this will fail authentication');
+      }
       
       const jwtToken = await signInToBackend(initData);
       

@@ -33,10 +33,28 @@ export function setBackendAuthToken(token: string | null) {
 export async function signInToBackend(initData: string): Promise<string | null> {
   try {
     console.log('🔐 API: Signing in to FastAPI with initData');
+    console.log('📤 API: Raw initData being sent to backend:', initData);
+    console.log('📤 API: InitData length:', initData.length);
     
     if (!initData || initData.length === 0) {
       console.error('🔐 API: No initData provided for sign-in');
       throw new Error('No Telegram authentication data provided');
+    }
+
+    // Log the parsed structure for debugging
+    try {
+      const urlParams = new URLSearchParams(initData);
+      const parsedStructure = {
+        user: urlParams.get('user'),
+        auth_date: urlParams.get('auth_date'),
+        hash: urlParams.get('hash'),
+        query_id: urlParams.get('query_id'),
+        allKeys: Array.from(urlParams.keys()),
+        totalParams: urlParams.size
+      };
+      console.log('🔍 API: Parsed initData structure before sending:', parsedStructure);
+    } catch (err) {
+      console.warn('⚠️ API: Could not parse initData structure:', err);
     }
 
     // Validate initData format
@@ -49,7 +67,12 @@ export async function signInToBackend(initData: string): Promise<string | null> 
       }
     }
 
-    console.log('📤 API: Sending authentication request to FastAPI');
+    const requestBody = {
+      init_data: initData
+    };
+    
+    console.log('📤 API: Request body being sent to FastAPI:', requestBody);
+    console.log('📤 API: Sending authentication request to FastAPI endpoint:', `${API_BASE_URL}${apiEndpoints.signIn()}`);
     
     const response = await fetch(`${API_BASE_URL}${apiEndpoints.signIn()}`, {
       method: 'POST',
@@ -60,12 +83,11 @@ export async function signInToBackend(initData: string): Promise<string | null> 
         'X-Client-Version': '2.0.0',
       },
       mode: 'cors',
-      body: JSON.stringify({
-        init_data: initData
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     console.log('📡 API: FastAPI response status:', response.status);
+    console.log('📡 API: FastAPI response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       const errorText = await response.text();
