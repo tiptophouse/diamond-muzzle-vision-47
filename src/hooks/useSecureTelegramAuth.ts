@@ -233,9 +233,25 @@ export function useSecureTelegramAuth(): AuthState {
         console.warn('⚠️ Telegram WebApp setup failed:', setupError);
       }
 
+      // Log all available Telegram data for debugging
+      console.log('📊 Telegram WebApp Data:', {
+        initData: tg.initData,
+        initDataLength: tg.initData?.length || 0,
+        initDataUnsafe: tg.initDataUnsafe,
+        version: tg.version,
+        platform: tg.platform,
+        colorScheme: tg.colorScheme,
+        isExpanded: tg.isExpanded,
+        viewportHeight: tg.viewportHeight,
+        themeParams: tg.themeParams,
+        fullTelegramObject: (window as any).Telegram
+      });
+
       // Validate initData presence
       if (!tg.initData || tg.initData.length === 0) {
         console.error('❌ No initData available - cannot authenticate');
+        console.log('🔍 Raw initData value:', JSON.stringify(tg.initData));
+        console.log('🔍 InitDataUnsafe:', JSON.stringify(tg.initDataUnsafe));
         updateState({
           error: 'No Telegram authentication data available',
           isLoading: false,
@@ -246,6 +262,7 @@ export function useSecureTelegramAuth(): AuthState {
       }
 
       console.log('🔍 InitData found, authenticating with FastAPI...');
+      console.log('📤 Sending initData to backend:', tg.initData.substring(0, 100) + '...');
       
       // Authenticate with FastAPI using initData
       const authSuccess = await authenticateWithFastAPI(tg.initData);
