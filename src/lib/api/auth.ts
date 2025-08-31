@@ -29,17 +29,21 @@ export function getBackendAuthToken(): string | null {
   return backendAuthToken;
 }
 
-// Backend sign-in function
+// Backend sign-in function - FIXED to use correct endpoint
 export async function signInToBackend(initData: string): Promise<string | null> {
   try {
-    console.log('🔐 API: Signing in to backend with initData');
+    console.log('🔐 API: Signing in to unified FastAPI backend with initData');
     
     if (!initData || initData.length === 0) {
       console.error('🔐 API: No initData provided for sign-in');
       return null;
     }
 
-    const response = await fetch(`${API_BASE_URL}${apiEndpoints.signIn()}`, {
+    // Use the correct sign-in endpoint from apiEndpoints
+    const signInUrl = `${API_BASE_URL}${apiEndpoints.signIn()}`;
+    console.log('🔐 API: Using sign-in URL:', signInUrl);
+
+    const response = await fetch(signInUrl, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -59,12 +63,13 @@ export async function signInToBackend(initData: string): Promise<string | null> 
 
     const result = await response.json();
     
-    if (result.token) {
-      backendAuthToken = result.token;
+    if (result.access_token || result.token) {
+      // Handle both possible response formats
+      backendAuthToken = result.access_token || result.token;
       console.log('✅ API: Backend sign-in successful, token stored');
-      return result.token;
+      return backendAuthToken;
     } else {
-      console.error('🔐 API: No token in sign-in response');
+      console.error('🔐 API: No token in sign-in response:', Object.keys(result));
       return null;
     }
   } catch (error) {

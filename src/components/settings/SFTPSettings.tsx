@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,10 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { testSftpConnection } from '@/api/sftp';
+import { signInToBackend } from '@/lib/api/auth';
+import { provisionSftp, testSftpConnection } from '@/api/sftp';
 import { 
   Server, 
   Upload, 
@@ -28,100 +29,26 @@ interface SFTPCredentials {
   port: number;
   username: string;
   password: string;
-  upload_path: string;
-  connection_test?: {
-    success: boolean;
-    message: string;
-    details?: any;
-  };
+  folder_path: string;
+  ftp_username: string;
+  status: string;
+  created_at: string;
+  id?: string;
+  last_used_at?: string;
+  expires_at?: string;
 }
 
 export function SFTPSettings() {
   const { user } = useTelegramAuth();
   const { toast } = useToast();
   
-  const [host, setHost] = useState('');
-  const [port, setPort] = useState(22);
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [uploadPath, setUploadPath] = useState('');
-  const [connectionStatus, setConnectionStatus] = useState<{ success: boolean; message: string } | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [uptime, setUptime] = useState<number | null>(null);
-  const [sftpEnabled, setSftpEnabled] = useState(false);
-  const [sftpDetails, setSftpDetails] = useState<{ host: string; port: number; username: string } | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
-  const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [credentials, setCredentials] = useState<SFTPCredentials | null>(null);
   const [isProvisioning, setIsProvisioning] = useState(false);
-  const [isDeactivating, setIsDeactivating] = useState(false);
+  const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [jwtToken, setJwtToken] = useState<string | null>(null);
   const [showCredentials, setShowCredentials] = useState(false);
   const [lastProvisionTime, setLastProvisionTime] = useState<Date | null>(null);
-
-  useEffect(() => {
-    const fetchUptime = async () => {
-      try {
-        const response = await fetch('/api/uptime');
-        if (response.ok) {
-          const data = await response.json();
-          setUptime(data.uptime);
-        } else {
-          console.error('Failed to fetch uptime');
-        }
-      } catch (error) {
-        console.error('Error fetching uptime:', error);
-      }
-    };
-
-    fetchUptime();
-  }, []);
-
-  const signInToFastAPI = async (): Promise<string | null> => {
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
-    try {
-      console.log('🔐 Signing in to FastAPI...');
-      
-      const initData = window.Telegram?.WebApp?.initData;
-      if (!initData) {
-        throw new Error('Telegram WebApp data not available');
-      }
-
-      const response = await fetch('https://api.diamondbot.store/api/v1/auth/telegram/sign-in', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          init_data: initData
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`Authentication failed: ${errorData.detail || response.statusText}`);
-      }
-
-      const data = await response.json();
-      const token = data.access_token;
-      
-      if (!token) {
-        throw new Error('No access token received');
-      }
-
-      console.log('✅ FastAPI authentication successful');
-      setJwtToken(token);
-      return token;
-    } catch (error) {
-      console.error('❌ FastAPI sign-in error:', error);
-      throw error;
-    }
-  };
+  const [connectionTestResult, setConnectionTestResult] = useState<{ status: 'success' | 'failed'; message?: string } | null>(null);
 
   const provisionSFTPAccount = async () => {
     if (!user) {
@@ -135,55 +62,70 @@ export function SFTPSettings() {
 
     setIsProvisioning(true);
     setError(null);
+    setConnectionTestResult(null);
 
     try {
-      console.log('🚀 Starting SFTP provisioning...');
+      console.log('🚀 Starting SFTP provisioning for user:', user.id);
       
-      // Step 1: Sign in to FastAPI
-      const token = await signInToFastAPI();
-      
-      // Step 2: Provision SFTP account
-      console.log('📡 Provisioning SFTP account...');
-      const response = await fetch('https://api.diamondbot.store/api/v1/sftp/provision', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`SFTP provisioning failed: ${errorData.detail || response.statusText}`);
+      // Step 1: Sign in to FastAPI backend using unified auth
+      const initData = window.Telegram?.WebApp?.initData;
+      if (!initData) {
+        throw new Error('Telegram WebApp data not available');
       }
 
-      const data = await response.json();
-      console.log('✅ SFTP provisioning successful:', data);
+      console.log('🔐 Signing in to FastAPI backend...');
+      const token = await signInToBackend(initData);
+      
+      if (!token) {
+        throw new Error('Failed to authenticate with FastAPI backend');
+      }
+
+      console.log('✅ Authentication successful, provisioning SFTP...');
+      
+      // Step 2: Provision SFTP account using unified API
+      const sftpData = await provisionSftp(user.id);
+      console.log('✅ SFTP provisioning successful:', sftpData);
 
       // Update state with new credentials
-      setCredentials(data);
+      setCredentials(sftpData);
       setShowCredentials(true);
       setLastProvisionTime(new Date());
 
       toast({
         title: "🎉 חשבון SFTP הוקם בהצלחה!",
-        description: `שם משתמש: ftp_${user.id} | תיקיית העלאה: /sftp/${user.id}/upload`,
+        description: `שם משתמש: ${sftpData.ftp_username} | תיקיית העלאה: ${sftpData.folder_path}`,
       });
 
-      // Auto-test connection if test results are included
-      if (data.connection_test) {
-        if (data.connection_test.success) {
+      // Step 3: Auto-test connection
+      console.log('🧪 Auto-testing SFTP connection...');
+      setIsTestingConnection(true);
+      
+      try {
+        const testResult = await testSftpConnection(user.id);
+        setConnectionTestResult(testResult);
+        
+        if (testResult.status === 'success') {
           toast({
             title: "✅ בדיקת חיבור הצליחה",
-            description: data.connection_test.message,
+            description: testResult.message || "החיבור לשרת SFTP עובד בהצלחה",
           });
         } else {
           toast({
             title: "⚠️ בדיקת חיבור נכשלה",
-            description: data.connection_test.message,
+            description: testResult.message || "לא ניתן להתחבר לשרת SFTP",
             variant: "destructive",
           });
         }
+      } catch (testError: any) {
+        console.error('❌ Connection test error:', testError);
+        setConnectionTestResult({ status: 'failed', message: testError.message });
+        toast({
+          title: "⚠️ שגיאה בבדיקת החיבור",
+          description: testError.message,
+          variant: "destructive",
+        });
+      } finally {
+        setIsTestingConnection(false);
       }
 
     } catch (error: any) {
@@ -199,72 +141,6 @@ export function SFTPSettings() {
     }
   };
 
-  const testConnection = async () => {
-    if (!credentials || !jwtToken) {
-      toast({
-        title: "שגיאה",
-        description: "אין פרטי חיבור או אסימון",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsTestingConnection(true);
-
-    try {
-      console.log('🧪 Testing SFTP connection...');
-      
-      const response = await fetch('https://api.diamondbot.store/api/v1/sftp/test-connection', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${jwtToken}`,
-          'Content-Type': 'application/json',
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`Connection test failed: ${errorData.detail || response.statusText}`);
-      }
-
-      const result = await response.json();
-      console.log('✅ Connection test result:', result);
-
-      // Update credentials with test results
-      setCredentials(prev => prev ? {
-        ...prev,
-        connection_test: result
-      } : null);
-
-      if (result.success) {
-        toast({
-          title: "✅ חיבור SFTP תקין",
-          description: result.message || "החיבור לשרת SFTP עובד בהצלחה",
-        });
-      } else {
-        toast({
-          title: "❌ חיבור SFTP נכשל",
-          description: result.message || "לא ניתן להתחבר לשרת SFTP",
-          variant: "destructive",
-        });
-      }
-    } catch (error: any) {
-      console.error('❌ Connection test error:', error);
-      toast({
-        title: "שגיאה בבדיקת החיבור",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsTestingConnection(false);
-    }
-  };
-
-  const deactivateAccount = async () => {
-    // Implementation for deactivation
-    console.log('Deactivating SFTP account...');
-  };
-
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -275,12 +151,6 @@ export function SFTPSettings() {
     } catch (error) {
       console.error('Failed to copy:', error);
     }
-  };
-
-  const formatUptime = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return `${hours}h ${minutes}m`;
   };
 
   if (!user) {
@@ -349,18 +219,25 @@ export function SFTPSettings() {
           ) : (
             <div className="space-y-4">
               {/* Connection Status */}
-              {credentials.connection_test && (
-                <Alert className={credentials.connection_test.success ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
+              {connectionTestResult && (
+                <Alert className={connectionTestResult.status === 'success' ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
                   <div className="flex items-center gap-2">
-                    {credentials.connection_test.success ? (
+                    {connectionTestResult.status === 'success' ? (
                       <CheckCircle className="h-4 w-4 text-green-600" />
                     ) : (
                       <AlertCircle className="h-4 w-4 text-red-600" />
                     )}
-                    <AlertDescription className={credentials.connection_test.success ? "text-green-800" : "text-red-800"}>
-                      {credentials.connection_test.message}
+                    <AlertDescription className={connectionTestResult.status === 'success' ? "text-green-800" : "text-red-800"}>
+                      {connectionTestResult.message || (connectionTestResult.status === 'success' ? 'חיבור SFTP תקין' : 'חיבור SFTP נכשל')}
                     </AlertDescription>
                   </div>
+                </Alert>
+              )}
+
+              {isTestingConnection && (
+                <Alert>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <AlertDescription>בודק חיבור SFTP...</AlertDescription>
                 </Alert>
               )}
 
@@ -372,11 +249,11 @@ export function SFTPSettings() {
                     שם משתמש
                   </Label>
                   <div className="flex items-center gap-2">
-                    <Input value={credentials.username} readOnly className="bg-muted" />
+                    <Input value={credentials.ftp_username} readOnly className="bg-muted" />
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => copyToClipboard(credentials.username)}
+                      onClick={() => copyToClipboard(credentials.ftp_username)}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -389,11 +266,11 @@ export function SFTPSettings() {
                     תיקיית העלאה
                   </Label>
                   <div className="flex items-center gap-2">
-                    <Input value={credentials.upload_path} readOnly className="bg-muted" />
+                    <Input value={credentials.folder_path} readOnly className="bg-muted" />
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => copyToClipboard(credentials.upload_path)}
+                      onClick={() => copyToClipboard(credentials.folder_path)}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -451,24 +328,6 @@ export function SFTPSettings() {
               <div className="flex gap-2 flex-wrap">
                 <Button
                   variant="outline"
-                  onClick={testConnection}
-                  disabled={isTestingConnection}
-                >
-                  {isTestingConnection ? (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      בודק חיבור...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      בדוק חיבור
-                    </>
-                  )}
-                </Button>
-
-                <Button
-                  variant="outline"
                   onClick={provisionSFTPAccount}
                   disabled={isProvisioning}
                 >
@@ -482,21 +341,6 @@ export function SFTPSettings() {
                       <Key className="mr-2 h-4 w-4" />
                       חדש סיסמה
                     </>
-                  )}
-                </Button>
-
-                <Button
-                  variant="destructive"
-                  onClick={deactivateAccount}
-                  disabled={isDeactivating}
-                >
-                  {isDeactivating ? (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      מבטל...
-                    </>
-                  ) : (
-                    'בטל חשבון'
                   )}
                 </Button>
               </div>
