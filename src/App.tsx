@@ -1,10 +1,10 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TelegramAuthProvider } from './context/TelegramAuthContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
-import { TelegramMiniAppLayout } from './components/layout/TelegramMiniAppLayout';
 import Index from './pages/Index';
 import Dashboard from './pages/Dashboard';
 import InventoryPage from './pages/InventoryPage';
@@ -25,7 +25,6 @@ import DiamondSwipe from './pages/DiamondSwipe';
 import NotFound from './pages/NotFound';
 import StandardizeCsvPage from './pages/StandardizeCsvPage';
 import BulkUploadPage from './pages/BulkUploadPage';
-import AnalyticsPage from "./pages/AnalyticsPage";
 
 function App() {
   const queryClient = new QueryClient({
@@ -43,7 +42,7 @@ function App() {
         <Router>
           <TutorialProvider>
             <InteractiveWizardProvider>
-              <TelegramMiniAppLayout>
+              <div className="min-h-screen bg-background">
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/dashboard" element={<Dashboard />} />
@@ -65,10 +64,9 @@ function App() {
                   <Route path="/secure-diamond/:encryptedData" element={<SecureDiamondPage />} />
                   <Route path="/swipe" element={<DiamondSwipe />} />
                   <Route path="/standardize-csv" element={<StandardizeCsvPage />} />
-                  <Route path="/analytics" element={<AnalyticsPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-              </TelegramMiniAppLayout>
+              </div>
             </InteractiveWizardProvider>
           </TutorialProvider>
         </Router>
