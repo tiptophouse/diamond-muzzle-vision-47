@@ -1,5 +1,5 @@
 
-import { TelegramLayout } from "@/components/layout/TelegramLayout";
+import { TelegramMiniAppLayout } from "@/components/layout/TelegramMiniAppLayout";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
 import { InventoryPagination } from "@/components/inventory/InventoryPagination";
@@ -124,17 +124,17 @@ export default function InventoryPage() {
 
   if (loading && allDiamonds.length === 0) {
     return (
-      <TelegramLayout>
+      <TelegramMiniAppLayout>
         <div className="text-center py-8">
           <p className="text-muted-foreground">Loading inventory...</p>
         </div>
-      </TelegramLayout>
+      </TelegramMiniAppLayout>
     );
   }
 
   return (
-    <TelegramLayout>
-      <div className="space-y-6">
+    <TelegramMiniAppLayout>
+      <div className="p-4 space-y-4 max-w-full overflow-hidden">
         <InventoryHeader 
           totalCount={allDiamonds.length}
           onRefresh={handleRefresh}
@@ -145,9 +145,7 @@ export default function InventoryPage() {
           }}
         />
         
-        <div className="flex flex-col lg:flex-row gap-6">
-          <aside className="lg:w-80">
-        <div className="space-y-6">
+        <div className="space-y-4 w-full">
           <InventorySearch
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -158,28 +156,24 @@ export default function InventoryPage() {
           <InventoryFilters
             onFilterChange={setFilters}
           />
-        </div>
-          </aside>
           
-          <main className="flex-1">
-            <div className="space-y-4">
-              <InventoryTable
-                data={filteredDiamonds}
-                loading={loading}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onStoreToggle={handleStoreToggle}
-                onImageUpdate={handleRefresh}
-                data-tutorial="inventory-table"
-              />
-              
-              <InventoryPagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-              />
-            </div>
-          </main>
+          <div className="w-full">
+            <InventoryTable
+              data={filteredDiamonds}
+              loading={loading}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onStoreToggle={handleStoreToggle}
+              onImageUpdate={handleRefresh}
+              data-tutorial="inventory-table"
+            />
+            
+            <InventoryPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
         </div>
 
         {/* Edit Diamond Modal */}
@@ -228,6 +222,6 @@ export default function InventoryPage() {
           </DialogContent>
         </Dialog>
       </div>
-    </TelegramLayout>
+    </TelegramMiniAppLayout>
   );
 }
