@@ -1,6 +1,6 @@
 
-// FastAPI backend configuration - UPDATED FOR PRODUCTION
-export const API_BASE_URL = "https://api.mazalbot.com"; // ✅ Your production FastAPI backend
+// FastAPI backend configuration - UNIFIED FOR PRODUCTION
+export const API_BASE_URL = "https://api.mazalbot.com"; // ✅ Unified production FastAPI backend
 
 let currentUserId: number | null = null;
 
@@ -26,3 +26,9 @@ export function getFullApiUrl(endpoint: string): string {
   console.log('🔧 API: Full URL constructed:', fullUrl);
   return fullUrl;
 }
+
+// Validate API configuration on startup
+console.log('🔧 API Config initialized:', {
+  baseUrl: API_BASE_URL,
+  environment: isDevelopment() ? 'development' : 'production'
+});

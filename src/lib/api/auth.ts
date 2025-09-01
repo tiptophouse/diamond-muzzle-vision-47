@@ -1,8 +1,6 @@
 
 import { API_BASE_URL } from './config';
-import { apiEndpoints } from './endpoints';
 import { setCurrentUserId } from './config';
-import { getBackendAccessToken } from './secureConfig';
 
 export interface TelegramVerificationResponse {
   success: boolean;
@@ -17,186 +15,148 @@ export interface TelegramVerificationResponse {
   };
 }
 
-// Store only the JWT token from FastAPI
+// Store backend auth token in memory
 let backendAuthToken: string | null = null;
 
 export function getBackendAuthToken(): string | null {
+  console.log('🔑 Getting backend auth token:', backendAuthToken ? 'EXISTS' : 'NULL');
   return backendAuthToken;
 }
 
-export function setBackendAuthToken(token: string | null) {
-  backendAuthToken = token;
-  console.log('🔐 Backend auth token', token ? 'set' : 'cleared');
+export function clearBackendAuthToken(): void {
+  console.log('🔑 Clearing backend auth token');
+  backendAuthToken = null;
 }
 
-// Enhanced backend sign-in function that returns JWT token
+// THE ONLY TRUE AUTHENTICATION METHOD: Telegram initData → FastAPI sign-in → JWT
 export async function signInToBackend(initData: string): Promise<string | null> {
   try {
-    console.log('🔐 API: Signing in to FastAPI with initData');
+    console.log('🔐 MAIN AUTH: Starting FastAPI backend authentication');
+    console.log('🔐 MAIN AUTH: InitData length:', initData?.length || 0);
     
     if (!initData || initData.length === 0) {
-      console.error('🔐 API: No initData provided for sign-in');
-      throw new Error('No Telegram authentication data provided');
+      console.error('🔐 MAIN AUTH: No initData provided');
+      return null;
     }
 
-    // Validate initData format
-    const urlParams = new URLSearchParams(initData);
-    const requiredParams = ['user', 'auth_date', 'hash'];
-    for (const param of requiredParams) {
-      if (!urlParams.get(param)) {
-        console.error(`🔐 API: Missing required parameter: ${param}`);
-        throw new Error(`Invalid Telegram data: missing ${param}`);
-      }
-    }
+    const signInUrl = `${API_BASE_URL}/api/v1/sign-in/`;
+    console.log('🔐 MAIN AUTH: Sign-in URL:', signInUrl);
 
-    console.log('📤 API: Sending authentication request to FastAPI');
-    
-    const response = await fetch(`${API_BASE_URL}${apiEndpoints.signIn()}`, {
+    const response = await fetch(signInUrl, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'X-Client-Platform': 'telegram-webapp',
-        'X-Client-Version': '2.0.0',
+        'Origin': window.location.origin,
       },
       mode: 'cors',
+      credentials: 'omit',
       body: JSON.stringify({
         init_data: initData
       }),
     });
 
-    console.log('📡 API: FastAPI response status:', response.status);
+    console.log('🔐 MAIN AUTH: Response status:', response.status);
+    console.log('🔐 MAIN AUTH: Response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ API: FastAPI sign-in failed:', response.status, errorText);
-      
-      let errorMessage = `Authentication failed (${response.status})`;
-      try {
-        const errorJson = JSON.parse(errorText);
-        errorMessage = errorJson.detail || errorJson.message || errorMessage;
-      } catch {
-        // Use default error message if JSON parsing fails
-      }
-      
-      throw new Error(errorMessage);
+      console.error('🔐 MAIN AUTH: Sign-in failed:', response.status, errorText);
+      return null;
     }
 
     const result = await response.json();
-    console.log('✅ API: FastAPI sign-in successful');
+    console.log('🔐 MAIN AUTH: Response data keys:', Object.keys(result));
     
-    if (!result.token) {
-      console.error('❌ API: No JWT token in FastAPI response');
-      throw new Error('Authentication successful but no token received');
-    }
-
-    // Store the JWT token
-    backendAuthToken = result.token;
+    // FIXED: According to OpenAPI spec, the field is "token", not "access_token"
+    const token = result.token;
     
-    // Extract user ID from the response or initData for current user tracking
-    try {
-      const userParam = urlParams.get('user');
-      if (userParam) {
-        const userData = JSON.parse(decodeURIComponent(userParam));
-        if (userData.id) {
-          setCurrentUserId(userData.id);
-          console.log('👤 API: Current user ID set to:', userData.id);
+    if (token) {
+      backendAuthToken = token;
+      console.log('✅ MAIN AUTH: JWT token received and stored');
+      
+      // Extract user ID from initData since the API doesn't return user_id
+      try {
+        const urlParams = new URLSearchParams(initData);
+        const userParam = urlParams.get('user');
+        
+        if (userParam) {
+          const user = JSON.parse(decodeURIComponent(userParam));
+          if (user.id) {
+            setCurrentUserId(user.id);
+            console.log('✅ MAIN AUTH: User ID extracted from initData:', user.id);
+          }
         }
+      } catch (error) {
+        console.error('🔐 MAIN AUTH: Failed to extract user ID from initData:', error);
       }
-    } catch (error) {
-      console.warn('⚠️ API: Could not extract user ID for tracking:', error);
+      
+      return backendAuthToken;
+    } else {
+      console.error('🔐 MAIN AUTH: No token in response:', Object.keys(result));
+      return null;
     }
-
-    console.log('🎫 API: JWT token received and stored');
-    return result.token;
   } catch (error) {
-    console.error('❌ API: Backend sign-in error:', error);
-    throw error; // Re-throw to let caller handle the error
-  }
-}
-
-// Strict Telegram verification - now only used for additional validation if needed
-export async function verifyTelegramUser(initData: string): Promise<TelegramVerificationResponse | null> {
-  try {
-    console.log('🔐 API: Additional Telegram verification (if needed)');
-    
-    if (!initData || initData.length === 0) {
-      console.error('🔐 API: No initData provided for verification');
-      return null;
-    }
-    
-    const backendToken = await getBackendAccessToken();
-    if (!backendToken) {
-      console.error('🔐 API: No backend access token available for verification');
-      return null;
-    }
-    
-    const response = await fetch(`${API_BASE_URL}${apiEndpoints.verifyTelegram()}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${backendToken}`,
-      },
-      mode: 'cors',
-      body: JSON.stringify({
-        init_data: initData,
-        client_timestamp: Date.now(),
-        security_level: 'strict',
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('🔐 API: Verification failed:', response.status, errorText);
-      return null;
-    }
-
-    const result: TelegramVerificationResponse = await response.json();
-    console.log('✅ API: Additional verification successful');
-    
-    return result;
-  } catch (error) {
-    console.error('❌ API: Verification error:', error);
+    console.error('❌ MAIN AUTH: Sign-in error:', error);
     return null;
   }
 }
 
+// Get auth headers with JWT token for protected endpoints
 export async function getAuthHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+    "Origin": window.location.origin,
     "X-Client-Timestamp": Date.now().toString(),
-    "X-Security-Level": "strict",
-    "X-Client-Platform": "telegram-webapp"
   };
   
-  // Use JWT token from FastAPI if available
   if (backendAuthToken) {
+    // FIXED: Use proper Bearer token format as required by FastAPI
     headers["Authorization"] = `Bearer ${backendAuthToken}`;
-    console.log('🎫 API: Using JWT token for authorization');
+    console.log('🔑 AUTH HEADERS: Added Bearer token for protected endpoint');
   } else {
-    // Fallback to secure config token if JWT not available
-    const fallbackToken = await getBackendAccessToken();
-    if (fallbackToken) {
-      headers["Authorization"] = `Bearer ${fallbackToken}`;
-      console.log('🔑 API: Using fallback token for authorization');
-    }
+    console.warn('⚠️ AUTH HEADERS: No JWT token available - this will fail for protected endpoints');
   }
   
   return headers;
 }
 
-export function getSecurityMetrics() {
-  return {
-    lastAuthentication: backendAuthToken ? new Date().toISOString() : null,
-    authenticationStatus: !!backendAuthToken,
-    tokenPresent: !!backendAuthToken,
-    securityLevel: 'strict',
-    platform: 'telegram-webapp'
-  };
+// Legacy function for compatibility - redirects to main auth
+export async function verifyTelegramUser(initData: string): Promise<TelegramVerificationResponse | null> {
+  console.warn('⚠️ LEGACY AUTH: verifyTelegramUser called - redirecting to signInToBackend');
+  
+  const token = await signInToBackend(initData);
+  if (!token) {
+    return { success: false, user_id: 0, user_data: null, message: 'Authentication failed' };
+  }
+  
+  // Extract user data from initData for compatibility
+  try {
+    const urlParams = new URLSearchParams(initData);
+    const userParam = urlParams.get('user');
+    
+    if (userParam) {
+      const user = JSON.parse(decodeURIComponent(userParam));
+      return {
+        success: true,
+        user_id: user.id,
+        user_data: user,
+        message: 'Success via main auth flow'
+      };
+    }
+  } catch (error) {
+    console.error('Failed to parse user data:', error);
+  }
+  
+  return { success: false, user_id: 0, user_data: null, message: 'Failed to parse user data' };
 }
 
-// Clear authentication state (for logout)
-export function clearAuthState() {
-  backendAuthToken = null;
-  console.log('🔐 API: Authentication state cleared');
+export function getSecurityMetrics() {
+  return {
+    lastVerification: backendAuthToken ? new Date().toISOString() : null,
+    verificationStatus: !!backendAuthToken,
+    securityInfo: null,
+    securityLevel: 'strict'
+  };
 }

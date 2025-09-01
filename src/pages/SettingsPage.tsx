@@ -1,23 +1,22 @@
 
-import React from 'react';
-import { SettingsForm } from '@/components/settings/SettingsForm';
-import { UnifiedLayout } from '@/components/layout/UnifiedLayout';
-import { useUnifiedTelegramNavigation } from '@/hooks/useUnifiedTelegramNavigation';
+import { TelegramLayout } from "@/components/layout/TelegramLayout";
+import { AccountSettings } from "@/components/settings/AccountSettings";
+import { SFTPSettings } from "@/components/settings/SFTPSettings";
 
 export default function SettingsPage() {
-  // Set up back button for settings
-  useUnifiedTelegramNavigation({
-    showBackButton: true
-  });
-
   return (
-    <UnifiedLayout>
-      <div className="p-4">
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-2xl font-bold mb-6">Settings</h1>
-          <SettingsForm />
+    <TelegramLayout>
+      <div className="space-y-6 max-w-4xl mx-auto">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">הגדרות חשבון</h1>
+          <p className="text-muted-foreground mt-1">
+            נהל את המידע האישי שלך והעדפות החשבון
+          </p>
         </div>
+        
+        <AccountSettings />
+        <SFTPSettings />
       </div>
-    </UnifiedLayout>
+    </TelegramLayout>
   );
 }
