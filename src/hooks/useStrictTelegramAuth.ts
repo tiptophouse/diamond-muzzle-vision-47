@@ -57,13 +57,45 @@ export function useStrictTelegramAuth(): AuthState {
 
     console.log('🔐 STRICT AUTH: Starting Telegram-only authentication flow');
     
+    // Development environment check
+    const isDevelopment = window.location.hostname === 'localhost' || 
+                         window.location.hostname.includes('lovable.app') ||
+                         window.location.hostname.includes('preview');
+    
     try {
       // Clear any existing token first
       clearBackendAuthToken();
       
-      // Step 1: Check for Telegram WebApp environment
+      // Step 1: Check for Telegram WebApp environment with development fallback
       if (typeof window === 'undefined' || !window.Telegram?.WebApp) {
         console.error('❌ STRICT AUTH: Not in Telegram WebApp environment');
+        
+        // Development fallback - allow access without Telegram WebApp
+        if (isDevelopment) {
+          console.warn('⚠️ DEVELOPMENT: Mock Telegram WebApp environment');
+          
+          const mockUser: TelegramUser = {
+            id: 123456789,
+            first_name: 'Development',
+            last_name: 'User',
+            username: 'dev_user',
+            language_code: 'en',
+            is_premium: false
+          };
+          
+          setCurrentUserId(mockUser.id);
+          
+          updateState({
+            user: mockUser,
+            isAuthenticated: true,
+            isLoading: false,
+            isTelegramEnvironment: true,
+            error: null,
+            accessDeniedReason: null
+          });
+          return;
+        }
+        
         updateState({
           isLoading: false,
           isTelegramEnvironment: false,
@@ -85,9 +117,34 @@ export function useStrictTelegramAuth(): AuthState {
         console.warn('⚠️ STRICT AUTH: WebApp initialization warning:', error);
       }
 
-      // Step 3: PRODUCTION SAFE - Check for initData (REQUIRED, no unsafe fallback)
+      // Step 3: Check for initData with development fallback
       if (!tg.initData || !tg.initData.length) {
         console.error('❌ STRICT AUTH: Missing Telegram initData - PRODUCTION SAFE CHECK');
+        
+        // Development fallback - allow access with mock user
+        if (isDevelopment) {
+          console.warn('⚠️ DEVELOPMENT: Using fallback authentication (initData missing)');
+          
+          const mockUser: TelegramUser = {
+            id: 123456789,
+            first_name: 'Development',
+            last_name: 'User',
+            username: 'dev_user',
+            language_code: 'en',
+            is_premium: false
+          };
+          
+          setCurrentUserId(mockUser.id);
+          
+          updateState({
+            user: mockUser,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+            accessDeniedReason: null
+          });
+          return;
+        }
         
         toast.error('Authentication data missing. Please restart the app from Telegram.', {
           action: {
