@@ -14,6 +14,7 @@ interface AdminUserCardProps {
   onEditUser: (user: any) => void;
   onToggleBlock: (user: any) => void;
   onDeleteUser: (user: any) => void;
+  onSendMessage: (user: any) => void;
   countryCode?: string | null;
   countryName?: string | null;
 }
@@ -26,6 +27,7 @@ export function AdminUserCard({
   onEditUser, 
   onToggleBlock, 
   onDeleteUser,
+  onSendMessage,
   countryCode,
   countryName
 }: AdminUserCardProps) {
@@ -197,6 +199,7 @@ export function AdminUserCard({
             onEditUser={onEditUser}
             onToggleBlock={onToggleBlock}
             onDeleteUser={onDeleteUser}
+            onSendMessage={onSendMessage}
           />
         </div>
       </div>
