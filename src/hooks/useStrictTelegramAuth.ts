@@ -55,52 +55,20 @@ export function useStrictTelegramAuth(): AuthState {
       return;
     }
 
-    console.log('🔐 STRICT AUTH: Starting Telegram-only authentication flow');
-    
-    // Development environment check
-    const isDevelopment = window.location.hostname === 'localhost' || 
-                         window.location.hostname.includes('lovable.app') ||
-                         window.location.hostname.includes('preview');
+    console.log('🔐 JWT-ONLY AUTH: Starting Telegram WebApp authentication - JWT is the ONLY source of truth');
     
     try {
       // Clear any existing token first
       clearBackendAuthToken();
       
-      // Step 1: Check for Telegram WebApp environment with development fallback
+      // Step 1: STRICT - Check for Telegram WebApp environment (NO FALLBACKS)
       if (typeof window === 'undefined' || !window.Telegram?.WebApp) {
-        console.error('❌ STRICT AUTH: Not in Telegram WebApp environment');
-        
-        // Development fallback - allow access without Telegram WebApp
-        if (isDevelopment) {
-          console.warn('⚠️ DEVELOPMENT: Mock Telegram WebApp environment');
-          
-          const mockUser: TelegramUser = {
-            id: 123456789,
-            first_name: 'Development',
-            last_name: 'User',
-            username: 'dev_user',
-            language_code: 'en',
-            is_premium: false
-          };
-          
-          setCurrentUserId(mockUser.id);
-          
-          updateState({
-            user: mockUser,
-            isAuthenticated: true,
-            isLoading: false,
-            isTelegramEnvironment: true,
-            error: null,
-            accessDeniedReason: null
-          });
-          return;
-        }
-        
+        console.error('❌ JWT-ONLY AUTH: Not in Telegram WebApp environment - NO FALLBACKS ALLOWED');
         updateState({
           isLoading: false,
           isTelegramEnvironment: false,
           accessDeniedReason: 'not_telegram_environment',
-          error: 'This app only works inside Telegram'
+          error: 'This app only works inside Telegram WebApp'
         });
         return;
       }
@@ -112,39 +80,14 @@ export function useStrictTelegramAuth(): AuthState {
       try {
         if (typeof tg.ready === 'function') tg.ready();
         if (typeof tg.expand === 'function') tg.expand();
-        console.log('✅ STRICT AUTH: Telegram WebApp initialized');
+        console.log('✅ JWT-ONLY AUTH: Telegram WebApp initialized');
       } catch (error) {
-        console.warn('⚠️ STRICT AUTH: WebApp initialization warning:', error);
+        console.warn('⚠️ JWT-ONLY AUTH: WebApp initialization warning:', error);
       }
 
-      // Step 3: Check for initData with development fallback
+      // Step 3: STRICT - Check for initData (NO FALLBACKS)
       if (!tg.initData || !tg.initData.length) {
-        console.error('❌ STRICT AUTH: Missing Telegram initData - PRODUCTION SAFE CHECK');
-        
-        // Development fallback - allow access with mock user
-        if (isDevelopment) {
-          console.warn('⚠️ DEVELOPMENT: Using fallback authentication (initData missing)');
-          
-          const mockUser: TelegramUser = {
-            id: 123456789,
-            first_name: 'Development',
-            last_name: 'User',
-            username: 'dev_user',
-            language_code: 'en',
-            is_premium: false
-          };
-          
-          setCurrentUserId(mockUser.id);
-          
-          updateState({
-            user: mockUser,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
-            accessDeniedReason: null
-          });
-          return;
-        }
+        console.error('❌ JWT-ONLY AUTH: Missing Telegram initData - NO FALLBACKS, JWT REQUIRED');
         
         toast.error('Authentication data missing. Please restart the app from Telegram.', {
           action: {
@@ -161,16 +104,16 @@ export function useStrictTelegramAuth(): AuthState {
         return;
       }
 
-      console.log('🔍 STRICT AUTH: Found initData, length:', tg.initData.length);
+      console.log('🔍 JWT-ONLY AUTH: Found initData, length:', tg.initData.length);
 
-      // Step 4: Authenticate with FastAPI backend using initData
-      console.log('🔐 STRICT AUTH: Authenticating with FastAPI backend...');
+      // Step 4: CRITICAL - Authenticate with FastAPI backend using initData (JWT IS ONLY SOURCE OF TRUTH)
+      console.log('🔐 JWT-ONLY AUTH: Authenticating with FastAPI backend - JWT token required...');
       const jwtToken = await signInToBackend(tg.initData);
       
       if (!jwtToken) {
-        console.error('❌ STRICT AUTH: FastAPI authentication failed');
+        console.error('❌ JWT-ONLY AUTH: FastAPI JWT authentication failed - NO ACCESS GRANTED');
         
-        toast.error('Authentication failed. Please try again.', {
+        toast.error('JWT authentication failed. Please try again.', {
           action: {
             label: 'Retry',
             onClick: handleRetry
@@ -185,7 +128,7 @@ export function useStrictTelegramAuth(): AuthState {
         return;
       }
 
-      console.log('✅ STRICT AUTH: JWT token received from FastAPI');
+      console.log('✅ JWT-ONLY AUTH: Valid JWT token received from FastAPI - Authentication successful');
 
       // Step 5: Extract user data from Telegram initData (PRODUCTION SAFE - no initDataUnsafe)
       let authenticatedUser: TelegramUser | null = null;
@@ -213,9 +156,9 @@ export function useStrictTelegramAuth(): AuthState {
           photo_url: user.photo_url,
           phone_number: user.phone_number
         };
-        console.log('✅ STRICT AUTH: User data extracted from secure initData');
+        console.log('✅ JWT-ONLY AUTH: User data extracted from secure initData');
       } catch (error) {
-        console.error('❌ STRICT AUTH: Failed to parse user data from initData:', error);
+        console.error('❌ JWT-ONLY AUTH: Failed to parse user data from initData:', error);
         
         toast.error('Invalid authentication data. Please restart from Telegram.', {
           action: {
@@ -232,9 +175,9 @@ export function useStrictTelegramAuth(): AuthState {
         return;
       }
 
-      // Step 6: Final validation
+      // Step 6: Final validation - JWT must be valid for access
       if (!authenticatedUser) {
-        console.error('❌ STRICT AUTH: No user data found after parsing');
+        console.error('❌ JWT-ONLY AUTH: No user data found after parsing - JWT authentication incomplete');
         updateState({
           isLoading: false,
           accessDeniedReason: 'no_user_data',
@@ -243,11 +186,11 @@ export function useStrictTelegramAuth(): AuthState {
         return;
       }
 
-      // Step 7: Success - Set user ID and complete authentication
+      // Step 7: SUCCESS - JWT validated, user authenticated
       setCurrentUserId(authenticatedUser.id);
       
-      console.log('✅ STRICT AUTH: Authentication successful');
-      console.log('👤 STRICT AUTH: User:', authenticatedUser.first_name, 'ID:', authenticatedUser.id);
+      console.log('✅ JWT-ONLY AUTH: Complete authentication success - JWT is valid, user authorized');
+      console.log('👤 JWT-ONLY AUTH: User:', authenticatedUser.first_name, 'ID:', authenticatedUser.id);
       
       // Reset retry counter on success
       retryAttempts.current = 0;
@@ -261,11 +204,11 @@ export function useStrictTelegramAuth(): AuthState {
       });
       
     } catch (error) {
-      console.error('❌ STRICT AUTH: Authentication error:', error);
+      console.error('❌ JWT-ONLY AUTH: Authentication system error:', error);
       
-      const errorMessage = error instanceof Error ? error.message : 'Authentication system error';
+      const errorMessage = error instanceof Error ? error.message : 'JWT authentication system error';
       
-      toast.error(`Authentication failed: ${errorMessage}`, {
+      toast.error(`JWT Authentication failed: ${errorMessage}`, {
         action: {
           label: 'Retry',
           onClick: handleRetry
@@ -285,12 +228,12 @@ export function useStrictTelegramAuth(): AuthState {
   useEffect(() => {
     mountedRef.current = true;
     
-    // Authentication timeout (15 seconds)
+    // JWT Authentication timeout (15 seconds)
     const timeoutId = setTimeout(() => {
       if (state.isLoading && mountedRef.current && !initializedRef.current) {
-        console.error('❌ STRICT AUTH: Authentication timeout');
+        console.error('❌ JWT-ONLY AUTH: Authentication timeout - no valid JWT received');
         
-        toast.error('Authentication timeout. Please refresh the app.', {
+        toast.error('JWT Authentication timeout. Please refresh the app.', {
           action: {
             label: 'Retry',
             onClick: handleRetry
@@ -300,7 +243,7 @@ export function useStrictTelegramAuth(): AuthState {
         updateState({
           isLoading: false,
           accessDeniedReason: 'timeout',
-          error: 'Authentication timeout - please reload the app'
+          error: 'JWT Authentication timeout - please reload the app'
         });
         initializedRef.current = true;
       }
