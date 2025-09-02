@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
 import { EnhancedStoreGrid } from "@/components/store/EnhancedStoreGrid";
-import { OptimizedDiamondCard } from "@/components/store/OptimizedDiamondCard";
+import { MotionDiamondCard } from "@/components/store/MotionDiamondCard";
 import { DiamondCardSkeleton } from "@/components/store/DiamondCardSkeleton";
 import { MobilePullToRefresh } from "@/components/mobile/MobilePullToRefresh";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
@@ -273,10 +273,10 @@ function CatalogPage() {
               key={diamond.id}
               id={`diamond-${diamond.stockNumber}`}
             >
-              <OptimizedDiamondCard 
+              <MotionDiamondCard 
                 diamond={diamond}
                 index={index}
-                onUpdate={refetch}
+                onViewDetails={(diamond) => navigate(`/diamond/${diamond.id}`)}
               />
             </div>
           ))}
@@ -296,10 +296,10 @@ function CatalogPage() {
               <div>
                 <h1 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-primary" />
-                  Diamond Catalog
+                  Motion Catalog
                 </h1>
                 <div className="text-xs text-muted-foreground space-y-1">
-                  <p>{sortedDiamonds.length} available • Priority: 3D → Image → Info</p>
+                  <p>{sortedDiamonds.length} available • Tilt device for motion controls</p>
                   <div className="flex items-center gap-3 text-xs">
                     {mediaCounts.with3D > 0 && (
                       <span className="flex items-center gap-1">
