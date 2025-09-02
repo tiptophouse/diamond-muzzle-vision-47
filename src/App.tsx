@@ -4,7 +4,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TelegramAuthProvider } from './context/TelegramAuthContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
-import { TelegramMiniAppLayout } from './components/layout/TelegramMiniAppLayout';
+import { SecureTelegramLayout } from './components/layout/SecureTelegramLayout';
+import { AuthenticatedRoute } from './components/auth/AuthenticatedRoute';
+import { PublicRoute } from './components/auth/PublicRoute';
 import Index from './pages/Index';
 import Dashboard from './pages/Dashboard';
 import InventoryPage from './pages/InventoryPage';
@@ -43,32 +45,121 @@ function App() {
         <Router>
           <TutorialProvider>
             <InteractiveWizardProvider>
-              <TelegramMiniAppLayout>
+              <SecureTelegramLayout>
                 <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/inventory" element={<InventoryPage />} />
-                  <Route path="/catalog" element={<CatalogPage />} />
-                  <Route path="/store" element={<CatalogPage />} />
-                  <Route path="/upload" element={<UploadPage />} />
-                  <Route path="/upload/bulk" element={<BulkUploadPage />} />
-                  <Route path="/upload-single-stone" element={<UploadSingleStonePage />} />
-                  <Route path="/insights" element={<InsightsPage />} />
-                  <Route path="/chat" element={<ChatPage />} />
-                  <Route path="/notifications" element={<NotificationsPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  <Route path="/settings" element={<SettingsPage />} />
-                  <Route path="/wishlist" element={<WishlistPage />} />
-                  <Route path="/admin" element={<Admin />} />
-                  <Route path="/admin/analytics" element={<AdminAnalytics />} />
-                  <Route path="/diamond/:stockNumber" element={<DiamondDetailPage />} />
-                  <Route path="/secure-diamond/:encryptedData" element={<SecureDiamondPage />} />
-                  <Route path="/swipe" element={<DiamondSwipe />} />
-                  <Route path="/standardize-csv" element={<StandardizeCsvPage />} />
-                  <Route path="/analytics" element={<AnalyticsPage />} />
+                  {/* Public route - redirects to dashboard if authenticated */}
+                  <Route path="/" element={
+                    <PublicRoute>
+                      <Index />
+                    </PublicRoute>
+                  } />
+                  
+                  {/* All protected routes require JWT authentication */}
+                  <Route path="/dashboard" element={
+                    <AuthenticatedRoute>
+                      <Dashboard />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/inventory" element={
+                    <AuthenticatedRoute>
+                      <InventoryPage />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/catalog" element={
+                    <AuthenticatedRoute>
+                      <CatalogPage />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/store" element={
+                    <AuthenticatedRoute>
+                      <CatalogPage />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/upload" element={
+                    <AuthenticatedRoute>
+                      <UploadPage />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/upload/bulk" element={
+                    <AuthenticatedRoute>
+                      <BulkUploadPage />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/upload-single-stone" element={
+                    <AuthenticatedRoute>
+                      <UploadSingleStonePage />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/insights" element={
+                    <AuthenticatedRoute>
+                      <InsightsPage />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/chat" element={
+                    <AuthenticatedRoute>
+                      <ChatPage />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/notifications" element={
+                    <AuthenticatedRoute>
+                      <NotificationsPage />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/profile" element={
+                    <AuthenticatedRoute>
+                      <ProfilePage />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/settings" element={
+                    <AuthenticatedRoute>
+                      <SettingsPage />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/wishlist" element={
+                    <AuthenticatedRoute>
+                      <WishlistPage />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/admin" element={
+                    <AuthenticatedRoute>
+                      <Admin />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/admin/analytics" element={
+                    <AuthenticatedRoute>
+                      <AdminAnalytics />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/diamond/:stockNumber" element={
+                    <AuthenticatedRoute>
+                      <DiamondDetailPage />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/secure-diamond/:encryptedData" element={
+                    <AuthenticatedRoute>
+                      <SecureDiamondPage />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/swipe" element={
+                    <AuthenticatedRoute>
+                      <DiamondSwipe />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/standardize-csv" element={
+                    <AuthenticatedRoute>
+                      <StandardizeCsvPage />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/analytics" element={
+                    <AuthenticatedRoute>
+                      <AnalyticsPage />
+                    </AuthenticatedRoute>
+                  } />
+                  
+                  {/* 404 page - no authentication required */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-              </TelegramMiniAppLayout>
+              </SecureTelegramLayout>
             </InteractiveWizardProvider>
           </TutorialProvider>
         </Router>
