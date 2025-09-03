@@ -34,9 +34,10 @@ export function AdminGuard({ children }: AdminGuardProps) {
 
   console.log('🔍 AdminGuard - Current user:', user);
   console.log('🔍 AdminGuard - User ID:', user?.id);
-  console.log('🔍 AdminGuard - Admin ID:', adminTelegramId);
+  console.log('🔍 AdminGuard - Admin ID:', adminTelegramId);  
   console.log('🔍 AdminGuard - Is Loading:', isLoading || isLoadingAdmin);
   console.log('🔍 AdminGuard - Is Authenticated:', isAuthenticated);
+  console.log('🔍 AdminGuard - Is Telegram Environment:', isTelegramEnvironment);
 
   if (isLoading || isLoadingAdmin) {
     console.log('⏳ AdminGuard - Still loading...');

@@ -7,6 +7,7 @@ import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
 import { SecureTelegramLayout } from './components/layout/SecureTelegramLayout';
 import { AuthenticatedRoute } from './components/auth/AuthenticatedRoute';
 import { PublicRoute } from './components/auth/PublicRoute';
+import { AdminGuard } from './components/admin/AdminGuard';
 import Index from './pages/Index';
 import Dashboard from './pages/Dashboard';
 import InventoryPage from './pages/InventoryPage';
@@ -122,12 +123,16 @@ function App() {
                   } />
                   <Route path="/admin" element={
                     <AuthenticatedRoute>
-                      <Admin />
+                      <AdminGuard>
+                        <Admin />
+                      </AdminGuard>
                     </AuthenticatedRoute>
                   } />
                   <Route path="/admin/analytics" element={
                     <AuthenticatedRoute>
-                      <AdminAnalytics />
+                      <AdminGuard>
+                        <AdminAnalytics />
+                      </AdminGuard>
                     </AuthenticatedRoute>
                   } />
                   <Route path="/diamond/:stockNumber" element={
