@@ -16,12 +16,24 @@ interface MotionDiamondCardProps {
 
 export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamondCardProps) {
   const [imageError, setImageError] = useState(false);
-  const [isMotionMode, setIsMotionMode] = useState(false);
+  const [isMotionMode, setIsMotionMode] = useState(true); // Auto-enable motion mode
   const [showViewer, setShowViewer] = useState(false);
   const { user } = useTelegramAuth();
   const { accelerometerData, orientationData, isSupported, startAccelerometer, stopAccelerometer } = useTelegramAccelerometer(isMotionMode, 60);
   const { impactOccurred, selectionChanged } = useTelegramHapticFeedback();
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // Auto-start motion mode when component mounts
+  useEffect(() => {
+    if (isSupported && isMotionMode) {
+      startAccelerometer();
+    }
+    return () => {
+      if (isSupported) {
+        stopAccelerometer();
+      }
+    };
+  }, [isSupported, startAccelerometer, stopAccelerometer, isMotionMode]);
 
   // Calculate diamond image rotation based on device tilt
   const getDiamondImageTransform = () => {
@@ -100,7 +112,7 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
       }}
     >
       {/* Image Container */}
-      <div className="relative h-48 bg-gradient-to-br from-slate-50 to-slate-100 rounded-t-xl overflow-hidden">
+      <div className="relative h-64 bg-white rounded-t-xl overflow-hidden">
         {hasGem360 ? (
           // Show interactive 3D viewer
           <div className="w-full h-full">
@@ -115,7 +127,7 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
             src={diamond.imageUrl}
             alt={`Diamond ${diamond.stockNumber}`}
             className={`w-full h-full object-cover transition-transform duration-200 ease-out ${
-              isMotionMode ? 'scale-105' : 'group-hover:scale-105'
+              isMotionMode ? 'scale-110' : 'group-hover:scale-105'
             }`}
             style={{
               transform: isMotionMode ? getDiamondImageTransform() : '',
@@ -124,21 +136,21 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
             onError={() => setImageError(true)}
           />
         ) : (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex items-center justify-center h-full bg-gradient-to-br from-blue-50 to-purple-50">
             <div className="relative">
               <div 
-                className={`w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-lg transition-transform duration-200 ease-out ${
-                  isMotionMode ? 'scale-110' : ''
+                className={`w-32 h-32 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-2xl transition-transform duration-200 ease-out ${
+                  isMotionMode ? 'scale-125' : ''
                 }`}
                 style={{
                   transform: isMotionMode ? getDiamondImageTransform() : '',
                   transformStyle: 'preserve-3d'
                 }}
               >
-                <Gem className="h-8 w-8 text-white" />
+                <Gem className="h-16 w-16 text-white" />
               </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
+              <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg">
+                <div className="w-3 h-3 bg-white rounded-full"></div>
               </div>
             </div>
           </div>
@@ -157,24 +169,6 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
             {diamond.status}
           </Badge>
         </div>
-
-        {/* Motion Toggle Button */}
-        {isSupported && (
-          <div className="absolute top-3 right-3">
-            <Button
-              size="sm"
-              variant={isMotionMode ? "default" : "outline"}
-              onClick={toggleMotionMode}
-              className={`w-8 h-8 p-0 rounded-full transition-all duration-300 ${
-                isMotionMode 
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg' 
-                  : 'bg-white/80 backdrop-blur-sm border-white/50 text-slate-600 hover:bg-white'
-              }`}
-            >
-              <Gem className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
 
         {/* 3D Badge */}
         {hasGem360 && (
