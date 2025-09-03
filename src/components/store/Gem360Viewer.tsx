@@ -180,15 +180,17 @@ const Gem360Viewer = memo(({ gem360Url, stockNumber, isInline = false, className
               <img
                 src={processedUrl}
                 alt={`360° View of Diamond ${stockNumber}`}
-                className={`max-w-full max-h-full object-contain transition-transform duration-100 ${
-                  isLoading ? 'opacity-0' : 'opacity-100'
+                className={`w-full h-full object-contain transition-all duration-200 ${
+                  isLoading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
                 }`}
                 style={{
-                  transform: isTiltMode ? '' : `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
-                  transformStyle: 'preserve-3d'
+                  transform: isTiltMode ? '' : `perspective(800px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
+                  transformStyle: 'preserve-3d',
+                  transformOrigin: 'center center'
                 }}
                 onLoad={handleIframeLoad}
                 onError={handleIframeError}
+                loading="eager"
               />
             </div>
           ) : (

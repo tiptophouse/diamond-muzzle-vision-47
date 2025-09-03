@@ -84,18 +84,17 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
             <img
               src={diamond.imageUrl}
               alt={`Diamond ${diamond.stockNumber}`}
-              className={`w-full h-full object-cover transition-transform duration-200 ease-out ${
-                isTiltMode ? 'scale-105' : 'group-hover:scale-105'
+              className={`w-full h-full object-contain transition-all duration-200 ease-out ${
+                !isTiltMode ? 'group-hover:scale-105' : ''
               }`}
               onError={() => setImageError(true)}
+              loading="lazy"
             />
           ) : (
             <div className="flex items-center justify-center h-full">
               <div className="relative">
                 <div 
-                  className={`w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-lg transition-transform duration-200 ease-out ${
-                    isTiltMode ? 'scale-110' : ''
-                  }`}
+                  className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-lg transition-transform duration-200 ease-out"
                 >
                   <Gem className="h-8 w-8 text-white" />
                 </div>

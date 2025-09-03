@@ -243,14 +243,15 @@ export function TiltDiamondController({
 
   // Calculate diamond transform
   const getDiamondTransform = () => {
-    if (!isTiltMode) return '';
+    if (!isTiltMode) return 'scale(1)';
     
     // Apply rotation limits and convert to CSS transform
-    const maxRotation = 25; // Maximum rotation in degrees
-    const rotateX = Math.max(-maxRotation, Math.min(maxRotation, motionData.beta * 0.8));
-    const rotateY = Math.max(-maxRotation, Math.min(maxRotation, motionData.gamma * 0.8));
+    const maxRotation = 45; // Increased maximum rotation for more dramatic effect
+    const rotateX = Math.max(-maxRotation, Math.min(maxRotation, motionData.beta * 1.2));
+    const rotateY = Math.max(-maxRotation, Math.min(maxRotation, motionData.gamma * 1.2));
     
-    return `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    // Make the diamond bigger and more prominent in tilt mode
+    return `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.15)`;
   };
 
   return (
@@ -258,10 +259,11 @@ export function TiltDiamondController({
       <div className={`relative ${className}`}>
         {/* Main Content with Motion Transform */}
         <div 
-          className="transition-transform duration-75 ease-out"
+          className={`transition-transform duration-100 ease-out ${isTiltMode ? 'z-10' : ''}`}
           style={{
             transform: getDiamondTransform(),
-            transformStyle: 'preserve-3d'
+            transformStyle: 'preserve-3d',
+            transformOrigin: 'center center'
           }}
         >
           {children}
