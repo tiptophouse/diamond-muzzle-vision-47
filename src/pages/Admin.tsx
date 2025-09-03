@@ -331,7 +331,7 @@ export default function Admin() {
               <span className="hidden xs:inline sm:inline">Settings</span>
               <span className="xs:hidden sm:hidden">Set</span>
             </TabsTrigger>
-            <TabsTrigger value="individual-messages">הודעות אישיות</TabsTrigger>
+            
           </TabsList>
           
           <div className="mt-6">
@@ -381,6 +381,9 @@ export default function Admin() {
             <TabsContent value="notifications" className="space-y-0">
               <div className="grid gap-6">
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <IndividualMessageSender />
+                </div>
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
                   <UploadReminderNotifier />
                 </div>
                 <div className="grid gap-6 lg:grid-cols-2">
@@ -401,9 +404,6 @@ export default function Admin() {
               </div>
             </TabsContent>
 
-            <TabsContent value="individual-messages" className="space-y-4">
-              <IndividualMessageSender />
-            </TabsContent>
           </div>
         </Tabs>
       </div>
