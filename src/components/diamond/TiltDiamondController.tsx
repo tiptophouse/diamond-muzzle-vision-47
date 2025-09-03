@@ -251,7 +251,7 @@ export function TiltDiamondController({
     const rotateY = Math.max(-maxRotation, Math.min(maxRotation, motionData.gamma * 1.2));
     
     // Make the diamond bigger and more prominent in tilt mode
-    return `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.15)`;
+    return `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(2.0)`;
   };
 
   return (
