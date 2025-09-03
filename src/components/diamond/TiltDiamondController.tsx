@@ -250,13 +250,13 @@ export function TiltDiamondController({
     const rotateX = Math.max(-maxRotation, Math.min(maxRotation, motionData.beta * 1.2));
     const rotateY = Math.max(-maxRotation, Math.min(maxRotation, motionData.gamma * 1.2));
     
-    // Make the diamond bigger and more prominent in tilt mode
-    return `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(2.0)`;
+    // Reasonable scale that won't cause overflow
+    return `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.3)`;
   };
 
   return (
     <>
-      <div className={`relative ${className}`}>
+      <div className={`relative overflow-hidden ${className}`}>
         {/* Main Content with Motion Transform */}
         <div 
           className={`transition-transform duration-100 ease-out ${isTiltMode ? 'z-10' : ''}`}
