@@ -1,26 +1,22 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 
-export function useAddDiamond() {
+export function useAddDiamond(onSuccess?: () => void) {
   const queryClient = useQueryClient();
   const { notificationOccurred } = useTelegramHapticFeedback();
 
-  return useMutation({
-    mutationFn: async (diamondData: any) => {
+  const addDiamond = async (diamondData: any): Promise<boolean> => {
+    try {
       console.log('💎 Adding diamond:', diamondData);
       
       const response = await api.post('/diamonds', diamondData);
       
-      if (!response.success) {
-        throw new Error(response.error || 'Failed to add diamond');
+      if (response.error) {
+        throw new Error(response.error);
       }
       
-      return response.data;
-    },
-    
-    onSuccess: () => {
       // Invalidate and refetch inventory data
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
       queryClient.invalidateQueries({ queryKey: ['userInventory'] });
@@ -33,9 +29,13 @@ export function useAddDiamond() {
         description: 'היהלום התווסף למלאי שלך',
         duration: 3000,
       });
-    },
-    
-    onError: (error: any) => {
+
+      if (onSuccess) {
+        onSuccess();
+      }
+      
+      return true;
+    } catch (error: any) {
       console.error('Failed to add diamond:', error);
       
       // Haptic feedback for error
@@ -47,6 +47,10 @@ export function useAddDiamond() {
         description: errorMessage,
         duration: 5000,
       });
-    },
-  });
+
+      return false;
+    }
+  };
+
+  return { addDiamond };
 }
