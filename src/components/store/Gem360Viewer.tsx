@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, memo } from 'react';
 import { Maximize2, RotateCcw, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { TiltDiamondController } from '@/components/diamond/TiltDiamondController';
+import { useTelegramAccelerometer } from '@/hooks/useTelegramAccelerometer';
 
 interface Gem360ViewerProps {
   gem360Url: string;
@@ -17,9 +17,7 @@ const Gem360Viewer = memo(({ gem360Url, stockNumber, isInline = false, className
   const [loadError, setLoadError] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
-  const [isTiltMode, setIsTiltMode] = useState(false);
-  const [motionSensitivity, setMotionSensitivity] = useState(0.5);
-  
+  const { accelerometerData, orientationData, isSupported, startAccelerometer, stopAccelerometer } = useTelegramAccelerometer(isInline);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
@@ -36,26 +34,16 @@ const Gem360Viewer = memo(({ gem360Url, stockNumber, isInline = false, className
   const isStaticImage = gem360Url.match(/\.(jpg|jpeg|png)(\?.*)?$/i) && 
     (gem360Url.includes('my360.sela') || gem360Url.includes('DAN'));
 
-  // Handle motion updates from TiltDiamondController
+  // Handle device motion for tilt control
   useEffect(() => {
-    const handleMotionUpdate = (event: CustomEvent) => {
-      if (!isTiltMode || !isInline) return;
-      
-      const { beta, gamma } = event.detail;
-      const maxRotation = 20;
-      const sensitivity = motionSensitivity;
-      
+    if (isSupported && orientationData && isInline) {
+      const { beta, gamma } = orientationData;
       setRotation({
-        x: Math.max(-maxRotation, Math.min(maxRotation, beta * sensitivity)),
-        y: Math.max(-maxRotation, Math.min(maxRotation, gamma * sensitivity))
+        x: Math.max(-15, Math.min(15, beta * 0.3)),
+        y: Math.max(-15, Math.min(15, gamma * 0.3))
       });
-    };
-
-    window.addEventListener('motionUpdate', handleMotionUpdate as EventListener);
-    return () => {
-      window.removeEventListener('motionUpdate', handleMotionUpdate as EventListener);
-    };
-  }, [isTiltMode, isInline, motionSensitivity]);
+    }
+  }, [orientationData, isSupported, isInline]);
 
   // Touch controls for manual rotation
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -151,19 +139,13 @@ const Gem360Viewer = memo(({ gem360Url, stockNumber, isInline = false, className
 
   return (
     <>
-      <TiltDiamondController
+      <div 
+        ref={containerRef}
         className={`relative w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden ${className}`}
-        onModeChange={setIsTiltMode}
-        sensitivity={motionSensitivity}
-        onSensitivityChange={setMotionSensitivity}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
-        <div 
-          ref={containerRef}
-          className="w-full h-full"
-          onTouchStart={!isTiltMode ? handleTouchStart : undefined}
-          onTouchMove={!isTiltMode ? handleTouchMove : undefined}
-          onTouchEnd={!isTiltMode ? handleTouchEnd : undefined}
-        >
         {/* Loading state */}
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center z-20 bg-gradient-to-br from-gray-50 to-gray-100">
@@ -174,72 +156,69 @@ const Gem360Viewer = memo(({ gem360Url, stockNumber, isInline = false, className
           </div>
         )}
         
-          {/* Static 360° image with manual controls */}
-          {isStaticImage ? (
-            <div className="w-full h-full flex items-center justify-center">
-              <img
-                src={processedUrl}
-                alt={`360° View of Diamond ${stockNumber}`}
-                className={`w-full h-full object-contain transition-all duration-200 ${
-                  isLoading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
-                }`}
-                style={{
-                  transform: isTiltMode ? '' : `perspective(800px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
-                  transformStyle: 'preserve-3d',
-                  transformOrigin: 'center center'
-                }}
-                onLoad={handleIframeLoad}
-                onError={handleIframeError}
-                loading="eager"
-              />
-            </div>
-          ) : (
-            /* Interactive iframe viewer */
-            <iframe
-              ref={iframeRef}
+        {/* Static 360° image with manual controls */}
+        {isStaticImage ? (
+          <div className="w-full h-full flex items-center justify-center">
+            <img
               src={processedUrl}
-              className={`w-full h-full border-0 transition-opacity duration-500 ${
+              alt={`360° View of Diamond ${stockNumber}`}
+              className={`max-w-full max-h-full object-contain transition-transform duration-100 ${
                 isLoading ? 'opacity-0' : 'opacity-100'
               }`}
+              style={{
+                transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
+                transformStyle: 'preserve-3d'
+              }}
               onLoad={handleIframeLoad}
               onError={handleIframeError}
-              allow="accelerometer; gyroscope; vr; xr-spatial-tracking"
-              sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-              referrerPolicy="no-referrer-when-downgrade"
-              title={`360° View of Diamond ${stockNumber}`}
             />
-          )}
+          </div>
+        ) : (
+          /* Interactive iframe viewer */
+          <iframe
+            ref={iframeRef}
+            src={processedUrl}
+            className={`w-full h-full border-0 transition-opacity duration-500 ${
+              isLoading ? 'opacity-0' : 'opacity-100'
+            }`}
+            onLoad={handleIframeLoad}
+            onError={handleIframeError}
+            allow="accelerometer; gyroscope; vr; xr-spatial-tracking"
+            sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+            referrerPolicy="no-referrer-when-downgrade"
+            title={`360° View of Diamond ${stockNumber}`}
+          />
+        )}
 
-          {/* Enhanced Controls overlay */}
-          {isInline && !isTiltMode && (
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center">
-                <div className="flex gap-2">
-                  <Button
-                    onClick={resetView}
-                    size="sm"
-                    variant="outline"
-                    className="h-8 px-2 bg-white/90 hover:bg-white border-0 text-gray-900"
-                  >
-                    <RotateCcw className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    onClick={toggleFullscreen}
-                    size="sm"
-                    variant="outline"
-                    className="h-8 px-2 bg-white/90 hover:bg-white border-0 text-gray-900"
-                  >
-                    <Maximize2 className="h-3 w-3" />
-                  </Button>
-                </div>
-                <div className="bg-black/70 text-white px-2 py-1 rounded text-xs font-medium">
-                  360° Interactive • {isStaticImage ? 'Touch & Tilt' : 'Embedded'}
-                </div>
+        {/* Controls overlay */}
+        {isInline && (
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center">
+              <div className="flex gap-2">
+                <Button
+                  onClick={resetView}
+                  size="sm"
+                  variant="outline"
+                  className="h-8 px-2 bg-white/90 hover:bg-white border-0 text-gray-900"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                </Button>
+                <Button
+                  onClick={toggleFullscreen}
+                  size="sm"
+                  variant="outline"
+                  className="h-8 px-2 bg-white/90 hover:bg-white border-0 text-gray-900"
+                >
+                  <Maximize2 className="h-3 w-3" />
+                </Button>
+              </div>
+              <div className="bg-black/70 text-white px-2 py-1 rounded text-xs font-medium">
+                360° Interactive • {isStaticImage ? 'Touch & Tilt' : 'Embedded'}
               </div>
             </div>
-          )}
-        </div>
-      </TiltDiamondController>
+          </div>
+        )}
+      </div>
 
       {/* Fullscreen Modal */}
       <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
