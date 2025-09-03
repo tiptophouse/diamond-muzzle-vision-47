@@ -1,9 +1,10 @@
-import { Share2, Copy, MessageCircle, Mail, Shield } from "lucide-react";
+import { Share2, Copy, MessageCircle, Mail, Shield, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useTutorial } from "@/contexts/TutorialContext";
+import { StoryShareButton } from "./StoryShareButton";
 
 interface SecureShareButtonProps {
   stockNumber: string;
@@ -160,6 +161,24 @@ This premium diamond is available for immediate viewing. The secure link provide
           </p>
         </DialogHeader>
         <div className="space-y-3 py-4">
+          {/* Telegram Story Share - First priority */}
+          {diamond && (
+            <div className="group">
+              <StoryShareButton 
+                diamond={{
+                  stockNumber,
+                  carat: diamond.carat,
+                  shape: diamond.shape,
+                  color: diamond.color,
+                  clarity: diamond.clarity,
+                  price: diamond.price
+                }}
+                variant="default"
+                className="w-full justify-start h-16 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+              />
+            </div>
+          )}
+
           {shareOptions.map((option) => (
             <div key={option.name} className="group">
               <Button

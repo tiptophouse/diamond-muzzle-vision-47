@@ -64,7 +64,7 @@ interface AdvancedTelegramFeatures {
   // Native Features
   openTelegramLink: (url: string) => void;
   openLink: (url: string, tryInstantView?: boolean) => void;
-  shareToStory: (mediaUrl: string, text?: string, widgetUrl?: string) => void;
+  shareToStory: (mediaUrl: string, text?: string, widgetUrl?: string) => boolean;
   switchInlineQuery: (query: string, chatTypes?: string[]) => void;
   
   // Swipe Behavior
@@ -218,11 +218,29 @@ export function useAdvancedTelegramSDK(): AdvancedTelegramFeatures {
     // Enhanced haptics
     haptics,
     
-    // Native Features
-    openTelegramLink: (url) => tgOpenLink(url),
-    openLink: tgOpenLink,
-    shareToStory: () => console.log('Share to story not available'),
-    switchInlineQuery: (query) => share(query),
+  // Native Features
+  openTelegramLink: (url) => tgOpenLink(url),
+  openLink: tgOpenLink,
+  shareToStory: (mediaUrl: string, text?: string, widgetUrl?: string) => {
+    try {
+      if (webApp && 'shareToStory' in webApp) {
+        // Use official Telegram WebApp API for story sharing
+        (webApp as any).shareToStory(mediaUrl, { text, widget_link: { url: widgetUrl } });
+        hapticFeedback.notification('success');
+        return true;
+      } else {
+        // Fallback to opening Telegram with story intent
+        const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(mediaUrl)}&text=${encodeURIComponent(text || '')}`;
+        window.open(tgUrl, '_blank');
+        return false;
+      }
+    } catch (error) {
+      console.error('Story sharing failed:', error);
+      hapticFeedback.notification('error');
+      return false;
+    }
+  },
+  switchInlineQuery: (query) => share(query),
     
     // Swipe Behavior
     enableSwipeToClose: () => console.log('Swipe enabled'),

@@ -1,9 +1,10 @@
 
-import { Share2, Copy, MessageCircle, Mail, Link } from "lucide-react";
+import { Share2, Copy, MessageCircle, Mail, Link, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useAdvancedTelegramSDK } from "@/hooks/useAdvancedTelegramSDK";
 
 interface ShareButtonProps {
   className?: string;
@@ -14,12 +15,92 @@ interface ShareButtonProps {
 export function ShareButton({ className = "", variant = "outline", size = "default" }: ShareButtonProps) {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const { toast } = useToast();
+  const { shareToStory, isInitialized, haptics } = useAdvancedTelegramSDK();
 
   const getCurrentUrl = () => {
     return window.location.href;
   };
 
+  const handleStoryShare = async () => {
+    try {
+      haptics.impact('light');
+      
+      // Generate store image for story
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas not supported');
+
+      canvas.width = 1080;
+      canvas.height = 1920;
+
+      // Create gradient background
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, '#667eea');
+      gradient.addColorStop(0.5, '#764ba2');
+      gradient.addColorStop(1, '#f093fb');
+      
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Add diamond emoji/icon
+      ctx.font = '200px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('💎', canvas.width / 2, 400);
+
+      // Add store title
+      ctx.font = 'bold 80px Arial';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('Premium Diamond', canvas.width / 2, 600);
+      ctx.fillText('Collection', canvas.width / 2, 700);
+      
+      ctx.font = '50px Arial';
+      ctx.fillText('Browse our exclusive selection', canvas.width / 2, 800);
+
+      // Add branding
+      ctx.font = '40px Arial';
+      ctx.fillStyle = '#ffd700';
+      ctx.fillText('Visit our store now!', canvas.width / 2, 1600);
+
+      const mediaUrl = canvas.toDataURL('image/jpeg', 0.9);
+      const storyText = '✨ Premium Diamond Collection\n💎 Browse our exclusive selection';
+      const widgetUrl = getCurrentUrl();
+
+      const success = shareToStory(mediaUrl, storyText, widgetUrl);
+      
+      if (success) {
+        toast({
+          title: "השיתוף הצליח! 📖",
+          description: "החנות שותפה לסטורי בטלגרם",
+        });
+        haptics.notification('success');
+      } else {
+        toast({
+          title: "שיתוף פותח בדפדפן 🌐",
+          description: "השיתוף נפתח בחלון חדש",
+        });
+      }
+      
+      setShowShareDialog(false);
+    } catch (error) {
+      console.error('Story sharing failed:', error);
+      toast({
+        title: "שגיאה בשיתוף ❌",
+        description: "נסה שוב מאוחר יותר",
+        variant: "destructive"
+      });
+      haptics.notification('error');
+    }
+  };
+
   const shareOptions = [
+    ...(isInitialized ? [{
+      name: "Telegram Story",
+      icon: Camera,
+      action: handleStoryShare,
+      color: "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700",
+      description: "Share to your Telegram story"
+    }] : []),
     {
       name: "Copy Link",
       icon: Copy,
