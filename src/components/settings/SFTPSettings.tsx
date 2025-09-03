@@ -158,6 +158,13 @@ export function SFTPSettings() {
       setShowCredentials(true);
       setLastProvisionTime(new Date());
 
+      // Show success message
+      toast({
+        title: "✅ חשבון SFTP נוצר בהצלחה",
+        description: "כעת ניתן להעלות קבצים באמצעות FTP",
+        variant: "default",
+      });
+
       toast({
         title: "🎉 חשבון SFTP הוקם בהצלחה!",
         description: `שם משתמש: ${sftpData.ftp_username} | תיקיית העלאה: ${sftpData.folder_path}`,
@@ -175,11 +182,12 @@ export function SFTPSettings() {
           toast({
             title: "✅ בדיקת חיבור הצליחה",
             description: testResult.message || "החיבור לשרת SFTP עובד בהצלחה",
+            variant: "default",
           });
         } else {
           toast({
             title: "⚠️ בדיקת חיבור נכשלה",
-            description: testResult.message || "לא ניתן להתחבר לשרת SFTP",
+            description: testResult.message || "החיבור לשרת SFTP נכשל",
             variant: "destructive",
           });
         }
@@ -197,15 +205,18 @@ export function SFTPSettings() {
       }
 
     } catch (error: any) {
-      console.error('❌ SFTP provisioning error:', error);
       const errorDetails = analyzeError(error);
       setDetailedError(errorDetails);
       
+      console.error('❌ SFTP provisioning failed:', errorDetails);
+      
+      // Show specific error message to user
       toast({
-        title: "שגיאה ביצירת חשבון SFTP",
+        title: "❌ יצירת חשבון SFTP נכשלה",
         description: errorDetails.message,
         variant: "destructive",
       });
+
     } finally {
       setIsProvisioning(false);
     }

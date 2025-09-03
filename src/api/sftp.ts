@@ -35,10 +35,18 @@ export type SFTPTestConnectionResponse = {
 export async function provisionSftp(telegram_id: number): Promise<SFTPProvisionResponse> {
   console.log('📡 API: Calling SFTP provision endpoint for user:', telegram_id);
   
-  return http<SFTPProvisionResponse>("/api/v1/sftp/provision", { 
-    method: "POST",
-    body: JSON.stringify({ telegram_id })
-  });
+  try {
+    const response = await http<SFTPProvisionResponse>("/api/v1/sftp/provision", { 
+      method: "POST",
+      body: JSON.stringify({ telegram_id })
+    });
+    
+    console.log('✅ SFTP: Provision successful for user:', telegram_id);
+    return response;
+  } catch (error) {
+    console.error('❌ SFTP: Provision failed for user:', telegram_id, error);
+    throw error;
+  }
 }
 
 export async function getSftpStatus(telegram_id: number): Promise<SFTPStatusResponse> {
@@ -52,10 +60,18 @@ export async function getSftpStatus(telegram_id: number): Promise<SFTPStatusResp
 export async function testSftpConnection(telegram_id: number): Promise<SFTPTestConnectionResponse> {
   console.log('📡 API: Testing SFTP connection for user:', telegram_id);
   
-  return http<SFTPTestConnectionResponse>("/api/v1/sftp/test-connection", {
-    method: "POST",
-    body: JSON.stringify({ telegram_id })
-  });
+  try {
+    const response = await http<SFTPTestConnectionResponse>("/api/v1/sftp/test-connection", {
+      method: "POST",
+      body: JSON.stringify({ telegram_id })
+    });
+    
+    console.log('✅ SFTP: Connection test result:', response.status, 'for user:', telegram_id);
+    return response;
+  } catch (error) {
+    console.error('❌ SFTP: Connection test failed for user:', telegram_id, error);
+    throw error;
+  }
 }
 
 export async function deactivateSftp(telegram_id: number): Promise<{ status: string; message: string }> {
