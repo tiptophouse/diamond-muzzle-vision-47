@@ -246,13 +246,26 @@ export function useTelegramWebApp() {
   };
 
   const share = async (text: string, url?: string) => {
-    if (webApp) {
+    if (webApp && typeof webApp.switchInlineQuery === 'function') {
       try {
         const shareText = url ? `${text}\n${url}` : text;
         webApp.switchInlineQuery(shareText);
       } catch (error) {
         console.error('Share failed:', error);
         // Fallback to clipboard
+        await navigator.clipboard.writeText(text);
+        showAlert('Link copied to clipboard!');
+      }
+    } else {
+      // Fallback for non-Telegram environments
+      if (navigator.share) {
+        try {
+          await navigator.share({ text, url });
+        } catch (error) {
+          await navigator.clipboard.writeText(text);
+          showAlert('Link copied to clipboard!');
+        }
+      } else {
         await navigator.clipboard.writeText(text);
         showAlert('Link copied to clipboard!');
       }

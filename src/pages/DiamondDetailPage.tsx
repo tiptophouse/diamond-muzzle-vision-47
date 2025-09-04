@@ -3,7 +3,9 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { telegramNavigation, PAGE_CONFIGS } from "@/utils/telegramNavigation";
+import { useTelegramNavigation } from '@/hooks/useTelegramNavigation';
+import { TelegramShareButton } from '@/components/store/TelegramShareButton';
+import { OptimizedDiamondImage } from '@/components/store/OptimizedDiamondImage';
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,20 +26,11 @@ function DiamondDetailPage() {
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [showImageUpload, setShowImageUpload] = useState(false);
 
-  // Configure Telegram navigation for diamond detail page
-  useEffect(() => {
-    telegramNavigation.configurePage({
-      ...PAGE_CONFIGS.DIAMOND_DETAIL,
-      onBackButtonClick: () => {
-        telegramNavigation.impactFeedback('medium');
-        navigate(-1);
-      }
-    });
-
-    return () => {
-      telegramNavigation.cleanup();
-    };
-  }, [navigate]);
+  const { navigateWithFeedback, goBack, shareContent } = useTelegramNavigation({
+    showBackButton: true,
+    onBackClick: () => navigate(-1),
+    enableHapticFeedback: true
+  });
 
   // Memoized admin check
   const isAdmin = useMemo(() => user?.id === 2138564172, [user?.id]);
@@ -80,10 +73,8 @@ function DiamondDetailPage() {
   const handleShare = useCallback(async () => {
     if (!diamond) return;
     
-    const currentUrl = window.location.href;
-    
-    // Create comprehensive diamond information
-    const diamondInfo = `💎 ${diamond.carat}ct ${diamond.shape} Diamond
+    const shareTitle = `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond`;
+    const shareText = `💎 ${diamond.carat}ct ${diamond.shape} Diamond
 
 🔸 Shape: ${diamond.shape}
 ⚖️ Weight: ${diamond.carat}ct
@@ -96,28 +87,21 @@ ${diamond.lab ? `🏛️ Lab: ${diamond.lab}` : ''}
 ${diamond.certificateNumber ? `🆔 Certificate: ${diamond.certificateNumber}` : ''}
 
 ${diamond.gem360Url ? `🌐 360° View: ${diamond.gem360Url}` : ''}
-${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}
+${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
 
-View full details: ${currentUrl}`;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond - Stock #${diamond.stockNumber}`,
-          text: diamondInfo,
-          url: currentUrl,
-        });
-        toast({ title: "Diamond details shared!" });
-      } catch (error) {
-        // Fallback to clipboard with comprehensive info
-        navigator.clipboard.writeText(diamondInfo);
-        toast({ title: "Diamond details copied to clipboard!" });
-      }
-    } else {
-      navigator.clipboard.writeText(diamondInfo);
-      toast({ title: "Diamond details copied to clipboard!" });
+    const shareUrl = window.location.href;
+    
+    try {
+      await shareContent(shareTitle, shareText, shareUrl);
+      toast({ title: "Diamond details shared!" });
+    } catch (error) {
+      toast({ 
+        title: "Share failed", 
+        description: "Could not share diamond details",
+        variant: "destructive" 
+      });
     }
-  }, [diamond, toast, formatPrice]);
+  }, [diamond, shareContent, formatPrice, toast]);
 
   const handleContact = useCallback(async () => {
     if (!isAuthenticated || !user || !diamond) {
@@ -296,20 +280,18 @@ View full details: ${currentUrl}`;
               variant="ghost" 
               size="sm" 
               className="flex items-center gap-2"
-              onClick={() => navigate(-1)}
+              onClick={goBack}
             >
               <ArrowLeft className="h-4 w-4" />
               Back
             </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="flex items-center gap-2"
-              onClick={handleShare}
-            >
-              <Share2 className="h-4 w-4" />
-              Share
-            </Button>
+            <TelegramShareButton
+              title={metaData?.title || 'Diamond Details'}
+              text={`💎 ${diamond.carat}ct ${diamond.shape} Diamond\n\n🎨 ${diamond.color} • 💎 ${diamond.clarity} • ✂️ ${diamond.cut}\n💰 ${formatPrice(diamond.price)}\n📋 Stock #${diamond.stockNumber}`}
+              url={window.location.href}
+              variant="ghost"
+              size="sm"
+            />
           </div>
         </div>
 
@@ -319,52 +301,14 @@ View full details: ${currentUrl}`;
             <div className="space-y-4">
               <Card className="overflow-hidden">
                 <div className="aspect-square bg-gradient-to-br from-slate-100 to-slate-200 relative">
-                  {/* PRIORITY 1: Show v360.in viewer if available */}
-                  {diamond.gem360Url && diamond.gem360Url.includes('v360.in') ? (
-                    <div className="relative w-full h-full">
-                      <V360Viewer 
-                        v360Url={diamond.gem360Url}
-                        stockNumber={diamond.stockNumber}
-                        isInline={false}
-                      />
-                      <div className="absolute top-4 left-4">
-                        <Badge className="bg-gradient-to-r from-emerald-600 to-green-600 text-white border-0 px-3 py-1 text-sm font-medium flex items-center gap-2">
-                          <Sparkles className="h-4 w-4" />
-                          v360.in Interactive
-                        </Badge>
-                      </div>
-                    </div>
-                  ) : diamond.gem360Url ? (
-                    /* PRIORITY 2: Show other 360° viewers */
-                    <div className="relative w-full h-full">
-                      <Gem360Viewer 
-                        gem360Url={diamond.gem360Url}
-                        stockNumber={diamond.stockNumber}
-                        isInline={false}
-                      />
-                      <div className="absolute top-4 left-4">
-                        <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0 px-3 py-1 text-sm font-medium flex items-center gap-2">
-                          <Sparkles className="h-4 w-4" />
-                          360° Interactive
-                        </Badge>
-                      </div>
-                    </div>
-                  ) : diamond.imageUrl ? (
-                    /* PRIORITY 3: Show static image */
-                    <img 
-                      src={diamond.imageUrl} 
-                      alt={`${diamond.shape} Diamond`}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    /* PRIORITY 4: Placeholder */
-                    <div className="w-full h-full flex items-center justify-center text-center">
-                      <div>
-                        <Gem className="h-24 w-24 text-slate-400 mx-auto mb-4" />
-                        <p className="text-slate-500">Diamond Image</p>
-                      </div>
-                    </div>
-                  )}
+                  <OptimizedDiamondImage
+                    imageUrl={diamond.imageUrl}
+                    gem360Url={diamond.gem360Url}
+                    stockNumber={diamond.stockNumber}
+                    shape={diamond.shape}
+                    className="w-full h-full"
+                    priority={true}
+                  />
                   
                   {/* Admin Image Upload Button */}
                   {isAdmin && (

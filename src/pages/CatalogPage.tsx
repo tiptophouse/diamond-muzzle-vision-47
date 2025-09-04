@@ -4,10 +4,11 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
 import { EnhancedStoreGrid } from "@/components/store/EnhancedStoreGrid";
-import { MotionDiamondCard } from "@/components/store/MotionDiamondCard";
+import { TelegramDiamondCard } from "@/components/store/TelegramDiamondCard";
 import { DiamondCardSkeleton } from "@/components/store/DiamondCardSkeleton";
 import { MobilePullToRefresh } from "@/components/mobile/MobilePullToRefresh";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
+import { useTelegramNavigation } from "@/hooks/useTelegramNavigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Plus, Filter, SortAsc, AlertCircle, Search, Sparkles } from "lucide-react";
@@ -33,6 +34,10 @@ function CatalogPage() {
   const [searchParams] = useSearchParams();
   const stockNumber = searchParams.get('stock');
   const { selectionChanged, impactOccurred } = useTelegramHapticFeedback();
+  const { navigateWithFeedback } = useTelegramNavigation({
+    showBackButton: false, // Store page doesn't need back button
+    enableHapticFeedback: true
+  });
   const navigate = useNavigate();
 
   // Telegram memory optimization
@@ -273,10 +278,10 @@ function CatalogPage() {
               key={diamond.id}
               id={`diamond-${diamond.stockNumber}`}
             >
-              <MotionDiamondCard 
+              <TelegramDiamondCard 
                 diamond={diamond}
                 index={index}
-                onViewDetails={(diamond) => navigate(`/diamond/${diamond.id}`)}
+                onViewDetails={(diamond) => navigateWithFeedback(`/diamond/${diamond.id}`)}
               />
             </div>
           ))}
