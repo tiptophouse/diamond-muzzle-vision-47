@@ -1,6 +1,7 @@
 
 import { API_BASE_URL } from './config';
 import { setCurrentUserId } from './config';
+import { tokenManager } from './tokenManager';
 
 export interface TelegramVerificationResponse {
   success: boolean;
@@ -15,17 +16,20 @@ export interface TelegramVerificationResponse {
   };
 }
 
-// Store backend auth token in memory
+// Enhanced token management with caching
 let backendAuthToken: string | null = null;
 
 export function getBackendAuthToken(): string | null {
-  console.log('🔑 Getting backend auth token:', backendAuthToken ? 'EXISTS' : 'NULL');
-  return backendAuthToken;
+  // Try memory first, then token manager
+  const token = backendAuthToken || tokenManager.getToken();
+  console.log('🔑 Getting backend auth token:', token ? 'EXISTS' : 'NULL');
+  return token;
 }
 
 export function clearBackendAuthToken(): void {
   console.log('🔑 Clearing backend auth token');
   backendAuthToken = null;
+  tokenManager.clear();
 }
 
 // THE ONLY TRUE AUTHENTICATION METHOD: Telegram initData → FastAPI sign-in → JWT
@@ -75,7 +79,7 @@ export async function signInToBackend(initData: string): Promise<string | null> 
       backendAuthToken = token;
       console.log('✅ MAIN AUTH: JWT token received and stored');
       
-      // Extract user ID from initData since the API doesn't return user_id
+      // Extract user ID and store token in manager
       try {
         const urlParams = new URLSearchParams(initData);
         const userParam = urlParams.get('user');
@@ -84,7 +88,8 @@ export async function signInToBackend(initData: string): Promise<string | null> 
           const user = JSON.parse(decodeURIComponent(userParam));
           if (user.id) {
             setCurrentUserId(user.id);
-            console.log('✅ MAIN AUTH: User ID extracted from initData:', user.id);
+            tokenManager.setToken(token, user.id);
+            console.log('✅ MAIN AUTH: User ID extracted and token cached:', user.id);
           }
         }
       } catch (error) {
