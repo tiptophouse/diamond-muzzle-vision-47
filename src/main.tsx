@@ -1,5 +1,5 @@
 
-import React, { StrictMode } from 'react';
+import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';
 import App from './App.tsx';
@@ -26,11 +26,9 @@ const root = createRoot(container);
 
 try {
   root.render(
-    <StrictMode>
-      <HelmetProvider>
-        <App />
-      </HelmetProvider>
-    </StrictMode>
+    <HelmetProvider>
+      <App />
+    </HelmetProvider>
   );
 } catch (error) {
   console.error('Failed to render app:', error);
