@@ -10,7 +10,7 @@ import { GroupCTAAnalytics } from '@/components/admin/GroupCTAAnalytics';
 import { PaymentManagement } from '@/components/admin/PaymentManagement';
 import { SessionUsersDisplay } from '@/components/admin/SessionUsersDisplay';
 import { UserUploadAnalysis } from '@/components/admin/UserUploadAnalysis';
-import { UserDiamondCounts } from '@/components/admin/UserDiamondCounts';
+import { OptimizedUserDiamondCounts } from '@/components/admin/OptimizedUserDiamondCounts';
 import { ForceRefreshButton } from '@/components/admin/ForceRefreshButton';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useEffect, useState } from 'react';
@@ -346,7 +346,7 @@ export default function Admin() {
             
             <TabsContent value="diamond-counts" className="space-y-0">
               <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <UserDiamondCounts />
+                <OptimizedUserDiamondCounts />
               </div>
             </TabsContent>
             
