@@ -109,6 +109,9 @@ serve(async (req) => {
 
     console.log('📱 Processing message from B2B group:', message.text);
 
+    // Save incoming message to chatbot_messages table
+    await saveIncomingMessage(message);
+
     // Check for payment confirmation message
     if (message.text.includes('✅ Payment for post in group confirmed')) {
       console.log('💎 Payment confirmation detected, generating diamond post');
@@ -327,6 +330,39 @@ async function generateDiamondPostFromPayment(message: any) {
     }
   } catch (error) {
     console.error('❌ Error in generateDiamondPostFromPayment:', error);
+  }
+}
+
+async function saveIncomingMessage(message: any) {
+  try {
+    const diamondRequest = parseDiamondRequest(message.text);
+    
+    const { error } = await supabase
+      .from('chatbot_messages')
+      .insert([{
+        telegram_id: message.from.id,
+        message_text: message.text,
+        chat_id: message.chat.id,
+        chat_type: message.chat.type,
+        chat_title: message.chat.title,
+        sender_info: {
+          id: message.from.id,
+          first_name: message.from.first_name,
+          last_name: message.from.last_name,
+          username: message.from.username
+        },
+        parsed_data: diamondRequest,
+        confidence_score: diamondRequest.confidence,
+        message_timestamp: new Date(message.date * 1000).toISOString()
+      }]);
+
+    if (error) {
+      console.error('❌ Error saving incoming message:', error);
+    } else {
+      console.log(`✅ Saved incoming message from ${message.from.first_name}`);
+    }
+  } catch (error) {
+    console.error('❌ Error in saveIncomingMessage:', error);
   }
 }
 

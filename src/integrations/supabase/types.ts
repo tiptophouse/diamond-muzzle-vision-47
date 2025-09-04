@@ -287,6 +287,51 @@ export type Database = {
         }
         Relationships: []
       }
+      chatbot_messages: {
+        Row: {
+          chat_id: number
+          chat_title: string | null
+          chat_type: string
+          confidence_score: number | null
+          created_at: string | null
+          id: string
+          message_text: string
+          message_timestamp: string
+          parsed_data: Json | null
+          processed: boolean | null
+          sender_info: Json
+          telegram_id: number
+        }
+        Insert: {
+          chat_id: number
+          chat_title?: string | null
+          chat_type?: string
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          message_text: string
+          message_timestamp: string
+          parsed_data?: Json | null
+          processed?: boolean | null
+          sender_info: Json
+          telegram_id: number
+        }
+        Update: {
+          chat_id?: number
+          chat_title?: string | null
+          chat_type?: string
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          message_text?: string
+          message_timestamp?: string
+          parsed_data?: Json | null
+          processed?: boolean | null
+          sender_info?: Json
+          telegram_id?: number
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           created_at: string
