@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { IndividualMessageSender } from '@/components/admin/IndividualMessageSender';
 import { BlockedUsersManager } from '@/components/admin/BlockedUsersManager';
+import { CTATrackingFix } from '@/components/admin/CTATrackingFix';
 
 export default function Admin() {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
@@ -257,7 +258,7 @@ export default function Admin() {
 
       {/* Main Admin Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-        <Tabs defaultValue="users" className="space-y-4">
+        <Tabs defaultValue="group-cta" className="space-y-4">
           <TabsList className="grid w-full grid-cols-9">
             <TabsTrigger 
               value="blocked-users" 
@@ -373,8 +374,13 @@ export default function Admin() {
 
             <TabsContent value="group-cta" className="space-y-0">
               <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <GroupCTASender />
-            <GroupCTAAnalytics />
+                <CTATrackingFix />
+                <div className="mt-8">
+                  <GroupCTASender />
+                </div>
+                <div className="mt-6">
+                  <GroupCTAAnalytics />
+                </div>
               </div>
             </TabsContent>
 
