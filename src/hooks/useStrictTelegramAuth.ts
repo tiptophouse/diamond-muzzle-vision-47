@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { TelegramUser } from '@/types/telegram';
 import { signInToBackend, clearBackendAuthToken } from '@/lib/api/auth';
 import { setCurrentUserId } from '@/lib/api/config';
@@ -15,19 +15,6 @@ interface AuthState {
 }
 
 export function useStrictTelegramAuth(): AuthState {
-  // Add safety check for React context
-  if (!React || typeof React.useState !== 'function') {
-    console.error('❌ React context is not available');
-    return {
-      user: null,
-      isLoading: false,
-      error: 'React context error',
-      isTelegramEnvironment: false,
-      isAuthenticated: false,
-      accessDeniedReason: 'react_context_error',
-    };
-  }
-
   const [state, setState] = useState<AuthState>({
     user: null,
     isLoading: true,
