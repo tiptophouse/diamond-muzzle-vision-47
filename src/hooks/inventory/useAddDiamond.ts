@@ -128,7 +128,7 @@ export function useAddDiamond(onSuccess?: () => void) {
         if (response.data) {
           toast({
             title: "✅ Diamond Added Successfully!",
-            description: `Stone "${data.stockNumber}" has been added to your inventory via FastAPI backend`,
+            description: `Stone "${data.stockNumber}" has been added to your inventory and is visible in the store`,
           });
           
           // Send notification with direct link to the specific diamond
@@ -193,7 +193,7 @@ export function useAddDiamond(onSuccess?: () => void) {
         // Show specific error message to user with API details
         toast({
           variant: "destructive",
-          title: "❌ Backend Validation Error",
+          title: "❌ Failed to Add Diamond",
           description: errorMessage,
         });
         

@@ -57,8 +57,9 @@ export default function InventoryPage() {
   const handleDelete = async (diamondId: string) => {
     console.log('🗑️ Delete diamond clicked:', diamondId);
     if (window.confirm('Are you sure you want to delete this diamond?')) {
-      const diamond = allDiamonds.find(d => d.id === diamondId);
-      console.log('🗑️ Deleting diamond:', diamond?.stockNumber, 'Diamond ID:', diamond?.diamondId);
+      // Find diamond by either diamondId (FastAPI) or id (local)
+      const diamond = allDiamonds.find(d => d.diamondId === diamondId || d.id === diamondId);
+      console.log('🗑️ Deleting diamond:', diamond?.stockNumber, 'FastAPI ID:', diamond?.diamondId, 'Local ID:', diamond?.id);
       
       const success = await deleteDiamond(diamondId, diamond);
       if (success) {

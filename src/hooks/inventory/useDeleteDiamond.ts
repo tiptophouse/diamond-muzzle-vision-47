@@ -26,13 +26,16 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
 
     console.log('🗑️ DELETE: Starting delete for diamond:', diamondId);
     
-    // Use the actual FastAPI diamond ID if available
-    const fastApiDiamondId = diamondData?.diamondId || diamondId;
+    // diamondId is now already the correct FastAPI ID from the table row
+    const fastApiDiamondId = diamondId;
     console.log('🗑️ DELETE: Using FastAPI diamond ID:', fastApiDiamondId);
+    
+    // Find the diamond in UI for optimistic removal
+    const localDiamondId = diamondData?.id || diamondId;
 
-    // Optimistically remove from UI
+    // Optimistically remove from UI using the local diamond ID
     if (removeDiamondFromState) {
-      removeDiamondFromState(diamondId);
+      removeDiamondFromState(localDiamondId);
     }
 
     try {
@@ -70,7 +73,9 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
         // Fallback to localStorage with user notification
         console.log('🔄 DELETE: Falling back to localStorage...');
         const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
-        const filteredData = existingData.filter((item: any) => item.id !== diamondId);
+        const filteredData = existingData.filter((item: any) => 
+          item.id !== localDiamondId && item.diamondId !== fastApiDiamondId && item.stockNumber !== diamondData?.stockNumber
+        );
         
         if (filteredData.length < existingData.length) {
           localStorage.setItem('diamond_inventory', JSON.stringify(filteredData));
