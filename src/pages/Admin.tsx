@@ -22,6 +22,8 @@ import { IndividualMessageSender } from '@/components/admin/IndividualMessageSen
 import { SFTPPromotionSender } from '@/components/admin/SFTPPromotionSender';
 import { SFTPGroupMessageSender } from '@/components/admin/SFTPGroupMessageSender';
 import { SFTPTestMessageSender } from '@/components/admin/SFTPTestMessageSender';
+import { DiamondShareAnalytics } from "@/components/admin/DiamondShareAnalytics";
+import { RealTimeBotAnalytics } from "@/components/admin/RealTimeBotAnalytics";
 import { BlockedUsersManager } from '@/components/admin/BlockedUsersManager';
 import { CTATrackingFix } from '@/components/admin/CTATrackingFix';
 
@@ -261,8 +263,16 @@ export default function Admin() {
 
       {/* Main Admin Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-        <Tabs defaultValue="group-cta" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-9">
+        <Tabs defaultValue="analytics" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-10">
+            <TabsTrigger 
+              value="analytics" 
+              className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-green-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
+            >
+              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="hidden xs:inline sm:inline">Bot Analytics</span>
+              <span className="xs:hidden sm:hidden">Bot</span>
+            </TabsTrigger>
             <TabsTrigger 
               value="blocked-users" 
               className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-red-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
@@ -339,6 +349,17 @@ export default function Admin() {
           </TabsList>
           
           <div className="mt-6">
+            <TabsContent value="analytics" className="space-y-6">
+              <AdminStatsGrid
+                stats={stats}
+                blockedUsersCount={blockedUsersCount}
+                averageEngagement={averageEngagement}
+              />
+              <RealTimeBotAnalytics />
+              <DiamondShareAnalytics />
+              <GroupCTAAnalytics />
+            </TabsContent>
+            
             <TabsContent value="blocked-users" className="space-y-0">
               <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                 <div className="p-6">

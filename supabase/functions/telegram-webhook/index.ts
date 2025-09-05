@@ -69,9 +69,13 @@ serve(async (req) => {
 
   try {
     console.log('📱 Telegram webhook called');
+    const startTime = Date.now();
     
     const update: TelegramUpdate = await req.json();
     console.log('📱 Received update:', JSON.stringify(update, null, 2));
+
+    // Track bot usage analytics
+    await trackBotUsage(update, startTime);
 
     if (!update.message?.text || !update.message?.chat) {
       console.log('📱 No text message or chat info, skipping');
