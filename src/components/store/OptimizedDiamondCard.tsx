@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { useSecureDiamondSharing } from "@/hooks/useSecureDiamondSharing";
+import { LimitedGroupShareButton } from "./LimitedGroupShareButton";
 import { toast } from 'sonner';
 import { Gem360Viewer } from "./Gem360Viewer";
 import { V360Viewer } from "./V360Viewer";
@@ -255,13 +256,6 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
 
       <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
         <button
-          onClick={handleShare}
-          className="p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm transition-all duration-200 hover:bg-white hover:scale-110"
-          disabled={!shareAvailable}
-        >
-          <Share2 className={`h-3 w-3 ${shareAvailable ? 'text-blue-600' : 'text-gray-400'}`} />
-        </button>
-        <button
           onClick={handleLike}
           className="p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm transition-all duration-200 hover:bg-white hover:scale-110"
         >
@@ -372,6 +366,13 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
             Details
           </Button>
         </div>
+
+        {/* Limited Group Share Button */}
+        <LimitedGroupShareButton 
+          diamond={diamond} 
+          size="sm"
+          className="w-full mt-2"
+        />
       </div>
     </div>
   );
