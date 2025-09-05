@@ -1783,6 +1783,7 @@ export type Database = {
           payment_status: string | null
           phone_number: string | null
           photo_url: string | null
+          shares_remaining: number
           status: string | null
           subscription_plan: string | null
           telegram_id: number
@@ -1808,6 +1809,7 @@ export type Database = {
           payment_status?: string | null
           phone_number?: string | null
           photo_url?: string | null
+          shares_remaining?: number
           status?: string | null
           subscription_plan?: string | null
           telegram_id: number
@@ -1833,6 +1835,7 @@ export type Database = {
           payment_status?: string | null
           phone_number?: string | null
           photo_url?: string | null
+          shares_remaining?: number
           status?: string | null
           subscription_plan?: string | null
           telegram_id?: number
@@ -1910,6 +1913,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_share_history: {
+        Row: {
+          analytics_data: Json
+          created_at: string
+          diamond_stock_number: string
+          id: string
+          share_type: string
+          shares_remaining_after: number
+          user_telegram_id: number
+        }
+        Insert: {
+          analytics_data?: Json
+          created_at?: string
+          diamond_stock_number: string
+          id?: string
+          share_type?: string
+          shares_remaining_after: number
+          user_telegram_id: number
+        }
+        Update: {
+          analytics_data?: Json
+          created_at?: string
+          diamond_stock_number?: string
+          id?: string
+          share_type?: string
+          shares_remaining_after?: number
+          user_telegram_id?: number
+        }
+        Relationships: []
+      }
+      user_share_quotas: {
+        Row: {
+          created_at: string
+          id: string
+          quota_reset_at: string | null
+          shares_granted: number
+          shares_used: number
+          updated_at: string
+          user_telegram_id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          quota_reset_at?: string | null
+          shares_granted?: number
+          shares_used?: number
+          updated_at?: string
+          user_telegram_id: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          quota_reset_at?: string | null
+          shares_granted?: number
+          shares_used?: number
+          updated_at?: string
+          user_telegram_id?: number
+        }
+        Relationships: []
       }
       users: {
         Row: {
@@ -2077,6 +2140,10 @@ export type Database = {
       }
       update_diamond_for_user: {
         Args: { p_stock_number: string; p_update_data: Json; p_user_id: number }
+        Returns: boolean
+      }
+      use_share_quota: {
+        Args: { p_diamond_stock_number: string; p_user_telegram_id: number }
         Returns: boolean
       }
     }
