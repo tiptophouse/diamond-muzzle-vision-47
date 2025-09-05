@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { OptimizedDiamondImage } from "./OptimizedDiamondImage";
 import { TelegramShareButton } from "./TelegramShareButton";
+import { LimitedGroupShareButton } from "./LimitedGroupShareButton";
 import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useNavigate } from "react-router-dom";
@@ -181,6 +182,13 @@ View details: ${window.location.origin}/diamond/${diamond.id}`;
             <Share2 className="h-3 w-3" />
           </TelegramShareButton>
         </div>
+
+        {/* Premium Group Share Button */}
+        <LimitedGroupShareButton 
+          diamond={diamond} 
+          size="sm"
+          className="w-full"
+        />
 
         {/* Contact Button - Telegram Optimized */}
         <Button 

@@ -71,8 +71,11 @@ serve(async (req) => {
     console.log('📱 Telegram webhook called');
     const startTime = Date.now();
     
-    const update: TelegramUpdate = await req.json();
-    console.log('📱 Received update:', JSON.stringify(update, null, 2));
+    // Handle web app data (diamond sharing)
+    if (update.message?.web_app_data) {
+      console.log('🌐 Handling web app data');
+      return await handleWebAppData(update.message);
+    }
 
     // Track bot usage analytics
     await trackBotUsage(update, startTime);
@@ -464,6 +467,51 @@ async function createGroupNotification(notification: any) {
     }
   } catch (error) {
     console.error('❌ Error in createGroupNotification:', error);
+  }
+}
+
+async function handleWebAppData(message: any) {
+  try {
+    console.log('🌐 Processing web app data from message');
+    
+    const webAppData = JSON.parse(message.web_app_data.data);
+    console.log('📱 Parsed web app data:', webAppData);
+
+    if (webAppData.action === 'share_diamond_with_registration_check') {
+      const { data } = webAppData;
+      const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN')!;
+      
+      // Send diamond card to group with inline buttons
+      const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: message.chat.id,
+          text: data.message,
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: data.inline_keyboard
+          }
+        })
+      });
+
+      if (!telegramResponse.ok) {
+        throw new Error(`Telegram API error: ${telegramResponse.statusText}`);
+      }
+
+      const result = await telegramResponse.json();
+      console.log('✅ Diamond shared to group successfully:', result.message_id);
+      
+      return new Response('OK', { status: 200, headers: corsHeaders });
+    }
+
+    return new Response('OK', { status: 200, headers: corsHeaders });
+  } catch (error) {
+    console.error('❌ Error handling web app data:', error);
+    return new Response('Error processing web app data', { 
+      status: 500, 
+      headers: corsHeaders 
+    });
   }
 }
 

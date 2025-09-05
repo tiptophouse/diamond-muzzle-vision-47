@@ -25,6 +25,7 @@ import AdminAnalytics from './pages/AdminAnalytics';
 import DiamondDetailPage from './pages/DiamondDetailPage';
 import SecureDiamondPage from './pages/SecureDiamondPage';
 import DiamondSwipe from './pages/DiamondSwipe';
+import SecureDiamondViewerPage from './pages/SecureDiamondViewerPage';
 import NotFound from './pages/NotFound';
 import StandardizeCsvPage from './pages/StandardizeCsvPage';
 import BulkUploadPage from './pages/BulkUploadPage';
@@ -161,7 +162,11 @@ function App() {
                     </AuthenticatedRoute>
                   } />
                   
-                  {/* 404 page - no authentication required */}
+                  <Route path="/shared-diamond/:stockNumber" element={
+                    <AuthenticatedRoute>
+                      <SecureDiamondViewerPage />
+                    </AuthenticatedRoute>
+                  } />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </SecureTelegramLayout>
