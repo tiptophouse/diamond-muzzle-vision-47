@@ -1087,6 +1087,48 @@ export type Database = {
         }
         Relationships: []
       }
+      sftp_requests: {
+        Row: {
+          created_at: string
+          first_name: string
+          id: string
+          last_name: string | null
+          notes: string | null
+          processed_at: string | null
+          requested_at: string
+          status: string
+          telegram_id: number
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          created_at?: string
+          first_name: string
+          id?: string
+          last_name?: string | null
+          notes?: string | null
+          processed_at?: string | null
+          requested_at?: string
+          status?: string
+          telegram_id: number
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          created_at?: string
+          first_name?: string
+          id?: string
+          last_name?: string | null
+          notes?: string | null
+          processed_at?: string | null
+          requested_at?: string
+          status?: string
+          telegram_id?: number
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
       store_item_reshares: {
         Row: {
           created_at: string | null
