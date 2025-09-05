@@ -85,6 +85,13 @@ serve(async (req) => {
     if (message.chat.type === 'private' && message.text?.startsWith('/start')) {
       const parts = message.text.split(' ');
       const startParam = parts[1] || '';
+      
+      // Handle SFTP setup requests
+      if (startParam === 'provide_sftp') {
+        await handleSFTPSetupRequest(message.from);
+        return new Response('OK', { status: 200, headers: corsHeaders });
+      }
+      
       const { error: insertError } = await supabase
         .from('group_cta_clicks')
         .insert([{
@@ -98,6 +105,12 @@ serve(async (req) => {
       } else {
         console.log('✅ Tracked CTA click from start parameter:', startParam);
       }
+      return new Response('OK', { status: 200, headers: corsHeaders });
+    }
+
+    // Handle direct SFTP command in private chats
+    if (message.chat.type === 'private' && message.text?.toLowerCase().includes('/provide_sftp')) {
+      await handleSFTPSetupRequest(message.from);
       return new Response('OK', { status: 200, headers: corsHeaders });
     }
     
@@ -294,6 +307,68 @@ async function findMatchingDiamonds(request: DiamondRequest) {
   } catch (error) {
     console.error('❌ Error in findMatchingDiamonds:', error);
     return [];
+  }
+}
+
+async function handleSFTPSetupRequest(user: any) {
+  console.log('🔗 SFTP setup request from user:', user.id, user.first_name);
+  
+  try {
+    // Send response message to user
+    const message = `שלום ${user.first_name}! 👋
+
+🚀 בקשתך לחיבור SFTP התקבלה בהצלחה!
+
+צוות Acadia יצור איתך קשר בקרוב עם פרטי החיבור והוראות ההתקנה.
+
+📧 במקביל, תוכל גם לפנות ישירות ל:
+info@accadiasoftware.com
+
+💎 בינתיים, תוכל להמשיך להשתמש במערכת דרך האפליקציה.
+
+תודה על הפנייה! 🙏`;
+
+    // Log the SFTP request in database for Acadia team follow-up
+    const { error: logError } = await supabase
+      .from('sftp_requests')
+      .insert([{
+        telegram_id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name || null,
+        username: user.username || null,
+        status: 'pending',
+        requested_at: new Date().toISOString()
+      }]);
+
+    if (logError) {
+      console.error('❌ Error logging SFTP request:', logError);
+    } else {
+      console.log('✅ SFTP request logged successfully');
+    }
+
+    // Send confirmation message to user via Telegram Bot API
+    const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+    if (botToken) {
+      const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+      const response = await fetch(telegramApiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: user.id,
+          text: message,
+          parse_mode: 'HTML'
+        })
+      });
+
+      if (!response.ok) {
+        console.error('❌ Failed to send Telegram message:', await response.text());
+      } else {
+        console.log('✅ Confirmation message sent to user');
+      }
+    }
+
+  } catch (error) {
+    console.error('❌ Error handling SFTP setup request:', error);
   }
 }
 
