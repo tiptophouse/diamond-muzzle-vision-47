@@ -145,6 +145,57 @@ export type Database = {
         }
         Relationships: []
       }
+      bot_usage_analytics: {
+        Row: {
+          api_version: string | null
+          bot_token_type: string
+          chat_id: number
+          chat_type: string
+          command: string | null
+          created_at: string
+          id: string
+          message_data: Json | null
+          message_type: string
+          processed_at: string | null
+          response_sent: boolean | null
+          response_time_ms: number | null
+          telegram_id: number
+          user_info: Json | null
+        }
+        Insert: {
+          api_version?: string | null
+          bot_token_type?: string
+          chat_id: number
+          chat_type?: string
+          command?: string | null
+          created_at?: string
+          id?: string
+          message_data?: Json | null
+          message_type: string
+          processed_at?: string | null
+          response_sent?: boolean | null
+          response_time_ms?: number | null
+          telegram_id: number
+          user_info?: Json | null
+        }
+        Update: {
+          api_version?: string | null
+          bot_token_type?: string
+          chat_id?: number
+          chat_type?: string
+          command?: string | null
+          created_at?: string
+          id?: string
+          message_data?: Json | null
+          message_type?: string
+          processed_at?: string | null
+          response_sent?: boolean | null
+          response_time_ms?: number | null
+          telegram_id?: number
+          user_info?: Json | null
+        }
+        Relationships: []
+      }
       chat_conversation_messages: {
         Row: {
           content: string
@@ -1965,6 +2016,18 @@ export type Database = {
       expire_keshett_agreements: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      get_bot_usage_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          active_chats: number
+          avg_response_time_ms: number
+          bot_distribution: Json
+          commands_used_today: number
+          most_used_commands: Json
+          total_messages_today: number
+          unique_users_today: number
+        }[]
       }
       get_public_diamond_count: {
         Args: Record<PropertyKey, never>
