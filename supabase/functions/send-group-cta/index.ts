@@ -19,7 +19,9 @@ serve(async (req) => {
       message, 
       groupId, 
       botUsername: providedBotUsername,
-      useButtons = false // Default to false for now
+      useButtons = false, // Default to false for now
+      buttonText = '🚀 הצטרף ל-BrilliantBot',
+      buttonUrl
     } = await req.json();
     
     console.log('📥 CTA request:', { 
@@ -67,16 +69,31 @@ serve(async (req) => {
 
     // Only add buttons if explicitly requested
     if (useButtons) {
-      telegramPayload.reply_markup = {
-        inline_keyboard: [[
-          {
-            text: '🚀 הצטרף ל-BrilliantBot',
-            web_app: {
-              url: `https://diamondbot-store.vercel.app/?utm_source=group_cta&utm_campaign=growth_announcement&start=group_activation&button_clicked=join_brilliantbot`
+      const finalButtonText = buttonText || '🚀 הצטרף ל-BrilliantBot';
+      const finalButtonUrl = buttonUrl || `https://diamondbot-store.vercel.app/?utm_source=group_cta&utm_campaign=growth_announcement&start=group_activation&button_clicked=join_brilliantbot`;
+      
+      // If buttonUrl starts with https://t.me/, use url instead of web_app
+      if (finalButtonUrl.startsWith('https://t.me/')) {
+        telegramPayload.reply_markup = {
+          inline_keyboard: [[
+            {
+              text: finalButtonText,
+              url: finalButtonUrl
             }
-          }
-        ]]
-      };
+          ]]
+        };
+      } else {
+        telegramPayload.reply_markup = {
+          inline_keyboard: [[
+            {
+              text: finalButtonText,
+              web_app: {
+                url: finalButtonUrl
+              }
+            }
+          ]]
+        };
+      }
     }
 
     console.log('📤 Sending message to group:', groupId || -1001009290613);

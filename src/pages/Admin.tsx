@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { IndividualMessageSender } from '@/components/admin/IndividualMessageSender';
 import { SFTPPromotionSender } from '@/components/admin/SFTPPromotionSender';
+import { SFTPGroupMessageSender } from '@/components/admin/SFTPGroupMessageSender';
 import { BlockedUsersManager } from '@/components/admin/BlockedUsersManager';
 import { CTATrackingFix } from '@/components/admin/CTATrackingFix';
 
@@ -387,6 +388,9 @@ export default function Admin() {
 
             <TabsContent value="notifications" className="space-y-0">
               <div className="grid gap-6">
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <SFTPGroupMessageSender />
+                </div>
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
                   <IndividualMessageSender />
                 </div>
