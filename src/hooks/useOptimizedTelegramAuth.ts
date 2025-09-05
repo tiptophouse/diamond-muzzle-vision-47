@@ -71,8 +71,41 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
     }
 
     try {
+      // Development mode detection
+      const isDevelopment = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost';
+      
       // Fast environment check
       if (typeof window === 'undefined' || !window.Telegram?.WebApp) {
+        if (isDevelopment) {
+          console.log('🛠️ AUTH: Development mode - using mock authentication');
+          // Use mock authentication for development
+          const mockUser: TelegramUser = {
+            id: 999999999,
+            first_name: 'Dev',
+            last_name: 'User',
+            username: 'dev_user',
+            language_code: 'en',
+            is_premium: false
+          };
+          
+          // Set mock token and user data
+          const mockToken = 'dev_mock_token_' + Date.now();
+          tokenManager.setToken(mockToken, mockUser.id);
+          setCurrentUserId(mockUser.id);
+          tokenManager.cacheAuthState(mockUser, mockToken);
+          
+          updateState({
+            user: mockUser,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+            accessDeniedReason: null,
+            isTelegramEnvironment: false
+          });
+          
+          console.log('✅ AUTH: Development mode authentication complete');
+          return;
+        }
         throw new Error('not_telegram_environment');
       }
 

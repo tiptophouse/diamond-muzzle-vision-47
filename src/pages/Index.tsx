@@ -3,12 +3,15 @@ import { Navigate } from 'react-router-dom';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useUserTracking } from '@/hooks/useUserTracking';
 import { getAdminTelegramId } from '@/lib/api/secureConfig';
+import { TelegramAccessGuide } from '@/components/auth/TelegramAccessGuide';
 import { Diamond } from 'lucide-react';
 const Index = () => {
   const {
     user,
     isAuthenticated,
-    isLoading
+    isLoading,
+    isTelegramEnvironment,
+    accessDeniedReason
   } = useTelegramAuth();
   const {
     trackPageVisit
@@ -106,7 +109,22 @@ const Index = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Fallback for unauthenticated users
+  // Show development mode or Telegram access guide for unauthenticated users
+  const isDevelopment = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost';
+  
+  // Handle access denied scenarios
+  if (!isAuthenticated && accessDeniedReason) {
+    if (accessDeniedReason === 'not_telegram_environment' && !isDevelopment) {
+      return <TelegramAccessGuide onRetry={() => window.location.reload()} />;
+    }
+  }
+
+  // For development mode, show that mock auth is active
+  if (!isAuthenticated && isDevelopment && !isTelegramEnvironment) {
+    return <TelegramAccessGuide isDevelopment={true} />;
+  }
+
+  // Fallback loading state
   return <div className="min-h-screen flex items-center justify-center px-6">
       <div className="text-center space-y-12 max-w-2xl">
         {/* Clean icon */}
@@ -130,7 +148,10 @@ const Index = () => {
         </button>
         
         {/* Debug info in development */}
-        {process.env.NODE_ENV === 'development'}
+        {isDevelopment && <div className="text-xs text-left bg-card p-4 rounded-lg border shadow-soft max-w-md mx-auto">
+            <div className="font-semibold mb-2 text-foreground">Debug Info:</div>
+            {debugInfo.map((info, i) => <div key={i} className="text-muted-foreground">{info}</div>)}
+          </div>}
       </div>
     </div>;
 };

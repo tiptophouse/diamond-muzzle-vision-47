@@ -3,6 +3,7 @@ import { useLocation, Link } from 'react-router-dom';
 import { Home, Package, Store, MessageCircle, BarChart3, Shield } from 'lucide-react';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { DevelopmentModeIndicator } from '@/components/debug/DevelopmentModeIndicator';
 import { cn } from '@/lib/utils';
 
 interface SecureTelegramLayoutProps {
@@ -64,6 +65,9 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Development Mode Indicator */}
+      <DevelopmentModeIndicator />
+      
       {/* Security Header */}
       <div className="bg-primary/5 border-b border-primary/10 px-4 py-2">
         <div className="flex items-center justify-between max-w-screen-sm mx-auto">
