@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useTelegramWebApp } from './useTelegramWebApp';
 import { useToast } from '@/hooks/use-toast';
 
 interface ShareQuotaData {
@@ -13,24 +13,11 @@ interface ShareQuotaData {
 export function useShareQuota() {
   const [quotaData, setQuotaData] = useState<ShareQuotaData | null>(null);
   const [loading, setLoading] = useState(true);
-  const { user } = useTelegramAuth();
+  const { user } = useTelegramWebApp();
   const { toast } = useToast();
-  const isDevelopment = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost';
 
   const fetchQuotaData = async () => {
     if (!user?.id) return;
-
-    // Mock data for development mode
-    if (isDevelopment && user.id === 999999999) {
-      setQuotaData({
-        sharesRemaining: 5,
-        sharesUsed: 0,
-        sharesGranted: 5,
-        quotaResetAt: null
-      });
-      setLoading(false);
-      return;
-    }
 
     try {
       // First get shares_remaining from user_profiles
@@ -73,27 +60,6 @@ export function useShareQuota() {
         variant: "destructive"
       });
       return false;
-    }
-
-    // Mock success for development mode
-    if (isDevelopment && user.id === 999999999) {
-      console.log('🛠️ DEVELOPMENT: Mock share used for diamond:', diamondStockNumber);
-      
-      // Update mock quota data
-      if (quotaData && quotaData.sharesRemaining > 0) {
-        setQuotaData({
-          ...quotaData,
-          sharesRemaining: quotaData.sharesRemaining - 1,
-          sharesUsed: quotaData.sharesUsed + 1
-        });
-      }
-      
-      toast({
-        title: "Development Mode",
-        description: `Mock share used for diamond ${diamondStockNumber}`,
-        variant: "default"
-      });
-      return true;
     }
 
     try {

@@ -1,15 +1,14 @@
 
 import { useCallback } from 'react';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useTelegramWebApp } from './useTelegramWebApp';
 import { useTelegramSendData } from './useTelegramSendData';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 export function useSecureDiamondSharing() {
-  const { user, isTelegramEnvironment } = useTelegramAuth();
+  const { webApp, user } = useTelegramWebApp();
   const { sendData } = useTelegramSendData();
-  const isDevelopment = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost';
 
   const createSecureShareData = useCallback((diamond: Diamond) => {
     // Create secure data payload that only works in Telegram for registered users
@@ -82,24 +81,7 @@ export function useSecureDiamondSharing() {
   }, [user]);
 
   const shareWithInlineButtons = useCallback(async (diamond: Diamond) => {
-    if (!user) {
-      toast.error('🔒 Authentication required for sharing');
-      return false;
-    }
-
-    // Development mode mock
-    if (isDevelopment && user.id === 999999999) {
-      console.log('🛠️ DEVELOPMENT: Mock diamond share to group ID -1002178695748');
-      console.log('Diamond details:', diamond);
-      
-      toast.success('🛠️ Development Mode: Diamond share simulated successfully!', {
-        description: `Mock share of ${diamond.carat}ct ${diamond.shape} to group -1002178695748`
-      });
-      
-      return true;
-    }
-
-    if (!isTelegramEnvironment) {
+    if (!webApp || !user) {
       toast.error('🔒 Telegram Mini App required for sharing');
       return false;
     }
@@ -172,12 +154,12 @@ export function useSecureDiamondSharing() {
       toast.error('Failed to share diamond. Please try again.');
       return false;
     }
-  }, [user, createSecureShareData, sendData, isTelegramEnvironment, isDevelopment]);
+  }, [webApp, user, createSecureShareData, sendData]);
 
   return {
     shareWithInlineButtons,
     trackShareClick,
     verifyUserRegistration,
-    isAvailable: !!(user && (isTelegramEnvironment || isDevelopment))
+    isAvailable: !!(webApp && user)
   };
 }
