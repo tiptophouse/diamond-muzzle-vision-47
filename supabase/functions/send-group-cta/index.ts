@@ -61,8 +61,11 @@ serve(async (req) => {
 
     const finalMessage = message || defaultMessage;
 
+    // Use the B2B group ID from environment or provided groupId
+    const targetGroupId = groupId || Deno.env.get('B2B_GROUP_ID') || -1002178695748;
+    
     let telegramPayload: any = {
-      chat_id: groupId || -1001009290613,
+      chat_id: targetGroupId,
       text: finalMessage,
       parse_mode: 'Markdown'
     };
@@ -96,7 +99,7 @@ serve(async (req) => {
       }
     }
 
-    console.log('📤 Sending message to group:', groupId || -1001009290613);
+    console.log('📤 Sending message to group:', targetGroupId);
     
     const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
@@ -122,7 +125,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         messageId: result.result.message_id,
-        groupId: groupId || -1001009290613,
+        groupId: targetGroupId,
         messageType: useButtons ? 'with_buttons' : 'text_only',
         userCount: '400+'
       }),
