@@ -71,6 +71,14 @@ serve(async (req) => {
     console.log('📱 Telegram webhook called');
     const startTime = Date.now();
     
+    // Parse the request body to get the update
+    const update: TelegramUpdate = await req.json();
+    console.log('📥 Received Telegram update:', { 
+      update_id: update.update_id, 
+      has_message: !!update.message,
+      has_web_app_data: !!update.message?.web_app_data
+    });
+    
     // Handle web app data (diamond sharing)
     if (update.message?.web_app_data) {
       console.log('🌐 Handling web app data');

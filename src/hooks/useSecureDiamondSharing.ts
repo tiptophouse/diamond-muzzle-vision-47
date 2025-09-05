@@ -81,13 +81,19 @@ export function useSecureDiamondSharing() {
   }, [user]);
 
   const shareWithInlineButtons = useCallback(async (diamond: Diamond) => {
+    console.log('🔍 SHARE DEBUG: Starting share process for diamond:', diamond.stockNumber);
+    console.log('📱 WebApp available:', !!webApp);
+    console.log('👤 User available:', !!user);
+    
     if (!webApp || !user) {
+      console.error('❌ SHARE DEBUG: Missing requirements - webApp:', !!webApp, 'user:', !!user);
       toast.error('🔒 Telegram Mini App required for sharing');
       return false;
     }
 
     try {
       const shareData = createSecureShareData(diamond);
+      console.log('📋 SHARE DEBUG: Created share data:', shareData);
       
       // Create the share message with inline buttons for registered users only
       const shareMessage = {
@@ -130,8 +136,11 @@ export function useSecureDiamondSharing() {
         requiresRegistration: true
       };
 
+      console.log('📤 SHARE DEBUG: Prepared share message:', shareMessage);
+
       // Send via Telegram WebApp
       const success = sendData(shareMessage);
+      console.log('📤 SHARE DEBUG: Send result:', success);
       
       if (success) {
         // Track the share action
@@ -147,10 +156,10 @@ export function useSecureDiamondSharing() {
         toast.success('💎 Diamond shared with registration verification!');
         return true;
       } else {
-        throw new Error('Failed to send share data');
+        throw new Error('Failed to send share data via Telegram WebApp');
       }
     } catch (error) {
-      console.error('❌ Failed to share diamond:', error);
+      console.error('❌ SHARE DEBUG: Failed to share diamond:', error);
       toast.error('Failed to share diamond. Please try again.');
       return false;
     }

@@ -124,13 +124,35 @@ const Index = () => {
           </p>
         </div>
         
-        {/* Clean button */}
-        <button onClick={() => window.location.reload()} className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-primary-foreground bg-primary rounded-xl hover:bg-primary/90 transition-all duration-200 shadow-soft hover:shadow-medium hover:-translate-y-0.5">
-          Manual Refresh
-        </button>
+        {/* Navigation buttons for testing */}
+        <div className="flex flex-col gap-4">
+          <button 
+            onClick={() => window.location.href = '/store'} 
+            className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-primary-foreground bg-primary rounded-xl hover:bg-primary/90 transition-all duration-200 shadow-soft hover:shadow-medium hover:-translate-y-0.5"
+          >
+            🏪 View Store (Test Share)
+          </button>
+          <button 
+            onClick={() => window.location.href = '/dashboard'} 
+            className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-secondary-foreground bg-secondary rounded-xl hover:bg-secondary/90 transition-all duration-200 shadow-soft hover:shadow-medium hover:-translate-y-0.5"
+          >
+            📊 Dashboard
+          </button>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-muted-foreground bg-muted rounded-xl hover:bg-muted/90 transition-all duration-200 shadow-soft hover:shadow-medium hover:-translate-y-0.5"
+          >
+            🔄 Manual Refresh
+          </button>
+        </div>
         
         {/* Debug info in development */}
-        {process.env.NODE_ENV === 'development'}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="text-xs text-left bg-card p-4 rounded-lg border shadow-soft max-w-md mx-auto">
+            <div className="font-semibold mb-2 text-foreground">Debug Info:</div>
+            {debugInfo.map((info, i) => <div key={i} className="text-muted-foreground">{info}</div>)}
+          </div>
+        )}
       </div>
     </div>;
 };
