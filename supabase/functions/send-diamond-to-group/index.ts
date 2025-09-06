@@ -32,7 +32,10 @@ serve(async (req) => {
   }
 
   try {
-    const { diamond, sharedBy, sharedByName }: DiamondGroupShareRequest = await req.json();
+    const requestBody = await req.json();
+    console.log('📥 Full request body:', requestBody);
+    
+    const { diamond, sharedBy, sharedByName }: DiamondGroupShareRequest = requestBody;
     
     console.log('📥 Request data:', { 
       diamondStock: diamond.stockNumber,
@@ -54,6 +57,7 @@ serve(async (req) => {
     );
 
     const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+    console.log('🔑 Bot token available:', !!botToken);
     if (!botToken) {
       console.error('❌ Bot token not configured');
       return new Response(
@@ -129,6 +133,11 @@ serve(async (req) => {
     };
 
     console.log(`📧 Sending diamond to group: ${groupId}`);
+    console.log('📤 Message payload:', { 
+      chat_id: groupId, 
+      text: shareMessage.substring(0, 100) + '...', 
+      parse_mode: 'Markdown' 
+    });
     
     // Send diamond to group
     const response = await fetch(`${telegramApiUrl}/sendMessage`, {
