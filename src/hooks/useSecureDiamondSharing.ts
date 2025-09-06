@@ -92,78 +92,54 @@ export function useSecureDiamondSharing() {
     }
 
     try {
-      const shareData = createSecureShareData(diamond);
-      console.log('📋 SHARE DEBUG: Created share data:', shareData);
+      console.log('📤 SHARE DEBUG: Sending diamond to Telegram group via API...');
       
-      // Create the share message with inline buttons for registered users only
-      const shareMessage = {
-        action: 'share_diamond_with_registration_check',
-        data: {
-          diamond: shareData.diamond,
-          message: `💎 *${diamond.carat} ct ${diamond.shape} Diamond*\n\n` +
-                  `🎨 Color: ${diamond.color}\n` +
-                  `💎 Clarity: ${diamond.clarity}\n` +
-                  `✂️ Cut: ${diamond.cut}\n` +
-                  `💰 Price: $${diamond.price?.toLocaleString() || 'Contact for Price'}\n\n` +
-                  `Stock: ${diamond.stockNumber}\n\n` +
-                  `⚠️ *Registration Required*: You must be registered in our Telegram Mini App to view this diamond.`,
-          inline_keyboard: [
-            [
-              {
-                text: '💎 View Diamond (Registered Users Only)',
-                web_app: {
-                  url: `${window.location.origin}/diamond/${diamond.id}?shared=true&from=${user.id}&verify=true`
-                }
-              }
-            ],
-            [
-              {
-                text: '📝 Register & Start Mini App',
-                web_app: {
-                  url: `${window.location.origin}/?register=true&from=${user.id}`
-                }
-              }
-            ],
-            [
-              {
-                text: '📞 Contact Seller',
-                callback_data: `contact_seller_${diamond.stockNumber}_${user.id}`
-              }
-            ]
-          ]
-        },
-        timestamp: Date.now(),
-        requiresRegistration: true
-      };
-
-      console.log('📤 SHARE DEBUG: Prepared share message:', shareMessage);
-
-      // Send via Telegram WebApp
-      const success = sendData(shareMessage);
-      console.log('📤 SHARE DEBUG: Send result:', success);
+      // Get user profile for name
+      const { data: userProfile } = await supabase
+        .from('user_profiles')
+        .select('first_name, last_name')
+        .eq('telegram_id', user.id)
+        .single();
       
-      if (success) {
-        // Track the share action
-        await supabase.from('diamond_share_analytics').insert({
-          diamond_stock_number: diamond.stockNumber,
-          owner_telegram_id: user.id,
-          viewer_telegram_id: null, // Will be filled when someone clicks
-          action_type: 'share_initiated',
-          session_id: crypto.randomUUID(),
-          access_via_share: true
-        });
+      const sharerName = userProfile ? 
+        `${userProfile.first_name}${userProfile.last_name ? ` ${userProfile.last_name}` : ''}` : 
+        `User ${user.id}`;
 
-        toast.success('💎 Diamond shared with registration verification!');
-        return true;
-      } else {
-        throw new Error('Failed to send share data via Telegram WebApp');
+      // Call the new Supabase function to send diamond to group
+      const { data, error } = await supabase.functions.invoke('send-diamond-to-group', {
+        body: {
+          diamond: {
+            id: diamond.id,
+            stockNumber: diamond.stockNumber,
+            carat: diamond.carat,
+            shape: diamond.shape,
+            color: diamond.color,
+            clarity: diamond.clarity,
+            cut: diamond.cut,
+            price: diamond.price,
+            imageUrl: diamond.imageUrl,
+            gem360Url: diamond.gem360Url
+          },
+          sharedBy: user.id,
+          sharedByName: sharerName
+        }
+      });
+
+      if (error) {
+        console.error('❌ SHARE DEBUG: Supabase function error:', error);
+        throw error;
       }
+
+      console.log('✅ SHARE DEBUG: Diamond sent to group successfully:', data);
+      toast.success('💎 היהלום נשתף לקבוצה בהצלחה!');
+      return true;
+      
     } catch (error) {
-      console.error('❌ SHARE DEBUG: Failed to share diamond:', error);
-      toast.error('Failed to share diamond. Please try again.');
+      console.error('❌ SHARE DEBUG: Failed to share diamond to group:', error);
+      toast.error('נכשל בשיתוף היהלום. נסה שוב.');
       return false;
     }
-  }, [webApp, user, createSecureShareData, sendData]);
+  }, [webApp, user, supabase]);
 
   return {
     shareWithInlineButtons,
