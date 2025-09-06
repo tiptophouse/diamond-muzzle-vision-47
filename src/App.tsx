@@ -46,12 +46,12 @@ function App() {
   });
   
   return (
-    <QueryClientProvider client={queryClient}>
-      <TelegramSDKProvider autoInit={true}>
-        <TelegramAuthProvider>
-          <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-            <Toaster />
-            <ErrorBoundary>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TelegramSDKProvider autoInit={true}>
+          <TelegramAuthProvider>
+            <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+              <Toaster />
               <Router>
                 <TutorialProvider>
                   <InteractiveWizardProvider>
@@ -181,11 +181,11 @@ function App() {
                   </InteractiveWizardProvider>
                 </TutorialProvider>
               </Router>
-            </ErrorBoundary>
-          </ThemeProvider>
-        </TelegramAuthProvider>
-      </TelegramSDKProvider>
-    </QueryClientProvider>
+            </ThemeProvider>
+          </TelegramAuthProvider>
+        </TelegramSDKProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
