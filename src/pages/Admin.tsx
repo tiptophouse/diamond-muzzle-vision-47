@@ -28,6 +28,9 @@ import { BlockedUsersManager } from '@/components/admin/BlockedUsersManager';
 import { CTATrackingFix } from '@/components/admin/CTATrackingFix';
 import { BulkDiamondShare } from '@/components/admin/BulkDiamondShare';
 import { AcadiaBulkMessageSender } from '@/components/admin/AcadiaBulkMessageSender';
+import { ReEngagementCampaign } from '@/components/admin/ReEngagementCampaign';
+import { UserEngagementTracker } from '@/components/admin/UserEngagementTracker';
+import { GamificationManager } from '@/components/admin/GamificationManager';
 
 export default function Admin() {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
@@ -474,6 +477,24 @@ export default function Admin() {
             <TabsContent value="acadia-message" className="space-y-0">
               <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
                 <AcadiaBulkMessageSender />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="re-engagement" className="space-y-0">
+              <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
+                <ReEngagementCampaign />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="engagement-tracker" className="space-y-0">
+              <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
+                <UserEngagementTracker />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="gamification" className="space-y-0">
+              <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
+                <GamificationManager />
               </div>
             </TabsContent>
 
