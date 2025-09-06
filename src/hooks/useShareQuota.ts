@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramWebApp } from './useTelegramWebApp';
 import { useToast } from '@/hooks/use-toast';
+import { useIsAdmin } from './useIsAdmin';
 
 interface ShareQuotaData {
   sharesRemaining: number;
@@ -15,6 +16,7 @@ export function useShareQuota() {
   const [loading, setLoading] = useState(true);
   const { user } = useTelegramWebApp();
   const { toast } = useToast();
+  const { isAdmin } = useIsAdmin();
 
   const fetchQuotaData = async () => {
     if (!user?.id) return;
@@ -40,9 +42,9 @@ export function useShareQuota() {
         .single();
 
       setQuotaData({
-        sharesRemaining: userProfile?.shares_remaining || 5,
+        sharesRemaining: isAdmin ? 999 : (userProfile?.shares_remaining || 5),
         sharesUsed: quotaDetails?.shares_used || 0,
-        sharesGranted: quotaDetails?.shares_granted || 5,
+        sharesGranted: isAdmin ? 999 : (quotaDetails?.shares_granted || 5),
         quotaResetAt: quotaDetails?.quota_reset_at || null
       });
     } catch (error) {
@@ -60,6 +62,12 @@ export function useShareQuota() {
         variant: "destructive"
       });
       return false;
+    }
+
+    // Admin users bypass quota entirely
+    if (isAdmin) {
+      console.log('🔧 Admin user bypassing share quota');
+      return true;
     }
 
     try {
