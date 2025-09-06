@@ -188,3 +188,32 @@ img {
   --input: 240 5.9% 90%;
   --ring: 240 5.9% 10%;
 }
+
+/* Mobile responsive utilities */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+/* Smooth scroll for horizontal tabs */
+.tab-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Mobile touch enhancements */
+@media (max-width: 768px) {
+  .touch-pan-x {
+    touch-action: pan-x;
+  }
+  
+  .mobile-tap {
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+}
