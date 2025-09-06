@@ -68,8 +68,11 @@ export function OptimizedDiamondImage({
 
   // Determine what type of media we have
   const has3D = gem360Url && gem360Url.trim();
-  const hasImage = imageUrl && imageUrl.trim() && imageUrl !== 'default';
+  const hasImage = imageUrl && imageUrl.trim() && imageUrl !== 'default' && imageUrl !== 'null';
   const shouldShowImage = isInView && hasImage && !hasError;
+
+  // Improved image URL processing
+  const processedImageUrl = hasImage ? imageUrl : null;
 
   return (
     <div 
@@ -88,10 +91,10 @@ export function OptimizedDiamondImage({
       )}
 
       {/* Optimized Image */}
-      {shouldShowImage && (
+      {shouldShowImage && processedImageUrl && (
         <img
           ref={imgRef}
-          src={imageUrl}
+          src={processedImageUrl}
           alt={`${shape} Diamond #${stockNumber}`}
           className={`w-full h-full object-cover transition-opacity duration-300 ${
             isLoaded ? 'opacity-100' : 'opacity-0'

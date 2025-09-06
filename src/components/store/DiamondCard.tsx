@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { ThreeDViewer } from "./ThreeDViewer";
+import { EnhancedContactButton } from "./EnhancedContactButton";
+import { OptimizedDiamondImage } from "./OptimizedDiamondImage";
 
 interface DiamondCardProps {
   diamond: Diamond;
@@ -13,33 +14,7 @@ interface DiamondCardProps {
 }
 
 export function DiamondCard({ diamond, index }: DiamondCardProps) {
-  const [imageError, setImageError] = useState(false);
   const { user } = useTelegramAuth();
-
-  const handleContactOwner = () => {
-    const message = `Hi! I'm interested in your diamond:\n\n` +
-      `Stock #: ${diamond.stockNumber}\n` +
-      `Shape: ${diamond.shape}\n` +
-      `Carat: ${diamond.carat}\n` +
-      `Color: ${diamond.color}\n` +
-      `Clarity: ${diamond.clarity}\n` +
-      `Price: $${diamond.price.toLocaleString()}\n\n` +
-      `Could you please provide more details?`;
-
-    const encodedMessage = encodeURIComponent(message);
-    
-    // Try to open Telegram first
-    const telegramUrl = `https://t.me/share/url?url=${encodedMessage}`;
-    
-    try {
-      // Simple fallback approach - just open the URL
-      window.open(telegramUrl, '_blank');
-    } catch (error) {
-      console.error('Failed to open Telegram:', error);
-      // Fallback to regular window.open
-      window.open(telegramUrl, '_blank');
-    }
-  };
 
   return (
     <div 
@@ -48,23 +23,14 @@ export function DiamondCard({ diamond, index }: DiamondCardProps) {
     >
       {/* Image Container */}
       <div className="relative h-48 bg-gradient-to-br from-primary/5 to-primary-glow/10 rounded-t-xl overflow-hidden">
-        {diamond.imageUrl && !imageError ? (
-          <ThreeDViewer 
-            imageUrl={diamond.imageUrl}
-            stockNumber={diamond.stockNumber}
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <div className="relative">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-glow rounded-full flex items-center justify-center shadow-lg">
-                <Gem className="h-8 w-8 text-primary-foreground" />
-              </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
-              </div>
-            </div>
-          </div>
-        )}
+        <OptimizedDiamondImage
+          imageUrl={diamond.imageUrl || diamond.picture}
+          gem360Url={diamond.gem360Url}
+          stockNumber={diamond.stockNumber}
+          shape={diamond.shape}
+          className="w-full h-full"
+          priority={index < 4} // Prioritize first 4 images
+        />
         
         {/* Status Badge */}
         <div className="absolute top-3 left-3">
@@ -116,13 +82,10 @@ export function DiamondCard({ diamond, index }: DiamondCardProps) {
         </div>
 
         {/* Contact Button */}
-        <Button 
-          onClick={handleContactOwner}
+        <EnhancedContactButton 
+          diamond={diamond}
           className="w-full bg-gradient-to-r from-primary to-primary-glow hover:from-primary-dark hover:to-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300"
-        >
-          <MessageCircle className="h-4 w-4 mr-2" />
-          Contact Owner
-        </Button>
+        />
       </div>
     </div>
   );
