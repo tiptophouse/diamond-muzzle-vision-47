@@ -27,6 +27,7 @@ import { RealTimeBotAnalytics } from "@/components/admin/RealTimeBotAnalytics";
 import { BlockedUsersManager } from '@/components/admin/BlockedUsersManager';
 import { CTATrackingFix } from '@/components/admin/CTATrackingFix';
 import { BulkDiamondShare } from '@/components/admin/BulkDiamondShare';
+import { AcadiaBulkMessageSender } from '@/components/admin/AcadiaBulkMessageSender';
 
 export default function Admin() {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
@@ -265,7 +266,7 @@ export default function Admin() {
       {/* Main Admin Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <Tabs defaultValue="analytics" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-11">
+          <TabsList className="grid w-full grid-cols-12">
             <TabsTrigger 
               value="analytics" 
               className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-green-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
@@ -345,6 +346,14 @@ export default function Admin() {
               <Diamond className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
               <span className="hidden xs:inline sm:inline">Bulk Share</span>
               <span className="xs:hidden sm:hidden">Share</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="acadia-message" 
+              className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-green-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
+            >
+              <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="hidden xs:inline sm:inline">Acadia Msg</span>
+              <span className="xs:hidden sm:hidden">Acadia</span>
             </TabsTrigger>
             <TabsTrigger 
               value="settings" 
@@ -448,6 +457,12 @@ export default function Admin() {
             <TabsContent value="bulk-share" className="space-y-0">
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <BulkDiamondShare />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="acadia-message" className="space-y-0">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <AcadiaBulkMessageSender />
               </div>
             </TabsContent>
 
