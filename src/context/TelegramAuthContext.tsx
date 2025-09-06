@@ -1,7 +1,6 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useOptimizedTelegramAuth } from '@/hooks/useOptimizedTelegramAuth';
-import { useUserDataPersistence } from '@/hooks/useUserDataPersistence';
+import { useTelegramSDKUser, useTelegramSDKEnvironment } from '@/contexts/TelegramSDKContext';
 
 interface TelegramUser {
   id: number;
@@ -26,34 +25,29 @@ interface TelegramAuthContextType {
 const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(undefined);
 
 export function TelegramAuthProvider({ children }: { children: ReactNode }) {
-  const authState = useOptimizedTelegramAuth();
+  // Bridge to new SDK
+  const { user, isReady, isTelegramEnvironment } = useTelegramSDKUser();
+  const { error } = useTelegramSDKEnvironment();
   
-  console.log('🔍 TelegramAuthProvider - Optimized auth state:', { 
-    user: authState.user, 
-    isAuthenticated: authState.isAuthenticated,
-    isTelegramEnvironment: authState.isTelegramEnvironment,
-    loadTime: authState.loadTime
-  });
-  
-  // Automatically persist user data when authenticated
-  useUserDataPersistence(authState.user, authState.isTelegramEnvironment);
+  // Map new SDK state to old API
+  const contextValue: TelegramAuthContextType = {
+    user,
+    isAuthenticated: isReady && isTelegramEnvironment && !!user,
+    isLoading: !isReady,
+    error: error || null,
+    isTelegramEnvironment,
+    accessDeniedReason: error || null
+  };
 
-  // Enhanced logging for analytics debugging
-  React.useEffect(() => {
-    if (authState.isAuthenticated && authState.user) {
-      console.log('✅ User authenticated - analytics tracking should initialize');
-      console.log('👤 User details:', {
-        id: authState.user.id,
-        name: authState.user.first_name,
-        telegram: authState.isTelegramEnvironment
-      });
-    } else {
-      console.log('❌ User not authenticated - analytics tracking disabled');
-    }
-  }, [authState.isAuthenticated, authState.user, authState.isTelegramEnvironment]);
+  console.log('🔍 TelegramAuthProvider (compatibility) - state:', { 
+    user: contextValue.user, 
+    isAuthenticated: contextValue.isAuthenticated,
+    isTelegramEnvironment: contextValue.isTelegramEnvironment,
+    isLoading: contextValue.isLoading
+  });
 
   return (
-    <TelegramAuthContext.Provider value={authState}>
+    <TelegramAuthContext.Provider value={contextValue}>
       {children}
     </TelegramAuthContext.Provider>
   );
