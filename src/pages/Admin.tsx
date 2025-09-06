@@ -31,6 +31,7 @@ import { AcadiaBulkMessageSender } from '@/components/admin/AcadiaBulkMessageSen
 import { ReEngagementCampaign } from '@/components/admin/ReEngagementCampaign';
 import { UserEngagementTracker } from '@/components/admin/UserEngagementTracker';
 import { GamificationManager } from '@/components/admin/GamificationManager';
+import { BotWebhookTester } from '@/components/admin/BotWebhookTester';
 
 export default function Admin() {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
@@ -376,6 +377,38 @@ export default function Admin() {
                   <span className="hidden sm:inline">Settings</span>
                   <span className="sm:hidden">⚙️</span>
                 </TabsTrigger>
+                <TabsTrigger 
+                  value="re-engagement" 
+                  className="flex items-center gap-1 data-[state=active]:bg-indigo-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
+                >
+                  <MessageSquare className="h-3 w-3 flex-shrink-0" />
+                  <span className="hidden sm:inline">Re-engage</span>
+                  <span className="sm:hidden">🔄</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="engagement-tracker" 
+                  className="flex items-center gap-1 data-[state=active]:bg-orange-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
+                >
+                  <BarChart3 className="h-3 w-3 flex-shrink-0" />
+                  <span className="hidden sm:inline">Activity</span>
+                  <span className="sm:hidden">📊</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="gamification" 
+                  className="flex items-center gap-1 data-[state=active]:bg-purple-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
+                >
+                  <Diamond className="h-3 w-3 flex-shrink-0" />
+                  <span className="hidden sm:inline">Gamify</span>
+                  <span className="sm:hidden">🎮</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="webhook-test" 
+                  className="flex items-center gap-1 data-[state=active]:bg-red-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
+                >
+                  <MessageSquare className="h-3 w-3 flex-shrink-0" />
+                  <span className="hidden sm:inline">Webhook</span>
+                  <span className="sm:hidden">🤖</span>
+                </TabsTrigger>
               </div>
             </TabsList>
           </div>
@@ -495,6 +528,12 @@ export default function Admin() {
             <TabsContent value="gamification" className="space-y-0">
               <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
                 <GamificationManager />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="webhook-test" className="space-y-0">
+              <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
+                <BotWebhookTester />
               </div>
             </TabsContent>
 
