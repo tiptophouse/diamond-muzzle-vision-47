@@ -35,11 +35,11 @@ export const apiEndpoints = {
   
   // Match notifications and search results - NEW ENDPOINTS
   getSearchResults: (userId: number, limit: number = 50, offset: number = 0, resultType: string = 'match') => 
-    `/api/v1/get_search_results?user_id=${userId}&limit=${limit}&offset=${offset}&result_type=${resultType}`,
+    `/functions/v1/get-search-results?user_id=${userId}&limit=${limit}&offset=${offset}&result_type=${resultType}`,
   getMatchNotifications: (userId: number, dateRange?: string) => 
-    `/api/v1/match_notifications/?user_id=${userId}${dateRange ? `&date_range=${dateRange}` : ''}`,
+    `/functions/v1/match-notifications?user_id=${userId}${dateRange ? `&date_range=${dateRange}` : ''}`,
   getMatchNotificationsSummary: (userId: number, dateRange?: string) => 
-    `/api/v1/match_notifications/summary?user_id=${userId}${dateRange ? `&date_range=${dateRange}` : ''}`,
+    `/functions/v1/match-notifications/summary?user_id=${userId}${dateRange ? `&date_range=${dateRange}` : ''}`,
   
   // Legacy endpoints (keeping for compatibility)
   verifyTelegram: () => `/api/v1/verify-telegram`,

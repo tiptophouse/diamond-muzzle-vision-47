@@ -33,6 +33,7 @@ import SecureDiamondViewerPage from './pages/SecureDiamondViewerPage';
 import NotFound from './pages/NotFound';
 import StandardizeCsvPage from './pages/StandardizeCsvPage';
 import BulkUploadPage from './pages/BulkUploadPage';
+import SearchResultsTestPage from './pages/SearchResultsTestPage';
 import AnalyticsPage from "./pages/AnalyticsPage";
 
 function App() {
@@ -167,6 +168,12 @@ function App() {
                   <Route path="/analytics" element={
                     <AuthenticatedRoute>
                       <AnalyticsPage />
+                    </AuthenticatedRoute>
+                  } />
+                  
+                  <Route path="/search-results-test" element={
+                    <AuthenticatedRoute>
+                      <SearchResultsTestPage />
                     </AuthenticatedRoute>
                   } />
                   
