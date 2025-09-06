@@ -22,6 +22,7 @@ interface DiamondGroupShareRequest {
   };
   sharedBy: number;
   sharedByName?: string;
+  testMode?: boolean; // New field for test messaging
 }
 
 serve(async (req) => {
@@ -35,12 +36,13 @@ serve(async (req) => {
     const requestBody = await req.json();
     console.log('📥 Full request body:', requestBody);
     
-    const { diamond, sharedBy, sharedByName }: DiamondGroupShareRequest = requestBody;
+    const { diamond, sharedBy, sharedByName, testMode }: DiamondGroupShareRequest = requestBody;
     
     console.log('📥 Request data:', { 
       diamondStock: diamond.stockNumber,
       sharedBy,
-      sharedByName
+      sharedByName,
+      testMode: !!testMode
     });
 
     if (!diamond || !sharedBy) {
@@ -66,9 +68,11 @@ serve(async (req) => {
       );
     }
 
-    // Fixed group ID for diamond sharing
-    const groupId = -1001009290613;
-    const telegramApiUrl = `https://api.telegram.org/bot${botToken}`;
+    // Determine target chat: personal chat for test mode, group for normal mode
+    const targetChatId = testMode ? sharedBy : -1001009290613;
+    const messagePrefix = testMode ? '🧪 **TEST MESSAGE** - ' : '';
+    
+    console.log(`📧 Sending diamond to ${testMode ? 'personal chat' : 'group'}: ${targetChatId}`);
 
     // Get sharer's name if not provided
     let sharerName = sharedByName;
@@ -87,7 +91,7 @@ serve(async (req) => {
     }
 
     // Create the diamond share message
-    const shareMessage = `💎 *יהלום חדש זמין למכירה!*
+    const shareMessage = `${messagePrefix}💎 *יהלום חדש זמין למכירה!*
 
 📊 *פרטי היהלום:*
 • *מלאי:* ${diamond.stockNumber}
@@ -132,19 +136,20 @@ serve(async (req) => {
       }
     };
 
-    console.log(`📧 Sending diamond to group: ${groupId}`);
+    const telegramApiUrl = `https://api.telegram.org/bot${botToken}`;
     console.log('📤 Message payload:', { 
-      chat_id: groupId, 
+      chat_id: targetChatId, 
       text: shareMessage.substring(0, 100) + '...', 
-      parse_mode: 'Markdown' 
+      parse_mode: 'Markdown',
+      test_mode: !!testMode
     });
     
-    // Send diamond to group
+    // Send diamond to target chat
     const response = await fetch(`${telegramApiUrl}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        chat_id: groupId,
+        chat_id: targetChatId,
         text: shareMessage,
         parse_mode: 'Markdown',
         ...inlineKeyboard
@@ -154,7 +159,7 @@ serve(async (req) => {
     const result = await response.json();
     
     if (result.ok) {
-      console.log('✅ Diamond shared to group successfully:', result.message_id);
+      console.log(`✅ Diamond shared to ${testMode ? 'personal chat' : 'group'} successfully:`, result.message_id);
       
       // Track the share in analytics
       try {
@@ -166,8 +171,9 @@ serve(async (req) => {
           session_id: crypto.randomUUID(),
           access_via_share: true,
           analytics_data: {
-            group_share: true,
-            group_id: groupId,
+            group_share: !testMode,
+            test_share: !!testMode,
+            target_chat_id: targetChatId,
             share_timestamp: new Date().toISOString(),
             diamond_data: diamond,
             message_id: result.message_id

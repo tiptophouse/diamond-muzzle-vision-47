@@ -9,6 +9,9 @@ import { useSecureDiamondSharing } from "@/hooks/useSecureDiamondSharing";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { Diamond } from "@/components/inventory/InventoryTable";
+import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface LimitedGroupShareButtonProps {
   diamond: Diamond;
@@ -28,6 +31,7 @@ export function LimitedGroupShareButton({
   const { shareWithInlineButtons } = useSecureDiamondSharing();
   const { impactOccurred, notificationOccurred } = useTelegramHapticFeedback();
   const { isAdmin } = useIsAdmin();
+  const { user } = useTelegramWebApp();
 
   const handleShareClick = () => {
     console.log('🔍 SHARE CLICK DEBUG: Button clicked, isAdmin:', isAdmin, 'quotaData:', quotaData);
@@ -46,6 +50,49 @@ export function LimitedGroupShareButton({
       return;
     }
     setShowConfirmDialog(true);
+  };
+
+  const handleTestShare = async () => {
+    console.log('🧪 TEST SHARE: Sending test message to personal chat');
+    impactOccurred('light');
+    
+    try {
+      // Send test message to personal chat instead of group
+      const { data, error } = await supabase.functions.invoke('send-diamond-to-group', {
+        body: {
+          diamond: {
+            id: diamond.id,
+            stockNumber: diamond.stockNumber,
+            carat: diamond.carat,
+            shape: diamond.shape,
+            color: diamond.color,
+            clarity: diamond.clarity,
+            cut: diamond.cut,
+            price: diamond.price,
+            imageUrl: diamond.imageUrl,
+            gem360Url: diamond.gem360Url
+          },
+          sharedBy: user?.id,
+          testMode: true // This will send to personal chat instead of group
+        }
+      });
+
+      if (error) {
+        console.error('❌ TEST SHARE: Error:', error);
+        notificationOccurred('error');
+        return;
+      }
+
+      console.log('✅ TEST SHARE: Test message sent successfully');
+      notificationOccurred('success');
+      toast({
+        title: "Test Message Sent",
+        description: "Check your personal Telegram chat for the diamond message",
+      });
+    } catch (error) {
+      console.error('❌ TEST SHARE: Failed:', error);
+      notificationOccurred('error');
+    }
   };
 
   const handleConfirmShare = async () => {
@@ -181,6 +228,15 @@ export function LimitedGroupShareButton({
             >
               Cancel
             </Button>
+            {isAdmin && (
+              <Button 
+                variant="outline"
+                className="flex-1 border-blue-500 text-blue-500 hover:bg-blue-50"
+                onClick={handleTestShare}
+              >
+                🧪 Test Message
+              </Button>
+            )}
             <Button 
               className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
               onClick={handleConfirmShare}
