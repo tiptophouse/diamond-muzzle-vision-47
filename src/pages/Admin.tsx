@@ -32,6 +32,9 @@ import { ReEngagementCampaign } from '@/components/admin/ReEngagementCampaign';
 import { UserEngagementTracker } from '@/components/admin/UserEngagementTracker';
 import { GamificationManager } from '@/components/admin/GamificationManager';
 import { BotWebhookTester } from '@/components/admin/BotWebhookTester';
+import { WebhookDiagnostics } from '@/components/admin/WebhookDiagnostics';
+import { CampaignManager } from '@/components/admin/CampaignManager';
+import { RealTimeMonitor } from '@/components/admin/RealTimeMonitor';
 
 export default function Admin() {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
@@ -277,18 +280,42 @@ export default function Admin() {
 
       {/* Main Admin Content */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 pb-8">
-        <Tabs defaultValue="analytics" className="space-y-4">
+        <Tabs defaultValue="monitor" className="space-y-4">
           <div className="relative">
             <TabsList className="w-full h-auto p-1 bg-muted rounded-lg overflow-x-auto scrollbar-hide">
               <div className="flex gap-1 min-w-max">
-                <TabsTrigger 
-                  value="analytics" 
-                  className="flex items-center gap-1 data-[state=active]:bg-green-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
-                >
-                  <BarChart3 className="h-3 w-3 flex-shrink-0" />
-                  <span className="hidden sm:inline">Analytics</span>
-                  <span className="sm:hidden">Bot</span>
-                </TabsTrigger>
+                 <TabsTrigger 
+                   value="monitor" 
+                   className="flex items-center gap-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
+                 >
+                   <BarChart3 className="h-3 w-3 flex-shrink-0" />
+                   <span className="hidden sm:inline">Monitor</span>
+                   <span className="sm:hidden">📊</span>
+                 </TabsTrigger>
+                 <TabsTrigger 
+                   value="campaigns" 
+                   className="flex items-center gap-1 data-[state=active]:bg-green-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
+                 >
+                   <Send className="h-3 w-3 flex-shrink-0" />
+                   <span className="hidden sm:inline">Campaigns</span>
+                   <span className="sm:hidden">🚀</span>
+                 </TabsTrigger>
+                 <TabsTrigger 
+                   value="diagnostics" 
+                   className="flex items-center gap-1 data-[state=active]:bg-red-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
+                 >
+                   <MessageSquare className="h-3 w-3 flex-shrink-0" />
+                   <span className="hidden sm:inline">Diagnostics</span>
+                   <span className="sm:hidden">🔧</span>
+                 </TabsTrigger>
+                 <TabsTrigger 
+                   value="analytics" 
+                   className="flex items-center gap-1 data-[state=active]:bg-purple-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
+                 >
+                   <BarChart3 className="h-3 w-3 flex-shrink-0" />
+                   <span className="hidden sm:inline">Analytics</span>
+                   <span className="sm:hidden">📈</span>
+                 </TabsTrigger>
                 <TabsTrigger 
                   value="blocked-users" 
                   className="flex items-center gap-1 data-[state=active]:bg-red-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
@@ -414,6 +441,18 @@ export default function Admin() {
           </div>
           
           <div className="mt-4">
+            <TabsContent value="monitor" className="space-y-4">
+              <RealTimeMonitor />
+            </TabsContent>
+            
+            <TabsContent value="campaigns" className="space-y-4">
+              <CampaignManager />
+            </TabsContent>
+            
+            <TabsContent value="diagnostics" className="space-y-4">
+              <WebhookDiagnostics />
+            </TabsContent>
+            
             <TabsContent value="analytics" className="space-y-4">
               <AdminStatsGrid
                 stats={stats}
