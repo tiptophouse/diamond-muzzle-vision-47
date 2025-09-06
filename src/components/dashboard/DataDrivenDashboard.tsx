@@ -4,6 +4,7 @@ import { processDiamondDataForDashboard } from '@/services/diamondAnalytics';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { InventoryChart } from '@/components/dashboard/InventoryChart';
 import { RealTimeUserCount } from '@/components/dashboard/RealTimeUserCount';
+import { ElegantMemberCount } from '@/components/dashboard/ElegantMemberCount';
 import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
 import { useEnhancedTelegramWebApp } from '@/hooks/useEnhancedTelegramWebApp';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
@@ -181,9 +182,12 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
               {allDiamonds.length} diamonds • ${Math.round(totalValue / 1000)}K
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-xs text-muted-foreground font-medium">Live</span>
+          <div className="flex items-center gap-3">
+            <ElegantMemberCount />
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-xs text-muted-foreground font-medium">Live</span>
+            </div>
           </div>
         </div>
       </div>
