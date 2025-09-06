@@ -99,7 +99,11 @@ export function LimitedGroupShareButton({
             cut: diamond.cut,
             price: diamond.price,
             imageUrl: diamond.imageUrl,
-            gem360Url: diamond.gem360Url
+            gem360Url: diamond.gem360Url,
+            // Include CSV image fallbacks
+            Image: (diamond as any).Image,
+            image: (diamond as any).image,
+            picture: (diamond as any).picture
           },
           sharedBy: userId,
           testMode: true // This will send to personal chat instead of group

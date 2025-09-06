@@ -19,10 +19,14 @@ interface DiamondGroupShareRequest {
     price: number;
     imageUrl?: string;
     gem360Url?: string;
+    // CSV image fallbacks
+    Image?: string;
+    image?: string;
+    picture?: string;
   };
   sharedBy: number;
   sharedByName?: string;
-  testMode?: boolean; // New field for test messaging
+  testMode?: boolean;
 }
 
 serve(async (req) => {
@@ -69,7 +73,7 @@ serve(async (req) => {
     }
 
     // Determine target chat: personal chat for test mode, group for normal mode
-    const targetChatId = testMode ? sharedBy : -1001009290613;
+    const targetChatId = testMode ? sharedBy : (Deno.env.get('B2B_GROUP_ID') || -1002178695748);
     const messagePrefix = testMode ? '🧪 **TEST MESSAGE** - ' : '';
     
     console.log(`📧 Sending diamond to ${testMode ? 'personal chat' : 'group'}: ${targetChatId}`);
@@ -90,31 +94,40 @@ serve(async (req) => {
       }
     }
 
-    // Create the diamond share message (removed stock number)
-    const shareMessage = `${messagePrefix}💎 *יהלום חדש זמין למכירה!*
+    // Get best available image URL with fallbacks
+    const imageUrl = diamond.imageUrl || diamond.Image || diamond.image || diamond.picture;
+    console.log('🖼️ Image URL check:', {
+      imageUrl: !!diamond.imageUrl,
+      Image: !!diamond.Image, 
+      image: !!diamond.image,
+      picture: !!diamond.picture,
+      finalUrl: !!imageUrl
+    });
 
-📊 *פרטי היהלום:*
-• *משקל:* ${diamond.carat} קראט
-• *צורה:* ${diamond.shape}
-• *צבע:* ${diamond.color}
-• *ניקיון:* ${diamond.clarity}
-• *חיתוך:* ${diamond.cut}
-• *מחיר:* $${diamond.price?.toLocaleString() || 'צור קשר למחיר'}
+    // Create enhanced diamond share message
+    const shareMessage = `${messagePrefix}💎 *יהלום איכותי זמין עכשיו*
 
-👤 *משתף:* ${sharerName}
+✨ *פרטי היהלום:*
+💍 *${diamond.carat} קראט • ${diamond.shape}*
+🌈 *צבע ${diamond.color} • ניקיון ${diamond.clarity}*
+⚡ *חיתוך ${diamond.cut}*
+💰 *$${diamond.price?.toLocaleString() || 'צור קשר למחיר'}*
 
-⚠️ *לצפייה בפרטים המלאים נדרשת הרשמה במערכת*`;
+👨‍💼 *שותף עסקי:* ${sharerName}
 
-    // Create inline keyboard with options
-    // Use different button types for groups vs personal chats
+🔥 *למידע נוסף ופרטים מלאים - לחץ על הכפתור למטה*`;
+
+    // Create inline keyboard with working URL buttons only
     const baseUrl = 'https://uhhljqgxhdhbbhpohxll.supabase.co';
+    const telegramBotUrl = `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'BrilliantBot_bot'}`;
+    
     const inlineKeyboard = {
       reply_markup: {
         inline_keyboard: testMode ? [
           // Personal chat - can use web_app buttons
           [
             {
-              text: '💎 צפה בפרטים מלאים',
+              text: '💎 פרטים מלאים',
               web_app: {
                 url: `${baseUrl}/diamond/${diamond.id}?shared=true&from=${sharedBy}&verify=true`
               }
@@ -122,42 +135,36 @@ serve(async (req) => {
           ],
           [
             {
-              text: '📞 צור קשר עם המוכר',
-              callback_data: `contact_seller_${diamond.stockNumber}_${sharedBy}`
+              text: '📱 צור קשר',
+              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
             }
           ],
           [
             {
-              text: '📝 הרשמה למערכת',
+              text: '📝 הרשמה',
               web_app: {
                 url: `${baseUrl}/?register=true&from=${sharedBy}`
               }
             }
           ]
         ] : [
-          // Group chat - must use url buttons (web_app not allowed in groups)
+          // Group chat - only URL buttons work reliably  
           [
             {
-              text: '💎 צפה בפרטים מלאים',
+              text: '💎 פרטים מלאים ומחיר',
               url: `${baseUrl}/diamond/${diamond.id}?shared=true&from=${sharedBy}&verify=true`
             }
           ],
           [
             {
-              text: '💰 הצע מחיר / בקש הצעה',
-              callback_data: `bid_offer_${diamond.stockNumber}_${sharedBy}`
+              text: '📱 צור קשר עם המוכר',
+              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
             }
           ],
           [
             {
-              text: '📞 צור קשר עם המוכר',
-              callback_data: `contact_seller_${diamond.stockNumber}_${sharedBy}`
-            }
-          ],
-          [
-            {
-              text: '📝 הרשמה למערכת',
-              url: `${baseUrl}/?register=true&from=${sharedBy}`
+              text: '🏪 עוד יהלומים מהמוכר',
+              url: `${baseUrl}/?seller=${sharedBy}&shared=true`
             }
           ]
         ]
@@ -175,20 +182,22 @@ serve(async (req) => {
     
     // Send diamond to target chat with image if available
     let response;
-    if (diamond.imageUrl) {
+    if (imageUrl) {
+      console.log('📸 Sending with image:', imageUrl.substring(0, 50) + '...');
       // Send as photo with caption
       response = await fetch(`${telegramApiUrl}/sendPhoto`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: targetChatId,
-          photo: diamond.imageUrl,
+          photo: imageUrl,
           caption: shareMessage,
           parse_mode: 'Markdown',
           ...inlineKeyboard
         })
       });
     } else {
+      console.log('📝 Sending text only (no image available)');
       // Send as text message
       response = await fetch(`${telegramApiUrl}/sendMessage`, {
         method: 'POST',

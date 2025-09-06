@@ -135,7 +135,11 @@ export function useSecureDiamondSharing() {
             cut: diamond.cut,
             price: diamond.price,
             imageUrl: diamond.imageUrl,
-            gem360Url: diamond.gem360Url
+            gem360Url: diamond.gem360Url,
+            // Include CSV image fallbacks
+            Image: (diamond as any).Image,
+            image: (diamond as any).image,
+            picture: (diamond as any).picture
           },
           sharedBy: userId,
           sharedByName: sharerName,
