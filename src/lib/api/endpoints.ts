@@ -33,6 +33,14 @@ export const apiEndpoints = {
   // CORRECTED Authentication endpoint
   signIn: () => `/api/v1/sign-in/`,
   
+  // Match notifications and search results - NEW ENDPOINTS
+  getSearchResults: (userId: number, limit: number = 50, offset: number = 0, resultType: string = 'match') => 
+    `/api/v1/get_search_results?user_id=${userId}&limit=${limit}&offset=${offset}&result_type=${resultType}`,
+  getMatchNotifications: (userId: number, dateRange?: string) => 
+    `/api/v1/match_notifications/?user_id=${userId}${dateRange ? `&date_range=${dateRange}` : ''}`,
+  getMatchNotificationsSummary: (userId: number, dateRange?: string) => 
+    `/api/v1/match_notifications/summary?user_id=${userId}${dateRange ? `&date_range=${dateRange}` : ''}`,
+  
   // Legacy endpoints (keeping for compatibility)
   verifyTelegram: () => `/api/v1/verify-telegram`,
   uploadInventory: () => `/api/v1/upload-inventory`,
