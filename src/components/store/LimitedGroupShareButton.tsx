@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useShareQuota } from "@/hooks/useShareQuota";
 import { useSecureDiamondSharing } from "@/hooks/useSecureDiamondSharing";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { Diamond } from "@/components/inventory/InventoryTable";
 
 interface LimitedGroupShareButtonProps {
@@ -26,10 +27,21 @@ export function LimitedGroupShareButton({
   const { quotaData, loading, useShare } = useShareQuota();
   const { shareWithInlineButtons } = useSecureDiamondSharing();
   const { impactOccurred, notificationOccurred } = useTelegramHapticFeedback();
+  const { isAdmin } = useIsAdmin();
 
   const handleShareClick = () => {
+    console.log('🔍 SHARE CLICK DEBUG: Button clicked, isAdmin:', isAdmin, 'quotaData:', quotaData);
     impactOccurred('light');
+    
+    // Admin users bypass quota checks entirely
+    if (isAdmin) {
+      console.log('🔧 SHARE CLICK DEBUG: Admin bypass - opening dialog');
+      setShowConfirmDialog(true);
+      return;
+    }
+    
     if (!quotaData || quotaData.sharesRemaining <= 0) {
+      console.error('❌ SHARE CLICK DEBUG: No shares remaining');
       notificationOccurred('error');
       return;
     }
@@ -37,21 +49,32 @@ export function LimitedGroupShareButton({
   };
 
   const handleConfirmShare = async () => {
+    console.log('🔍 SHARE DEBUG: Share button clicked for diamond:', diamond.stockNumber);
+    console.log('🔍 SHARE DEBUG: Current quota data:', quotaData);
     impactOccurred('medium');
     
     // First use the share quota
+    console.log('🔍 SHARE DEBUG: Attempting to use share quota...');
     const success = await useShare(diamond.stockNumber);
+    console.log('🔍 SHARE DEBUG: Share quota result:', success);
     
     if (success) {
+      console.log('🔍 SHARE DEBUG: Quota used successfully, now sharing diamond...');
       // Then share the diamond
       const shared = await shareWithInlineButtons(diamond);
+      console.log('🔍 SHARE DEBUG: Diamond sharing result:', shared);
       
       if (shared) {
+        console.log('✅ SHARE DEBUG: Complete share process successful');
         notificationOccurred('success');
         setShowConfirmDialog(false);
       } else {
+        console.error('❌ SHARE DEBUG: Diamond sharing failed');
         notificationOccurred('error');
       }
+    } else {
+      console.error('❌ SHARE DEBUG: Share quota usage failed');
+      notificationOccurred('error');
     }
   };
 
@@ -83,7 +106,7 @@ export function LimitedGroupShareButton({
           variant={getButtonVariant()}
           size={size}
           onClick={handleShareClick}
-          disabled={!quotaData || quotaData.sharesRemaining <= 0}
+          disabled={!isAdmin && (!quotaData || quotaData.sharesRemaining <= 0)}
           className={`flex items-center gap-2 relative ${getButtonColor()} ${className}`}
         >
           {quotaData && quotaData.sharesRemaining <= 2 && quotaData.sharesRemaining > 0 && (
@@ -102,7 +125,7 @@ export function LimitedGroupShareButton({
             Share to Group
           </span>
           <Badge variant="secondary" className="ml-1 text-xs">
-            {quotaData?.sharesRemaining || 0}
+            {isAdmin ? "∞" : (quotaData?.sharesRemaining || 0)}
           </Badge>
         </Button>
       </DialogTrigger>
