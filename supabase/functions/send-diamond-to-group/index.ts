@@ -90,11 +90,10 @@ serve(async (req) => {
       }
     }
 
-    // Create the diamond share message
+    // Create the diamond share message (removed stock number)
     const shareMessage = `${messagePrefix}💎 *יהלום חדש זמין למכירה!*
 
 📊 *פרטי היהלום:*
-• *מלאי:* ${diamond.stockNumber}
 • *משקל:* ${diamond.carat} קראט
 • *צורה:* ${diamond.shape}
 • *צבע:* ${diamond.color}
@@ -107,14 +106,17 @@ serve(async (req) => {
 ⚠️ *לצפייה בפרטים המלאים נדרשת הרשמה במערכת*`;
 
     // Create inline keyboard with options
+    // Use different button types for groups vs personal chats
+    const baseUrl = 'https://uhhljqgxhdhbbhpohxll.supabase.co';
     const inlineKeyboard = {
       reply_markup: {
-        inline_keyboard: [
+        inline_keyboard: testMode ? [
+          // Personal chat - can use web_app buttons
           [
             {
               text: '💎 צפה בפרטים מלאים',
               web_app: {
-                url: `${Deno.env.get('SUPABASE_URL')?.replace('/rest/v1', '')}/diamond/${diamond.id}?shared=true&from=${sharedBy}&verify=true`
+                url: `${baseUrl}/diamond/${diamond.id}?shared=true&from=${sharedBy}&verify=true`
               }
             }
           ],
@@ -128,8 +130,34 @@ serve(async (req) => {
             {
               text: '📝 הרשמה למערכת',
               web_app: {
-                url: `${Deno.env.get('SUPABASE_URL')?.replace('/rest/v1', '')}/?register=true&from=${sharedBy}`
+                url: `${baseUrl}/?register=true&from=${sharedBy}`
               }
+            }
+          ]
+        ] : [
+          // Group chat - must use url buttons (web_app not allowed in groups)
+          [
+            {
+              text: '💎 צפה בפרטים מלאים',
+              url: `${baseUrl}/diamond/${diamond.id}?shared=true&from=${sharedBy}&verify=true`
+            }
+          ],
+          [
+            {
+              text: '💰 הצע מחיר / בקש הצעה',
+              callback_data: `bid_offer_${diamond.stockNumber}_${sharedBy}`
+            }
+          ],
+          [
+            {
+              text: '📞 צור קשר עם המוכר',
+              callback_data: `contact_seller_${diamond.stockNumber}_${sharedBy}`
+            }
+          ],
+          [
+            {
+              text: '📝 הרשמה למערכת',
+              url: `${baseUrl}/?register=true&from=${sharedBy}`
             }
           ]
         ]
@@ -141,20 +169,38 @@ serve(async (req) => {
       chat_id: targetChatId, 
       text: shareMessage.substring(0, 100) + '...', 
       parse_mode: 'Markdown',
-      test_mode: !!testMode
+      test_mode: !!testMode,
+      hasImage: !!diamond.imageUrl
     });
     
-    // Send diamond to target chat
-    const response = await fetch(`${telegramApiUrl}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: targetChatId,
-        text: shareMessage,
-        parse_mode: 'Markdown',
-        ...inlineKeyboard
-      })
-    });
+    // Send diamond to target chat with image if available
+    let response;
+    if (diamond.imageUrl) {
+      // Send as photo with caption
+      response = await fetch(`${telegramApiUrl}/sendPhoto`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: targetChatId,
+          photo: diamond.imageUrl,
+          caption: shareMessage,
+          parse_mode: 'Markdown',
+          ...inlineKeyboard
+        })
+      });
+    } else {
+      // Send as text message
+      response = await fetch(`${telegramApiUrl}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: targetChatId,
+          text: shareMessage,
+          parse_mode: 'Markdown',
+          ...inlineKeyboard
+        })
+      });
+    }
 
     const result = await response.json();
     
