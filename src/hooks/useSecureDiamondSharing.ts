@@ -85,27 +85,44 @@ export function useSecureDiamondSharing() {
     console.log('📱 WebApp available:', !!webApp);
     console.log('👤 User available:', !!user);
     
-    if (!webApp || !user) {
-      console.error('❌ SHARE DEBUG: Missing requirements - webApp:', !!webApp, 'user:', !!user);
-      toast.error('🔒 Telegram Mini App required for sharing');
-      return false;
-    }
-
     try {
+      // Try to get user ID from different sources
+      let userId = user?.id;
+      let sharerName = '';
+      
+      // Fallback: try to get user data from Telegram WebApp directly
+      if (!userId && webApp) {
+        console.log('🔄 SHARE DEBUG: Trying to get user from Telegram WebApp...');
+        const telegramUser = webApp.initDataUnsafe?.user;
+        if (telegramUser) {
+          userId = telegramUser.id;
+          sharerName = `${telegramUser.first_name}${telegramUser.last_name ? ` ${telegramUser.last_name}` : ''}`;
+          console.log('✅ SHARE DEBUG: Got user from Telegram WebApp:', userId);
+        }
+      }
+      
+      if (!userId) {
+        console.error('❌ SHARE DEBUG: No user ID available from any source');
+        toast.error('לא ניתן לזהות את המשתמש. נסה לרענן את הדף.');
+        return false;
+      }
+
       console.log('📤 SHARE DEBUG: Sending diamond to Telegram group via API...');
       
-      // Get user profile for name
-      const { data: userProfile } = await supabase
-        .from('user_profiles')
-        .select('first_name, last_name')
-        .eq('telegram_id', user.id)
-        .single();
-      
-      const sharerName = userProfile ? 
-        `${userProfile.first_name}${userProfile.last_name ? ` ${userProfile.last_name}` : ''}` : 
-        `User ${user.id}`;
+      // Get user profile for name if we don't have it
+      if (!sharerName) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('first_name, last_name')
+          .eq('telegram_id', userId)
+          .single();
+        
+        sharerName = userProfile ? 
+          `${userProfile.first_name}${userProfile.last_name ? ` ${userProfile.last_name}` : ''}` : 
+          `User ${userId}`;
+      }
 
-      // Call the new Supabase function to send diamond to group
+      // Call the Supabase function to send diamond to group
       const { data, error } = await supabase.functions.invoke('send-diamond-to-group', {
         body: {
           diamond: {
@@ -120,14 +137,16 @@ export function useSecureDiamondSharing() {
             imageUrl: diamond.imageUrl,
             gem360Url: diamond.gem360Url
           },
-          sharedBy: user.id,
-          sharedByName: sharerName
+          sharedBy: userId,
+          sharedByName: sharerName,
+          testMode: false
         }
       });
 
       if (error) {
         console.error('❌ SHARE DEBUG: Supabase function error:', error);
-        throw error;
+        toast.error(`שגיאה בשליחה: ${error.message}`);
+        return false;
       }
 
       console.log('✅ SHARE DEBUG: Diamond sent to group successfully:', data);
@@ -139,7 +158,7 @@ export function useSecureDiamondSharing() {
       toast.error('נכשל בשיתוף היהלום. נסה שוב.');
       return false;
     }
-  }, [webApp, user, supabase]);
+  }, [webApp, user]);
 
   return {
     shareWithInlineButtons,

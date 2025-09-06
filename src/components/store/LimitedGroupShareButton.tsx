@@ -64,6 +64,28 @@ export function LimitedGroupShareButton({
         description: "מעבד את הבקשה",
       });
 
+      // Try to get user ID from different sources
+      let userId = user?.id;
+      
+      // Fallback: try to get user data from Telegram WebApp directly
+      if (!userId && window.Telegram?.WebApp) {
+        const telegramUser = window.Telegram.WebApp.initDataUnsafe?.user;
+        if (telegramUser) {
+          userId = telegramUser.id;
+          console.log('✅ TEST SHARE: Got user from Telegram WebApp:', userId);
+        }
+      }
+      
+      if (!userId) {
+        console.error('❌ TEST SHARE: No user ID available');
+        toast({
+          title: "שגיאה בזיהוי משתמש",
+          description: "לא ניתן לזהות את המשתמש. נסה לרענן את הדף.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       // Send test message to personal chat instead of group
       const { data, error } = await supabase.functions.invoke('send-diamond-to-group', {
         body: {
@@ -79,7 +101,7 @@ export function LimitedGroupShareButton({
             imageUrl: diamond.imageUrl,
             gem360Url: diamond.gem360Url
           },
-          sharedBy: user?.id,
+          sharedBy: userId,
           testMode: true // This will send to personal chat instead of group
         }
       });
