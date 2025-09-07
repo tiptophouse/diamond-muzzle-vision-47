@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { api } from '@/lib/api';
 
 interface MatchNotification {
   id: string;
@@ -14,10 +14,14 @@ interface MatchNotification {
   updated_at: string;
 }
 
-interface NotificationsResponse {
-  notifications: MatchNotification[];
-  total: number;
-  has_more: boolean;
+interface SearchResult {
+  id: number;
+  user_id: number;
+  search_query: string;
+  result_type: string;
+  diamonds_data: any[] | null;
+  message_sent: string | null;
+  created_at: string;
 }
 
 export function useMatchNotifications(userId: number) {
@@ -38,27 +42,41 @@ export function useMatchNotifications(userId: number) {
     try {
       console.log('🔔 Fetching match notifications for user:', userId);
 
-      const { data, error: functionError } = await supabase.functions.invoke('match-notifications', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
+      // Call FastAPI endpoint instead of Supabase edge function
+      const response = await api.get<SearchResult[]>(`/api/v1/get_search_results?user_id=${userId}&limit=50&offset=0`);
 
-      if (functionError) {
-        console.error('❌ Match notifications error:', functionError);
-        throw new Error(functionError.message || 'Failed to fetch match notifications');
+      if (response.error || !response.data) {
+        throw new Error(response.error || 'Failed to fetch search results');
       }
 
-      const response = data as NotificationsResponse;
-      
-      setNotifications(response.notifications || []);
-      setTotal(response.total || 0);
+      // Transform search results to match notification format
+      const transformedNotifications: MatchNotification[] = response.data.map((result) => ({
+        id: result.id.toString(),
+        buyer_id: result.user_id,
+        seller_id: result.user_id, // For now, same as buyer_id
+        diamond_id: `diamond_${result.id}`,
+        is_match: result.result_type === 'match',
+        confidence_score: result.result_type === 'match' ? 0.85 : 0.25,
+        details_json: {
+          search_query: result.search_query,
+          diamonds_data: result.diamonds_data,
+          message_sent: result.message_sent
+        },
+        created_at: result.created_at,
+        updated_at: result.created_at
+      }));
+
+      setNotifications(transformedNotifications);
+      setTotal(transformedNotifications.length);
 
       console.log('✅ Match notifications fetched:', {
-        count: response.notifications?.length || 0,
-        total: response.total || 0
+        count: transformedNotifications.length,
+        total: transformedNotifications.length
       });
+
+      if (transformedNotifications.length > 0) {
+        toast.success(`Loaded ${transformedNotifications.length} notifications`);
+      }
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch match notifications';

@@ -1,18 +1,54 @@
-import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useMatchNotifications } from '@/hooks/useMatchNotifications';
 import { Loader2, Bell, Diamond, User, Calendar, RefreshCcw, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
 export default function MatchNotificationsPage() {
-  // For demo purposes, using a test user ID
-  // In production, this would come from user authentication
-  const [userId] = useState<number>(609472329);
   const navigate = useNavigate();
+  const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
 
-  const { notifications, loading, error, total, refresh } = useMatchNotifications(userId);
+  const { notifications, loading, error, total, refresh } = useMatchNotifications(user?.id || 0);
+
+  // Show loading if still authenticating
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background p-4 md:p-6">
+        <div className="max-w-4xl mx-auto">
+          <Card>
+            <CardContent className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin mr-2" />
+              <span>Authenticating...</span>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if not authenticated
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen bg-background p-4 md:p-6">
+        <div className="max-w-4xl mx-auto">
+          <Card>
+            <CardContent className="text-center py-8">
+              <Bell className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-medium mb-2">Authentication Required</h3>
+              <p className="text-muted-foreground mb-4">
+                Please open this app through Telegram to view your notifications.
+              </p>
+              <Button variant="outline" onClick={() => navigate('/')}>
+                Go Home
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -29,7 +65,7 @@ export default function MatchNotificationsPage() {
   };
 
   const getNotificationDescription = (notification: any) => {
-    const role = notification.buyer_id === userId ? 'buyer' : 'seller';
+    const role = notification.buyer_id === user.id ? 'buyer' : 'seller';
     const otherParty = role === 'buyer' ? notification.seller_id : notification.buyer_id;
     
     if (notification.is_match) {
@@ -90,7 +126,7 @@ export default function MatchNotificationsPage() {
                 <div className="text-sm text-muted-foreground">Matches Found</div>
               </div>
               <div className="text-center md:col-span-1 col-span-2">
-                <div className="text-2xl font-bold text-primary">{userId}</div>
+                <div className="text-2xl font-bold text-primary">{user.id}</div>
                 <div className="text-sm text-muted-foreground">Your User ID</div>
               </div>
             </div>
