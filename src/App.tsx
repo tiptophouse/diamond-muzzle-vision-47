@@ -2,12 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TelegramSDKProvider } from '@/contexts/TelegramSDKContext';
-import { TelegramAuthProvider } from './context/TelegramAuthContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
-import { ThemeProvider } from 'next-themes';
-import { Toaster } from '@/components/ui/sonner';
-import { ErrorBoundary } from './components/ErrorBoundary';
 import { SecureTelegramLayout } from './components/layout/SecureTelegramLayout';
 import { AuthenticatedRoute } from './components/auth/AuthenticatedRoute';
 import { PublicRoute } from './components/auth/PublicRoute';
@@ -33,8 +29,6 @@ import SecureDiamondViewerPage from './pages/SecureDiamondViewerPage';
 import NotFound from './pages/NotFound';
 import StandardizeCsvPage from './pages/StandardizeCsvPage';
 import BulkUploadPage from './pages/BulkUploadPage';
-import SearchResultsTestPage from './pages/SearchResultsTestPage';
-import MatchNotificationsPage from './pages/MatchNotificationsPage';
 import AnalyticsPage from "./pages/AnalyticsPage";
 
 function App() {
@@ -48,17 +42,12 @@ function App() {
   });
   
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <TelegramSDKProvider autoInit={true}>
-          <TelegramAuthProvider>
-            <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-              <Toaster position="top-center" />
-              <div className="tg-mini-app tg-themed tg-safe-area">
-                <Router>
-                  <TutorialProvider>
-                    <InteractiveWizardProvider>
-                      <SecureTelegramLayout>
+    <QueryClientProvider client={queryClient}>
+      <TelegramSDKProvider autoInit={true}>
+        <Router>
+          <TutorialProvider>
+            <InteractiveWizardProvider>
+              <SecureTelegramLayout>
                 <Routes>
                   {/* Public route - redirects to dashboard if authenticated */}
                   <Route path="/" element={
@@ -173,18 +162,6 @@ function App() {
                     </AuthenticatedRoute>
                   } />
                   
-                  <Route path="/search-results-test" element={
-                    <AuthenticatedRoute>
-                      <SearchResultsTestPage />
-                    </AuthenticatedRoute>
-                  } />
-                  
-                  <Route path="/match-notifications" element={
-                    <AuthenticatedRoute>
-                      <MatchNotificationsPage />
-                    </AuthenticatedRoute>
-                  } />
-                  
                   <Route path="/shared-diamond/:stockNumber" element={
                     <AuthenticatedRoute>
                       <SecureDiamondViewerPage />
@@ -192,16 +169,12 @@ function App() {
                   } />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-                      </SecureTelegramLayout>
-                    </InteractiveWizardProvider>
-                  </TutorialProvider>
-                </Router>
-              </div>
-            </ThemeProvider>
-          </TelegramAuthProvider>
-        </TelegramSDKProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+              </SecureTelegramLayout>
+            </InteractiveWizardProvider>
+          </TutorialProvider>
+        </Router>
+      </TelegramSDKProvider>
+    </QueryClientProvider>
   );
 }
 

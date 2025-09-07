@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, Eye, Share, Edit, Upload, Sparkles } from "lucide-react";
+import { Heart, Eye, Share, Edit, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { AdminStoreControls } from "./AdminStoreControls";
 import { Gem360Viewer } from "./Gem360Viewer";
-import { TelegramStoryShareButton } from "./TelegramStoryShareButton";
 
 const ADMIN_TELEGRAM_ID = 2138564172;
 
@@ -158,25 +157,8 @@ export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamo
           </>
         )}
         
-        {/* Share Buttons Container */}
-        <div className="absolute bottom-3 right-3 flex gap-2">
-          {/* Story Share Button */}
-          <TelegramStoryShareButton
-            diamondImage={diamondImageUrl}
-            diamondData={{
-              stockNumber: diamond.stockNumber,
-              carat: diamond.carat,
-              shape: diamond.shape,
-              color: diamond.color,
-              clarity: diamond.clarity,
-              price: diamond.price
-            }}
-            size="icon"
-            variant="secondary"
-            className="min-w-[36px] min-h-[36px] w-9 h-9 rounded-full bg-white/90 hover:bg-white text-gray-600 shadow-sm border-0 p-2 touch-target"
-          />
-          
-          {/* Regular Share Button */}
+        {/* Share Button - Always visible in bottom-right with fixed styling */}
+        <div className="absolute bottom-3 right-3 opacity-100 transition-opacity">
           <Button
             size="icon"
             variant="secondary"

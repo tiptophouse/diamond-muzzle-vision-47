@@ -5,7 +5,6 @@ import { useTelegramSendData } from './useTelegramSendData';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { processImageUrl } from '@/utils/diamondImageUtils';
 
 export function useSecureDiamondSharing() {
   const { webApp, user } = useTelegramWebApp();
@@ -82,6 +81,9 @@ export function useSecureDiamondSharing() {
   }, [user]);
 
   const shareWithInlineButtons = useCallback(async (diamond: Diamond) => {
+    console.log('🔍 SHARE DEBUG: Starting share process for diamond:', diamond.stockNumber);
+    console.log('📱 WebApp available:', !!webApp);
+    console.log('👤 User available:', !!user);
     
     try {
       // Try to get user ID from different sources
@@ -90,17 +92,22 @@ export function useSecureDiamondSharing() {
       
       // Fallback: try to get user data from Telegram WebApp directly
       if (!userId && webApp) {
+        console.log('🔄 SHARE DEBUG: Trying to get user from Telegram WebApp...');
         const telegramUser = webApp.initDataUnsafe?.user;
         if (telegramUser) {
           userId = telegramUser.id;
           sharerName = `${telegramUser.first_name}${telegramUser.last_name ? ` ${telegramUser.last_name}` : ''}`;
+          console.log('✅ SHARE DEBUG: Got user from Telegram WebApp:', userId);
         }
       }
       
       if (!userId) {
+        console.error('❌ SHARE DEBUG: No user ID available from any source');
         toast.error('לא ניתן לזהות את המשתמש. נסה לרענן את הדף.');
         return false;
       }
+
+      console.log('📤 SHARE DEBUG: Sending diamond to Telegram group via API...');
       
       // Get user profile for name if we don't have it
       if (!sharerName) {
@@ -115,16 +122,6 @@ export function useSecureDiamondSharing() {
           `User ${userId}`;
       }
 
-      // Process diamond image using our enhanced image utilities
-      const processedImageUrl = processImageUrl(
-        diamond.imageUrl || 
-        (diamond as any).Image || 
-        (diamond as any).image || 
-        (diamond as any).picture
-      );
-
-      
-
       // Call the Supabase function to send diamond to group
       const { data, error } = await supabase.functions.invoke('send-diamond-to-group', {
         body: {
@@ -137,9 +134,9 @@ export function useSecureDiamondSharing() {
             clarity: diamond.clarity,
             cut: diamond.cut,
             price: diamond.price,
-            imageUrl: processedImageUrl,
+            imageUrl: diamond.imageUrl,
             gem360Url: diamond.gem360Url,
-            // Include all image fallbacks
+            // Include CSV image fallbacks
             Image: (diamond as any).Image,
             image: (diamond as any).image,
             picture: (diamond as any).picture
@@ -151,13 +148,17 @@ export function useSecureDiamondSharing() {
       });
 
       if (error) {
+        console.error('❌ SHARE DEBUG: Supabase function error:', error);
         toast.error(`שגיאה בשליחה: ${error.message}`);
         return false;
       }
+
+      console.log('✅ SHARE DEBUG: Diamond sent to group successfully:', data);
       toast.success('💎 היהלום נשתף לקבוצה בהצלחה!');
       return true;
       
     } catch (error) {
+      console.error('❌ SHARE DEBUG: Failed to share diamond to group:', error);
       toast.error('נכשל בשיתוף היהלום. נסה שוב.');
       return false;
     }

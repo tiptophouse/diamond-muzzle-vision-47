@@ -2,8 +2,8 @@ export const apiEndpoints = {
   // Health check
   alive: () => `/api/v1/alive`,
   
-  // Stone/Diamond management - Standardized endpoints
-  getAllStones: (userId: number) => `/api/v1/diamonds?user_id=${userId}`,
+  // Stone/Diamond management - CORRECTED to match FastAPI spec
+  getAllStones: (userId: number) => `/api/v1/get_all_stones?user_id=${userId}`,
   
   // Create diamond - POST /api/v1/diamonds?user_id={user_id}
   addDiamond: (userId: number) => `/api/v1/diamonds?user_id=${userId}`,
@@ -14,13 +14,13 @@ export const apiEndpoints = {
   // Update diamond - PUT /api/v1/diamonds/{diamond_id}?user_id={user_id}
   updateDiamond: (diamondId: string, userId: number) => `/api/v1/diamonds/${diamondId}?user_id=${userId}`,
   
-  // Standardized Delete diamond endpoint
-  deleteDiamond: (diamondId: string, userId: number) => `/api/v1/diamonds/${diamondId}?user_id=${userId}`,
+  // CORRECTED Delete diamond endpoint to match FastAPI spec
+  deleteDiamond: (diamondId: string, userId: number) => `/api/v1/delete_stone/${diamondId}?user_id=${userId}`,
   
-  // SFTP endpoints - Standardized
+  // SFTP endpoints - CORRECTED to include proper auth
   sftpProvision: () => `/api/v1/sftp/provision`,
   sftpStatus: (telegramId: number) => `/api/v1/sftp/status/${telegramId}`,
-  sftpTestConnection: () => `/api/v1/sftp/test`,
+  sftpTestConnection: () => `/api/v1/sftp/test-connection`,
   sftpDeactivate: () => `/api/v1/sftp/deactivate`,
   
   // Reports
@@ -30,16 +30,8 @@ export const apiEndpoints = {
   // Payment
   paymentRequest: () => `/api/v1/payment_request`,
   
-  // Standardized Authentication endpoint
-  signIn: () => `/api/v1/auth/sign-in`,
-  
-  // Match notifications and search results - NEW ENDPOINTS
-  getSearchResults: (userId: number, limit: number = 50, offset: number = 0, resultType: string = 'match') => 
-    `/functions/v1/get-search-results?user_id=${userId}&limit=${limit}&offset=${offset}&result_type=${resultType}`,
-  getMatchNotifications: (userId: number, dateRange?: string) => 
-    `/functions/v1/match-notifications?user_id=${userId}${dateRange ? `&date_range=${dateRange}` : ''}`,
-  getMatchNotificationsSummary: (userId: number, dateRange?: string) => 
-    `/functions/v1/match-notifications/summary?user_id=${userId}${dateRange ? `&date_range=${dateRange}` : ''}`,
+  // CORRECTED Authentication endpoint
+  signIn: () => `/api/v1/sign-in/`,
   
   // Legacy endpoints (keeping for compatibility)
   verifyTelegram: () => `/api/v1/verify-telegram`,

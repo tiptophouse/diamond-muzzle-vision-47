@@ -94,45 +94,77 @@ serve(async (req) => {
       }
     }
 
-    // Get the first available image URL directly - no complex enhancement
+    // Get best available image URL with fallbacks
     const imageUrl = diamond.imageUrl || diamond.Image || diamond.image || diamond.picture;
-    
-    console.log('🖼️ Simple image processing:', {
-      imageUrl: !!imageUrl,
-      urlPreview: imageUrl ? imageUrl.substring(0, 60) + '...' : 'none',
-      has360: !!diamond.gem360Url
+    console.log('🖼️ Image URL check:', {
+      imageUrl: !!diamond.imageUrl,
+      Image: !!diamond.Image, 
+      image: !!diamond.image,
+      picture: !!diamond.picture,
+      finalUrl: !!imageUrl
     });
 
-    // Simple diamond details text
-    const priceDisplay = diamond.price && diamond.price > 0 ? 
-      `$${diamond.price.toLocaleString()}` : 
-      'Contact for price';
-    
-    const shareMessage = `${messagePrefix}💎 ${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond - Mazalbot
+    // Create enhanced diamond share message
+    const shareMessage = `${messagePrefix}💎 *יהלום איכותי זמין עכשיו*
 
-💎 ${diamond.carat}ct ${diamond.shape} Diamond
+✨ *פרטי היהלום:*
+💍 *${diamond.carat} קראט • ${diamond.shape}*
+🌈 *צבע ${diamond.color} • ניקיון ${diamond.clarity}*
+⚡ *חיתוך ${diamond.cut}*
+💰 *$${diamond.price?.toLocaleString() || 'צור קשר למחיר'}*
 
-🎨 ${diamond.color} • 💎 ${diamond.clarity} • ✂️ ${diamond.cut}
-💰 ${priceDisplay}
-📋 Stock #${diamond.stockNumber}
+👨‍💼 *שותף עסקי:* ${sharerName}
 
-Shared by: ${sharerName}`;
+🔥 *למידע נוסף ופרטים מלאים - לחץ על הכפתור למטה*`;
 
-    // Simple inline keyboard - just 2-3 buttons
-    const baseUrl = 'https://diamond-mazal-vision-47.lovable.app';
-    const telegramBotUrl = `https://t.me/diamondmazalbot`;
+    // Create inline keyboard with working URL buttons only
+    const baseUrl = 'https://uhhljqgxhdhbbhpohxll.supabase.co';
+    const telegramBotUrl = `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'BrilliantBot_bot'}`;
     
     const inlineKeyboard = {
       reply_markup: {
-        inline_keyboard: [
+        inline_keyboard: testMode ? [
+          // Personal chat - can use web_app buttons
           [
             {
-              text: '💎 View Details',
-              url: `${baseUrl}/diamond/${diamond.stockNumber}`
-            },
+              text: '💎 פרטים מלאים',
+              web_app: {
+                url: `${baseUrl}/diamond/${diamond.id}?shared=true&from=${sharedBy}&verify=true`
+              }
+            }
+          ],
+          [
             {
-              text: '📱 Contact Seller',
-              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}`
+              text: '📱 צור קשר',
+              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
+            }
+          ],
+          [
+            {
+              text: '📝 הרשמה',
+              web_app: {
+                url: `${baseUrl}/?register=true&from=${sharedBy}`
+              }
+            }
+          ]
+        ] : [
+          // Group chat - only URL buttons work reliably  
+          [
+            {
+              text: '💎 פרטים מלאים ומחיר',
+              url: `${baseUrl}/diamond/${diamond.id}?shared=true&from=${sharedBy}&verify=true`
+            }
+          ],
+          [
+            {
+              text: '📱 צור קשר עם המוכר',
+              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
+            }
+          ],
+          [
+            {
+              text: '🏪 עוד יהלומים מהמוכר',
+              url: `${baseUrl}/?seller=${sharedBy}&shared=true`
             }
           ]
         ]
@@ -140,14 +172,19 @@ Shared by: ${sharerName}`;
     };
 
     const telegramApiUrl = `https://api.telegram.org/bot${botToken}`;
-    console.log('📤 Simple message - Image → Text → Inline buttons');
+    console.log('📤 Message payload:', { 
+      chat_id: targetChatId, 
+      text: shareMessage.substring(0, 100) + '...', 
+      parse_mode: 'Markdown',
+      test_mode: !!testMode,
+      hasImage: !!diamond.imageUrl
+    });
     
-    // Send message: Image first, then text as caption, then inline buttons
+    // Send diamond to target chat with image if available
     let response;
     if (imageUrl) {
-      console.log('📸 Sending real diamond image:', imageUrl.substring(0, 50) + '...');
-      
-      // Send photo with caption (simple Image → Text → Inline buttons structure)
+      console.log('📸 Sending with image:', imageUrl.substring(0, 50) + '...');
+      // Send as photo with caption
       response = await fetch(`${telegramApiUrl}/sendPhoto`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -155,19 +192,20 @@ Shared by: ${sharerName}`;
           chat_id: targetChatId,
           photo: imageUrl,
           caption: shareMessage,
+          parse_mode: 'Markdown',
           ...inlineKeyboard
         })
       });
     } else {
-      console.log('📝 No image available - sending text only');
-      
-      // Send text message with inline buttons
+      console.log('📝 Sending text only (no image available)');
+      // Send as text message
       response = await fetch(`${telegramApiUrl}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: targetChatId,
-          text: shareMessage + '\n\n⚠️ Image not available',
+          text: shareMessage,
+          parse_mode: 'Markdown',
           ...inlineKeyboard
         })
       });

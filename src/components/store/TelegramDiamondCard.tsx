@@ -32,7 +32,7 @@ export function TelegramDiamondCard({ diamond, index, onViewDetails }: TelegramD
     if (onViewDetails) {
       onViewDetails(diamond);
     } else {
-      navigate(`/diamond/${diamond.stockNumber}`);
+      navigate(`/diamond/${diamond.id}`);
     }
   }, [diamond, onViewDetails, navigate, hapticFeedback]);
 
@@ -78,7 +78,7 @@ Could you please provide more details?`;
 💰 Price: $${diamond.price.toLocaleString()}
 📋 Stock #: ${diamond.stockNumber}
 
-View details: ${window.location.origin}/diamond/${diamond.stockNumber}`;
+View details: ${window.location.origin}/diamond/${diamond.id}`;
 
   return (
     <Card 

@@ -90,20 +90,8 @@ export function OptimizedDiamondImage({
         </div>
       )}
 
-      {/* 360° Viewer or Regular Image */}
-      {has3D ? (
-        <div className="w-full h-full">
-          <iframe 
-            src={gem360Url}
-            className="w-full h-full border-0"
-            title={`360° view of ${shape} Diamond #${stockNumber}`}
-            allow="accelerometer; gyroscope"
-            loading={priority ? 'eager' : 'lazy'}
-            onLoad={handleImageLoad}
-            onError={handleImageError}
-          />
-        </div>
-      ) : shouldShowImage && processedImageUrl ? (
+      {/* Optimized Image */}
+      {shouldShowImage && processedImageUrl && (
         <img
           ref={imgRef}
           src={processedImageUrl}
@@ -115,12 +103,13 @@ export function OptimizedDiamondImage({
           decoding="async"
           onLoad={handleImageLoad}
           onError={handleImageError}
+          // Performance optimizations
           style={{
             contentVisibility: 'auto',
             containIntrinsicSize: '200px 200px'
           }}
         />
-      ) : null}
+      )}
 
       {/* 3D/360° Badge */}
       {has3D && (

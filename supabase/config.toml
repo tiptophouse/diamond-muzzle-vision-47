@@ -46,12 +46,3 @@ verify_jwt = false
 
 [functions.send-diamond-to-group]
 verify_jwt = false
-
-[functions.get-search-results]
-verify_jwt = false
-
-[functions.match-notifications]
-verify_jwt = false
-
-[functions.enhance-diamond-image]
-verify_jwt = false

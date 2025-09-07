@@ -365,17 +365,6 @@ export class TelegramSDK {
 
     close: () => {
       this.webApp?.close();
-    },
-
-    shareToStory: (media_url: string, params?: {
-      text?: string;
-      widget_link?: { url: string; name?: string };
-    }) => {
-      if (this.webApp?.shareToStory) {
-        this.webApp.shareToStory(media_url, params);
-      } else {
-        console.warn('shareToStory is not available in this Telegram version');
-      }
     }
   };
 

@@ -7,7 +7,6 @@ import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { useSecureDiamondSharing } from "@/hooks/useSecureDiamondSharing";
 import { LimitedGroupShareButton } from "./LimitedGroupShareButton";
-import { TelegramStoryShareButton } from "./TelegramStoryShareButton";
 import { toast } from 'sonner';
 import { Gem360Viewer } from "./Gem360Viewer";
 import { V360Viewer } from "./V360Viewer";
@@ -368,27 +367,12 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
           </Button>
         </div>
 
-        {/* Share Buttons */}
-        <div className="flex gap-2 mt-2">
-          <LimitedGroupShareButton 
-            diamond={diamond} 
-            size="sm"
-            className="flex-1"
-          />
-          <TelegramStoryShareButton
-            diamondImage={diamond.image || diamond.certificateUrl || '/placeholder.svg'}
-            diamondData={{
-              stockNumber: diamond.stockNumber,
-              carat: diamond.carat,
-              shape: diamond.shape,
-              color: diamond.color,
-              clarity: diamond.clarity,
-              price: diamond.price
-            }}
-            size="sm"
-            className="flex-1"
-          />
-        </div>
+        {/* Limited Group Share Button */}
+        <LimitedGroupShareButton 
+          diamond={diamond} 
+          size="sm"
+          className="w-full mt-2"
+        />
       </div>
     </div>
   );

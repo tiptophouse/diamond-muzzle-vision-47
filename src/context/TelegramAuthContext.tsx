@@ -1,6 +1,7 @@
-// TelegramAuth Context with Proper Backend Authentication
+
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useOptimizedTelegramAuth } from '@/hooks/useOptimizedTelegramAuth';
+import { useUserDataPersistence } from '@/hooks/useUserDataPersistence';
 
 interface TelegramUser {
   id: number;
@@ -25,26 +26,40 @@ interface TelegramAuthContextType {
 const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(undefined);
 
 export function TelegramAuthProvider({ children }: { children: ReactNode }) {
-  // Use optimized auth that handles JWT authentication
   const authState = useOptimizedTelegramAuth();
-
-  const contextValue: TelegramAuthContextType = {
-    user: authState.user,
+  
+  console.log('🔍 TelegramAuthProvider - Optimized auth state:', { 
+    user: authState.user, 
     isAuthenticated: authState.isAuthenticated,
-    isLoading: authState.isLoading,
-    error: authState.error,
     isTelegramEnvironment: authState.isTelegramEnvironment,
-    accessDeniedReason: authState.accessDeniedReason
-  };
+    loadTime: authState.loadTime
+  });
+  
+  // Automatically persist user data when authenticated
+  useUserDataPersistence(authState.user, authState.isTelegramEnvironment);
+
+  // Enhanced logging for analytics debugging
+  React.useEffect(() => {
+    if (authState.isAuthenticated && authState.user) {
+      console.log('✅ User authenticated - analytics tracking should initialize');
+      console.log('👤 User details:', {
+        id: authState.user.id,
+        name: authState.user.first_name,
+        telegram: authState.isTelegramEnvironment
+      });
+    } else {
+      console.log('❌ User not authenticated - analytics tracking disabled');
+    }
+  }, [authState.isAuthenticated, authState.user, authState.isTelegramEnvironment]);
 
   return (
-    <TelegramAuthContext.Provider value={contextValue}>
+    <TelegramAuthContext.Provider value={authState}>
       {children}
     </TelegramAuthContext.Provider>
   );
 }
 
-export function useTelegramAuth(): TelegramAuthContextType {
+export function useTelegramAuth() {
   const context = useContext(TelegramAuthContext);
   if (context === undefined) {
     throw new Error('useTelegramAuth must be used within a TelegramAuthProvider');
