@@ -160,7 +160,7 @@ serve(async (req) => {
             {
               text: '💎 פרטים מלאים',
               web_app: {
-                url: `${baseUrl}/diamond/${diamond.id}?shared=true&from=${sharedBy}&verify=true`
+                url: `${baseUrl}/diamond/${diamond.stockNumber}?shared=true&from=${sharedBy}&verify=true`
               }
             },
             {
@@ -171,7 +171,7 @@ serve(async (req) => {
           [
             {
               text: '🔄 צפייה 360°',
-              url: diamond.gem360Url || `${baseUrl}/diamond/${diamond.id}?view=360&shared=true&from=${sharedBy}`
+              url: diamond.gem360Url || `${baseUrl}/diamond/${diamond.stockNumber}?view=360&shared=true&from=${sharedBy}`
             },
             {
               text: '📝 הרשמה',
@@ -185,7 +185,7 @@ serve(async (req) => {
           [
             {
               text: '💎 פרטים ומחיר מלא',
-              url: `${baseUrl}/diamond/${diamond.id}?shared=true&from=${sharedBy}&verify=true`
+              url: `${baseUrl}/diamond/${diamond.stockNumber}?shared=true&from=${sharedBy}&verify=true`
             },
             {
               text: '📱 צור קשר ישיר',
@@ -195,7 +195,7 @@ serve(async (req) => {
           [
             {
               text: '🔄 צפייה 360°',
-              url: diamond.gem360Url || `${baseUrl}/diamond/${diamond.id}?view=360&shared=true&from=${sharedBy}`
+              url: diamond.gem360Url || `${baseUrl}/diamond/${diamond.stockNumber}?view=360&shared=true&from=${sharedBy}`
             },
             {
               text: '🏪 עוד יהלומים',
@@ -212,13 +212,21 @@ serve(async (req) => {
       }
     };
 
+    console.log('🔗 Generated URLs for debugging:', {
+      detailsUrl: `${baseUrl}/diamond/${diamond.stockNumber}`,
+      contactUrl: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`,
+      gem360Url: diamond.gem360Url,
+      stockNumber: diamond.stockNumber,
+      diamondId: diamond.id
+    });
     const telegramApiUrl = `https://api.telegram.org/bot${botToken}`;
     console.log('📤 Message payload:', { 
       chat_id: targetChatId, 
       text: shareMessage.substring(0, 100) + '...', 
       parse_mode: 'Markdown',
       test_mode: !!testMode,
-      hasImage: !!diamond.imageUrl
+      hasImage: !!imageUrl,
+      buttonCount: testMode ? 4 : 5
     });
     
     // Send diamond to target chat with image if available
