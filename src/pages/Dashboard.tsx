@@ -34,8 +34,15 @@ export default function Dashboard() {
     }
   }, [searchParams, setSearchParams, toast, fetchData]);
 
+  console.log('🔍 DASHBOARD DEBUG:');
+  console.log('- Auth loading:', authLoading);
+  console.log('- Is authenticated:', isAuthenticated);
+  console.log('- User:', user);
+  console.log('- Inventory loading:', loading);
+  console.log('- Diamonds count:', allDiamonds.length);
+
   const handleEmergencyMode = () => {
-    // Emergency mode implementation
+    console.log('Emergency mode activated - skipping to basic dashboard');
   };
 
   if (authLoading || loading) {
