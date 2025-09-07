@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
+import { useTelegramToast } from './useTelegramToast';
 import { api } from '@/lib/api';
 
 interface MatchNotification {
@@ -29,6 +29,7 @@ export function useMatchNotifications(userId: number) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
+  const toast = useTelegramToast();
 
   const fetchNotifications = async () => {
     if (!userId) {

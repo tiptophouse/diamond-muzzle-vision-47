@@ -53,11 +53,12 @@ function App() {
         <TelegramSDKProvider autoInit={true}>
           <TelegramAuthProvider>
             <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-              <Toaster />
-              <Router>
-                <TutorialProvider>
-                  <InteractiveWizardProvider>
-                    <SecureTelegramLayout>
+              <Toaster position="top-center" />
+              <div className="tg-mini-app tg-themed tg-safe-area">
+                <Router>
+                  <TutorialProvider>
+                    <InteractiveWizardProvider>
+                      <SecureTelegramLayout>
                 <Routes>
                   {/* Public route - redirects to dashboard if authenticated */}
                   <Route path="/" element={
@@ -191,10 +192,11 @@ function App() {
                   } />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-                    </SecureTelegramLayout>
-                  </InteractiveWizardProvider>
-                </TutorialProvider>
-              </Router>
+                      </SecureTelegramLayout>
+                    </InteractiveWizardProvider>
+                  </TutorialProvider>
+                </Router>
+              </div>
             </ThemeProvider>
           </TelegramAuthProvider>
         </TelegramSDKProvider>
