@@ -224,6 +224,10 @@ export function useStoreData() {
           certificateNumber: item.certificate_number || item.certificateNumber || undefined,
           lab: item.lab || item.Lab || undefined,
           certificateUrl: item.certificate_url || item.certificateUrl || undefined,
+          // Preserve original CSV image fields for sharing functionality
+          Image: item.Image || item.picture || undefined,
+          image: item.image || undefined,
+          picture: item.picture || undefined,
         };
 
         // Debug first few items

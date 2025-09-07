@@ -101,7 +101,11 @@ serve(async (req) => {
       Image: !!diamond.Image, 
       image: !!diamond.image,
       picture: !!diamond.picture,
-      finalUrl: !!imageUrl
+      finalUrl: !!imageUrl,
+      imageUrlValue: diamond.imageUrl?.substring(0, 50) + '...',
+      ImageValue: diamond.Image?.substring(0, 50) + '...',
+      imageValue: diamond.image?.substring(0, 50) + '...',
+      pictureValue: diamond.picture?.substring(0, 50) + '...'
     });
 
     // Create enhanced diamond share message
