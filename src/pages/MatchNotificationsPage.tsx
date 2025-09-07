@@ -10,7 +10,7 @@ export default function MatchNotificationsPage() {
   const navigate = useNavigate();
   const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
 
-  const { notifications, loading, error, total, refresh } = useMatchNotifications(user?.id || 609472329);
+  const { notifications, loading, error, total, refresh } = useMatchNotifications(user?.id || 0);
 
   // Show loading if still authenticating
   if (authLoading) {
