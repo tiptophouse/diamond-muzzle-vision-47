@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { TelegramSDKProvider } from '@/contexts/TelegramSDKContext';
+import { TelegramAuthProvider } from './context/TelegramAuthContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
 import { SecureTelegramLayout } from './components/layout/SecureTelegramLayout';
@@ -43,7 +43,7 @@ function App() {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <TelegramSDKProvider autoInit={true}>
+      <TelegramAuthProvider>
         <Router>
           <TutorialProvider>
             <InteractiveWizardProvider>
@@ -173,7 +173,7 @@ function App() {
             </InteractiveWizardProvider>
           </TutorialProvider>
         </Router>
-      </TelegramSDKProvider>
+      </TelegramAuthProvider>
     </QueryClientProvider>
   );
 }
