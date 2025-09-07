@@ -5,6 +5,7 @@ import { useTelegramSendData } from './useTelegramSendData';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { processImageUrl } from '@/utils/diamondImageUtils';
 
 export function useSecureDiamondSharing() {
   const { webApp, user } = useTelegramWebApp();
@@ -122,6 +123,16 @@ export function useSecureDiamondSharing() {
           `User ${userId}`;
       }
 
+      // Process diamond image using our enhanced image utilities
+      const processedImageUrl = processImageUrl(
+        diamond.imageUrl || 
+        (diamond as any).Image || 
+        (diamond as any).image || 
+        (diamond as any).picture
+      );
+
+      console.log('🖼️ SHARE DEBUG: Processed image URL:', processedImageUrl);
+
       // Call the Supabase function to send diamond to group
       const { data, error } = await supabase.functions.invoke('send-diamond-to-group', {
         body: {
@@ -134,9 +145,9 @@ export function useSecureDiamondSharing() {
             clarity: diamond.clarity,
             cut: diamond.cut,
             price: diamond.price,
-            imageUrl: diamond.imageUrl,
+            imageUrl: processedImageUrl,
             gem360Url: diamond.gem360Url,
-            // Include CSV image fallbacks
+            // Include all image fallbacks
             Image: (diamond as any).Image,
             image: (diamond as any).image,
             picture: (diamond as any).picture

@@ -94,52 +94,85 @@ serve(async (req) => {
       }
     }
 
-    // Get best available image URL with fallbacks
-    const imageUrl = diamond.imageUrl || diamond.Image || diamond.image || diamond.picture;
-    console.log('🖼️ Image URL check:', {
-      imageUrl: !!diamond.imageUrl,
+    // Get best available image URL with enhanced fallbacks and validation
+    let imageUrl = diamond.imageUrl || diamond.Image || diamond.image || diamond.picture;
+    
+    // Enhanced image URL processing for diamond industry providers
+    if (imageUrl) {
+      // Handle Segoma URLs - they're valid even with .aspx extension
+      if (imageUrl.includes('segoma.com') && imageUrl.includes('v.aspx')) {
+        console.log('✅ Segoma diamond image detected:', imageUrl.substring(0, 50) + '...');
+      }
+      // Handle other trusted diamond image providers
+      else if (imageUrl.includes('sarine.com') || imageUrl.includes('gcal.com') || 
+               imageUrl.includes('gemfacts.com') || imageUrl.includes('my360.fab')) {
+        console.log('✅ Trusted diamond image provider detected:', imageUrl.substring(0, 50) + '...');
+      }
+      // For other URLs, ensure they look like valid image URLs
+      else if (!imageUrl.match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/i)) {
+        console.warn('⚠️ Suspicious image URL format, clearing:', imageUrl);
+        imageUrl = null;
+      }
+    }
+    
+    console.log('🖼️ Enhanced Image URL check:', {
+      originalImageUrl: !!diamond.imageUrl,
       Image: !!diamond.Image, 
       image: !!diamond.image,
       picture: !!diamond.picture,
-      finalUrl: !!imageUrl
+      processedUrl: !!imageUrl,
+      urlPreview: imageUrl ? imageUrl.substring(0, 60) + '...' : 'none'
     });
 
-    // Create enhanced diamond share message
-    const shareMessage = `${messagePrefix}💎 *יהלום איכותי זמין עכשיו*
+    // Create professional diamond share message with better formatting
+    const priceDisplay = diamond.price && diamond.price > 0 ? 
+      `$${diamond.price.toLocaleString()}` : 
+      'צור קשר למחיר 📞';
+    
+    const shareMessage = `${messagePrefix}💎 *יהלום איכותי זמין להשקעה*
 
-✨ *פרטי היהלום:*
-💍 *${diamond.carat} קראט • ${diamond.shape}*
-🌈 *צבע ${diamond.color} • ניקיון ${diamond.clarity}*
-⚡ *חיתוך ${diamond.cut}*
-💰 *$${diamond.price?.toLocaleString() || 'צור קשר למחיר'}*
+┏━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  ✨ *פרטי היהלום המלאים* ✨  ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-👨‍💼 *שותף עסקי:* ${sharerName}
+💍 *משקל:* ${diamond.carat} קראט
+🔶 *צורה:* ${diamond.shape}
+🌈 *צבע:* ${diamond.color}
+💎 *ניקיון:* ${diamond.clarity}
+⚡ *איכות חיתוך:* ${diamond.cut}
+💰 *מחיר:* ${priceDisplay}
 
-🔥 *למידע נוסף ופרטים מלאים - לחץ על הכפתור למטה*`;
+👨‍💼 *מוצע על ידי:* ${sharerName}
+🏷️ *מק״ט:* ${diamond.stockNumber}
+
+🔥 *לפרטים מלאים, צפייה ב-360° ויצירת קשר - השתמש בכפתורים למטה* ⬇️`;
 
     // Create inline keyboard with working URL buttons only
     const baseUrl = 'https://uhhljqgxhdhbbhpohxll.supabase.co';
     const telegramBotUrl = `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'BrilliantBot_bot'}`;
     
+    // Create responsive inline keyboard optimized for mobile
     const inlineKeyboard = {
       reply_markup: {
         inline_keyboard: testMode ? [
-          // Personal chat - can use web_app buttons
+          // Personal chat - can use web_app buttons (2x2 responsive layout)
           [
             {
               text: '💎 פרטים מלאים',
               web_app: {
                 url: `${baseUrl}/diamond/${diamond.id}?shared=true&from=${sharedBy}&verify=true`
               }
-            }
-          ],
-          [
+            },
             {
               text: '📱 צור קשר',
               url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
             }
           ],
           [
+            {
+              text: '🔄 צפייה 360°',
+              url: diamond.gem360Url || `${baseUrl}/diamond/${diamond.id}?view=360&shared=true&from=${sharedBy}`
+            },
             {
               text: '📝 הרשמה',
               web_app: {
@@ -148,23 +181,31 @@ serve(async (req) => {
             }
           ]
         ] : [
-          // Group chat - only URL buttons work reliably  
+          // Group chat - URL buttons only (responsive 2x2 then 1x1 layout)
           [
             {
-              text: '💎 פרטים מלאים ומחיר',
+              text: '💎 פרטים ומחיר מלא',
               url: `${baseUrl}/diamond/${diamond.id}?shared=true&from=${sharedBy}&verify=true`
-            }
-          ],
-          [
+            },
             {
-              text: '📱 צור קשר עם המוכר',
+              text: '📱 צור קשר ישיר',
               url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
             }
           ],
           [
             {
-              text: '🏪 עוד יהלומים מהמוכר',
+              text: '🔄 צפייה 360°',
+              url: diamond.gem360Url || `${baseUrl}/diamond/${diamond.id}?view=360&shared=true&from=${sharedBy}`
+            },
+            {
+              text: '🏪 עוד יהלומים',
               url: `${baseUrl}/?seller=${sharedBy}&shared=true`
+            }
+          ],
+          [
+            {
+              text: '⭐ הצטרף לפלטפורמה',
+              url: `${telegramBotUrl}?start=register_from_${sharedBy}`
             }
           ]
         ]
