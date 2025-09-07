@@ -11,30 +11,16 @@ export function useTelegramSendData() {
   const { webApp } = useTelegramWebApp();
 
   const sendData = useCallback((payload: TelegramSendDataPayload) => {
-    console.log('🔍 SHARE DEBUG: Attempting to send data via Telegram WebApp');
-    console.log('📱 WebApp available:', !!webApp);
-    console.log('📱 SendData function available:', !!webApp?.sendData);
-    console.log('📤 Payload:', payload);
-    
     if (webApp?.sendData) {
       try {
         const dataString = JSON.stringify(payload);
-        console.log('📤 Sending data string:', dataString);
         webApp.sendData(dataString);
-        console.log('✅ Data sent to Telegram bot successfully');
         return true;
       } catch (error) {
         console.error('❌ Failed to send data to Telegram bot:', error);
         return false;
       }
     } else {
-      console.warn('⚠️ Telegram WebApp not available for sending data');
-      console.warn('🔍 Current environment:', {
-        isTelegram: !!window.Telegram,
-        webApp: !!webApp,
-        sendData: !!webApp?.sendData,
-        userAgent: navigator.userAgent
-      });
       return false;
     }
   }, [webApp]);
