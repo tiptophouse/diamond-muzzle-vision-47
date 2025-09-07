@@ -1,6 +1,6 @@
 // Compatibility Bridge for TelegramAuth Context
 import React, { createContext, useContext, ReactNode, useEffect, useState } from 'react';
-import { useTelegramSDK } from '@/hooks/useTelegramSDK';
+import { useOptimizedTelegramAuth } from '@/hooks/useOptimizedTelegramAuth';
 
 interface TelegramUser {
   id: number;
@@ -34,21 +34,21 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
     accessDeniedReason: null
   });
 
-  // Use the optimized SDK
+  // Use the optimized auth hook that includes backend authentication
   const { 
     user, 
-    isReady, 
+    isAuthenticated,
     isTelegramEnvironment, 
-    isInitializing,
+    isLoading,
     error 
-  } = useTelegramSDK({ autoInit: true });
+  } = useOptimizedTelegramAuth();
 
-  // Update context value when SDK state changes
+  // Update context value when auth state changes
   useEffect(() => {
     const newContextValue: TelegramAuthContextType = {
       user,
-      isAuthenticated: isReady && isTelegramEnvironment && !!user,
-      isLoading: isInitializing || !isReady,
+      isAuthenticated,
+      isLoading,
       error: error || null,
       isTelegramEnvironment,
       accessDeniedReason: error || null
@@ -62,7 +62,7 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
       isTelegramEnvironment: newContextValue.isTelegramEnvironment,
       isLoading: newContextValue.isLoading
     });
-  }, [user, isReady, isTelegramEnvironment, isInitializing, error]);
+  }, [user, isAuthenticated, isTelegramEnvironment, isLoading, error]);
 
   return (
     <TelegramAuthContext.Provider value={contextValue}>
