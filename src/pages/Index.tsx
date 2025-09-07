@@ -35,6 +35,7 @@ const Index = () => {
     // Add debug info for troubleshooting
     const info = [`Loading: ${isLoading}`, `Config Loading: ${loadingConfig}`, `Authenticated: ${isAuthenticated}`, `User ID: ${user?.id || 'none'}`, `User Name: ${user?.first_name || 'none'}`, `Admin ID: ${adminTelegramId || 'loading...'}`, `Telegram Env: ${!!window.Telegram?.WebApp}`, `URL: ${window.location.href}`, `Redirect Handled: ${redirectHandledRef.current}`];
     setDebugInfo(info);
+    console.log('🔍 Index Debug Info:', info);
   }, [user, isAuthenticated, isLoading, adminTelegramId, loadingConfig]);
   useEffect(() => {
     if (!isLoading && !loadingConfig && !redirectHandledRef.current) {
@@ -93,12 +94,14 @@ const Index = () => {
 
   // If user is admin, redirect directly to admin panel
   if (isAuthenticated && user?.id === adminTelegramId) {
+    console.log('✅ Admin user detected - redirecting to admin panel');
     redirectHandledRef.current = true;
     return <Navigate to="/admin" replace />;
   }
 
   // For regular users, redirect to dashboard
   if (isAuthenticated && user) {
+    console.log('✅ Regular user detected - redirecting to dashboard');
     redirectHandledRef.current = true;
     return <Navigate to="/dashboard" replace />;
   }

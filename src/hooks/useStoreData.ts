@@ -68,6 +68,7 @@ export function useStoreData() {
     for (const field of potential360Fields) {
       const result = detect360Url(field);
       if (result) {
+        console.log('✨ DETECTED 360° URL for', item.stock_number || item.stock || 'unknown', ':', result);
         return result;
       }
     }
@@ -76,6 +77,7 @@ export function useStoreData() {
 
   // Direct data transformation with enhanced media processing
   const transformData = useCallback((rawData: any[]): Diamond[] => {
+    console.log('🔧 TRANSFORM DATA: Processing', rawData.length, 'items from FastAPI');
     
     const transformedData = rawData
       .map((item, index) => {
@@ -152,6 +154,22 @@ export function useStoreData() {
           certificateUrl: item.certificate_url || item.certificateUrl || undefined,
         };
 
+        // Debug first few items
+        if (index < 3) {
+          console.log(`🔧 TRANSFORM DEBUG [${index}]:`, {
+            stockNumber: result.stockNumber,
+            hasImage: !!result.imageUrl,
+            has360: !!result.gem360Url,
+            price: result.price,
+            priceSource: totalPrice > 0 ? 'total_price' : pricePerCarat > 0 ? 'calculated' : 'none',
+            rawPriceData: {
+              total_price: item.price,
+              price_per_carat: item.price_per_carat,
+              weight: item.weight,
+              calculated: pricePerCarat * weight
+            }
+          });
+        }
 
         return result;
       })
@@ -160,9 +178,21 @@ export function useStoreData() {
         const isVisible = diamond.store_visible !== false;
         const isAvailable = diamond.status === 'Available';
         
+        if (!isVisible || !isAvailable) {
+          console.log('🚫 FILTERED OUT:', diamond.stockNumber, { isVisible, isAvailable });
+        }
+        
         return isVisible && isAvailable;
       });
 
+    console.log('🎯 FINAL TRANSFORM RESULT:', {
+      originalCount: rawData.length,
+      transformedCount: transformedData.length,
+      filteredOut: rawData.length - transformedData.length,
+      withImages: transformedData.filter(d => d.imageUrl).length,
+      with360: transformedData.filter(d => d.gem360Url).length,
+      withPrices: transformedData.filter(d => d.price > 0).length
+    });
 
     return transformedData;
   }, [detect360UrlFromItem, parseNumber]);
@@ -180,6 +210,13 @@ export function useStoreData() {
       setLoading(true);
 
       const result = await fetchInventoryData();
+      
+      console.log('🚨 RAW API RESPONSE:', {
+        hasData: !!result.data,
+        dataLength: result.data?.length || 0,
+        error: result.error,
+        firstItem: result.data?.[0]
+      });
 
       if (result.error) {
         setError(result.error);
