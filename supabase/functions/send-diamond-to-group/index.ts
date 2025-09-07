@@ -94,271 +94,80 @@ serve(async (req) => {
       }
     }
 
-    // Get best available image URL with enhanced fallbacks and validation
-    let imageUrl = diamond.imageUrl || diamond.Image || diamond.image || diamond.picture;
-    let enhancedImageData = null;
-    let useAnimatedVersion = false;
+    // Get the first available image URL directly - no complex enhancement
+    const imageUrl = diamond.imageUrl || diamond.Image || diamond.image || diamond.picture;
     
-    // Enhanced image URL processing with professional enhancement
-    if (imageUrl) {
-      console.log('🎨 Processing diamond image for professional display');
-      
-      try {
-        // Call image enhancement service for better presentation
-        const enhancementResponse = await supabase.functions.invoke('enhance-diamond-image', {
-          body: {
-            imageUrl,
-            diamondData: {
-              shape: diamond.shape,
-              carat: diamond.carat,
-              stockNumber: diamond.stockNumber
-            },
-            options: {
-              addAnimation: true, // Request rotational animation
-              addFrame: true,
-              optimize: true
-            }
-          }
-        });
-
-        if (enhancementResponse.data?.success) {
-          enhancedImageData = enhancementResponse.data.data;
-          
-          // Use enhanced URL if available and accessible
-          if (enhancedImageData.isAccessible && enhancedImageData.enhancedUrl) {
-            imageUrl = enhancedImageData.enhancedUrl;
-            useAnimatedVersion = enhancedImageData.presentation.shouldAnimate;
-            
-            console.log('✨ Enhanced image ready:', {
-              provider: enhancedImageData.optimization.provider,
-              animated: useAnimatedVersion,
-              enhanced: enhancedImageData.optimization.hasQualityParams
-            });
-          }
-        }
-      } catch (enhancementError) {
-        console.warn('⚠️ Image enhancement failed, using original:', enhancementError.message);
-        // Continue with original image processing
-      }
-
-      // Validate diamond industry image URLs
-      if (imageUrl.includes('segoma.com')) {
-        console.log('✅ Segoma diamond image detected:', imageUrl.substring(0, 50) + '...');
-      }
-      else if (imageUrl.includes('sarine.com') || imageUrl.includes('gcal.com') || 
-               imageUrl.includes('gemfacts.com') || imageUrl.includes('my360.fab') ||
-               imageUrl.includes('gia.edu') || imageUrl.includes('gsi.net')) {
-        console.log('✅ Trusted diamond image provider detected:', imageUrl.substring(0, 50) + '...');
-      }
-      else if (imageUrl.match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/i)) {
-        console.log('✅ Standard image format detected:', imageUrl.substring(0, 50) + '...');
-      }
-      else {
-        console.log('⚠️ Unknown image format, will attempt to send:', imageUrl.substring(0, 50) + '...');
-      }
-    }
-    
-    console.log('🖼️ Enhanced Image processing results:', {
-      originalImageUrl: !!diamond.imageUrl,
-      Image: !!diamond.Image, 
-      image: !!diamond.image,
-      picture: !!diamond.picture,
-      processedUrl: !!imageUrl,
-      enhanced: !!enhancedImageData,
-      animated: useAnimatedVersion,
-      accessible: enhancedImageData?.isAccessible,
-      provider: enhancedImageData?.optimization?.provider,
-      urlPreview: imageUrl ? imageUrl.substring(0, 60) + '...' : 'none'
+    console.log('🖼️ Simple image processing:', {
+      imageUrl: !!imageUrl,
+      urlPreview: imageUrl ? imageUrl.substring(0, 60) + '...' : 'none',
+      has360: !!diamond.gem360Url
     });
 
-    // Create professional diamond share message with better formatting
+    // Simple diamond details text
     const priceDisplay = diamond.price && diamond.price > 0 ? 
       `$${diamond.price.toLocaleString()}` : 
-      'צור קשר למחיר 📞';
+      'Contact for price';
     
-    const shareMessage = `${messagePrefix}💎 *יהלום איכותי זמין להשקעה*
+    const shareMessage = `${messagePrefix}💎 ${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond - Mazalbot
 
-┏━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃  ✨ *פרטי היהלום המלאים* ✨  ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━┛
+💎 ${diamond.carat}ct ${diamond.shape} Diamond
 
-💍 *משקל:* ${diamond.carat} קראט
-🔶 *צורה:* ${diamond.shape}
-🌈 *צבע:* ${diamond.color}
-💎 *ניקיון:* ${diamond.clarity}
-⚡ *איכות חיתוך:* ${diamond.cut}
-💰 *מחיר:* ${priceDisplay}
+🎨 ${diamond.color} • 💎 ${diamond.clarity} • ✂️ ${diamond.cut}
+💰 ${priceDisplay}
+📋 Stock #${diamond.stockNumber}
 
-👨‍💼 *מוצע על ידי:* ${sharerName}
-🏷️ *מק״ט:* ${diamond.stockNumber}
+Shared by: ${sharerName}`;
 
-🔥 *לפרטים מלאים, צפייה ב-360° ויצירת קשר - השתמש בכפתורים למטה* ⬇️`;
-
-    // Create inline keyboard with working URL buttons only
-    const baseUrl = 'https://uhhljqgxhdhbbhpohxll.supabase.co';
-    const telegramBotUrl = `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'BrilliantBot_bot'}`;
+    // Simple inline keyboard - just 2-3 buttons
+    const baseUrl = 'https://diamond-mazal-vision-47.lovable.app';
+    const telegramBotUrl = `https://t.me/diamondmazalbot`;
     
-    // Create responsive inline keyboard optimized for mobile
     const inlineKeyboard = {
       reply_markup: {
-        inline_keyboard: testMode ? [
-          // Personal chat - can use web_app buttons (2x2 responsive layout)
+        inline_keyboard: [
           [
             {
-              text: '💎 פרטים מלאים',
-              web_app: {
-                url: `${baseUrl}/diamond/${diamond.stockNumber}?shared=true&from=${sharedBy}&verify=true`
-              }
+              text: '💎 View Details',
+              url: `${baseUrl}/diamond/${diamond.stockNumber}`
             },
             {
-              text: '📱 צור קשר',
-              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
-            }
-          ],
-          [
-            {
-              text: '🔄 צפייה 360°',
-              url: diamond.gem360Url || `${baseUrl}/diamond/${diamond.stockNumber}?view=360&shared=true&from=${sharedBy}`
-            },
-            {
-              text: '📝 הרשמה',
-              web_app: {
-                url: `${baseUrl}/?register=true&from=${sharedBy}`
-              }
-            }
-          ]
-        ] : [
-          // Group chat - URL buttons only (responsive 2x2 then 1x1 layout)
-          [
-            {
-              text: '💎 פרטים ומחיר מלא',
-              url: `${baseUrl}/diamond/${diamond.stockNumber}?shared=true&from=${sharedBy}&verify=true`
-            },
-            {
-              text: '📱 צור קשר ישיר',
-              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
-            }
-          ],
-          [
-            {
-              text: '🔄 צפייה 360°',
-              url: diamond.gem360Url || `${baseUrl}/diamond/${diamond.stockNumber}?view=360&shared=true&from=${sharedBy}`
-            },
-            {
-              text: '🏪 עוד יהלומים',
-              url: `${baseUrl}/?seller=${sharedBy}&shared=true`
-            }
-          ],
-          [
-            {
-              text: '⭐ הצטרף לפלטפורמה',
-              url: `${telegramBotUrl}?start=register_from_${sharedBy}`
+              text: '📱 Contact Seller',
+              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}`
             }
           ]
         ]
       }
     };
 
-    console.log('🔗 Generated URLs for debugging:', {
-      detailsUrl: `${baseUrl}/diamond/${diamond.stockNumber}`,
-      contactUrl: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`,
-      gem360Url: diamond.gem360Url,
-      stockNumber: diamond.stockNumber,
-      diamondId: diamond.id
-    });
     const telegramApiUrl = `https://api.telegram.org/bot${botToken}`;
-    console.log('📤 Message payload:', { 
-      chat_id: targetChatId, 
-      text: shareMessage.substring(0, 100) + '...', 
-      parse_mode: 'Markdown',
-      test_mode: !!testMode,
-      hasImage: !!imageUrl,
-      buttonCount: testMode ? 4 : 5
-    });
+    console.log('📤 Simple message - Image → Text → Inline buttons');
     
-    // Send diamond to target chat with enhanced image presentation
+    // Send message: Image first, then text as caption, then inline buttons
     let response;
     if (imageUrl) {
-      console.log('📸 Sending with enhanced image:', {
-        url: imageUrl.substring(0, 50) + '...',
-        animated: useAnimatedVersion,
-        enhanced: !!enhancedImageData
+      console.log('📸 Sending real diamond image:', imageUrl.substring(0, 50) + '...');
+      
+      // Send photo with caption (simple Image → Text → Inline buttons structure)
+      response = await fetch(`${telegramApiUrl}/sendPhoto`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: targetChatId,
+          photo: imageUrl,
+          caption: shareMessage,
+          ...inlineKeyboard
+        })
       });
-
-      // Create enhanced message with better visual presentation
-      const enhancedMessage = `${messagePrefix}💎 *יהלום איכותי זמין להשקעה* ✨
-
-┏━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃    🔥 *יהלום מושלם* 🔥    ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-💍 *${diamond.carat} קראט* | 🔶 *${diamond.shape}*
-🌈 *${diamond.color}* | 💎 *${diamond.clarity}* | ⚡ *${diamond.cut}*
-💰 *${priceDisplay}*
-
-👨‍💼 *מוצע על ידי:* ${sharerName}
-🏷️ *מק״ט:* ${diamond.stockNumber}
-
-${useAnimatedVersion ? '🔄 *תמונה מסתובבת - לחץ לפרטים מלאים*' : ''}
-🔥 *השתמש בכפתורים למטה לפרטים ויצירת קשר* ⬇️`;
-
-      // Try sending as animation if we have animated version
-      if (useAnimatedVersion && enhancedImageData?.animationUrl) {
-        console.log('🔄 Attempting animated presentation');
-        response = await fetch(`${telegramApiUrl}/sendAnimation`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: targetChatId,
-            animation: enhancedImageData.animationUrl,
-            caption: enhancedMessage,
-            parse_mode: 'Markdown',
-            ...inlineKeyboard
-          })
-        }).catch(async (error) => {
-          console.log('⚠️ Animation failed, falling back to photo:', error.message);
-          // Fallback to regular photo
-          return fetch(`${telegramApiUrl}/sendPhoto`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: targetChatId,
-              photo: imageUrl,
-              caption: enhancedMessage,
-              parse_mode: 'Markdown',
-              ...inlineKeyboard
-            })
-          });
-        });
-      } else {
-        // Send as enhanced photo
-        response = await fetch(`${telegramApiUrl}/sendPhoto`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: targetChatId,
-            photo: imageUrl,
-            caption: enhancedMessage,
-            parse_mode: 'Markdown',
-            ...inlineKeyboard
-          })
-        });
-      }
     } else {
-      console.log('📝 Sending text only (no image available)');
-      // Send as text message with enhanced formatting
-      const noImageMessage = `${shareMessage}
-
-⚠️ *תמונת היהלום לא זמינה כרגע*
-📞 *צור קשר לקבלת תמונות ופרטים נוספים*`;
-
+      console.log('📝 No image available - sending text only');
+      
+      // Send text message with inline buttons
       response = await fetch(`${telegramApiUrl}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: targetChatId,
-          text: noImageMessage,
-          parse_mode: 'Markdown',
+          text: shareMessage + '\n\n⚠️ Image not available',
           ...inlineKeyboard
         })
       });
