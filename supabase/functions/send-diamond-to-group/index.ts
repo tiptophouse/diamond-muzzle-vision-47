@@ -141,17 +141,20 @@ serve(async (req) => {
         // Continue with original image processing
       }
 
-      // Fallback validation for image URLs
-      if (imageUrl.includes('segoma.com') && imageUrl.includes('v.aspx')) {
+      // Validate diamond industry image URLs
+      if (imageUrl.includes('segoma.com')) {
         console.log('✅ Segoma diamond image detected:', imageUrl.substring(0, 50) + '...');
       }
       else if (imageUrl.includes('sarine.com') || imageUrl.includes('gcal.com') || 
-               imageUrl.includes('gemfacts.com') || imageUrl.includes('my360.fab')) {
+               imageUrl.includes('gemfacts.com') || imageUrl.includes('my360.fab') ||
+               imageUrl.includes('gia.edu') || imageUrl.includes('gsi.net')) {
         console.log('✅ Trusted diamond image provider detected:', imageUrl.substring(0, 50) + '...');
       }
-      else if (!imageUrl.match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/i)) {
-        console.warn('⚠️ Suspicious image URL format, clearing:', imageUrl);
-        imageUrl = null;
+      else if (imageUrl.match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/i)) {
+        console.log('✅ Standard image format detected:', imageUrl.substring(0, 50) + '...');
+      }
+      else {
+        console.log('⚠️ Unknown image format, will attempt to send:', imageUrl.substring(0, 50) + '...');
       }
     }
     
