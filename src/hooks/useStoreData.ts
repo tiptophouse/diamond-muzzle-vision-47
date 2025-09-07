@@ -5,6 +5,7 @@ import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useInventoryDataSync } from "./inventory/useInventoryDataSync";
 import { getTelegramWebApp } from "@/utils/telegramWebApp";
 import { detectFancyColor } from "@/utils/fancyColorUtils";
+import { processImageUrl, detect360Url } from "@/utils/diamondImageUtils";
 
 // Telegram memory management
 const tg = getTelegramWebApp();
@@ -31,7 +32,7 @@ export function useStoreData() {
   }, []);
 
   // Enhanced 360° URL detection with priority for my360.fab and HTML viewers
-  const detect360Url = useCallback((item: any): string | undefined => {
+  const detect360UrlFromItem = useCallback((item: any): string | undefined => {
     // All possible fields that might contain 360° URLs
     const potential360Fields = [
       item.picture,           
@@ -65,85 +66,12 @@ export function useStoreData() {
     ];
     
     for (const field of potential360Fields) {
-      if (field && typeof field === 'string' && field.trim()) {
-        const url = field.trim();
-        
-        // Enhanced detection patterns for 360° formats
-        const is360Url = 
-          url.includes('my360.fab') ||          
-          url.includes('my360.sela') ||         
-          url.includes('v360.in') ||            
-          url.includes('diamondview.aspx') ||   
-          url.includes('gem360') ||             
-          url.includes('sarine') ||             
-          url.includes('360') ||                
-          url.includes('3d') ||                 
-          url.includes('rotate') ||             
-          url.includes('.html') ||              
-          url.match(/DAN\d+-\d+[A-Z]?\.jpg$/i); 
-
-        if (is360Url) {
-          let processedUrl = url;
-          if (!processedUrl.startsWith('http://') && !processedUrl.startsWith('https://')) {
-            processedUrl = `https://${processedUrl}`;
-          }
-          
-          console.log('✨ DETECTED 360° URL for', item.stock_number || item.stock || 'unknown', ':', processedUrl);
-          return processedUrl;
-        }
+      const result = detect360Url(field);
+      if (result) {
+        console.log('✨ DETECTED 360° URL for', item.stock_number || item.stock || 'unknown', ':', result);
+        return result;
       }
     }
-    return undefined;
-  }, []);
-
-  // Regular image URL processing - exclude 360° URLs
-  const processImageUrl = useCallback((imageUrl: string | undefined): string | undefined => {
-    if (!imageUrl || typeof imageUrl !== 'string') {
-      return undefined;
-    }
-
-    const trimmedUrl = imageUrl.trim();
-    
-    // Skip invalid or placeholder values
-    if (!trimmedUrl || 
-        trimmedUrl === 'default' || 
-        trimmedUrl === 'null' || 
-        trimmedUrl === 'undefined' ||
-        trimmedUrl.length < 10) {
-      return undefined;
-    }
-
-    // Skip 360° viewers - these should go to gem360Url instead
-    if (trimmedUrl.includes('.html') ||
-        trimmedUrl.includes('diamondview.aspx') ||
-        trimmedUrl.includes('v360.in') ||
-        trimmedUrl.includes('my360.fab') ||
-        trimmedUrl.includes('my360.sela') ||
-        trimmedUrl.includes('sarine') ||
-        trimmedUrl.includes('360') ||
-        trimmedUrl.includes('3d') ||
-        trimmedUrl.includes('rotate')) {
-      console.log('🔄 SKIPPING 360° URL in image field:', trimmedUrl);
-      return undefined;
-    }
-
-    // Must be a valid HTTP/HTTPS URL
-    if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
-      return undefined;
-    }
-
-    // Accept common image extensions OR image service URLs
-    const hasImageExtension = trimmedUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i);
-    const isImageServiceUrl = trimmedUrl.includes('unsplash.com') || 
-                             trimmedUrl.includes('/image') ||
-                             trimmedUrl.includes('w=') || 
-                             trimmedUrl.includes('h=');   
-
-    if (hasImageExtension || isImageServiceUrl) {
-      console.log('✅ VALID IMAGE URL processed:', trimmedUrl);
-      return trimmedUrl;
-    }
-
     return undefined;
   }, []);
 
@@ -154,7 +82,7 @@ export function useStoreData() {
     const transformedData = rawData
       .map((item, index) => {
         // PHASE 1: Detect 360° URLs first (highest priority)
-        const final360Url = detect360Url(item);
+        const final360Url = detect360UrlFromItem(item);
         
         // PHASE 2: Process regular image URLs (excluding 360° URLs)
         let finalImageUrl = undefined;
@@ -267,7 +195,7 @@ export function useStoreData() {
     });
 
     return transformedData;
-  }, [processImageUrl, detect360Url, parseNumber]);
+  }, [detect360UrlFromItem, parseNumber]);
 
   const fetchStoreData = useCallback(async (useCache = true) => {
     try {

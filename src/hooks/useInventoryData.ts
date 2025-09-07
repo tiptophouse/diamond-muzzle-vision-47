@@ -3,6 +3,7 @@ import { Diamond } from '@/components/inventory/InventoryTable';
 import { fetchInventoryData } from '@/services/inventoryDataService';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
+import { processImageUrl, detect360Url } from '@/utils/diamondImageUtils';
 
 export function useInventoryData() {
   const { user, isLoading: authLoading } = useTelegramAuth();
@@ -41,82 +42,7 @@ export function useInventoryData() {
     return shapeMap[normalized] || apiShape.charAt(0).toUpperCase() + apiShape.slice(1).toLowerCase();
   };
 
-  // Enhanced image URL processing - separate from 360° URLs
-  const processImageUrl = useCallback((imageUrl: string | undefined): string | undefined => {
-    if (!imageUrl || typeof imageUrl !== 'string') {
-      return undefined;
-    }
-
-    const trimmedUrl = imageUrl.trim();
-    
-    // Skip invalid or placeholder values
-    if (!trimmedUrl || 
-        trimmedUrl === 'default' || 
-        trimmedUrl === 'null' || 
-        trimmedUrl === 'undefined' ||
-        trimmedUrl.length < 10) {
-      return undefined;
-    }
-
-    // Skip 360° viewers (these should go to gem360Url field instead)
-    if (trimmedUrl.includes('.html') ||
-        trimmedUrl.includes('diamondview.aspx') ||
-        trimmedUrl.includes('v360.in') ||
-        trimmedUrl.includes('sarine')) {
-      return undefined;
-    }
-
-    // Must be a valid HTTP/HTTPS URL
-    if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
-      return undefined;
-    }
-
-    // Must end with valid image extension
-    if (!trimmedUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i)) {
-      return undefined;
-    }
-
-    return trimmedUrl;
-  }, []);
-
-  // Enhanced 360° URL detection and processing
-  const detect360Url = useCallback((url: string | undefined): string | undefined => {
-    if (!url || typeof url !== 'string') {
-      return undefined;
-    }
-
-    const trimmedUrl = url.trim();
-    
-    // Skip invalid or placeholder values
-    if (!trimmedUrl || 
-        trimmedUrl === 'default' || 
-        trimmedUrl === 'null' || 
-        trimmedUrl === 'undefined' ||
-        trimmedUrl.length < 10) {
-      return undefined;
-    }
-
-    // Check for 360° indicators
-    const is360Url = trimmedUrl.includes('v360.in') ||
-                     trimmedUrl.includes('diamondview.aspx') ||
-                     trimmedUrl.includes('my360.sela') ||
-                     trimmedUrl.includes('gem360') ||
-                     trimmedUrl.includes('sarine') ||
-                     trimmedUrl.includes('360') ||
-                     trimmedUrl.includes('.html') ||
-                     trimmedUrl.match(/DAN\d+-\d+[A-Z]?\.jpg$/i);
-
-    if (!is360Url) {
-      return undefined;
-    }
-
-    // Ensure proper protocol
-    if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
-      return `https://${trimmedUrl}`;
-    }
-
-    return trimmedUrl;
-  }, []);
+  // Using enhanced image and 360° URL processing from utils
 
   const fetchData = useCallback(async () => {
     try {
@@ -218,7 +144,7 @@ export function useInventoryData() {
     } finally {
       setLoading(false);
     }
-  }, [processImageUrl, detect360Url]);
+  }, []);
 
   const handleRefresh = useCallback(() => {
     console.log('🔄 INVENTORY HOOK: Manual refresh triggered');
