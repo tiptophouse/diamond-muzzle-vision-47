@@ -52,3 +52,6 @@ verify_jwt = false
 
 [functions.match-notifications]
 verify_jwt = false
+
+[functions.enhance-diamond-image]
+verify_jwt = false

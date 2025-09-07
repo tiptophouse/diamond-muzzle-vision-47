@@ -96,31 +96,75 @@ serve(async (req) => {
 
     // Get best available image URL with enhanced fallbacks and validation
     let imageUrl = diamond.imageUrl || diamond.Image || diamond.image || diamond.picture;
+    let enhancedImageData = null;
+    let useAnimatedVersion = false;
     
-    // Enhanced image URL processing for diamond industry providers
+    // Enhanced image URL processing with professional enhancement
     if (imageUrl) {
-      // Handle Segoma URLs - they're valid even with .aspx extension
+      console.log('🎨 Processing diamond image for professional display');
+      
+      try {
+        // Call image enhancement service for better presentation
+        const enhancementResponse = await supabase.functions.invoke('enhance-diamond-image', {
+          body: {
+            imageUrl,
+            diamondData: {
+              shape: diamond.shape,
+              carat: diamond.carat,
+              stockNumber: diamond.stockNumber
+            },
+            options: {
+              addAnimation: true, // Request rotational animation
+              addFrame: true,
+              optimize: true
+            }
+          }
+        });
+
+        if (enhancementResponse.data?.success) {
+          enhancedImageData = enhancementResponse.data.data;
+          
+          // Use enhanced URL if available and accessible
+          if (enhancedImageData.isAccessible && enhancedImageData.enhancedUrl) {
+            imageUrl = enhancedImageData.enhancedUrl;
+            useAnimatedVersion = enhancedImageData.presentation.shouldAnimate;
+            
+            console.log('✨ Enhanced image ready:', {
+              provider: enhancedImageData.optimization.provider,
+              animated: useAnimatedVersion,
+              enhanced: enhancedImageData.optimization.hasQualityParams
+            });
+          }
+        }
+      } catch (enhancementError) {
+        console.warn('⚠️ Image enhancement failed, using original:', enhancementError.message);
+        // Continue with original image processing
+      }
+
+      // Fallback validation for image URLs
       if (imageUrl.includes('segoma.com') && imageUrl.includes('v.aspx')) {
         console.log('✅ Segoma diamond image detected:', imageUrl.substring(0, 50) + '...');
       }
-      // Handle other trusted diamond image providers
       else if (imageUrl.includes('sarine.com') || imageUrl.includes('gcal.com') || 
                imageUrl.includes('gemfacts.com') || imageUrl.includes('my360.fab')) {
         console.log('✅ Trusted diamond image provider detected:', imageUrl.substring(0, 50) + '...');
       }
-      // For other URLs, ensure they look like valid image URLs
       else if (!imageUrl.match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/i)) {
         console.warn('⚠️ Suspicious image URL format, clearing:', imageUrl);
         imageUrl = null;
       }
     }
     
-    console.log('🖼️ Enhanced Image URL check:', {
+    console.log('🖼️ Enhanced Image processing results:', {
       originalImageUrl: !!diamond.imageUrl,
       Image: !!diamond.Image, 
       image: !!diamond.image,
       picture: !!diamond.picture,
       processedUrl: !!imageUrl,
+      enhanced: !!enhancedImageData,
+      animated: useAnimatedVersion,
+      accessible: enhancedImageData?.isAccessible,
+      provider: enhancedImageData?.optimization?.provider,
       urlPreview: imageUrl ? imageUrl.substring(0, 60) + '...' : 'none'
     });
 
@@ -229,31 +273,88 @@ serve(async (req) => {
       buttonCount: testMode ? 4 : 5
     });
     
-    // Send diamond to target chat with image if available
+    // Send diamond to target chat with enhanced image presentation
     let response;
     if (imageUrl) {
-      console.log('📸 Sending with image:', imageUrl.substring(0, 50) + '...');
-      // Send as photo with caption
-      response = await fetch(`${telegramApiUrl}/sendPhoto`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: targetChatId,
-          photo: imageUrl,
-          caption: shareMessage,
-          parse_mode: 'Markdown',
-          ...inlineKeyboard
-        })
+      console.log('📸 Sending with enhanced image:', {
+        url: imageUrl.substring(0, 50) + '...',
+        animated: useAnimatedVersion,
+        enhanced: !!enhancedImageData
       });
+
+      // Create enhanced message with better visual presentation
+      const enhancedMessage = `${messagePrefix}💎 *יהלום איכותי זמין להשקעה* ✨
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃    🔥 *יהלום מושלם* 🔥    ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+💍 *${diamond.carat} קראט* | 🔶 *${diamond.shape}*
+🌈 *${diamond.color}* | 💎 *${diamond.clarity}* | ⚡ *${diamond.cut}*
+💰 *${priceDisplay}*
+
+👨‍💼 *מוצע על ידי:* ${sharerName}
+🏷️ *מק״ט:* ${diamond.stockNumber}
+
+${useAnimatedVersion ? '🔄 *תמונה מסתובבת - לחץ לפרטים מלאים*' : ''}
+🔥 *השתמש בכפתורים למטה לפרטים ויצירת קשר* ⬇️`;
+
+      // Try sending as animation if we have animated version
+      if (useAnimatedVersion && enhancedImageData?.animationUrl) {
+        console.log('🔄 Attempting animated presentation');
+        response = await fetch(`${telegramApiUrl}/sendAnimation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: targetChatId,
+            animation: enhancedImageData.animationUrl,
+            caption: enhancedMessage,
+            parse_mode: 'Markdown',
+            ...inlineKeyboard
+          })
+        }).catch(async (error) => {
+          console.log('⚠️ Animation failed, falling back to photo:', error.message);
+          // Fallback to regular photo
+          return fetch(`${telegramApiUrl}/sendPhoto`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: targetChatId,
+              photo: imageUrl,
+              caption: enhancedMessage,
+              parse_mode: 'Markdown',
+              ...inlineKeyboard
+            })
+          });
+        });
+      } else {
+        // Send as enhanced photo
+        response = await fetch(`${telegramApiUrl}/sendPhoto`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: targetChatId,
+            photo: imageUrl,
+            caption: enhancedMessage,
+            parse_mode: 'Markdown',
+            ...inlineKeyboard
+          })
+        });
+      }
     } else {
       console.log('📝 Sending text only (no image available)');
-      // Send as text message
+      // Send as text message with enhanced formatting
+      const noImageMessage = `${shareMessage}
+
+⚠️ *תמונת היהלום לא זמינה כרגע*
+📞 *צור קשר לקבלת תמונות ופרטים נוספים*`;
+
       response = await fetch(`${telegramApiUrl}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: targetChatId,
-          text: shareMessage,
+          text: noImageMessage,
           parse_mode: 'Markdown',
           ...inlineKeyboard
         })
