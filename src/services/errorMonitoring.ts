@@ -72,7 +72,7 @@ class ErrorMonitoringService {
     }
   }
 
-  // Submit errors to Supabase
+  // Submit errors to analytics_events table (temporary until types are updated)
   private async submitErrors(): Promise<void> {
     if (this.isSubmitting || this.errorQueue.length === 0) return;
     
@@ -81,9 +81,24 @@ class ErrorMonitoringService {
     this.errorQueue = [];
 
     try {
+      // Map to analytics_events format temporarily
+      const analyticsEvents = errorsToSubmit.map(error => ({
+        event_type: `error_${error.error_type}`,
+        page_path: error.url || window.location.pathname,
+        session_id: crypto.randomUUID(),
+        event_data: {
+          error_message: error.error_message,
+          error_stack: error.error_stack,
+          severity: error.severity,
+          additional_context: error.additional_context
+        },
+        user_agent: error.user_agent,
+        timestamp: error.timestamp
+      }));
+
       const { error } = await supabase
-        .from('error_reports')
-        .insert(errorsToSubmit);
+        .from('analytics_events')
+        .insert(analyticsEvents);
 
       if (error) {
         console.error('📊 ERROR MONITOR: Failed to submit errors:', error);
@@ -106,12 +121,13 @@ class ErrorMonitoringService {
     }
   }
 
-  // Get system health metrics
+  // Get system health metrics from analytics_events
   public async getSystemMetrics(): Promise<SystemMetrics> {
     try {
       const { data: errorData, error } = await supabase
-        .from('error_reports')
-        .select('error_type, severity, timestamp')
+        .from('analytics_events')
+        .select('event_type, event_data, timestamp')
+        .like('event_type', 'error_%')
         .gte('timestamp', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
       if (error) {
@@ -120,7 +136,10 @@ class ErrorMonitoringService {
       }
 
       const totalErrors = errorData?.length || 0;
-      const criticalErrors = errorData?.filter(e => e.severity === 'critical').length || 0;
+      const criticalErrors = errorData?.filter(e => 
+        e.event_data && typeof e.event_data === 'object' && 
+        'severity' in e.event_data && e.event_data.severity === 'critical'
+      ).length || 0;
       const errorRate = totalErrors / 1440; // errors per minute in 24h
       
       // Simple performance score calculation
