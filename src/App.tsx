@@ -34,6 +34,7 @@ import NotFound from './pages/NotFound';
 import StandardizeCsvPage from './pages/StandardizeCsvPage';
 import BulkUploadPage from './pages/BulkUploadPage';
 import SearchResultsTestPage from './pages/SearchResultsTestPage';
+import MatchNotificationsPage from './pages/MatchNotificationsPage';
 import AnalyticsPage from "./pages/AnalyticsPage";
 
 function App() {
@@ -174,6 +175,12 @@ function App() {
                   <Route path="/search-results-test" element={
                     <AuthenticatedRoute>
                       <SearchResultsTestPage />
+                    </AuthenticatedRoute>
+                  } />
+                  
+                  <Route path="/match-notifications" element={
+                    <AuthenticatedRoute>
+                      <MatchNotificationsPage />
                     </AuthenticatedRoute>
                   } />
                   
