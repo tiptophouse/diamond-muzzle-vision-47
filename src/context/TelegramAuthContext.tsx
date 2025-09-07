@@ -1,6 +1,6 @@
-// Compatibility Bridge for TelegramAuth Context
-import React, { createContext, useContext, ReactNode, useEffect, useState } from 'react';
-import { useTelegramSDK } from '@/hooks/useTelegramSDK';
+// TelegramAuth Context with Proper Backend Authentication
+import React, { createContext, useContext, ReactNode } from 'react';
+import { useOptimizedTelegramAuth } from '@/hooks/useOptimizedTelegramAuth';
 
 interface TelegramUser {
   id: number;
@@ -25,44 +25,17 @@ interface TelegramAuthContextType {
 const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(undefined);
 
 export function TelegramAuthProvider({ children }: { children: ReactNode }) {
-  const [contextValue, setContextValue] = useState<TelegramAuthContextType>({
-    user: null,
-    isAuthenticated: false,
-    isLoading: true,
-    error: null,
-    isTelegramEnvironment: false,
-    accessDeniedReason: null
-  });
+  // Use optimized auth that handles JWT authentication
+  const authState = useOptimizedTelegramAuth();
 
-  // Use the optimized SDK
-  const { 
-    user, 
-    isReady, 
-    isTelegramEnvironment, 
-    isInitializing,
-    error 
-  } = useTelegramSDK({ autoInit: true });
-
-  // Update context value when SDK state changes
-  useEffect(() => {
-    const newContextValue: TelegramAuthContextType = {
-      user,
-      isAuthenticated: isReady && isTelegramEnvironment && !!user,
-      isLoading: isInitializing || !isReady,
-      error: error || null,
-      isTelegramEnvironment,
-      accessDeniedReason: error || null
-    };
-
-    setContextValue(newContextValue);
-
-    console.log('🔍 TelegramAuthProvider (bridge) - updated state:', { 
-      user: newContextValue.user?.first_name, 
-      isAuthenticated: newContextValue.isAuthenticated,
-      isTelegramEnvironment: newContextValue.isTelegramEnvironment,
-      isLoading: newContextValue.isLoading
-    });
-  }, [user, isReady, isTelegramEnvironment, isInitializing, error]);
+  const contextValue: TelegramAuthContextType = {
+    user: authState.user,
+    isAuthenticated: authState.isAuthenticated,
+    isLoading: authState.isLoading,
+    error: authState.error,
+    isTelegramEnvironment: authState.isTelegramEnvironment,
+    accessDeniedReason: authState.accessDeniedReason
+  };
 
   return (
     <TelegramAuthContext.Provider value={contextValue}>
