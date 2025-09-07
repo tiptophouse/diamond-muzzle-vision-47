@@ -42,8 +42,8 @@ export function useMatchNotifications(userId: number) {
     try {
       console.log('🔔 Fetching match notifications for user:', userId);
 
-      // Call FastAPI endpoint instead of Supabase edge function
-      const response = await api.get<SearchResult[]>(`/api/v1/get_search_results?user_id=${userId}&limit=50&offset=0`);
+      // Call FastAPI endpoint directly 
+      const response = await api.get<SearchResult[]>(`/api/v1/get_search_results?user_id=${userId}&limit=50&offset=0&result_type=match`);
 
       if (response.error || !response.data) {
         throw new Error(response.error || 'Failed to fetch search results');
