@@ -88,7 +88,6 @@ export function useStoreData() {
             processedUrl = `https://${processedUrl}`;
           }
           
-          console.log('✨ DETECTED 360° URL for', item.stock_number || item.stock || 'unknown', ':', processedUrl);
           return processedUrl;
         }
       }
@@ -123,7 +122,6 @@ export function useStoreData() {
         trimmedUrl.includes('360') ||
         trimmedUrl.includes('3d') ||
         trimmedUrl.includes('rotate')) {
-      console.log('🔄 SKIPPING 360° URL in image field:', trimmedUrl);
       return undefined;
     }
 
@@ -140,7 +138,6 @@ export function useStoreData() {
                              trimmedUrl.includes('h=');   
 
     if (hasImageExtension || isImageServiceUrl) {
-      console.log('✅ VALID IMAGE URL processed:', trimmedUrl);
       return trimmedUrl;
     }
 
@@ -149,7 +146,6 @@ export function useStoreData() {
 
   // Direct data transformation with enhanced media processing
   const transformData = useCallback((rawData: any[]): Diamond[] => {
-    console.log('🔧 TRANSFORM DATA: Processing', rawData.length, 'items from FastAPI');
     
     const transformedData = rawData
       .map((item, index) => {
@@ -230,23 +226,6 @@ export function useStoreData() {
           picture: item.picture || undefined,
         };
 
-        // Debug first few items
-        if (index < 3) {
-          console.log(`🔧 TRANSFORM DEBUG [${index}]:`, {
-            stockNumber: result.stockNumber,
-            hasImage: !!result.imageUrl,
-            has360: !!result.gem360Url,
-            price: result.price,
-            priceSource: totalPrice > 0 ? 'total_price' : pricePerCarat > 0 ? 'calculated' : 'none',
-            rawPriceData: {
-              total_price: item.price,
-              price_per_carat: item.price_per_carat,
-              weight: item.weight,
-              calculated: pricePerCarat * weight
-            }
-          });
-        }
-
         return result;
       })
       .filter(diamond => {
@@ -254,21 +233,8 @@ export function useStoreData() {
         const isVisible = diamond.store_visible !== false;
         const isAvailable = diamond.status === 'Available';
         
-        if (!isVisible || !isAvailable) {
-          console.log('🚫 FILTERED OUT:', diamond.stockNumber, { isVisible, isAvailable });
-        }
-        
         return isVisible && isAvailable;
       });
-
-    console.log('🎯 FINAL TRANSFORM RESULT:', {
-      originalCount: rawData.length,
-      transformedCount: transformedData.length,
-      filteredOut: rawData.length - transformedData.length,
-      withImages: transformedData.filter(d => d.imageUrl).length,
-      with360: transformedData.filter(d => d.gem360Url).length,
-      withPrices: transformedData.filter(d => d.price > 0).length
-    });
 
     return transformedData;
   }, [processImageUrl, detect360Url, parseNumber]);

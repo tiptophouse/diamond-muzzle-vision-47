@@ -35,18 +35,15 @@ export function LimitedGroupShareButton({
   const { user } = useTelegramWebApp();
 
   const handleShareClick = () => {
-    console.log('🔍 SHARE CLICK DEBUG: Button clicked, isAdmin:', isAdmin, 'quotaData:', quotaData);
     impactOccurred('light');
     
     // Admin users bypass quota checks entirely
     if (isAdmin) {
-      console.log('🔧 SHARE CLICK DEBUG: Admin bypass - opening dialog');
       setShowConfirmDialog(true);
       return;
     }
     
     if (!quotaData || quotaData.sharesRemaining <= 0) {
-      console.error('❌ SHARE CLICK DEBUG: No shares remaining');
       notificationOccurred('error');
       return;
     }
@@ -54,7 +51,6 @@ export function LimitedGroupShareButton({
   };
 
   const handleTestShare = async () => {
-    console.log('🧪 TEST SHARE: Sending test message to personal chat');
     impactOccurred('medium');
     
     try {
@@ -72,12 +68,10 @@ export function LimitedGroupShareButton({
         const telegramUser = window.Telegram.WebApp.initDataUnsafe?.user;
         if (telegramUser) {
           userId = telegramUser.id;
-          console.log('✅ TEST SHARE: Got user from Telegram WebApp:', userId);
         }
       }
       
       if (!userId) {
-        console.error('❌ TEST SHARE: No user ID available');
         toast({
           title: "שגיאה בזיהוי משתמש",
           description: "לא ניתן לזהות את המשתמש. נסה לרענן את הדף.",
@@ -111,7 +105,6 @@ export function LimitedGroupShareButton({
       });
 
       if (error) {
-        console.error('❌ TEST SHARE: Error:', error);
         impactOccurred('heavy');
         toast({
           title: "שגיאה בשליחת הודעת בדיקה",
@@ -121,7 +114,6 @@ export function LimitedGroupShareButton({
         return;
       }
 
-      console.log('✅ TEST SHARE: Test message sent successfully');
       impactOccurred('light');
       toast({
         title: "✅ הודעת בדיקה נשלחה בהצלחה!",
@@ -130,7 +122,6 @@ export function LimitedGroupShareButton({
       
       setShowConfirmDialog(false);
     } catch (error) {
-      console.error('❌ TEST SHARE: Failed:', error);
       impactOccurred('heavy');
       toast({
         title: "שגיאה בשליחת הודעת בדיקה",
@@ -141,8 +132,6 @@ export function LimitedGroupShareButton({
   };
 
   const handleConfirmShare = async () => {
-    console.log('🔍 SHARE DEBUG: Share button clicked for diamond:', diamond.stockNumber);
-    console.log('🔍 SHARE DEBUG: Current quota data:', quotaData);
     impactOccurred('medium');
     
     try {
@@ -153,18 +142,13 @@ export function LimitedGroupShareButton({
       });
 
       // First use the share quota
-      console.log('🔍 SHARE DEBUG: Attempting to use share quota...');
       const success = await useShare(diamond.stockNumber);
-      console.log('🔍 SHARE DEBUG: Share quota result:', success);
       
       if (success) {
-        console.log('🔍 SHARE DEBUG: Quota used successfully, now sharing diamond...');
         // Then share the diamond
         const shared = await shareWithInlineButtons(diamond);
-        console.log('🔍 SHARE DEBUG: Diamond sharing result:', shared);
         
         if (shared) {
-          console.log('✅ SHARE DEBUG: Complete share process successful');
           impactOccurred('light');
           toast({
             title: "✅ יהלום נשלח לקבוצה בהצלחה!",
@@ -172,7 +156,6 @@ export function LimitedGroupShareButton({
           });
           setShowConfirmDialog(false);
         } else {
-          console.error('❌ SHARE DEBUG: Diamond sharing failed');
           impactOccurred('heavy');
           toast({
             title: "שגיאה בשליחת היהלום",
@@ -181,7 +164,6 @@ export function LimitedGroupShareButton({
           });
         }
       } else {
-        console.error('❌ SHARE DEBUG: Share quota usage failed');
         impactOccurred('heavy');
         toast({
           title: "שגיאה בשימוש בחלק",
@@ -190,7 +172,6 @@ export function LimitedGroupShareButton({
         });
       }
     } catch (error) {
-      console.error('❌ SHARE DEBUG: Share process failed:', error);
       impactOccurred('heavy');
       toast({
         title: "שגיאה בשליחת היהלום",

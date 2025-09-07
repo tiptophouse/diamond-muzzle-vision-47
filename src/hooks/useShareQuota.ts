@@ -55,12 +55,7 @@ export function useShareQuota() {
   };
 
   const useShare = async (diamondStockNumber: string): Promise<boolean> => {
-    console.log('🔍 QUOTA DEBUG: useShare called for diamond:', diamondStockNumber);
-    console.log('🔍 QUOTA DEBUG: User ID:', user?.id);
-    console.log('🔍 QUOTA DEBUG: Is admin:', isAdmin);
-    
     if (!user?.id) {
-      console.error('❌ QUOTA DEBUG: No user ID available');
       toast({
         title: "Authentication Required",
         description: "Please log in to share diamonds",
@@ -71,7 +66,6 @@ export function useShareQuota() {
 
     // Admin users bypass quota entirely
     if (isAdmin) {
-      console.log('🔧 QUOTA DEBUG: Admin user bypassing share quota');
       return true;
     }
 
