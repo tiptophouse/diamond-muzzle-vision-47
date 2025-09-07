@@ -7,5 +7,6 @@ export {
   verifyTelegramUser, 
   signInToBackend,
   getBackendAuthToken,
+  clearBackendAuthToken,
   type TelegramVerificationResponse 
 } from './auth';

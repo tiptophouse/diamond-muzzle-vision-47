@@ -1,191 +1,162 @@
+// Inventory Data Hook - FastAPI Integration
 import { useState, useEffect, useCallback } from 'react';
-import { Diamond } from '@/components/inventory/InventoryTable';
-import { fetchInventoryData } from '@/services/inventoryDataService';
+import { fastAPI } from '@/lib/api/fastapi';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
-import { processImageUrl, detect360Url } from '@/utils/diamondImageUtils';
+import { toast } from 'sonner';
+
+export interface Diamond {
+  id: number;
+  diamondId?: number;
+  stock: string;
+  stockNumber: string;
+  shape: string;
+  weight: number;
+  carat: number;
+  color: string;
+  clarity: string;
+  lab?: string;
+  certificate_number?: number;
+  certificateNumber?: string;
+  price_per_carat?: number;
+  price: number;
+  cut?: string;
+  polish?: string;
+  symmetry?: string;
+  fluorescence?: string;
+  picture?: string;
+  certificate_url?: string;
+  certificateUrl?: string;
+  gem360_url?: string;
+  v360_url?: string;
+  status?: string;
+  store_visible: boolean;
+}
 
 export function useInventoryData() {
-  const { user, isLoading: authLoading } = useTelegramAuth();
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
-  const [allDiamonds, setAllDiamonds] = useState<Diamond[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { subscribeToInventoryChanges } = useInventoryDataSync();
+  const { isAuthenticated, user } = useTelegramAuth();
 
-  // Map API shape formats to display formats
-  const normalizeShape = (apiShape: string): string => {
-    if (!apiShape) return 'Round';
-    
-    const shapeMap: Record<string, string> = {
-      'round brilliant': 'Round',
-      'round': 'Round',
-      'br': 'Round', // From CSV - BR = Brilliant Round
-      'princess': 'Princess',
-      'ps': 'Princess', // From CSV
-      'cushion': 'Cushion',
-      'cu': 'Cushion', // From CSV
-      'emerald': 'Emerald',
-      'oval': 'Oval',
-      'pear': 'Pear',
-      'marquise': 'Marquise',
-      'radiant': 'Radiant',
-      'rad': 'Radiant', // From CSV
-      'asscher': 'Asscher',
-      'heart': 'Heart',
-      'hs': 'Heart', // From CSV
-      'tp': 'Trillion', // From CSV - TP = Trillion/Pear variant
-      'bg': 'Baguette' // From CSV
-    };
-    
-    const normalized = apiShape.toLowerCase().trim();
-    return shapeMap[normalized] || apiShape.charAt(0).toUpperCase() + apiShape.slice(1).toLowerCase();
-  };
-
-  // Using enhanced image and 360° URL processing from utils
-
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      console.log('📥 INVENTORY HOOK: Fetching inventory data...');
-      const result = await fetchInventoryData();
-
-      if (result.error) {
-        console.error('📥 INVENTORY HOOK: Fetch failed:', result.error);
-        setError(result.error);
-        setDiamonds([]);
-        setAllDiamonds([]);
-        return;
-      }
-
-      if (result.data && result.data.length > 0) {
-        console.log('📥 INVENTORY HOOK: Processing', result.data.length, 'diamonds');
-        
-        // Transform data to match Diamond interface with enhanced field mapping
-        const transformedDiamonds: Diamond[] = result.data.map(item => {
-          // Enhanced image URL detection with multiple fallbacks
-          let finalImageUrl = undefined;
-          const imageFields = [
-            item.picture,
-            item.image_url,
-            item.imageUrl,
-            item.Image, // CSV field
-            item.image,
-          ];
-          
-          // Process each potential image field
-          for (const imageField of imageFields) {
-            const processedUrl = processImageUrl(imageField);
-            if (processedUrl) {
-              finalImageUrl = processedUrl;
-              break;
-            }
-          }
-
-          return {
-            id: item.id || `${item.stock || item.stock_number || item.VendorStockNumber}-${Date.now()}`,
-            diamondId: item.id || item.diamond_id,
-            stockNumber: item.stock || item.stock_number || item.stockNumber || item.VendorStockNumber || '',
-            shape: normalizeShape(item.shape || item.Shape),
-            carat: parseFloat((item.weight || item.carat || item.Weight || 0).toString()) || 0,
-            color: (item.color || item.Color || 'D').toUpperCase(),
-            clarity: (item.clarity || item.Clarity || 'FL').toUpperCase(),
-            cut: item.cut || item.Cut || item.Make || 'Excellent',
-            polish: item.polish || item.Polish || undefined,
-            symmetry: item.symmetry || item.Symmetry || undefined,
-            price: Number(
-              item.price_per_carat ? 
-                item.price_per_carat * (item.weight || item.carat || item.Weight) : 
-                item.price || item.Price || item.RapnetAskingPrice || item.IndexAskingPrice || 0
-            ) || 0,
-            status: item.status || item.Availability || 'Available',
-            fluorescence: item.fluorescence || item.FluorescenceIntensity || undefined,
-            imageUrl: finalImageUrl,
-            // Enhanced 360° URL detection from multiple fields
-            gem360Url: detect360Url(item.gem360Url) || 
-                       detect360Url(item['Video link']) || 
-                       detect360Url(item.videoLink) ||
-                       detect360Url(item.video_url) ||
-                       detect360Url(item.v360_url) ||
-                       undefined,
-            store_visible: item.store_visible !== false,
-            certificateNumber: item.certificate_number || 
-                             item.certificateNumber || 
-                             item.CertificateID || 
-                             undefined,
-            lab: item.lab || item.Lab || undefined,
-            certificateUrl: item.certificate_url || item.certificateUrl || undefined,
-          };
-        });
-
-        console.log('📥 INVENTORY HOOK: Transformed diamonds with image URLs:', 
-          transformedDiamonds.map(d => ({ 
-            stock: d.stockNumber, 
-            imageUrl: d.imageUrl,
-            gem360Url: d.gem360Url 
-          }))
-        );
-        
-        setDiamonds(transformedDiamonds);
-        setAllDiamonds(transformedDiamonds);
-      } else {
-        console.log('📥 INVENTORY HOOK: No diamonds found');
-        setDiamonds([]);
-        setAllDiamonds([]);
-      }
-    } catch (err) {
-      console.error('📥 INVENTORY HOOK: Unexpected error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load inventory';
-      setError(errorMessage);
+  // Load diamonds from FastAPI
+  const loadDiamonds = useCallback(async () => {
+    if (!isAuthenticated || !user) {
       setDiamonds([]);
-      setAllDiamonds([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const handleRefresh = useCallback(() => {
-    console.log('🔄 INVENTORY HOOK: Manual refresh triggered');
-    fetchData();
-  }, [fetchData]);
-
-  // Initial load when user is available
-  useEffect(() => {
-    if (authLoading) {
-      console.log('⏳ INVENTORY HOOK: Waiting for auth...');
+      setIsLoading(false);
       return;
     }
-    
-    if (user) {
-      console.log('👤 INVENTORY HOOK: User available, fetching data for:', user.id);
-      fetchData();
-    } else {
-      console.log('🚫 INVENTORY HOOK: No user, clearing data');
-      setLoading(false);
-      setDiamonds([]);
-      setAllDiamonds([]);
-      setError("Please log in to view your inventory.");
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const data = await fastAPI.getAllStones();
+      
+      // Transform API data to Diamond interface
+      const transformedDiamonds: Diamond[] = data.map((item: any) => ({
+        id: item.id || item.diamond_id,
+        diamondId: item.id || item.diamond_id,
+        stock: item.stock_number || item.stock || '',
+        stockNumber: item.stock_number || item.stock || '',
+        shape: item.shape || '',
+        weight: parseFloat(item.weight) || 0,
+        carat: parseFloat(item.weight) || 0,
+        color: item.color || '',
+        clarity: item.clarity || '',
+        lab: item.lab,
+        certificate_number: item.certificate_number,
+        certificateNumber: item.certificate_number?.toString(),
+        price_per_carat: item.price_per_carat,
+        price: item.price_per_carat ? item.price_per_carat * parseFloat(item.weight) : 0,
+        cut: item.cut,
+        polish: item.polish,
+        symmetry: item.symmetry,
+        fluorescence: item.fluorescence,
+        picture: item.picture || item.image,
+        certificate_url: item.certificate_url,
+        certificateUrl: item.certificate_url,
+        gem360_url: item.gem360_url,
+        v360_url: item.v360_url,
+        status: item.status || 'Available',
+        store_visible: item.store_visible !== false
+      }));
+
+      setDiamonds(transformedDiamonds);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load diamonds';
+      setError(errorMessage);
+      toast.error('Failed to load inventory');
+    } finally {
+      setIsLoading(false);
     }
-  }, [user, authLoading, fetchData]);
+  }, [isAuthenticated, user]);
 
-  // Listen for inventory changes
+  // Delete diamond with success/failure feedback
+  const deleteDiamond = useCallback(async (diamondId: number): Promise<boolean> => {
+    try {
+      const result = await fastAPI.deleteStone(diamondId);
+      
+      if (result.success) {
+        // Remove from local state immediately for better UX
+        setDiamonds(prev => prev.filter(d => d.id !== diamondId));
+        await loadDiamonds(); // Refresh to ensure consistency
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      return false;
+    }
+  }, [loadDiamonds]);
+
+  // Add diamond with success/failure feedback
+  const addDiamond = useCallback(async (diamondData: Partial<Diamond>): Promise<boolean> => {
+    try {
+      const result = await fastAPI.createDiamond(diamondData);
+      
+      if (result.success) {
+        await loadDiamonds(); // Refresh inventory
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      return false;
+    }
+  }, [loadDiamonds]);
+
+  // Update diamond
+  const updateDiamond = useCallback(async (diamondId: number, diamondData: Partial<Diamond>): Promise<boolean> => {
+    try {
+      const result = await fastAPI.updateDiamond(diamondId, diamondData);
+      
+      if (result.success) {
+        await loadDiamonds(); // Refresh inventory
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      return false;
+    }
+  }, [loadDiamonds]);
+
+  // Load diamonds on mount and auth change
   useEffect(() => {
-    const unsubscribe = subscribeToInventoryChanges(() => {
-      console.log('🔄 INVENTORY HOOK: Inventory change detected, refreshing...');
-      fetchData();
-    });
-
-    return unsubscribe;
-  }, [subscribeToInventoryChanges, fetchData]);
+    loadDiamonds();
+  }, [loadDiamonds]);
 
   return {
     diamonds,
-    allDiamonds,
-    loading: loading || authLoading,
+    allDiamonds: diamonds, // For compatibility
+    loading: isLoading,
     error,
-    handleRefresh,
-    fetchData,
+    handleRefresh: loadDiamonds,
+    fetchData: loadDiamonds,
+    deleteDiamond,
+    addDiamond,
+    updateDiamond,
+    totalDiamonds: diamonds.length,
+    isEmpty: diamonds.length === 0
   };
 }
