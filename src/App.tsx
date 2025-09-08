@@ -11,7 +11,8 @@ import { PublicRoute } from './components/auth/PublicRoute';
 import { AdminGuard } from './components/admin/AdminGuard';
 import Index from './pages/Index';
 // Lazy load heavy components to improve initial loading speed
-import { LazyDashboard, LazyInventory, LazyUpload, LazySettings } from './components/performance/LazyRoute';
+import { LazyInventory, LazyUpload, LazySettings } from './components/performance/LazyRoute';
+import DashboardMaintenance from './pages/DashboardMaintenance';
 import CatalogPage from './pages/CatalogPage';
 import UploadSingleStonePage from './pages/UploadSingleStonePage';
 import InsightsPage from './pages/InsightsPage';
@@ -63,7 +64,7 @@ function App() {
                    {/* All protected routes require JWT authentication - OPTIMIZED: Lazy loaded */}
                    <Route path="/dashboard" element={
                      <AuthenticatedRoute>
-                       <LazyDashboard />
+                       <DashboardMaintenance />
                      </AuthenticatedRoute>
                    } />
                    <Route path="/inventory" element={
