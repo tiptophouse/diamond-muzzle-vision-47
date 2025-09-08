@@ -1,4 +1,6 @@
+
 import { api, apiEndpoints, getCurrentUserId } from "@/lib/api";
+import { fetchMockInventoryData } from "./mockInventoryService";
 
 export interface FetchInventoryResult {
   data?: any[];
@@ -140,19 +142,16 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       }
     }
     
-    // Return mock data for development/testing when no real data is available
-    console.log('🔄 INVENTORY SERVICE: No real data found - providing mock data for testing');
-    const { fetchMockInventoryData } = await import('./mockInventoryService');
-    const mockResult = await fetchMockInventoryData();
+    // Return error instead of mock data - clients should not see mock data
+    console.log('❌ INVENTORY SERVICE: No real data found - returning error instead of mock data');
     
     return {
-      data: mockResult.data,
+      error: 'No inventory data available. Please ensure your FastAPI backend is running and accessible.',
       debugInfo: {
         ...debugInfo,
-        step: 'FALLBACK: Mock data provided for testing',
-        dataSource: 'mock',
-        totalDiamonds: mockResult.data.length,
-        recommendation: 'Check FastAPI backend connectivity to access real data'
+        step: 'ERROR: No real data available',
+        dataSource: 'none',
+        recommendation: 'Check FastAPI backend connectivity'
       }
     };
     
@@ -184,19 +183,14 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       }
     }
     
-    // Provide mock data as final fallback to prevent dashboard crashes
-    console.log('🔄 INVENTORY SERVICE: All sources failed - providing mock data to prevent crash');
-    const { fetchMockInventoryData } = await import('./mockInventoryService');
-    const mockResult = await fetchMockInventoryData();
-    
+    // Return error instead of mock data - clients should not see mock data
     return {
-      data: mockResult.data,
+      error: error instanceof Error ? error.message : String(error),
       debugInfo: {
         ...debugInfo,
-        step: 'EMERGENCY: Mock data provided after all failures',
+        step: 'ERROR: All data sources failed',
         error: error instanceof Error ? error.message : String(error),
-        dataSource: 'mock_emergency',
-        totalDiamonds: mockResult.data.length,
+        dataSource: 'none',
         recommendation: 'Check authentication and FastAPI backend connectivity'
       }
     };
