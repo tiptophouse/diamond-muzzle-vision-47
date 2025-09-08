@@ -95,7 +95,7 @@ export default function SimpleDashboard() {
     if (isAuthenticated && user) {
       fetchDashboardData();
     }
-  }, [isAuthenticated, user?.id]);
+  }, [isAuthenticated]); // Only run when authentication status changes
 
   if (!isAuthenticated || !user) {
     return (
