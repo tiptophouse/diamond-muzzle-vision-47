@@ -6,7 +6,7 @@ import { GroupNotificationCard } from '@/components/notifications/GroupNotificat
 import { BusinessNotificationCard } from '@/components/notifications/BusinessNotificationCard';
 import { IncomingChatbotMessages } from '@/components/notifications/IncomingChatbotMessages';
 import { TelegramNotificationsList } from '@/components/notifications/TelegramNotificationsList';
-import { NotificationHeatMapSection } from '@/components/dashboard/NotificationHeatMapSection';
+import { MobileTelegramHeatMap } from '@/components/heatmap/MobileTelegramHeatMap';
 import { useFastApiNotifications } from '@/hooks/useFastApiNotifications';
 import { useTelegramNotificationBridge } from '@/hooks/useTelegramNotificationBridge';
 import { useDiamondSearch } from '@/hooks/useDiamondSearch';
@@ -109,8 +109,8 @@ const NotificationsPage = () => {
             />
           </TabsContent>
 
-          <TabsContent value="heatmap" className="space-y-6">
-            <NotificationHeatMapSection />
+          <TabsContent value="heatmap" className="p-0">
+            <MobileTelegramHeatMap />
           </TabsContent>
 
           <TabsContent value="outgoing" className="space-y-6">
