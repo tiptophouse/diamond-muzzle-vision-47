@@ -1,12 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TelegramHeatMapGrid } from '@/components/heatmap/TelegramHeatMapGrid';
+import { Advanced3DHeatMap } from '@/components/heatmap/Advanced3DHeatMap';
 import { useNotificationHeatMap } from '@/hooks/useNotificationHeatMap';
-import { TrendingUp, Flame, Eye, BarChart3 } from 'lucide-react';
+import { TrendingUp, Flame, Eye, BarChart3, Box, Grid3X3, Zap } from 'lucide-react';
+import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 
 export function NotificationHeatMapSection() {
+  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
+  const { impactOccurred, selectionChanged } = useTelegramHapticFeedback();
+  
   const { 
     heatMapData, 
     isLoading, 
@@ -18,6 +23,18 @@ export function NotificationHeatMapSection() {
   const stats = getHeatMapStats();
   const hotDiamonds = getHotDiamonds();
   const trendingDiamonds = getTrendingDiamonds(5);
+
+  const handleViewModeToggle = () => {
+    const newMode = viewMode === '2d' ? '3d' : '2d';
+    setViewMode(newMode);
+    
+    // Telegram haptic feedback
+    if (newMode === '3d') {
+      impactOccurred('heavy'); // Strong feedback for 3D mode
+    } else {
+      selectionChanged(); // Light feedback for 2D mode
+    }
+  };
 
   if (isLoading) {
     return (
@@ -114,25 +131,87 @@ export function NotificationHeatMapSection() {
       {/* Main Heat Map */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Flame className="h-5 w-5 text-orange-500" />
-            Diamond Interest Heat Map
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Flame className="h-5 w-5 text-orange-500" />
+              <CardTitle>Diamond Interest Heat Map</CardTitle>
+              {viewMode === '3d' && (
+                <Badge variant="secondary" className="ml-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                  <Zap className="h-3 w-3 mr-1" />
+                  Level 2000
+                </Badge>
+              )}
+            </div>
+            
+            {/* 2D/3D Toggle */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === '2d' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  setViewMode('2d');
+                  selectionChanged();
+                }}
+                className="h-8"
+              >
+                <Grid3X3 className="h-4 w-4 mr-1" />
+                2D
+              </Button>
+              <Button
+                variant={viewMode === '3d' ? 'default' : 'outline'}
+                size="sm"
+                onClick={handleViewModeToggle}
+                className="h-8 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              >
+                <Box className="h-4 w-4 mr-1" />
+                3D
+              </Button>
+            </div>
+          </div>
           <CardDescription>
-            Visual representation of customer interest in your diamonds. Red = High interest, Orange = Medium, Gray = Low
+            {viewMode === '2d' 
+              ? 'Visual representation of customer interest in your diamonds. Red = High interest, Orange = Medium, Gray = Low'
+              : 'Advanced 3D visualization with real-time animations, interactive diamond models, and immersive depth perception'
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
           {heatMapData.length > 0 ? (
-            <TelegramHeatMapGrid 
-              diamonds={heatMapData} 
-              onDiamondSelect={(diamond) => console.log('Selected diamond:', diamond)}
-            />
+            viewMode === '2d' ? (
+              <TelegramHeatMapGrid 
+                diamonds={heatMapData} 
+                onDiamondSelect={(diamond) => console.log('Selected diamond:', diamond)}
+              />
+            ) : (
+              <Advanced3DHeatMap
+                diamonds={heatMapData}
+                onDiamondSelect={(diamond) => {
+                  console.log('Selected 3D diamond:', diamond);
+                  impactOccurred('medium');
+                }}
+                height={500}
+                interactive={true}
+              />
+            )
           ) : (
             <div className="text-center py-8 text-muted-foreground">
-              <Flame className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p>No heat map data available yet.</p>
+              <div className="flex justify-center mb-4">
+                {viewMode === '2d' ? (
+                  <Flame className="h-12 w-12 opacity-20" />
+                ) : (
+                  <div className="relative">
+                    <Box className="h-12 w-12 opacity-20" />
+                    <Zap className="h-6 w-6 absolute -top-1 -right-1 text-purple-500 opacity-60" />
+                  </div>
+                )}
+              </div>
+              <p className="font-medium">No heat map data available yet.</p>
               <p className="text-sm">Heat map will appear as customers interact with your diamonds.</p>
+              {viewMode === '3d' && (
+                <p className="text-xs text-purple-400 mt-2">
+                  ✨ 3D mode features floating diamonds, particle effects, and immersive interactions
+                </p>
+              )}
             </div>
           )}
         </CardContent>
