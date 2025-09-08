@@ -23,10 +23,24 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   try {
     // First, try to get data from FastAPI backend using get_all_stones
     console.log('🔍 INVENTORY SERVICE: Attempting FastAPI connection...');
+    
+    // Add timeout and error boundary around API call
     const endpoint = apiEndpoints.getAllStones(userId);
     console.log('🔍 INVENTORY SERVICE: Using endpoint:', endpoint);
     
-    const result = await api.get(endpoint);
+    // Wrap API call with comprehensive error handling
+    let result;
+    try {
+      result = await Promise.race([
+        api.get(endpoint),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('API timeout')), 10000)
+        )
+      ]) as any;
+    } catch (apiError) {
+      console.error('❌ INVENTORY SERVICE: FastAPI call failed:', apiError);
+      throw apiError;
+    }
     
     if (result.data && !result.error) {
       let dataArray: any[] = [];

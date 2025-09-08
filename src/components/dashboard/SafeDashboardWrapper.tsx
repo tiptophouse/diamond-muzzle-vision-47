@@ -1,6 +1,6 @@
 import React from 'react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { DataDrivenDashboard } from './DataDrivenDashboard';
+import { CrashProtectedDashboard } from './CrashProtectedDashboard';
 import { Diamond } from '@/components/inventory/InventoryTable';
 
 interface SafeDashboardWrapperProps {
@@ -10,12 +10,16 @@ interface SafeDashboardWrapperProps {
 }
 
 export function SafeDashboardWrapper({ allDiamonds, loading, fetchData }: SafeDashboardWrapperProps) {
+  console.log('🔒 SafeDashboardWrapper: Initializing with crash protection');
+  console.log('🔒 Received diamonds:', allDiamonds?.length || 0);
+  console.log('🔒 Loading state:', loading);
+  
   return (
     <ErrorBoundary>
-      <DataDrivenDashboard 
-        allDiamonds={allDiamonds} 
-        loading={loading} 
-        fetchData={fetchData} 
+      <CrashProtectedDashboard 
+        allDiamonds={allDiamonds || []} 
+        loading={loading || false} 
+        fetchData={fetchData || (() => {})} 
       />
     </ErrorBoundary>
   );

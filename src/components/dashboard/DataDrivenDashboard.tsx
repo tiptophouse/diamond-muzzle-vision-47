@@ -9,7 +9,7 @@ import { NotificationHeatMapSection } from '@/components/dashboard/NotificationH
 import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
 import { useEnhancedTelegramWebApp } from '@/hooks/useEnhancedTelegramWebApp';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { useNavigate } from 'react-router-dom';
 import { Gem, Users, TrendingUp, Star, Plus, Upload } from 'lucide-react';
@@ -29,44 +29,61 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
   const { selectionChanged, impactOccurred } = useTelegramHapticFeedback();
   const navigate = useNavigate();
 
-  console.log('🔍 DataDrivenDashboard: Processing data for user:', user?.id, 'Diamonds:', allDiamonds.length);
+  console.log('🔍 DataDrivenDashboard: Processing data for user:', user?.id, 'Diamonds:', allDiamonds?.length || 0);
 
-  // Set Telegram WebApp theme
+  // Set Telegram WebApp theme with error handling
   useEffect(() => {
-    if (webApp) {
-      document.documentElement.style.setProperty('--tg-theme-bg-color', webApp.backgroundColor);
-      document.documentElement.style.setProperty('--tg-theme-text-color', webApp.themeParams?.text_color || '#000000');
-      document.documentElement.style.setProperty('--tg-theme-button-color', webApp.themeParams?.button_color || '#0088cc');
+    try {
+      if (webApp) {
+        document.documentElement.style.setProperty('--tg-theme-bg-color', webApp.backgroundColor || '#f8fafc');
+        document.documentElement.style.setProperty('--tg-theme-text-color', webApp.themeParams?.text_color || '#000000');
+        document.documentElement.style.setProperty('--tg-theme-button-color', webApp.themeParams?.button_color || '#0088cc');
+      }
+    } catch (error) {
+      console.error('❌ Dashboard: WebApp theme setup failed:', error);
     }
   }, [webApp]);
 
-  // Listen for inventory changes and refresh dashboard data immediately
+  // Listen for inventory changes with error handling
   useEffect(() => {
-    const unsubscribe = subscribeToInventoryChanges(() => {
-      console.log('🔄 Dashboard: Inventory changed detected, refreshing dashboard data...');
-      fetchData();
-    });
+    try {
+      const unsubscribe = subscribeToInventoryChanges(() => {
+        console.log('🔄 Dashboard: Inventory changed detected, refreshing dashboard data...');
+        try {
+          fetchData();
+        } catch (error) {
+          console.error('❌ Dashboard: Failed to refresh data:', error);
+        }
+      });
 
-    return unsubscribe;
+      return unsubscribe;
+    } catch (error) {
+      console.error('❌ Dashboard: Failed to subscribe to inventory changes:', error);
+      return () => {}; // Return noop function
+    }
   }, [subscribeToInventoryChanges, fetchData]);
 
-  // Process the data only if we have valid diamonds
-  const validDiamonds = allDiamonds.filter(validateDiamondData);
-  
-  const { stats, inventoryByShape, salesByCategory } = validDiamonds.length > 0 
-    ? processDiamondDataForDashboard(
-        validDiamonds.map(d => ({
-          id: parseInt(d.id || '0'),
-          shape: d.shape,
-          color: d.color,
-          clarity: d.clarity,
-          weight: d.carat,
-          price_per_carat: safeDivide(d.price, d.carat),
-          owners: [user?.id || 0],
-        })),
-        user?.id
-      )
-    : { 
+  // Safe data processing with comprehensive error handling
+  const { validDiamonds, processedData } = useMemo(() => {
+    try {
+      // Ensure allDiamonds is an array
+      const diamondsArray = Array.isArray(allDiamonds) ? allDiamonds : [];
+      console.log('🔍 Dashboard: Processing', diamondsArray.length, 'diamonds');
+      
+      // Filter valid diamonds with safe validation
+      const valid = diamondsArray.filter(diamond => {
+        try {
+          return validateDiamondData(diamond);
+        } catch (error) {
+          console.warn('❌ Dashboard: Invalid diamond data:', diamond, error);
+          return false;
+        }
+      });
+      
+      console.log('🔍 Dashboard: Found', valid.length, 'valid diamonds');
+
+      // Process data with error boundary
+      let processed = { 
         stats: { 
           totalDiamonds: 0, 
           matchedPairs: 0, 
@@ -77,56 +94,151 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
         salesByCategory: [] 
       };
 
-  // Calculate actual metrics from real data with safe math operations
-  const calculateTotalValue = () => {
-    try {
-      const validPrices = validDiamonds
-        .map(d => d.price)
-        .filter(price => isFinite(price) && price > 0 && price < 500000);
-      
-      const total = safeSum(validPrices);
-      console.log('💰 Total value calculated:', total, 'from', validPrices.length, 'valid diamonds');
-      return total;
-    } catch (error) {
-      console.error('Error calculating total value:', error);
-      return 0;
-    }
-  };
+      if (valid.length > 0 && user?.id) {
+        try {
+          processed = processDiamondDataForDashboard(
+            valid.map(d => {
+              try {
+                return {
+                  id: parseInt(String(d.id || '0')) || 0,
+                  shape: String(d.shape || 'Round'),
+                  color: String(d.color || 'D'),
+                  clarity: String(d.clarity || 'FL'),
+                  weight: Number(d.carat) || 0,
+                  price_per_carat: safeDivide(Number(d.price) || 0, Number(d.carat) || 1),
+                  owners: [user.id],
+                };
+              } catch (error) {
+                console.error('❌ Dashboard: Failed to map diamond:', d, error);
+                return {
+                  id: 0,
+                  shape: 'Round',
+                  color: 'D', 
+                  clarity: 'FL',
+                  weight: 0,
+                  price_per_carat: 0,
+                  owners: [user.id],
+                };
+              }
+            }),
+            user.id
+          );
+        } catch (error) {
+          console.error('❌ Dashboard: Data processing failed:', error);
+          // Keep default processed data
+        }
+      }
 
-  const calculateAvgPricePerCarat = () => {
-    try {
-      const validDiamondsForAvg = validDiamonds.filter(d => 
-        isFinite(d.price) && d.price > 0 && d.price < 500000 && 
-        isFinite(d.carat) && d.carat > 0 && d.carat < 20
-      );
-      
-      if (validDiamondsForAvg.length === 0) return 0;
-      
-      const totalValue = safeSum(validDiamondsForAvg.map(d => d.price));
-      const totalCarats = safeSum(validDiamondsForAvg.map(d => d.carat));
-      
-      const avgPricePerCarat = safeRound(safeDivide(totalValue, totalCarats));
-      console.log('💎 Avg price per carat calculated:', avgPricePerCarat, 'from', validDiamondsForAvg.length, 'valid diamonds');
-      
-      return avgPricePerCarat;
+      return { validDiamonds: valid, processedData: processed };
     } catch (error) {
-      console.error('Error calculating avg price per carat:', error);
-      return 0;
+      console.error('❌ Dashboard: Complete data processing failed:', error);
+      return { 
+        validDiamonds: [], 
+        processedData: { 
+          stats: { totalDiamonds: 0, matchedPairs: 0, totalLeads: 0, activeSubscriptions: 0 }, 
+          inventoryByShape: [], 
+          salesByCategory: [] 
+        } 
+      };
     }
-  };
+  }, [allDiamonds, user?.id]);
 
-  const totalValue = calculateTotalValue();
-  const availableDiamonds = validDiamonds.filter(d => d.status === 'Available').length;
-  const avgPricePerCarat = calculateAvgPricePerCarat();
+  const { stats, inventoryByShape, salesByCategory } = processedData;
+
+  // Calculate metrics with bulletproof error handling
+  const { totalValue, availableDiamonds, avgPricePerCarat } = useMemo(() => {
+    try {
+      // Calculate total value safely
+      let calculatedTotalValue = 0;
+      try {
+        const validPrices = validDiamonds
+          .map(d => {
+            const price = Number(d?.price) || 0;
+            return (isFinite(price) && price > 0 && price < 500000) ? price : 0;
+          })
+          .filter(price => price > 0);
+        
+        calculatedTotalValue = safeSum(validPrices);
+        console.log('💰 Total value calculated:', calculatedTotalValue, 'from', validPrices.length, 'valid diamonds');
+      } catch (error) {
+        console.error('❌ Dashboard: Total value calculation failed:', error);
+        calculatedTotalValue = 0;
+      }
+
+      // Calculate available diamonds safely
+      let calculatedAvailable = 0;
+      try {
+        calculatedAvailable = validDiamonds.filter(d => {
+          try {
+            return String(d?.status || '').toLowerCase() === 'available';
+          } catch {
+            return false;
+          }
+        }).length;
+      } catch (error) {
+        console.error('❌ Dashboard: Available diamonds calculation failed:', error);
+        calculatedAvailable = 0;
+      }
+
+      // Calculate average price per carat safely
+      let calculatedAvgPrice = 0;
+      try {
+        const validDiamondsForAvg = validDiamonds.filter(d => {
+          try {
+            const price = Number(d?.price) || 0;
+            const carat = Number(d?.carat) || 0;
+            return (
+              isFinite(price) && price > 0 && price < 500000 && 
+              isFinite(carat) && carat > 0 && carat < 20
+            );
+          } catch {
+            return false;
+          }
+        });
+        
+        if (validDiamondsForAvg.length > 0) {
+          const totalValue = safeSum(validDiamondsForAvg.map(d => Number(d?.price) || 0));
+          const totalCarats = safeSum(validDiamondsForAvg.map(d => Number(d?.carat) || 0));
+          
+          calculatedAvgPrice = safeRound(safeDivide(totalValue, totalCarats));
+          console.log('💎 Avg price per carat calculated:', calculatedAvgPrice, 'from', validDiamondsForAvg.length, 'valid diamonds');
+        }
+      } catch (error) {
+        console.error('❌ Dashboard: Average price calculation failed:', error);
+        calculatedAvgPrice = 0;
+      }
+
+      return {
+        totalValue: calculatedTotalValue,
+        availableDiamonds: calculatedAvailable,
+        avgPricePerCarat: calculatedAvgPrice
+      };
+    } catch (error) {
+      console.error('❌ Dashboard: All metrics calculations failed:', error);
+      return { totalValue: 0, availableDiamonds: 0, avgPricePerCarat: 0 };
+    }
+  }, [validDiamonds]);
 
   const handleNavigate = (path: string) => {
-    selectionChanged();
-    navigate(path);
+    try {
+      selectionChanged();
+      navigate(path);
+    } catch (error) {
+      console.error('❌ Dashboard: Navigation failed:', error);
+      // Fallback navigation
+      window.location.href = path;
+    }
   };
 
   const handleButtonClick = (path: string) => {
-    impactOccurred('medium');
-    navigate(path);
+    try {
+      impactOccurred('medium');
+      navigate(path);
+    } catch (error) {
+      console.error('❌ Dashboard: Button click navigation failed:', error);
+      // Fallback navigation
+      window.location.href = path;
+    }
   };
 
   // Show empty state when no valid diamonds
