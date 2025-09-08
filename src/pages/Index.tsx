@@ -99,11 +99,11 @@ const Index = () => {
     return <Navigate to="/admin" replace />;
   }
 
-  // For regular users, redirect to inventory instead of dashboard (dashboard is crashing)
+  // For regular users, redirect to dashboard to see their diamond data
   if (isAuthenticated && user) {
-    console.log('✅ Regular user detected - redirecting to inventory');
+    console.log('✅ Regular user detected - redirecting to dashboard');
     redirectHandledRef.current = true;
-    return <Navigate to="/inventory" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   // Fallback for unauthenticated users
