@@ -122,7 +122,8 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
         });
         console.log('✅ AUTH: Set Supabase session context for RLS');
       } catch (error) {
-        console.warn('⚠️ AUTH: Failed to set session context:', error);
+        console.warn('⚠️ AUTH: Failed to set session context, continuing without it:', error);
+        // Don't throw - this is not critical for basic functionality
       }
       
       // Cache complete auth state
