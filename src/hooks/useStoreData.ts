@@ -244,8 +244,20 @@ export function useStoreData() {
   const fetchStoreData = useCallback(async (useCache = true) => {
     try {
       setError(null);
+      
+      console.log('🔍 STORE DATA: Starting fetch process');
+      
+      // Wait for user authentication before making API calls
+      if (!user) {
+        console.log('⏳ STORE DATA: Waiting for user authentication');
+        setError('Please log in to view your diamonds');
+        setDiamonds([]);
+        setLoading(false);
+        return;
+      }
 
       if (useCache && dataCache && (Date.now() - dataCache.timestamp) < CACHE_DURATION) {
+        console.log('✅ STORE DATA: Using cached data');
         setDiamonds(dataCache.data);
         setLoading(false);
         return;
@@ -287,7 +299,7 @@ export function useStoreData() {
     } finally {
       setLoading(false);
     }
-  }, [transformData]);
+  }, [transformData, user]);
 
   // Telegram memory optimization
   useEffect(() => {
@@ -306,28 +318,37 @@ export function useStoreData() {
 
   useEffect(() => {
     if (authLoading) {
+      console.log('⏳ STORE DATA: Auth loading, waiting...');
       return;
     }
+    
     if (user) {
+      console.log('✅ STORE DATA: User authenticated, fetching data');
       fetchStoreData();
     } else {
+      console.log('❌ STORE DATA: No user, clearing data');
       setLoading(false);
       setDiamonds([]);
-      setError("Please log in to view your store items.");
+      setError("Please log in to view your diamonds");
     }
   }, [user, authLoading, fetchStoreData]);
 
   useEffect(() => {
-    return subscribeToInventoryChanges(() => {
+    const unsubscribe = subscribeToInventoryChanges(() => {
+      console.log('🔄 STORE DATA: Inventory change detected');
       if (user && !authLoading) {
-        dataCache = null;
+        console.log('🔄 STORE DATA: Refreshing data after inventory change');
+        dataCache = null; // Clear cache to force fresh fetch
         fetchStoreData(false);
       }
     });
+
+    return unsubscribe;
   }, [user, authLoading, subscribeToInventoryChanges, fetchStoreData]);
 
   const refetch = useCallback(() => {
-    dataCache = null;
+    console.log('🔄 STORE DATA: Manual refetch requested');
+    dataCache = null; // Clear cache to force fresh fetch
     return fetchStoreData(false);
   }, [fetchStoreData]);
 
