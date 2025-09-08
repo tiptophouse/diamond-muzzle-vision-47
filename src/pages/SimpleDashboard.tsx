@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { api } from '@/lib/api/client';
 
 interface DashboardData {
   totalDiamonds: number;
@@ -37,20 +38,11 @@ export default function SimpleDashboard() {
       
       console.log('🔍 Simple Dashboard: Fetching data for user:', user.id);
       
-      // Call the FastAPI endpoint directly
-      const response = await fetch(`/api/v1/get_all_stones?user_id=${user.id}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const diamonds = await response.json();
-      console.log('✅ Simple Dashboard: Received', diamonds?.length || 0, 'diamonds');
+      // Use the proper API client with authentication
+      const response = await api.get<any[]>(`/api/v1/get_all_stones?user_id=${user.id}`);
+      
+      const diamonds = response.data || [];
+      console.log('✅ Simple Dashboard: Received', diamonds.length, 'diamonds');
 
       if (Array.isArray(diamonds)) {
         const totalValue = diamonds.reduce((sum, diamond) => {
@@ -93,8 +85,10 @@ export default function SimpleDashboard() {
   };
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [user, isAuthenticated]);
+    if (isAuthenticated && user) {
+      fetchDashboardData();
+    }
+  }, [isAuthenticated, user?.id]);
 
   if (!isAuthenticated || !user) {
     return (
