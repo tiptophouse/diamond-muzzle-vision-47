@@ -1,7 +1,6 @@
-
-import React, { createContext, useContext, ReactNode } from 'react';
-import { useOptimizedTelegramAuth } from '@/hooks/useOptimizedTelegramAuth';
-import { useUserDataPersistence } from '@/hooks/useUserDataPersistence';
+// Compatibility Bridge for TelegramAuth Context
+import React, { createContext, useContext, ReactNode, useEffect, useState } from 'react';
+import { useTelegramSDK } from '@/hooks/useTelegramSDK';
 
 interface TelegramUser {
   id: number;
@@ -26,26 +25,53 @@ interface TelegramAuthContextType {
 const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(undefined);
 
 export function TelegramAuthProvider({ children }: { children: ReactNode }) {
-  const authState = useOptimizedTelegramAuth();
-  
-  console.log('🔍 TelegramAuthProvider - Optimized auth state:', { 
-    user: authState.user, 
-    isAuthenticated: authState.isAuthenticated,
-    isTelegramEnvironment: authState.isTelegramEnvironment,
-    loadTime: authState.loadTime
+  const [contextValue, setContextValue] = useState<TelegramAuthContextType>({
+    user: null,
+    isAuthenticated: false,
+    isLoading: true,
+    error: null,
+    isTelegramEnvironment: false,
+    accessDeniedReason: null
   });
-  
-  // Automatically persist user data when authenticated
-  useUserDataPersistence(authState.user, authState.isTelegramEnvironment);
+
+  // Use the optimized SDK
+  const { 
+    user, 
+    isReady, 
+    isTelegramEnvironment, 
+    isInitializing,
+    error 
+  } = useTelegramSDK({ autoInit: true });
+
+  // Update context value when SDK state changes
+  useEffect(() => {
+    const newContextValue: TelegramAuthContextType = {
+      user,
+      isAuthenticated: isReady && isTelegramEnvironment && !!user,
+      isLoading: isInitializing || !isReady,
+      error: error || null,
+      isTelegramEnvironment,
+      accessDeniedReason: error || null
+    };
+
+    setContextValue(newContextValue);
+
+    console.log('🔍 TelegramAuthProvider (bridge) - updated state:', { 
+      user: newContextValue.user?.first_name, 
+      isAuthenticated: newContextValue.isAuthenticated,
+      isTelegramEnvironment: newContextValue.isTelegramEnvironment,
+      isLoading: newContextValue.isLoading
+    });
+  }, [user, isReady, isTelegramEnvironment, isInitializing, error]);
 
   return (
-    <TelegramAuthContext.Provider value={authState}>
+    <TelegramAuthContext.Provider value={contextValue}>
       {children}
     </TelegramAuthContext.Provider>
   );
 }
 
-export function useTelegramAuth() {
+export function useTelegramAuth(): TelegramAuthContextType {
   const context = useContext(TelegramAuthContext);
   if (context === undefined) {
     throw new Error('useTelegramAuth must be used within a TelegramAuthProvider');

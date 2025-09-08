@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from 'react';
 import { TelegramUser } from '@/types/telegram';
 import { signInToBackend, clearBackendAuthToken } from '@/lib/api/auth';
 import { setCurrentUserId } from '@/lib/api/config';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface AuthState {
@@ -189,17 +188,6 @@ export function useStrictTelegramAuth(): AuthState {
 
       // Step 7: SUCCESS - JWT validated, user authenticated
       setCurrentUserId(authenticatedUser.id);
-      
-      // Set telegram_id in Supabase session context for RLS
-      try {
-        await supabase.rpc('set_session_context', {
-          key: 'app.current_user_id', 
-          value: authenticatedUser.id.toString()
-        });
-        console.log('✅ AUTH: Set Supabase session context for RLS');
-      } catch (error) {
-        console.warn('⚠️ AUTH: Failed to set session context:', error);
-      }
       
       console.log('✅ JWT-ONLY AUTH: Complete authentication success - JWT is valid, user authorized');
       console.log('👤 JWT-ONLY AUTH: User:', authenticatedUser.first_name, 'ID:', authenticatedUser.id);

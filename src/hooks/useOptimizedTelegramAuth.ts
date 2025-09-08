@@ -3,7 +3,6 @@ import { TelegramUser } from '@/types/telegram';
 import { signInToBackend, clearBackendAuthToken } from '@/lib/api/auth';
 import { setCurrentUserId } from '@/lib/api/config';
 import { tokenManager } from '@/lib/api/tokenManager';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface OptimizedAuthState {
@@ -113,18 +112,6 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
 
       tokenManager.setToken(jwtToken, userData.id);
       setCurrentUserId(userData.id);
-      
-      // Set telegram_id in Supabase session context for RLS
-      try {
-        await supabase.rpc('set_session_context', {
-          key: 'app.current_user_id',
-          value: userData.id.toString()
-        });
-        console.log('✅ AUTH: Set Supabase session context for RLS');
-      } catch (error) {
-        console.warn('⚠️ AUTH: Failed to set session context, continuing without it:', error);
-        // Don't throw - this is not critical for basic functionality
-      }
       
       // Cache complete auth state
       tokenManager.cacheAuthState(userData, jwtToken);
