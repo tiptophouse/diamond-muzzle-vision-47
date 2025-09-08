@@ -14,6 +14,7 @@ import { Diamond } from '@/components/inventory/InventoryTable';
 import { useNavigate } from 'react-router-dom';
 import { Gem, Users, TrendingUp, Star, Plus, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { safeDivide, safeSum, safeRound, validateDiamondData } from '@/utils/safeMath';
 
 interface DataDrivenDashboardProps {
   allDiamonds: Diamond[];
@@ -49,16 +50,18 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
     return unsubscribe;
   }, [subscribeToInventoryChanges, fetchData]);
 
-  // Process the data only if we have diamonds
-  const { stats, inventoryByShape, salesByCategory } = allDiamonds.length > 0 
+  // Process the data only if we have valid diamonds
+  const validDiamonds = allDiamonds.filter(validateDiamondData);
+  
+  const { stats, inventoryByShape, salesByCategory } = validDiamonds.length > 0 
     ? processDiamondDataForDashboard(
-        allDiamonds.map(d => ({
+        validDiamonds.map(d => ({
           id: parseInt(d.id || '0'),
           shape: d.shape,
           color: d.color,
           clarity: d.clarity,
           weight: d.carat,
-          price_per_carat: d.price / d.carat,
+          price_per_carat: safeDivide(d.price, d.carat),
           owners: [user?.id || 0],
         })),
         user?.id
@@ -74,38 +77,46 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
         salesByCategory: [] 
       };
 
-  // Calculate actual metrics from real data with realistic bounds
+  // Calculate actual metrics from real data with safe math operations
   const calculateTotalValue = () => {
-    const total = allDiamonds.reduce((sum, diamond) => {
-      const price = diamond.price;
-      if (price > 0 && price < 500000) {
-        return sum + price;
-      }
-      return sum;
-    }, 0);
-    
-    console.log('💰 Total value calculated:', total);
-    return total;
+    try {
+      const validPrices = validDiamonds
+        .map(d => d.price)
+        .filter(price => isFinite(price) && price > 0 && price < 500000);
+      
+      const total = safeSum(validPrices);
+      console.log('💰 Total value calculated:', total, 'from', validPrices.length, 'valid diamonds');
+      return total;
+    } catch (error) {
+      console.error('Error calculating total value:', error);
+      return 0;
+    }
   };
 
   const calculateAvgPricePerCarat = () => {
-    const validDiamonds = allDiamonds.filter(d => 
-      d.price > 0 && d.price < 500000 && d.carat > 0 && d.carat < 20
-    );
-    
-    if (validDiamonds.length === 0) return 0;
-    
-    const totalValue = validDiamonds.reduce((sum, d) => sum + d.price, 0);
-    const totalCarats = validDiamonds.reduce((sum, d) => sum + d.carat, 0);
-    
-    const avgPricePerCarat = Math.round(totalValue / totalCarats);
-    console.log('💎 Avg price per carat calculated:', avgPricePerCarat, 'from', validDiamonds.length, 'valid diamonds');
-    
-    return avgPricePerCarat;
+    try {
+      const validDiamondsForAvg = validDiamonds.filter(d => 
+        isFinite(d.price) && d.price > 0 && d.price < 500000 && 
+        isFinite(d.carat) && d.carat > 0 && d.carat < 20
+      );
+      
+      if (validDiamondsForAvg.length === 0) return 0;
+      
+      const totalValue = safeSum(validDiamondsForAvg.map(d => d.price));
+      const totalCarats = safeSum(validDiamondsForAvg.map(d => d.carat));
+      
+      const avgPricePerCarat = safeRound(safeDivide(totalValue, totalCarats));
+      console.log('💎 Avg price per carat calculated:', avgPricePerCarat, 'from', validDiamondsForAvg.length, 'valid diamonds');
+      
+      return avgPricePerCarat;
+    } catch (error) {
+      console.error('Error calculating avg price per carat:', error);
+      return 0;
+    }
   };
 
   const totalValue = calculateTotalValue();
-  const availableDiamonds = allDiamonds.filter(d => d.status === 'Available').length;
+  const availableDiamonds = validDiamonds.filter(d => d.status === 'Available').length;
   const avgPricePerCarat = calculateAvgPricePerCarat();
 
   const handleNavigate = (path: string) => {
@@ -118,8 +129,8 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
     navigate(path);
   };
 
-  // Show empty state when no diamonds
-  if (!loading && allDiamonds.length === 0) {
+  // Show empty state when no valid diamonds
+  if (!loading && validDiamonds.length === 0) {
     return (
       <div className="min-h-screen bg-background">
         {/* Mobile Header */}
@@ -180,7 +191,7 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
           <div>
             <h1 className="text-lg font-bold text-foreground">Portfolio</h1>
             <p className="text-xs text-muted-foreground">
-              {allDiamonds.length} diamonds • ${Math.round(totalValue / 1000)}K
+              {validDiamonds.length} diamonds • ${safeRound(safeDivide(totalValue, 1000))}K
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -198,7 +209,7 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
         <div className="grid grid-cols-2 gap-3">
           <StatCard
             title="Inventory"
-            value={allDiamonds.length}
+            value={validDiamonds.length}
             icon={Gem}
             loading={loading}
             description="Total stones"
@@ -207,7 +218,7 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
           />
           <StatCard
             title="Value"
-            value={Math.round(totalValue / 1000)}
+            value={safeRound(safeDivide(totalValue, 1000))}
             prefix="$"
             suffix="K"
             icon={Star}
@@ -252,11 +263,11 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
           <div className="p-4">
             <InventoryChart
               data={inventoryByShape.length > 0 ? inventoryByShape : [
-                { name: 'Round', value: allDiamonds.filter(d => d.shape === 'Round').length },
-                { name: 'Princess', value: allDiamonds.filter(d => d.shape === 'Princess').length },
-                { name: 'Emerald', value: allDiamonds.filter(d => d.shape === 'Emerald').length },
-                { name: 'Oval', value: allDiamonds.filter(d => d.shape === 'Oval').length },
-                { name: 'Other', value: allDiamonds.filter(d => !['Round', 'Princess', 'Emerald', 'Oval'].includes(d.shape)).length }
+                { name: 'Round', value: validDiamonds.filter(d => d.shape === 'Round').length },
+                { name: 'Princess', value: validDiamonds.filter(d => d.shape === 'Princess').length },
+                { name: 'Emerald', value: validDiamonds.filter(d => d.shape === 'Emerald').length },
+                { name: 'Oval', value: validDiamonds.filter(d => d.shape === 'Oval').length },
+                { name: 'Other', value: validDiamonds.filter(d => !['Round', 'Princess', 'Emerald', 'Oval'].includes(d.shape)).length }
               ].filter(item => item.value > 0)}
               title=""
               loading={loading}

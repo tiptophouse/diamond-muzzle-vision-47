@@ -1,7 +1,7 @@
 
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { DataDrivenDashboard } from '@/components/dashboard/DataDrivenDashboard';
+import { SafeDashboardWrapper } from '@/components/dashboard/SafeDashboardWrapper';
 import { DashboardLoading } from '@/components/dashboard/DashboardLoading';
 import { SecurityMonitor } from '@/components/auth/SecurityMonitor';
 import { useSearchParams } from 'react-router-dom';
@@ -80,7 +80,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <DataDrivenDashboard 
+      <SafeDashboardWrapper 
         allDiamonds={allDiamonds} 
         loading={loading}
         fetchData={fetchData} 
