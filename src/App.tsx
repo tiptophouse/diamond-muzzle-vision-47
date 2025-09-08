@@ -5,6 +5,7 @@ import { TelegramAuthProvider } from './context/TelegramAuthContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
 import { SecureTelegramLayout } from './components/layout/SecureTelegramLayout';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthenticatedRoute } from './components/auth/AuthenticatedRoute';
 import { PublicRoute } from './components/auth/PublicRoute';
 import { AdminGuard } from './components/admin/AdminGuard';
@@ -43,12 +44,13 @@ function App() {
   });
   
   return (
-    <QueryClientProvider client={queryClient}>
-      <TelegramAuthProvider>
-        <Router>
-          <TutorialProvider>
-            <InteractiveWizardProvider>
-              <SecureTelegramLayout>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TelegramAuthProvider>
+          <Router>
+            <TutorialProvider>
+              <InteractiveWizardProvider>
+                <SecureTelegramLayout>
                 <Routes>
                   {/* Public route - redirects to dashboard if authenticated */}
                   <Route path="/" element={
@@ -175,12 +177,13 @@ function App() {
                   } />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-              </SecureTelegramLayout>
-            </InteractiveWizardProvider>
-          </TutorialProvider>
-        </Router>
-      </TelegramAuthProvider>
-    </QueryClientProvider>
+                </SecureTelegramLayout>
+              </InteractiveWizardProvider>
+            </TutorialProvider>
+          </Router>
+        </TelegramAuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
