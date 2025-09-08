@@ -90,6 +90,20 @@ export async function signInToBackend(initData: string): Promise<string | null> 
             setCurrentUserId(user.id);
             tokenManager.setToken(token, user.id);
             console.log('✅ MAIN AUTH: User ID extracted and token cached:', user.id);
+            
+            // CRITICAL: Set session context for RLS policies
+            // This ensures the database can identify the current user
+            try {
+              // Call Supabase to set the session context with the telegram ID
+              const { supabase } = await import('@/integrations/supabase/client');
+              await supabase.rpc('set_session_context', {
+                key: 'app.current_user_id',
+                value: user.id.toString()
+              });
+              console.log('✅ MAIN AUTH: Session context set for user:', user.id);
+            } catch (contextError) {
+              console.error('⚠️ MAIN AUTH: Failed to set session context:', contextError);
+            }
           }
         }
       } catch (error) {
