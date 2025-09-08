@@ -74,13 +74,14 @@ export function useStoreData() {
           url.includes('my360.sela') ||         
           url.includes('v360.in') ||            
           url.includes('diamondview.aspx') ||   
+          url.includes('segoma.com') ||         // Add Segoma support
           url.includes('gem360') ||             
           url.includes('sarine') ||             
           url.includes('360') ||                
           url.includes('3d') ||                 
           url.includes('rotate') ||             
           url.includes('.html') ||              
-          url.match(/DAN\d+-\d+[A-Z]?\.jpg$/i); 
+          url.match(/DAN\d+-\d+[A-Z]?\.jpg$/i);
 
         if (is360Url) {
           let processedUrl = url;
@@ -118,6 +119,7 @@ export function useStoreData() {
         trimmedUrl.includes('v360.in') ||
         trimmedUrl.includes('my360.fab') ||
         trimmedUrl.includes('my360.sela') ||
+        trimmedUrl.includes('segoma.com') ||        // Add Segoma exclusion
         trimmedUrl.includes('sarine') ||
         trimmedUrl.includes('360') ||
         trimmedUrl.includes('3d') ||

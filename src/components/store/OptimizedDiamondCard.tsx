@@ -10,6 +10,7 @@ import { LimitedGroupShareButton } from "./LimitedGroupShareButton";
 import { toast } from 'sonner';
 import { Gem360Viewer } from "./Gem360Viewer";
 import { V360Viewer } from "./V360Viewer";
+import { SegomaViewer } from "./SegomaViewer";
 import { formatCurrency } from "@/utils/numberUtils";
 import { 
   detectFancyColor, 
@@ -82,6 +83,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
 
   const isV360 = !!(diamond.gem360Url && diamond.gem360Url.includes('v360.in'));
   const isMy360Fab = !!(diamond.gem360Url && diamond.gem360Url.includes('my360.fab'));
+  const isSegoma = !!(diamond.gem360Url && diamond.gem360Url.includes('segoma.com'));
 
   const hasValidImage = !!(
     diamond.imageUrl && 
@@ -96,6 +98,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     // Exclude 360° URLs from regular images
     !diamond.imageUrl.includes('my360.fab') &&
     !diamond.imageUrl.includes('v360.in') &&
+    !diamond.imageUrl.includes('segoma.com') &&
     !diamond.imageUrl.includes('.html') &&
     !diamond.imageUrl.includes('diamondview.aspx')
   );
@@ -176,7 +179,14 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     >
       {has360 && isVisible ? (
         <div className="relative aspect-square">
-          {isV360 ? (
+          {isSegoma ? (
+            <SegomaViewer 
+              segomaUrl={diamond.gem360Url!}
+              stockNumber={diamond.stockNumber}
+              isInline={true}
+              className="w-full h-full"
+            />
+          ) : isV360 ? (
             <V360Viewer 
               v360Url={diamond.gem360Url!}
               stockNumber={diamond.stockNumber}
@@ -192,6 +202,13 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
           <div className="absolute top-2 left-2">
             <MediaPriorityBadge hasGem360={true} hasImage={false} />
           </div>
+          {isSegoma && (
+            <div className="absolute top-2 right-2">
+              <Badge className="bg-purple-500 text-white border-0 px-2 py-1 text-xs font-medium">
+                Segoma
+              </Badge>
+            </div>
+          )}
           {isMy360Fab && (
             <div className="absolute top-2 right-2">
               <Badge className="bg-purple-500 text-white border-0 px-2 py-1 text-xs font-medium">
