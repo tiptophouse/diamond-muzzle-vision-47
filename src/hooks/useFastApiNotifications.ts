@@ -26,6 +26,7 @@ export function useFastApiNotifications() {
 
   const fetchNotifications = async () => {
     if (!user?.id) {
+      console.log('🔔 No user ID available, skipping notification fetch');
       setIsLoading(false);
       return;
     }
@@ -34,15 +35,22 @@ export function useFastApiNotifications() {
     
     try {
       console.log('🔔 Fetching notifications from FastAPI for user:', user.id);
+      console.log('🔔 API endpoint:', `/api/v1/get_search_results?user_id=${user.id}&limit=50&offset=0`);
       
       // Fetch search results from FastAPI
       const response = await api.get<any[]>(`/api/v1/get_search_results?user_id=${user.id}&limit=50&offset=0`);
       
-      if (response && Array.isArray(response)) {
-        console.log('🔔 FastAPI search results:', response);
+      console.log('🔔 FastAPI response received:', response);
+      
+      // Handle the response structure - check if response.data exists
+      const searchResults = response?.data || response;
+      console.log('🔔 Search results data:', searchResults);
+      
+      if (searchResults && Array.isArray(searchResults)) {
+        console.log('🔔 FastAPI search results:', searchResults);
         
         // Transform search results into notification format
-        const transformedNotifications = response.map((result: any) => ({
+        const transformedNotifications = searchResults.map((result: any) => ({
           id: result.id.toString(),
           user_id: result.user_id,
           search_query: result.search_query,
@@ -63,6 +71,7 @@ export function useFastApiNotifications() {
         }));
 
         setNotifications(transformedNotifications);
+        console.log('🔔 Notifications set:', transformedNotifications.length, 'notifications');
 
         // Show toast for new notifications if this is not the initial load
         if (transformedNotifications.length > 0) {
@@ -71,15 +80,29 @@ export function useFastApiNotifications() {
             description: `נמצאו ${transformedNotifications.length} התאמות חיפוש עבור היהלומים שלך`,
           });
         }
+      } else {
+        console.log('🔔 No search results or invalid format received');
+        setNotifications([]);
       }
 
     } catch (error) {
-      console.error('Failed to fetch notifications from FastAPI:', error);
-      toast({
-        title: "שגיאה בטעינת התראות",
-        description: "לא ניתן לטעון את ההתראות כרגע. נסה שוב מאוחר יותר.",
-        variant: "destructive"
-      });
+      console.error('🔔 Failed to fetch notifications from FastAPI:', error);
+      
+      // Check if it's a network error
+      if (error instanceof Error && error.message.includes('not reachable')) {
+        console.log('🔔 FastAPI backend not reachable - this is expected in some environments');
+        toast({
+          title: "שגיאת חיבור",
+          description: "לא ניתן להתחבר לשרת הזמן-אמת. התראות לא זמינות כרגע.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "שגיאה בטעינת התראות",
+          description: "לא ניתן לטעון את ההתראות כרגע. נסה שוב מאוחר יותר.",
+          variant: "destructive"
+        });
+      }
       setNotifications([]);
     } finally {
       setIsLoading(false);
