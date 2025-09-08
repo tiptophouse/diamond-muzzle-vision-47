@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { api } from '@/lib/api';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SearchResultNotification {
   id: string;
@@ -23,6 +24,51 @@ export function useFastApiNotifications() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useTelegramAuth();
+
+  const saveNotificationsToDatabase = async (notifications: SearchResultNotification[]) => {
+    try {
+      console.log('💾 Saving notifications to database:', notifications.length);
+      
+      for (const notification of notifications) {
+        // Check if notification already exists to avoid duplicates
+        const { data: existing } = await supabase
+          .from('notifications')
+          .select('id')
+          .eq('telegram_id', user!.id)
+          .contains('metadata', { fastapi_id: notification.id })
+          .maybeSingle();
+
+        if (!existing) {
+          const { error } = await supabase
+            .from('notifications')
+            .insert({
+              telegram_id: user!.id,
+              message_type: notification.type,
+              message_content: notification.message,
+              status: 'delivered',
+              metadata: {
+                fastapi_id: notification.id,
+                search_query: notification.search_query,
+                result_type: notification.result_type,
+                diamonds_data: notification.diamonds_data,
+                title: notification.title,
+                searcher_info: notification.data?.searcher_info
+              }
+            });
+
+          if (error) {
+            console.error('💾 Failed to save notification:', error);
+          } else {
+            console.log('💾 Notification saved successfully:', notification.id);
+          }
+        } else {
+          console.log('💾 Notification already exists:', notification.id);
+        }
+      }
+    } catch (error) {
+      console.error('💾 Error saving notifications to database:', error);
+    }
+  };
 
   const fetchNotifications = async () => {
     if (!user?.id) {
@@ -70,6 +116,9 @@ export function useFastApiNotifications() {
           }
         }));
 
+        // Save notifications to database
+        await saveNotificationsToDatabase(transformedNotifications);
+        
         setNotifications(transformedNotifications);
         console.log('🔔 Notifications set:', transformedNotifications.length, 'notifications');
 
