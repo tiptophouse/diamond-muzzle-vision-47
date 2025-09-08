@@ -1,7 +1,7 @@
 
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { SafeDataDrivenDashboard } from '@/components/dashboard/SafeDataDrivenDashboard';
+import { DataDrivenDashboard } from '@/components/dashboard/DataDrivenDashboard';
 import { DashboardLoading } from '@/components/dashboard/DashboardLoading';
 import { SecurityMonitor } from '@/components/auth/SecurityMonitor';
 import { useSearchParams } from 'react-router-dom';
@@ -16,25 +16,21 @@ export default function Dashboard() {
 
   // Check for upload success notification
   useEffect(() => {
-    try {
-      const uploadSuccess = searchParams.get('upload_success');
-      const fromBulkUpload = searchParams.get('from');
+    const uploadSuccess = searchParams.get('upload_success');
+    const fromBulkUpload = searchParams.get('from');
+    
+    if (uploadSuccess && fromBulkUpload === 'bulk_upload') {
+      toast({
+        title: `🎉 Bulk Upload Successful!`,
+        description: `${uploadSuccess} diamonds have been added to your inventory and are now visible in your dashboard.`,
+        duration: 5000,
+      });
       
-      if (uploadSuccess && fromBulkUpload === 'bulk_upload') {
-        toast({
-          title: `🎉 Bulk Upload Successful!`,
-          description: `${uploadSuccess} diamonds have been added to your inventory and are now visible in your dashboard.`,
-          duration: 5000,
-        });
-        
-        // Clear the search parameters after showing the notification
-        setSearchParams({});
-        
-        // Refresh inventory data to show newly uploaded diamonds
-        fetchData();
-      }
-    } catch (error) {
-      console.error('❌ DASHBOARD: Upload success notification failed:', error);
+      // Clear the search parameters after showing the notification
+      setSearchParams({});
+      
+      // Refresh inventory data to show newly uploaded diamonds
+      fetchData();
     }
   }, [searchParams, setSearchParams, toast, fetchData]);
 
@@ -43,7 +39,7 @@ export default function Dashboard() {
   console.log('- Is authenticated:', isAuthenticated);
   console.log('- User:', user);
   console.log('- Inventory loading:', loading);
-  console.log('- Diamonds count:', allDiamonds?.length || 0);
+  console.log('- Diamonds count:', allDiamonds.length);
 
   const handleEmergencyMode = () => {
     console.log('Emergency mode activated - skipping to basic dashboard');
@@ -84,8 +80,8 @@ export default function Dashboard() {
 
   return (
     <>
-      <SafeDataDrivenDashboard 
-        allDiamonds={allDiamonds || []} 
+      <DataDrivenDashboard 
+        allDiamonds={allDiamonds} 
         loading={loading}
         fetchData={fetchData} 
       />

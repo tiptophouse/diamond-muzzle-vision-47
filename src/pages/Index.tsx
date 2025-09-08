@@ -99,11 +99,11 @@ const Index = () => {
     return <Navigate to="/admin" replace />;
   }
 
-  // For regular users, redirect to dashboard (now crash-safe)
+  // For regular users, redirect to inventory instead of dashboard (dashboard is crashing)
   if (isAuthenticated && user) {
-    console.log('✅ Regular user detected - redirecting to dashboard');
+    console.log('✅ Regular user detected - redirecting to inventory');
     redirectHandledRef.current = true;
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/inventory" replace />;
   }
 
   // Fallback for unauthenticated users
