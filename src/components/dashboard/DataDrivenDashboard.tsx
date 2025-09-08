@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { Gem, Users, TrendingUp, Star, Plus, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { safeDivide, safeSum, safeRound, validateDiamondData } from '@/utils/safeMath';
+import { useToast } from '@/hooks/use-toast';
 
 interface DataDrivenDashboardProps {
   allDiamonds: Diamond[];
@@ -28,8 +29,27 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
   const { webApp, haptics } = useEnhancedTelegramWebApp();
   const { selectionChanged, impactOccurred } = useTelegramHapticFeedback();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  console.log('🔍 DataDrivenDashboard: Processing data for user:', user?.id, 'Diamonds:', allDiamonds.length);
+  console.log('🔍 DataDrivenDashboard: Processing data for user:', user?.id, 'Diamonds:', allDiamonds?.length || 0);
+
+  // Show appropriate notifications based on data source
+  useEffect(() => {
+    if (!loading && allDiamonds && allDiamonds.length > 0) {
+      // Check if this is mock data (mock data has specific IDs starting with "mock-")
+      const isMockData = allDiamonds.some(d => d.id?.startsWith('mock-'));
+      
+      if (isMockData && allDiamonds.length <= 5) {
+        toast({
+          title: "🔄 Using Demo Data",
+          description: "FastAPI connection failed. Showing demo data. Check your backend connection.",
+          duration: 5000,
+        });
+      } else if (allDiamonds.length > 0) {
+        console.log('✅ Dashboard loaded with real data:', allDiamonds.length, 'diamonds');
+      }
+    }
+  }, [loading, allDiamonds, toast]);
 
   // Set Telegram WebApp theme
   useEffect(() => {
@@ -50,21 +70,23 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
     return unsubscribe;
   }, [subscribeToInventoryChanges, fetchData]);
 
-  // Process the data only if we have valid diamonds
-  const validDiamonds = allDiamonds.filter(validateDiamondData);
+  // Process the data with safe validation
+  const validDiamonds = allDiamonds?.filter(validateDiamondData) || [];
+  
+  console.log('🔍 DataDrivenDashboard: Valid diamonds:', validDiamonds.length, 'from total:', allDiamonds?.length || 0);
   
   const { stats, inventoryByShape, salesByCategory } = validDiamonds.length > 0 
     ? processDiamondDataForDashboard(
         validDiamonds.map(d => ({
           id: parseInt(d.id || '0'),
-          shape: d.shape,
-          color: d.color,
-          clarity: d.clarity,
-          weight: d.carat,
-          price_per_carat: safeDivide(d.price, d.carat),
-          owners: [user?.id || 0],
+          shape: d.shape || 'Unknown',
+          color: d.color || 'Unknown',
+          clarity: d.clarity || 'Unknown',
+          weight: d.carat || 0,
+          price_per_carat: safeDivide(d.price || 0, d.carat || 1),
+          owners: [user?.id || 2138564172],
         })),
-        user?.id
+        user?.id || 2138564172
       )
     : { 
         stats: { 
@@ -80,9 +102,11 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
   // Calculate actual metrics from real data with safe math operations
   const calculateTotalValue = () => {
     try {
+      if (!validDiamonds || validDiamonds.length === 0) return 0;
+      
       const validPrices = validDiamonds
-        .map(d => d.price)
-        .filter(price => isFinite(price) && price > 0 && price < 500000);
+        .map(d => d.price || 0)
+        .filter(price => isFinite(price) && price > 0 && price < 1000000);
       
       const total = safeSum(validPrices);
       console.log('💰 Total value calculated:', total, 'from', validPrices.length, 'valid diamonds');
@@ -95,15 +119,17 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
 
   const calculateAvgPricePerCarat = () => {
     try {
+      if (!validDiamonds || validDiamonds.length === 0) return 0;
+      
       const validDiamondsForAvg = validDiamonds.filter(d => 
-        isFinite(d.price) && d.price > 0 && d.price < 500000 && 
-        isFinite(d.carat) && d.carat > 0 && d.carat < 20
+        isFinite(d.price || 0) && (d.price || 0) > 0 && (d.price || 0) < 1000000 && 
+        isFinite(d.carat || 0) && (d.carat || 0) > 0 && (d.carat || 0) < 50
       );
       
       if (validDiamondsForAvg.length === 0) return 0;
       
-      const totalValue = safeSum(validDiamondsForAvg.map(d => d.price));
-      const totalCarats = safeSum(validDiamondsForAvg.map(d => d.carat));
+      const totalValue = safeSum(validDiamondsForAvg.map(d => d.price || 0));
+      const totalCarats = safeSum(validDiamondsForAvg.map(d => d.carat || 0));
       
       const avgPricePerCarat = safeRound(safeDivide(totalValue, totalCarats));
       console.log('💎 Avg price per carat calculated:', avgPricePerCarat, 'from', validDiamondsForAvg.length, 'valid diamonds');
@@ -116,7 +142,7 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
   };
 
   const totalValue = calculateTotalValue();
-  const availableDiamonds = validDiamonds.filter(d => d.status === 'Available').length;
+  const availableDiamonds = validDiamonds?.filter(d => d.status === 'Available')?.length || 0;
   const avgPricePerCarat = calculateAvgPricePerCarat();
 
   const handleNavigate = (path: string) => {
@@ -191,7 +217,7 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
           <div>
             <h1 className="text-lg font-bold text-foreground">Portfolio</h1>
             <p className="text-xs text-muted-foreground">
-              {validDiamonds.length} diamonds • ${safeRound(safeDivide(totalValue, 1000))}K
+              {validDiamonds?.length || 0} diamonds • ${safeRound(safeDivide(totalValue, 1000))}K
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -209,7 +235,7 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
         <div className="grid grid-cols-2 gap-3">
           <StatCard
             title="Inventory"
-            value={validDiamonds.length}
+            value={validDiamonds?.length || 0}
             icon={Gem}
             loading={loading}
             description="Total stones"
@@ -263,11 +289,11 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
           <div className="p-4">
             <InventoryChart
               data={inventoryByShape.length > 0 ? inventoryByShape : [
-                { name: 'Round', value: validDiamonds.filter(d => d.shape === 'Round').length },
-                { name: 'Princess', value: validDiamonds.filter(d => d.shape === 'Princess').length },
-                { name: 'Emerald', value: validDiamonds.filter(d => d.shape === 'Emerald').length },
-                { name: 'Oval', value: validDiamonds.filter(d => d.shape === 'Oval').length },
-                { name: 'Other', value: validDiamonds.filter(d => !['Round', 'Princess', 'Emerald', 'Oval'].includes(d.shape)).length }
+                { name: 'Round', value: validDiamonds?.filter(d => d.shape === 'Round')?.length || 0 },
+                { name: 'Princess', value: validDiamonds?.filter(d => d.shape === 'Princess')?.length || 0 },
+                { name: 'Emerald', value: validDiamonds?.filter(d => d.shape === 'Emerald')?.length || 0 },
+                { name: 'Oval', value: validDiamonds?.filter(d => d.shape === 'Oval')?.length || 0 },
+                { name: 'Other', value: validDiamonds?.filter(d => !['Round', 'Princess', 'Emerald', 'Oval'].includes(d.shape || ''))?.length || 0 }
               ].filter(item => item.value > 0)}
               title=""
               loading={loading}
