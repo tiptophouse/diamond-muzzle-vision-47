@@ -50,7 +50,7 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
   const mountedRef = useRef(true);
   const initializedRef = useRef(false);
   const retryCount = useRef(0);
-  const maxRetries = 3;
+  const maxRetries = 2; // OPTIMIZED: Reduced from 3 to 2 for faster loading
 
   const updateState = useCallback((updates: Partial<OptimizedAuthState>) => {
     if (mountedRef.current) {
@@ -65,7 +65,7 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
   const authenticateWithBackoff = useCallback(async (attempt: number = 0): Promise<void> => {
     if (initializedRef.current || !mountedRef.current) return;
 
-    const delay = Math.min(1000 * Math.pow(2, attempt), 5000); // Exponential backoff, max 5s
+    const delay = Math.min(500 * Math.pow(1.5, attempt), 2000); // OPTIMIZED: Faster backoff - starts at 500ms, max 2s
     if (attempt > 0) {
       console.log(`🔄 AUTH: Retry attempt ${attempt} after ${delay}ms delay`);
       await new Promise(resolve => setTimeout(resolve, delay));
@@ -254,10 +254,10 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
         });
         initializedRef.current = true;
       }
-    }, 10000); // Reduced to 10 seconds
+    }, 8000); // OPTIMIZED: Reduced from 10 seconds to 8 seconds
 
     // Start authentication with minimal delay
-    const initTimer = setTimeout(() => authenticateWithBackoff(), 50);
+    const initTimer = setTimeout(() => authenticateWithBackoff(), 25); // OPTIMIZED: Reduced from 50ms to 25ms
 
     return () => {
       mountedRef.current = false;

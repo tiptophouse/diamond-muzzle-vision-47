@@ -10,16 +10,14 @@ import { AuthenticatedRoute } from './components/auth/AuthenticatedRoute';
 import { PublicRoute } from './components/auth/PublicRoute';
 import { AdminGuard } from './components/admin/AdminGuard';
 import Index from './pages/Index';
-import Dashboard from './pages/Dashboard';
-import InventoryPage from './pages/InventoryPage';
+// Lazy load heavy components to improve initial loading speed
+import { LazyDashboard, LazyInventory, LazyUpload, LazySettings } from './components/performance/LazyRoute';
 import CatalogPage from './pages/CatalogPage';
-import UploadPage from './pages/UploadPage';
 import UploadSingleStonePage from './pages/UploadSingleStonePage';
 import InsightsPage from './pages/InsightsPage';
 import ChatPage from './pages/ChatPage';
 import NotificationsPage from './pages/NotificationsPage';
 import ProfilePage from './pages/ProfilePage';
-import SettingsPage from './pages/SettingsPage';
 import WishlistPage from './pages/WishlistPage';
 import Admin from './pages/Admin';
 import AdminAnalytics from './pages/AdminAnalytics';
@@ -37,8 +35,11 @@ function App() {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        retry: false,
-        staleTime: 5 * 60 * 1000, // 5 minutes
+        retry: 1, // Reduce retries for faster failure
+        staleTime: 10 * 60 * 1000, // 10 minutes - cache data longer
+        gcTime: 15 * 60 * 1000, // 15 minutes - keep cached data longer
+        refetchOnWindowFocus: false, // Don't refetch on window focus
+        refetchOnMount: false, // Don't refetch on mount if data exists
       },
     },
   });
@@ -59,17 +60,17 @@ function App() {
                     </PublicRoute>
                   } />
                   
-                  {/* All protected routes require JWT authentication */}
-                  <Route path="/dashboard" element={
-                    <AuthenticatedRoute>
-                      <Dashboard />
-                    </AuthenticatedRoute>
-                  } />
-                  <Route path="/inventory" element={
-                    <AuthenticatedRoute>
-                      <InventoryPage />
-                    </AuthenticatedRoute>
-                  } />
+                   {/* All protected routes require JWT authentication - OPTIMIZED: Lazy loaded */}
+                   <Route path="/dashboard" element={
+                     <AuthenticatedRoute>
+                       <LazyDashboard />
+                     </AuthenticatedRoute>
+                   } />
+                   <Route path="/inventory" element={
+                     <AuthenticatedRoute>
+                       <LazyInventory />
+                     </AuthenticatedRoute>
+                   } />
                   <Route path="/catalog" element={
                     <AuthenticatedRoute>
                       <CatalogPage />
@@ -80,11 +81,11 @@ function App() {
                       <CatalogPage />
                     </AuthenticatedRoute>
                   } />
-                  <Route path="/upload" element={
-                    <AuthenticatedRoute>
-                      <UploadPage />
-                    </AuthenticatedRoute>
-                  } />
+                   <Route path="/upload" element={
+                     <AuthenticatedRoute>
+                       <LazyUpload />
+                     </AuthenticatedRoute>
+                   } />
                   <Route path="/upload/bulk" element={
                     <AuthenticatedRoute>
                       <BulkUploadPage />
@@ -115,11 +116,11 @@ function App() {
                       <ProfilePage />
                     </AuthenticatedRoute>
                   } />
-                  <Route path="/settings" element={
-                    <AuthenticatedRoute>
-                      <SettingsPage />
-                    </AuthenticatedRoute>
-                  } />
+                   <Route path="/settings" element={
+                     <AuthenticatedRoute>
+                       <LazySettings />
+                     </AuthenticatedRoute>
+                   } />
                   <Route path="/wishlist" element={
                     <AuthenticatedRoute>
                       <WishlistPage />
