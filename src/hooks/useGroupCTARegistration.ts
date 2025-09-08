@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useTelegramWebApp } from './useTelegramWebApp';
 import { toast } from '@/components/ui/use-toast';
 import { API_BASE_URL } from '@/lib/api/config';
-import { getBackendAccessToken } from '@/lib/api/secureConfig';
+// Removed old authentication import
 
 interface RegistrationResult {
   success: boolean;
@@ -19,17 +19,12 @@ export function useGroupCTARegistration() {
     try {
       console.log('🔐 רושם משתמש ב-FastAPI עם initData');
       
-      const backendToken = await getBackendAccessToken();
-      if (!backendToken) {
-        throw new Error('אין אסימון גישה לשרת');
-      }
-
+      // Direct call to FastAPI without pre-auth token
       const response = await fetch(`${API_BASE_URL}/api/v1/sign-in/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Authorization': `Bearer ${backendToken}`,
         },
         body: JSON.stringify({
           init_data: initData
