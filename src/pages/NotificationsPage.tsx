@@ -5,7 +5,7 @@ import { SmartNotificationCard } from '@/components/notifications/SmartNotificat
 import { GroupNotificationCard } from '@/components/notifications/GroupNotificationCard';
 import { BusinessNotificationCard } from '@/components/notifications/BusinessNotificationCard';
 import { IncomingChatbotMessages } from '@/components/notifications/IncomingChatbotMessages';
-import { useNotifications } from '@/hooks/useNotifications';
+import { useFastApiNotifications } from '@/hooks/useFastApiNotifications';
 import { useTelegramNotificationBridge } from '@/hooks/useTelegramNotificationBridge';
 import { useDiamondSearch } from '@/hooks/useDiamondSearch';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const NotificationsPage = () => {
-  const { notifications, isLoading, markAsRead, contactCustomer, refetch } = useNotifications();
+  const { notifications, isLoading, markAsRead, contactCustomer, refetch } = useFastApiNotifications();
   const { simulateSearchFromBot, isLoading: isSearching } = useDiamondSearch();
   const { user } = useTelegramAuth();
   
