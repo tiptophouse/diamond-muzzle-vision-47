@@ -196,6 +196,39 @@ export type Database = {
         }
         Relationships: []
       }
+      buyer_requests: {
+        Row: {
+          buyer_id: number
+          confidence_score: number | null
+          created_at: string
+          extracted_criteria_json: Json
+          id: string
+          original_message: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          buyer_id: number
+          confidence_score?: number | null
+          created_at?: string
+          extracted_criteria_json?: Json
+          id?: string
+          original_message?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          buyer_id?: number
+          confidence_score?: number | null
+          created_at?: string
+          extracted_criteria_json?: Json
+          id?: string
+          original_message?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chat_conversation_messages: {
         Row: {
           content: string
@@ -622,6 +655,51 @@ export type Database = {
         }
         Relationships: []
       }
+      error_reports: {
+        Row: {
+          additional_context: Json | null
+          created_at: string
+          error_message: string
+          error_stack: string | null
+          error_type: string
+          id: string
+          severity: string
+          timestamp: string
+          updated_at: string
+          url: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          additional_context?: Json | null
+          created_at?: string
+          error_message: string
+          error_stack?: string | null
+          error_type: string
+          id?: string
+          severity: string
+          timestamp?: string
+          updated_at?: string
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          additional_context?: Json | null
+          created_at?: string
+          error_message?: string
+          error_stack?: string | null
+          error_type?: string
+          id?: string
+          severity?: string
+          timestamp?: string
+          updated_at?: string
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       group_cta_clicks: {
         Row: {
           clicked_at: string | null
@@ -858,6 +936,42 @@ export type Database = {
           seller_telegram_id?: number
           status?: string
           terms?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      match_notifications: {
+        Row: {
+          buyer_id: number
+          confidence_score: number | null
+          created_at: string
+          details_json: Json | null
+          diamond_id: string
+          id: string
+          is_match: boolean
+          seller_id: number
+          updated_at: string
+        }
+        Insert: {
+          buyer_id: number
+          confidence_score?: number | null
+          created_at?: string
+          details_json?: Json | null
+          diamond_id: string
+          id?: string
+          is_match?: boolean
+          seller_id: number
+          updated_at?: string
+        }
+        Update: {
+          buyer_id?: number
+          confidence_score?: number | null
+          created_at?: string
+          details_json?: Json | null
+          diamond_id?: string
+          id?: string
+          is_match?: boolean
+          seller_id?: number
           updated_at?: string
         }
         Relationships: []
