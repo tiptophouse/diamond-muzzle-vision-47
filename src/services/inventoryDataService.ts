@@ -52,7 +52,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       if (dataArray && dataArray.length > 0) {
         console.log('✅ INVENTORY SERVICE: Successfully fetched', dataArray.length, 'diamonds from FastAPI');
         
-        // PHASE 4: Critical debugging - Log EXACTLY what FastAPI is sending
+        // Log EXACTLY what FastAPI is sending for debugging
         console.log('🚨 FASTAPI RESPONSE ANALYSIS:', {
           totalCount: dataArray.length,
           firstItem: {
@@ -142,17 +142,16 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       }
     }
     
-    // Final fallback to mock data
-    console.log('🔄 INVENTORY SERVICE: No real data found, using mock data');
-    const mockResult = await fetchMockInventoryData();
+    // Return error instead of mock data - clients should not see mock data
+    console.log('❌ INVENTORY SERVICE: No real data found - returning error instead of mock data');
     
     return {
-      ...mockResult,
+      error: 'No inventory data available. Please ensure your FastAPI backend is running and accessible.',
       debugInfo: {
         ...debugInfo,
-        ...mockResult.debugInfo,
-        step: 'FALLBACK: Using mock data',
-        dataSource: 'mock'
+        step: 'ERROR: No real data available',
+        dataSource: 'none',
+        recommendation: 'Check FastAPI backend connectivity'
       }
     };
     
@@ -184,16 +183,15 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       }
     }
     
-    // Ultimate fallback to mock data
-    const mockResult = await fetchMockInventoryData();
+    // Return error instead of mock data - clients should not see mock data
     return {
-      ...mockResult,
+      error: error instanceof Error ? error.message : String(error),
       debugInfo: {
         ...debugInfo,
-        ...mockResult.debugInfo,
-        step: 'ULTIMATE FALLBACK: Mock data after all failures',
+        step: 'ERROR: All data sources failed',
         error: error instanceof Error ? error.message : String(error),
-        dataSource: 'mock_emergency'
+        dataSource: 'none',
+        recommendation: 'Check authentication and FastAPI backend connectivity'
       }
     };
   }

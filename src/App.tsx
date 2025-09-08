@@ -1,14 +1,11 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { TelegramSDKProvider } from '@/contexts/TelegramSDKContext';
 import { TelegramAuthProvider } from './context/TelegramAuthContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
-import { ThemeProvider } from 'next-themes';
-import { Toaster } from '@/components/ui/sonner';
-import { ErrorBoundary } from './components/ErrorBoundary';
 import { SecureTelegramLayout } from './components/layout/SecureTelegramLayout';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthenticatedRoute } from './components/auth/AuthenticatedRoute';
 import { PublicRoute } from './components/auth/PublicRoute';
 import { AdminGuard } from './components/admin/AdminGuard';
@@ -33,9 +30,8 @@ import SecureDiamondViewerPage from './pages/SecureDiamondViewerPage';
 import NotFound from './pages/NotFound';
 import StandardizeCsvPage from './pages/StandardizeCsvPage';
 import BulkUploadPage from './pages/BulkUploadPage';
-import SearchResultsTestPage from './pages/SearchResultsTestPage';
-import MatchNotificationsPage from './pages/MatchNotificationsPage';
 import AnalyticsPage from "./pages/AnalyticsPage";
+import TelegramNotificationsDemo from "./pages/TelegramNotificationsDemo";
 
 function App() {
   const queryClient = new QueryClient({
@@ -50,14 +46,11 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <TelegramSDKProvider autoInit={true}>
-          <TelegramAuthProvider>
-            <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-              <Toaster />
-              <Router>
-                <TutorialProvider>
-                  <InteractiveWizardProvider>
-                    <SecureTelegramLayout>
+        <TelegramAuthProvider>
+          <Router>
+            <TutorialProvider>
+              <InteractiveWizardProvider>
+                <SecureTelegramLayout>
                 <Routes>
                   {/* Public route - redirects to dashboard if authenticated */}
                   <Route path="/" element={
@@ -171,16 +164,9 @@ function App() {
                       <AnalyticsPage />
                     </AuthenticatedRoute>
                   } />
-                  
-                  <Route path="/search-results-test" element={
+                  <Route path="/demo/notifications" element={
                     <AuthenticatedRoute>
-                      <SearchResultsTestPage />
-                    </AuthenticatedRoute>
-                  } />
-                  
-                  <Route path="/match-notifications" element={
-                    <AuthenticatedRoute>
-                      <MatchNotificationsPage />
+                      <TelegramNotificationsDemo />
                     </AuthenticatedRoute>
                   } />
                   
@@ -191,13 +177,11 @@ function App() {
                   } />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-                    </SecureTelegramLayout>
-                  </InteractiveWizardProvider>
-                </TutorialProvider>
-              </Router>
-            </ThemeProvider>
-          </TelegramAuthProvider>
-        </TelegramSDKProvider>
+                </SecureTelegramLayout>
+              </InteractiveWizardProvider>
+            </TutorialProvider>
+          </Router>
+        </TelegramAuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

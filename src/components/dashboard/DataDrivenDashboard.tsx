@@ -5,6 +5,7 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { InventoryChart } from '@/components/dashboard/InventoryChart';
 import { RealTimeUserCount } from '@/components/dashboard/RealTimeUserCount';
 import { ElegantMemberCount } from '@/components/dashboard/ElegantMemberCount';
+import { NotificationHeatMapSection } from '@/components/dashboard/NotificationHeatMapSection';
 import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
 import { useEnhancedTelegramWebApp } from '@/hooks/useEnhancedTelegramWebApp';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
@@ -238,6 +239,9 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
 
         {/* Real-time User Count */}
         <RealTimeUserCount />
+
+        {/* Notification Heat Map */}
+        <NotificationHeatMapSection />
 
         {/* Charts Section */}
         <div className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/30 overflow-hidden">
