@@ -1,147 +1,105 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
-import { formatCurrency } from "@/utils/numberUtils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { Palette } from 'lucide-react';
+import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 
 interface ColorDistribution {
   color: string;
   count: number;
-  percentage: number;
-  totalValue: number;
 }
 
 interface ColorDistributionChartProps {
-  data: ColorDistribution[];
-  loading?: boolean;
+  distribution: ColorDistribution[];
+  isLoading: boolean;
 }
 
-// Diamond color grade colors
-const COLOR_PALETTE = {
-  'D': '#f8fafc', // Near colorless - lightest
-  'E': '#f1f5f9',
-  'F': '#e2e8f0',
-  'G': '#cbd5e1',
-  'H': '#94a3b8',
-  'I': '#64748b',
-  'J': '#475569',
-  'K': '#334155',
-  'L': '#1e293b',
-  'M': '#0f172a', // Most colored - darkest
-  'Unknown': '#6b7280'
+// Diamond industry standard color grading (D is colorless, Z is light yellow)
+const DIAMOND_COLORS = {
+  'D': '#ffffff',
+  'E': '#fefefe', 
+  'F': '#fdfdfd',
+  'G': '#fbfbfb',
+  'H': '#f9f9f9',
+  'I': '#f5f5dc',
+  'J': '#f0e68c',
+  'K': '#daa520',
+  'L': '#cd853f',
+  'M': '#d2691e'
 };
 
-const getColorForGrade = (color: string): string => {
-  return COLOR_PALETTE[color as keyof typeof COLOR_PALETTE] || '#3b82f6';
-};
+export function ColorDistributionChart({ distribution, isLoading }: ColorDistributionChartProps) {
+  const { selectionChanged } = useTelegramHapticFeedback();
 
-export function ColorDistributionChart({ data, loading = false }: ColorDistributionChartProps) {
-  if (loading) {
-    return (
-      <Card className="bg-gradient-to-br from-amber-50/30 to-yellow-100/20 border-amber-200/30">
-        <CardHeader>
-          <CardTitle className="text-amber-700">Color Distribution</CardTitle>
-          <CardDescription>Diamond color grade breakdown</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px] flex items-center justify-center">
-            <div className="animate-pulse text-muted-foreground">Loading color data...</div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const chartData = distribution.map(item => ({
+    color: item.color,
+    count: item.count,
+    name: `Grade ${item.color}`
+  }));
 
-  if (!data || data.length === 0) {
-    return (
-      <Card className="bg-gradient-to-br from-amber-50/30 to-yellow-100/20 border-amber-200/30">
-        <CardHeader>
-          <CardTitle className="text-amber-700">Color Distribution</CardTitle>
-          <CardDescription>Diamond color grade breakdown</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px] flex items-center justify-center">
-            <div className="text-center text-muted-foreground">
-              <div className="text-2xl mb-2">💎</div>
-              <p>No color data available</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-background/95 backdrop-blur-sm border border-border rounded-lg p-3 shadow-lg">
-          <p className="font-semibold text-foreground">Color Grade: {data.color}</p>
-          <p className="text-sm text-muted-foreground">Count: {data.count} diamonds</p>
-          <p className="text-sm text-muted-foreground">Percentage: {data.percentage.toFixed(1)}%</p>
-          <p className="text-sm text-muted-foreground">Total Value: {formatCurrency(data.totalValue)}</p>
-        </div>
-      );
-    }
-    return null;
+  const handleChartClick = () => {
+    selectionChanged();
   };
 
   return (
-    <Card className="bg-gradient-to-br from-amber-50/30 to-yellow-100/20 border-amber-200/30">
-      <CardHeader>
-        <CardTitle className="text-amber-700 flex items-center gap-2">
-          <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+    <Card className="bg-background/60 backdrop-blur-sm border-primary/10">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <Palette className="w-5 h-5 text-primary" />
           Color Distribution
         </CardTitle>
-        <CardDescription>Diamond color grade breakdown • {data.reduce((sum, item) => sum + item.count, 0)} total</CardDescription>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={110}
-              paddingAngle={2}
-              dataKey="count"
-            >
-              {data.map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={getColorForGrade(entry.color)}
-                  stroke="hsl(var(--background))"
-                  strokeWidth={2}
-                />
-              ))}
-            </Pie>
-            <Tooltip content={<CustomTooltip />} />
-            <Legend 
-              verticalAlign="bottom" 
-              height={36}
-              formatter={(value, entry: any) => (
-                <span className="text-xs font-medium" style={{ color: entry.color }}>
-                  {value} ({entry.payload.count})
-                </span>
-              )}
-            />
-          </PieChart>
-        </ResponsiveContainer>
-        
-        {/* Summary stats */}
-        <div className="mt-4 pt-4 border-t border-border/30">
-          <div className="grid grid-cols-2 gap-4 text-center">
-            <div>
-              <p className="text-lg font-bold text-foreground">{data.length}</p>
-              <p className="text-xs text-muted-foreground">Different Grades</p>
-            </div>
-            <div>
-              <p className="text-lg font-bold text-foreground">
-                {formatCurrency(data.reduce((sum, item) => sum + item.totalValue, 0))}
-              </p>
-              <p className="text-xs text-muted-foreground">Total Value</p>
+        {isLoading ? (
+          <div className="h-48 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : chartData.length === 0 ? (
+          <div className="h-48 flex items-center justify-center text-muted-foreground">
+            <div className="text-center">
+              <Palette className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
+              <p>No color data available</p>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="h-48" onClick={handleChartClick}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={chartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={25}
+                  outerRadius={65}
+                  paddingAngle={2}
+                  dataKey="count"
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={DIAMOND_COLORS[entry.color] || '#94a3b8'} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  formatter={(value, name, props) => [
+                    `${value} diamonds`,
+                    `Color ${props.payload.color}`
+                  ]}
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    fontSize: '12px'
+                  }}
+                />
+                <Legend 
+                  verticalAlign="bottom"
+                  height={20}
+                  formatter={(value) => `${value}`}
+                  iconType="circle"
+                  wrapperStyle={{ fontSize: '11px' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

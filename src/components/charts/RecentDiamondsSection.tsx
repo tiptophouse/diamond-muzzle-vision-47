@@ -1,134 +1,124 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency } from "@/utils/numberUtils";
-import { Clock, Gem } from "lucide-react";
-import { format } from "date-fns";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Diamond, Clock, ArrowRight } from 'lucide-react';
+import { useNavigate } from "react-router-dom";
+import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 
 interface DiamondData {
   id: string;
+  stock: string;
+  weight?: number;
+  carat?: number;
   shape: string;
   color: string;
   clarity: string;
-  carat: number;
-  price: number;
-  certificate_number: string;
-  created_at: string;
+  price_per_carat?: number;
 }
 
 interface RecentDiamondsSectionProps {
   diamonds: DiamondData[];
-  loading?: boolean;
+  isLoading: boolean;
 }
 
-export function RecentDiamondsSection({ diamonds, loading = false }: RecentDiamondsSectionProps) {
-  if (loading) {
-    return (
-      <Card className="bg-gradient-to-br from-blue-50/30 to-cyan-100/20 border-blue-200/30">
-        <CardHeader>
-          <CardTitle className="text-blue-700 flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            Recent Additions
-          </CardTitle>
-          <CardDescription>Latest diamonds added to inventory</CardDescription>
-        </CardHeader>
-        <CardContent>
+export function RecentDiamondsSection({ diamonds, isLoading }: RecentDiamondsSectionProps) {
+  const navigate = useNavigate();
+  const { impactOccurred } = useTelegramHapticFeedback();
+
+  const handleViewAll = () => {
+    impactOccurred('light');
+    navigate('/inventory');
+  };
+
+  const handleDiamondClick = (diamond: any) => {
+    impactOccurred('light');
+    if (diamond.stock) {
+      navigate(`/diamond/${diamond.stock}`);
+    }
+  };
+
+  return (
+    <Card className="bg-background/60 backdrop-blur-sm border-primary/10">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2">
+          <Clock className="w-5 h-5 text-primary" />
+          Recent Diamonds
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
           <div className="space-y-3">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-background/50">
-                <div className="w-10 h-10 bg-muted rounded-lg animate-pulse" />
-                <div className="flex-1 space-y-1">
-                  <div className="h-4 bg-muted rounded animate-pulse" />
-                  <div className="h-3 bg-muted rounded w-2/3 animate-pulse" />
+              <div key={i} className="flex items-center space-x-3 p-3 border rounded-lg animate-pulse">
+                <div className="w-10 h-10 bg-muted rounded-full"></div>
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                  <div className="h-3 bg-muted rounded w-1/2"></div>
                 </div>
+                <div className="w-16 h-4 bg-muted rounded"></div>
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!diamonds || diamonds.length === 0) {
-    return (
-      <Card className="bg-gradient-to-br from-blue-50/30 to-cyan-100/20 border-blue-200/30">
-        <CardHeader>
-          <CardTitle className="text-blue-700 flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            Recent Additions
-          </CardTitle>
-          <CardDescription>Latest diamonds added to inventory</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <div className="text-2xl mb-2">📅</div>
-            <p className="text-muted-foreground">No recent diamonds found</p>
+        ) : diamonds.length === 0 ? (
+          <div className="text-center py-6 text-muted-foreground">
+            <Diamond className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
+            <p className="text-sm">No recent diamonds found</p>
           </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card className="bg-gradient-to-br from-blue-50/30 to-cyan-100/20 border-blue-200/30">
-      <CardHeader>
-        <CardTitle className="text-blue-700 flex items-center gap-2">
-          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-          Recent Additions
-        </CardTitle>
-        <CardDescription>Latest diamonds added • {diamonds.length} showing</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3 max-h-[400px] overflow-y-auto scrollbar-hide">
-          {diamonds.map((diamond) => (
-            <div 
-              key={diamond.id} 
-              className="flex items-center gap-3 p-3 rounded-xl bg-background/60 backdrop-blur-sm border border-border/20 hover:bg-background/80 transition-all duration-200"
-            >
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center">
-                <Gem className="h-5 w-5 text-blue-600" />
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="text-sm font-semibold text-foreground truncate">
-                    {diamond.carat}ct {diamond.shape}
-                  </p>
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded font-medium">
-                      {diamond.color}
-                    </span>
-                    <span className="text-xs px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded font-medium">
-                      {diamond.clarity}
-                    </span>
+        ) : (
+          <>
+            <div className="space-y-2">
+              {diamonds.slice(0, 4).map((diamond, index) => (
+                <div 
+                  key={diamond.id || index} 
+                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors cursor-pointer active:scale-95"
+                  onClick={() => handleDiamondClick(diamond)}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                      <Diamond className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">
+                        {diamond.stock || `Diamond ${index + 1}`}
+                      </p>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span>{diamond.weight || diamond.carat || 0}ct</span>
+                        <span>•</span>
+                        <Badge variant="outline" className="h-4 px-1.5 text-xs font-medium">
+                          {diamond.color || 'D'}
+                        </Badge>
+                        <Badge variant="outline" className="h-4 px-1.5 text-xs font-medium">
+                          {diamond.clarity || 'FL'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-sm">
+                      ${((diamond.price_per_carat || 0) * (diamond.weight || diamond.carat || 0)).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      ${(diamond.price_per_carat || 0).toLocaleString()}/ct
+                    </p>
                   </div>
                 </div>
-                
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">
-                    {format(new Date(diamond.created_at), 'MMM dd, HH:mm')}
-                  </p>
-                  <p className="text-sm font-bold text-foreground">
-                    {formatCurrency(diamond.price)}
-                  </p>
-                </div>
-                
-                {diamond.certificate_number && (
-                  <p className="text-xs text-muted-foreground mt-1 truncate">
-                    Cert: {diamond.certificate_number}
-                  </p>
-                )}
+              ))}
+            </div>
+            
+            {diamonds.length > 0 && (
+              <div className="mt-4 pt-3 border-t">
+                <Button 
+                  onClick={handleViewAll}
+                  variant="outline" 
+                  className="w-full h-10"
+                  size="sm"
+                >
+                  <span>View All Diamonds</span>
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
               </div>
-            </div>
-          ))}
-        </div>
-        
-        {diamonds.length > 5 && (
-          <div className="mt-4 pt-4 border-t border-border/30">
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">
-                Showing {Math.min(diamonds.length, 10)} of {diamonds.length} recent diamonds
-              </p>
-            </div>
-          </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
