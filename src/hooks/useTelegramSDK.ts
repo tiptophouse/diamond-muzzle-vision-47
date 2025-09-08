@@ -69,7 +69,7 @@ export function useTelegramSDK() {
       isInitialized: telegramSDK.isInitialized(),
       user: telegramSDK.getUser(),
       chat: telegramSDK.getChat(),
-      theme: telegramSDK.getTheme(),
+      theme: telegramSDK.getTheme() as { colorScheme: "light" | "dark"; themeParams: Record<string, string>; },
       device: telegramSDK.getDeviceInfo(),
       features: {
         cloudStorage: !!webApp?.CloudStorage,

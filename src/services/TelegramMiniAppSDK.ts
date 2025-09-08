@@ -227,13 +227,14 @@ interface TelegramPopupParams {
   }>;
 }
 
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp: any; // Use any to avoid conflicts with existing declarations
-    };
-  }
-}
+// Comment out duplicate Window interface - already declared in telegramWebApp.ts
+// declare global {
+//   interface Window {
+//     Telegram?: {
+//       WebApp: TelegramWebApp;
+//     };
+//   }
+// }
 
 class TelegramMiniAppSDK {
   private webApp: TelegramWebApp | null = null;
