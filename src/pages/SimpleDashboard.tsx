@@ -97,20 +97,15 @@ export default function SimpleDashboard() {
     }
   }, [isAuthenticated]); // Only run when authentication status changes
 
+  // Redirect to store if not authenticated to avoid loading issues
+  useEffect(() => {
+    if (!isAuthenticated && !user) {
+      navigate('/store');
+    }
+  }, [isAuthenticated, user, navigate]);
+
   if (!isAuthenticated || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="text-center space-y-4">
-              <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
-              <h2 className="text-xl font-semibold">Authentication Required</h2>
-              <p className="text-muted-foreground">Please log in to view your dashboard</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return null; // Will redirect before showing anything
   }
 
   return (
