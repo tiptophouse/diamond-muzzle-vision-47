@@ -30,6 +30,7 @@ import NotFound from './pages/NotFound';
 import StandardizeCsvPage from './pages/StandardizeCsvPage';
 import BulkUploadPage from './pages/BulkUploadPage';
 import AnalyticsPage from "./pages/AnalyticsPage";
+import TelegramNotificationsDemo from "./pages/TelegramNotificationsDemo";
 
 function App() {
   const queryClient = new QueryClient({
@@ -159,6 +160,11 @@ function App() {
                   <Route path="/analytics" element={
                     <AuthenticatedRoute>
                       <AnalyticsPage />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/demo/notifications" element={
+                    <AuthenticatedRoute>
+                      <TelegramNotificationsDemo />
                     </AuthenticatedRoute>
                   } />
                   

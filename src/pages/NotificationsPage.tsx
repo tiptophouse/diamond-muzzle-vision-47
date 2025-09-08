@@ -5,6 +5,8 @@ import { SmartNotificationCard } from '@/components/notifications/SmartNotificat
 import { GroupNotificationCard } from '@/components/notifications/GroupNotificationCard';
 import { BusinessNotificationCard } from '@/components/notifications/BusinessNotificationCard';
 import { IncomingChatbotMessages } from '@/components/notifications/IncomingChatbotMessages';
+import { TelegramNotificationsList } from '@/components/notifications/TelegramNotificationsList';
+import { NotificationHeatMapSection } from '@/components/dashboard/NotificationHeatMapSection';
 import { useFastApiNotifications } from '@/hooks/useFastApiNotifications';
 import { useTelegramNotificationBridge } from '@/hooks/useTelegramNotificationBridge';
 import { useDiamondSearch } from '@/hooks/useDiamondSearch';
@@ -74,8 +76,16 @@ const NotificationsPage = () => {
   return (
     <TelegramLayout>
       <div className="max-w-4xl mx-auto p-6 space-y-6">
-        <Tabs defaultValue="outgoing" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
+        <Tabs defaultValue="enhanced" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
+            <TabsTrigger value="enhanced" className="flex items-center gap-2">
+              <Bell className="h-4 w-4" />
+              Enhanced
+            </TabsTrigger>
+            <TabsTrigger value="heatmap" className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Heat Map
+            </TabsTrigger>
             <TabsTrigger value="outgoing" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
               התראות יוצאות
@@ -85,6 +95,23 @@ const NotificationsPage = () => {
               הודעות נכנסות
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="enhanced" className="space-y-6">
+            <TelegramNotificationsList
+              notifications={notifications}
+              onMarkAsRead={markAsRead}
+              onMarkAllAsRead={() => {
+                notifications.forEach(n => {
+                  if (!n.read) markAsRead(n.id);
+                });
+              }}
+              onContactCustomer={handleContactCustomer}
+            />
+          </TabsContent>
+
+          <TabsContent value="heatmap" className="space-y-6">
+            <NotificationHeatMapSection />
+          </TabsContent>
 
           <TabsContent value="outgoing" className="space-y-6">
             {/* Header */}
