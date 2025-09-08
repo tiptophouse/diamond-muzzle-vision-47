@@ -38,8 +38,12 @@ export default function SimpleDashboard() {
       
       console.log('🔍 Simple Dashboard: Fetching data for user:', user.id);
       
-      // Use the proper API client with authentication
+      // Use the proper API client with JWT authentication
       const response = await api.get<any[]>(`/api/v1/get_all_stones?user_id=${user.id}`);
+      
+      if (response.error) {
+        throw new Error(response.error);
+      }
       
       const diamonds = response.data || [];
       console.log('✅ Simple Dashboard: Received', diamonds.length, 'diamonds');
@@ -76,11 +80,14 @@ export default function SimpleDashboard() {
         error: errorMessage
       }));
 
-      toast({
-        variant: "destructive",
-        title: "Failed to load dashboard",
-        description: errorMessage,
-      });
+      // Only show toast for non-authentication errors (auth errors are handled by API client)
+      if (!errorMessage.includes('JWT token') && !errorMessage.includes('Authentication')) {
+        toast({
+          variant: "destructive",
+          title: "Failed to load dashboard",
+          description: errorMessage,
+        });
+      }
     }
   };
 
