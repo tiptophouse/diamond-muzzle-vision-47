@@ -2206,6 +2206,10 @@ export type Database = {
           unique_users_today: number
         }[]
       }
+      get_current_user_telegram_id: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       get_public_diamond_count: {
         Args: Record<PropertyKey, never>
         Returns: number
