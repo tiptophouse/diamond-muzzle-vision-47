@@ -15,6 +15,10 @@ import { useNavigate } from 'react-router-dom';
 import { Gem, Users, TrendingUp, Star, Plus, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { safeDivide, safeSum, safeRound, validateDiamondData } from '@/utils/safeMath';
+import { useDiamondDistribution } from '@/hooks/useDiamondDistribution';
+import { ColorDistributionChart } from '@/components/charts/ColorDistributionChart';
+import { ClarityDistributionChart } from '@/components/charts/ClarityDistributionChart';
+import { RecentDiamondsSection } from '@/components/charts/RecentDiamondsSection';
 
 interface DataDrivenDashboardProps {
   allDiamonds: Diamond[];
@@ -28,6 +32,9 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
   const { webApp, haptics } = useEnhancedTelegramWebApp();
   const { selectionChanged, impactOccurred } = useTelegramHapticFeedback();
   const navigate = useNavigate();
+  
+  // Fetch distribution data from FastAPI
+  const { data: distributionData, loading: distributionLoading, refetch: refetchDistribution } = useDiamondDistribution();
 
   console.log('🔍 DataDrivenDashboard: Processing data for user:', user?.id, 'Diamonds:', allDiamonds?.length || 0);
 
@@ -366,7 +373,28 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
         {/* Notification Heat Map */}
         <NotificationHeatMapSection />
 
-        {/* Charts Section */}
+        {/* Distribution Charts Section */}
+        <div className="grid gap-4">
+          {/* Color and Clarity Charts */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <ColorDistributionChart 
+              data={distributionData.colorDistribution} 
+              loading={distributionLoading}
+            />
+            <ClarityDistributionChart 
+              data={distributionData.clarityDistribution} 
+              loading={distributionLoading}
+            />
+          </div>
+          
+          {/* Recent Diamonds */}
+          <RecentDiamondsSection 
+            diamonds={distributionData.recentDiamonds} 
+            loading={distributionLoading}
+          />
+        </div>
+
+        {/* Shape Distribution Chart */}
         <div className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/30 overflow-hidden">
           <div className="p-4 bg-gradient-to-r from-muted/30 to-muted/10">
             <h3 className="text-sm font-semibold text-foreground">Inventory Overview</h3>
