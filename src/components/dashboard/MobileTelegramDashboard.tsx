@@ -24,11 +24,13 @@ export function MobileTelegramDashboard() {
   const navigate = useNavigate();
   const { user } = useTelegramAuth();
   const { 
-    data: { colorDistribution, clarityDistribution, recentDiamonds, totalCount, totalValue }, 
+    data: { colorDistribution, clarityDistribution, recentDiamonds, totalDiamonds }, 
     loading: isLoading, 
     error, 
     refetch 
   } = useDiamondDistribution();
+  
+  const totalInventoryValue = colorDistribution.reduce((sum, item) => sum + item.totalValue, 0);
   const { selectionChanged, impactOccurred } = useTelegramHapticFeedback();
 
   const handleQuickAction = (action: string, path: string) => {
@@ -78,7 +80,7 @@ export function MobileTelegramDashboard() {
                 <div>
                   <p className="text-xs text-muted-foreground">Total Diamonds</p>
                   <p className="text-lg font-bold text-foreground">
-                    {isLoading ? '...' : totalCount.toLocaleString()}
+                    {isLoading ? '...' : totalDiamonds.toLocaleString()}
                   </p>
                 </div>
               </div>
@@ -94,7 +96,7 @@ export function MobileTelegramDashboard() {
                 <div>
                   <p className="text-xs text-muted-foreground">Portfolio Value</p>
                   <p className="text-lg font-bold text-foreground">
-                    {isLoading ? '...' : `$${(totalValue / 1000).toFixed(0)}K`}
+                    {isLoading ? '...' : `$${(totalInventoryValue / 1000).toFixed(0)}K`}
                   </p>
                 </div>
               </div>
@@ -133,7 +135,7 @@ export function MobileTelegramDashboard() {
 
         {/* Recent Diamonds */}
         <RecentDiamondsSection 
-          diamonds={recentDiamonds} 
+          diamonds={recentDiamonds.map(d => ({ ...d, stock: d.certificate_number?.toString() || d.id }))} 
           isLoading={isLoading} 
         />
 

@@ -378,19 +378,19 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
           {/* Color and Clarity Charts */}
           <div className="grid md:grid-cols-2 gap-4">
             <ColorDistributionChart 
-              data={distributionData.colorDistribution} 
-              loading={distributionLoading}
+              distribution={distributionData.colorDistribution} 
+              isLoading={distributionLoading}
             />
             <ClarityDistributionChart 
-              data={distributionData.clarityDistribution} 
-              loading={distributionLoading}
+              distribution={distributionData.clarityDistribution} 
+              isLoading={distributionLoading}
             />
           </div>
           
           {/* Recent Diamonds */}
           <RecentDiamondsSection 
-            diamonds={distributionData.recentDiamonds} 
-            loading={distributionLoading}
+            diamonds={distributionData.recentDiamonds.map(d => ({ ...d, stock: d.certificate_number?.toString() || d.id }))} 
+            isLoading={distributionLoading}
           />
         </div>
 
