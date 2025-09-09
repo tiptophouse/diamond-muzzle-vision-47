@@ -91,8 +91,72 @@ export function useEnhancedTelegramWebApp() {
         if (metaViewport) {
           metaViewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
         }
+        
+        // Apply Telegram theme colors
+        applyTelegramTheme();
       } else {
         document.documentElement.style.setProperty('--tg-viewport-height', `${WebApp.viewportHeight}px`);
+        // Apply Telegram theme colors for non-iOS too
+        applyTelegramTheme();
+      }
+
+      // Function to apply Telegram's dynamic theme
+      function applyTelegramTheme() {
+        const theme = WebApp.themeParams;
+        console.log('🎨 Applying Telegram theme:', theme);
+        
+        if (theme) {
+          // Apply Telegram colors to CSS variables
+          if (theme.bg_color) {
+            document.documentElement.style.setProperty('--background', convertToHSL(theme.bg_color));
+          }
+          if (theme.text_color) {
+            document.documentElement.style.setProperty('--foreground', convertToHSL(theme.text_color));
+          }
+          if (theme.hint_color) {
+            document.documentElement.style.setProperty('--muted-foreground', convertToHSL(theme.hint_color));
+          }
+          if (theme.link_color) {
+            document.documentElement.style.setProperty('--primary', convertToHSL(theme.link_color));
+          }
+          if (theme.button_color) {
+            document.documentElement.style.setProperty('--primary', convertToHSL(theme.button_color));
+          }
+          if (theme.button_text_color) {
+            document.documentElement.style.setProperty('--primary-foreground', convertToHSL(theme.button_text_color));
+          }
+          if (theme.secondary_bg_color) {
+            document.documentElement.style.setProperty('--card', convertToHSL(theme.secondary_bg_color));
+            document.documentElement.style.setProperty('--secondary', convertToHSL(theme.secondary_bg_color));
+          }
+        }
+      }
+
+      // Convert hex color to HSL for CSS variables
+      function convertToHSL(hex: string): string {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        if (!result) return '0 0% 50%';
+        
+        const r = parseInt(result[1], 16) / 255;
+        const g = parseInt(result[2], 16) / 255;
+        const b = parseInt(result[3], 16) / 255;
+        
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        let h = 0, s = 0, l = (max + min) / 2;
+        
+        if (max !== min) {
+          const d = max - min;
+          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+          switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+          }
+          h /= 6;
+        }
+        
+        return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
       }
 
       // Set up enhanced WebApp state
