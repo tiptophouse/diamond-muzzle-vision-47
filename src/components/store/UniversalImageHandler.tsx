@@ -47,6 +47,11 @@ export function UniversalImageHandler({
       return { provider: 'aws_s3_html', type: '360_html', supported: true };
     }
     
+    // AWS S3 my360.sela HTML detection (specific pattern)
+    if (cleanUrl.includes('my360.sela') && cleanUrl.endsWith('.html')) {
+      return { provider: 'aws_s3_html', type: '360_html', supported: true };
+    }
+    
     // AWS S3 static image detection (my360.sela and other static images)
     if ((cleanUrl.includes('s3.') && cleanUrl.includes('amazonaws.com')) || cleanUrl.includes('my360.sela')) {
       if (cleanUrl.match(/\.(jpg|jpeg|png)(\?.*)?$/)) {
