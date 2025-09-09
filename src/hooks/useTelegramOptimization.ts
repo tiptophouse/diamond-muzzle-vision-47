@@ -17,7 +17,7 @@ interface TelegramOptimizationState {
 
 export function useTelegramOptimization() {
   const { webApp } = useTelegramWebApp();
-  const { impactOccurred } = useTelegramHapticFeedback();
+  const { impactOccurred, notificationOccurred } = useTelegramHapticFeedback();
   
   const [state, setState] = useState<TelegramOptimizationState>({
     themeParams: {},
@@ -131,8 +131,9 @@ export function useTelegramOptimization() {
     // Enable momentum scrolling for containers
     const containers = document.querySelectorAll('.ios-scroll');
     containers.forEach(container => {
-      (container as HTMLElement).style.webkitOverflowScrolling = 'touch';
-      (container as HTMLElement).style.overscrollBehavior = 'contain';
+      const element = container as HTMLElement;
+      (element.style as any).webkitOverflowScrolling = 'touch';
+      element.style.overscrollBehavior = 'contain';
     });
   }, []);
 
@@ -188,8 +189,12 @@ export function useTelegramOptimization() {
   }, [webApp, applyTelegramTheme, updateSafeAreaInsets, optimizeViewport, optimizeForIOS, applyPerformanceOptimizations]);
 
   const triggerHapticFeedback = useCallback((type: 'light' | 'medium' | 'heavy' | 'success' | 'error' | 'warning') => {
-    impactOccurred(type);
-  }, [impactOccurred]);
+    if (['success', 'error', 'warning'].includes(type)) {
+      notificationOccurred(type as 'success' | 'error' | 'warning');
+    } else {
+      impactOccurred(type as 'light' | 'medium' | 'heavy');
+    }
+  }, [impactOccurred, notificationOccurred]);
 
   const openTelegramLink = useCallback((url: string) => {
     if (webApp?.openTelegramLink) {
@@ -200,8 +205,9 @@ export function useTelegramOptimization() {
   }, [webApp]);
 
   const shareContent = useCallback((text: string, url?: string) => {
-    if (webApp?.share) {
-      webApp.share(url ? `${text}\n${url}` : text);
+    const webAppAny = webApp as any;
+    if (webAppAny?.share) {
+      webAppAny.share(url ? `${text}\n${url}` : text);
     } else if (navigator.share) {
       navigator.share({ text, url });
     } else {
