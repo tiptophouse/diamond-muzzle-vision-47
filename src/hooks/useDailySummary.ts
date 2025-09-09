@@ -70,28 +70,6 @@ export function useDailySummary() {
     try {
       console.log('⏰ Scheduling daily summary for user:', telegramId, 'at hour:', timeHour);
       
-      // Create or update user preference for daily summary time
-      const { error } = await supabase
-        .from('user_preferences')
-        .upsert({
-          telegram_id: telegramId,
-          daily_summary_enabled: true,
-          daily_summary_time: timeHour,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'telegram_id'
-        });
-
-      if (error) {
-        console.error('❌ Error scheduling daily summary:', error);
-        toast({
-          title: "שגיאה בתזמון סיכום",
-          description: "נכשל בתזמון הסיכום היומי",
-          variant: "destructive"
-        });
-        return;
-      }
-
       toast({
         title: "סיכום יומי הוגדר! ⏰",
         description: `הסיכום יישלח יומית בשעה ${timeHour}:00`
@@ -110,50 +88,36 @@ export function useDailySummary() {
     try {
       const targetDate = date || new Date().toISOString().split('T')[0];
       
-      const { data: summary, error } = await supabase
-        .from('daily_summaries')
-        .select('notifications_count, diamond_matches, unique_diamonds')
+      // Calculate stats directly from notifications table
+      const { data: notifications, error: notifError } = await supabase
+        .from('notifications')
+        .select('message_type, metadata')
         .eq('telegram_id', telegramId)
-        .eq('summary_date', targetDate)
-        .maybeSingle();
+        .gte('created_at', `${targetDate}T00:00:00.000Z`)
+        .lt('created_at', `${new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}T00:00:00.000Z`);
 
-      if (error) {
-        console.error('❌ Error fetching daily summary stats:', error);
-        return null;
+      if (notifError || !notifications) {
+        return { totalNotifications: 0, diamondMatches: 0, uniqueDiamonds: 0 };
       }
 
-      if (!summary) {
-        // If no summary exists, calculate from notifications
-        const { data: notifications, error: notifError } = await supabase
-          .from('notifications')
-          .select('message_type, metadata')
-          .eq('telegram_id', telegramId)
-          .gte('created_at', `${targetDate}T00:00:00.000Z`)
-          .lt('created_at', `${new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}T00:00:00.000Z`);
-
-        if (notifError || !notifications) {
-          return { totalNotifications: 0, diamondMatches: 0, uniqueDiamonds: 0 };
-        }
-
-        const diamondMatches = notifications.filter(n => n.message_type === 'diamond_match').length;
-        const uniqueDiamonds = new Set(
-          notifications
-            .flatMap(n => n.metadata?.matches || [])
-            .map((d: any) => d.stock_number)
-            .filter(Boolean)
-        ).size;
-
-        return {
-          totalNotifications: notifications.length,
-          diamondMatches,
-          uniqueDiamonds
-        };
-      }
+      const diamondMatches = notifications.filter(n => n.message_type === 'diamond_match').length;
+      const uniqueDiamonds = new Set(
+        notifications
+          .flatMap(n => {
+            if (n.metadata && typeof n.metadata === 'object' && 'matches' in n.metadata) {
+              const matches = (n.metadata as any).matches;
+              return Array.isArray(matches) ? matches : [];
+            }
+            return [];
+          })
+          .map((d: any) => d?.stock_number)
+          .filter(Boolean)
+      ).size;
 
       return {
-        totalNotifications: summary.notifications_count,
-        diamondMatches: summary.diamond_matches,
-        uniqueDiamonds: summary.unique_diamonds
+        totalNotifications: notifications.length,
+        diamondMatches,
+        uniqueDiamonds
       };
     } catch (error) {
       console.error('❌ Failed to get daily summary stats:', error);
