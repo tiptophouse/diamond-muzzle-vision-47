@@ -2,9 +2,10 @@ import { useEffect, useState, useMemo, useCallback, memo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useStoreData } from "@/hooks/useStoreData";
+import { useTelegramHapticControl } from '@/hooks/useTelegramHapticControl';
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { useTelegramNavigation } from '@/hooks/useTelegramNavigation';
 import { TelegramShareButton } from '@/components/store/TelegramShareButton';
+import { getImageUrl } from "@/utils/imageUtils";
 import { OptimizedDiamondImage } from '@/components/store/OptimizedDiamondImage';
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { Button } from "@/components/ui/button";
@@ -26,19 +27,20 @@ function DiamondDetailPage() {
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [showImageUpload, setShowImageUpload] = useState(false);
 
-  const { navigateWithFeedback, goBack, shareContent } = useTelegramNavigation({
-    showBackButton: true,
-    onBackClick: () => navigate(-1),
-    enableHapticFeedback: true
+  // Controlled haptic feedback to prevent loops
+  const { triggerHaptic } = useTelegramHapticControl({
+    enableHaptic: true,
+    maxHapticsPerSecond: 1,
+    debounceTime: 1000
   });
 
   // Memoized admin check
   const isAdmin = useMemo(() => user?.id === 2138564172, [user?.id]);
 
-  // Memoized diamond finding with early return optimization
+  // Memoized diamond finding with stockNumber instead of id
   const diamond = useMemo(() => {
     if (!diamonds || !diamondId) return null;
-    return diamonds.find(d => d.id === diamondId) || null;
+    return diamonds.find(d => d.stockNumber === diamondId) || null;
   }, [diamonds, diamondId]);
 
   // Memoized price formatting to avoid recreation
@@ -50,13 +52,13 @@ function DiamondDetailPage() {
     }).format(price);
   }, []);
 
-  // Memoized meta data for better performance
+  // Memoized meta data for better performance with proper image fallback
   const metaData = useMemo(() => {
     if (!diamond) return null;
     
     const title = `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond - Mazalbot`;
     const description = `Premium ${diamond.cut} cut ${diamond.shape} diamond. ${diamond.color} color, ${diamond.clarity} clarity. Stock #${diamond.stockNumber}. Price: $${diamond.price.toLocaleString()}`;
-    const imageUrl = diamond.imageUrl || `https://miniapp.mazalbot.com/api/diamond-image/${diamond.stockNumber}`;
+    const imageUrl = getImageUrl(diamond) || `https://miniapp.mazalbot.com/api/diamond-image/${diamond.stockNumber}`;
     const url = `https://miniapp.mazalbot.com/diamond/${diamond.stockNumber}`;
     
     return { title, description, imageUrl, url };
@@ -72,6 +74,8 @@ function DiamondDetailPage() {
 
   const handleShare = useCallback(async () => {
     if (!diamond) return;
+    
+    triggerHaptic('light');
     
     const shareTitle = `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond`;
     const shareText = `💎 ${diamond.carat}ct ${diamond.shape} Diamond
@@ -92,8 +96,18 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
     const shareUrl = window.location.href;
     
     try {
-      await shareContent(shareTitle, shareText, shareUrl);
-      toast({ title: "Diamond details shared!" });
+      // Use native Telegram Web App sharing if available
+      if (navigator.share) {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl
+        });
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(`${shareTitle}\n\n${shareText}\n\n${shareUrl}`);
+        toast({ title: "Diamond details copied to clipboard!" });
+      }
     } catch (error) {
       toast({ 
         title: "Share failed", 
@@ -101,7 +115,7 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
         variant: "destructive" 
       });
     }
-  }, [diamond, shareContent, formatPrice, toast]);
+  }, [diamond, formatPrice, toast, triggerHaptic]);
 
   const handleContact = useCallback(async () => {
     if (!isAuthenticated || !user || !diamond) {
@@ -113,7 +127,9 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
       return;
     }
 
+    triggerHaptic('medium');
     setIsContactLoading(true);
+    
     try {
       const { data, error } = await supabase.functions.invoke('send-diamond-contact', {
         body: {
@@ -127,7 +143,7 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
             price: diamond.price,
             lab: diamond.lab,
             certificateNumber: diamond.certificateNumber,
-            imageUrl: diamond.imageUrl,
+            imageUrl: getImageUrl(diamond),
             certificateUrl: diamond.certificateUrl
           },
           visitorInfo: {
@@ -156,7 +172,7 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
     } finally {
       setIsContactLoading(false);
     }
-  }, [isAuthenticated, user, diamond, toast]);
+  }, [isAuthenticated, user, diamond, toast, triggerHaptic]);
 
   const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -280,7 +296,10 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
               variant="ghost" 
               size="sm" 
               className="flex items-center gap-2"
-              onClick={goBack}
+              onClick={() => {
+                triggerHaptic('light');
+                navigate(-1);
+              }}
             >
               <ArrowLeft className="h-4 w-4" />
               Back
@@ -302,11 +321,11 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
               <Card className="overflow-hidden">
                 <div className="aspect-square bg-gradient-to-br from-slate-100 to-slate-200 relative">
                   <OptimizedDiamondImage
-                    imageUrl={diamond.imageUrl}
+                    imageUrl={getImageUrl(diamond)}
                     gem360Url={diamond.gem360Url}
                     stockNumber={diamond.stockNumber}
                     shape={diamond.shape}
-                    className="w-full h-full"
+                    className="w-full h-full object-cover"
                     priority={true}
                   />
                   
