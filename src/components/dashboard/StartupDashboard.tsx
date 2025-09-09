@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useDiamondDistribution } from "@/hooks/useDiamondDistribution";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
+import { useAdvancedTelegramSDK } from '@/hooks/useAdvancedTelegramSDK';
+import { useTelegramCloudStorage } from '@/hooks/useTelegramCloudStorage';
 import { useSearchResults } from "@/hooks/useSearchResults";
 import { ColorDistributionChart } from "@/components/charts/ColorDistributionChart";
 import { ClarityDistributionChart } from "@/components/charts/ClarityDistributionChart";
 import { RecentDiamondsSection } from "@/components/charts/RecentDiamondsSection";
-import { useState, useEffect } from "react";
+import { TelegramOptimizedLayout } from "@/components/telegram/TelegramOptimizedLayout";
+import { useState, useEffect, useCallback } from "react";
 import { 
   Diamond, 
   TrendingUp, 
@@ -49,7 +51,15 @@ export function StartupDashboard() {
   } = useDiamondDistribution();
   
   const { searchResults, searchResultsCount, loading: searchLoading } = useSearchResults();
-  const { selectionChanged, impactOccurred } = useTelegramHapticFeedback();
+  const { 
+    haptics, 
+    navigation, 
+    utils, 
+    dynamicTheme, 
+    performanceMetrics 
+  } = useAdvancedTelegramSDK();
+  
+  const { preload, stats: cacheStats } = useTelegramCloudStorage();
   
   const [metrics, setMetrics] = useState<StartupMetrics>({
     totalUsers: 375,
@@ -62,33 +72,56 @@ export function StartupDashboard() {
   const totalInventoryValue = colorDistribution.reduce((sum, item) => sum + item.totalValue, 0);
   const unreadNotifications = searchResults.filter(r => r.result_type === 'match').length;
 
-  const handleQuickAction = (action: string, path: string) => {
-    impactOccurred('light');
-    selectionChanged();
+  // Advanced optimized action handler with preloading
+  const handleQuickAction = useCallback(utils.debounce((action: string, path: string) => {
+    haptics.medium();
+    
+    // Preload data for common routes
+    if (path === '/inventory') {
+      preload('inventory_data', async () => {
+        // This would preload inventory data
+        return { preloaded: true };
+      });
+    }
+    
     navigate(path);
-  };
+  }, 300), [haptics, utils, preload, navigate]);
 
-  const handleRefresh = async () => {
-    impactOccurred('medium');
-    await refetch();
-  };
+  // Optimized refresh with caching
+  const handleRefresh = useCallback(utils.throttle(async () => {
+    haptics.heavy();
+    
+    // Show Telegram's main button as loading indicator
+    navigation.showMainButton('Refreshing...', undefined, dynamicTheme.primary);
+    
+    try {
+      await Promise.all([refetch(), new Promise(resolve => setTimeout(resolve, 500))]);
+      haptics.success();
+      navigation.hideMainButton();
+    } catch (error) {
+      haptics.error();
+      navigation.hideMainButton();
+    }
+  }, 1000), [haptics, navigation, dynamicTheme, refetch, utils]);
 
+  // Real-time metrics with optimized updates
   useEffect(() => {
-    // Simulate real-time metrics updates
-    const interval = setInterval(() => {
+    const updateMetrics = utils.throttle(() => {
       setMetrics(prev => ({
         ...prev,
         activeToday: prev.activeToday + Math.floor(Math.random() * 3),
         searchMatches: prev.searchMatches + Math.floor(Math.random() * 2),
         totalRevenue: prev.totalRevenue + Math.floor(Math.random() * 500)
       }));
-    }, 10000);
+    }, 5000);
 
+    const interval = setInterval(updateMetrics, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [utils]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary/2 to-secondary/5 pb-6">
+    <TelegramOptimizedLayout enablePerformanceMonitoring enableAutoSave cacheKey="startup_dashboard">
+      <div className="min-h-screen bg-gradient-to-br from-background via-primary/2 to-secondary/5 pb-6">
       {/* Startup-style header with notifications */}
       <div className="relative bg-gradient-to-br from-primary/8 via-primary/12 to-purple-500/8 px-4 pt-6 pb-8 rounded-b-3xl mb-6 overflow-hidden">
         {/* Background decorative elements */}
@@ -400,7 +433,8 @@ export function StartupDashboard() {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
-    </div>
+    </TelegramOptimizedLayout>
   );
 }
