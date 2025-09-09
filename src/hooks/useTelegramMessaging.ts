@@ -1,76 +1,112 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { createClient } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 
-interface SendMessageOptions {
-  telegramId: number;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+interface MessageOptions {
   message: string;
-  diamondDetails?: {
-    stock_number: string;
-    shape: string;
-    weight: number;
-    color: string;
-    clarity: string;
-    price_per_carat: number;
-  };
+  buttons?: Array<{
+    text: string;
+    url: string;
+  }>;
 }
 
 export function useTelegramMessaging() {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
-  const { user } = useTelegramAuth();
+  const { notificationOccurred, impactOccurred } = useTelegramHapticFeedback();
 
-  const sendMessage = useCallback(async (options: SendMessageOptions) => {
-    if (!user?.id) {
-      toast({
-        title: "Error",
-        description: "User not authenticated",
-        variant: "destructive",
-      });
-      return false;
-    }
+  const sendDirectMessage = useCallback(async (
+    telegramId: number, 
+    options: MessageOptions
+  ): Promise<boolean> => {
+    setIsSending(true);
+    impactOccurred('medium');
 
-    setIsLoading(true);
-    
     try {
-      const messageContent = options.diamondDetails 
-        ? `${options.message}\n\n💎 Diamond Details:\n${options.diamondDetails.shape} ${options.diamondDetails.weight}ct ${options.diamondDetails.color} ${options.diamondDetails.clarity}\nStock: ${options.diamondDetails.stock_number}\nPrice: $${(options.diamondDetails.price_per_carat * options.diamondDetails.weight).toLocaleString()}`
-        : options.message;
-
-      const { error } = await supabase.functions.invoke('send-individual-message', {
+      const { data, error } = await supabase.functions.invoke('send-individual-message', {
         body: {
-          telegramId: options.telegramId,
-          message: messageContent,
-          senderId: user.id
+          telegramId,
+          message: options.message,
+          buttons: options.buttons
         }
       });
 
       if (error) {
-        throw error;
+        console.error('Error sending message:', error);
+        toast({
+          title: "Failed to Send Message",
+          description: "Could not send the message. Please try again.",
+          variant: "destructive"
+        });
+        notificationOccurred('error');
+        return false;
       }
 
       toast({
         title: "Message Sent",
-        description: "Your message has been sent successfully",
+        description: `Message sent successfully to user ${telegramId}`,
       });
-
+      notificationOccurred('success');
       return true;
+
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
         title: "Failed to Send Message",
-        description: "Could not send message. Please try again.",
-        variant: "destructive",
+        description: "An unexpected error occurred.",
+        variant: "destructive"
       });
+      notificationOccurred('error');
       return false;
+
     } finally {
-      setIsLoading(false);
+      setIsSending(false);
     }
-  }, [user?.id, toast]);
+  }, [toast, notificationOccurred, impactOccurred]);
+
+  const sendDiamondInquiry = useCallback(async (
+    telegramId: number,
+    diamond: any,
+    customMessage?: string
+  ): Promise<boolean> => {
+    const price = diamond.total_price || (diamond.price_per_carat * diamond.weight);
+    const formattedPrice = price.toLocaleString('en-US', { 
+      style: 'currency', 
+      currency: 'USD', 
+      maximumFractionDigits: 0 
+    });
+
+    const message = customMessage || 
+      `💎 Hello! I have a ${diamond.shape} diamond that matches your search:\n\n` +
+      `📋 Details:\n` +
+      `• Shape: ${diamond.shape}\n` +
+      `• Weight: ${diamond.weight}ct\n` +
+      `• Color: ${diamond.color}\n` +
+      `• Clarity: ${diamond.clarity}\n` +
+      `• Price: ${formattedPrice}\n` +
+      `• Stock #: ${diamond.stock_number}\n\n` +
+      `Would you like more information or photos?`;
+
+    return await sendDirectMessage(telegramId, { message });
+  }, [sendDirectMessage]);
+
+  const sendQuickReply = useCallback(async (
+    telegramId: number,
+    replyMessage: string
+  ): Promise<boolean> => {
+    return await sendDirectMessage(telegramId, { message: replyMessage });
+  }, [sendDirectMessage]);
 
   return {
-    sendMessage,
-    isLoading
+    sendDirectMessage,
+    sendDiamondInquiry,
+    sendQuickReply,
+    isSending
   };
 }

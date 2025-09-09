@@ -198,7 +198,7 @@ export function TelegramNotificationsList({
 
           {/* Notifications list */}
           {filteredNotifications.length > 0 ? (
-            <div className={viewMode === 'mini' ? 'grid grid-cols-1 sm:grid-cols-2 gap-3' : 'space-y-4'}>
+            <div className={viewMode === 'mini' ? 'grid grid-cols-1 md:grid-cols-2 gap-3' : 'space-y-3 md:space-y-4'}>
               {filteredNotifications.map(notification => (
                 viewMode === 'cards' ? (
                   <TelegramDiamondNotificationCard
