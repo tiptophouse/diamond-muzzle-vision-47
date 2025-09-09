@@ -99,11 +99,11 @@ const Index = () => {
     return <Navigate to="/admin" replace />;
   }
 
-  // For regular users, redirect to store to see diamond collection
+  // For regular users, redirect to dashboard to see their data
   if (isAuthenticated && user) {
-    console.log('✅ Regular user detected - redirecting to store');
+    console.log('✅ Regular user detected - redirecting to dashboard');
     redirectHandledRef.current = true;
-    return <Navigate to="/store" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   // Fallback for unauthenticated users
