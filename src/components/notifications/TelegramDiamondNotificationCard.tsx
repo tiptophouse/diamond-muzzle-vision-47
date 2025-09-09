@@ -2,11 +2,13 @@ import React, { useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Diamond, TrendingUp, Users, Sparkles, Copy, Share, MessageCircle } from 'lucide-react';
+import { Diamond, TrendingUp, Users, Sparkles, Copy, Share, MessageCircle, Search, User, Phone } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
+import { useInventoryQuickSearch } from '@/hooks/useInventoryQuickSearch';
+import { useInventoryData } from '@/hooks/useInventoryData';
 
 interface DiamondMatch {
   stock_number: string;
@@ -32,7 +34,10 @@ interface TelegramDiamondNotificationCardProps {
       search_criteria?: any;
       matches?: DiamondMatch[];
       customer_info?: any;
+      searcher_info?: any;
       confidence_score?: number;
+      user_id?: number;
+      search_query?: string;
     };
     created_at: string;
   };
@@ -48,6 +53,8 @@ export function TelegramDiamondNotificationCard({
   const { hapticFeedback, mainButton, showAlert, share } = useTelegramWebApp();
   const { impactOccurred, notificationOccurred, selectionChanged } = useTelegramHapticFeedback();
   const { toast } = useToast();
+  const { allDiamonds } = useInventoryData();
+  const { searchByCriteria, createQuickReplyButtons } = useInventoryQuickSearch(allDiamonds);
   
   const isDiamondMatch = notification.type === 'diamond_match';
   const metadata = notification.data;
@@ -96,9 +103,37 @@ export function TelegramDiamondNotificationCard({
 
   const handleContactCustomer = useCallback((diamond?: DiamondMatch) => {
     impactOccurred('medium');
-    onContactCustomer?.(metadata?.customer_info, diamond);
+    onContactCustomer?.(metadata?.customer_info || metadata?.searcher_info, diamond);
     selectionChanged();
-  }, [metadata?.customer_info, onContactCustomer, impactOccurred, selectionChanged]);
+  }, [metadata?.customer_info, metadata?.searcher_info, onContactCustomer, impactOccurred, selectionChanged]);
+
+  const handleDirectContact = useCallback((userId: number) => {
+    impactOccurred('medium');
+    
+    // Try different Telegram contact methods
+    if (window.Telegram?.WebApp) {
+      // Use Telegram Web App API to open user profile
+      window.open(`tg://user?id=${userId}`, '_blank');
+    } else {
+      // Fallback to opening in new window
+      window.open(`https://t.me/user/${userId}`, '_blank');
+    }
+    
+    toast({
+      title: "פותח צ'אט",
+      description: `פותח שיחה עם משתמש ${userId}`,
+    });
+  }, [impactOccurred, toast]);
+
+  const handleQuickSearch = useCallback((criteria: any) => {
+    impactOccurred('light');
+    const result = searchByCriteria(criteria);
+    
+    toast({
+      title: `🔍 נמצאו ${result.matches.length} יהלומים`,
+      description: result.searchText,
+    });
+  }, [impactOccurred, searchByCriteria, toast]);
 
   const handleCopyDiamond = useCallback((diamond: DiamondMatch) => {
     const diamondText = `💎 ${diamond.shape} ${diamond.weight}ct ${diamond.color} ${diamond.clarity}\n💰 $${(diamond.total_price || diamond.price_per_carat * diamond.weight).toLocaleString()}\n📦 Stock: ${diamond.stock_number}`;
@@ -130,6 +165,21 @@ export function TelegramDiamondNotificationCard({
     const price = diamond.total_price || (diamond.price_per_carat * diamond.weight);
     return price.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
   };
+
+  const getUserInfo = () => {
+    const userId = metadata?.user_id;
+    const searcherInfo = metadata?.searcher_info;
+    const customerInfo = metadata?.customer_info;
+    
+    return {
+      userId,
+      name: searcherInfo?.name || customerInfo?.name || 'לקוח מעוניין',
+      telegram_username: searcherInfo?.telegram_username || customerInfo?.telegram_username,
+      phone: searcherInfo?.phone || customerInfo?.phone
+    };
+  };
+
+  const quickReplyButtons = createQuickReplyButtons(notification);
 
   return (
     <Card 
@@ -167,6 +217,41 @@ export function TelegramDiamondNotificationCard({
         <p className="text-sm text-foreground/90 leading-relaxed">
           {notification.message}
         </p>
+
+        {/* User Contact Info */}
+        {getUserInfo().userId && (
+          <div className="bg-background/60 backdrop-blur-sm rounded-lg p-3 border border-border/50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="font-medium text-sm">{getUserInfo().name}</p>
+                  <p className="text-xs text-muted-foreground">ID: {getUserInfo().userId}</p>
+                </div>
+              </div>
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  onClick={() => handleDirectContact(getUserInfo().userId!)}
+                  className="h-8 px-3"
+                >
+                  <MessageCircle className="h-3 w-3 mr-1" />
+                  צ'אט
+                </Button>
+                {getUserInfo().phone && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => window.open(`tel:${getUserInfo().phone}`, '_blank')}
+                    className="h-8 px-3"
+                  >
+                    <Phone className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Diamond Match Details */}
         {isDiamondMatch && metadata && (
@@ -231,7 +316,7 @@ export function TelegramDiamondNotificationCard({
                     <Share className="h-3 w-3 mr-1" />
                     Share
                   </Button>
-                  {metadata.customer_info && (
+                  {(metadata?.customer_info || metadata?.searcher_info) && (
                     <Button
                       size="sm"
                       onClick={() => handleContactCustomer(topMatch)}
@@ -269,6 +354,29 @@ export function TelegramDiamondNotificationCard({
                     +{matches.length - 3} more matches available
                   </p>
                 )}
+              </div>
+            )}
+
+            {/* Quick Reply Buttons */}
+            {quickReplyButtons.length > 0 && (
+              <div className="bg-background/40 rounded-lg p-3">
+                <h5 className="font-medium text-xs text-muted-foreground mb-3 flex items-center gap-1">
+                  <Search className="h-3 w-3" />
+                  חיפוש מהיר במלאי שלך
+                </h5>
+                <div className="flex flex-wrap gap-2">
+                  {quickReplyButtons.map((button, index) => (
+                    <Button
+                      key={index}
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleQuickSearch(button.criteria)}
+                      className="h-7 text-xs"
+                    >
+                      {button.text}
+                    </Button>
+                  ))}
+                </div>
               </div>
             )}
 

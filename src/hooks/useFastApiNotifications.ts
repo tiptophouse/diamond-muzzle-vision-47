@@ -52,7 +52,9 @@ export function useFastApiNotifications() {
                 result_type: notification.result_type,
                 diamonds_data: notification.diamonds_data,
                 title: notification.title,
-                searcher_info: notification.data?.searcher_info
+                searcher_info: notification.data?.searcher_info,
+                user_id: notification.user_id,
+                matches: notification.data?.matches
               }
             });
 
@@ -112,7 +114,20 @@ export function useFastApiNotifications() {
             search_query: result.search_query,
             diamonds_count: result.diamonds_data?.length || 0,
             diamonds_data: result.diamonds_data,
-            searcher_info: extractSearcherInfo(result.search_query)
+            searcher_info: extractSearcherInfo(result.search_query),
+            user_id: result.user_id,
+            matches: result.diamonds_data?.map((diamond: any) => ({
+              stock_number: diamond.stock_number || diamond.stockNumber,
+              shape: diamond.shape,
+              weight: diamond.weight || diamond.carat,
+              color: diamond.color,
+              clarity: diamond.clarity,
+              cut: diamond.cut,
+              price_per_carat: diamond.price_per_carat || diamond.price,
+              status: diamond.status || 'Available',
+              confidence: diamond.confidence || 0.8,
+              total_price: diamond.total_price || (diamond.price_per_carat * (diamond.weight || diamond.carat))
+            }))
           }
         }));
 
@@ -229,11 +244,23 @@ export function useFastApiNotifications() {
   };
 
   const contactCustomer = (customerInfo: any) => {
-    if (customerInfo.telegram_username) {
+    const userId = customerInfo?.user_id || customerInfo?.telegram_id;
+    
+    if (userId) {
+      // Direct Telegram contact using user ID
+      if (window.Telegram?.WebApp) {
+        window.open(`tg://user?id=${userId}`, '_blank');
+      } else {
+        window.open(`https://t.me/user/${userId}`, '_blank');
+      }
+      
+      toast({
+        title: "פותח צ'אט",
+        description: `פותח שיחה עם משתמש ${userId}`,
+      });
+    } else if (customerInfo?.telegram_username) {
       window.open(`https://t.me/${customerInfo.telegram_username}`, '_blank');
-    } else if (customerInfo.telegram_id) {
-      window.open(`tg://user?id=${customerInfo.telegram_id}`, '_blank');
-    } else if (customerInfo.phone) {
+    } else if (customerInfo?.phone) {
       window.open(`tel:${customerInfo.phone}`, '_blank');
     } else {
       toast({
