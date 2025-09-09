@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { http } from '@/api/http';
+import { api } from '@/lib/api/client';
 
 interface DiamondData {
   id: string;
@@ -46,31 +46,45 @@ export function useDiamondDistribution() {
   const { user, isAuthenticated } = useTelegramAuth();
 
   const fetchDistributionData = async () => {
-    if (!isAuthenticated || !user?.id) {
-      console.log('Not authenticated, skipping diamond distribution fetch');
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
     try {
-      console.log('🔍 Fetching diamond distribution for user:', user.id);
+      let diamonds: DiamondData[] = [];
       
-      // Fetch diamonds from FastAPI
-      const response = await http<{ results: DiamondData[]; total: number }>(`/api/v1/get_search_results?user_id=${user.id}&limit=1000&offset=0`);
-      
-      const diamonds = response.results || [];
-      console.log('📊 Received diamonds for distribution:', diamonds.length);
-
-      if (diamonds.length === 0) {
-        setData({
-          colorDistribution: [],
-          clarityDistribution: [],
-          totalDiamonds: 0,
-          recentDiamonds: []
-        });
-        return;
+      if (isAuthenticated && user?.id) {
+        console.log('🔍 Fetching diamond distribution for authenticated user:', user.id);
+        
+        // Fetch diamonds from correct FastAPI endpoint
+        const response = await api.get<any[]>(`/api/v1/get_all_stones?user_id=${user.id}`);
+        
+        if (response.data && Array.isArray(response.data)) {
+          diamonds = response.data.map(d => ({
+            id: d.id || d.stock_number || '',
+            shape: d.shape || 'Round',
+            color: d.color || 'H',
+            clarity: d.clarity || 'VS1',
+            carat: Number(d.weight || d.carat || 1),
+            price: Number(d.price_per_carat || d.price || 0),
+            certificate_number: String(d.certificate_number || ''),
+            created_at: d.created_at || new Date().toISOString()
+          }));
+        }
+        
+        console.log('📊 Received diamonds for distribution:', diamonds.length);
+      } else {
+        console.log('🔍 Not authenticated, using demo data for diamond distribution');
+        // Provide demo data for better UX
+        diamonds = [
+          { id: '1', shape: 'Round', color: 'D', clarity: 'FL', carat: 2.5, price: 15000, certificate_number: '12345', created_at: new Date().toISOString() },
+          { id: '2', shape: 'Princess', color: 'E', clarity: 'VVS1', carat: 1.8, price: 12000, certificate_number: '12346', created_at: new Date().toISOString() },
+          { id: '3', shape: 'Emerald', color: 'F', clarity: 'VVS2', carat: 3.2, price: 18000, certificate_number: '12347', created_at: new Date().toISOString() },
+          { id: '4', shape: 'Round', color: 'G', clarity: 'VS1', carat: 1.5, price: 8000, certificate_number: '12348', created_at: new Date().toISOString() },
+          { id: '5', shape: 'Oval', color: 'H', clarity: 'VS2', carat: 2.1, price: 11000, certificate_number: '12349', created_at: new Date().toISOString() },
+          { id: '6', shape: 'Cushion', color: 'I', clarity: 'SI1', carat: 1.9, price: 9500, certificate_number: '12350', created_at: new Date().toISOString() },
+          { id: '7', shape: 'Pear', color: 'J', clarity: 'SI2', carat: 2.3, price: 10500, certificate_number: '12351', created_at: new Date().toISOString() },
+          { id: '8', shape: 'Marquise', color: 'K', clarity: 'I1', carat: 1.7, price: 7500, certificate_number: '12352', created_at: new Date().toISOString() }
+        ];
       }
 
       // Calculate color distribution
@@ -140,6 +154,7 @@ export function useDiamondDistribution() {
   };
 
   useEffect(() => {
+    // Always fetch data, regardless of authentication status for better UX
     fetchDistributionData();
   }, [user?.id, isAuthenticated]);
 
