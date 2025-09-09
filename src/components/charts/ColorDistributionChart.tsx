@@ -13,7 +13,7 @@ interface ColorDistributionChartProps {
   isLoading: boolean;
 }
 
-// Diamond industry standard color grading (D is colorless, Z is light yellow)
+// Diamond industry standard color grading with accurate colors
 const DIAMOND_COLORS = {
   'D': '#ffffff',
   'E': '#fefefe', 
@@ -21,10 +21,23 @@ const DIAMOND_COLORS = {
   'G': '#fbfbfb',
   'H': '#f9f9f9',
   'I': '#f5f5dc',
-  'J': '#f0e68c',
-  'K': '#daa520',
-  'L': '#cd853f',
-  'M': '#d2691e'
+  'J': '#f0e68c', // Light yellow
+  'K': '#daa520', // Golden yellow  
+  'L': '#cd853f', // Light orange
+  'M': '#d2691e', // Orange
+  'N': '#a0522d', // Brown/gray
+  'O': '#8b4513', // Darker brown
+  'P': '#654321', // Dark brown
+  'Q': '#5d4037',
+  'R': '#4e342e',
+  'S': '#3e2723',
+  'T': '#2e1609',
+  'U': '#1e0e06',
+  'V': '#0f0703',
+  'W': '#0a0502',
+  'X': '#050201',
+  'Y': '#030100',
+  'Z': '#020100'
 };
 
 export function ColorDistributionChart({ distribution, isLoading }: ColorDistributionChartProps) {
@@ -73,22 +86,28 @@ export function ColorDistributionChart({ distribution, isLoading }: ColorDistrib
                   paddingAngle={2}
                   dataKey="count"
                 >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={DIAMOND_COLORS[entry.color] || '#94a3b8'} />
-                  ))}
+                   {chartData.map((entry, index) => (
+                     <Cell 
+                       key={`cell-${index}`} 
+                       fill={DIAMOND_COLORS[entry.color as keyof typeof DIAMOND_COLORS] || 'hsl(var(--muted))'} 
+                       stroke="hsl(var(--border))"
+                       strokeWidth={1}
+                     />
+                   ))}
                 </Pie>
-                <Tooltip 
-                  formatter={(value, name, props) => [
-                    `${value} diamonds`,
-                    `Color ${props.payload.color}`
-                  ]}
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--background))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                    fontSize: '12px'
-                  }}
-                />
+                 <Tooltip 
+                   formatter={(value, name, props) => [
+                     `${value} diamonds`,
+                     `Grade ${props.payload.color}`
+                   ]}
+                   contentStyle={{
+                     backgroundColor: 'hsl(var(--popover))',
+                     border: '1px solid hsl(var(--border))',
+                     borderRadius: '8px',
+                     fontSize: '12px',
+                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                   }}
+                 />
                 <Legend 
                   verticalAlign="bottom"
                   height={20}
