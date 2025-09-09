@@ -3,7 +3,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Diamond } from "./InventoryTable";
-import { Edit, Trash, ImageIcon } from "lucide-react";
+import { Edit, Trash } from "lucide-react";
+import { OptimizedDiamondImage } from "@/components/store/OptimizedDiamondImage";
+import { getImageUrl, getFallbackImageUrl, get360Url } from "@/utils/imageUtils";
 
 interface InventoryMobileCardProps {
   diamond: Diamond;
@@ -16,25 +18,16 @@ export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobi
     <Card className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors">
       <CardContent className="p-3 sm:p-4 w-full">
         {/* Image section */}
-        {(diamond.imageUrl || diamond.picture) && (
-          <div className="mb-3 sm:mb-4 w-full">
-            <img 
-              src={diamond.imageUrl || diamond.picture} 
-              alt={`Diamond ${diamond.stockNumber}`}
-              className="w-full h-28 sm:h-32 object-cover rounded-lg border border-slate-200 dark:border-slate-600"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                const placeholderDiv = e.currentTarget.parentElement?.nextElementSibling as HTMLElement;
-                if (placeholderDiv) {
-                  placeholderDiv.classList.remove('hidden');
-                }
-              }}
+        <div className="mb-3 sm:mb-4 w-full">
+          <div className="w-full h-28 sm:h-32 rounded-lg overflow-hidden">
+            <OptimizedDiamondImage
+              stockNumber={diamond.stockNumber}
+              imageUrl={getImageUrl(diamond)}
+              gem360Url={get360Url(diamond)}
+              shape={diamond.shape}
+              className="w-full h-full"
             />
           </div>
-        )}
-        
-        <div className={`mb-3 sm:mb-4 w-full h-28 sm:h-32 bg-slate-100 dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center ${(diamond.imageUrl || diamond.picture) ? 'hidden' : ''}`}>
-          <ImageIcon className="h-6 w-6 sm:h-8 sm:w-8 text-slate-400" />
         </div>
 
         <div className="flex justify-between items-start mb-3 sm:mb-4 w-full gap-3">
