@@ -12,9 +12,7 @@ import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 import { useEffect, useMemo } from 'react';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { useNavigate } from 'react-router-dom';
-import { Gem, Users, TrendingUp, Star, Plus, Upload, Bell } from 'lucide-react';
-import { useFastApiNotifications } from '@/hooks/useFastApiNotifications';
-import { Badge } from '@/components/ui/badge';
+import { Gem, Users, TrendingUp, Star, Plus, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { safeDivide, safeSum, safeRound, validateDiamondData } from '@/utils/safeMath';
 import { useDiamondDistribution } from '@/hooks/useDiamondDistribution';
@@ -34,7 +32,6 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
   const { webApp, haptics } = useEnhancedTelegramWebApp();
   const { selectionChanged, impactOccurred } = useTelegramHapticFeedback();
   const navigate = useNavigate();
-  const { notifications } = useFastApiNotifications();
   
   // Fetch distribution data from FastAPI
   const { data: distributionData, loading: distributionLoading, refetch: refetchDistribution } = useDiamondDistribution();

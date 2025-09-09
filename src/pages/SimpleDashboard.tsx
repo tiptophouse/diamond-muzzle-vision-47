@@ -98,10 +98,15 @@ export default function SimpleDashboard() {
     }
   }, [isAuthenticated]); // Only run when authentication status changes
 
-  // Show data even without authentication for better UX
+  // Redirect to store if not authenticated to avoid loading issues
+  useEffect(() => {
+    if (!isAuthenticated && !user) {
+      navigate('/store');
+    }
+  }, [isAuthenticated, user, navigate]);
+
   if (!isAuthenticated || !user) {
-    // Still show dashboard with limited data
-    return <MobileTelegramDashboard />;
+    return null; // Will redirect before showing anything
   }
 
   // Use the new mobile-optimized dashboard

@@ -18,8 +18,6 @@ import {
   Diamond,
   Shield,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { useFastApiNotifications } from '@/hooks/useFastApiNotifications';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -42,7 +40,6 @@ export function Sidebar({ className }: SidebarProps) {
   const location = useLocation();
   const { user } = useTelegramAuth();
   const [isAdmin, setIsAdmin] = useState(false);
-  const { notifications } = useFastApiNotifications();
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -71,13 +68,12 @@ export function Sidebar({ className }: SidebarProps) {
           <div className="space-y-1">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
-              const unreadCount = item.name === 'Notifications' ? notifications.filter(n => !n.read).length : 0;
               return (
                 <Link
                   key={item.name}
                   to={item.href}
                   className={cn(
-                    'flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100 transition-colors relative',
+                    'flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100 transition-colors',
                     isActive
                       ? 'bg-blue-100 text-blue-700'
                       : 'text-slate-700 hover:text-slate-900'
@@ -85,14 +81,6 @@ export function Sidebar({ className }: SidebarProps) {
                 >
                   <item.icon className="mr-3 h-5 w-5" />
                   {item.name}
-                  {unreadCount > 0 && (
-                    <Badge 
-                      variant="destructive" 
-                      className="ml-auto h-5 w-5 p-0 flex items-center justify-center text-xs"
-                    >
-                      {unreadCount}
-                    </Badge>
-                  )}
                 </Link>
               );
             })}

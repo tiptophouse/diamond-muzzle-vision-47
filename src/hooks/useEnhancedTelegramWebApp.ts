@@ -53,11 +53,21 @@ export function useEnhancedTelegramWebApp() {
       // Enable modern features for stable experience
       WebApp.enableClosingConfirmation();
       
-      // iPhone scrolling fixes - Use ONLY disableVerticalSwipes to prevent app closing
-      // This prevents the mini app from closing on vertical swipes while allowing native scrolling
+      // iPhone scrolling fixes - Latest Telegram SDK features
+      if (typeof WebApp.enableVerticalSwipes === 'function') {
+        WebApp.enableVerticalSwipes();
+        console.log('✅ Vertical swipes enabled for iPhone scrolling');
+      }
+      
+      // Disable pull-to-refresh that interferes with scrolling
       if (typeof WebApp.disableVerticalSwipes === 'function') {
         WebApp.disableVerticalSwipes();
-        console.log('✅ Disabled vertical swipes to prevent app closing - native scrolling enabled');
+        console.log('✅ Disabled problematic vertical swipes');
+      }
+      
+      // Re-enable only safe vertical interactions
+      if (typeof WebApp.enableVerticalSwipes === 'function') {
+        WebApp.enableVerticalSwipes();
       }
       
       // Set optimal theme for better UX
@@ -73,10 +83,8 @@ export function useEnhancedTelegramWebApp() {
         document.documentElement.style.setProperty('--tg-safe-area-inset-top', `${WebApp.safeAreaInset?.top || 0}px`);
         document.documentElement.style.setProperty('--tg-safe-area-inset-bottom', `${WebApp.safeAreaInset?.bottom || 0}px`);
         
-        // Optimize viewport for iPhone - Always use viewportStableHeight for iOS
-        const stableHeight = WebApp.viewportStableHeight || WebApp.viewportHeight;
-        document.documentElement.style.setProperty('--tg-viewport-height', `${stableHeight}px`);
-        document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableHeight}px`);
+        // Optimize viewport for iPhone
+        document.documentElement.style.setProperty('--tg-viewport-height', `${WebApp.viewportStableHeight || WebApp.viewportHeight}px`);
         
         // Prevent iOS zoom on input focus
         const metaViewport = document.querySelector('meta[name=viewport]');
@@ -200,28 +208,8 @@ export function useEnhancedTelegramWebApp() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       initializeWebApp();
-      
-      // Listen for viewport changes to update CSS variables dynamically
-      const handleViewportChanged = () => {
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        if (isIOS && webApp) {
-          const stableHeight = WebApp.viewportStableHeight || WebApp.viewportHeight;
-          document.documentElement.style.setProperty('--tg-viewport-height', `${WebApp.viewportHeight}px`);
-          document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableHeight}px`);
-          console.log('📱 iOS viewport updated:', { viewportHeight: WebApp.viewportHeight, stableHeight });
-        }
-      };
-      
-      // Set up viewport change listener
-      if (typeof WebApp !== 'undefined' && WebApp.onEvent) {
-        WebApp.onEvent('viewportChanged', handleViewportChanged);
-        
-        return () => {
-          WebApp.offEvent('viewportChanged', handleViewportChanged);
-        };
-      }
     }
-  }, [initializeWebApp, webApp]);
+  }, [initializeWebApp]);
 
   // Helper function to ensure color format is valid for Telegram SDK
   const formatColor = (color: string): `#${string}` => {

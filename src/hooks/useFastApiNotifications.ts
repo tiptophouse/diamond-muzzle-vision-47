@@ -52,9 +52,7 @@ export function useFastApiNotifications() {
                 result_type: notification.result_type,
                 diamonds_data: notification.diamonds_data,
                 title: notification.title,
-                searcher_info: notification.data?.searcher_info,
-                user_id: notification.user_id,
-                matches: notification.data?.matches
+                searcher_info: notification.data?.searcher_info
               }
             });
 
@@ -114,20 +112,7 @@ export function useFastApiNotifications() {
             search_query: result.search_query,
             diamonds_count: result.diamonds_data?.length || 0,
             diamonds_data: result.diamonds_data,
-            searcher_info: extractSearcherInfo(result.search_query),
-            user_id: result.user_id,
-            matches: result.diamonds_data?.map((diamond: any) => ({
-              stock_number: diamond.stock_number || diamond.stockNumber,
-              shape: diamond.shape,
-              weight: diamond.weight || diamond.carat,
-              color: diamond.color,
-              clarity: diamond.clarity,
-              cut: diamond.cut,
-              price_per_carat: diamond.price_per_carat || diamond.price,
-              status: diamond.status || 'Available',
-              confidence: diamond.confidence || 0.8,
-              total_price: diamond.total_price || (diamond.price_per_carat * (diamond.weight || diamond.carat))
-            }))
+            searcher_info: extractSearcherInfo(result.search_query)
           }
         }));
 
@@ -243,94 +228,19 @@ export function useFastApiNotifications() {
     });
   };
 
-  const contactCustomer = async (customerInfo: any) => {
-    const telegramId = customerInfo?.user_id || customerInfo?.telegram_id;
-    
-    console.log('📱 Attempting to contact customer:', { customerInfo, telegramId });
-    
-    if (!telegramId) {
+  const contactCustomer = (customerInfo: any) => {
+    if (customerInfo.telegram_username) {
+      window.open(`https://t.me/${customerInfo.telegram_username}`, '_blank');
+    } else if (customerInfo.telegram_id) {
+      window.open(`tg://user?id=${customerInfo.telegram_id}`, '_blank');
+    } else if (customerInfo.phone) {
+      window.open(`tel:${customerInfo.phone}`, '_blank');
+    } else {
       toast({
         title: "אין פרטי קשר",
-        description: "לא נמצא מזהה טלגרם עבור לקוח זה",
+        description: "לא נמצאו פרטי קשר עבור לקוח זה",
         variant: "destructive"
       });
-      return;
-    }
-
-    // Try to send a direct message using Supabase function
-    try {
-      const defaultMessage = `שלום ${customerInfo?.customerName || 'לקוח יקר'},
-
-ראיתי שחיפשת יהלומים ונמצאו התאמות במלאי שלי! 💎
-
-${customerInfo?.search_query ? `החיפוש שלך: ${customerInfo.search_query}` : ''}
-${customerInfo?.diamonds_count ? `נמצאו ${customerInfo.diamonds_count} יהלומים מתאימים` : ''}
-
-אשמח לעזור לך למצוא את היהלום המושלם ולתת לך מחירים מיוחדים.
-
-בואו נדבר! 😊`;
-
-      const { data, error } = await supabase.functions.invoke('send-individual-message', {
-        body: {
-          telegramId: telegramId,
-          message: defaultMessage,
-          buttons: [
-            {
-              text: '💎 צפה במלאי היהלומים',
-              url: 'https://t.me/diamondmazalbot?startapp=store'
-            },
-            {
-              text: '📱 התחל שיחה',
-              url: `tg://user?id=${telegramId}`
-            }
-          ]
-        }
-      });
-
-      if (error) {
-        console.error('❌ Error sending message to customer:', error);
-        
-        // Fallback to opening Telegram chat
-        if (window.Telegram?.WebApp) {
-          window.open(`tg://user?id=${telegramId}`, '_blank');
-        } else {
-          window.open(`https://t.me/user?id=${telegramId}`, '_blank');
-        }
-        
-        toast({
-          title: "נפתח צ'אט ישיר",
-          description: `פתחתי שיחה ישירה עם הלקוח. שלח הודעה אישית!`,
-        });
-      } else {
-        console.log('✅ Message sent successfully to customer:', data);
-        toast({
-          title: "הודעה נשלחה בהצלחה! ✅",
-          description: `ההודעה נשלחה ללקוח. הוא יוכל לראות את המלאי שלך ולהתחיל שיחה`,
-        });
-      }
-    } catch (error) {
-      console.error('❌ Failed to contact customer:', error);
-      
-      // Fallback to opening Telegram chat
-      if (customerInfo?.telegram_username) {
-        window.open(`https://t.me/${customerInfo.telegram_username}`, '_blank');
-        toast({
-          title: "פותח צ'אט",
-          description: `פותח שיחה עם @${customerInfo.telegram_username}`,
-        });
-      } else if (customerInfo?.phone) {
-        window.open(`tel:${customerInfo.phone}`, '_blank');
-        toast({
-          title: "מתקשר",
-          description: `מתקשר ל-${customerInfo.phone}`,
-        });
-      } else {
-        toast({
-          title: "שגיאה ביצירת קשר",
-          description: "נכשל ביצירת קשר עם הלקוח. נסה שוב מאוחר יותר.",
-          variant: "destructive"
-        });
-      }
     }
   };
 
