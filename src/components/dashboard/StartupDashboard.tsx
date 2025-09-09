@@ -10,6 +10,7 @@ import { ColorDistributionChart } from "@/components/charts/ColorDistributionCha
 import { ClarityDistributionChart } from "@/components/charts/ClarityDistributionChart";
 import { RecentDiamondsSection } from "@/components/charts/RecentDiamondsSection";
 import { useState, useEffect } from "react";
+import { formatLargeNumber } from "@/utils/numberUtils";
 import { 
   Diamond, 
   TrendingUp, 
@@ -203,10 +204,10 @@ export function StartupDashboard() {
                   <div className="p-2 rounded-xl bg-gradient-to-br from-orange-500/20 to-yellow-500/20">
                     <TrendingUp className="w-5 h-5 text-orange-600" />
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p className="text-xs text-muted-foreground font-medium">Revenue</p>
-                    <p className="text-xl font-bold text-foreground">
-                      ${(metrics.totalRevenue / 1000).toFixed(0)}K
+                    <p className="text-xl font-bold text-foreground truncate" title={`$${metrics.totalRevenue.toLocaleString()}`}>
+                      ${formatLargeNumber(metrics.totalRevenue)}
                     </p>
                     <p className="text-xs text-orange-600 font-medium">Monthly</p>
                   </div>
@@ -243,10 +244,10 @@ export function StartupDashboard() {
                   <div className="p-3 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/30">
                     <Target className="w-6 h-6 text-green-600" />
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p className="text-xs text-muted-foreground font-medium">Portfolio Value</p>
-                    <p className="text-2xl font-bold text-foreground">
-                      {isLoading ? '...' : `$${(totalInventoryValue / 1000).toFixed(0)}K`}
+                    <p className="text-2xl font-bold text-foreground truncate" title={isLoading ? 'Loading...' : `$${totalInventoryValue.toLocaleString()}`}>
+                      {isLoading ? '...' : `$${formatLargeNumber(totalInventoryValue)}`}
                     </p>
                     <div className="flex items-center gap-1">
                       <Sparkles className="w-3 h-3 text-green-500" />
