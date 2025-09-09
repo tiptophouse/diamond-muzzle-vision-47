@@ -16,8 +16,8 @@ interface InventoryMobileCardProps {
 export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobileCardProps) {
   return (
     <Card className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors">
-      <CardContent className="p-3 sm:p-4 w-full">
-        {/* Image section */}
+      <CardContent className="p-4 w-full">
+        {/* Telegram Mini App Optimized Layout */}
         <div className="mb-3 sm:mb-4 w-full">
           <div className="w-full h-28 sm:h-32 rounded-lg overflow-hidden">
             <OptimizedDiamondImage
@@ -97,7 +97,7 @@ export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobi
                 variant="outline"
                 size="sm"
                 onClick={() => onEdit(diamond)}
-                className="flex-1 h-8 sm:h-9 text-xs sm:text-sm dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700 min-w-0"
+                className="flex-1 h-10 text-xs sm:text-sm dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700 min-w-0 touch-target"
               >
                 <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 flex-shrink-0" />
                 <span className="truncate">Edit</span>
@@ -108,7 +108,7 @@ export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobi
                 variant="outline"
                 size="sm"
                 onClick={() => onDelete(diamond.id)}
-                className="flex-1 h-8 sm:h-9 text-xs sm:text-sm text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950 min-w-0"
+                className="flex-1 h-10 text-xs sm:text-sm text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950 min-w-0 touch-target"
               >
                 <Trash className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 flex-shrink-0" />
                 <span className="truncate">Delete</span>
