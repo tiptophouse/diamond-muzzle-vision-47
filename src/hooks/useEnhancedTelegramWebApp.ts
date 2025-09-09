@@ -50,8 +50,25 @@ export function useEnhancedTelegramWebApp() {
       WebApp.ready();
       WebApp.expand();
       
-      // Enable modern features
+      // Enable modern features for stable experience
       WebApp.enableClosingConfirmation();
+      
+      // iPhone scrolling fixes - Latest Telegram SDK features
+      if (typeof WebApp.enableVerticalSwipes === 'function') {
+        WebApp.enableVerticalSwipes();
+        console.log('✅ Vertical swipes enabled for iPhone scrolling');
+      }
+      
+      // Disable pull-to-refresh that interferes with scrolling
+      if (typeof WebApp.disableVerticalSwipes === 'function') {
+        WebApp.disableVerticalSwipes();
+        console.log('✅ Disabled problematic vertical swipes');
+      }
+      
+      // Re-enable only safe vertical interactions
+      if (typeof WebApp.enableVerticalSwipes === 'function') {
+        WebApp.enableVerticalSwipes();
+      }
       
       // Set optimal theme for better UX
       WebApp.setHeaderColor('#1f2937');
