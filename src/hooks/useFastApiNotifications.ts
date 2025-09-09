@@ -243,31 +243,94 @@ export function useFastApiNotifications() {
     });
   };
 
-  const contactCustomer = (customerInfo: any) => {
-    const userId = customerInfo?.user_id || customerInfo?.telegram_id;
+  const contactCustomer = async (customerInfo: any) => {
+    const telegramId = customerInfo?.user_id || customerInfo?.telegram_id;
     
-    if (userId) {
-      // Direct Telegram contact using user ID
-      if (window.Telegram?.WebApp) {
-        window.open(`tg://user?id=${userId}`, '_blank');
-      } else {
-        window.open(`https://t.me/user/${userId}`, '_blank');
-      }
-      
-      toast({
-        title: "פותח צ'אט",
-        description: `פותח שיחה עם משתמש ${userId}`,
-      });
-    } else if (customerInfo?.telegram_username) {
-      window.open(`https://t.me/${customerInfo.telegram_username}`, '_blank');
-    } else if (customerInfo?.phone) {
-      window.open(`tel:${customerInfo.phone}`, '_blank');
-    } else {
+    console.log('📱 Attempting to contact customer:', { customerInfo, telegramId });
+    
+    if (!telegramId) {
       toast({
         title: "אין פרטי קשר",
-        description: "לא נמצאו פרטי קשר עבור לקוח זה",
+        description: "לא נמצא מזהה טלגרם עבור לקוח זה",
         variant: "destructive"
       });
+      return;
+    }
+
+    // Try to send a direct message using Supabase function
+    try {
+      const defaultMessage = `שלום ${customerInfo?.customerName || 'לקוח יקר'},
+
+ראיתי שחיפשת יהלומים ונמצאו התאמות במלאי שלי! 💎
+
+${customerInfo?.search_query ? `החיפוש שלך: ${customerInfo.search_query}` : ''}
+${customerInfo?.diamonds_count ? `נמצאו ${customerInfo.diamonds_count} יהלומים מתאימים` : ''}
+
+אשמח לעזור לך למצוא את היהלום המושלם ולתת לך מחירים מיוחדים.
+
+בואו נדבר! 😊`;
+
+      const { data, error } = await supabase.functions.invoke('send-individual-message', {
+        body: {
+          telegramId: telegramId,
+          message: defaultMessage,
+          buttons: [
+            {
+              text: '💎 צפה במלאי היהלומים',
+              url: 'https://t.me/diamondmazalbot?startapp=store'
+            },
+            {
+              text: '📱 התחל שיחה',
+              url: `tg://user?id=${telegramId}`
+            }
+          ]
+        }
+      });
+
+      if (error) {
+        console.error('❌ Error sending message to customer:', error);
+        
+        // Fallback to opening Telegram chat
+        if (window.Telegram?.WebApp) {
+          window.open(`tg://user?id=${telegramId}`, '_blank');
+        } else {
+          window.open(`https://t.me/user?id=${telegramId}`, '_blank');
+        }
+        
+        toast({
+          title: "נפתח צ'אט ישיר",
+          description: `פתחתי שיחה ישירה עם הלקוח. שלח הודעה אישית!`,
+        });
+      } else {
+        console.log('✅ Message sent successfully to customer:', data);
+        toast({
+          title: "הודעה נשלחה בהצלחה! ✅",
+          description: `ההודעה נשלחה ללקוח. הוא יוכל לראות את המלאי שלך ולהתחיל שיחה`,
+        });
+      }
+    } catch (error) {
+      console.error('❌ Failed to contact customer:', error);
+      
+      // Fallback to opening Telegram chat
+      if (customerInfo?.telegram_username) {
+        window.open(`https://t.me/${customerInfo.telegram_username}`, '_blank');
+        toast({
+          title: "פותח צ'אט",
+          description: `פותח שיחה עם @${customerInfo.telegram_username}`,
+        });
+      } else if (customerInfo?.phone) {
+        window.open(`tel:${customerInfo.phone}`, '_blank');
+        toast({
+          title: "מתקשר",
+          description: `מתקשר ל-${customerInfo.phone}`,
+        });
+      } else {
+        toast({
+          title: "שגיאה ביצירת קשר",
+          description: "נכשל ביצירת קשר עם הלקוח. נסה שוב מאוחר יותר.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
