@@ -4,76 +4,50 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Advanced Telegram-optimized theme system */
+/* Modern clean theme inspired by 21.dev */
 :root {
-  /* Base theme colors - enhanced with Telegram SDK integration */
-  --background: hsl(0 0% 98%);
-  --foreground: hsl(240 10% 3.9%);
-  --card: hsl(0 0% 100%);
-  --card-foreground: hsl(240 10% 3.9%);
-  --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(240 10% 3.9%);
-  --primary: hsl(240 5.9% 10%);
-  --primary-foreground: hsl(0 0% 98%);
-  --secondary: hsl(240 4.8% 95.9%);
-  --secondary-foreground: hsl(240 5.9% 10%);
-  --muted: hsl(240 4.8% 95.9%);
-  --muted-foreground: hsl(240 3.8% 46.1%);
-  --accent: hsl(240 4.8% 95.9%);
-  --accent-foreground: hsl(240 5.9% 10%);
-  --destructive: hsl(0 84.2% 60.2%);
-  --destructive-foreground: hsl(0 0% 98%);
-  --border: hsl(240 5.9% 90%);
-  --input: hsl(240 5.9% 90%);
-  --ring: hsl(240 5.9% 10%);
+  --background: 0 0% 98%;
+  --foreground: 240 10% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 3.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 3.9%;
+  --primary: 240 5.9% 10%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 4.8% 95.9%;
+  --secondary-foreground: 240 5.9% 10%;
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --accent: 240 4.8% 95.9%;
+  --accent-foreground: 240 5.9% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 240 5.9% 10%;
   --radius: 0.75rem;
   
-  /* Telegram SDK dynamic colors - will be overridden by JS */
-  --tg-primary: #007AFF;
-  --tg-secondary: #5856D6;
-  --tg-background: #FFFFFF;
-  --tg-text: #000000;
-  --tg-accent: #FF3B30;
+  /* Premium gradients */
+  --gradient-primary: linear-gradient(135deg, hsl(240 5.9% 10%) 0%, hsl(240 3.8% 25%) 100%);
+  --gradient-surface: linear-gradient(180deg, hsl(0 0% 98%) 0%, hsl(240 4.8% 95.9%) 100%);
+  --gradient-accent: linear-gradient(135deg, hsl(240 4.8% 95.9%) 0%, hsl(0 0% 100%) 100%);
   
-  /* Performance-optimized gradients */
-  --gradient-primary: linear-gradient(135deg, var(--tg-primary) 0%, hsl(240 3.8% 25%) 100%);
-  --gradient-surface: linear-gradient(180deg, var(--tg-background) 0%, hsl(240 4.8% 95.9%) 100%);
-  --gradient-accent: linear-gradient(135deg, var(--tg-accent) 0%, hsl(0 0% 100%) 100%);
-  
-  /* Advanced shadows with GPU acceleration */
+  /* Shadows */
   --shadow-soft: 0 1px 3px 0 hsl(240 3.8% 46.1% / 0.1), 0 1px 2px 0 hsl(240 3.8% 46.1% / 0.06);
   --shadow-medium: 0 4px 6px -1px hsl(240 3.8% 46.1% / 0.1), 0 2px 4px -1px hsl(240 3.8% 46.1% / 0.06);
   --shadow-large: 0 20px 25px -5px hsl(240 3.8% 46.1% / 0.1), 0 10px 10px -5px hsl(240 3.8% 46.1% / 0.04);
-  
-  /* Telegram-optimized viewport units */
-  --vh: 1vh;
-  --safe-area-inset-top: env(safe-area-inset-top, 0px);
-  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-area-inset-left: env(safe-area-inset-left, 0px);
-  --safe-area-inset-right: env(safe-area-inset-right, 0px);
 }
 
-/* Enhanced body with Telegram optimizations */
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: var(--tg-background, var(--gradient-surface));
-  color: var(--tg-text, hsl(var(--foreground)));
+  background: var(--gradient-surface);
+  color: hsl(var(--foreground));
   line-height: 1.6;
   letter-spacing: -0.01em;
-  
-  /* Telegram-specific optimizations */
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  touch-action: manipulation;
-  
-  /* Performance optimizations */
-  will-change: auto;
-  transform: translateZ(0);
-  backface-visibility: hidden;
 }
 
 /* Clean, modern components */
@@ -242,87 +216,5 @@ img {
   .mobile-tap {
     -webkit-tap-highlight-color: transparent;
     user-select: none;
-}
-
-/* Telegram SDK Optimizations */
-.telegram-optimized-layout {
-  /* Advanced performance optimizations */
-  contain: layout style paint;
-  isolation: isolate;
-  
-  /* Smooth scrolling with momentum */
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-  
-  /* GPU acceleration */
-  transform: translateZ(0);
-  will-change: transform;
-  
-  /* Touch optimizations */
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Advanced button optimizations for Telegram */
-.telegram-button {
-  /* Hardware acceleration */
-  transform: translateZ(0);
-  will-change: transform;
-  
-  /* Touch feedback */
-  transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
-}
-
-.telegram-button:active {
-  transform: translateZ(0) scale(0.95);
-}
-
-/* Performance-optimized animations */
-@keyframes telegram-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-@keyframes telegram-slide-up {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
   }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.telegram-animate-pulse {
-  animation: telegram-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-.telegram-animate-slide-up {
-  animation: telegram-slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Telegram theme integration */
-.telegram-theme-dynamic {
-  background-color: var(--tg-background);
-  color: var(--tg-text);
-  border-color: var(--tg-primary);
-}
-
-/* Advanced caching hints */
-.telegram-cache-optimized {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 500px;
-}
-
-/* Lazy loading optimizations */
-img[data-src] {
-  filter: blur(5px);
-  transition: filter 0.3s;
-}
-
-img[data-src].loaded {
-  filter: blur(0);
-}
 }
