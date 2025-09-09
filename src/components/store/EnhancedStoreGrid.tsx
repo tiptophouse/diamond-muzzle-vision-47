@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { PaginatedStoreGrid } from "./PaginatedStoreGrid";
 import { OptimizedDiamondCard } from "./OptimizedDiamondCard";
 import { DiamondCardSkeleton } from "./DiamondCardSkeleton";
 import { Diamond } from "@/components/inventory/InventoryTable";
@@ -65,9 +66,51 @@ export function EnhancedStoreGrid({ diamonds, loading, error, onUpdate }: Enhanc
     );
   }
 
+  // Use paginated grid for large datasets
+  if (diamonds.length > 50) {
+    return (
+      <div className="space-y-4">
+        {/* Media Statistics Display */}
+        {mediaStats.total > 0 && (
+          <div className="space-y-4">
+            <div className="bg-white rounded-lg border p-4">
+              <h3 className="text-sm font-medium text-gray-900 mb-3">Catalog Overview</h3>
+              <div className="flex flex-wrap gap-3">
+                <Badge variant="default" className="gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  {mediaStats.with3D} with 3D View
+                </Badge>
+                <Badge variant="secondary" className="gap-1">
+                  <Camera className="h-3 w-3" />
+                  {mediaStats.withImages} with Photos
+                </Badge>
+                <Badge variant="outline" className="gap-1">
+                  <FileText className="h-3 w-3" />
+                  {mediaStats.infoOnly} Info Only
+                </Badge>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Showing {mediaStats.total} diamonds prioritized by media availability (3D → Photos → Info)
+              </p>
+            </div>
+            <ShareQuotaIndicator />
+          </div>
+        )}
+
+        {/* Paginated Grid for Large Datasets */}
+        <PaginatedStoreGrid 
+          diamonds={diamonds}
+          loading={loading}
+          error={error}
+          onUpdate={onUpdate}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      {/* PHASE 5: Media Statistics Display */}
+      {/* Media Statistics Display */}
       {mediaStats.total > 0 && (
         <div className="space-y-4">
           <div className="bg-white rounded-lg border p-4">
@@ -90,34 +133,23 @@ export function EnhancedStoreGrid({ diamonds, loading, error, onUpdate }: Enhanc
               Showing {mediaStats.total} diamonds prioritized by media availability (3D → Photos → Info)
             </p>
           </div>
-
-          {/* Share Quota Indicator */}
           <ShareQuotaIndicator />
         </div>
       )}
 
-      {/* PHASE 5: Optimized Grid with Priority-Based Layout */}
+      {/* Regular Grid for Small Datasets */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
-        {diamonds.map((diamond, index) => {
-          console.log('🎯 GRID: Rendering diamond', diamond.stockNumber, 'with media:', {
-            hasGem360: !!diamond.gem360Url,
-            hasImage: !!diamond.imageUrl,
-            gem360Url: diamond.gem360Url,
-            imageUrl: diamond.imageUrl
-          });
-          
-          return (
-            <OptimizedDiamondCard 
-              key={diamond.id} 
-              diamond={diamond}
-              index={index}
-              onUpdate={onUpdate}
-            />
-          );
-        })}
+        {diamonds.map((diamond, index) => (
+          <OptimizedDiamondCard 
+            key={diamond.id} 
+            diamond={diamond}
+            index={index}
+            onUpdate={onUpdate}
+          />
+        ))}
       </div>
 
-      {/* PHASE 4: Debug Info (only show if there are issues) */}
+      {/* Debug Info */}
       {diamonds.length > 0 && mediaStats.with3D === 0 && mediaStats.withImages === 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
           <h4 className="text-sm font-medium text-yellow-800 mb-2">

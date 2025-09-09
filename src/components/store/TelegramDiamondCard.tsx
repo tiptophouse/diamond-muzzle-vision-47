@@ -32,7 +32,7 @@ export function TelegramDiamondCard({ diamond, index, onViewDetails }: TelegramD
     if (onViewDetails) {
       onViewDetails(diamond);
     } else {
-      navigate(`/diamond/${diamond.id}`);
+      navigate(`/diamond/${diamond.stockNumber}`);
     }
   }, [diamond, onViewDetails, navigate, hapticFeedback]);
 
