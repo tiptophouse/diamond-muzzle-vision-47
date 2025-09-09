@@ -3,9 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Diamond } from "./InventoryTable";
-import { Edit, Trash } from "lucide-react";
-import { OptimizedDiamondImage } from "@/components/store/OptimizedDiamondImage";
-import { getImageUrl, getFallbackImageUrl, get360Url } from "@/utils/imageUtils";
+import { Edit, Trash, ImageIcon } from "lucide-react";
 
 interface InventoryMobileCardProps {
   diamond: Diamond;
@@ -16,18 +14,27 @@ interface InventoryMobileCardProps {
 export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobileCardProps) {
   return (
     <Card className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors">
-      <CardContent className="p-4 w-full">
-        {/* Telegram Mini App Optimized Layout */}
-        <div className="mb-3 sm:mb-4 w-full">
-          <div className="w-full h-28 sm:h-32 rounded-lg overflow-hidden">
-            <OptimizedDiamondImage
-              stockNumber={diamond.stockNumber}
-              imageUrl={getImageUrl(diamond)}
-              gem360Url={get360Url(diamond)}
-              shape={diamond.shape}
-              className="w-full h-full"
+      <CardContent className="p-3 sm:p-4 w-full">
+        {/* Image section */}
+        {(diamond.imageUrl || diamond.picture) && (
+          <div className="mb-3 sm:mb-4 w-full">
+            <img 
+              src={diamond.imageUrl || diamond.picture} 
+              alt={`Diamond ${diamond.stockNumber}`}
+              className="w-full h-28 sm:h-32 object-cover rounded-lg border border-slate-200 dark:border-slate-600"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                const placeholderDiv = e.currentTarget.parentElement?.nextElementSibling as HTMLElement;
+                if (placeholderDiv) {
+                  placeholderDiv.classList.remove('hidden');
+                }
+              }}
             />
           </div>
+        )}
+        
+        <div className={`mb-3 sm:mb-4 w-full h-28 sm:h-32 bg-slate-100 dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center ${(diamond.imageUrl || diamond.picture) ? 'hidden' : ''}`}>
+          <ImageIcon className="h-6 w-6 sm:h-8 sm:w-8 text-slate-400" />
         </div>
 
         <div className="flex justify-between items-start mb-3 sm:mb-4 w-full gap-3">
@@ -97,7 +104,7 @@ export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobi
                 variant="outline"
                 size="sm"
                 onClick={() => onEdit(diamond)}
-                className="flex-1 h-10 text-xs sm:text-sm dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700 min-w-0 touch-target"
+                className="flex-1 h-8 sm:h-9 text-xs sm:text-sm dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700 min-w-0"
               >
                 <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 flex-shrink-0" />
                 <span className="truncate">Edit</span>
@@ -108,7 +115,7 @@ export function InventoryMobileCard({ diamond, onEdit, onDelete }: InventoryMobi
                 variant="outline"
                 size="sm"
                 onClick={() => onDelete(diamond.id)}
-                className="flex-1 h-10 text-xs sm:text-sm text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950 min-w-0 touch-target"
+                className="flex-1 h-8 sm:h-9 text-xs sm:text-sm text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950 min-w-0"
               >
                 <Trash className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 flex-shrink-0" />
                 <span className="truncate">Delete</span>

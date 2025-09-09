@@ -281,13 +281,6 @@ export function useStoreData() {
       }
 
       if (result.data && result.data.length > 0) {
-        console.log('📊 Processing', result.data.length, 'diamonds');
-        
-        // Performance warning for large datasets  
-        if (result.data.length > 5000) {
-          console.warn('⚠️  Large dataset detected:', result.data.length, 'diamonds - Performance mode active');
-        }
-        
         const transformedDiamonds = transformData(result.data);
         
         dataCache = {

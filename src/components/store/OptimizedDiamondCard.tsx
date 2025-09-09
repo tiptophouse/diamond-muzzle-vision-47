@@ -117,8 +117,8 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
 
   const handleViewDetails = useCallback(() => {
     impactOccurred('light');
-    navigate(`/diamond/${diamond.stockNumber}`);
-  }, [impactOccurred, navigate, diamond.stockNumber]);
+    navigate(`/diamond/${diamond.id}`);
+  }, [impactOccurred, navigate, diamond.id]);
 
   const handleContact = useCallback(() => {
     impactOccurred('light');

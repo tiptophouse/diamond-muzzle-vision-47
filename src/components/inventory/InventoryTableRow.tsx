@@ -3,11 +3,9 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Diamond } from "./InventoryTable";
-import { Edit, Trash } from "lucide-react";
+import { Edit, Trash, ImageIcon, Upload } from "lucide-react";
 import { StoreVisibilityToggle } from "./StoreVisibilityToggle";
 import { UserImageUpload } from "./UserImageUpload";
-import { OptimizedDiamondImage } from "@/components/store/OptimizedDiamondImage";
-import { getImageUrl, getFallbackImageUrl, get360Url } from "@/utils/imageUtils";
 
 interface InventoryTableRowProps {
   diamond: Diamond & { store_visible?: boolean; picture?: string };
@@ -21,14 +19,22 @@ export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle, on
   return (
     <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-800">
       <TableCell className="w-16">
-        <div className="w-12 h-12 rounded overflow-hidden">
-          <OptimizedDiamondImage
-            stockNumber={diamond.stockNumber}
-            imageUrl={getImageUrl(diamond)}
-            gem360Url={get360Url(diamond)}
-            shape={diamond.shape}
-            className="w-full h-full"
+        {diamond.imageUrl || diamond.picture ? (
+          <img 
+            src={diamond.imageUrl || diamond.picture} 
+            alt={`Diamond ${diamond.stockNumber}`}
+            className="w-12 h-12 object-cover rounded border border-slate-200 dark:border-slate-600"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const placeholderDiv = e.currentTarget.nextElementSibling as HTMLElement;
+              if (placeholderDiv) {
+                placeholderDiv.classList.remove('hidden');
+              }
+            }}
           />
+        ) : null}
+        <div className={`w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 flex items-center justify-center ${diamond.imageUrl || diamond.picture ? 'hidden' : ''}`}>
+          <ImageIcon className="h-4 w-4 text-slate-400" />
         </div>
       </TableCell>
       <TableCell className="font-mono text-xs font-medium text-slate-600 dark:text-slate-400">
