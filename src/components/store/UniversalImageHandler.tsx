@@ -37,31 +37,21 @@ export function UniversalImageHandler({
       return { provider: 'v360', type: '360_interactive', supported: true };
     }
     
-    // AWS S3 HTML detection (my360.fab and other HTML files)
-    if (cleanUrl.includes('s3.') && cleanUrl.includes('amazonaws.com') && cleanUrl.endsWith('.html')) {
+    // Universal HTML viewer detection (catches all HTML-based viewers)
+    if ((cleanUrl.includes('s3.') && cleanUrl.includes('amazonaws.com') && cleanUrl.endsWith('.html')) ||
+        (cleanUrl.includes('my360.') && cleanUrl.endsWith('.html')) ||
+        (cleanUrl.includes('.html') && (cleanUrl.includes('360') || cleanUrl.includes('diamond') || cleanUrl.includes('gem')))) {
       return { provider: 'aws_s3_html', type: '360_html', supported: true };
     }
     
-    // AWS S3 my360.fab HTML detection (specific pattern)
-    if (cleanUrl.includes('my360.fab') && cleanUrl.endsWith('.html')) {
-      return { provider: 'aws_s3_html', type: '360_html', supported: true };
-    }
-    
-    // AWS S3 my360.sela HTML detection (specific pattern)
-    if (cleanUrl.includes('my360.sela') && cleanUrl.endsWith('.html')) {
-      return { provider: 'aws_s3_html', type: '360_html', supported: true };
-    }
-    
-    // AWS S3 static image detection (my360.sela and other static images)
-    if ((cleanUrl.includes('s3.') && cleanUrl.includes('amazonaws.com')) || cleanUrl.includes('my360.sela')) {
+    // Universal static image detection (AWS S3 and other providers)
+    if ((cleanUrl.includes('s3.') && cleanUrl.includes('amazonaws.com')) || 
+        cleanUrl.includes('my360.') || 
+        cleanUrl.includes('360') || 
+        cleanUrl.includes('dan')) {
       if (cleanUrl.match(/\.(jpg|jpeg|png)(\?.*)?$/)) {
         return { provider: 'aws_s3_image', type: '360_static', supported: true };
       }
-    }
-    
-    // Generic 360 image detection
-    if (cleanUrl.includes('360') || cleanUrl.includes('my360') || cleanUrl.includes('dan')) {
-      return { provider: 'generic_360', type: '360_static', supported: true };
     }
     
     // Static image fallback
