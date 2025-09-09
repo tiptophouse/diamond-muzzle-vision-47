@@ -63,9 +63,9 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col ios-scroll">
       {/* Security Header */}
-      <div className="bg-primary/5 border-b border-primary/10 px-4 py-2">
+      <div className="bg-primary/5 border-b border-primary/10 px-4 py-2 pt-safe">
         <div className="flex items-center justify-between max-w-screen-sm mx-auto">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Shield className="h-3 w-3 text-primary" />
@@ -77,13 +77,13 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <main className="flex-1 pb-20">
+      {/* Main Content Area with iOS scroll optimization */}
+      <main className="flex-1 pb-20 ios-scroll overflow-y-auto">
         {children}
       </main>
 
-      {/* Bottom Navigation - Only for authenticated users */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border z-50">
+      {/* Bottom Navigation - Only for authenticated users with safe area */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border z-50 pb-safe">
         <div className="grid grid-cols-5 max-w-screen-sm mx-auto">
           {navigationItems.map((item) => {
             const Icon = item.icon;
@@ -95,7 +95,7 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
                 to={item.to}
                 onClick={handleNavClick}
                 className={cn(
-                  "flex flex-col items-center justify-center py-3 px-2 text-xs transition-colors duration-200",
+                  "flex flex-col items-center justify-center py-3 px-2 text-xs transition-colors duration-200 clickable",
                   active 
                     ? "text-primary" 
                     : "text-muted-foreground hover:text-foreground"
