@@ -75,28 +75,24 @@ const NotificationsPage = () => {
 
   return (
     <TelegramLayout>
-      <div className="max-w-4xl mx-auto p-3 md:p-6 space-y-4 md:space-y-6">
+      <div className="max-w-4xl mx-auto p-6 space-y-6">
         <Tabs defaultValue="enhanced" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-6">
-            <TabsTrigger value="enhanced" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm">
-              <Bell className="h-3 w-3 md:h-4 md:w-4" />
-              <span className="hidden sm:inline">Enhanced</span>
-              <span className="sm:hidden">All</span>
+          <TabsList className="grid w-full grid-cols-4 mb-6">
+            <TabsTrigger value="enhanced" className="flex items-center gap-2">
+              <Bell className="h-4 w-4" />
+              Enhanced
             </TabsTrigger>
-            <TabsTrigger value="heatmap" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm">
-              <TrendingUp className="h-3 w-3 md:h-4 md:w-4" />
-              <span className="hidden sm:inline">Heat Map</span>
-              <span className="sm:hidden">Heat</span>
+            <TabsTrigger value="heatmap" className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Heat Map
             </TabsTrigger>
-            <TabsTrigger value="outgoing" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm">
-              <Bell className="h-3 w-3 md:h-4 md:w-4" />
-              <span className="hidden sm:inline">התראות יוצאות</span>
-              <span className="sm:hidden">יוצאות</span>
+            <TabsTrigger value="outgoing" className="flex items-center gap-2">
+              <Bell className="h-4 w-4" />
+              התראות יוצאות
             </TabsTrigger>
-            <TabsTrigger value="incoming" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm">
-              <MessageCircle className="h-3 w-3 md:h-4 md:w-4" />
-              <span className="hidden sm:inline">הודעות נכנסות</span>
-              <span className="sm:hidden">נכנסות</span>
+            <TabsTrigger value="incoming" className="flex items-center gap-2">
+              <MessageCircle className="h-4 w-4" />
+              הודעות נכנסות
             </TabsTrigger>
           </TabsList>
 
@@ -162,7 +158,7 @@ const NotificationsPage = () => {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 md:gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-center gap-2">
                   <BellRing className="h-5 w-5 text-blue-600" />

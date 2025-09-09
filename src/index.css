@@ -4,41 +4,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Touch target improvements for mobile */
-.touch-target {
-  min-height: 44px;
-  min-width: 44px;
-  position: relative;
-}
-
-/* Ensure proper touch targets on mobile */
-@media (max-width: 768px) {
-  .touch-target {
-    padding: 12px 16px;
-  }
-  
-  .touch-target.h-7 {
-    min-height: 44px;
-    height: auto;
-  }
-  
-  .touch-target.h-8 {
-    min-height: 44px;
-    height: auto;
-  }
-  
-  .touch-target.h-9 {
-    min-height: 44px;
-    height: auto;
-  }
-}
-
-/* Improve touch feedback */
-.touch-target:active {
-  transform: scale(0.98);
-  transition: transform 0.1s ease;
-}
-
 /* Modern clean theme inspired by 21.dev */
 :root {
   --background: 0 0% 98%;
