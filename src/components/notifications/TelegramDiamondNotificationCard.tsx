@@ -1,14 +1,15 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Diamond, TrendingUp, Users, Sparkles, Copy, Share, MessageCircle, Search, User, Phone } from 'lucide-react';
+import { Diamond, TrendingUp, Users, Sparkles, Copy, Share, MessageCircle, Search, User, Phone, Bot } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
 import { useInventoryQuickSearch } from '@/hooks/useInventoryQuickSearch';
 import { useInventoryData } from '@/hooks/useInventoryData';
+import { QuickReplyWithGPT } from './QuickReplyWithGPT';
 
 interface DiamondMatch {
   stock_number: string;
@@ -50,6 +51,7 @@ export function TelegramDiamondNotificationCard({
   onMarkAsRead,
   onContactCustomer 
 }: TelegramDiamondNotificationCardProps) {
+  const [showQuickReply, setShowQuickReply] = useState(false);
   const { hapticFeedback, mainButton, showAlert, share } = useTelegramWebApp();
   const { impactOccurred, notificationOccurred, selectionChanged } = useTelegramHapticFeedback();
   const { toast } = useToast();
@@ -326,8 +328,35 @@ export function TelegramDiamondNotificationCard({
                       Contact
                     </Button>
                   )}
+                  {/* Quick Reply with GPT Button */}
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      setShowQuickReply(!showQuickReply);
+                      impactOccurred('light');
+                    }}
+                    className="flex-1 h-8 text-xs"
+                  >
+                    <Bot className="h-3 w-3 mr-1" />
+                    Quick Reply
+                  </Button>
                 </div>
               </div>
+            )}
+
+            {/* Quick Reply with GPT Component */}
+            {showQuickReply && isDiamondMatch && (
+              <QuickReplyWithGPT 
+                notification={notification}
+                onMessageSent={() => {
+                  setShowQuickReply(false);
+                  toast({
+                    title: "Message Sent",
+                    description: "Your reply has been sent to the customer",
+                  });
+                }}
+              />
             )}
 
             {/* Additional Matches */}
