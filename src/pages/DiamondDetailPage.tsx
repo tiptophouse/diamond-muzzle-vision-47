@@ -3,7 +3,6 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { useTelegramNavigation } from '@/hooks/useTelegramNavigation';
 import { TelegramShareButton } from '@/components/store/TelegramShareButton';
 import { OptimizedDiamondImage } from '@/components/store/OptimizedDiamondImage';
 import { Diamond } from "@/components/inventory/InventoryTable";
@@ -26,19 +25,18 @@ function DiamondDetailPage() {
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [showImageUpload, setShowImageUpload] = useState(false);
 
-  const { navigateWithFeedback, goBack, shareContent } = useTelegramNavigation({
-    showBackButton: true,
-    onBackClick: () => navigate(-1),
-    enableHapticFeedback: true
-  });
+  // Simple navigation without haptic feedback to prevent loops
+  const handleGoBack = useCallback(() => {
+    navigate(-1);
+  }, [navigate]);
 
   // Memoized admin check
   const isAdmin = useMemo(() => user?.id === 2138564172, [user?.id]);
 
-  // Memoized diamond finding with early return optimization
+  // Memoized diamond finding with correct stock number matching
   const diamond = useMemo(() => {
     if (!diamonds || !diamondId) return null;
-    return diamonds.find(d => d.id === diamondId) || null;
+    return diamonds.find(d => d.stockNumber === diamondId || d.id === diamondId) || null;
   }, [diamonds, diamondId]);
 
   // Memoized price formatting to avoid recreation
@@ -92,16 +90,34 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
     const shareUrl = window.location.href;
     
     try {
-      await shareContent(shareTitle, shareText, shareUrl);
+      // Use Web Share API if available, otherwise fallback
+      if (navigator.share) {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl
+        });
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(`${shareTitle}\n\n${shareText}\n\n${shareUrl}`);
+        toast({ title: "Diamond details copied to clipboard!" });
+        return;
+      }
       toast({ title: "Diamond details shared!" });
     } catch (error) {
-      toast({ 
-        title: "Share failed", 
-        description: "Could not share diamond details",
-        variant: "destructive" 
-      });
+      // Final fallback - copy to clipboard
+      try {
+        await navigator.clipboard.writeText(`${shareTitle}\n\n${shareText}\n\n${shareUrl}`);
+        toast({ title: "Diamond details copied to clipboard!" });
+      } catch (clipboardError) {
+        toast({ 
+          title: "Share failed", 
+          description: "Could not share diamond details",
+          variant: "destructive" 
+        });
+      }
     }
-  }, [diamond, shareContent, formatPrice, toast]);
+  }, [diamond, formatPrice, toast]);
 
   const handleContact = useCallback(async () => {
     if (!isAuthenticated || !user || !diamond) {
@@ -280,7 +296,7 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
               variant="ghost" 
               size="sm" 
               className="flex items-center gap-2"
-              onClick={goBack}
+              onClick={handleGoBack}
             >
               <ArrowLeft className="h-4 w-4" />
               Back
