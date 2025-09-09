@@ -7,7 +7,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api/client';
 import { MobileTelegramDashboard } from '@/components/dashboard/MobileTelegramDashboard';
-import { useTelegramOptimization } from '@/hooks/useTelegramOptimization';
 
 interface DashboardData {
   totalDiamonds: number;
@@ -21,7 +20,6 @@ export default function SimpleDashboard() {
   const { user, isAuthenticated } = useTelegramAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { isOptimized, triggerHapticFeedback } = useTelegramOptimization();
   const [data, setData] = useState<DashboardData>({
     totalDiamonds: 0,
     totalValue: 0,
@@ -106,6 +104,6 @@ export default function SimpleDashboard() {
     return <MobileTelegramDashboard />;
   }
 
-  // Use the new mobile-optimized dashboard with Telegram SDK integration
+  // Use the new mobile-optimized dashboard
   return <MobileTelegramDashboard />;
 }
