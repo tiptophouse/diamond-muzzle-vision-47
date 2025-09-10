@@ -434,88 +434,86 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
                 )}
               </CardContent>
             </Card>
-
-            {/* Certificate Information */}
-            {(diamond.certificateNumber || diamond.lab) && (
-              <Card className="border border-border bg-card">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-card-foreground">
-                    <Gem className="h-5 w-5 text-primary" />
-                    Certificate Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4 pt-0">
-                  {diamond.certificateNumber && (
-                    <div className="space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Certificate Number</label>
-                      <p className="text-sm font-mono bg-secondary/20 px-3 py-2 rounded-md text-card-foreground">
-                        {diamond.certificateNumber}
-                      </p>
+                    <label className="text-sm font-medium text-muted-foreground">Clarity</label>
+                    <p className="text-lg font-semibold">{diamond.clarity}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Cut</label>
+                    <div className="flex items-center gap-2">
+                      <p className="text-lg font-semibold">{diamond.cut}</p>
+                      <Button
+                        onClick={handleShare}
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0 opacity-70 hover:opacity-100"
+                      >
+                        <Share2 className="h-3 w-3" />
+                      </Button>
                     </div>
-                  )}
-                  {diamond.lab && (
-                    <div className="space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Certification Lab</label>
-                      <p className="text-base font-semibold text-card-foreground">{diamond.lab}</p>
+                  </div>
+                  {diamond.fluorescence && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Fluorescence</label>
+                      <p className="text-lg font-semibold">{diamond.fluorescence}</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
-            )}
 
-            {/* Action Buttons */}
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-3">
-                <Button 
-                  onClick={handleContact}
-                  disabled={isContactLoading}
-                  className="h-12 text-base font-medium"
-                  size="lg"
-                >
-                  {isContactLoading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <MessageSquare className="h-5 w-5 mr-2" />
-                      Contact About This Diamond
-                    </>
-                  )}
-                </Button>
-                
-                <Button 
-                  onClick={handleShare}
-                  variant="outline"
-                  className="h-12 text-base font-medium"
-                  size="lg"
-                >
-                  <Share2 className="h-5 w-5 mr-2" />
-                  Share Diamond
-                </Button>
-              </div>
-
-              {(diamond.certificateUrl || diamond.gem360Url) && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {diamond.certificateUrl && (
-                    <Button asChild variant="secondary" className="h-11">
-                      <a href={diamond.certificateUrl} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        View Certificate
-                      </a>
-                    </Button>
-                  )}
-                  {diamond.gem360Url && (
-                    <Button asChild variant="secondary" className="h-11">
-                      <a href={diamond.gem360Url} target="_blank" rel="noopener noreferrer">
-                        <Eye className="h-4 w-4 mr-2" />
-                        360° View
-                      </a>
-                    </Button>
-                  )}
-                </div>
+              {/* Certificate Info */}
+              {(diamond.lab || diamond.certificateNumber) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Camera className="h-5 w-5" />
+                      Certificate Details
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {diamond.lab && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Grading Lab</label>
+                        <p className="text-lg font-semibold">{diamond.lab}</p>
+                      </div>
+                    )}
+                    {diamond.certificateNumber && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Certificate Number</label>
+                        <p className="text-lg font-semibold">{diamond.certificateNumber}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               )}
+
+              {/* Contact CTA */}
+              <Card className="bg-primary/5 border-primary/20">
+                <CardContent className="pt-6">
+                  <h3 className="text-xl font-semibold mb-2">Interested in this diamond?</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Contact us for more information, additional images, or to schedule a viewing.
+                  </p>
+                  <div className="flex gap-3">
+                    <Button 
+                      size="lg" 
+                      className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all duration-200" 
+                      onClick={handleContact}
+                      disabled={isContactLoading}
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      {isContactLoading ? "Sending..." : "Contact Us"}
+                    </Button>
+                    <Button 
+                      onClick={handleShare} 
+                      size="lg"
+                      variant="outline"
+                      className="px-4 border-2 border-primary/20 bg-gradient-to-r from-background to-muted/30 hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 shadow-md hover:shadow-lg transition-all duration-200"
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>

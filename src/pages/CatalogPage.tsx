@@ -33,7 +33,7 @@ function CatalogPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchParams] = useSearchParams();
   const stockNumber = searchParams.get('stock');
-  const { impactOccurred, selectionChanged } = useTelegramHapticFeedback();
+  const { selectionChanged, impactOccurred } = useTelegramHapticFeedback();
   const { navigateWithFeedback } = useTelegramNavigation({
     showBackButton: false, // Store page doesn't need back button
     enableHapticFeedback: true
@@ -188,27 +188,32 @@ function CatalogPage() {
   }, [refetch]);
 
   const handleAddDiamond = useCallback(() => {
+    impactOccurred('medium');
     navigate('/upload-single-stone');
-  }, [navigate]);
+  }, [impactOccurred, navigate]);
 
   const handleOpenFilters = useCallback(() => {
+    selectionChanged();
     setShowFilters(true);
-  }, []);
+  }, [selectionChanged]);
 
   const handleOpenSort = useCallback(() => {
+    selectionChanged();
     setShowSort(true);
-  }, []);
+  }, [selectionChanged]);
 
   const handleApplyFilters = useCallback(() => {
+    impactOccurred('light');
     setCurrentPage(1); // Reset pagination when filters change
     setShowFilters(false);
-  }, []);
+  }, [impactOccurred]);
 
   const handleApplySort = useCallback((newSortBy: string) => {
+    impactOccurred('light');
     setSortBy(newSortBy);
     setCurrentPage(1); // Reset pagination when sort changes
     setShowSort(false);
-  }, []);
+  }, [impactOccurred]);
 
   const activeFiltersCount = useMemo(() => 
     filters.shapes.length + 
@@ -276,7 +281,7 @@ function CatalogPage() {
               <TelegramDiamondCard 
                 diamond={diamond}
                 index={index}
-                onViewDetails={(diamond) => navigateWithFeedback(`/diamond/${diamond.stockNumber}`)}
+                onViewDetails={(diamond) => navigateWithFeedback(`/diamond/${diamond.id}`)}
               />
             </div>
           ))}

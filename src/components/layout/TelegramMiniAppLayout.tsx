@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { Home, Package, Store, MessageCircle, BarChart3 } from 'lucide-react';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
-import { useEnhancedTelegramWebApp } from '@/hooks/useEnhancedTelegramWebApp';
 import { cn } from '@/lib/utils';
 
 interface TelegramMiniAppLayoutProps {
@@ -45,66 +44,22 @@ const navigationItems = [
 export function TelegramMiniAppLayout({ children }: TelegramMiniAppLayoutProps) {
   const location = useLocation();
   const { selectionChanged } = useTelegramHapticFeedback();
-  const { webApp, rawWebApp } = useEnhancedTelegramWebApp();
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const isActive = (pattern: RegExp) => pattern.test(location.pathname);
 
   const handleNavClick = () => {
-    // Minimal haptic feedback only for navigation
+    selectionChanged();
   };
 
-  // Monitor fullscreen state changes
-  useEffect(() => {
-    if (!rawWebApp) return;
-
-    const checkFullscreenState = () => {
-      const fullscreenState = rawWebApp.isExpanded && rawWebApp.viewportHeight >= window.screen.height * 0.9;
-      setIsFullscreen(fullscreenState);
-      
-      // Update CSS variables for fullscreen
-      if (fullscreenState) {
-        document.documentElement.style.setProperty('--tg-fullscreen-height', `${rawWebApp.viewportHeight}px`);
-        document.documentElement.classList.add('telegram-fullscreen');
-      } else {
-        document.documentElement.classList.remove('telegram-fullscreen');
-      }
-    };
-
-    // Initial check
-    checkFullscreenState();
-
-    // Listen for viewport changes
-    const handleViewportChange = () => {
-      checkFullscreenState();
-    };
-
-    if (rawWebApp.onEvent) {
-      rawWebApp.onEvent('viewportChanged', handleViewportChange);
-      return () => {
-        rawWebApp.offEvent('viewportChanged', handleViewportChange);
-      };
-    }
-  }, [rawWebApp]);
-
   return (
-    <div className={cn(
-      "min-h-screen bg-background flex flex-col ios-viewport",
-      isFullscreen && "fullscreen-container"
-    )}>
-      {/* Main Content Area with fullscreen support */}
-      <main className={cn(
-        "flex-1 pb-20 pt-safe ios-scroll",
-        isFullscreen ? "fullscreen-content pb-16" : "pb-20"
-      )}>
+    <div className="min-h-screen bg-background flex flex-col ios-viewport">
+      {/* Main Content Area with safe area support */}
+      <main className="flex-1 pb-20 pt-safe ios-scroll">
         {children}
       </main>
 
-      {/* Bottom Navigation with fullscreen awareness */}
-      <nav className={cn(
-        "fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border z-50 pb-safe bottom-nav-ios",
-        isFullscreen && "bottom-nav-ios fullscreen"
-      )}>
+      {/* Bottom Navigation with enhanced safe area and responsive design */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border z-50 pb-safe bottom-nav-ios">
         <div className="grid grid-cols-5 w-full max-w-full mx-auto">
           {navigationItems.map((item) => {
             const Icon = item.icon;
