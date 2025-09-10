@@ -33,10 +33,10 @@ function DiamondDetailPage() {
   // Memoized admin check
   const isAdmin = useMemo(() => user?.id === 2138564172, [user?.id]);
 
-  // Memoized diamond finding with correct stock number matching
+  // Memoized diamond finding using stock number
   const diamond = useMemo(() => {
     if (!diamonds || !diamondId) return null;
-    return diamonds.find(d => d.stockNumber === diamondId || d.id === diamondId) || null;
+    return diamonds.find(d => d.stockNumber === diamondId) || null;
   }, [diamonds, diamondId]);
 
   // Memoized price formatting to avoid recreation

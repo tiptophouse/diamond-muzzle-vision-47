@@ -281,7 +281,7 @@ function CatalogPage() {
               <TelegramDiamondCard 
                 diamond={diamond}
                 index={index}
-                onViewDetails={(diamond) => navigateWithFeedback(`/diamond/${diamond.id}`)}
+                onViewDetails={(diamond) => navigateWithFeedback(`/diamond/${diamond.stockNumber}`)}
               />
             </div>
           ))}
