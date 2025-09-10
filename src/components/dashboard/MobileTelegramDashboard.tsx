@@ -1,5 +1,5 @@
-import { StartupDashboard } from './StartupDashboard';
+import { ProductionDashboard } from './ProductionDashboard';
 
 export function MobileTelegramDashboard() {
-  return <StartupDashboard />;
+  return <ProductionDashboard />;
 }
