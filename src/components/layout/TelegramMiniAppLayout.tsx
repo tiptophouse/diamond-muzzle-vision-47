@@ -51,7 +51,7 @@ export function TelegramMiniAppLayout({ children }: TelegramMiniAppLayoutProps) 
   const isActive = (pattern: RegExp) => pattern.test(location.pathname);
 
   const handleNavClick = () => {
-    selectionChanged();
+    // Minimal haptic feedback only for navigation
   };
 
   // Monitor fullscreen state changes

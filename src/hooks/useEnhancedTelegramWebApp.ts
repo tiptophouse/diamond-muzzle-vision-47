@@ -53,6 +53,21 @@ export function useEnhancedTelegramWebApp() {
       // Enable modern features for stable experience
       WebApp.enableClosingConfirmation();
       
+      // CRITICAL: Lock orientation to portrait mode
+      try {
+        if (typeof WebApp.lockOrientation === 'function') {
+          WebApp.lockOrientation();
+          console.log('📱 Orientation locked to portrait mode');
+        } else if (typeof window !== 'undefined' && 'screen' in window && 'orientation' in window.screen) {
+          // Fallback for browsers that support Screen Orientation API
+          (window.screen.orientation as any).lock('portrait').catch(() => {
+            console.log('📱 Screen orientation lock not supported by browser');
+          });
+        }
+      } catch (error) {
+        console.log('📱 Orientation lock not available:', error);
+      }
+      
       // Enhanced fullscreen and scrolling management
       if (typeof WebApp.disableVerticalSwipes === 'function') {
         WebApp.disableVerticalSwipes();
