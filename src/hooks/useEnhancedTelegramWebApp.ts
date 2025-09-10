@@ -53,11 +53,22 @@ export function useEnhancedTelegramWebApp() {
       // Enable modern features for stable experience
       WebApp.enableClosingConfirmation();
       
-      // iPhone scrolling fixes - Use ONLY disableVerticalSwipes to prevent app closing
-      // This prevents the mini app from closing on vertical swipes while allowing native scrolling
+      // Enhanced fullscreen and scrolling management
       if (typeof WebApp.disableVerticalSwipes === 'function') {
         WebApp.disableVerticalSwipes();
         console.log('✅ Disabled vertical swipes to prevent app closing - native scrolling enabled');
+      }
+
+      // Handle fullscreen mode if available
+      if (typeof WebApp.requestFullscreen === 'function') {
+        console.log('📱 Fullscreen mode available - optimizing layout');
+        
+        // Auto-request fullscreen for better UX
+        try {
+          WebApp.requestFullscreen();
+        } catch (error) {
+          console.log('📱 Fullscreen request handled by user choice');
+        }
       }
       
       // Set optimal theme for better UX
@@ -73,10 +84,17 @@ export function useEnhancedTelegramWebApp() {
         document.documentElement.style.setProperty('--tg-safe-area-inset-top', `${WebApp.safeAreaInset?.top || 0}px`);
         document.documentElement.style.setProperty('--tg-safe-area-inset-bottom', `${WebApp.safeAreaInset?.bottom || 0}px`);
         
-        // Optimize viewport for iPhone - Always use viewportStableHeight for iOS
+        // Optimize viewport for iPhone with fullscreen support
         const stableHeight = WebApp.viewportStableHeight || WebApp.viewportHeight;
-        document.documentElement.style.setProperty('--tg-viewport-height', `${stableHeight}px`);
+        const currentHeight = WebApp.viewportHeight;
+        
+        document.documentElement.style.setProperty('--tg-viewport-height', `${currentHeight}px`);
         document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableHeight}px`);
+        
+        // Set fullscreen height if in fullscreen mode
+        if (WebApp.isExpanded && currentHeight >= window.screen.height * 0.9) {
+          document.documentElement.style.setProperty('--tg-fullscreen-height', `${currentHeight}px`);
+        }
         
         // Prevent iOS zoom on input focus
         const metaViewport = document.querySelector('meta[name=viewport]');
@@ -201,15 +219,31 @@ export function useEnhancedTelegramWebApp() {
     if (typeof window !== 'undefined') {
       initializeWebApp();
       
-      // Listen for viewport changes to update CSS variables dynamically
+      // Listen for viewport changes with fullscreen support
       const handleViewportChanged = () => {
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        if (isIOS && webApp) {
-          const stableHeight = WebApp.viewportStableHeight || WebApp.viewportHeight;
-          document.documentElement.style.setProperty('--tg-viewport-height', `${WebApp.viewportHeight}px`);
-          document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableHeight}px`);
-          console.log('📱 iOS viewport updated:', { viewportHeight: WebApp.viewportHeight, stableHeight });
+        const currentHeight = WebApp.viewportHeight;
+        const stableHeight = WebApp.viewportStableHeight || currentHeight;
+        
+        // Update viewport variables
+        document.documentElement.style.setProperty('--tg-viewport-height', `${currentHeight}px`);
+        document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableHeight}px`);
+        
+        // Handle fullscreen mode detection and CSS updates
+        const isFullscreenLike = WebApp.isExpanded && currentHeight >= window.screen.height * 0.9;
+        if (isFullscreenLike) {
+          document.documentElement.style.setProperty('--tg-fullscreen-height', `${currentHeight}px`);
+          document.documentElement.classList.add('telegram-fullscreen');
+        } else {
+          document.documentElement.classList.remove('telegram-fullscreen');
         }
+        
+        console.log('📱 Viewport updated:', { 
+          viewportHeight: currentHeight, 
+          stableHeight, 
+          isFullscreen: isFullscreenLike,
+          isExpanded: WebApp.isExpanded 
+        });
       };
       
       // Set up viewport change listener
