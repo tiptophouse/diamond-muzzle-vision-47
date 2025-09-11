@@ -1,7 +1,6 @@
 import { api, apiEndpoints, getCurrentUserId } from "@/lib/api";
 import { fetchMockInventoryData } from "./mockInventoryService";
 import { telegramInventoryCache } from "./telegramInventoryCache";
-import { telegramPerformanceMonitor } from "./telegramPerformanceMonitor";
 
 export interface FetchInventoryResult {
   data?: any[];
@@ -12,8 +11,6 @@ export interface FetchInventoryResult {
 export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   const userId = getCurrentUserId() || 2138564172;
   
-  // Start performance monitoring
-  telegramPerformanceMonitor.startTimer('inventory_fetch');
   console.log('🔍 INVENTORY SERVICE: Fetching data for user:', userId);
   
   const debugInfo = { 
@@ -28,9 +25,6 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     const cachedData = await telegramInventoryCache.getCachedInventory(userId);
     if (cachedData && cachedData.length > 0) {
       console.log('✅ INVENTORY SERVICE: Retrieved from Telegram cache:', cachedData.length, 'stones');
-      telegramPerformanceMonitor.recordMetric('cache_hit', 1);
-      telegramPerformanceMonitor.endTimer('inventory_fetch', { dataSource: 'telegram_cache' });
-      
       return {
         data: cachedData,
         debugInfo: {
@@ -41,7 +35,6 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
         }
       };
     }
-    telegramPerformanceMonitor.recordMetric('cache_miss', 1);
   } catch (cacheError) {
     console.warn('⚠️ INVENTORY SERVICE: Telegram cache error:', cacheError);
   }
@@ -90,11 +83,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       }
       
       if (dataArray && dataArray.length > 0) {
-        const loadTime = telegramPerformanceMonitor.endTimer('inventory_fetch', { 
-          dataSource: 'fastapi',
-          totalDiamonds: dataArray.length 
-        });
-        console.log('✅ INVENTORY SERVICE: Successfully fetched', dataArray.length, 'diamonds from FastAPI in', loadTime, 'ms');
+        console.log('✅ INVENTORY SERVICE: Successfully fetched', dataArray.length, 'diamonds from FastAPI');
         
         // Cache the data for future use (especially important for large datasets)
         try {
