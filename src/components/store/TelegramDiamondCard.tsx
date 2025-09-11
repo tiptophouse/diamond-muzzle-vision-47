@@ -7,7 +7,6 @@ import { Diamond } from "@/components/inventory/InventoryTable";
 import { OptimizedDiamondImage } from "./OptimizedDiamondImage";
 import { TelegramShareButton } from "./TelegramShareButton";
 import { LimitedGroupShareButton } from "./LimitedGroupShareButton";
-import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useNavigate } from "react-router-dom";
 
@@ -19,7 +18,6 @@ interface TelegramDiamondCardProps {
 
 export function TelegramDiamondCard({ diamond, index, onViewDetails }: TelegramDiamondCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const { hapticFeedback, mainButton, backButton } = useTelegramWebApp();
   const { user } = useTelegramAuth();
   const navigate = useNavigate();
 
@@ -27,18 +25,14 @@ export function TelegramDiamondCard({ diamond, index, onViewDetails }: TelegramD
   const isPriority = index < 6;
 
   const handleViewDetails = useCallback(() => {
-    hapticFeedback.impact('light');
-    
     if (onViewDetails) {
       onViewDetails(diamond);
     } else {
       navigate(`/diamond/${diamond.stockNumber}`);
     }
-  }, [diamond, onViewDetails, navigate, hapticFeedback]);
+  }, [diamond, onViewDetails, navigate]);
 
   const handleContact = useCallback(() => {
-    hapticFeedback.impact('medium');
-    
     const message = `💎 Interested in Diamond #${diamond.stockNumber}
 
 🔸 Shape: ${diamond.shape}
@@ -64,7 +58,7 @@ Could you please provide more details?`;
       // Final fallback - copy to clipboard
       navigator.clipboard.writeText(message);
     }
-  }, [diamond, hapticFeedback]);
+  }, [diamond]);
 
   // Prepare share content
   const shareTitle = `${diamond.carat}ct ${diamond.shape} Diamond`;
