@@ -22,18 +22,6 @@ export default {
       spacing: {
         'safe': 'env(safe-area-inset-bottom)',
         'safe-top': 'env(safe-area-inset-top)',
-        'tg-safe': 'var(--tg-safe-area-inset-bottom)',
-        'tg-safe-top': 'var(--tg-safe-area-inset-top)',
-      },
-      height: {
-        'tg-viewport': 'var(--tg-viewport-height)',
-        'tg-stable': 'var(--tg-viewport-stable-height)', 
-        'tg-fullscreen': 'var(--tg-fullscreen-height)',
-      },
-      minHeight: {
-        'tg-viewport': 'var(--tg-viewport-height)',
-        'tg-stable': 'var(--tg-viewport-stable-height)',
-        'tg-fullscreen': 'var(--tg-fullscreen-height)',
       },
       flex: {
         '2': '2 2 0%',

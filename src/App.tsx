@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TelegramAuthProvider } from './context/TelegramAuthContext';
-import { useAdvancedTelegramOptimization } from './hooks/useAdvancedTelegramOptimization';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
 import { SecureTelegramLayout } from './components/layout/SecureTelegramLayout';
@@ -32,25 +31,17 @@ import StandardizeCsvPage from './pages/StandardizeCsvPage';
 import BulkUploadPage from './pages/BulkUploadPage';
 import AnalyticsPage from "./pages/AnalyticsPage";
 import TelegramNotificationsDemo from "./pages/TelegramNotificationsDemo";
-import PerformancePage from "./pages/PerformancePage";
 
 function App() {
-  // Initialize advanced Telegram optimizations
-  const optimization = useAdvancedTelegramOptimization();
-  
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        retry: optimization.networkOptimized ? 2 : 1, // Adaptive retries
-        staleTime: 15 * 60 * 1000, // 15 minutes - longer cache
-        gcTime: 20 * 60 * 1000, // 20 minutes - keep data longer
-        refetchOnWindowFocus: false, // Optimize for mobile
-        refetchOnMount: false, // Use cached data when available
-        refetchOnReconnect: true, // Refresh on network reconnect
+        retry: 1, // Reduce retries for faster failure
+        staleTime: 10 * 60 * 1000, // 10 minutes - cache data longer
+        gcTime: 15 * 60 * 1000, // 15 minutes - keep cached data longer
+        refetchOnWindowFocus: false, // Don't refetch on window focus
+        refetchOnMount: false, // Don't refetch on mount if data exists
       },
-      mutations: {
-        retry: 1, // Single retry for mutations
-      }
     },
   });
   
@@ -175,18 +166,13 @@ function App() {
                       <AnalyticsPage />
                     </AuthenticatedRoute>
                   } />
-                   <Route path="/demo/notifications" element={
-                     <AuthenticatedRoute>
-                       <TelegramNotificationsDemo />
-                     </AuthenticatedRoute>
-                   } />
-                   <Route path="/performance" element={
-                     <AuthenticatedRoute>
-                       <PerformancePage />
-                     </AuthenticatedRoute>
-                   } />
-                   
-                   <Route path="/shared-diamond/:stockNumber" element={
+                  <Route path="/demo/notifications" element={
+                    <AuthenticatedRoute>
+                      <TelegramNotificationsDemo />
+                    </AuthenticatedRoute>
+                  } />
+                  
+                  <Route path="/shared-diamond/:stockNumber" element={
                     <AuthenticatedRoute>
                       <SecureDiamondViewerPage />
                     </AuthenticatedRoute>
