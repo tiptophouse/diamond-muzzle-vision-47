@@ -51,6 +51,8 @@ export function useTelegramImageLoader({
           loadTime
         });
         
+        // Success haptic for cached load
+        haptic?.notification?.('success');
         return;
       }
       
@@ -76,6 +78,8 @@ export function useTelegramImageLoader({
         telegramImageCache.cacheImage(stockNumber, urlToLoad).catch(console.warn);
       }
       
+      // Success haptic for network load
+      haptic?.notification?.('success');
       
     } catch (error) {
       console.warn(`Failed to load image for ${stockNumber}:`, error);
@@ -89,8 +93,10 @@ export function useTelegramImageLoader({
         loadTime
       });
       
+      // Error haptic
+      haptic?.notification?.('error');
     }
-  }, [stockNumber, originalUrl, fallbackUrl]);
+  }, [stockNumber, originalUrl, fallbackUrl, haptic]);
   
   // Validate if URL actually returns an image
   const validateImageUrl = useCallback((url: string): Promise<void> => {
