@@ -52,22 +52,18 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
   // Toggle motion mode
   const toggleMotionMode = () => {
     if (!isSupported) {
-      impactOccurred('heavy');
       return;
     }
 
     setIsMotionMode(prev => {
       const newMode = !prev;
       if (newMode) {
-        impactOccurred('medium');
         startAccelerometer();
       } else {
-        impactOccurred('light');
         stopAccelerometer();
       }
       return newMode;
     });
-    selectionChanged();
   };
 
   const handleContactOwner = () => {
@@ -85,7 +81,6 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
     
     try {
       window.open(telegramUrl, '_blank');
-      impactOccurred('light');
     } catch (error) {
       console.error('Failed to open Telegram:', error);
       window.open(telegramUrl, '_blank');
@@ -93,7 +88,6 @@ export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamo
   };
 
   const handleViewDetails = () => {
-    impactOccurred('medium');
     if (onViewDetails) {
       onViewDetails(diamond);
     }
