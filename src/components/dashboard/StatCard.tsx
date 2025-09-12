@@ -37,13 +37,14 @@ export function StatCard({
     const duration = 1000;
     const startTime = Date.now();
     const startValue = displayValue;
+    const targetValue = Number.isFinite(value) ? value : 0;
     
     const updateValue = () => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const easedProgress = 1 - Math.pow(1 - progress, 3); // Cubic ease-out
       
-      const nextValue = Math.floor(startValue + (value - startValue) * easedProgress);
+      const nextValue = Math.floor(startValue + (targetValue - startValue) * easedProgress);
       setDisplayValue(nextValue);
       
       if (progress < 1) {

@@ -47,7 +47,7 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
           color: d.color,
           clarity: d.clarity,
           weight: d.carat,
-          price_per_carat: d.price / d.carat,
+          price_per_carat: d.carat > 0 && d.price > 0 ? Math.round(d.price / d.carat) : 0,
           owners: [user?.id || 0],
         })),
         user?.id
@@ -63,12 +63,14 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
         salesByCategory: [] 
       };
 
-  // Calculate actual metrics from real data
-  const totalValue = allDiamonds.reduce((sum, diamond) => sum + diamond.price, 0);
-  const availableDiamonds = allDiamonds.filter(d => d.status === 'Available').length;
+  // Calculate actual metrics from real data (ignore items without price/carat)
+  const pricedDiamonds = allDiamonds.filter(d => d.price > 0 && d.carat > 0);
+  const totalValue = pricedDiamonds.reduce((sum, d) => sum + d.price, 0);
+  const totalCarats = pricedDiamonds.reduce((sum, d) => sum + d.carat, 0);
+  const availableDiamonds = allDiamonds.filter(d => String(d.status || '').toLowerCase() === 'available').length;
   const storeVisibleDiamonds = allDiamonds.filter(d => d.store_visible).length;
-  const avgPricePerCarat = allDiamonds.length > 0 
-    ? Math.round(totalValue / allDiamonds.reduce((sum, d) => sum + d.carat, 0))
+  const avgPricePerCarat = totalCarats > 0 
+    ? Math.round(totalValue / totalCarats)
     : 0;
 
   // Show empty state when no diamonds
