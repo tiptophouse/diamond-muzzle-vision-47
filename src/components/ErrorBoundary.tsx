@@ -1,18 +1,23 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
+  fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
 interface State {
   hasError: boolean;
-  error?: Error;
+  error: Error | null;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
-    hasError: false
+    hasError: false,
+    error: null
   };
 
   public static getDerivedStateFromError(error: Error): State {
@@ -21,41 +26,37 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+    this.props.onError?.(error, errorInfo);
   }
 
-  private handleReload = () => {
-    window.location.reload();
+  private handleReset = () => {
+    this.setState({ hasError: false, error: null });
   };
 
   public render() {
     if (this.state.hasError) {
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+
       return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-4">
-          <div className="text-center bg-card rounded-xl shadow-lg p-8 max-w-md mx-auto border">
-            <div className="bg-destructive/10 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-              <AlertTriangle className="h-10 w-10 text-destructive" />
+        <Card className="border-destructive/50 bg-destructive/5">
+          <CardContent className="p-6 text-center space-y-4">
+            <div className="flex justify-center">
+              <AlertTriangle className="w-12 h-12 text-destructive" />
             </div>
-            <h2 className="text-2xl font-bold text-foreground mb-4">Application Error</h2>
-            <p className="text-muted-foreground mb-6">
-              Something went wrong. The application will reload to recover.
-            </p>
-            
-            {process.env.NODE_ENV === 'development' && this.state.error && (
-              <div className="text-xs text-left bg-muted/50 p-4 rounded-lg mb-6">
-                <p className="font-semibold mb-2">Error Details:</p>
-                <p className="text-destructive">{this.state.error.message}</p>
-              </div>
-            )}
-            
-            <button
-              onClick={this.handleReload}
-              className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-3 px-6 rounded-lg transition-colors"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Reload Application
-            </button>
-          </div>
-        </div>
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Something went wrong</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                {this.state.error?.message || 'An unexpected error occurred'}
+              </p>
+              <Button onClick={this.handleReset} variant="outline" size="sm">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Try Again
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       );
     }
 

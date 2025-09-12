@@ -21,6 +21,8 @@ import { Badge } from '@/components/ui/badge';
 import { useTelegramHeatMapIntegration } from '@/hooks/useTelegramHeatMapIntegration';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 import { getTelegramWebApp } from '@/utils/telegramWebApp';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { HeatMapFallback } from './HeatMapFallback';
 
 interface DiamondHeatData {
   id: string;
@@ -56,7 +58,7 @@ function DiamondGeometry({
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
-  const [visible, setVisible] = useState(true);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   
   // Dynamic colors based on interest level and selection
   const { color, emissive, intensity } = useMemo(() => {
@@ -76,44 +78,43 @@ function DiamondGeometry({
     };
   }, [diamond.interestLevel, isSelected, hovered]);
 
-  // Animation based on interest level
+  // Simplified animation for mobile performance
   useFrame((state) => {
-    if (meshRef.current) {
+    if (meshRef.current && !isMobile) {
       const time = state.clock.getElapsedTime();
-      const heightMultiplier = diamond.interestLevel === 'high' ? 2 : 
-                              diamond.interestLevel === 'medium' ? 1.5 : 1;
+      const heightMultiplier = diamond.interestLevel === 'high' ? 1.5 : 1;
       
-      // Floating animation
-      meshRef.current.position.y = position[1] + Math.sin(time * 2 + position[0]) * 0.1 * heightMultiplier;
+      // Reduced floating animation
+      meshRef.current.position.y = position[1] + Math.sin(time + position[0]) * 0.05 * heightMultiplier;
       
-      // Rotation based on interest
-      meshRef.current.rotation.y += 0.01 * intensity;
-      meshRef.current.rotation.x = Math.sin(time + position[0]) * 0.1;
+      // Slower rotation
+      meshRef.current.rotation.y += 0.005 * intensity;
       
-      // Pulsing scale for high interest diamonds
+      // Reduced pulsing for high interest diamonds
       if (diamond.interestLevel === 'high') {
-        const pulse = 1 + Math.sin(time * 4) * 0.1;
+        const pulse = 1 + Math.sin(time * 2) * 0.05;
         meshRef.current.scale.setScalar(pulse);
       }
     }
   });
 
-  // Create diamond shape geometry
+  // Simplified diamond geometry for better performance
   const diamondGeometry = useMemo(() => {
-    const geometry = new THREE.ConeGeometry(0.3, 0.8, 8);
-    const topGeometry = new THREE.ConeGeometry(0.3, 0.4, 8);
-    topGeometry.rotateX(Math.PI);
-    topGeometry.translate(0, 0.6, 0);
-    
-    const mergedGeometry = new THREE.BufferGeometry();
-    const merged = [geometry, topGeometry];
-    mergedGeometry.copy(geometry);
-    
-    return mergedGeometry;
+    const geometry = new THREE.ConeGeometry(0.25, 0.6, 6); // Reduced complexity
+    return geometry;
   }, []);
 
+  // Cleanup geometry on unmount
+  useEffect(() => {
+    return () => {
+      if (diamondGeometry) {
+        diamondGeometry.dispose();
+      }
+    };
+  }, [diamondGeometry]);
+
   return (
-    <Float speed={2} rotationIntensity={0.5} floatIntensity={intensity / 2}>
+    <Float speed={isMobile ? 1 : 2} rotationIntensity={isMobile ? 0.2 : 0.5} floatIntensity={intensity / 4}>
       <mesh
         ref={meshRef}
         position={position}
@@ -121,63 +122,53 @@ function DiamondGeometry({
         onClick={onClick}
         onPointerOver={() => setHovered(true)}
         onPointerOut={() => setHovered(false)}
-        visible={visible}
       >
-        <MeshWobbleMaterial
-          color={color}
-          emissive={emissive}
-          emissiveIntensity={intensity * 0.3}
-          roughness={0.1}
-          metalness={0.8}
-          factor={0.1}
-          speed={2}
-          transparent
-          opacity={0.9}
-        />
-        
-        {/* Sparkles effect for high interest diamonds */}
-        {diamond.interestLevel === 'high' && (
-          <Sparkles 
-            count={20} 
-            scale={2} 
-            size={3} 
-            speed={0.4}
-            opacity={0.6}
+        {/* Simplified material for mobile performance */}
+        {isMobile ? (
+          <meshStandardMaterial
             color={color}
+            emissive={emissive}
+            emissiveIntensity={intensity * 0.2}
+            roughness={0.3}
+            metalness={0.7}
+            transparent
+            opacity={0.9}
+          />
+        ) : (
+          <MeshWobbleMaterial
+            color={color}
+            emissive={emissive}
+            emissiveIntensity={intensity * 0.3}
+            roughness={0.1}
+            metalness={0.8}
+            factor={0.1}
+            speed={2}
+            transparent
+            opacity={0.9}
           />
         )}
         
-        {/* Trail effect for selected diamond */}
-        {isSelected && (
-          <Trail width={2} length={6} color={emissive} attenuation={(t) => t * t}>
-            <Box args={[0.1, 0.1, 0.1]}>
-              <meshBasicMaterial color={emissive} />
-            </Box>
-          </Trail>
+        {/* Reduced effects for mobile performance */}
+        {!isMobile && diamond.interestLevel === 'high' && (
+          <Sparkles 
+            count={10}
+            scale={1.5}
+            size={2}
+            speed={0.2}
+            opacity={0.4}
+            color={color}
+          />
         )}
       </mesh>
       
-      {/* Info billboard */}
-      {(hovered || isSelected) && (
-        <Billboard position={[position[0], position[1] + 1, position[2]]}>
+      {/* Simplified info display for mobile */}
+      {(hovered || isSelected) && !isMobile && (
+        <Billboard position={[position[0], position[1] + 0.8, position[2]]}>
           <Html center>
-            <Card className="w-48 bg-black/80 backdrop-blur-sm border-white/20">
-              <CardContent className="p-2 text-white text-xs">
-                <div className="flex justify-between items-center mb-1">
-                  <Badge variant="outline" className="text-xs">
-                    {diamond.shape}
-                  </Badge>
-                  <span className="text-yellow-400">{diamond.carat}ct</span>
-                </div>
-                <div className="text-green-400 font-bold">
-                  ${diamond.price.toLocaleString()}
-                </div>
-                <div className="flex justify-between mt-1 text-gray-300">
-                  <span>Views: {diamond.notificationCount}</span>
-                  <span className="capitalize">{diamond.interestLevel}</span>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="bg-black/80 backdrop-blur-sm border border-white/20 rounded px-2 py-1 text-white text-xs">
+              <div className="font-medium">{diamond.shape} {diamond.carat}ct</div>
+              <div className="text-green-400">${diamond.price.toLocaleString()}</div>
+            </div>
           </Html>
         </Billboard>
       )}
@@ -185,27 +176,43 @@ function DiamondGeometry({
   );
 }
 
-// Particle System for Background Effect
+// Optimized Particle System for Mobile Performance
 function BackgroundParticles() {
   const particlesRef = useRef<THREE.Points>(null);
   
-  const particleCount = 1000;
+  // Reduce particle count for mobile performance
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const particleCount = isMobile ? 100 : 300; // Reduced from 1000
+  
   const positions = useMemo(() => {
     const pos = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount * 3; i += 3) {
-      pos[i] = (Math.random() - 0.5) * 20;
-      pos[i + 1] = (Math.random() - 0.5) * 20;
-      pos[i + 2] = (Math.random() - 0.5) * 20;
+      pos[i] = (Math.random() - 0.5) * 15; // Reduced range
+      pos[i + 1] = (Math.random() - 0.5) * 15;
+      pos[i + 2] = (Math.random() - 0.5) * 15;
     }
     return pos;
-  }, []);
+  }, [particleCount]);
 
   useFrame((state) => {
     if (particlesRef.current) {
-      particlesRef.current.rotation.y += 0.001;
-      particlesRef.current.rotation.x += 0.0005;
+      // Slower, less intensive animation
+      particlesRef.current.rotation.y += 0.0005;
+      particlesRef.current.rotation.x += 0.0002;
     }
   });
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (particlesRef.current) {
+        particlesRef.current.geometry?.dispose();
+        if (particlesRef.current.material && 'dispose' in particlesRef.current.material) {
+          (particlesRef.current.material as any).dispose();
+        }
+      }
+    };
+  }, []);
 
   return (
     <points ref={particlesRef}>
@@ -218,11 +225,11 @@ function BackgroundParticles() {
         />
       </bufferGeometry>
       <PointMaterial 
-        size={0.01} 
+        size={0.005} 
         color="#ffffff" 
         transparent 
-        opacity={0.3}
-        sizeAttenuation
+        opacity={0.2}
+        sizeAttenuation={false}
       />
     </points>
   );
@@ -321,18 +328,13 @@ function Scene3D({ diamonds, onDiamondSelect }: {
       <color attach="background" args={['#0a0a0a']} />
       <fog attach="fog" args={['#0a0a0a', 10, 50]} />
       
-      {/* Lighting */}
-      <ambientLight intensity={0.3} />
+      {/* Simplified lighting for mobile performance */}
+      <ambientLight intensity={0.4} />
       <directionalLight 
-        position={[10, 10, 5]} 
-        intensity={1}
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        position={[5, 5, 5]} 
+        intensity={0.8}
+        castShadow={false}
       />
-      <pointLight position={[0, 10, 0]} intensity={0.5} color="#ffffff" />
-      <pointLight position={[-10, -10, -10]} intensity={0.3} color="#3388ff" />
-      <pointLight position={[10, -10, 10]} intensity={0.3} color="#ff3333" />
       
       {/* Environment */}
       <Environment preset="night" />
@@ -392,7 +394,7 @@ export function Advanced3DHeatMap({
     sendHeatMapReport 
   } = useTelegramHeatMapIntegration();
   
-  // Configure Telegram WebApp for 3D interaction
+  // Configure Telegram WebApp for 3D interaction with proper cleanup
   useEffect(() => {
     const tg = getTelegramWebApp();
     if (tg && (tg as any).MainButton) {
@@ -406,39 +408,53 @@ export function Advanced3DHeatMap({
       mainButton.show();
       
       const handleMainButtonClick = () => {
-        sendHeatMapReport(diamonds);
+        try {
+          sendHeatMapReport(diamonds);
+        } catch (error) {
+          console.error('Heat map report error:', error);
+        }
       };
       
       mainButton.onClick(handleMainButtonClick);
       
       return () => {
-        if (mainButton) {
-          mainButton.hide();
-          if (mainButton.offClick) {
-            mainButton.offClick(handleMainButtonClick);
+        try {
+          if (mainButton) {
+            mainButton.hide();
+            if (mainButton.offClick) {
+              mainButton.offClick(handleMainButtonClick);
+            }
           }
+        } catch (error) {
+          console.warn('Cleanup error:', error);
         }
       };
     }
   }, [diamonds, sendHeatMapReport]);
 
-  // Performance optimization for mobile
-  const canvasProps = useMemo(() => ({
-    dpr: [1, 2] as [number, number], // Limit pixel ratio for mobile performance
-    performance: { min: 0.5 }, // Adaptive performance
-    gl: { 
-      antialias: false, // Disable for better mobile performance
-      powerPreference: 'high-performance' as const,
-      alpha: false,
-    },
-    camera: { 
-      fov: 60, 
-      near: 0.1, 
-      far: 100, 
-      position: [8, 8, 8] as [number, number, number]
-    },
-    shadows: false, // Disable shadows on mobile for performance
-  }), []);
+  // Enhanced mobile optimization
+  const canvasProps = useMemo(() => {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    
+    return {
+      dpr: (isMobile ? [1, 1.5] : [1, 2]) as [number, number],
+      performance: { min: isMobile ? 0.3 : 0.5 },
+      gl: { 
+        antialias: !isMobile,
+        powerPreference: 'high-performance' as const,
+        alpha: false,
+        stencil: false,
+        depth: true,
+      },
+      camera: { 
+        fov: 60, 
+        near: 0.1, 
+        far: 50,
+        position: [6, 6, 6] as [number, number, number]
+      },
+      shadows: false,
+    };
+  }, []);
 
   if (!diamonds.length) {
     return (
@@ -453,46 +469,56 @@ export function Advanced3DHeatMap({
   }
 
   return (
-    <div className="relative w-full bg-black rounded-lg overflow-hidden" style={{ height }}>
-      {/* Performance indicator */}
-      <div className="absolute top-4 left-4 z-10">
-        <Badge variant="outline" className="bg-black/50 text-white border-white/20">
-          3D Heat Map • {diamonds.length} Diamonds
-        </Badge>
-      </div>
-      
-      {/* Controls help */}
-      <div className="absolute bottom-4 left-4 z-10">
-        <div className="bg-black/50 backdrop-blur-sm rounded-lg p-2 text-white text-xs">
-          <div>🖱️ Drag to rotate</div>
-          <div>🔍 Pinch to zoom</div>
-          <div>👆 Tap diamonds for details</div>
+    <ErrorBoundary 
+      fallback={<HeatMapFallback diamonds={diamonds} onDiamondSelect={onDiamondSelect} height={height} />}
+      onError={(error) => {
+        console.error('3D Heat Map Error:', error);
+        // Report crash to performance monitor
+        if (typeof window !== 'undefined' && 'performance' in window) {
+          (window as any).telegramPerformanceMonitor?.recordMetric('3d_crash', 1, { error: error.message });
+        }
+      }}
+    >
+      <div className="relative w-full bg-black rounded-lg overflow-hidden" style={{ height }}>
+        {/* Performance indicator */}
+        <div className="absolute top-4 left-4 z-10">
+          <Badge variant="outline" className="bg-black/50 text-white border-white/20">
+            3D Heat Map • {diamonds.length} Diamonds
+          </Badge>
         </div>
-      </div>
-      
-      {/* Stats overlay */}
-      <div className="absolute top-4 right-4 z-10">
-        <div className="bg-black/50 backdrop-blur-sm rounded-lg p-3 text-white text-xs space-y-1">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-red-500 rounded"></div>
-            <span>High: {diamonds.filter(d => d.interestLevel === 'high').length}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-orange-400 rounded"></div>
-            <span>Medium: {diamonds.filter(d => d.interestLevel === 'medium').length}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-400 rounded"></div>
-            <span>Low: {diamonds.filter(d => d.interestLevel === 'low').length}</span>
+        
+        {/* Simplified controls help for mobile */}
+        <div className="absolute bottom-4 left-4 z-10">
+          <div className="bg-black/50 backdrop-blur-sm rounded-lg p-2 text-white text-xs">
+            <div>🖱️ Drag to rotate</div>
+            <div>🔍 Pinch to zoom</div>
           </div>
         </div>
+        
+        {/* Compact stats overlay */}
+        <div className="absolute top-4 right-4 z-10">
+          <div className="bg-black/50 backdrop-blur-sm rounded-lg p-2 text-white text-xs space-y-1">
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-red-500 rounded"></div>
+              <span>{diamonds.filter(d => d.interestLevel === 'high').length}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-orange-400 rounded"></div>
+              <span>{diamonds.filter(d => d.interestLevel === 'medium').length}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-blue-400 rounded"></div>
+              <span>{diamonds.filter(d => d.interestLevel === 'low').length}</span>
+            </div>
+          </div>
+        </div>
+        
+        <Canvas {...canvasProps}>
+          <Suspense fallback={null}>
+            <Scene3D diamonds={diamonds} onDiamondSelect={onDiamondSelect} />
+          </Suspense>
+        </Canvas>
       </div>
-      
-      <Canvas {...canvasProps}>
-        <Suspense fallback={null}>
-          <Scene3D diamonds={diamonds} onDiamondSelect={onDiamondSelect} />
-        </Suspense>
-      </Canvas>
-    </div>
+    </ErrorBoundary>
   );
 }

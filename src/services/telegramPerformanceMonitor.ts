@@ -147,6 +147,32 @@ class TelegramPerformanceMonitor {
     try {
       if (!telegramSDK.isInitialized()) return;
       
+      // Check if CloudStorage is supported (graceful fallback)
+      const webApp = telegramSDK.getWebApp();
+      if (!webApp || !webApp.CloudStorage) {
+        // Fallback to localStorage for development/older versions
+        try {
+          const perfKey = `perf_${Date.now()}`;
+          const data = JSON.stringify({
+            report,
+            timestamp: Date.now(),
+            userId: telegramSDK.getUser()?.id || 'unknown'
+          });
+          localStorage.setItem(perfKey, data);
+          
+          // Cleanup old localStorage performance data
+          const keys = Object.keys(localStorage).filter(key => key.startsWith('perf_'));
+          if (keys.length > 10) {
+            keys.sort().slice(0, keys.length - 10).forEach(key => {
+              localStorage.removeItem(key);
+            });
+          }
+        } catch (localError) {
+          console.warn('⚠️ PERF: LocalStorage fallback failed:', localError);
+        }
+        return;
+      }
+      
       const perfKey = `perf_${Date.now()}`;
       await telegramSDK.cloudStorage.setItem(perfKey, JSON.stringify({
         report,
@@ -163,6 +189,11 @@ class TelegramPerformanceMonitor {
 
   private async cleanupOldPerformanceData(): Promise<void> {
     try {
+      const webApp = telegramSDK.getWebApp();
+      if (!webApp || !webApp.CloudStorage) {
+        return; // Skip cleanup if CloudStorage not available
+      }
+      
       const keys = await telegramSDK.cloudStorage.getKeys();
       const perfKeys = keys.filter(key => key.startsWith('perf_'));
       
@@ -212,13 +243,18 @@ class TelegramPerformanceMonitor {
       console.log('📊 PERF: Flushing metrics before unload:', this.metrics.length);
       const report = this.generatePerformanceReport();
       
-      // Store final performance report
+      // Store final performance report (gracefully handle CloudStorage)
       if (telegramSDK.isInitialized()) {
-        telegramSDK.cloudStorage.setItem('final_perf_report', JSON.stringify({
-          report,
-          timestamp: Date.now(),
-          sessionMetrics: this.metrics
-        }));
+        const webApp = telegramSDK.getWebApp();
+        if (webApp && webApp.CloudStorage) {
+          telegramSDK.cloudStorage.setItem('final_perf_report', JSON.stringify({
+            report,
+            timestamp: Date.now(),
+            sessionMetrics: this.metrics
+          })).catch(error => {
+            console.warn('⚠️ PERF: Failed to store final report:', error);
+          });
+        }
       }
     }
   }
