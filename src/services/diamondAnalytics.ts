@@ -5,7 +5,6 @@ interface DiamondData {
   clarity?: string;
   weight?: number;
   carat?: number;
-  cut?: string;
   price?: number;
   price_per_carat?: number;
   stock?: string;
@@ -19,11 +18,6 @@ interface DiamondData {
   'Video link'?: string;
   videoLink?: string;
   gem360Url?: string;
-  polish?: string;
-  symmetry?: string;
-  certificateNumber?: string;
-  lab?: string;
-  certificateUrl?: string;
 }
 
 interface DashboardStats {
@@ -87,16 +81,10 @@ export function processDiamondDataForDashboard(diamonds: DiamondData[], currentU
   const uniqueShapes = new Set(userDiamonds.map(d => d.shape).filter(Boolean));
   const totalLeads = uniqueShapes.size;
   
-  // Calculate inventory value tiers - use realistic price calculations
-  const highValueDiamonds = userDiamonds.filter(d => {
-    const weight = d.weight || d.carat || 0;
-    const pricePerCarat = d.price_per_carat || 0;
-    // Only count as high value if both weight and price per carat are reasonable
-    const totalPrice = weight > 0 && pricePerCarat > 0 && pricePerCarat < 50000 
-      ? pricePerCarat * weight 
-      : d.price || 0;
-    return totalPrice > 5000 && totalPrice < 1000000; // Reasonable range for high-value diamonds
-  }).length;
+  // Calculate inventory value tiers
+  const highValueDiamonds = userDiamonds.filter(d => 
+    (d.price_per_carat || 0) * (d.weight || d.carat || 0) > 10000
+  ).length;
   
   const stats: DashboardStats = {
     totalDiamonds,
@@ -168,46 +156,37 @@ export function convertDiamondsToInventoryFormat(diamonds: DiamondData[], curren
   const converted = userDiamonds.map(diamond => {
     const weight = diamond.weight || diamond.carat || 0;
     const pricePerCarat = diamond.price_per_carat || 0;
-    const totalPrice = diamond.price || 0;
+    const totalPrice = Math.round(pricePerCarat * weight);
     
-    // Calculate final price with realistic bounds
-    let finalPrice = 0;
-    if (totalPrice > 0 && totalPrice < 1000000) {
-      // Use direct price if it's in reasonable range
-      finalPrice = totalPrice;
-    } else if (pricePerCarat > 0 && pricePerCarat < 50000 && weight > 0 && weight < 20) {
-      // Calculate from price per carat if values are reasonable
-      finalPrice = Math.round(pricePerCarat * weight);
-    } else {
-      // Default fallback for unrealistic values
-      finalPrice = Math.round(Math.random() * 50000 + 1000); // Random price between $1k-$51k
-    }
-
     const result = {
-      id: String(diamond.id || `diamond_${Math.floor(Math.random() * 10000)}`),
-      stockNumber: String(diamond.stock || `STOCK_${Math.floor(Math.random() * 10000)}`),
-      shape: diamond.shape || 'Round',
-      carat: weight > 0 && weight < 20 ? weight : Math.round((Math.random() * 3 + 0.5) * 100) / 100,
-      color: diamond.color || 'D',
-      clarity: diamond.clarity || 'FL',
-      cut: diamond.cut || 'Excellent',
-      polish: diamond.polish || undefined,
-      symmetry: diamond.symmetry || undefined,
-      price: finalPrice,
+      id: diamond.id?.toString() || '',
+      stockNumber: diamond.stock || `D${diamond.id || Math.floor(Math.random() * 10000)}`,
+      shape: diamond.shape || 'Unknown',
+      carat: weight,
+      color: diamond.color || 'Unknown',
+      clarity: diamond.clarity || 'Unknown',
+      cut: 'Excellent', // Default since not in your data
+      price: totalPrice,
       status: diamond.status || 'Available',
-      imageUrl: diamond.picture !== 'default' ? diamond.picture : diamond.Image,
-      gem360Url: diamond.gem360Url,
       store_visible: true,
-      certificateNumber: diamond.certificateNumber || undefined,
-      lab: diamond.lab || undefined,
-      certificateUrl: diamond.certificateUrl || undefined,
+      // Map image fields from CSV
+      Image: diamond.Image,
+      imageUrl: diamond.picture !== 'default' ? diamond.picture : diamond.Image,
+      picture: diamond.picture,
+      image: diamond.image,
+      'Video link': diamond['Video link'],
+      videoLink: diamond.videoLink,
+      gem360Url: diamond.gem360Url,
     };
+    
+    console.log('🔄 CONVERT: Converted diamond:', {
+      original: diamond,
+      converted: result
+    });
     
     return result;
   });
   
   console.log('🔄 CONVERT: Conversion complete, result count:', converted.length);
-  console.log('🔄 CONVERT: Sample converted prices:', converted.slice(0, 5).map(d => ({ id: d.id, price: d.price })));
-  
   return converted;
 }

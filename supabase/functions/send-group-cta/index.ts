@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  console.log('🚀 Group CTA function invoked');
+  console.log('🚀 Enhanced Group CTA function invoked');
   
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -19,14 +19,20 @@ serve(async (req) => {
       message, 
       groupId, 
       botUsername: providedBotUsername,
-      useButtons = false // Default to false for now
+      useMultipleButtons = true,
+      includePremiumButton = true,
+      includeInventoryButton = true,
+      includeChatButton = true
     } = await req.json();
     
-    console.log('📥 CTA request:', { 
+    console.log('📥 Enhanced CTA request:', { 
       hasMessage: !!message, 
       groupId, 
       botUsername: providedBotUsername,
-      useButtons
+      useMultipleButtons,
+      includePremiumButton,
+      includeInventoryButton,
+      includeChatButton
     });
 
     const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
@@ -40,53 +46,102 @@ serve(async (req) => {
 
     const botUsername = providedBotUsername || Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot';
     
-    // Growth announcement message
-    const defaultMessage = `🎉 **מזל טוב! אנחנו גדלים!**
+    // Enhanced default message
+    const defaultMessage = `💎 **העלו את העסק שלכם לרמה הבאה עם BrilliantBot!**
 
-💎 **BrilliantBot חוגג: 400+ סוחרי יהלומים פעילים!**
+🚀 **הבוט החכם ביותר לסוחרי יהלומים:**
+• 🔍 חיפוש מתקדם במלאי
+• 📊 ניתוחי שוק בזמן אמת
+• 💰 מעקב רווחיות חכם
+• 🎯 התאמות מושלמות ללקוחות
 
-🚀 **מה שהתחיל כחלום הפך למציאות:**
-• 400+ סוחרי יהלומים מובילים
-• אלפי יהלומים נמכרו דרך המערכת
-• חיסכון של מיליוני שקלים בעלויות
-• רשת הסוחרים הגדולה והמתקדמת בישראל
-
-💪 **אנחנו ממשיכים לחדש ולהוביל בתחום טכנולוגיית היהלומים**
-
-🙏 **תודה לכל הסוחרים שהאמינו בנו מההתחלה!**
-
-#יהלומים #BrilliantBot #גדלים_יחד #400_סוחרים`;
+⭐ **אלפי סוחרים כבר משתמשים - הצטרפו עכשיו!**`;
 
     const finalMessage = message || defaultMessage;
 
-    let telegramPayload: any = {
-      chat_id: groupId || -1001009290613,
-      text: finalMessage,
-      parse_mode: 'Markdown'
-    };
+    // Create dynamic inline keyboard with only web_app buttons (no mixing with other button types)
+    let inlineKeyboard = [];
 
-    // Only add buttons if explicitly requested
-    if (useButtons) {
-      telegramPayload.reply_markup = {
-        inline_keyboard: [[
-          {
-            text: '🚀 הצטרף ל-BrilliantBot',
-            web_app: {
-              url: `https://diamondbot-store.vercel.app/?utm_source=group_cta&utm_campaign=growth_announcement&start=group_activation&button_clicked=join_brilliantbot`
-            }
+    if (useMultipleButtons) {
+      // Main CTA button - routes to dashboard
+      inlineKeyboard.push([{
+        text: '🏠 התחל במחוון הראשי',
+        web_app: {
+          url: `https://diamondbot-store.vercel.app/?utm_source=group_cta&utm_campaign=main_dashboard&start=group_activation&button_clicked=main_dashboard`
+        }
+      }]);
+
+      // Secondary action buttons row
+      const secondRow = [];
+      
+      if (includePremiumButton) {
+        secondRow.push({
+          text: '💎 תכונות פרמיום',
+          web_app: {
+            url: `https://diamondbot-store.vercel.app/dashboard?utm_source=group_cta&utm_campaign=premium_features&start=premium_features&focus=premium&button_clicked=premium_features`
           }
-        ]]
-      };
+        });
+      }
+
+      if (includeInventoryButton) {
+        secondRow.push({
+          text: '📦 ניהול מלאי',
+          web_app: {
+            url: `https://diamondbot-store.vercel.app/inventory?utm_source=group_cta&utm_campaign=inventory_demo&start=inventory_demo&button_clicked=inventory_management`
+          }
+        });
+      }
+
+      // Add second row if it has buttons
+      if (secondRow.length > 0) {
+        inlineKeyboard.push(secondRow);
+      }
+
+      // Third row for AI chat button
+      if (includeChatButton) {
+        inlineKeyboard.push([{
+          text: '🤖 צ\'אט AI יועץ יהלומים',
+          web_app: {
+            url: `https://diamondbot-store.vercel.app/chat?utm_source=group_cta&utm_campaign=ai_chat_demo&start=ai_chat_demo&welcome=true&button_clicked=ai_chat`
+          }
+        }]);
+      }
+
+      // Store button - direct to marketplace
+      inlineKeyboard.push([{
+        text: '🏪 חנות יהלומים מקוונת',
+        web_app: {
+          url: `https://diamondbot-store.vercel.app/store?utm_source=group_cta&utm_campaign=store_visit&start=store_demo&view=featured&button_clicked=online_store`
+        }
+      }]);
+
+    } else {
+      // Single button fallback - routes to dashboard
+      inlineKeyboard = [[
+        {
+          text: '🚀 התחל עם BrilliantBot',
+          web_app: {
+            url: `https://diamondbot-store.vercel.app/?utm_source=group_cta&utm_campaign=single_button&start=group_activation&button_clicked=single_start`
+          }
+        }
+      ]];
     }
 
-    console.log('📤 Sending message to group:', groupId || -1001009290613);
+    console.log('📤 Sending enhanced CTA message with intelligent routing and', inlineKeyboard.length, 'button rows');
     
     const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(telegramPayload),
+      body: JSON.stringify({
+        chat_id: groupId || -1001009290613,
+        text: finalMessage,
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: inlineKeyboard
+        }
+      }),
     });
 
     const result = await telegramResponse.json();
@@ -95,25 +150,31 @@ serve(async (req) => {
     if (!telegramResponse.ok) {
       console.error('❌ Telegram API error:', result);
       return new Response(
-        JSON.stringify({ error: 'Failed to send group message', details: result }),
+        JSON.stringify({ error: 'Failed to send enhanced group CTA message', details: result }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('✅ Group message sent successfully');
+    console.log('✅ Enhanced Group CTA message with intelligent routing sent successfully');
     return new Response(
       JSON.stringify({ 
         success: true, 
         messageId: result.result.message_id,
         groupId: groupId || -1001009290613,
-        messageType: useButtons ? 'with_buttons' : 'text_only',
-        userCount: '400+'
+        buttonsCount: inlineKeyboard.length,
+        intelligentRouting: true,
+        features: {
+          useMultipleButtons,
+          includePremiumButton,
+          includeInventoryButton,
+          includeChatButton
+        }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('❌ Error sending group message:', error);
+    console.error('❌ Error sending enhanced group CTA message:', error);
     return new Response(
       JSON.stringify({ error: 'Internal server error', details: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

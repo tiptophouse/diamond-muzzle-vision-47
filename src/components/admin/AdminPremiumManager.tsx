@@ -1,10 +1,8 @@
 
 import React from 'react';
-import { Crown, Users, TrendingUp, Gift, CheckCircle } from 'lucide-react';
+import { Crown, Users, TrendingUp, Gift } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PremiumPromotionSender } from './PremiumPromotionSender';
-import { LegacyUserManager } from './LegacyUserManager';
-import { PremiumUserStatus } from './PremiumUserStatus';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function AdminPremiumManager() {
@@ -21,9 +19,6 @@ export function AdminPremiumManager() {
             Manage premium users, promotions, and benefits across your diamond trading platform
           </p>
         </div>
-
-        {/* Premium Status Overview */}
-        <PremiumUserStatus />
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -68,34 +63,18 @@ export function AdminPremiumManager() {
         </div>
 
         {/* Main Content */}
-        <Tabs defaultValue="status" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-white">
-            <TabsTrigger value="status" className="data-[state=active]:bg-yellow-600 data-[state=active]:text-white">
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Status Check
-            </TabsTrigger>
-            <TabsTrigger value="legacy" className="data-[state=active]:bg-yellow-600 data-[state=active]:text-white">
-              <Crown className="h-4 w-4 mr-2" />
-              Legacy Assignment
-            </TabsTrigger>
+        <Tabs defaultValue="promotion" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 bg-white">
             <TabsTrigger value="promotion" className="data-[state=active]:bg-yellow-600 data-[state=active]:text-white">
               <Gift className="h-4 w-4 mr-2" />
               User Promotion
             </TabsTrigger>
             <TabsTrigger value="benefits" className="data-[state=active]:bg-yellow-600 data-[state=active]:text-white">
-              <Users className="h-4 w-4 mr-2" />
+              <Crown className="h-4 w-4 mr-2" />
               Premium Benefits
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="status" className="mt-6">
-            <PremiumUserStatus />
-          </TabsContent>
-
-          <TabsContent value="legacy" className="mt-6">
-            <LegacyUserManager />
-          </TabsContent>
-          
           <TabsContent value="promotion" className="mt-6">
             <PremiumPromotionSender />
           </TabsContent>
