@@ -1,6 +1,5 @@
-// Enhanced Dashboard with modern Telegram-native design
+// Enhanced Dashboard with modern Telegram-native design  
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { processDiamondDataForDashboard } from '@/services/diamondAnalytics';
 import { InventoryChart } from '@/components/dashboard/InventoryChart';
 import { RealTimeUserCount } from '@/components/dashboard/RealTimeUserCount';
 import { NotificationHeatMapSection } from '@/components/dashboard/NotificationHeatMapSection';
@@ -94,10 +93,10 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
       
       console.log('🔍 Dashboard: Found', valid.length, 'valid diamonds');
 
-      // Process data with error boundary
+      // Process our own stats instead of using processDiamondDataForDashboard
       let processed = { 
         stats: { 
-          totalDiamonds: 0, 
+          totalDiamonds: valid.length, 
           matchedPairs: 0, 
           totalLeads: 0, 
           avgPricePerCarat: 0,
@@ -106,14 +105,8 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
         } 
       };
       
-      if (valid.length > 0) {
-        try {
-          processed = processDiamondDataForDashboard(valid);
-          console.log('✅ Dashboard: Data processed successfully:', processed);
-        } catch (error) {
-          console.error('❌ Dashboard: Data processing failed:', error);
-        }
-      }
+      // We'll calculate our stats directly in the component
+      console.log('✅ Dashboard: Using direct stats calculation for', valid.length, 'diamonds');
 
       return { validDiamonds: valid, processedData: processed };
     } catch (error) {
@@ -279,11 +272,14 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
           </div>
           <BarChart3 className="h-5 w-5 text-primary" />
         </div>
-        <InventoryChart data={validDiamonds.map(d => ({ 
-          name: d.shape || 'Unknown', 
-          value: 1, 
-          color: '#0088cc' 
-        }))} />
+        <InventoryChart 
+          title="Shape Distribution" 
+          data={validDiamonds.map(d => ({ 
+            name: d.shape || 'Unknown', 
+            value: 1, 
+            color: '#0088cc' 
+          }))} 
+        />
       </Card>
 
       {/* Recent Activity */}
