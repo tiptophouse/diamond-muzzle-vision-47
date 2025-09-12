@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useStrictTelegramAuth } from '@/hooks/useStrictTelegramAuth';
+import { useSecureTelegramAuth } from '@/hooks/useSecureTelegramAuth';
 import { useUserDataPersistence } from '@/hooks/useUserDataPersistence';
 
 interface TelegramUser {
@@ -26,7 +26,7 @@ interface TelegramAuthContextType {
 const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(undefined);
 
 export function TelegramAuthProvider({ children }: { children: ReactNode }) {
-  const authState = useStrictTelegramAuth();
+  const authState = useSecureTelegramAuth();
   
   console.log('🔍 TelegramAuthProvider - Auth state:', { 
     user: authState.user, 
