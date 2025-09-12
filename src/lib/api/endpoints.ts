@@ -21,8 +21,8 @@ export const apiEndpoints = {
   // Update diamond - PUT /api/v1/diamonds/{diamond_id}?user_id={user_id}
   updateDiamond: (diamondId: string, userId: number) => `/api/v1/diamonds/${diamondId}?user_id=${userId}`,
   
-  // Delete diamond - DELETE /api/v1/delete_stone/{diamond_id}?user_id={user_id}&diamond_id={diamond_id}
-  deleteDiamond: (diamondId: string, userId: number) => `/api/v1/delete_stone/${diamondId}?user_id=${userId}&diamond_id=${diamondId}`,
+  // Delete diamond - DELETE /api/v1/delete_stone/{diamond_id}?user_id={user_id}
+  deleteDiamond: (diamondId: string, userId: number) => `/api/v1/delete_stone/${diamondId}?user_id=${userId}`,
   
   // SFTP endpoints
   sftpProvision: () => `/api/v1/sftp/provision`,
