@@ -25,9 +25,9 @@ declare global {
 export function isTelegramWebAppEnvironment(): boolean {
   if (typeof window === 'undefined') return false;
   
+  const tg = (window.Telegram as any)?.WebApp;
   return !!(
-    window.Telegram?.WebApp && 
-    typeof window.Telegram.WebApp === 'object'
+    tg && typeof tg === 'object' && typeof tg.initData === 'string' && tg.initData.length > 0
   );
 }
 
