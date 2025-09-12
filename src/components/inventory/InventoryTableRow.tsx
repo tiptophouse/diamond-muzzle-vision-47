@@ -19,7 +19,7 @@ export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle, on
   return (
     <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-800">
       <TableCell className="w-16">
-        {diamond.imageUrl || diamond.picture ? (
+        {(diamond.imageUrl || diamond.picture) ? (
           <img 
             src={diamond.imageUrl || diamond.picture} 
             alt={`Diamond ${diamond.stockNumber}`}
@@ -33,7 +33,7 @@ export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle, on
             }}
           />
         ) : null}
-        <div className={`w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 flex items-center justify-center ${diamond.imageUrl || diamond.picture ? 'hidden' : ''}`}>
+        <div className={`w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 flex items-center justify-center ${(diamond.imageUrl || diamond.picture) ? 'hidden' : ''}`}>
           <ImageIcon className="h-4 w-4 text-slate-400" />
         </div>
       </TableCell>

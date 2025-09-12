@@ -56,8 +56,9 @@ export function useTelegramImageLoader({
         return;
       }
       
-      // If not cached, use original or fallback URL
-      const urlToLoad = originalUrl && originalUrl.trim() && originalUrl !== 'null' 
+      // If not cached, use original or fallback URL - check both imageUrl and picture fields
+      const validOriginalUrl = originalUrl && originalUrl.trim() && originalUrl !== 'null' && originalUrl !== 'undefined' && originalUrl.startsWith('http');
+      const urlToLoad = validOriginalUrl 
         ? originalUrl 
         : fallbackUrl || `https://miniapp.mazalbot.com/api/diamond-image/${stockNumber}`;
       

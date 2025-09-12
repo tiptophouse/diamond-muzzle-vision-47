@@ -32,7 +32,7 @@ export function OptimizedDiamondImage({
   const containerRef = useRef<HTMLDivElement>(null);
   const { haptic } = useTelegramSDK();
 
-  // Use Telegram native image loading with cache
+  // Use Telegram native image loading with cache - try imageUrl first, then picture
   const {
     imageUrl: cachedImageUrl,
     isLoading,
@@ -42,7 +42,7 @@ export function OptimizedDiamondImage({
     retryLoad
   } = useTelegramImageLoader({
     stockNumber,
-    originalUrl: imageUrl,
+    originalUrl: imageUrl || (gem360Url ? null : imageUrl), // Don't use imageUrl if it's actually a 360 URL
     fallbackUrl: `https://miniapp.mazalbot.com/api/diamond-image/${stockNumber}`,
     priority
   });

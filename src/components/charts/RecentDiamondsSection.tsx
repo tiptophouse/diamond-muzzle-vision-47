@@ -32,8 +32,8 @@ export function RecentDiamondsSection({ diamonds, isLoading }: RecentDiamondsSec
 
   const handleDiamondClick = (diamond: any) => {
     impactOccurred('light');
-    if (diamond.stock) {
-      navigate(`/diamond/${diamond.stock}`);
+    if (diamond.stockNumber || diamond.stock) {
+      navigate(`/diamond/${diamond.stockNumber || diamond.stock}`);
     }
   };
 
