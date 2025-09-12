@@ -12,10 +12,11 @@ import { PaymentManagement } from '@/components/admin/PaymentManagement';
 import { SessionUsersDisplay } from '@/components/admin/SessionUsersDisplay';
 import { UserUploadAnalysis } from '@/components/admin/UserUploadAnalysis';
 import { UserDiamondCounts } from '@/components/admin/UserDiamondCounts';
+import { ApiTestingCenter } from '@/components/admin/ApiTestingCenter';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { Users, Settings, MessageSquare, CreditCard, Upload, BarChart3, Diamond, Send } from 'lucide-react';
+import { Users, Settings, MessageSquare, CreditCard, Upload, BarChart3, Diamond, Send, Activity } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -217,7 +218,7 @@ export default function Admin() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <Tabs defaultValue="diamond-counts" className="w-full">
           <div className="overflow-x-auto mb-6">
-            <TabsList className="grid grid-cols-8 bg-white border border-gray-200 rounded-lg p-1 min-w-fit w-full">
+            <TabsList className="grid grid-cols-9 bg-white border border-gray-200 rounded-lg p-1 min-w-fit w-full">
               <TabsTrigger 
                 value="diamond-counts" 
                 className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
@@ -282,6 +283,14 @@ export default function Admin() {
                 <span className="hidden xs:inline sm:inline">Settings</span>
                 <span className="xs:hidden sm:hidden">Set</span>
               </TabsTrigger>
+              <TabsTrigger 
+                value="api-testing" 
+                className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap"
+              >
+                <Activity className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="hidden xs:inline sm:inline">API Testing</span>
+                <span className="xs:hidden sm:hidden">API</span>
+              </TabsTrigger>
             </TabsList>
           </div>
           
@@ -341,6 +350,12 @@ export default function Admin() {
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <h3 className="text-lg font-semibold mb-4">System Settings</h3>
                 <p className="text-gray-600">Admin settings panel coming soon...</p>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="api-testing" className="space-y-0">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <ApiTestingCenter />
               </div>
             </TabsContent>
           </div>
