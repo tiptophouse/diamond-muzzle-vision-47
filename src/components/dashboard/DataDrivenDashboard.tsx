@@ -166,32 +166,8 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
     validDiamonds.length
   );
 
-  // Empty state with enhanced UI
-  if (!validDiamonds || validDiamonds.length === 0) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <Card className="max-w-md mx-auto text-center p-8 border-0 shadow-2xl bg-card/60 backdrop-blur-xl">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-            <Gem className="h-10 w-10 text-primary" />
-          </div>
-          <h2 className="text-2xl font-bold text-foreground mb-3">Welcome to Your Dashboard</h2>
-          <p className="text-muted-foreground mb-6 leading-relaxed">
-            Start building your diamond portfolio by uploading your inventory or adding individual items.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button onClick={() => handleNavigate('/upload')} className="rounded-2xl">
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Inventory
-            </Button>
-            <Button variant="outline" onClick={() => handleNavigate('/inventory')} className="rounded-2xl">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Individual
-            </Button>
-          </div>
-        </Card>
-      </div>
-    );
-  }
+  // Always show dashboard - no welcome screen
+  // Show empty state data but keep dashboard structure
 
   // Modern dashboard stats
   const statsData = defaultDashboardStats({
