@@ -1,12 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { Diamond, Package, TrendingUp, AlertCircle, RefreshCw } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api/client';
-import { MobileTelegramDashboard } from '@/components/dashboard/MobileTelegramDashboard';
+import { DataDrivenDashboard } from '@/components/dashboard/DataDrivenDashboard';
+import { TelegramMiniAppLayout } from '@/components/layout/TelegramMiniAppLayout';
 
 interface DashboardData {
   totalDiamonds: number;
@@ -19,7 +16,6 @@ interface DashboardData {
 export default function SimpleDashboard() {
   const { user, isAuthenticated } = useTelegramAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [data, setData] = useState<DashboardData>({
     totalDiamonds: 0,
     totalValue: 0,
@@ -59,7 +55,7 @@ export default function SimpleDashboard() {
         setData({
           totalDiamonds: diamonds.length,
           totalValue,
-          diamonds: diamonds.slice(0, 5), // Show only first 5 for preview
+          diamonds: diamonds, // Pass all diamonds to DataDrivenDashboard
           loading: false,
           error: null
         });
@@ -100,10 +96,25 @@ export default function SimpleDashboard() {
 
   // Show data even without authentication for better UX
   if (!isAuthenticated || !user) {
-    // Still show dashboard with limited data
-    return <MobileTelegramDashboard />;
+    return (
+      <TelegramMiniAppLayout>
+        <DataDrivenDashboard 
+          allDiamonds={[]} 
+          loading={false} 
+          fetchData={() => {}} 
+        />
+      </TelegramMiniAppLayout>
+    );
   }
 
-  // Use the new mobile-optimized dashboard
-  return <MobileTelegramDashboard />;
+  // Use the modern DataDrivenDashboard with proper layout
+  return (
+    <TelegramMiniAppLayout>
+      <DataDrivenDashboard 
+        allDiamonds={data.diamonds} 
+        loading={data.loading} 
+        fetchData={fetchDashboardData} 
+      />
+    </TelegramMiniAppLayout>
+  );
 }
