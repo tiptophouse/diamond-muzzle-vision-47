@@ -60,25 +60,22 @@ export function BulkUploadForm() {
 
       console.log('📤 Sending diamonds to batch API:', payload);
 
-      // Send POST request to the FastAPI endpoint with the actual user ID
-      const response = await fetch(
-        `https://api.mazalbot.com/api/v1/diamonds/batch?user_id=${user.id}`,
-        {
-          method: 'POST',
-          headers: {
-            'accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload)
-        }
+      // Use authenticated API through our secure client
+      const { api } = await import('@/lib/api');
+      const { apiEndpoints } = await import('@/lib/api/endpoints');
+      
+      const response = await api.uploadCsv(
+        apiEndpoints.addDiamondsBatch(user.id),
+        processedData.validRows,
+        user.id
       );
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        console.error('❌ API Error:', result);
-        throw new Error(`Upload failed: ${result.detail || result.message || 'Unknown error'}`);
+      if (response.error) {
+        console.error('❌ API Error:', response.error);
+        throw new Error(`Upload failed: ${response.error}`);
       }
+
+      const result = response.data;
 
       console.log('✅ Batch upload result:', result);
 

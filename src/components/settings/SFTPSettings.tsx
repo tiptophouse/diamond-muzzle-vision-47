@@ -52,22 +52,20 @@ export function SFTPSettings() {
       try {
         console.log('🔍 Loading SFTP account for user:', user.id);
         
-        const response = await fetch(`/api/v1/sftp/status/${user.id}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-          },
+        // Use Supabase function with proper JWT
+        const { supabase } = await import('@/integrations/supabase/client');
+        const { data, error } = await supabase.functions.invoke('sftp-status', {
+          body: { userId: user.id }
         });
 
-        if (response.ok) {
-          const data = await response.json();
+        if (!error && data) {
           console.log('✅ Found existing SFTP account:', data);
           setSftpAccount(data);
-        } else if (response.status === 404) {
+        } else if (error?.message?.includes('404')) {
           console.log('ℹ️ No existing SFTP account found');
           setSftpAccount(null);
-        } else {
-          throw new Error(`HTTP ${response.status}`);
+        } else if (error) {
+          throw new Error(error.message);
         }
       } catch (error) {
         console.error('❌ Error loading SFTP account:', error);
@@ -94,21 +92,15 @@ export function SFTPSettings() {
     try {
       console.log('📤 Requesting SFTP provision for user:', user.id);
       
-      const response = await fetch('/api/v1/sftp/provision', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({ telegram_id: user.id }),
+      // Use Supabase function with proper JWT
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data, error } = await supabase.functions.invoke('sftp-provision', {
+        body: { telegram_id: user.id }
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      if (error) {
+        throw new Error(error.message || 'Failed to create SFTP account');
       }
-
-      const data: FastAPIResponse = await response.json();
       console.log('✅ SFTP account created successfully:', data);
       
       // Update state with new account and credentials
@@ -149,20 +141,15 @@ export function SFTPSettings() {
     try {
       console.log('🔄 Testing SFTP connection for user:', user.id);
       
-      const response = await fetch('/api/v1/sftp/test-connection', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({ telegram_id: user.id }),
+      // Use Supabase function with proper JWT
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data, error } = await supabase.functions.invoke('sftp-test-connection', {
+        body: { telegram_id: user.id }
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      if (error) {
+        throw new Error(error.message || 'Connection test failed');
       }
-
-      const data = await response.json();
       
       if (data.status === 'success') {
         console.log('✅ SFTP connection test successful');
@@ -207,17 +194,14 @@ export function SFTPSettings() {
     try {
       console.log('🗑️ Deactivating SFTP account for user:', user.id);
       
-      const response = await fetch('/api/v1/sftp/deactivate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({ telegram_id: user.id }),
+      // Use Supabase function with proper JWT
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data, error } = await supabase.functions.invoke('sftp-deactivate', {
+        body: { telegram_id: user.id }
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      if (error) {
+        throw new Error(error.message || 'Failed to deactivate SFTP account');
       }
 
       console.log('✅ SFTP account deactivated successfully');
