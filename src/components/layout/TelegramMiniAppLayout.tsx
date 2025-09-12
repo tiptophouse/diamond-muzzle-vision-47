@@ -102,7 +102,7 @@ export function TelegramMiniAppLayout({ children }: TelegramMiniAppLayoutProps) 
 
       {/* Bottom Navigation with fullscreen awareness */}
       <nav className={cn(
-        "fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border z-50 pb-safe bottom-nav-ios",
+        "fixed bottom-0 left-0 right-0 bg-white border-t border-border z-50 pb-safe bottom-nav-ios",
         isFullscreen && "bottom-nav-ios fullscreen"
       )}>
         <div className="grid grid-cols-5 w-full max-w-full mx-auto">
@@ -120,7 +120,7 @@ export function TelegramMiniAppLayout({ children }: TelegramMiniAppLayoutProps) 
                   "touch-action-manipulation select-none",
                   active 
                     ? "text-primary bg-primary/5" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/20"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
                 )}
               >
                 <Icon 

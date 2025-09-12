@@ -7,7 +7,7 @@ export function Header() {
   const { user } = useTelegramAuth();
 
   return (
-    <header className="bg-card/80 backdrop-blur-xl border-b border-border/30 px-6 py-5 shadow-sm">
+    <header className="bg-card border-b border-border px-6 py-5 shadow-sm">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-3xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 ring-4 ring-primary/10">

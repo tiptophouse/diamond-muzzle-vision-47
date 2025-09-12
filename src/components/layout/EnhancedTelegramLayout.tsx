@@ -81,7 +81,7 @@ export function EnhancedTelegramLayout({ children }: EnhancedTelegramLayoutProps
 
       {/* Enhanced bottom navigation with iPhone optimization */}
       <nav 
-        className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border/50"
+        className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-border"
         style={{ 
           paddingBottom: `${webApp?.safeAreaInset.bottom || 0}px`,
           height: `calc(72px + ${webApp?.safeAreaInset.bottom || 0}px)`
@@ -102,7 +102,7 @@ export function EnhancedTelegramLayout({ children }: EnhancedTelegramLayoutProps
                   active:scale-95 touch-manipulation
                   ${isActive 
                     ? 'text-primary bg-primary/10 shadow-sm' 
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                   }
                 `}
                 aria-label={tab.label}
@@ -131,7 +131,7 @@ export function EnhancedTelegramLayout({ children }: EnhancedTelegramLayoutProps
           haptics.light();
           window.location.href = '/settings';
         }}
-        className="fixed right-4 z-40 bg-card/90 backdrop-blur-sm border border-border/50 rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95"
+        className="fixed right-4 z-40 bg-card border border-border rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95"
         style={{ 
           bottom: `calc(${webApp?.safeAreaInset.bottom || 0}px + 88px)`
         }}

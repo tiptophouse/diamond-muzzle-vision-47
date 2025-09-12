@@ -23,7 +23,7 @@ export function Layout({ children }: LayoutProps) {
       {/* Mobile backdrop overlay */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden" 
+          className="fixed inset-0 bg-background z-40 lg:hidden" 
           onClick={() => setSidebarOpen(false)} 
         />
       )}
@@ -37,10 +37,10 @@ export function Layout({ children }: LayoutProps) {
       </div>
       
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-muted/30">
+      <div className="flex-1 flex flex-col min-w-0 bg-background">
         {/* Mobile Navigation Header */}
         <div className="lg:hidden">
-          <div className="flex items-center h-16 px-4 border-b border-border/50 bg-card/60 backdrop-blur-xl">
+          <div className="flex items-center h-16 px-4 border-b border-border bg-card">
             <Button 
               variant="ghost" 
               size="sm" 
@@ -67,7 +67,7 @@ export function Layout({ children }: LayoutProps) {
         </div>
         
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto ios-scroll bg-background/50">
+        <main className="flex-1 overflow-y-auto ios-scroll bg-background">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 max-w-7xl">
             {children}
           </div>

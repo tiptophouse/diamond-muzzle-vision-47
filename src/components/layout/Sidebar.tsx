@@ -65,7 +65,7 @@ export function Sidebar({ className, onClose }: SidebarProps) {
 
   return (
     <div className={cn(
-      "h-full bg-card/95 backdrop-blur-xl border-r border-border/50 shadow-2xl",
+      "h-full bg-card border-r border-border shadow-2xl",
       "flex flex-col relative",
       className
     )}>

@@ -98,7 +98,7 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
                   "flex flex-col items-center justify-center py-3 px-2 text-xs transition-all duration-200 clickable relative",
                   active 
                     ? "text-primary" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
               >
                 {/* Active indicator */}
