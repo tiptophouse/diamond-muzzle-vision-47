@@ -2,7 +2,7 @@
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { InventoryChart } from '@/components/dashboard/InventoryChart';
 import { RealTimeUserCount } from '@/components/dashboard/RealTimeUserCount';
-import { NotificationHeatMapSection } from '@/components/dashboard/NotificationHeatMapSection';
+
 import { ModernStatsGrid, defaultDashboardStats } from '@/components/dashboard/ModernStatsGrid';
 import { EnhancedDashboardContent } from '@/components/dashboard/EnhancedDashboardContent';
 import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
@@ -11,7 +11,7 @@ import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 import { useEffect, useMemo } from 'react';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { useNavigate } from 'react-router-dom';
-import { Gem, TrendingUp, Plus, Upload, Activity, Users2, ArrowRight, Package, BarChart3 } from 'lucide-react';
+import { Gem, TrendingUp, Plus, Upload, Activity, Users2, ArrowRight, Package, BarChart3, Bell } from 'lucide-react';
 import { useFastApiNotifications } from '@/hooks/useFastApiNotifications';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -202,11 +202,16 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-xl font-bold text-foreground">Notifications</h3>
-              <p className="text-sm text-muted-foreground">Activity heatmap</p>
+              <p className="text-sm text-muted-foreground">System activity</p>
             </div>
             <TrendingUp className="h-5 w-5 text-primary" />
           </div>
-          <NotificationHeatMapSection />
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">Notifications will appear here</p>
+            </div>
+          </div>
         </Card>
       </div>
 
