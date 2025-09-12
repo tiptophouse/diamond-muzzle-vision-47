@@ -155,15 +155,26 @@ export function useTelegramSDK() {
     }, []),
   };
 
-  // Haptic Feedback
+  // Haptic Feedback with global throttle to prevent spam
+  const lastHapticRef = useRef(0);
+  const canTriggerHaptic = () => {
+    const now = Date.now();
+    if (now - lastHapticRef.current < 150) return false;
+    lastHapticRef.current = now;
+    return true;
+  };
+
   const haptic = {
     impact: useCallback((style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft' = 'medium') => {
+      if (!canTriggerHaptic()) return;
       telegramSDK.hapticFeedback.impact(style);
     }, []),
     notification: useCallback((type: 'error' | 'success' | 'warning') => {
+      if (!canTriggerHaptic()) return;
       telegramSDK.hapticFeedback.notification(type);
     }, []),
     selection: useCallback(() => {
+      if (!canTriggerHaptic()) return;
       telegramSDK.hapticFeedback.selection();
     }, []),
   };

@@ -15,7 +15,7 @@ export function useStoreData() {
   const { user, isLoading: authLoading } = useTelegramAuth();
   const { subscribeToInventoryChanges } = useInventoryDataSync();
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!dataCache);
   const [error, setError] = useState<string | null>(null);
 
   // Helper function to parse numbers from various formats
