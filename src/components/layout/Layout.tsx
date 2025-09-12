@@ -17,7 +17,7 @@ export function Layout({
   return (
     <div className="min-h-screen w-full overflow-x-hidden flex bg-background">
       {/* Mobile overlay */}
-      {sidebarOpen && <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+      {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
       
       {/* Sidebar - hidden on mobile, slide in when open */}
       <div className={`
@@ -29,7 +29,7 @@ export function Layout({
       
       <div className="flex-1 w-full min-w-0 flex flex-col bg-background lg:ml-0">
         {/* Mobile header with menu button */}
-        <div className="lg:hidden flex items-center justify-between h-14 sm:h-16 px-3 sm:px-4 border-b border-border/20 bg-card/80 backdrop-blur-md">
+        <div className="lg:hidden flex items-center justify-between h-14 sm:h-16 px-3 sm:px-4 border-b border-border bg-card shadow-sm">
           <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)} className="p-2 rounded-xl hover:bg-accent/50 transition-colors min-w-[44px] min-h-[44px]">
             <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>

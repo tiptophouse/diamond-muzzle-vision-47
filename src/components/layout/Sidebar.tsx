@@ -61,12 +61,12 @@ export function Sidebar({ className }: SidebarProps) {
   }, [user?.id]);
 
   return (
-    <div className={cn('pb-12 min-h-screen bg-white border-r border-gray-200', className)}>
+    <div className={cn('pb-12 min-h-screen bg-card border-r border-border shadow-lg', className)}>
       <div className="space-y-4 py-4">
         <div className="px-3 py-2">
-          <div className="flex items-center mb-6 px-4">
-            <Diamond className="h-8 w-8 text-blue-600" />
-            <span className="ml-2 text-xl font-bold text-slate-800">BrilliantBot</span>
+          <div className="flex items-center mb-6 px-4 py-3 bg-primary/10 rounded-lg mx-2">
+            <Diamond className="h-8 w-8 text-primary" />
+            <span className="ml-2 text-xl font-bold text-foreground">BrilliantBot</span>
           </div>
           <div className="space-y-1">
             {navigation.map((item) => {
@@ -76,12 +76,12 @@ export function Sidebar({ className }: SidebarProps) {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={cn(
-                    'flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100 transition-colors relative',
-                    isActive
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'text-slate-700 hover:text-slate-900'
-                  )}
+                   className={cn(
+                     'flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent transition-colors relative',
+                     isActive
+                       ? 'bg-primary text-primary-foreground shadow-md'
+                       : 'text-foreground hover:text-foreground'
+                   )}
                 >
                   <item.icon className="mr-3 h-5 w-5" />
                   {item.name}
@@ -99,17 +99,17 @@ export function Sidebar({ className }: SidebarProps) {
             
             {/* Admin-only navigation */}
             {isAdmin && (
-              <div className="border-t border-gray-200 pt-4 mt-4">
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 mb-2">
+              <div className="border-t border-border pt-4 mt-4">
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-3 mb-2">
                   Admin
                 </div>
                 <Link
                   to="/admin"
                   className={cn(
-                    'flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-red-50 transition-colors',
+                    'flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-destructive/10 transition-colors',
                     location.pathname === '/admin'
-                      ? 'bg-red-100 text-red-700'
-                      : 'text-slate-700 hover:text-red-600'
+                      ? 'bg-destructive text-destructive-foreground shadow-md'
+                      : 'text-foreground hover:text-destructive'
                   )}
                 >
                   <Shield className="mr-3 h-5 w-5" />
