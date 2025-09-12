@@ -32,6 +32,7 @@ import StandardizeCsvPage from './pages/StandardizeCsvPage';
 import BulkUploadPage from './pages/BulkUploadPage';
 import AnalyticsPage from "./pages/AnalyticsPage";
 import TelegramNotificationsDemo from "./pages/TelegramNotificationsDemo";
+import TelegramStore from './pages/TelegramStore';
 import PerformancePage from "./pages/PerformancePage";
 
 function App() {
@@ -86,11 +87,12 @@ function App() {
                       <CatalogPage />
                     </AuthenticatedRoute>
                   } />
-                  <Route path="/store" element={
-                    <AuthenticatedRoute>
-                      <CatalogPage />
-                    </AuthenticatedRoute>
-                  } />
+        {/* Replace /store route with TelegramStore */}
+        <Route path="/store" element={
+          <AuthenticatedRoute>
+            <TelegramStore />
+          </AuthenticatedRoute>
+        } />
                    <Route path="/upload" element={
                      <AuthenticatedRoute>
                        <LazyUpload />
