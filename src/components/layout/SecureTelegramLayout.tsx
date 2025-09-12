@@ -83,7 +83,7 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
       </main>
 
       {/* Bottom Navigation - Enhanced with solid background */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-lg z-50 pb-safe">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-border shadow-lg z-50 pb-safe" style={{ backdropFilter: 'none', WebkitBackdropFilter: 'none' }}>
         <div className="grid grid-cols-5 max-w-screen-sm mx-auto">
           {navigationItems.map((item) => {
             const Icon = item.icon;

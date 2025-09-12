@@ -84,7 +84,9 @@ export function EnhancedTelegramLayout({ children }: EnhancedTelegramLayoutProps
         className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-border"
         style={{ 
           paddingBottom: `${webApp?.safeAreaInset.bottom || 0}px`,
-          height: `calc(72px + ${webApp?.safeAreaInset.bottom || 0}px)`
+          height: `calc(72px + ${webApp?.safeAreaInset.bottom || 0}px)`,
+          backdropFilter: 'none',
+          WebkitBackdropFilter: 'none'
         }}
       >
         <div className="flex items-center justify-around w-full h-[72px] px-2">

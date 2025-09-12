@@ -102,9 +102,9 @@ export function TelegramMiniAppLayout({ children }: TelegramMiniAppLayoutProps) 
 
       {/* Bottom Navigation with fullscreen awareness */}
       <nav className={cn(
-        "fixed bottom-0 left-0 right-0 bg-white border-t border-border z-50 pb-safe bottom-nav-ios",
+        "fixed bottom-0 left-0 right-0 bg-white border-t border-border z-50 pb-safe",
         isFullscreen && "bottom-nav-ios fullscreen"
-      )}>
+      )} style={{ backdropFilter: 'none', WebkitBackdropFilter: 'none' }}>
         <div className="grid grid-cols-5 w-full max-w-full mx-auto">
           {navigationItems.map((item) => {
             const Icon = item.icon;
