@@ -127,8 +127,8 @@ export function useAddDiamond(onSuccess?: () => void) {
         // Show success message - API call succeeded
         if (response.data) {
           toast({
-            title: "✅ יהלום נוסף בהצלחה!",
-            description: `אבן "${data.stockNumber}" נוספה למלאי שלך ונראית בחנות`,
+            title: "✅ Diamond Added Successfully!",
+            description: `Stone "${data.stockNumber}" has been added to your inventory via FastAPI backend`,
           });
           
           // Send notification with direct link to the specific diamond
@@ -193,7 +193,7 @@ export function useAddDiamond(onSuccess?: () => void) {
         // Show specific error message to user with API details
         toast({
           variant: "destructive",
-          title: "❌ נכשל בהוספת יהלום",
+          title: "❌ Backend Validation Error",
           description: errorMessage,
         });
         
@@ -224,8 +224,8 @@ export function useAddDiamond(onSuccess?: () => void) {
         localStorage.setItem('diamond_inventory', JSON.stringify(existingData));
         
         toast({
-          title: "⚠️ אבן נשמרה מקומית", 
-          description: `אבן "${data.stockNumber}" נשמרה במצב לא מקוון. שגיאת שרת: ${errorMessage}`,
+          title: "⚠️ Stone Saved Locally", 
+          description: `Stone "${data.stockNumber}" saved offline. Backend error: ${errorMessage}`,
           variant: "default",
         });
         

@@ -1,7 +1,6 @@
 
 import { API_BASE_URL } from './config';
 import { setCurrentUserId } from './config';
-import { tokenManager } from './tokenManager';
 
 export interface TelegramVerificationResponse {
   success: boolean;
@@ -16,137 +15,131 @@ export interface TelegramVerificationResponse {
   };
 }
 
-// Enhanced token management with caching
+// Store backend auth token
 let backendAuthToken: string | null = null;
 
 export function getBackendAuthToken(): string | null {
-  // Try memory first, then token manager
-  const token = backendAuthToken || tokenManager.getToken();
-  console.log('🔑 Getting backend auth token:', token ? 'EXISTS' : 'NULL');
-  return token;
+  return backendAuthToken;
 }
 
-export function clearBackendAuthToken(): void {
-  console.log('🔑 Clearing backend auth token');
-  backendAuthToken = null;
-  tokenManager.clear();
-}
-
-// THE ONLY TRUE AUTHENTICATION METHOD: Telegram initData → FastAPI sign-in → JWT
+// ONLY TRUE AUTHENTICATION METHOD: Telegram initData → FastAPI sign-in → JWT
 export async function signInToBackend(initData: string): Promise<string | null> {
   try {
-    console.log('🔐 MAIN AUTH: Starting FastAPI backend authentication');
-    console.log('🔐 MAIN AUTH: InitData length:', initData?.length || 0);
+    console.log('🔐 API: Signing in to FastAPI backend with Telegram initData');
     
     if (!initData || initData.length === 0) {
-      console.error('🔐 MAIN AUTH: No initData provided');
+      console.error('🔐 API: No initData provided for sign-in');
       return null;
     }
 
+    // 🐛 DEBUG: Log detailed request information
     const signInUrl = `${API_BASE_URL}/api/v1/sign-in/`;
-    console.log('🔐 MAIN AUTH: Sign-in URL:', signInUrl);
+    const requestBody = { init_data: initData };
+    
+    console.log('🐛 BACKEND REQUEST DEBUG:', {
+      url: signInUrl,
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      bodyData: {
+        init_data_length: initData.length,
+        init_data_preview: initData.substring(0, 100) + '...',
+        full_request_body: requestBody
+      }
+    });
+
+    console.log('🔐 API: Using sign-in URL:', signInUrl);
 
     const response = await fetch(signInUrl, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Origin': window.location.origin,
       },
       mode: 'cors',
-      credentials: 'omit',
-      body: JSON.stringify({
-        init_data: initData
-      }),
+      body: JSON.stringify(requestBody),
     });
 
-    console.log('🔐 MAIN AUTH: Response status:', response.status);
-    console.log('🔐 MAIN AUTH: Response headers:', Object.fromEntries(response.headers.entries()));
+    // 🐛 DEBUG: Log response details
+    console.log('🐛 BACKEND RESPONSE DEBUG:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      headers: Object.fromEntries([...response.headers.entries()]),
+      url: response.url
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('🔐 MAIN AUTH: Sign-in failed:', response.status, errorText);
+      console.error('🔐 API: Backend sign-in failed:', response.status, errorText);
+      console.log('🐛 ERROR RESPONSE BODY:', errorText);
       return null;
     }
 
     const result = await response.json();
-    console.log('🔐 MAIN AUTH: Response data keys:', Object.keys(result));
     
-    // FIXED: According to OpenAPI spec, the field is "token", not "access_token"
-    const token = result.token;
+    // 🐛 DEBUG: Log successful response
+    console.log('🐛 SUCCESS RESPONSE DEBUG:', {
+      responseKeys: Object.keys(result),
+      hasAccessToken: !!(result.access_token),
+      hasToken: !!(result.token),
+      hasUserId: !!(result.user_id),
+      fullResponse: result
+    });
     
-    if (token) {
-      backendAuthToken = token;
-      console.log('✅ MAIN AUTH: JWT token received and stored');
+    if (result.access_token || result.token) {
+      // Handle both possible response formats
+      backendAuthToken = result.access_token || result.token;
+      console.log('✅ API: Backend sign-in successful, JWT token stored');
+      console.log('🐛 TOKEN DEBUG:', {
+        tokenLength: backendAuthToken.length,
+        tokenPreview: backendAuthToken.substring(0, 50) + '...'
+      });
       
-      // Extract user ID and store token in manager
-      try {
-        const urlParams = new URLSearchParams(initData);
-        const userParam = urlParams.get('user');
-        
-        if (userParam) {
-          const user = JSON.parse(decodeURIComponent(userParam));
-          if (user.id) {
-            setCurrentUserId(user.id);
-            tokenManager.setToken(token, user.id);
-            console.log('✅ MAIN AUTH: User ID extracted and token cached:', user.id);
-            
-            // Set session context for RLS policies
-            try {
-              const { supabase } = await import('@/integrations/supabase/client');
-              await supabase.rpc('set_session_context', {
-                key: 'app.current_user_id',
-                value: user.id.toString()
-              });
-              console.log('✅ MAIN AUTH: Session context set for user:', user.id);
-            } catch (contextError) {
-              console.warn('⚠️ MAIN AUTH: Failed to set session context, continuing:', contextError);
-              // Don't throw - this is not critical for basic functionality
-            }
-          }
-        }
-      } catch (error) {
-        console.error('🔐 MAIN AUTH: Failed to extract user ID from initData:', error);
+      // Set current user ID if available in response
+      if (result.user_id) {
+        setCurrentUserId(result.user_id);
       }
       
       return backendAuthToken;
     } else {
-      console.error('🔐 MAIN AUTH: No token in response:', Object.keys(result));
+      console.error('🔐 API: No token in sign-in response:', Object.keys(result));
       return null;
     }
   } catch (error) {
-    console.error('❌ MAIN AUTH: Sign-in error:', error);
+    console.error('❌ API: Backend sign-in error:', error);
+    console.log('🐛 FETCH ERROR DEBUG:', {
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : 'No stack trace'
+    });
     return null;
   }
 }
 
-// Get auth headers with JWT token for protected endpoints
+// Get auth headers with JWT token
 export async function getAuthHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "Accept": "application/json",
-    "Origin": window.location.origin,
     "X-Client-Timestamp": Date.now().toString(),
+    "X-Security-Level": "strict"
   };
   
   if (backendAuthToken) {
-    // FIXED: Use proper Bearer token format as required by FastAPI
     headers["Authorization"] = `Bearer ${backendAuthToken}`;
-    console.log('🔑 AUTH HEADERS: Added Bearer token for protected endpoint');
-  } else {
-    console.warn('⚠️ AUTH HEADERS: No JWT token available - this will fail for protected endpoints');
   }
   
   return headers;
 }
 
-// Legacy function for compatibility - redirects to main auth
+// Legacy verification function - remove if not used elsewhere
 export async function verifyTelegramUser(initData: string): Promise<TelegramVerificationResponse | null> {
-  console.warn('⚠️ LEGACY AUTH: verifyTelegramUser called - redirecting to signInToBackend');
+  console.warn('⚠️ verifyTelegramUser is deprecated - use signInToBackend instead');
   
   const token = await signInToBackend(initData);
   if (!token) {
-    return { success: false, user_id: 0, user_data: null, message: 'Authentication failed' };
+    return { success: false, user_id: 0, user_data: null, message: 'Sign-in failed' };
   }
   
   // Extract user data from initData for compatibility
@@ -160,7 +153,7 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
         success: true,
         user_id: user.id,
         user_data: user,
-        message: 'Success via main auth flow'
+        message: 'Success via sign-in'
       };
     }
   } catch (error) {

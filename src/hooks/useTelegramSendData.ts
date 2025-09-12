@@ -15,11 +15,14 @@ export function useTelegramSendData() {
       try {
         const dataString = JSON.stringify(payload);
         webApp.sendData(dataString);
+        console.log('📤 Data sent to Telegram bot:', payload);
         return true;
       } catch (error) {
+        console.error('❌ Failed to send data to Telegram bot:', error);
         return false;
       }
     } else {
+      console.warn('⚠️ Telegram WebApp not available for sending data');
       return false;
     }
   }, [webApp]);

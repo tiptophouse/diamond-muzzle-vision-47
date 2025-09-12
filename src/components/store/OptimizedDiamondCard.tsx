@@ -6,11 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { useSecureDiamondSharing } from "@/hooks/useSecureDiamondSharing";
-import { LimitedGroupShareButton } from "./LimitedGroupShareButton";
 import { toast } from 'sonner';
 import { Gem360Viewer } from "./Gem360Viewer";
 import { V360Viewer } from "./V360Viewer";
-import { SegomaViewer } from "./SegomaViewer";
 import { formatCurrency } from "@/utils/numberUtils";
 import { 
   detectFancyColor, 
@@ -83,24 +81,14 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
 
   const isV360 = !!(diamond.gem360Url && diamond.gem360Url.includes('v360.in'));
   const isMy360Fab = !!(diamond.gem360Url && diamond.gem360Url.includes('my360.fab'));
-  const isSegoma = !!(diamond.gem360Url && diamond.gem360Url.includes('segoma.com'));
 
   const hasValidImage = !!(
     diamond.imageUrl && 
     diamond.imageUrl.trim() && 
     diamond.imageUrl !== 'default' &&
-    diamond.imageUrl !== 'null' &&
-    diamond.imageUrl !== 'undefined' &&
     diamond.imageUrl.startsWith('http') &&
     diamond.imageUrl.length > 10 &&
-    !diamond.imageUrl.includes('placeholder') &&
-    !diamond.imageUrl.includes('mockup') &&
-    // Exclude 360° URLs from regular images
-    !diamond.imageUrl.includes('my360.fab') &&
-    !diamond.imageUrl.includes('v360.in') &&
-    !diamond.imageUrl.includes('segoma.com') &&
-    !diamond.imageUrl.includes('.html') &&
-    !diamond.imageUrl.includes('diamondview.aspx')
+    !diamond.imageUrl.includes('placeholder') // Exclude placeholder images
   );
 
   const colorInfo = detectFancyColor(diamond.color, diamond.color_type);
@@ -117,8 +105,8 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
 
   const handleViewDetails = useCallback(() => {
     impactOccurred('light');
-    navigate(`/diamond/${diamond.stockNumber}`);
-  }, [impactOccurred, navigate, diamond.stockNumber]);
+    navigate(`/diamond/${diamond.id}`);
+  }, [impactOccurred, navigate, diamond.id]);
 
   const handleContact = useCallback(() => {
     impactOccurred('light');
@@ -165,7 +153,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
   const handleImageError = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
     console.error('❌ IMAGE FAILED for', diamond.stockNumber, ':', event.currentTarget.src);
     setImageError(true);
-    setImageLoaded(false); // Keep loading false to show fallback properly
+    setImageLoaded(true);
   }, [diamond.stockNumber]);
 
   const priceDisplay = diamond.price > 0 ? formatCurrency(diamond.price) : null;
@@ -179,14 +167,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     >
       {has360 && isVisible ? (
         <div className="relative aspect-square">
-          {isSegoma ? (
-            <SegomaViewer 
-              segomaUrl={diamond.gem360Url!}
-              stockNumber={diamond.stockNumber}
-              isInline={true}
-              className="w-full h-full"
-            />
-          ) : isV360 ? (
+          {isV360 ? (
             <V360Viewer 
               v360Url={diamond.gem360Url!}
               stockNumber={diamond.stockNumber}
@@ -202,13 +183,6 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
           <div className="absolute top-2 left-2">
             <MediaPriorityBadge hasGem360={true} hasImage={false} />
           </div>
-          {isSegoma && (
-            <div className="absolute top-2 right-2">
-              <Badge className="bg-purple-500 text-white border-0 px-2 py-1 text-xs font-medium">
-                Segoma
-              </Badge>
-            </div>
-          )}
           {isMy360Fab && (
             <div className="absolute top-2 right-2">
               <Badge className="bg-purple-500 text-white border-0 px-2 py-1 text-xs font-medium">
@@ -219,24 +193,9 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
         </div>
       ) : hasValidImage && isVisible ? (
         <div className="relative aspect-square bg-gray-50 overflow-hidden">
-          {!imageLoaded && !imageError && (
+          {!imageLoaded && (
             <div className="absolute inset-0 bg-gray-100 flex items-center justify-center z-10">
               <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          )}
-          
-          {/* Show fallback if image failed to load */}
-          {imageError && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-              <div className="text-center p-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Gem className="h-8 w-8 text-blue-600" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold text-gray-900">{diamond.carat} ct</h3>
-                  <p className="text-sm text-gray-600">{diamond.shape}</p>
-                </div>
-              </div>
             </div>
           )}
           
@@ -249,8 +208,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
             }`}
             style={{
               imageRendering: 'crisp-edges',
-              transform: 'translateZ(0)',
-              display: imageError ? 'none' : 'block'
+              transform: 'translateZ(0)'
             }}
             onLoad={handleImageLoad}
             onError={handleImageError}
@@ -296,6 +254,13 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
       </div>
 
       <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <button
+          onClick={handleShare}
+          className="p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm transition-all duration-200 hover:bg-white hover:scale-110"
+          disabled={!shareAvailable}
+        >
+          <Share2 className={`h-3 w-3 ${shareAvailable ? 'text-blue-600' : 'text-gray-400'}`} />
+        </button>
         <button
           onClick={handleLike}
           className="p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm transition-all duration-200 hover:bg-white hover:scale-110"
@@ -407,13 +372,6 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
             Details
           </Button>
         </div>
-
-        {/* Limited Group Share Button */}
-        <LimitedGroupShareButton 
-          diamond={diamond} 
-          size="sm"
-          className="w-full mt-2"
-        />
       </div>
     </div>
   );

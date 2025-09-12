@@ -18,7 +18,6 @@ import { useInsightsData } from "@/hooks/useInsightsData";
 import { useEnhancedInsights } from "@/hooks/useEnhancedInsights";
 import { useStoreData } from "@/hooks/useStoreData";
 import { BarChart3, TrendingUp, Zap, Target, RefreshCw, Upload } from "lucide-react";
-import { InteractiveAnalyticsChart } from "@/components/insights/InteractiveAnalyticsChart";
 
 export default function InsightsPage() {
   const {
@@ -78,7 +77,7 @@ export default function InsightsPage() {
 
   return (
     <TelegramLayout>
-      <div className="space-y-6 pb-8">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Portfolio Intelligence</h1>
@@ -125,7 +124,7 @@ export default function InsightsPage() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="overview" className="space-y-6 pb-8">
+            <TabsContent value="overview" className="space-y-6">
               <InsightsHeader
                 totalDiamonds={Math.max(totalDiamonds, diamonds.length)}
                 loading={loading}
@@ -148,35 +147,30 @@ export default function InsightsPage() {
                 marketTrends={marketTrends}
               />
 
-              {/* Interactive Analytics Chart */}
-              {diamonds.length > 0 && (
-                <InteractiveAnalyticsChart diamonds={diamonds} />
-              )}
-
               {/* Enhanced Insights from Real Data */}
               {diamonds.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>ניתוח מתקדם של התיק</CardTitle>
-                    <CardDescription>מבוסס על נתוני המלאי האמיתיים שלך</CardDescription>
+                    <CardTitle>Enhanced Portfolio Analysis</CardTitle>
+                    <CardDescription>Based on your actual inventory data</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="text-center">
                         <p className="text-2xl font-bold">{enhancedInsights.totalCount}</p>
-                        <p className="text-sm text-muted-foreground">סך אבנים</p>
+                        <p className="text-sm text-muted-foreground">Total Stones</p>
                       </div>
                       <div className="text-center">
                         <p className="text-2xl font-bold">${enhancedInsights.totalValue.toLocaleString()}</p>
-                        <p className="text-sm text-muted-foreground">ערך כולל</p>
+                        <p className="text-sm text-muted-foreground">Total Value</p>
                       </div>
                       <div className="text-center">
                         <p className="text-2xl font-bold">${enhancedInsights.averagePrice.toLocaleString()}</p>
-                        <p className="text-sm text-muted-foreground">מחיר ממוצע</p>
+                        <p className="text-sm text-muted-foreground">Average Price</p>
                       </div>
                       <div className="text-center">
                         <p className="text-2xl font-bold">{enhancedInsights.topShapes.length}</p>
-                        <p className="text-sm text-muted-foreground">סוגי צורות</p>
+                        <p className="text-sm text-muted-foreground">Shape Types</p>
                       </div>
                     </div>
                   </CardContent>
@@ -184,7 +178,7 @@ export default function InsightsPage() {
               )}
             </TabsContent>
 
-            <TabsContent value="profitability" className="space-y-6 pb-8">
+            <TabsContent value="profitability" className="space-y-6">
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <Target className="h-12 w-12 text-muted-foreground mb-4" />
@@ -196,7 +190,7 @@ export default function InsightsPage() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="market" className="space-y-6 pb-8">
+            <TabsContent value="market" className="space-y-6">
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <TrendingUp className="h-12 w-12 text-muted-foreground mb-4" />
@@ -208,7 +202,7 @@ export default function InsightsPage() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="velocity" className="space-y-6 pb-8">
+            <TabsContent value="velocity" className="space-y-6">
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <Zap className="h-12 w-12 text-muted-foreground mb-4" />

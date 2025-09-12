@@ -291,19 +291,7 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
             </div>
           </div>
           
-          <div className="flex justify-between">
-            <Button 
-              variant="default"
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                impactOccurred('medium');
-                applyFilters();
-              }}
-              className="bg-primary hover:bg-primary/90"
-            >
-              חפש עכשיו
-            </Button>
+          <div className="flex justify-end">
             <Button 
               variant="outline" 
               type="button"
@@ -312,7 +300,7 @@ export function InventoryFilters({ onFilterChange }: InventoryFiltersProps) {
                 setIsOpen(false);
               }}
             >
-              סגור
+              Close
             </Button>
           </div>
         </div>

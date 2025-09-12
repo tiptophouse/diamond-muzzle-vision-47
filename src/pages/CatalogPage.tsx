@@ -4,11 +4,10 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
 import { EnhancedStoreGrid } from "@/components/store/EnhancedStoreGrid";
-import { TelegramDiamondCard } from "@/components/store/TelegramDiamondCard";
+import { OptimizedDiamondCard } from "@/components/store/OptimizedDiamondCard";
 import { DiamondCardSkeleton } from "@/components/store/DiamondCardSkeleton";
 import { MobilePullToRefresh } from "@/components/mobile/MobilePullToRefresh";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
-import { useTelegramNavigation } from "@/hooks/useTelegramNavigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Plus, Filter, SortAsc, AlertCircle, Search, Sparkles } from "lucide-react";
@@ -33,11 +32,7 @@ function CatalogPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchParams] = useSearchParams();
   const stockNumber = searchParams.get('stock');
-  const { impactOccurred, selectionChanged } = useTelegramHapticFeedback();
-  const { navigateWithFeedback } = useTelegramNavigation({
-    showBackButton: false, // Store page doesn't need back button
-    enableHapticFeedback: true
-  });
+  const { selectionChanged, impactOccurred } = useTelegramHapticFeedback();
   const navigate = useNavigate();
 
   // Telegram memory optimization
@@ -188,27 +183,32 @@ function CatalogPage() {
   }, [refetch]);
 
   const handleAddDiamond = useCallback(() => {
+    impactOccurred('medium');
     navigate('/upload-single-stone');
-  }, [navigate]);
+  }, [impactOccurred, navigate]);
 
   const handleOpenFilters = useCallback(() => {
+    selectionChanged();
     setShowFilters(true);
-  }, []);
+  }, [selectionChanged]);
 
   const handleOpenSort = useCallback(() => {
+    selectionChanged();
     setShowSort(true);
-  }, []);
+  }, [selectionChanged]);
 
   const handleApplyFilters = useCallback(() => {
+    impactOccurred('light');
     setCurrentPage(1); // Reset pagination when filters change
     setShowFilters(false);
-  }, []);
+  }, [impactOccurred]);
 
   const handleApplySort = useCallback((newSortBy: string) => {
+    impactOccurred('light');
     setSortBy(newSortBy);
     setCurrentPage(1); // Reset pagination when sort changes
     setShowSort(false);
-  }, []);
+  }, [impactOccurred]);
 
   const activeFiltersCount = useMemo(() => 
     filters.shapes.length + 
@@ -273,10 +273,10 @@ function CatalogPage() {
               key={diamond.id}
               id={`diamond-${diamond.stockNumber}`}
             >
-              <TelegramDiamondCard 
+              <OptimizedDiamondCard 
                 diamond={diamond}
                 index={index}
-                onViewDetails={(diamond) => navigateWithFeedback(`/diamond/${diamond.stockNumber}`)}
+                onUpdate={refetch}
               />
             </div>
           ))}
@@ -296,10 +296,10 @@ function CatalogPage() {
               <div>
                 <h1 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-primary" />
-                  Motion Catalog
+                  Diamond Catalog
                 </h1>
                 <div className="text-xs text-muted-foreground space-y-1">
-                  <p>{sortedDiamonds.length} available • Tilt device for motion controls</p>
+                  <p>{sortedDiamonds.length} available • Priority: 3D → Image → Info</p>
                   <div className="flex items-center gap-3 text-xs">
                     {mediaCounts.with3D > 0 && (
                       <span className="flex items-center gap-1">

@@ -37,20 +37,3 @@ export const ensureInteger = (value: any): number => {
   }
   return roundToInteger(value);
 };
-
-export const formatLargeNumber = (value: number | string): string => {
-  const num = safeParseNumber(value);
-  
-  if (num < 1000) {
-    return num.toString();
-  } else if (num < 1000000) {
-    const kValue = num / 1000;
-    return kValue % 1 === 0 ? `${kValue}K` : `${kValue.toFixed(1)}K`;
-  } else if (num < 1000000000) {
-    const mValue = num / 1000000;
-    return mValue % 1 === 0 ? `${mValue}M` : `${mValue.toFixed(1)}M`;
-  } else {
-    const bValue = num / 1000000000;
-    return bValue % 1 === 0 ? `${bValue}B` : `${bValue.toFixed(1)}B`;
-  }
-};

@@ -81,77 +81,80 @@ export function useSecureDiamondSharing() {
   }, [user]);
 
   const shareWithInlineButtons = useCallback(async (diamond: Diamond) => {
-    
-    try {
-      // Try to get user ID from different sources
-      let userId = user?.id;
-      let sharerName = '';
-      
-      // Fallback: try to get user data from Telegram WebApp directly
-      if (!userId && webApp) {
-        const telegramUser = webApp.initDataUnsafe?.user;
-        if (telegramUser) {
-          userId = telegramUser.id;
-          sharerName = `${telegramUser.first_name}${telegramUser.last_name ? ` ${telegramUser.last_name}` : ''}`;
-        }
-      }
-      
-      if (!userId) {
-        toast.error('לא ניתן לזהות את המשתמש. נסה לרענן את הדף.');
-        return false;
-      }
-      
-      // Get user profile for name if we don't have it
-      if (!sharerName) {
-        const { data: userProfile } = await supabase
-          .from('user_profiles')
-          .select('first_name, last_name')
-          .eq('telegram_id', userId)
-          .single();
-        
-        sharerName = userProfile ? 
-          `${userProfile.first_name}${userProfile.last_name ? ` ${userProfile.last_name}` : ''}` : 
-          `User ${userId}`;
-      }
-
-      // Call the Supabase function to send diamond to group
-      const { data, error } = await supabase.functions.invoke('send-diamond-to-group', {
-        body: {
-          diamond: {
-            id: diamond.id,
-            stockNumber: diamond.stockNumber,
-            carat: diamond.carat,
-            shape: diamond.shape,
-            color: diamond.color,
-            clarity: diamond.clarity,
-            cut: diamond.cut,
-            price: diamond.price,
-            imageUrl: diamond.imageUrl,
-            gem360Url: diamond.gem360Url,
-            // Include CSV image fallbacks
-            Image: (diamond as any).Image,
-            image: (diamond as any).image,
-            picture: (diamond as any).picture
-          },
-          sharedBy: userId,
-          sharedByName: sharerName,
-          testMode: false
-        }
-      });
-
-      if (error) {
-        toast.error(`שגיאה בשליחה: ${error.message}`);
-        return false;
-      }
-
-      toast.success('💎 היהלום נשתף לקבוצה בהצלחה!');
-      return true;
-      
-    } catch (error) {
-      toast.error('נכשל בשיתוף היהלום. נסה שוב.');
+    if (!webApp || !user) {
+      toast.error('🔒 Telegram Mini App required for sharing');
       return false;
     }
-  }, [webApp, user]);
+
+    try {
+      const shareData = createSecureShareData(diamond);
+      
+      // Create the share message with inline buttons for registered users only
+      const shareMessage = {
+        action: 'share_diamond_with_registration_check',
+        data: {
+          diamond: shareData.diamond,
+          message: `💎 *${diamond.carat} ct ${diamond.shape} Diamond*\n\n` +
+                  `🎨 Color: ${diamond.color}\n` +
+                  `💎 Clarity: ${diamond.clarity}\n` +
+                  `✂️ Cut: ${diamond.cut}\n` +
+                  `💰 Price: $${diamond.price?.toLocaleString() || 'Contact for Price'}\n\n` +
+                  `Stock: ${diamond.stockNumber}\n\n` +
+                  `⚠️ *Registration Required*: You must be registered in our Telegram Mini App to view this diamond.`,
+          inline_keyboard: [
+            [
+              {
+                text: '💎 View Diamond (Registered Users Only)',
+                web_app: {
+                  url: `${window.location.origin}/diamond/${diamond.id}?shared=true&from=${user.id}&verify=true`
+                }
+              }
+            ],
+            [
+              {
+                text: '📝 Register & Start Mini App',
+                web_app: {
+                  url: `${window.location.origin}/?register=true&from=${user.id}`
+                }
+              }
+            ],
+            [
+              {
+                text: '📞 Contact Seller',
+                callback_data: `contact_seller_${diamond.stockNumber}_${user.id}`
+              }
+            ]
+          ]
+        },
+        timestamp: Date.now(),
+        requiresRegistration: true
+      };
+
+      // Send via Telegram WebApp
+      const success = sendData(shareMessage);
+      
+      if (success) {
+        // Track the share action
+        await supabase.from('diamond_share_analytics').insert({
+          diamond_stock_number: diamond.stockNumber,
+          owner_telegram_id: user.id,
+          viewer_telegram_id: null, // Will be filled when someone clicks
+          action_type: 'share_initiated',
+          session_id: crypto.randomUUID(),
+          access_via_share: true
+        });
+
+        toast.success('💎 Diamond shared with registration verification!');
+        return true;
+      } else {
+        throw new Error('Failed to send share data');
+      }
+    } catch (error) {
+      console.error('❌ Failed to share diamond:', error);
+      toast.error('Failed to share diamond. Please try again.');
+      return false;
+    }
+  }, [webApp, user, createSecureShareData, sendData]);
 
   return {
     shareWithInlineButtons,

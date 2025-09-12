@@ -43,45 +43,33 @@ export function processDiamondDataForDashboard(diamonds: DiamondData[], currentU
   inventoryByShape: InventoryData[];
   salesByCategory: InventoryData[];
 } {
-  try {
-    console.log('📊 ANALYTICS: Processing dashboard data');
-    console.log('📊 ANALYTICS: Input diamonds count:', diamonds?.length || 0);
-    console.log('📊 ANALYTICS: Current user ID:', currentUserId, 'type:', typeof currentUserId);
-    
-    // Ensure diamonds is an array
-    const diamondsArray = Array.isArray(diamonds) ? diamonds : [];
-    console.log('📊 ANALYTICS: Sample diamonds:', diamondsArray.slice(0, 3));
-    
-    // Filter diamonds for current user if user ID is provided with error handling
-    const userDiamonds = currentUserId 
-      ? diamondsArray.filter(diamond => {
-          try {
-            if (!diamond) return false;
-            
-            const hasOwners = Array.isArray(diamond.owners) && diamond.owners.includes(currentUserId);
-            const hasOwnerId = diamond.owner_id === currentUserId;
-            
-            console.log('📊 ANALYTICS: Checking diamond:', diamond.id, {
-              owners: diamond.owners,
-              owner_id: diamond.owner_id,
-              currentUserId,
-              hasOwners,
-              hasOwnerId,
-              included: hasOwners || hasOwnerId
-            });
-            return hasOwners || hasOwnerId;
-          } catch (error) {
-            console.error('❌ ANALYTICS: Error filtering diamond:', error);
-            return false;
-          }
-        })
-      : diamondsArray;
-    
-    console.log('📊 ANALYTICS: Filtered diamonds count:', userDiamonds.length);
-    console.log('📊 ANALYTICS: User diamonds sample:', userDiamonds.slice(0, 2));
-    
-    // Calculate basic stats with error handling
-    const totalDiamonds = userDiamonds.length;
+  console.log('📊 ANALYTICS: Processing dashboard data');
+  console.log('📊 ANALYTICS: Input diamonds count:', diamonds.length);
+  console.log('📊 ANALYTICS: Current user ID:', currentUserId, 'type:', typeof currentUserId);
+  console.log('📊 ANALYTICS: Sample diamonds:', diamonds.slice(0, 3));
+  
+  // Filter diamonds for current user if user ID is provided
+  const userDiamonds = currentUserId 
+    ? diamonds.filter(diamond => {
+        const hasOwners = diamond.owners?.includes(currentUserId);
+        const hasOwnerId = diamond.owner_id === currentUserId;
+        console.log('📊 ANALYTICS: Checking diamond:', diamond.id, {
+          owners: diamond.owners,
+          owner_id: diamond.owner_id,
+          currentUserId,
+          hasOwners,
+          hasOwnerId,
+          included: hasOwners || hasOwnerId
+        });
+        return hasOwners || hasOwnerId;
+      })
+    : diamonds;
+  
+  console.log('📊 ANALYTICS: Filtered diamonds count:', userDiamonds.length);
+  console.log('📊 ANALYTICS: User diamonds sample:', userDiamonds.slice(0, 2));
+  
+  // Calculate basic stats
+  const totalDiamonds = userDiamonds.length;
   
   // Calculate matched pairs based on similar characteristics
   const pairMap = new Map<string, number>();
@@ -144,26 +132,11 @@ export function processDiamondDataForDashboard(diamonds: DiamondData[], currentU
     .sort((a, b) => b.value - a.value)
     .slice(0, 8);
   
-    return {
-      stats,
-      inventoryByShape,
-      salesByCategory,
-    };
-  } catch (error) {
-    console.error('❌ ANALYTICS: Dashboard processing failed:', error);
-    
-    // Return safe defaults on error
-    return {
-      stats: { 
-        totalDiamonds: 0, 
-        matchedPairs: 0, 
-        totalLeads: 0, 
-        activeSubscriptions: 0 
-      },
-      inventoryByShape: [],
-      salesByCategory: [],
-    };
-  }
+  return {
+    stats,
+    inventoryByShape,
+    salesByCategory,
+  };
 }
 
 export function convertDiamondsToInventoryFormat(diamonds: DiamondData[], currentUserId?: number) {

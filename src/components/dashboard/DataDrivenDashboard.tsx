@@ -1,27 +1,19 @@
-// Enhanced Dashboard with modern Telegram-native design  
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { InventoryChart } from '@/components/dashboard/InventoryChart';
-import { RealTimeUserCount } from '@/components/dashboard/RealTimeUserCount';
 
-import { ModernStatsGrid, defaultDashboardStats } from '@/components/dashboard/ModernStatsGrid';
-import { EnhancedDashboardContent } from '@/components/dashboard/EnhancedDashboardContent';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { processDiamondDataForDashboard } from '@/services/diamondAnalytics';
+import { StatCard } from '@/components/dashboard/StatCard';
+import { InventoryChart } from '@/components/dashboard/InventoryChart';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { RealTimeUserCount } from '@/components/dashboard/RealTimeUserCount';
+import { WelcomeBanner } from '@/components/tutorial/WelcomeBanner';
+import { Layout } from '@/components/layout/Layout';
+import { Gem, Users, TrendingUp, Star, Plus, Upload } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
-import { useEnhancedTelegramWebApp } from '@/hooks/useEnhancedTelegramWebApp';
-import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { useNavigate } from 'react-router-dom';
-import { Gem, TrendingUp, Plus, Upload, Activity, Users2, ArrowRight, Package, BarChart3, Bell } from 'lucide-react';
-import { useFastApiNotifications } from '@/hooks/useFastApiNotifications';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { safeDivide, safeSum, safeRound, validateDiamondData } from '@/utils/safeMath';
-import { useDiamondDistribution } from '@/hooks/useDiamondDistribution';
-import { ColorDistributionChart } from '@/components/charts/ColorDistributionChart';
-import { ClarityDistributionChart } from '@/components/charts/ClarityDistributionChart';
-import { RecentDiamondsSection } from '@/components/charts/RecentDiamondsSection';
-import { cn } from '@/lib/utils';
 
 interface DataDrivenDashboardProps {
   allDiamonds: Diamond[];
@@ -32,256 +24,263 @@ interface DataDrivenDashboardProps {
 export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDrivenDashboardProps) {
   const { user } = useTelegramAuth();
   const { subscribeToInventoryChanges } = useInventoryDataSync();
-  const { webApp, haptics } = useEnhancedTelegramWebApp();
-  const { selectionChanged, impactOccurred } = useTelegramHapticFeedback();
   const navigate = useNavigate();
-  const { notifications } = useFastApiNotifications();
-  
-  // Fetch distribution data from FastAPI
-  const { data: distributionData, loading: distributionLoading, refetch: refetchDistribution } = useDiamondDistribution();
 
-  console.log('🔍 DataDrivenDashboard: Processing data for user:', user?.id, 'Diamonds:', allDiamonds?.length || 0);
+  console.log('🔍 DataDrivenDashboard: Processing data for user:', user?.id, 'Diamonds:', allDiamonds.length);
 
-  // Set Telegram WebApp theme with error handling
+  // Listen for inventory changes and refresh dashboard data immediately
   useEffect(() => {
-    try {
-      if (webApp) {
-        document.documentElement.style.setProperty('--tg-theme-bg-color', webApp.backgroundColor || '#f8fafc');
-        document.documentElement.style.setProperty('--tg-theme-text-color', webApp.themeParams?.text_color || '#000000');
-        document.documentElement.style.setProperty('--tg-theme-button-color', webApp.themeParams?.button_color || '#0088cc');
-      }
-    } catch (error) {
-      console.error('❌ Dashboard: WebApp theme setup failed:', error);
-    }
-  }, [webApp]);
+    const unsubscribe = subscribeToInventoryChanges(() => {
+      console.log('🔄 Dashboard: Inventory changed detected, refreshing dashboard data...');
+      fetchData();
+    });
 
-  // Listen for inventory changes with error handling
-  useEffect(() => {
-    try {
-      const unsubscribe = subscribeToInventoryChanges(() => {
-        console.log('🔄 Dashboard: Inventory changed detected, refreshing dashboard data...');
-        try {
-          fetchData();
-        } catch (error) {
-          console.error('❌ Dashboard: Failed to refresh data:', error);
-        }
-      });
-
-      return unsubscribe;
-    } catch (error) {
-      console.error('❌ Dashboard: Failed to subscribe to inventory changes:', error);
-      return () => {}; // Return noop function
-    }
+    return unsubscribe;
   }, [subscribeToInventoryChanges, fetchData]);
 
-  // Safe data processing with comprehensive error handling
-  const { validDiamonds, processedData } = useMemo(() => {
-    try {
-      // Ensure allDiamonds is an array
-      const diamondsArray = Array.isArray(allDiamonds) ? allDiamonds : [];
-      console.log('🔍 Dashboard: Processing', diamondsArray.length, 'diamonds');
-      
-      // Filter valid diamonds with safe validation
-      const valid = diamondsArray.filter(diamond => {
-        try {
-          return validateDiamondData(diamond);
-        } catch (error) {
-          console.warn('❌ Dashboard: Invalid diamond data:', diamond, error);
-          return false;
-        }
-      });
-      
-      console.log('🔍 Dashboard: Found', valid.length, 'valid diamonds');
-
-      // Process our own stats instead of using processDiamondDataForDashboard
-      let processed = { 
+  // Process the data only if we have diamonds
+  const { stats, inventoryByShape, salesByCategory } = allDiamonds.length > 0 
+    ? processDiamondDataForDashboard(
+        allDiamonds.map(d => ({
+          id: parseInt(d.id || '0'),
+          shape: d.shape,
+          color: d.color,
+          clarity: d.clarity,
+          weight: d.carat,
+          price_per_carat: d.price / d.carat,
+          owners: [user?.id || 0],
+        })),
+        user?.id
+      )
+    : { 
         stats: { 
-          totalDiamonds: valid.length, 
+          totalDiamonds: 0, 
           matchedPairs: 0, 
           totalLeads: 0, 
-          avgPricePerCarat: 0,
-          totalValue: 0,
-          availableDiamonds: 0,
-        } 
+          activeSubscriptions: 0 
+        }, 
+        inventoryByShape: [], 
+        salesByCategory: [] 
       };
-      
-      // We'll calculate our stats directly in the component
-      console.log('✅ Dashboard: Using direct stats calculation for', valid.length, 'diamonds');
 
-      return { validDiamonds: valid, processedData: processed };
-    } catch (error) {
-      console.error('❌ Dashboard: Critical error in data processing:', error);
-      return { validDiamonds: [], processedData: null };
-    }
-  }, [allDiamonds]);
-
-  // Safe navigation handlers with haptic feedback
-  const handleNavigate = (path: string) => {
-    try {
-      selectionChanged();
-      navigate(path);
-    } catch (error) {
-      console.error('❌ Dashboard: Navigation failed:', error);
-    }
-  };
-
-  const handleButtonClick = (path: string) => {
-    try {
-      impactOccurred('medium');
-      navigate(path);
-    } catch (error) {
-      console.error('❌ Dashboard: Button click failed:', error);
-    }
-  };
-
-  // Safe calculations with fallbacks
-  const totalValue = safeSum(validDiamonds.map(d => {
-    try {
-      const total = Number(d.price) || 0;
-      return isFinite(total) ? total : 0;
-    } catch {
-      return 0;
-    }
-  }));
-
-  const availableDiamonds = validDiamonds.filter(d => {
-    try {
-      const status = d.status?.toLowerCase();
-      return status === 'available' || status === 'in stock' || !status;
-    } catch {
-      return false;
-    }
-  }).length;
-
-  const avgPricePerCarat = safeDivide(
-    safeSum(validDiamonds.map(d => {
-      try {
-        const price = Number(d.price) || 0;
-        const carat = Number(d.carat) || 0;
-        return isFinite(price) && isFinite(carat) && carat > 0 ? safeDivide(price, carat) : 0;
-      } catch {
-        return 0;
+  // Calculate actual metrics from real data with realistic bounds
+  const calculateTotalValue = () => {
+    const total = allDiamonds.reduce((sum, diamond) => {
+      // Ensure price is reasonable (between $100 and $500k per diamond)
+      const price = diamond.price;
+      if (price > 0 && price < 500000) {
+        return sum + price;
       }
-    })),
-    validDiamonds.length
-  );
+      return sum;
+    }, 0);
+    
+    console.log('💰 Total value calculated:', total);
+    return total;
+  };
 
-  // Always show dashboard - no welcome screen
-  // Show empty state data but keep dashboard structure
+  const calculateAvgPricePerCarat = () => {
+    const validDiamonds = allDiamonds.filter(d => 
+      d.price > 0 && d.price < 500000 && d.carat > 0 && d.carat < 20
+    );
+    
+    if (validDiamonds.length === 0) return 0;
+    
+    const totalValue = validDiamonds.reduce((sum, d) => sum + d.price, 0);
+    const totalCarats = validDiamonds.reduce((sum, d) => sum + d.carat, 0);
+    
+    const avgPricePerCarat = Math.round(totalValue / totalCarats);
+    console.log('💎 Avg price per carat calculated:', avgPricePerCarat, 'from', validDiamonds.length, 'valid diamonds');
+    
+    return avgPricePerCarat;
+  };
 
-  // Modern dashboard stats
-  const statsData = defaultDashboardStats({
-    totalDiamonds: validDiamonds.length,
-    totalValue: totalValue,
-    availableCount: availableDiamonds,
-    avgPricePerCarat: avgPricePerCarat || 0
-  });
+  const totalValue = calculateTotalValue();
+  const availableDiamonds = allDiamonds.filter(d => d.status === 'Available').length;
+  const storeVisibleDiamonds = allDiamonds.filter(d => d.store_visible).length;
+  const avgPricePerCarat = calculateAvgPricePerCarat();
+
+  // Show empty state when no diamonds
+  if (!loading && allDiamonds.length === 0) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-background">
+          <DashboardHeader emergencyMode={false} />
+          
+          <div className="p-4 flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
+            <div className="w-16 h-16 bg-[#0088cc] rounded-full flex items-center justify-center">
+              <Gem className="h-8 w-8 text-white" />
+            </div>
+            
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold text-foreground">Welcome to Diamond Inventory</h2>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                Get started by uploading your diamond inventory or adding individual stones
+              </p>
+            </div>
+            
+            <div className="space-y-3 w-full max-w-xs">
+              <Button 
+                onClick={() => navigate('/upload')} 
+                className="w-full bg-[#0088cc] hover:bg-[#0088cc]/90"
+                size="lg"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload CSV File
+              </Button>
+              
+              <Button 
+                onClick={() => navigate('/upload')} 
+                variant="outline"
+                className="w-full"
+                size="lg"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Single Diamond
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
-    <EnhancedDashboardContent onNavigate={handleNavigate}>
-      {/* Modern Stats Grid */}
-      <ModernStatsGrid stats={statsData} />
-
-      {/* Real-time Activity Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 p-6 border-0 shadow-lg bg-card/60 backdrop-blur-xl">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-xl font-bold text-foreground">Live Activity</h3>
-              <p className="text-sm text-muted-foreground">Real-time user engagement</p>
-            </div>
-            <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
-              <Activity className="h-3 w-3 mr-1" />
-              Live
-            </Badge>
+    <Layout>
+      <div className="min-h-screen bg-background">
+        <DashboardHeader emergencyMode={false} />
+        
+        {/* Primary Stats - 2x2 Grid for Mobile */}
+        <div className="p-4 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <StatCard
+              title="Inventory"
+              value={allDiamonds.length}
+              icon={Gem}
+              loading={loading}
+              description="Total stones"
+              trend={12}
+            />
+            <StatCard
+              title="Value"
+              value={Math.round(totalValue / 1000)}
+              prefix="$"
+              suffix="K"
+              icon={Star}
+              loading={loading}
+              description="Portfolio"
+              trend={8}
+            />
+            <StatCard
+              title="Available"
+              value={availableDiamonds}
+              icon={Users}
+              loading={loading}
+              description="Ready to sell"
+              trend={5}
+            />
+            <StatCard
+              title="Price/Ct"
+              value={avgPricePerCarat}
+              prefix="$"
+              icon={TrendingUp}
+              loading={loading}
+              description="Average"
+              trend={-2}
+            />
           </div>
+
+          {/* Real-time User Count */}
           <RealTimeUserCount />
-        </Card>
-        
-        <Card className="p-6 border-0 shadow-lg bg-card/60 backdrop-blur-xl">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-xl font-bold text-foreground">Notifications</h3>
-              <p className="text-sm text-muted-foreground">System activity</p>
-            </div>
-            <TrendingUp className="h-5 w-5 text-primary" />
-          </div>
-          <div className="flex items-center justify-center py-8">
-            <div className="text-center">
-              <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">Notifications will appear here</p>
-            </div>
-          </div>
-        </Card>
-      </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6 border-0 shadow-lg bg-card/60 backdrop-blur-xl">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-xl font-bold text-foreground">Color Distribution</h3>
-              <p className="text-sm text-muted-foreground">Inventory breakdown by color</p>
+          {/* Charts Section */}
+          <div className="space-y-4">
+            <div className="bg-card rounded-lg border border-border">
+              <div className="p-4 border-b border-border">
+                <h3 className="text-sm font-medium text-foreground">Inventory Overview</h3>
+              </div>
+              <div className="p-4">
+                <InventoryChart
+                  data={inventoryByShape.length > 0 ? inventoryByShape : [
+                    { name: 'Round', value: allDiamonds.filter(d => d.shape === 'Round').length },
+                    { name: 'Princess', value: allDiamonds.filter(d => d.shape === 'Princess').length },
+                    { name: 'Emerald', value: allDiamonds.filter(d => d.shape === 'Emerald').length },
+                    { name: 'Oval', value: allDiamonds.filter(d => d.shape === 'Oval').length },
+                    { name: 'Other', value: allDiamonds.filter(d => !['Round', 'Princess', 'Emerald', 'Oval'].includes(d.shape)).length }
+                  ].filter(item => item.value > 0)}
+                  title=""
+                  loading={loading}
+                />
+              </div>
             </div>
           </div>
-          <ColorDistributionChart 
-            distribution={distributionData?.colorDistribution || []} 
-            isLoading={distributionLoading}
-          />
-        </Card>
-        
-        <Card className="p-6 border-0 shadow-lg bg-card/60 backdrop-blur-xl">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-xl font-bold text-foreground">Clarity Analysis</h3>
-              <p className="text-sm text-muted-foreground">Quality distribution</p>
-            </div>
-          </div>
-          <ClarityDistributionChart 
-            distribution={distributionData?.clarityDistribution || []} 
-            isLoading={distributionLoading}
-          />
-        </Card>
-      </div>
 
-      {/* Inventory Chart */}
-      <Card className="p-6 border-0 shadow-lg bg-card/60 backdrop-blur-xl">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-xl font-bold text-foreground">Shape Distribution</h3>
-            <p className="text-sm text-muted-foreground">Inventory analysis by diamond shape</p>
+          {/* Quick Actions - Telegram List Style */}
+          <div className="bg-card rounded-lg border border-border">
+            <div className="p-4 border-b border-border">
+              <h3 className="text-sm font-medium text-foreground">Quick Actions</h3>
+            </div>
+            <div className="divide-y divide-border">
+              <button 
+                onClick={() => navigate('/inventory')}
+                className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-[#0088cc]/10 rounded-full flex items-center justify-center">
+                    <Gem className="h-4 w-4 text-[#0088cc]" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-foreground">View Inventory</p>
+                    <p className="text-xs text-muted-foreground">Manage all diamonds</p>
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground">→</div>
+              </button>
+              
+              <button 
+                onClick={() => navigate('/upload')}
+                className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-[#0088cc]/10 rounded-full flex items-center justify-center">
+                    <Upload className="h-4 w-4 text-[#0088cc]" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-foreground">Upload Data</p>
+                    <p className="text-xs text-muted-foreground">Add new diamonds</p>
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground">→</div>
+              </button>
+              
+              <button 
+                onClick={() => navigate('/store')}
+                className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-[#0088cc]/10 rounded-full flex items-center justify-center">
+                    <Star className="h-4 w-4 text-[#0088cc]" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-foreground">Store View</p>
+                    <p className="text-xs text-muted-foreground">Public catalog</p>
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground">→</div>
+              </button>
+            </div>
           </div>
-          <BarChart3 className="h-5 w-5 text-primary" />
+
+          {/* Status Indicator */}
+          <div className="bg-[#0088cc]/5 border border-[#0088cc]/20 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-xs text-[#0088cc]">
+              <div className="w-1.5 h-1.5 bg-[#0088cc] rounded-full animate-pulse"></div>
+              <span className="font-medium">
+                Live data • {allDiamonds.length} diamonds • ${Math.round(totalValue / 1000)}K value
+              </span>
+            </div>
+          </div>
         </div>
-        <InventoryChart 
-          title="Shape Distribution" 
-          data={validDiamonds.map(d => ({ 
-            name: d.shape || 'Unknown', 
-            value: 1, 
-            color: '#0088cc' 
-          }))} 
-        />
-      </Card>
-
-      {/* Recent Activity */}
-      <Card className="p-6 border-0 shadow-lg bg-card/60 backdrop-blur-xl">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-xl font-bold text-foreground">Recent Additions</h3>
-            <p className="text-sm text-muted-foreground">Latest diamonds in your collection</p>
-          </div>
-          <ArrowRight className="h-5 w-5 text-primary cursor-pointer hover:translate-x-1 transition-transform" onClick={() => handleNavigate('/inventory')} />
-        </div>
-        <RecentDiamondsSection 
-          diamonds={validDiamonds.slice(0, 5).map(d => ({ 
-            ...d, 
-            stock: d.id,
-            name: d.shape || 'Diamond',
-            price: d.price || 0
-          }))} 
-          isLoading={loading}
-        />
-      </Card>
-    </EnhancedDashboardContent>
+      </div>
+    </Layout>
   );
 }

@@ -1,10 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { TelegramUser } from '@/types/telegram';
-import { signInToBackend, clearBackendAuthToken } from '@/lib/api/auth';
-import { setCurrentUserId } from '@/lib/api/config';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { signInToBackend } from '@/lib/api/auth';
 
 interface AuthState {
   user: TelegramUser | null;
@@ -27,27 +24,10 @@ export function useStrictTelegramAuth(): AuthState {
 
   const mountedRef = useRef(true);
   const initializedRef = useRef(false);
-  const retryAttempts = useRef(0);
-  const maxRetries = 3;
 
   const updateState = (updates: Partial<AuthState>) => {
     if (mountedRef.current) {
       setState(prev => ({ ...prev, ...updates }));
-    }
-  };
-
-  const handleRetry = () => {
-    if (retryAttempts.current < maxRetries) {
-      retryAttempts.current++;
-      initializedRef.current = false;
-      updateState({ 
-        isLoading: true, 
-        error: null, 
-        accessDeniedReason: null 
-      });
-      setTimeout(() => authenticateUser(), 500);
-    } else {
-      toast.error('Maximum retry attempts reached. Please refresh the app.');
     }
   };
 
@@ -56,20 +36,17 @@ export function useStrictTelegramAuth(): AuthState {
       return;
     }
 
-    console.log('🔐 JWT-ONLY AUTH: Starting Telegram WebApp authentication - JWT is the ONLY source of truth');
+    console.log('🔐 Starting STRICT Telegram-only authentication...');
     
     try {
-      // Clear any existing token first
-      clearBackendAuthToken();
-      
-      // Step 1: STRICT - Check for Telegram WebApp environment (NO FALLBACKS)
+      // Check for Telegram WebApp environment
       if (typeof window === 'undefined' || !window.Telegram?.WebApp) {
-        console.error('❌ JWT-ONLY AUTH: Not in Telegram WebApp environment - NO FALLBACKS ALLOWED');
+        console.error('❌ Not in Telegram WebApp environment - access denied');
         updateState({
           isLoading: false,
           isTelegramEnvironment: false,
           accessDeniedReason: 'not_telegram_environment',
-          error: 'This app only works inside Telegram WebApp'
+          error: 'This app only works inside Telegram'
         });
         return;
       }
@@ -77,108 +54,156 @@ export function useStrictTelegramAuth(): AuthState {
       const tg = window.Telegram.WebApp;
       updateState({ isTelegramEnvironment: true });
 
-      // Step 2: Initialize Telegram WebApp
+      // 🐛 DEBUG: Log complete Telegram WebApp environment
+      console.log('🔍 TELEGRAM WEBAPP DEBUG INFO:', {
+        telegram_available: !!window.Telegram,
+        webApp_available: !!window.Telegram.WebApp,
+        version: tg.version,
+        platform: tg.platform,
+        colorScheme: tg.colorScheme,
+        isExpanded: tg.isExpanded,
+        viewportHeight: tg.viewportHeight,
+        headerColor: tg.headerColor,
+        backgroundColor: tg.backgroundColor
+      });
+
+      // 🐛 DEBUG: Log detailed initData information
+      console.log('🔍 INIT DATA DETAILED DEBUG:');
+      console.log('📋 Raw initData:', {
+        value: tg.initData,
+        type: typeof tg.initData,
+        length: tg.initData?.length || 0,
+        isEmpty: !tg.initData || tg.initData.length === 0,
+        firstChars: tg.initData?.substring(0, 50) || 'EMPTY'
+      });
+
+      // 🐛 DEBUG: Log initDataUnsafe details
+      console.log('📋 InitDataUnsafe:', {
+        value: tg.initDataUnsafe,
+        type: typeof tg.initDataUnsafe,
+        keys: Object.keys(tg.initDataUnsafe || {}),
+        hasUser: !!(tg.initDataUnsafe?.user),
+        user: tg.initDataUnsafe?.user || null
+      });
+
+      // Initialize Telegram WebApp
       try {
         if (typeof tg.ready === 'function') tg.ready();
         if (typeof tg.expand === 'function') tg.expand();
-        console.log('✅ JWT-ONLY AUTH: Telegram WebApp initialized');
+        console.log('✅ Telegram WebApp initialized');
       } catch (error) {
-        console.warn('⚠️ JWT-ONLY AUTH: WebApp initialization warning:', error);
+        console.warn('⚠️ Telegram WebApp initialization warning:', error);
       }
 
-      // Step 3: STRICT - Check for initData (NO FALLBACKS)
-      if (!tg.initData || !tg.initData.length) {
-        console.error('❌ JWT-ONLY AUTH: Missing Telegram initData - NO FALLBACKS, JWT REQUIRED');
-        
-        toast.error('Authentication data missing. Please restart the app from Telegram.', {
-          action: {
-            label: 'Retry',
-            onClick: handleRetry
-          }
+      // Check for initData - REQUIRED
+      if (!tg.initData || tg.initData.length === 0) {
+        console.error('❌ No Telegram initData found - access denied');
+        console.log('🐛 EMPTY INIT DATA DEBUG:', {
+          initDataExists: !!tg.initData,
+          initDataType: typeof tg.initData,
+          initDataValue: tg.initData,
+          initDataUnsafeExists: !!tg.initDataUnsafe,
+          initDataUnsafeKeys: Object.keys(tg.initDataUnsafe || {}),
+          windowTelegramKeys: Object.keys(window.Telegram || {}),
+          webAppKeys: Object.keys(tg || {})
         });
-        
+
         updateState({
           isLoading: false,
           accessDeniedReason: 'no_init_data',
-          error: 'Missing Telegram authentication data'
+          error: 'No Telegram authentication data found'
         });
         return;
       }
 
-      console.log('🔍 JWT-ONLY AUTH: Found initData, length:', tg.initData.length);
+      console.log('🔍 Found Telegram initData, length:', tg.initData.length);
+      console.log('🐛 INIT DATA CONTENT DEBUG:', {
+        rawInitData: tg.initData,
+        parsedAsUrl: new URLSearchParams(tg.initData),
+        urlParamsEntries: [...new URLSearchParams(tg.initData).entries()]
+      });
 
-      // Step 4: CRITICAL - Authenticate with FastAPI backend using initData (JWT IS ONLY SOURCE OF TRUTH)
-      console.log('🔐 JWT-ONLY AUTH: Authenticating with FastAPI backend - JWT token required...');
+      // Step 1: Sign in to FastAPI backend using initData
+      console.log('🔐 Signing in to FastAPI backend...');
+      console.log('🐛 BACKEND REQUEST DEBUG - Sending initData:', {
+        initDataLength: tg.initData.length,
+        initDataPreview: tg.initData.substring(0, 100) + '...',
+        requestBody: { init_data: tg.initData }
+      });
+
       const jwtToken = await signInToBackend(tg.initData);
       
       if (!jwtToken) {
-        console.error('❌ JWT-ONLY AUTH: FastAPI JWT authentication failed - NO ACCESS GRANTED');
-        
-        toast.error('JWT authentication failed. Please try again.', {
-          action: {
-            label: 'Retry',
-            onClick: handleRetry
-          }
-        });
-        
+        console.error('❌ Backend sign-in failed - access denied');
         updateState({
           isLoading: false,
           accessDeniedReason: 'backend_auth_failed',
-          error: 'Failed to authenticate with backend server'
+          error: 'Failed to authenticate with backend'
         });
         return;
       }
 
-      console.log('✅ JWT-ONLY AUTH: Valid JWT token received from FastAPI - Authentication successful');
+      console.log('✅ JWT token received from backend');
 
-      // Step 5: Extract user data from Telegram initData (PRODUCTION SAFE - no initDataUnsafe)
+      // Step 2: Extract user data from initDataUnsafe (if available)
       let authenticatedUser: TelegramUser | null = null;
 
-      try {
-        const urlParams = new URLSearchParams(tg.initData);
-        const userParam = urlParams.get('user');
+      if (tg.initDataUnsafe?.user) {
+        const unsafeUser = tg.initDataUnsafe.user;
+        console.log('🐛 USER DATA FROM UNSAFE DEBUG:', unsafeUser);
         
-        if (!userParam) {
-          throw new Error('No user parameter in initData');
+        if (unsafeUser.id && unsafeUser.first_name) {
+          authenticatedUser = {
+            id: unsafeUser.id,
+            first_name: unsafeUser.first_name,
+            last_name: unsafeUser.last_name,
+            username: unsafeUser.username,
+            language_code: unsafeUser.language_code || 'en',
+            is_premium: unsafeUser.is_premium,
+            photo_url: unsafeUser.photo_url,
+            phone_number: (unsafeUser as any).phone_number
+          };
+          console.log('✅ User data extracted from initDataUnsafe');
         }
-        
-        const user = JSON.parse(decodeURIComponent(userParam));
-        if (!user.id || !user.first_name) {
-          throw new Error('Invalid user data structure');
-        }
-        
-        authenticatedUser = {
-          id: user.id,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          username: user.username,
-          language_code: user.language_code || 'en',
-          is_premium: user.is_premium,
-          photo_url: user.photo_url,
-          phone_number: user.phone_number
-        };
-        console.log('✅ JWT-ONLY AUTH: User data extracted from secure initData');
-      } catch (error) {
-        console.error('❌ JWT-ONLY AUTH: Failed to parse user data from initData:', error);
-        
-        toast.error('Invalid authentication data. Please restart from Telegram.', {
-          action: {
-            label: 'Retry',
-            onClick: handleRetry
-          }
-        });
-        
-        updateState({
-          isLoading: false,
-          accessDeniedReason: 'invalid_user_data',
-          error: 'Invalid user data in authentication'
-        });
-        return;
       }
 
-      // Step 6: Final validation - JWT must be valid for access
+      // If no user data from initDataUnsafe, try parsing initData
+      if (!authenticatedUser && tg.initData) {
+        try {
+          const urlParams = new URLSearchParams(tg.initData);
+          const userParam = urlParams.get('user');
+          
+          console.log('🐛 PARSING INIT DATA FOR USER:', {
+            hasUserParam: !!userParam,
+            userParamValue: userParam
+          });
+          
+          if (userParam) {
+            const user = JSON.parse(decodeURIComponent(userParam));
+            console.log('🐛 PARSED USER FROM INIT DATA:', user);
+            
+            if (user.id && user.first_name) {
+              authenticatedUser = {
+                id: user.id,
+                first_name: user.first_name,
+                last_name: user.last_name,
+                username: user.username,
+                language_code: user.language_code || 'en',
+                is_premium: user.is_premium,
+                photo_url: user.photo_url,
+                phone_number: user.phone_number
+              };
+              console.log('✅ User data parsed from initData');
+            }
+          }
+        } catch (error) {
+          console.error('❌ Failed to parse user data from initData:', error);
+        }
+      }
+
+      // If still no user data, authentication failed
       if (!authenticatedUser) {
-        console.error('❌ JWT-ONLY AUTH: No user data found after parsing - JWT authentication incomplete');
+        console.error('❌ No user data found in Telegram initData - access denied');
         updateState({
           isLoading: false,
           accessDeniedReason: 'no_user_data',
@@ -187,26 +212,8 @@ export function useStrictTelegramAuth(): AuthState {
         return;
       }
 
-      // Step 7: SUCCESS - JWT validated, user authenticated
-      setCurrentUserId(authenticatedUser.id);
-      
-      // Set telegram_id in Supabase session context for RLS
-      try {
-        await supabase.rpc('set_session_context', {
-          key: 'app.current_user_id', 
-          value: authenticatedUser.id.toString()
-        });
-        console.log('✅ AUTH: Set Supabase session context for RLS');
-      } catch (error) {
-        console.warn('⚠️ AUTH: Failed to set session context:', error);
-      }
-      
-      console.log('✅ JWT-ONLY AUTH: Complete authentication success - JWT is valid, user authorized');
-      console.log('👤 JWT-ONLY AUTH: User:', authenticatedUser.first_name, 'ID:', authenticatedUser.id);
-      
-      // Reset retry counter on success
-      retryAttempts.current = 0;
-      
+      // Success - user authenticated via Telegram + JWT
+      console.log('✅ Authentication successful for user:', authenticatedUser.first_name, 'ID:', authenticatedUser.id);
       updateState({
         user: authenticatedUser,
         isAuthenticated: true,
@@ -216,21 +223,11 @@ export function useStrictTelegramAuth(): AuthState {
       });
       
     } catch (error) {
-      console.error('❌ JWT-ONLY AUTH: Authentication system error:', error);
-      
-      const errorMessage = error instanceof Error ? error.message : 'JWT authentication system error';
-      
-      toast.error(`JWT Authentication failed: ${errorMessage}`, {
-        action: {
-          label: 'Retry',
-          onClick: handleRetry
-        }
-      });
-      
+      console.error('❌ Authentication error:', error);
       updateState({
         isLoading: false,
         accessDeniedReason: 'system_error',
-        error: errorMessage
+        error: error instanceof Error ? error.message : 'Authentication system error'
       });
     } finally {
       initializedRef.current = true;
@@ -240,36 +237,24 @@ export function useStrictTelegramAuth(): AuthState {
   useEffect(() => {
     mountedRef.current = true;
     
-    // JWT Authentication timeout (15 seconds)
+    // Timeout for authentication (5 seconds)
     const timeoutId = setTimeout(() => {
       if (state.isLoading && mountedRef.current && !initializedRef.current) {
-        console.error('❌ JWT-ONLY AUTH: Authentication timeout - no valid JWT received');
-        
-        toast.error('JWT Authentication timeout. Please refresh the app.', {
-          action: {
-            label: 'Retry',
-            onClick: handleRetry
-          }
-        });
-        
+        console.error('❌ Authentication timeout - access denied');
         updateState({
           isLoading: false,
           accessDeniedReason: 'timeout',
-          error: 'JWT Authentication timeout - please reload the app'
+          error: 'Authentication timeout - please reload the app'
         });
         initializedRef.current = true;
       }
-    }, 15000);
+    }, 5000);
 
-    // Start authentication
-    const initTimer = setTimeout(() => {
-      authenticateUser();
-    }, 100);
+    authenticateUser();
 
     return () => {
       mountedRef.current = false;
       clearTimeout(timeoutId);
-      clearTimeout(initTimer);
     };
   }, []);
 

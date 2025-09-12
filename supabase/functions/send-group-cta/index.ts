@@ -19,9 +19,7 @@ serve(async (req) => {
       message, 
       groupId, 
       botUsername: providedBotUsername,
-      useButtons = false, // Default to false for now
-      buttonText = '🚀 הצטרף ל-BrilliantBot',
-      buttonUrl
+      useButtons = false // Default to false for now
     } = await req.json();
     
     console.log('📥 CTA request:', { 
@@ -61,45 +59,27 @@ serve(async (req) => {
 
     const finalMessage = message || defaultMessage;
 
-    // Use the B2B group ID from environment or provided groupId
-    const targetGroupId = groupId || Deno.env.get('B2B_GROUP_ID') || -1002178695748;
-    
     let telegramPayload: any = {
-      chat_id: targetGroupId,
+      chat_id: groupId || -1001009290613,
       text: finalMessage,
       parse_mode: 'Markdown'
     };
 
     // Only add buttons if explicitly requested
     if (useButtons) {
-      const finalButtonText = buttonText || '🚀 הצטרף ל-BrilliantBot';
-      const finalButtonUrl = buttonUrl || `https://diamondbot-store.vercel.app/?utm_source=group_cta&utm_campaign=growth_announcement&start=group_activation&button_clicked=join_brilliantbot`;
-      
-      // If buttonUrl starts with https://t.me/, use url instead of web_app
-      if (finalButtonUrl.startsWith('https://t.me/')) {
-        telegramPayload.reply_markup = {
-          inline_keyboard: [[
-            {
-              text: finalButtonText,
-              url: finalButtonUrl
+      telegramPayload.reply_markup = {
+        inline_keyboard: [[
+          {
+            text: '🚀 הצטרף ל-BrilliantBot',
+            web_app: {
+              url: `https://diamondbot-store.vercel.app/?utm_source=group_cta&utm_campaign=growth_announcement&start=group_activation&button_clicked=join_brilliantbot`
             }
-          ]]
-        };
-      } else {
-        telegramPayload.reply_markup = {
-          inline_keyboard: [[
-            {
-              text: finalButtonText,
-              web_app: {
-                url: finalButtonUrl
-              }
-            }
-          ]]
-        };
-      }
+          }
+        ]]
+      };
     }
 
-    console.log('📤 Sending message to group:', targetGroupId);
+    console.log('📤 Sending message to group:', groupId || -1001009290613);
     
     const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
@@ -125,7 +105,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         messageId: result.result.message_id,
-        groupId: targetGroupId,
+        groupId: groupId || -1001009290613,
         messageType: useButtons ? 'with_buttons' : 'text_only',
         userCount: '400+'
       }),

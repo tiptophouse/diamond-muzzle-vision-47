@@ -40,21 +40,21 @@ export function UserImageUpload({ diamond, onUpdate }: UserImageUploadProps) {
       const endpoint = apiEndpoints.updateDiamond(diamond.id, user.id);
       const response = await api.put(endpoint, updateData);
 
-      if (response.data || !response.error) {
+      if (response.data) {
         toast({
-          title: "✅ Image Upload Success",
-          description: `Diamond #${diamond.stockNumber} images updated successfully via FastAPI`
+          title: "✅ Success",
+          description: "Diamond images updated successfully"
         });
         setOpen(false);
-        onUpdate(); // Trigger inventory refresh
+        onUpdate();
       } else {
-        throw new Error(response.error || "FastAPI update failed");
+        throw new Error(response.error || "Failed to update diamond");
       }
     } catch (error) {
-      console.error('❌ FastAPI Image Update Error:', error);
+      console.error('Error updating diamond:', error);
       toast({
-        title: "❌ FastAPI Update Failed", 
-        description: `Failed to update diamond #${diamond.stockNumber} images. Check FastAPI connection.`,
+        title: "Error",
+        description: "Failed to update diamond images",
         variant: "destructive"
       });
     } finally {

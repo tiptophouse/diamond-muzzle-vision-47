@@ -4,72 +4,58 @@ import { Header } from "./Header";
 import { useState } from "react";
 import { Menu, Diamond } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useEnhancedTelegramWebApp } from "@/hooks/useEnhancedTelegramWebApp";
-import { cn } from "@/lib/utils";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-export function Layout({ children }: LayoutProps) {
+export function Layout({
+  children
+}: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { webApp, isInitialized } = useEnhancedTelegramWebApp();
   
   return (
-    <div className={cn(
-      "min-h-tg-viewport w-full flex bg-background overflow-hidden",
-      "ios-viewport relative"
-    )}>
-      {/* Mobile backdrop overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-background z-40 lg:hidden" 
-          onClick={() => setSidebarOpen(false)} 
-        />
-      )}
+    <div className="min-h-screen w-full overflow-x-hidden flex bg-background">
+      {/* Mobile overlay */}
+      {sidebarOpen && <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
       
-      {/* Modern Sidebar - Telegram native design */}
-      <div className={cn(
-        "fixed lg:static inset-y-0 left-0 z-50 w-72 transform transition-all duration-300 ease-out",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-      )}>
-        <Sidebar onClose={() => setSidebarOpen(false)} />
+      {/* Sidebar - hidden on mobile, slide in when open */}
+      <div className={`
+          fixed lg:static inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `} data-tutorial="sidebar">
+        <Sidebar />
       </div>
       
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-background">
-        {/* Mobile Navigation Header */}
-        <div className="lg:hidden">
-          <div className="flex items-center h-16 px-4 border-b border-border bg-card">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setSidebarOpen(true)}
-              className="mobile-tap rounded-2xl hover:bg-accent/60 transition-all duration-200"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-            
-            <div className="flex items-center gap-3 flex-1 justify-center">
-              <div className="w-8 h-8 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
-                <Diamond className="text-primary-foreground h-4 w-4" />
-              </div>
-              <h1 className="text-lg font-bold text-foreground">BrilliantBot</h1>
+      <div className="flex-1 w-full min-w-0 flex flex-col bg-background lg:ml-0">
+        {/* Mobile header with menu button */}
+        <div className="lg:hidden flex items-center justify-between h-14 sm:h-16 px-3 sm:px-4 border-b border-border/20 bg-card/80 backdrop-blur-md">
+          <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)} className="p-2 rounded-xl hover:bg-accent/50 transition-colors min-w-[44px] min-h-[44px]">
+            <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
+          </Button>
+          
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 justify-center">
+            <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-xl bg-gradient-to-br from-[#0088cc] to-[#229ED9] flex items-center justify-center shadow-sm flex-shrink-0">
+              <Diamond className="text-white h-3 w-3 sm:h-4 sm:w-4" />
             </div>
-            
-            <div className="w-10" />
+            <h1 className="font-semibold text-foreground text-base sm:text-lg tracking-tight truncate">
+              BrilliantBot
+            </h1>
           </div>
+          
+          <div className="w-11 sm:w-9 flex-shrink-0" />
         </div>
         
-        {/* Desktop Header */}
+        {/* Desktop header */}
         <div className="hidden lg:block">
           <Header />
         </div>
         
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto ios-scroll bg-background">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 max-w-7xl">
-            {children}
+        <main className="flex-1 w-full min-w-0 overflow-x-hidden bg-background">
+          <div className="w-full max-w-full h-full p-3 sm:p-4 lg:p-6">
+            <div className="w-full max-w-none overflow-x-hidden">
+              {children}
+            </div>
           </div>
         </main>
       </div>
