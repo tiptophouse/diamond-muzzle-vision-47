@@ -104,11 +104,11 @@ const Index = () => {
     return <Navigate to="/admin" replace />;
   }
 
-  // For regular users, redirect to upload page for immediate diamond upload
+  // For regular users, redirect to dashboard page
   if (isAuthenticated && user) {
-    console.log('✅ Regular user detected - redirecting to upload page');
+    console.log('✅ Regular user detected - redirecting to dashboard');
     redirectHandledRef.current = true;
-    return <Navigate to="/upload" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   // Fallback for unauthenticated users
