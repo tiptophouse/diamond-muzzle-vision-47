@@ -141,12 +141,11 @@ export function useSecureTelegramAuth(): AuthState {
 
       let authenticatedUser: TelegramUser | null = null;
 
-      // Priority 1: Try initDataUnsafe first for admin or valid users
+      // Priority 1: Only allow initDataUnsafe for ADMIN user; all others must pass backend verification
       if (tg.initDataUnsafe?.user) {
         const unsafeUser = tg.initDataUnsafe.user;
         console.log('🔍 Analyzing user from initDataUnsafe:', unsafeUser);
         
-        // If it's the admin user, use it immediately
         if (unsafeUser.id === ADMIN_TELEGRAM_ID) {
           console.log('✅ ADMIN USER detected in initDataUnsafe!');
           authenticatedUser = {
@@ -160,22 +159,6 @@ export function useSecureTelegramAuth(): AuthState {
           };
           
           logSecurityEvent('Admin User Detected', {
-            source: 'initDataUnsafe',
-            userId: unsafeUser.id
-          });
-        } else if (unsafeUser.first_name && !['Test', 'Telegram', 'Emergency'].includes(unsafeUser.first_name)) {
-          console.log('✅ Valid user found in initDataUnsafe');
-          authenticatedUser = {
-            id: unsafeUser.id,
-            first_name: unsafeUser.first_name,
-            last_name: unsafeUser.last_name,
-            username: unsafeUser.username,
-            language_code: unsafeUser.language_code || 'en',
-            is_premium: unsafeUser.is_premium,
-            photo_url: unsafeUser.photo_url
-          };
-          
-          logSecurityEvent('Valid User Detected', {
             source: 'initDataUnsafe',
             userId: unsafeUser.id
           });
@@ -219,25 +202,6 @@ export function useSecureTelegramAuth(): AuthState {
               logSecurityEvent('Backend Verification Failed', {
                 result: verificationResult
               });
-              
-              // Try client-side parsing as fallback
-              const initDataParsed = parseTelegramInitData(tg.initData);
-              if (initDataParsed?.user) {
-                console.log('✅ Client-side parsing successful as fallback');
-                authenticatedUser = {
-                  id: initDataParsed.user.id,
-                  first_name: initDataParsed.user.first_name,
-                  last_name: initDataParsed.user.last_name,
-                  username: initDataParsed.user.username,
-                  language_code: initDataParsed.user.language_code || 'en',
-                  is_premium: initDataParsed.user.is_premium,
-                  photo_url: initDataParsed.user.photo_url
-                };
-                
-                logSecurityEvent('Client Parsing Fallback', {
-                  userId: initDataParsed.user.id
-                });
-              }
             }
           }
         } catch (error) {

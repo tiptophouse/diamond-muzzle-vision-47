@@ -1,6 +1,6 @@
 
 import { ReactNode } from 'react';
-import { useStrictTelegramAuth } from '@/hooks/useStrictTelegramAuth';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { Shield, Smartphone, ExternalLink, RefreshCw, AlertTriangle } from 'lucide-react';
 
 interface TelegramOnlyGuardProps {
@@ -15,7 +15,7 @@ export function TelegramOnlyGuard({ children }: TelegramOnlyGuardProps) {
     isTelegramEnvironment,
     isAuthenticated,
     accessDeniedReason
-  } = useStrictTelegramAuth();
+  } = useTelegramAuth();
 
   // Loading state
   if (isLoading) {
