@@ -7,7 +7,7 @@ import {
   validateTelegramInitData,
   initializeTelegramWebApp
 } from '@/utils/telegramWebApp';
-import { verifyTelegramUser, signInToBackend } from '@/lib/api/auth';
+import { verifyTelegramUser, signInToBackend, getBackendAuthToken } from '@/lib/api/auth';
 import { getAuthenticationMetrics } from '@/utils/telegramValidation';
 
 interface TelegramUser {
@@ -204,19 +204,13 @@ export function useSecureTelegramAuth(): AuthState {
             logSecurityEvent('Client Validation Failed', {
               initDataLength: tg.initData.length
             });
-          } else {
-            // Try backend verification
+          if (isValidClient) {
+            // Try backend verification first via Supabase
+            console.log('🔐 Attempting Supabase backend verification...');
             const verificationResult = await verifyTelegramUser(tg.initData);
             
             if (verificationResult && verificationResult.success) {
-              console.log('✅ Enhanced backend verification successful');
-              
-              // Sign in to FastAPI backend to get JWT token
-              const backendToken = await signInToBackend(tg.initData);
-              if (backendToken) {
-                console.log('✅ FastAPI JWT token obtained');
-              }
-              
+              console.log('✅ Supabase backend verification successful');
               authenticatedUser = {
                 id: verificationResult.user_id,
                 first_name: verificationResult.user_data?.first_name || 'User',
@@ -226,14 +220,53 @@ export function useSecureTelegramAuth(): AuthState {
                 is_premium: verificationResult.user_data?.is_premium,
                 photo_url: verificationResult.user_data?.photo_url
               };
-              
-              logSecurityEvent('Backend Verification Success', {
-                userId: verificationResult.user_id,
-                securityInfo: verificationResult.security_info,
-                hasBackendToken: !!backendToken
-              });
             } else {
-              console.warn('⚠️ Enhanced backend verification failed');
+              console.log('🔄 Supabase verification failed, trying direct FastAPI sign-in...');
+              
+              // Try direct FastAPI sign-in as fallback
+              const backendToken = await signInToBackend(tg.initData);
+              if (backendToken) {
+                console.log('✅ Direct FastAPI sign-in successful');
+                // Parse user data from initDataUnsafe for display
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                  const unsafeUser = tg.initDataUnsafe.user;
+                  authenticatedUser = {
+                    id: unsafeUser.id,
+                    first_name: unsafeUser.first_name || 'User',
+                    last_name: unsafeUser.last_name,
+                    username: unsafeUser.username,
+                    language_code: unsafeUser.language_code || 'en',
+                    is_premium: unsafeUser.is_premium,
+                    photo_url: unsafeUser.photo_url
+                  };
+                } else {
+                  // Fallback user data
+                  authenticatedUser = {
+                    id: Date.now(), // Temporary ID
+                    first_name: 'Authenticated User',
+                    last_name: '',
+                    username: '',
+                    language_code: 'en'
+                  };
+                }
+              }
+            }
+            
+            // Always try to get FastAPI JWT token for API calls
+            if (authenticatedUser) {
+              console.log('🔐 Ensuring FastAPI JWT token is available...');
+              const currentToken = getBackendAuthToken();
+              if (!currentToken) {
+                const fastApiToken = await signInToBackend(tg.initData);
+                if (fastApiToken) {
+                  console.log('✅ FastAPI JWT token obtained for API calls');
+                } else {
+                  console.warn('⚠️ Failed to obtain FastAPI JWT token - API calls may fail');
+                }
+              } else {
+                console.log('✅ FastAPI JWT token already available');
+              }
+            }
               logSecurityEvent('Backend Verification Failed', {
                 result: verificationResult
               });

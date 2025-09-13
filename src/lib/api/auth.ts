@@ -33,22 +33,24 @@ export function getBackendAuthToken(): string | null {
 // Backend sign-in function using FastAPI /api/v1/sign-in/ endpoint
 export async function signInToBackend(initData: string): Promise<string | null> {
   try {
-    console.log('🔐 API: Signing in to backend with initData');
+    console.log('🔐 FastAPI: Signing in to backend with initData');
+    console.log('🔐 FastAPI: Using endpoint:', `${API_BASE_URL}${apiEndpoints.signIn()}`);
     
     if (!initData || initData.length === 0) {
-      console.error('🔐 API: No initData provided for sign-in');
+      console.error('🔐 FastAPI: No initData provided for sign-in');
       return null;
     }
 
-    // Get auth headers for the request
-    const authHeaders = await getAuthHeaders();
+    console.log('🔐 FastAPI: InitData length:', initData.length);
+    console.log('🔐 FastAPI: Making sign-in request to FastAPI...');
 
     const response = await fetch(`${API_BASE_URL}${apiEndpoints.signIn()}`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        ...authHeaders
+        'Origin': window.location.origin,
+        'X-Client-Platform': 'telegram-web-app'
       },
       mode: 'cors',
       body: JSON.stringify({
@@ -56,24 +58,56 @@ export async function signInToBackend(initData: string): Promise<string | null> 
       }),
     });
 
+    console.log('🔐 FastAPI: Sign-in response status:', response.status);
+    console.log('🔐 FastAPI: Response headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('🔐 API: Backend sign-in failed:', response.status, errorText);
+      console.error('❌ FastAPI: Sign-in failed with status', response.status);
+      console.error('❌ FastAPI: Error response:', errorText);
+      
+      // Try to parse error details
+      try {
+        const errorData = JSON.parse(errorText);
+        console.error('❌ FastAPI: Parsed error:', errorData);
+      } catch {
+        console.error('❌ FastAPI: Raw error text:', errorText);
+      }
+      
       return null;
     }
 
     const result = await response.json();
+    console.log('✅ FastAPI: Sign-in response received:', result);
     
     if (result.token) {
       backendAuthToken = result.token;
-      console.log('✅ API: Backend sign-in successful, token stored');
+      console.log('✅ FastAPI: JWT token obtained and stored successfully');
+      console.log('✅ FastAPI: Token length:', result.token.length);
+      
+      // Verify token is valid JWT format
+      const tokenParts = result.token.split('.');
+      if (tokenParts.length === 3) {
+        console.log('✅ FastAPI: JWT token format is valid (3 parts)');
+      } else {
+        console.warn('⚠️ FastAPI: JWT token format might be invalid');
+      }
+      
       return result.token;
     } else {
-      console.error('🔐 API: No token in sign-in response');
+      console.error('❌ FastAPI: No token in sign-in response');
+      console.error('❌ FastAPI: Response structure:', Object.keys(result));
       return null;
     }
   } catch (error) {
-    console.error('❌ API: Backend sign-in error:', error);
+    console.error('❌ FastAPI: Sign-in network error:', error);
+    if (error instanceof Error) {
+      console.error('❌ FastAPI: Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack?.substring(0, 200)
+      });
+    }
     return null;
   }
 }
