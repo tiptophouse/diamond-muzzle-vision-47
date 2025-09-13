@@ -9,7 +9,12 @@ export interface FetchInventoryResult {
 }
 
 export async function fetchInventoryData(): Promise<FetchInventoryResult> {
-  const userId = getCurrentUserId() || 2138564172;
+  const userId = getCurrentUserId();
+  
+  if (!userId) {
+    console.error('❌ INVENTORY SERVICE: No authenticated user ID available');
+    throw new Error('Authentication required - no user ID available');
+  }
   
   console.log('🔍 INVENTORY SERVICE: Fetching data for user:', userId);
   

@@ -78,13 +78,32 @@ export async function fetchApi<T>(
   try {
     console.log('🚀 API: Making FastAPI request:', url);
     console.log('🚀 API: Method:', options.method || 'GET');
-    console.log('🚀 API: Current user ID:', getCurrentUserId(), 'type:', typeof getCurrentUserId());
+    
+    const currentUserId = getCurrentUserId();
+    console.log('🚀 API: Current user ID:', currentUserId, 'type:', typeof currentUserId);
+    
+    // Validate user permissions for user-specific endpoints
+    const urlParams = new URLSearchParams(url.split('?')[1] || '');
+    const requestedUserId = urlParams.get('user_id');
+    
+    if (requestedUserId && currentUserId) {
+      const requestedUserIdNum = parseInt(requestedUserId);
+      const ADMIN_TELEGRAM_ID = 2138564172;
+      
+      // Allow admin to access any user's data, but restrict regular users to their own data
+      if (currentUserId !== ADMIN_TELEGRAM_ID && currentUserId !== requestedUserIdNum) {
+        console.error('❌ API: Access denied - User', currentUserId, 'cannot access data for user', requestedUserIdNum);
+        throw new Error('Access denied: You can only access your own data');
+      }
+      
+      console.log('✅ API: Permission validated - User', currentUserId, 'accessing data for user', requestedUserIdNum);
+    }
     
     if (options.method === 'POST') {
       console.log('📤 API: This is a POST request (CREATE diamond)');
       console.log('📤 API: Should create diamond in FastAPI backend');
     } else {
-      console.log('🚀 API: This should return your 500+ diamonds, not mock data');
+      console.log('🚀 API: This should return your diamonds, not mock data');
     }
     
     // Test connectivity first
@@ -117,6 +136,8 @@ export async function fetchApi<T>(
       hasAuth: !!headers.Authorization,
       hasBody: !!fetchOptions.body,
       headers: Object.keys(headers),
+      currentUserId,
+      requestedUserId
     });
     
     // Add timeout to main request too
