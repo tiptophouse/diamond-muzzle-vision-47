@@ -26,7 +26,6 @@ interface AuthState {
   error: string | null;
   isTelegramEnvironment: boolean;
   isAuthenticated: boolean;
-  accessDeniedReason: string | null;
 }
 
 const ADMIN_TELEGRAM_ID = 2138564172;
@@ -38,7 +37,6 @@ export function useSecureTelegramAuth(): AuthState {
     error: null,
     isTelegramEnvironment: false,
     isAuthenticated: false,
-    accessDeniedReason: null,
   });
 
   const mountedRef = useRef(true);
