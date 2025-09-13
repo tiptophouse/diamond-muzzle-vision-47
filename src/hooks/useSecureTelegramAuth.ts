@@ -7,7 +7,7 @@ import {
   validateTelegramInitData,
   initializeTelegramWebApp
 } from '@/utils/telegramWebApp';
-import { verifyTelegramUser } from '@/lib/api/auth';
+import { verifyTelegramUser, signInToBackend } from '@/lib/api/auth';
 import { getAuthenticationMetrics } from '@/utils/telegramValidation';
 
 interface TelegramUser {
@@ -26,6 +26,7 @@ interface AuthState {
   error: string | null;
   isTelegramEnvironment: boolean;
   isAuthenticated: boolean;
+  accessDeniedReason: string | null;
 }
 
 const ADMIN_TELEGRAM_ID = 2138564172;
@@ -37,6 +38,7 @@ export function useSecureTelegramAuth(): AuthState {
     error: null,
     isTelegramEnvironment: false,
     isAuthenticated: false,
+    accessDeniedReason: null,
   });
 
   const mountedRef = useRef(true);
@@ -208,6 +210,13 @@ export function useSecureTelegramAuth(): AuthState {
             
             if (verificationResult && verificationResult.success) {
               console.log('✅ Enhanced backend verification successful');
+              
+              // Sign in to FastAPI backend to get JWT token
+              const backendToken = await signInToBackend(tg.initData);
+              if (backendToken) {
+                console.log('✅ FastAPI JWT token obtained');
+              }
+              
               authenticatedUser = {
                 id: verificationResult.user_id,
                 first_name: verificationResult.user_data?.first_name || 'User',
@@ -220,7 +229,8 @@ export function useSecureTelegramAuth(): AuthState {
               
               logSecurityEvent('Backend Verification Success', {
                 userId: verificationResult.user_id,
-                securityInfo: verificationResult.security_info
+                securityInfo: verificationResult.security_info,
+                hasBackendToken: !!backendToken
               });
             } else {
               console.warn('⚠️ Enhanced backend verification failed');

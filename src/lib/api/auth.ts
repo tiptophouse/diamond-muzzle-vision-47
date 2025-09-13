@@ -30,7 +30,7 @@ export function getBackendAuthToken(): string | null {
   return backendAuthToken;
 }
 
-// Backend sign-in function
+// Backend sign-in function using FastAPI /api/v1/sign-in/ endpoint
 export async function signInToBackend(initData: string): Promise<string | null> {
   try {
     console.log('🔐 API: Signing in to backend with initData');
@@ -40,11 +40,15 @@ export async function signInToBackend(initData: string): Promise<string | null> 
       return null;
     }
 
+    // Get auth headers for the request
+    const authHeaders = await getAuthHeaders();
+
     const response = await fetch(`${API_BASE_URL}${apiEndpoints.signIn()}`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
+        ...authHeaders
       },
       mode: 'cors',
       body: JSON.stringify({
@@ -125,21 +129,26 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
 }
 
 export async function getAuthHeaders(): Promise<Record<string, string>> {
-  // Use backend auth token if available, otherwise fallback to secure config token
+  // Prioritize backend JWT token from FastAPI sign-in
   const authToken = backendAuthToken || await getBackendAccessToken();
   
   const headers: Record<string, string> = {
     "X-Client-Timestamp": Date.now().toString(),
-    "X-Security-Level": "strict"
+    "X-Security-Level": "strict",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
   };
   
   if (authToken) {
     headers["Authorization"] = `Bearer ${authToken}`;
+    console.log('🔐 API: Using JWT token for FastAPI authentication');
+  } else {
+    console.warn('⚠️ API: No JWT token available - FastAPI requests may fail');
   }
   
   if (verificationResult && verificationResult.success) {
-    const telegramAuth = `telegram_verified_${verificationResult.user_id}_${Date.now()}`;
-    headers["X-Telegram-Auth"] = telegramAuth;
+    headers["X-Telegram-User-ID"] = verificationResult.user_id.toString();
+    headers["X-Telegram-Verified"] = "true";
   }
   
   return headers;
