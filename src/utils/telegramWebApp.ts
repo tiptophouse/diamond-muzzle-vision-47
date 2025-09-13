@@ -1,42 +1,15 @@
 
-// Telegram WebApp utility functions for secure authentication
-export interface TelegramWebApp {
-  initData: string;
-  initDataUnsafe: any;
-  ready: () => void;
-  expand: () => void;
-  themeParams: any;
-  BackButton?: {
-    show: () => void;
-    hide: () => void;
-    onClick: (callback: () => void) => void;
-  };
-  close?: () => void;
-}
+import { telegramSDK } from '@/lib/telegram/telegramSDK';
 
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp: TelegramWebApp;
-    };
-  }
-}
+// Re-export the interface from the SDK for backward compatibility
+export type { TelegramWebAppInterface as TelegramWebApp, TelegramUser } from '@/lib/telegram/telegramSDK';
 
 export function isTelegramWebAppEnvironment(): boolean {
-  if (typeof window === 'undefined') return false;
-  
-  return !!(
-    window.Telegram?.WebApp && 
-    typeof window.Telegram.WebApp === 'object'
-  );
+  return telegramSDK.isTelegramWebAppEnvironment();
 }
 
-export function getTelegramWebApp(): TelegramWebApp | null {
-  if (!isTelegramWebAppEnvironment()) {
-    return null;
-  }
-  
-  return window.Telegram!.WebApp;
+export function getTelegramWebApp() {
+  return telegramSDK.getWebApp();
 }
 
 export function parseTelegramInitData(initData: string) {
@@ -91,29 +64,6 @@ export function validateTelegramInitData(initData: string): boolean {
   }
 }
 
-export async function initializeTelegramWebApp(): Promise<boolean> {
-  return new Promise((resolve) => {
-    if (!isTelegramWebAppEnvironment()) {
-      resolve(false);
-      return;
-    }
-    
-    try {
-      const tg = getTelegramWebApp();
-      if (tg) {
-        if (typeof tg.ready === 'function') {
-          tg.ready();
-        }
-        if (typeof tg.expand === 'function') {
-          tg.expand();
-        }
-        resolve(true);
-      } else {
-        resolve(false);
-      }
-    } catch (error) {
-      console.error('Failed to initialize Telegram WebApp:', error);
-      resolve(false);
-    }
-  });
+export function initializeTelegramWebApp(): Promise<boolean> {
+  return telegramSDK.initialize();
 }
