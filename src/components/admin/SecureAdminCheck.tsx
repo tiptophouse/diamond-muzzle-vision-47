@@ -1,22 +1,29 @@
 import { useState, useEffect } from 'react';
-import { useTelegramWebApp } from './useTelegramWebApp';
 import { isAdminTelegramId } from '@/lib/api/secureConfig';
 
-export function useIsAdmin() {
+interface SecureAdminCheckProps {
+  telegramId: number | undefined;
+  children: (isAdmin: boolean, loading: boolean) => React.ReactNode;
+}
+
+/**
+ * Secure admin verification component that checks against database
+ * instead of relying on hardcoded values
+ */
+export function SecureAdminCheck({ telegramId, children }: SecureAdminCheckProps) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const { user } = useTelegramWebApp();
 
   useEffect(() => {
     const checkAdminStatus = async () => {
-      if (!user?.id) {
+      if (!telegramId) {
         setIsAdmin(false);
         setLoading(false);
         return;
       }
 
       try {
-        const adminStatus = await isAdminTelegramId(user.id);
+        const adminStatus = await isAdminTelegramId(telegramId);
         setIsAdmin(adminStatus);
       } catch (error) {
         console.error('Error checking admin status:', error);
@@ -27,7 +34,7 @@ export function useIsAdmin() {
     };
 
     checkAdminStatus();
-  }, [user?.id]);
+  }, [telegramId]);
 
-  return { isAdmin, loading };
+  return <>{children(isAdmin, loading)}</>;
 }

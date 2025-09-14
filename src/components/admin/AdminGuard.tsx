@@ -4,7 +4,7 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { Shield, AlertTriangle, Settings, Crown, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { getAdminTelegramId } from '@/lib/api/secureConfig';
+import { isAdminTelegramId } from '@/lib/api/secureConfig';
 
 interface AdminGuardProps {
   children: ReactNode;
@@ -13,24 +13,30 @@ interface AdminGuardProps {
 export function AdminGuard({ children }: AdminGuardProps) {
   const { user, isLoading, isTelegramEnvironment, isAuthenticated } = useTelegramAuth();
   const navigate = useNavigate();
-  const [adminTelegramId, setAdminTelegramId] = useState<number | null>(null);
+  const [isAdminUser, setIsAdminUser] = useState(false);
   const [isLoadingAdmin, setIsLoadingAdmin] = useState(true);
 
   useEffect(() => {
-    const loadAdminConfig = async () => {
+    const checkAdminStatus = async () => {
+      if (!user?.id) {
+        setIsAdminUser(false);
+        setIsLoadingAdmin(false);
+        return;
+      }
+
       try {
-        const adminId = await getAdminTelegramId();
-        setAdminTelegramId(adminId);
+        const adminStatus = await isAdminTelegramId(user.id);
+        setIsAdminUser(adminStatus);
       } catch (error) {
-        console.error('❌ Failed to load admin configuration:', error);
-        setAdminTelegramId(2138564172); // fallback
+        console.error('❌ Failed to check admin status:', error);
+        setIsAdminUser(false);
       } finally {
         setIsLoadingAdmin(false);
       }
     };
 
-    loadAdminConfig();
-  }, []);
+    checkAdminStatus();
+  }, [user?.id]);
 
   if (isLoading || isLoadingAdmin) {
     return (
@@ -70,10 +76,8 @@ export function AdminGuard({ children }: AdminGuardProps) {
     );
   }
 
-  // Enhanced admin verification using secure configuration
-  const isAdmin = adminTelegramId && user.id === adminTelegramId;
-  
-  if (!isAdmin) {
+  // Secure admin verification using database validation
+  if (!isAdminUser) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
