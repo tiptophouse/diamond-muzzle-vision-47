@@ -30,27 +30,21 @@ export function getBackendAuthToken(): string | null {
   return backendAuthToken;
 }
 
-// Backend sign-in function using FastAPI /api/v1/sign-in/ endpoint
+// Backend sign-in function
 export async function signInToBackend(initData: string): Promise<string | null> {
   try {
-    console.log('🔐 FastAPI: Signing in to backend with initData');
-    console.log('🔐 FastAPI: Using endpoint:', `${API_BASE_URL}${apiEndpoints.signIn()}`);
+    console.log('🔐 API: Signing in to backend with initData');
     
     if (!initData || initData.length === 0) {
-      console.error('🔐 FastAPI: No initData provided for sign-in');
+      console.error('🔐 API: No initData provided for sign-in');
       return null;
     }
-
-    console.log('🔐 FastAPI: InitData length:', initData.length);
-    console.log('🔐 FastAPI: Making sign-in request to FastAPI...');
 
     const response = await fetch(`${API_BASE_URL}${apiEndpoints.signIn()}`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Origin': window.location.origin,
-        'X-Client-Platform': 'telegram-web-app'
       },
       mode: 'cors',
       body: JSON.stringify({
@@ -58,56 +52,24 @@ export async function signInToBackend(initData: string): Promise<string | null> 
       }),
     });
 
-    console.log('🔐 FastAPI: Sign-in response status:', response.status);
-    console.log('🔐 FastAPI: Response headers:', Object.fromEntries(response.headers.entries()));
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ FastAPI: Sign-in failed with status', response.status);
-      console.error('❌ FastAPI: Error response:', errorText);
-      
-      // Try to parse error details
-      try {
-        const errorData = JSON.parse(errorText);
-        console.error('❌ FastAPI: Parsed error:', errorData);
-      } catch {
-        console.error('❌ FastAPI: Raw error text:', errorText);
-      }
-      
+      console.error('🔐 API: Backend sign-in failed:', response.status, errorText);
       return null;
     }
 
     const result = await response.json();
-    console.log('✅ FastAPI: Sign-in response received:', result);
     
     if (result.token) {
       backendAuthToken = result.token;
-      console.log('✅ FastAPI: JWT token obtained and stored successfully');
-      console.log('✅ FastAPI: Token length:', result.token.length);
-      
-      // Verify token is valid JWT format
-      const tokenParts = result.token.split('.');
-      if (tokenParts.length === 3) {
-        console.log('✅ FastAPI: JWT token format is valid (3 parts)');
-      } else {
-        console.warn('⚠️ FastAPI: JWT token format might be invalid');
-      }
-      
+      console.log('✅ API: Backend sign-in successful, token stored');
       return result.token;
     } else {
-      console.error('❌ FastAPI: No token in sign-in response');
-      console.error('❌ FastAPI: Response structure:', Object.keys(result));
+      console.error('🔐 API: No token in sign-in response');
       return null;
     }
   } catch (error) {
-    console.error('❌ FastAPI: Sign-in network error:', error);
-    if (error instanceof Error) {
-      console.error('❌ FastAPI: Error details:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack?.substring(0, 200)
-      });
-    }
+    console.error('❌ API: Backend sign-in error:', error);
     return null;
   }
 }
@@ -163,26 +125,21 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
 }
 
 export async function getAuthHeaders(): Promise<Record<string, string>> {
-  // Prioritize backend JWT token from FastAPI sign-in
+  // Use backend auth token if available, otherwise fallback to secure config token
   const authToken = backendAuthToken || await getBackendAccessToken();
   
   const headers: Record<string, string> = {
     "X-Client-Timestamp": Date.now().toString(),
-    "X-Security-Level": "strict",
-    "Accept": "application/json",
-    "Content-Type": "application/json"
+    "X-Security-Level": "strict"
   };
   
   if (authToken) {
     headers["Authorization"] = `Bearer ${authToken}`;
-    console.log('🔐 API: Using JWT token for FastAPI authentication');
-  } else {
-    console.warn('⚠️ API: No JWT token available - FastAPI requests may fail');
   }
   
   if (verificationResult && verificationResult.success) {
-    headers["X-Telegram-User-ID"] = verificationResult.user_id.toString();
-    headers["X-Telegram-Verified"] = "true";
+    const telegramAuth = `telegram_verified_${verificationResult.user_id}_${Date.now()}`;
+    headers["X-Telegram-Auth"] = telegramAuth;
   }
   
   return headers;

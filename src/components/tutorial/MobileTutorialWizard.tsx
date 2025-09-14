@@ -89,7 +89,7 @@ export function MobileTutorialWizard({ isOpen, onClose, language, onLanguageChan
         ? (language === 'he' ? 'סיום הסיור' : 'Finish Tour')
         : (language === 'he' ? 'הבא' : 'Next');
       
-      mainButton.show(buttonText, handleNext);
+      mainButton.show(buttonText, handleNext, '#007AFF');
     }
 
     return () => {
