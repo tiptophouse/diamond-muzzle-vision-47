@@ -153,46 +153,35 @@ export default function InsightsPage() {
                 <InteractiveAnalyticsChart diamonds={diamonds} />
               )}
 
+              {/* Enhanced Insights from Real Data */}
+              {diamonds.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-right" dir="rtl">ניתוח מתקדם של התיק</CardTitle>
-                    <CardDescription className="text-right" dir="rtl">מבוסס על נתוני המלאי האמיתיים שלך</CardDescription>
+                    <CardTitle>ניתוח מתקדם של התיק</CardTitle>
+                    <CardDescription>מבוסס על נתוני המלאי האמיתיים שלך</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                       <div className="text-center">
-                        <p className="text-2xl md:text-3xl font-bold text-primary">
-                          {enhancedInsights.totalCount.toLocaleString()}
-                        </p>
-                        <p className="text-sm text-muted-foreground" dir="rtl">סך אבנים</p>
+                        <p className="text-2xl font-bold">{enhancedInsights.totalCount}</p>
+                        <p className="text-sm text-muted-foreground">סך אבנים</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-xl md:text-2xl font-bold text-green-600">
-                          ${enhancedInsights.totalValue.toLocaleString('en-US', {
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0
-                          })}
-                        </p>
-                        <p className="text-sm text-muted-foreground" dir="rtl">ערך כולל</p>
+                        <p className="text-2xl font-bold">${enhancedInsights.totalValue.toLocaleString()}</p>
+                        <p className="text-sm text-muted-foreground">ערך כולל</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-xl md:text-2xl font-bold text-blue-600">
-                          ${enhancedInsights.averagePrice.toLocaleString('en-US', {
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0
-                          })}
-                        </p>
-                        <p className="text-sm text-muted-foreground" dir="rtl">מחיר ממוצע</p>
+                        <p className="text-2xl font-bold">${enhancedInsights.averagePrice.toLocaleString()}</p>
+                        <p className="text-sm text-muted-foreground">מחיר ממוצע</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-2xl md:text-3xl font-bold text-purple-600">
-                          {enhancedInsights.topShapes.length}
-                        </p>
-                        <p className="text-sm text-muted-foreground" dir="rtl">סוגי צורות</p>
+                        <p className="text-2xl font-bold">{enhancedInsights.topShapes.length}</p>
+                        <p className="text-sm text-muted-foreground">סוגי צורות</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="profitability" className="space-y-6 pb-8">

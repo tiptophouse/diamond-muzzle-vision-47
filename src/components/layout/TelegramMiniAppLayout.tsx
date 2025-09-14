@@ -4,7 +4,6 @@ import { Home, Package, Store, MessageCircle, BarChart3 } from 'lucide-react';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 import { cn } from '@/lib/utils';
 import { FloatingNotificationButton } from '@/components/notifications/FloatingNotificationButton';
-import { FloatingAdminButton } from '@/components/admin/FloatingAdminButton';
 
 interface TelegramMiniAppLayoutProps {
   children: React.ReactNode;
@@ -97,9 +96,8 @@ export function TelegramMiniAppLayout({ children }: TelegramMiniAppLayoutProps) 
         </div>
       </nav>
 
-      {/* Floating Buttons */}
+      {/* Floating Notification Button */}
       <FloatingNotificationButton className="bottom-20 right-4 md:bottom-24 md:right-6" />
-      <FloatingAdminButton className="bottom-20 right-20 md:bottom-24 md:right-24" />
     </div>
   );
 }
