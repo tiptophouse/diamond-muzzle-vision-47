@@ -9,7 +9,12 @@ export function useInventoryProcessor() {
   const { toast } = useToast();
   
   const processInventoryData = (rawData: any[]): Diamond[] => {
-    const userId = getCurrentUserId() || 2138564172;
+    const userId = getCurrentUserId();
+    
+    if (!userId) {
+      console.error('❌ INVENTORY PROCESSOR: No authenticated user ID available');
+      return [];
+    }
     
     console.log('🔍 INVENTORY PROCESSOR: Converting', rawData.length, 'items for display');
     

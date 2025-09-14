@@ -9,7 +9,21 @@ export interface FetchInventoryResult {
 }
 
 export async function fetchInventoryData(): Promise<FetchInventoryResult> {
-  const userId = getCurrentUserId() || 2138564172;
+  const userId = getCurrentUserId();
+  
+  if (!userId) {
+    console.error('❌ INVENTORY SERVICE: No authenticated user ID available');
+    return {
+      error: 'Authentication required. Please authenticate with Telegram to view your inventory.',
+      debugInfo: {
+        step: 'ERROR: No authenticated user',
+        userId: null,
+        timestamp: new Date().toISOString(),
+        dataSource: 'none',
+        recommendation: 'User must authenticate with Telegram first'
+      }
+    };
+  }
   
   console.log('🔍 INVENTORY SERVICE: Fetching data for user:', userId);
   
