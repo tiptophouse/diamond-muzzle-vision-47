@@ -16,7 +16,6 @@ import { useLocation } from 'react-router-dom';
 import { Home, Upload, Sparkle, Settings, Users, LogOut, TrendingUp, Package, MessageCircle, BarChart3, Bell, User, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEnhancedUserTracking } from '@/hooks/useEnhancedUserTracking';
-import { FloatingNotificationButton } from '@/components/notifications/FloatingNotificationButton';
 
 interface TelegramLayoutProps {
   children: React.ReactNode
@@ -180,9 +179,6 @@ export function TelegramLayout({ children }: TelegramLayoutProps) {
       <main className="flex-1 p-4">
         {children}
       </main>
-
-      {/* Floating Notification Button */}
-      <FloatingNotificationButton className="bottom-4 right-4 md:bottom-6 md:right-20" />
     </div>
   )
 }
