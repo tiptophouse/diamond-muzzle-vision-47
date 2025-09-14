@@ -17,6 +17,8 @@ import { Home, Upload, Sparkle, Settings, Users, LogOut, TrendingUp, Package, Me
 import { Button } from "@/components/ui/button";
 import { useEnhancedUserTracking } from '@/hooks/useEnhancedUserTracking';
 import { FloatingNotificationButton } from '@/components/notifications/FloatingNotificationButton';
+import { FloatingAdminButton } from '@/components/admin/FloatingAdminButton';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 interface TelegramLayoutProps {
   children: React.ReactNode
@@ -24,11 +26,20 @@ interface TelegramLayoutProps {
 
 export function TelegramLayout({ children }: TelegramLayoutProps) {
   const { user, isAuthenticated, isTelegramEnvironment } = useTelegramAuth()
+  const { isAdmin, loading: adminLoading } = useIsAdmin()
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   // Initialize enhanced tracking
   const { analytics } = useEnhancedUserTracking();
+
+  // Debug admin status
+  console.log('🔍 TelegramLayout Admin Debug:', {
+    isAdmin,
+    adminLoading,
+    userId: user?.id,
+    userFirstName: user?.first_name
+  });
 
   useEffect(() => {
     setIsMenuOpen(false);
@@ -92,6 +103,15 @@ export function TelegramLayout({ children }: TelegramLayoutProps) {
       badge: analytics?.last24Hours.pageViews ? `${analytics.last24Hours.pageViews}` : undefined
     }
   ];
+
+  // Add admin navigation item if user is admin
+  if (isAdmin && !adminLoading) {
+    navigationItems.push({
+      to: '/admin',
+      icon: Users,
+      label: 'Admin Panel'
+    });
+  }
 
   return (
     <div className="flex h-screen bg-gray-100 text-gray-700">
@@ -181,8 +201,9 @@ export function TelegramLayout({ children }: TelegramLayoutProps) {
         {children}
       </main>
 
-      {/* Floating Notification Button */}
+      {/* Floating Buttons */}
       <FloatingNotificationButton className="bottom-4 right-4 md:bottom-6 md:right-20" />
+      <FloatingAdminButton className="bottom-4 right-20 md:bottom-6 md:right-40" />
     </div>
   )
 }

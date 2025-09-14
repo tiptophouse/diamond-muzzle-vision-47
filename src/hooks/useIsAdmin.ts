@@ -10,16 +10,19 @@ export function useIsAdmin() {
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (!user?.id) {
+        console.log('🔍 useIsAdmin: No user ID found');
         setIsAdmin(false);
         setLoading(false);
         return;
       }
 
       try {
+        console.log('🔍 useIsAdmin: Checking admin status for Telegram ID:', user.id);
         const adminStatus = await isAdminTelegramId(user.id);
+        console.log('🔍 useIsAdmin: Admin status result:', adminStatus);
         setIsAdmin(adminStatus);
       } catch (error) {
-        console.error('Error checking admin status:', error);
+        console.error('❌ useIsAdmin: Error checking admin status:', error);
         setIsAdmin(false);
       } finally {
         setLoading(false);
