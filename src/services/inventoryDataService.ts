@@ -1,6 +1,7 @@
-
 import { api, apiEndpoints, getCurrentUserId } from "@/lib/api";
 import { fetchMockInventoryData } from "./mockInventoryService";
+import { telegramInventoryCache } from "./telegramInventoryCache";
+import { telegramPerformanceMonitor } from "./telegramPerformanceMonitor";
 
 export interface FetchInventoryResult {
   data?: any[];
@@ -11,6 +12,8 @@ export interface FetchInventoryResult {
 export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   const userId = getCurrentUserId() || 2138564172;
   
+  // Start performance monitoring
+  telegramPerformanceMonitor.startTimer('inventory_fetch');
   console.log('🔍 INVENTORY SERVICE: Fetching data for user:', userId);
   
   const debugInfo = { 
@@ -19,14 +22,51 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     timestamp: new Date().toISOString(),
     dataSource: 'unknown'
   };
+
+  // Try Telegram cache first for performance
+  try {
+    const cachedData = await telegramInventoryCache.getCachedInventory(userId);
+    if (cachedData && cachedData.length > 0) {
+      console.log('✅ INVENTORY SERVICE: Retrieved from Telegram cache:', cachedData.length, 'stones');
+      telegramPerformanceMonitor.recordMetric('cache_hit', 1);
+      telegramPerformanceMonitor.endTimer('inventory_fetch', { dataSource: 'telegram_cache' });
+      
+      return {
+        data: cachedData,
+        debugInfo: {
+          ...debugInfo,
+          step: 'SUCCESS: Telegram cache hit',
+          totalDiamonds: cachedData.length,
+          dataSource: 'telegram_cache'
+        }
+      };
+    }
+    telegramPerformanceMonitor.recordMetric('cache_miss', 1);
+  } catch (cacheError) {
+    console.warn('⚠️ INVENTORY SERVICE: Telegram cache error:', cacheError);
+  }
   
   try {
     // First, try to get data from FastAPI backend using get_all_stones
     console.log('🔍 INVENTORY SERVICE: Attempting FastAPI connection...');
+    
+    // Add timeout and error boundary around API call
     const endpoint = apiEndpoints.getAllStones(userId);
     console.log('🔍 INVENTORY SERVICE: Using endpoint:', endpoint);
     
-    const result = await api.get(endpoint);
+    // Wrap API call with comprehensive error handling
+    let result;
+    try {
+      result = await Promise.race([
+        api.get(endpoint),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('API timeout')), 10000)
+        )
+      ]) as any;
+    } catch (apiError) {
+      console.error('❌ INVENTORY SERVICE: FastAPI call failed:', apiError);
+      throw apiError;
+    }
     
     if (result.data && !result.error) {
       let dataArray: any[] = [];
@@ -50,9 +90,25 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       }
       
       if (dataArray && dataArray.length > 0) {
-        console.log('✅ INVENTORY SERVICE: Successfully fetched', dataArray.length, 'diamonds from FastAPI');
+        const loadTime = telegramPerformanceMonitor.endTimer('inventory_fetch', { 
+          dataSource: 'fastapi',
+          totalDiamonds: dataArray.length 
+        });
+        console.log('✅ INVENTORY SERVICE: Successfully fetched', dataArray.length, 'diamonds from FastAPI in', loadTime, 'ms');
         
-        // PHASE 4: Critical debugging - Log EXACTLY what FastAPI is sending
+        // Cache the data for future use (especially important for large datasets)
+        try {
+          if (dataArray.length > 5000) {
+            console.log('📱 INVENTORY SERVICE: Optimizing storage for large dataset...');
+            await telegramInventoryCache.optimizeForLargeDataset(userId, dataArray);
+          } else {
+            await telegramInventoryCache.cacheInventory(userId, dataArray);
+          }
+        } catch (cacheError) {
+          console.warn('⚠️ INVENTORY SERVICE: Failed to cache data:', cacheError);
+        }
+        
+        // Log EXACTLY what FastAPI is sending for debugging
         console.log('🚨 FASTAPI RESPONSE ANALYSIS:', {
           totalCount: dataArray.length,
           firstItem: {
@@ -142,17 +198,16 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       }
     }
     
-    // Final fallback to mock data
-    console.log('🔄 INVENTORY SERVICE: No real data found, using mock data');
-    const mockResult = await fetchMockInventoryData();
+    // Return error instead of mock data - clients should not see mock data
+    console.log('❌ INVENTORY SERVICE: No real data found - returning error instead of mock data');
     
     return {
-      ...mockResult,
+      error: 'No inventory data available. Please ensure your FastAPI backend is running and accessible.',
       debugInfo: {
         ...debugInfo,
-        ...mockResult.debugInfo,
-        step: 'FALLBACK: Using mock data',
-        dataSource: 'mock'
+        step: 'ERROR: No real data available',
+        dataSource: 'none',
+        recommendation: 'Check FastAPI backend connectivity'
       }
     };
     
@@ -184,16 +239,15 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       }
     }
     
-    // Ultimate fallback to mock data
-    const mockResult = await fetchMockInventoryData();
+    // Return error instead of mock data - clients should not see mock data
     return {
-      ...mockResult,
+      error: error instanceof Error ? error.message : String(error),
       debugInfo: {
         ...debugInfo,
-        ...mockResult.debugInfo,
-        step: 'ULTIMATE FALLBACK: Mock data after all failures',
+        step: 'ERROR: All data sources failed',
         error: error instanceof Error ? error.message : String(error),
-        dataSource: 'mock_emergency'
+        dataSource: 'none',
+        recommendation: 'Check authentication and FastAPI backend connectivity'
       }
     };
   }
