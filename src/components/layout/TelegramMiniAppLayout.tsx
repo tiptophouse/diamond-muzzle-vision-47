@@ -3,6 +3,7 @@ import { useLocation, Link } from 'react-router-dom';
 import { Home, Package, Store, MessageCircle, BarChart3 } from 'lucide-react';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 import { cn } from '@/lib/utils';
+import { FloatingNotificationButton } from '@/components/notifications/FloatingNotificationButton';
 
 interface TelegramMiniAppLayoutProps {
   children: React.ReactNode;
@@ -94,6 +95,9 @@ export function TelegramMiniAppLayout({ children }: TelegramMiniAppLayoutProps) 
           })}
         </div>
       </nav>
+
+      {/* Floating Notification Button */}
+      <FloatingNotificationButton className="bottom-24 right-6" />
     </div>
   );
 }
