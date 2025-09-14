@@ -13,7 +13,7 @@ import { ArrowLeft, Share2, ExternalLink, Camera, Award, Gem, Palette, Eye, Mess
 import { V360Viewer } from "@/components/store/V360Viewer";
 import { Gem360Viewer } from "@/components/store/Gem360Viewer";
 import { UniversalImageHandler } from "@/components/store/UniversalImageHandler";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 function DiamondDetailPage() {

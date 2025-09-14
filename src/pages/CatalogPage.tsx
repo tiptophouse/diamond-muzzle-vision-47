@@ -18,6 +18,7 @@ import { TelegramStoreFilters } from "@/components/store/TelegramStoreFilters";
 import { TelegramSortSheet } from "@/components/store/TelegramSortSheet";
 import { getTelegramWebApp } from "@/utils/telegramWebApp";
 import { InventoryPagination } from "@/components/inventory/InventoryPagination";
+import { preloadDiamondImages, cleanupImageMemory } from "@/utils/imagePreloader";
 
 // Telegram memory management
 const tg = getTelegramWebApp();
@@ -40,7 +41,7 @@ function CatalogPage() {
   });
   const navigate = useNavigate();
 
-  // Telegram memory optimization
+  // Telegram memory optimization with image cleanup
   useEffect(() => {
     if (tg) {
       try {
@@ -57,6 +58,12 @@ function CatalogPage() {
         console.log('Cache cleanup skipped');
       }
     }
+    
+    // Cleanup image memory on unmount
+    return () => {
+      console.log('🧹 CATALOG: Cleaning up image memory on unmount');
+      cleanupImageMemory();
+    };
   }, []);
 
   // Enhanced media priority detection - CRITICAL PRIORITY ORDER: 3D > Image > Info Only
@@ -136,8 +143,30 @@ function CatalogPage() {
       }))
     });
     
+    // Preload images for optimal performance
+    if (diamonds.length > 0) {
+      preloadDiamondImages(diamonds, 0);
+    }
+    
     return diamonds;
   }, [filteredDiamonds, sortBy, getMediaPriority]);
+
+  // Preload next batch when scrolling - after sortedDiamonds is defined
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      // When user scrolls to 80% of the page, preload next images
+      if (scrollPosition > documentHeight * 0.8 && sortedDiamonds.length > 0) {
+        const currentIndex = Math.floor(scrollPosition / 300); // Approximate card height
+        preloadDiamondImages(sortedDiamonds, currentIndex);
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [sortedDiamonds]);
 
   // Pagination - page size and slicing
   const totalPages = useMemo(() => Math.max(1, Math.ceil(sortedDiamonds.length / ITEMS_PER_PAGE)), [sortedDiamonds.length]);

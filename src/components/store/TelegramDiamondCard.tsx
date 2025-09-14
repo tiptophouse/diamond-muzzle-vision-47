@@ -1,16 +1,17 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { MessageCircle, Eye, Share2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Diamond } from "@/components/inventory/InventoryTable";
-import { OptimizedDiamondImage } from "./OptimizedDiamondImage";
+import { LazyImage } from "@/components/ui/LazyImage";
 import { UniversalImageHandler } from "./UniversalImageHandler";
 import { TelegramShareButton } from "./TelegramShareButton";
 import { LimitedGroupShareButton } from "./LimitedGroupShareButton";
 import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useNavigate } from "react-router-dom";
+import { imagePreloader } from "@/utils/imagePreloader";
 
 interface TelegramDiamondCardProps {
   diamond: Diamond;
@@ -26,6 +27,15 @@ export function TelegramDiamondCard({ diamond, index, onViewDetails }: TelegramD
 
   // Priority loading for first 6 cards
   const isPriority = index < 6;
+  
+  // Preload next images for smooth scrolling
+  useEffect(() => {
+    if (isPriority && diamond.gem360Url) {
+      imagePreloader.preload(diamond.gem360Url, { priority: 'high', format: 'auto' });
+    } else if (diamond.imageUrl) {
+      imagePreloader.preload(diamond.imageUrl, { priority: isPriority ? 'high' : 'low', format: 'auto' });
+    }
+  }, [diamond.gem360Url, diamond.imageUrl, isPriority]);
 
   const handleViewDetails = useCallback(() => {
     hapticFeedback.impact('light');
@@ -97,14 +107,19 @@ View details: ${window.location.origin}/diamond/${diamond.stockNumber}`;
             className="w-full h-full"
           />
         ) : (
-          <OptimizedDiamondImage
-            imageUrl={diamond.imageUrl}
-            gem360Url={diamond.gem360Url}
-            stockNumber={diamond.stockNumber}
-            shape={diamond.shape}
+          <LazyImage
+            src={diamond.imageUrl}
+            alt={`${diamond.carat}ct ${diamond.shape} Diamond - Stock #${diamond.stockNumber}`}
             className="w-full h-full"
             priority={isPriority}
+            quality={isPriority ? 90 : 75}
+            fallbacks={[
+              `https://miniapp.mazalbot.com/api/diamond-image/${diamond.stockNumber}`,
+              `https://via.placeholder.com/400x400/f3f4f6/6b7280?text=${diamond.shape}`
+            ]}
             onLoad={() => setImageLoaded(true)}
+            rootMargin="100px"
+            threshold={0.1}
           />
         )}
         
