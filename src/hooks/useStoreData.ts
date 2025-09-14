@@ -73,38 +73,53 @@ export function useStoreData() {
       item.interactiveView,   
     ];
     
+    const is360Candidate = (url: string) => (
+      url.includes('segoma.com') ||         // HIGH PRIORITY: Segoma detection
+      url.includes('v.aspx') ||             // HIGH PRIORITY: Segoma viewer pattern
+      url.includes('type=view') ||          // HIGH PRIORITY: Segoma parameter
+      /segoma\.com.*v\.aspx/.test(url) || // HIGH PRIORITY: Segoma regex pattern
+      url.includes('my360.fab') ||          
+      url.includes('my360.sela') ||         
+      url.includes('v360.in') ||            
+      url.includes('diamondview.aspx') ||   
+      url.includes('gem360') ||             
+      url.includes('sarine') ||             
+      url.includes('360') ||                
+      url.includes('3d') ||                 
+      url.includes('rotate') ||             
+      url.includes('.html') ||              
+      url.match(/DAN\d+-\d+[A-Z]?\.jpg$/i) !== null
+    );
+    
+    const normalize = (raw: string) => {
+      let processed = raw.trim();
+      if (!processed.startsWith('http://') && !processed.startsWith('https://')) {
+        processed = `https://${processed}`;
+      }
+      return processed;
+    };
+    
+    // 1) Check known fields first (fast path)
     for (const field of potential360Fields) {
       if (field && typeof field === 'string' && field.trim()) {
         const url = field.trim();
-        
-        // ENHANCED detection patterns for 360° formats with PRIORITY Segoma support
-        const is360Url = 
-          url.includes('segoma.com') ||         // HIGH PRIORITY: Segoma detection
-          url.includes('v.aspx') ||             // HIGH PRIORITY: Segoma viewer pattern
-          url.includes('type=view') ||          // HIGH PRIORITY: Segoma parameter
-          /segoma\.com.*v\.aspx/.test(url) ||   // HIGH PRIORITY: Segoma regex pattern
-          url.includes('my360.fab') ||          
-          url.includes('my360.sela') ||         
-          url.includes('v360.in') ||            
-          url.includes('diamondview.aspx') ||   
-          url.includes('gem360') ||             
-          url.includes('sarine') ||             
-          url.includes('360') ||                
-          url.includes('3d') ||                 
-          url.includes('rotate') ||             
-          url.includes('.html') ||              
-          url.match(/DAN\d+-\d+[A-Z]?\.jpg$/i);
-
-        if (is360Url) {
-          let processedUrl = url;
-          if (!processedUrl.startsWith('http://') && !processedUrl.startsWith('https://')) {
-            processedUrl = `https://${processedUrl}`;
-          }
-          
-          return processedUrl;
+        if (is360Candidate(url)) {
+          return normalize(url);
         }
       }
     }
+
+    // 2) Fallback: scan ALL string fields in the record (handles unknown CSV headers)
+    for (const [key, value] of Object.entries(item)) {
+      if (typeof value === 'string' && value.trim()) {
+        const url = value.trim();
+        if (is360Candidate(url)) {
+          console.log('✅ Fallback 360° URL detected from arbitrary field', { key, url });
+          return normalize(url);
+        }
+      }
+    }
+
     return undefined;
   }, []);
 
