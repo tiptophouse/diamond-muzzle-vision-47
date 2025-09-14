@@ -1,73 +1,12 @@
 import { toast } from "@/components/ui/use-toast";
 import { API_BASE_URL, getCurrentUserId } from './config';
 import { getAuthHeaders } from './auth';
-import { getBackendAccessToken } from './secureConfig';
 
 interface ApiResponse<T> {
   data?: T;
   error?: string;
 }
 
-// Fast connectivity cache to avoid repeated tests
-let connectivityCache: { isConnected: boolean; lastChecked: number } | null = null;
-const CONNECTIVITY_CACHE_DURATION = 30000; // 30 seconds
-
-// Fast backend connectivity test with timeout
-async function testBackendConnectivity(): Promise<boolean> {
-  // Check cache first
-  if (connectivityCache && (Date.now() - connectivityCache.lastChecked < CONNECTIVITY_CACHE_DURATION)) {
-    console.log('🔍 API: Using cached connectivity status:', connectivityCache.isConnected);
-    return connectivityCache.isConnected;
-  }
-
-  try {
-    console.log('🔍 API: Testing FastAPI backend connectivity to:', API_BASE_URL);
-    
-    const backendToken = await getBackendAccessToken();
-    if (!backendToken) {
-      console.error('❌ API: No secure backend access token available for connectivity test');
-      connectivityCache = { isConnected: false, lastChecked: Date.now() };
-      return false;
-    }
-    
-    // Fast connectivity test with 2 second timeout
-    const testUrl = `${API_BASE_URL}/`;
-    console.log('🔍 API: Testing root endpoint with 2s timeout:', testUrl);
-    
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
-    
-    const response = await fetch(testUrl, {
-      method: 'GET',
-      mode: 'cors',
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${backendToken}`,
-      },
-      signal: controller.signal,
-    });
-    
-    clearTimeout(timeoutId);
-    
-    const isConnected = response.ok || response.status === 404;
-    console.log('🔍 API: Fast connectivity test result:', isConnected);
-    
-    // Cache the result
-    connectivityCache = { isConnected, lastChecked: Date.now() };
-    
-    if (isConnected) {
-      console.log('✅ API: FastAPI backend is reachable - your diamonds should be accessible');
-    } else {
-      console.log('❌ API: FastAPI backend not reachable - status:', response.status);
-    }
-    
-    return isConnected;
-  } catch (error) {
-    console.error('❌ API: Fast connectivity test failed:', error);
-    connectivityCache = { isConnected: false, lastChecked: Date.now() };
-    return false;
-  }
-}
 
 export async function fetchApi<T>(
   endpoint: string,
@@ -80,22 +19,13 @@ export async function fetchApi<T>(
     console.log('🚀 API: Method:', options.method || 'GET');
     console.log('🚀 API: Current user ID:', getCurrentUserId(), 'type:', typeof getCurrentUserId());
     
-    if (options.method === 'POST') {
-      console.log('📤 API: This is a POST request (CREATE diamond)');
-      console.log('📤 API: Should create diamond in FastAPI backend');
-    } else {
-      console.log('🚀 API: This should return your 500+ diamonds, not mock data');
-    }
-    
-    // Test connectivity first
-    const isBackendReachable = await testBackendConnectivity();
-    if (!isBackendReachable) {
-      const errorMsg = 'FastAPI backend server is not reachable. Please check if the server is running at ' + API_BASE_URL;
-      console.error('❌ API: Backend unreachable - this forces fallback to 5 mock diamonds');
+    const authHeaders = await getAuthHeaders();
+    if (!authHeaders.Authorization) {
+      const errorMsg = 'No JWT token available - user must be authenticated first';
+      console.error('❌ API: Missing JWT token');
       throw new Error(errorMsg);
     }
     
-    const authHeaders = await getAuthHeaders();
     let headers: Record<string, string> = {
       "Content-Type": "application/json",
       "Accept": "application/json",
@@ -111,17 +41,16 @@ export async function fetchApi<T>(
       credentials: 'omit',
     };
     
-    console.log('🚀 API: Fetch options for real data:', {
+    console.log('🚀 API: Request with JWT authentication:', {
       url,
       method: fetchOptions.method || 'GET',
       hasAuth: !!headers.Authorization,
       hasBody: !!fetchOptions.body,
-      headers: Object.keys(headers),
     });
     
-    // Add timeout to main request too
+    // Add timeout to main request
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for main request
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
     
     const response = await fetch(url, {
       ...fetchOptions,
@@ -181,32 +110,38 @@ export async function fetchApi<T>(
     return { data: data as T };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error('❌ API: FastAPI request error - this is why you see 5 mock diamonds instead of 500 real ones:', errorMessage);
+    console.error('❌ API: FastAPI request error:', errorMessage);
     console.error('❌ API: Error details:', error);
     
     // Show specific toast messages for different error types
-    if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+    if (errorMessage.includes('No JWT token')) {
       toast({
-        title: "🌐 Connection Error",
-        description: `Cannot reach FastAPI server at ${API_BASE_URL}. Your 500 diamonds are not accessible. Please check if the server is running.`,
+        title: "🔐 Authentication Required",
+        description: "Please authenticate with Telegram to access your diamonds.",
         variant: "destructive",
       });
-    } else if (errorMessage.includes('not reachable')) {
+    } else if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
       toast({
-        title: "🔌 FastAPI Server Offline",
-        description: `The FastAPI backend at ${API_BASE_URL} is not responding. This is why you see 5 mock diamonds instead of your 500 real diamonds.`,
+        title: "🌐 Connection Error",
+        description: `Cannot reach FastAPI server. Please check your connection.`,
         variant: "destructive",
       });
     } else if (errorMessage.includes('CORS')) {
       toast({
         title: "🚫 CORS Issue",
-        description: "FastAPI server CORS configuration issue. Please check server settings to access your real diamond data.",
+        description: "Server configuration issue. Please try again later.",
+        variant: "destructive",
+      });
+    } else if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
+      toast({
+        title: "🔐 Authentication Failed",
+        description: "Your session has expired. Please refresh the app.",
         variant: "destructive",
       });
     } else {
       toast({
-        title: "❌ FastAPI Error",
-        description: `FastAPI request failed: ${errorMessage}. Falling back to mock data (5 diamonds).`,
+        title: "❌ API Error",
+        description: `Request failed: ${errorMessage}`,
         variant: "destructive",
       });
     }

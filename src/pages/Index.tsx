@@ -1,19 +1,22 @@
-
 import { useEffect, useState, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useUserTracking } from '@/hooks/useUserTracking';
 import { getAdminTelegramId } from '@/lib/api/secureConfig';
 import { Diamond } from 'lucide-react';
-
 const Index = () => {
-  const { user, isAuthenticated, isLoading } = useTelegramAuth();
-  const { trackPageVisit } = useUserTracking();
+  const {
+    user,
+    isAuthenticated,
+    isLoading
+  } = useTelegramAuth();
+  const {
+    trackPageVisit
+  } = useUserTracking();
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
   const [adminTelegramId, setAdminTelegramId] = useState<number | null>(null);
   const [loadingConfig, setLoadingConfig] = useState(true);
   const redirectHandledRef = useRef(false);
-
   useEffect(() => {
     const loadAdminId = async () => {
       try {
@@ -28,24 +31,12 @@ const Index = () => {
     };
     loadAdminId();
   }, []);
-
   useEffect(() => {
     // Add debug info for troubleshooting
-    const info = [
-      `Loading: ${isLoading}`,
-      `Config Loading: ${loadingConfig}`,
-      `Authenticated: ${isAuthenticated}`,
-      `User ID: ${user?.id || 'none'}`,
-      `User Name: ${user?.first_name || 'none'}`,
-      `Admin ID: ${adminTelegramId || 'loading...'}`,
-      `Telegram Env: ${!!window.Telegram?.WebApp}`,
-      `URL: ${window.location.href}`,
-      `Redirect Handled: ${redirectHandledRef.current}`
-    ];
+    const info = [`Loading: ${isLoading}`, `Config Loading: ${loadingConfig}`, `Authenticated: ${isAuthenticated}`, `User ID: ${user?.id || 'none'}`, `User Name: ${user?.first_name || 'none'}`, `Admin ID: ${adminTelegramId || 'loading...'}`, `Telegram Env: ${!!window.Telegram?.WebApp}`, `URL: ${window.location.href}`, `Redirect Handled: ${redirectHandledRef.current}`];
     setDebugInfo(info);
     console.log('🔍 Index Debug Info:', info);
   }, [user, isAuthenticated, isLoading, adminTelegramId, loadingConfig]);
-
   useEffect(() => {
     if (!isLoading && !loadingConfig && !redirectHandledRef.current) {
       trackPageVisit('/', 'BrilliantBot - Home');
@@ -54,42 +45,46 @@ const Index = () => {
 
   // Show loading state while auth is initializing
   if (isLoading || loadingConfig) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--gradient-surface)' }}>
-        <div className="text-center space-y-8 p-8 max-w-md glass-card animate-fade-in">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-24 w-24 border-4 border-primary/20 border-t-primary mx-auto"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-premium">
-                <Diamond className="text-white h-8 w-8" />
-              </div>
+    return <div className="min-h-screen flex items-center justify-center px-6">
+        <div className="text-center space-y-12 max-w-2xl animate-fade-in">
+          {/* Clean, minimal loader */}
+          <div className="relative mx-auto w-24 h-24">
+            <div className="absolute inset-0 rounded-full border-2 border-muted animate-pulse"></div>
+            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary animate-spin"></div>
+            <div className="absolute inset-4 rounded-full bg-primary/10 flex items-center justify-center">
+              <Diamond className="w-8 h-8 text-primary" />
             </div>
           </div>
-          <div className="space-y-4">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary-glow to-primary-dark bg-clip-text text-transparent">
+          
+          {/* Large, clean typography like 21.dev */}
+          <div className="space-y-8">
+            <h1 className="text-6xl md:text-7xl font-bold text-foreground tracking-tight leading-none">
               BrilliantBot
             </h1>
-            <p className="text-lg text-muted-foreground font-medium leading-relaxed">
-              {loadingConfig ? 'Loading configuration...' : 'Initializing your AI diamond assistant...'}
+            
+            <p className="text-xl md:text-2xl text-muted-foreground font-normal leading-relaxed max-w-xl mx-auto">
+              {loadingConfig ? 'Loading configuration...' : 'Equipping diamond traders with AI-powered tools for tomorrow\'s market'}
             </p>
-            <div className="flex items-center justify-center gap-3 text-sm text-muted-foreground">
-              <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
-              <span className="font-medium">Secure • Fast • Reliable</span>
+            
+            {/* Minimal status indicator */}
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+              <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse" style={{
+              animationDelay: '0.2s'
+            }}></div>
+              <div className="w-1.5 h-1.5 rounded-full bg-primary/30 animate-pulse" style={{
+              animationDelay: '0.4s'
+            }}></div>
             </div>
           </div>
           
           {/* Debug info in development */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="text-xs text-left bg-gray-100 p-3 rounded mt-4">
-              <div className="font-semibold mb-2">Debug Info:</div>
-              {debugInfo.map((info, i) => (
-                <div key={i} className="text-gray-600">{info}</div>
-              ))}
-            </div>
-          )}
+          {process.env.NODE_ENV === 'development' && <div className="text-xs text-left bg-card p-4 rounded-lg border shadow-soft max-w-md mx-auto">
+              <div className="font-semibold mb-2 text-foreground">Debug Info:</div>
+              {debugInfo.map((info, i) => <div key={i} className="text-muted-foreground">{info}</div>)}
+            </div>}
         </div>
-      </div>
-    );
+      </div>;
   }
 
   // Prevent multiple redirects
@@ -104,47 +99,46 @@ const Index = () => {
     return <Navigate to="/admin" replace />;
   }
 
-  // For regular users, redirect to upload page for immediate diamond upload
+  // For regular users, redirect to dashboard to see their data
   if (isAuthenticated && user) {
-    console.log('✅ Regular user detected - redirecting to upload page');
+    console.log('✅ Regular user detected - redirecting to dashboard');
     redirectHandledRef.current = true;
-    return <Navigate to="/upload" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   // Fallback for unauthenticated users
-  return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--gradient-surface)' }}>
-      <div className="text-center space-y-8 p-8 max-w-md glass-card">
-        <div className="space-y-6">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center mx-auto shadow-premium">
-            <Diamond className="text-white h-12 w-12" />
-          </div>
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-primary-glow to-primary-dark bg-clip-text text-transparent">
-            BrilliantBot
-          </h1>
-          <p className="text-xl text-muted-foreground font-medium">Loading your personalized experience...</p>
+  return <div className="min-h-screen flex items-center justify-center px-6">
+      <div className="text-center space-y-12 max-w-2xl">
+        {/* Clean icon */}
+        <div className="mx-auto w-20 h-20 rounded-2xl bg-card border shadow-soft flex items-center justify-center">
+          <Diamond className="w-10 h-10 text-primary" />
         </div>
         
-        {/* Emergency manual refresh button */}
-        <button
-          onClick={() => window.location.reload()}
-          className="premium-button"
-        >
-          Manual Refresh
-        </button>
+        {/* Large, clean typography */}
+        <div className="space-y-8">
+          <h1 className="text-6xl md:text-7xl font-bold text-foreground tracking-tight leading-none">
+            BrilliantBot
+          </h1>
+          <p className="text-xl md:text-2xl text-muted-foreground font-normal leading-relaxed">
+            Loading your personalized diamond trading experience
+          </p>
+        </div>
+        
+        {/* Information for unauthenticated users */}
+        <div className="flex flex-col gap-4">
+          <div className="bg-muted/50 rounded-xl p-4 text-sm text-muted-foreground">
+            <p className="font-medium mb-2">🔐 Secure Access Required</p>
+            <p>This app works exclusively within Telegram Mini App environment for security.</p>
+          </div>
+          
+          <button onClick={() => window.location.reload()} className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-muted-foreground bg-muted rounded-xl hover:bg-muted/90 transition-all duration-200 shadow-soft hover:shadow-medium hover:-translate-y-0.5">
+            🔄 Retry Authentication
+          </button>
+        </div>
         
         {/* Debug info in development */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="text-xs text-left bg-gray-100 p-3 rounded mt-4">
-            <div className="font-semibold mb-2">Debug Info:</div>
-            {debugInfo.map((info, i) => (
-              <div key={i} className="text-gray-600">{info}</div>
-            ))}
-          </div>
-        )}
+        {process.env.NODE_ENV === 'development'}
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;

@@ -55,8 +55,8 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-12 max-w-4xl">
+    <div className="min-h-screen">
+      <div className="container mx-auto px-6 py-16 max-w-4xl">
         {/* Registration Required Banner */}
         {isRegistrationRequired && (
           <Card className="mb-8 border-green-200 bg-green-50">
@@ -82,82 +82,90 @@ export default function HomePage() {
           </Card>
         )}
 
-        {/* Hero Section */}
-        <div className="text-center mb-12">
-          <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/20">
-            <div className="bg-blue-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-              <Gem className="h-10 w-10 text-blue-600" />
-            </div>
+        {/* Hero Section - Clean 21.dev style */}
+        <div className="text-center mb-20">
+          {/* Clean icon */}
+          <div className="mx-auto w-20 h-20 rounded-2xl bg-card border shadow-soft flex items-center justify-center mb-12">
+            <Gem className="w-10 h-10 text-primary" />
+          </div>
+          
+          {/* Large, prominent headline */}
+          <h1 className="text-6xl md:text-7xl font-bold text-foreground tracking-tight leading-none mb-8">
+            Equipping diamond traders with the tools they need today to build tomorrow's portfolio. 💎
+          </h1>
+          
+          <p className="text-xl md:text-2xl text-muted-foreground font-normal leading-relaxed max-w-3xl mx-auto mb-12">
+            Professional diamond inventory management and sharing platform
+          </p>
+          
+          {/* Clean buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button 
+              onClick={handleGetStarted}
+              size="lg" 
+              className="px-8 py-4 text-lg font-semibold rounded-xl shadow-soft hover:shadow-medium hover:-translate-y-0.5 transition-all duration-200"
+            >
+              <ArrowRight className="mr-2 h-5 w-5" />
+              {isAuthenticated ? 'Go to Inventory' : 'Start Mini App'}
+            </Button>
             
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Diamond Manager
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              Professional diamond inventory management and sharing platform for Telegram Mini App
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                onClick={handleGetStarted}
-                size="lg" 
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
-              >
-                <ArrowRight className="mr-2 h-5 w-5" />
-                {isAuthenticated ? 'Go to Inventory' : 'Start Mini App'}
-              </Button>
-              
-              <Button 
-                onClick={handleViewStore}
-                variant="outline" 
-                size="lg"
-                className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-3 text-lg"
-              >
-                <Users className="mr-2 h-5 w-5" />
-                View Store
-              </Button>
-            </div>
+            <Button 
+              onClick={handleViewStore}
+              variant="outline" 
+              size="lg"
+              className="px-8 py-4 text-lg font-semibold rounded-xl border-2 hover:bg-accent/50 transition-all duration-200"
+            >
+              <Users className="mr-2 h-5 w-5" />
+              View Store
+            </Button>
           </div>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-3 gap-6 mb-12">
-          <Card className="bg-white/80 backdrop-blur-sm border-white/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-blue-700">
-                <Gem className="h-5 w-5" />
+        {/* Features Grid - Minimal cards */}
+        <div className="grid md:grid-cols-3 gap-8 mb-20">
+          <Card className="border shadow-soft hover:shadow-medium transition-all duration-200">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-foreground text-lg font-semibold">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Gem className="h-5 w-5 text-primary" />
+                </div>
                 Inventory Management
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600">
+              <p className="text-muted-foreground leading-relaxed">
                 Manage your diamond inventory with advanced filtering, search, and organization tools.
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm border-white/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-700">
-                <Users className="h-5 w-5" />
+          <Card className="border shadow-soft hover:shadow-medium transition-all duration-200">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-foreground text-lg font-semibold">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Users className="h-5 w-5 text-primary" />
+                </div>
                 Secure Sharing
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600">
+              <p className="text-muted-foreground leading-relaxed">
                 Share diamonds securely with registered users only. Track engagement and interactions.
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm border-white/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-purple-700">
-                <ArrowRight className="h-5 w-5" />
+          <Card className="border shadow-soft hover:shadow-medium transition-all duration-200">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-foreground text-lg font-semibold">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <ArrowRight className="h-5 w-5 text-primary" />
+                </div>
                 Analytics
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600">
+              <p className="text-muted-foreground leading-relaxed">
                 Get insights on diamond views, user engagement, and sharing performance.
               </p>
             </CardContent>

@@ -6,6 +6,7 @@ import { useBlockedUsers } from '@/hooks/useBlockedUsers';
 import { UserDetailsModal } from './UserDetailsModal';
 import { AddUserModal } from './AddUserModal';
 import { EditUserModal } from './EditUserModal';
+import { SendMessageDialog } from './SendMessageDialog';
 import { AdminHeader } from './AdminHeader';
 import { AdminStatsGrid } from './AdminStatsGrid';
 import { AdminUserTable } from './AdminUserTable';
@@ -28,6 +29,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
   const [showUserDetails, setShowUserDetails] = useState(false);
   const [showAddUser, setShowAddUser] = useState(false);
   const [showEditUser, setShowEditUser] = useState(false);
+  const [showSendMessage, setShowSendMessage] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -71,6 +73,11 @@ export function AdminUserManager({}: AdminUserManagerProps) {
   const handleEditUser = (user: any) => {
     setEditingUser(user);
     setShowEditUser(true);
+  };
+
+  const handleSendMessage = (user: any) => {
+    setSelectedUser(user);
+    setShowSendMessage(true);
   };
 
   const handleDeleteUser = async (user: any) => {
@@ -302,6 +309,7 @@ export function AdminUserManager({}: AdminUserManagerProps) {
               onEditUser={handleEditUser}
               onToggleBlock={handleToggleBlock}
               onDeleteUser={handleDeleteUser}
+              onSendMessage={handleSendMessage}
             />
           </TabsContent>
 
@@ -345,6 +353,14 @@ export function AdminUserManager({}: AdminUserManagerProps) {
             user={editingUser}
             isOpen={showEditUser}
             onClose={() => setShowEditUser(false)}
+          />
+        )}
+
+        {showSendMessage && selectedUser && (
+          <SendMessageDialog
+            user={selectedUser}
+            open={showSendMessage}
+            onOpenChange={setShowSendMessage}
           />
         )}
       </div>

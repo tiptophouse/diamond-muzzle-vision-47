@@ -1,8 +1,8 @@
-
 import { useToast } from '@/hooks/use-toast';
-import { api, apiEndpoints } from '@/lib/api';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { Diamond } from '@/components/inventory/InventoryTable';
+import { deleteDiamond as deleteDiamondAPI } from '@/api/diamonds';
+import { useInventoryDataSync } from './useInventoryDataSync';
 
 interface UseDeleteDiamondProps {
   onSuccess?: () => void;
@@ -13,6 +13,7 @@ interface UseDeleteDiamondProps {
 export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDiamondToState }: UseDeleteDiamondProps) {
   const { toast } = useToast();
   const { user } = useTelegramAuth();
+  const { triggerInventoryChange } = useInventoryDataSync();
 
   const deleteDiamond = async (diamondId: string, diamondData?: Diamond) => {
     if (!user?.id) {
@@ -26,81 +27,77 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
 
     console.log('🗑️ DELETE: Starting delete for diamond:', diamondId);
     
-    // Use the actual FastAPI diamond ID if available
-    const fastApiDiamondId = diamondData?.diamondId || diamondId;
-    console.log('🗑️ DELETE: Using FastAPI diamond ID:', fastApiDiamondId);
+    const stockNumber = diamondData?.stockNumber || diamondId;
+    const localDiamondId = diamondData?.id || diamondId;
 
     // Optimistically remove from UI
     if (removeDiamondFromState) {
-      removeDiamondFromState(diamondId);
+      removeDiamondFromState(localDiamondId);
     }
 
     try {
-      // Try FastAPI first - DELETE /api/v1/delete_stone/{diamond_id}?user_id={user_id}&diamond_id={diamond_id}
-      try {
-        const endpoint = apiEndpoints.deleteDiamond(fastApiDiamondId.toString(), user.id);
-        console.log('🗑️ DELETE: Using endpoint:', endpoint);
-        
-        const response = await api.delete(endpoint);
-        
-        if (response.error) {
-          throw new Error(response.error);
-        }
-
-        console.log('✅ DELETE: FastAPI response:', response.data);
+      // Use the new API function with proper error handling
+      const response = await deleteDiamondAPI(stockNumber, user.id);
+      
+      if (response.success) {
+        console.log('✅ DELETE: Diamond deleted successfully:', response);
 
         toast({
-          title: "✅ Diamond Deleted Successfully",
-          description: "Diamond has been removed from your inventory, dashboard, and store",
+          title: "Diamond deleted successfully",
+          description: `Diamond ${stockNumber} has been removed from your inventory.`,
         });
+
+        // Trigger inventory refresh for real-time updates
+        triggerInventoryChange();
         
         if (onSuccess) onSuccess();
         return true;
-        
-      } catch (apiError) {
-        console.error('❌ DELETE: FastAPI delete failed:', apiError);
-        
-        // Show user-friendly error message about API connection
-        toast({
-          variant: "destructive",
-          title: "⚠️ API Connection Issue",
-          description: "Unable to connect to server. Diamond will be removed locally until connection is restored.",
-        });
-        
-        // Fallback to localStorage with user notification
-        console.log('🔄 DELETE: Falling back to localStorage...');
-        const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
-        const filteredData = existingData.filter((item: any) => item.id !== diamondId);
-        
-        if (filteredData.length < existingData.length) {
-          localStorage.setItem('diamond_inventory', JSON.stringify(filteredData));
-          
-          toast({
-            title: "✅ Diamond Deleted Locally",
-            description: "Diamond has been removed offline and will sync when server connection is restored",
-          });
-          
-          if (onSuccess) onSuccess();
-          return true;
-        } else {
-          throw new Error('Diamond not found in local or remote storage');
-        }
+      } else {
+        throw new Error(response.message || 'Failed to delete diamond');
       }
       
-    } catch (error) {
-      console.error('❌ DELETE: Unexpected error:', error);
+    } catch (error: any) {
+      console.error('❌ DELETE: Failed to delete diamond:', error);
       
       // Restore diamond to UI on error
       if (restoreDiamondToState && diamondData) {
         restoreDiamondToState(diamondData);
       }
+
+      // Show error message with fallback to localStorage
+      const isNetworkError = error.message?.includes('fetch') || error.name === 'TypeError';
       
-      const errorMessage = error instanceof Error ? error.message : "Failed to delete diamond. Please try again.";
+      if (isNetworkError) {
+        // Network error - try localStorage fallback
+        console.log('🔄 DELETE: Network error, falling back to localStorage...');
+        try {
+          const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
+          const filteredData = existingData.filter((item: any) => 
+            item.id !== localDiamondId && 
+            item.stockNumber !== stockNumber
+          );
+          
+          if (filteredData.length < existingData.length) {
+            localStorage.setItem('diamond_inventory', JSON.stringify(filteredData));
+            
+            toast({
+              title: "Diamond removed locally",
+              description: "Diamond removed offline. Will sync when connection is restored.",
+            });
+            
+            triggerInventoryChange();
+            if (onSuccess) onSuccess();
+            return true;
+          }
+        } catch (localError) {
+          console.error('❌ DELETE: LocalStorage fallback failed:', localError);
+        }
+      }
       
       toast({
         variant: "destructive",
-        title: "❌ Delete Failed",
-        description: "Failed to delete diamond. Please try again.",
+        title: "Failed to delete diamond",
+        description: error.message || "Could not delete diamond. Please try again.",
       });
       
       return false;
