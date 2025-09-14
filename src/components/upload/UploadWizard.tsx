@@ -73,7 +73,7 @@ export function UploadWizard({
       mainButton.hide(); // Hide for method selection and form filling
     } else if (currentStep === 3) {
       const buttonText = language === 'he' ? 'סיום' : 'Finish';
-      mainButton.show(buttonText, handleFinish, '#28a745');
+      mainButton.show(buttonText, handleFinish);
     } else {
       mainButton.hide();
     }
