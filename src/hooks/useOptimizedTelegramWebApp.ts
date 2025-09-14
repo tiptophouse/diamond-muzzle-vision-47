@@ -37,8 +37,8 @@ export function useOptimizedTelegramWebApp() {
   }, [isTelegramEnvironment, isInitialized, theme]);
 
   // Optimized methods using the SDK
-  const showMainButton = useCallback((text: string, callback: () => void) => {
-    return mainButton.show(text, callback);
+  const showMainButton = useCallback((text: string, callback: () => void, color?: string) => {
+    return mainButton.show(text, callback, color);
   }, [mainButton]);
 
   const hideMainButton = useCallback(() => {
