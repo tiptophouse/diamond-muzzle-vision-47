@@ -182,7 +182,7 @@ export function TelegramLayout({ children }: TelegramLayoutProps) {
       </main>
 
       {/* Floating Notification Button */}
-      <FloatingNotificationButton className="bottom-6 right-20" />
+      <FloatingNotificationButton className="bottom-4 right-4 md:bottom-6 md:right-20" />
     </div>
   )
 }

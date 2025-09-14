@@ -6,7 +6,7 @@ import { GroupNotificationCard } from '@/components/notifications/GroupNotificat
 import { BusinessNotificationCard } from '@/components/notifications/BusinessNotificationCard';
 import { IncomingChatbotMessages } from '@/components/notifications/IncomingChatbotMessages';
 import { TelegramNotificationsList } from '@/components/notifications/TelegramNotificationsList';
-import { MobileTelegramHeatMap } from '@/components/heatmap/MobileTelegramHeatMap';
+
 import { useFastApiNotifications } from '@/hooks/useFastApiNotifications';
 import { useTelegramNotificationBridge } from '@/hooks/useTelegramNotificationBridge';
 import { useDiamondSearch } from '@/hooks/useDiamondSearch';
@@ -77,14 +77,10 @@ const NotificationsPage = () => {
     <TelegramLayout>
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         <Tabs defaultValue="enhanced" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="enhanced" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
               Enhanced
-            </TabsTrigger>
-            <TabsTrigger value="heatmap" className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Heat Map
             </TabsTrigger>
             <TabsTrigger value="outgoing" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
@@ -109,9 +105,6 @@ const NotificationsPage = () => {
             />
           </TabsContent>
 
-          <TabsContent value="heatmap" className="p-0">
-            <MobileTelegramHeatMap />
-          </TabsContent>
 
           <TabsContent value="outgoing" className="space-y-6">
             {/* Header */}

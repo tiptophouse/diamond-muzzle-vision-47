@@ -26,9 +26,10 @@ export function FloatingNotificationButton({ className }: FloatingNotificationBu
     <div className={cn("fixed z-50", className)}>
       <Button
         onClick={handleClick}
+        size="lg"
         className={cn(
           // Base styling with Telegram theme integration
-          "relative h-14 w-14 rounded-full shadow-lg hover:shadow-xl",
+          "relative h-12 w-12 md:h-14 md:w-14 rounded-full shadow-lg hover:shadow-xl",
           "transition-all duration-200 hover:scale-105 active:scale-95",
           // Use Telegram button colors or fallback to primary
           "bg-[var(--tg-theme-button-color,hsl(var(--primary)))]",
@@ -37,21 +38,23 @@ export function FloatingNotificationButton({ className }: FloatingNotificationBu
           // Border for better definition
           "border border-white/20",
           // Animation for new notifications
-          unreadCount > 0 && "animate-pulse"
+          unreadCount > 0 && "animate-pulse",
+          // Mobile optimizations
+          "touch-manipulation select-none"
         )}
         style={{
           backgroundColor: themeParams.button_color || undefined,
           color: themeParams.button_text_color || undefined,
         }}
       >
-        <Bell size={22} className="drop-shadow-sm" />
+        <Bell size={18} className="md:w-[22px] md:h-[22px] drop-shadow-sm" />
         
         {/* Unread count badge */}
         {unreadCount > 0 && (
           <div className={cn(
-            "absolute -top-1 -right-1 min-w-[20px] h-5 px-1",
+            "absolute -top-1 -right-1 min-w-[18px] h-[18px] md:min-w-[20px] md:h-5 px-1",
             "bg-destructive text-destructive-foreground",
-            "rounded-full text-xs font-bold",
+            "rounded-full text-[10px] md:text-xs font-bold",
             "flex items-center justify-center",
             "border-2 border-background",
             "animate-scale-in"
