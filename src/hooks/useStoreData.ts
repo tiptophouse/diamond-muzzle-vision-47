@@ -161,6 +161,17 @@ export function useStoreData() {
         // PHASE 1: Detect 360° URLs first (highest priority)
         const final360Url = detect360Url(item);
         
+        // ENHANCED DEBUGGING for 360° detection
+        if (item.stock_number === '105604' || String(item.id).includes('105604')) {
+          console.log('🔍 DIAMOND 105604 DEBUG:', {
+            stock_number: item.stock_number,
+            '3D Link': item['3D Link'],
+            segoma_url: item.segoma_url,
+            final360Url: final360Url,
+            allFields: Object.keys(item)
+          });
+        }
+        
         // PHASE 2: Process regular image URLs (excluding 360° URLs)
         let finalImageUrl = undefined;
         const imageFields = [
@@ -301,13 +312,23 @@ export function useStoreData() {
         return;
       }
 
-      if (result.data && result.data.length > 0) {
-        const transformedDiamonds = transformData(result.data);
-        
-        dataCache = {
-          data: transformedDiamonds,
-          timestamp: Date.now()
-        };
+        if (result.data && result.data.length > 0) {
+          const transformedDiamonds = transformData(result.data);
+          
+          // ENHANCED DEBUGGING for transformed data
+          console.log('🔍 STORE DATA TRANSFORMED:', {
+            totalDiamonds: transformedDiamonds.length,
+            diamondsWithImages: transformedDiamonds.filter(d => d.imageUrl || d.gem360Url).length,
+            segomaDiamonds: transformedDiamonds.filter(d => 
+              d.gem360Url?.includes('segoma.com') || d.imageUrl?.includes('segoma.com')
+            ),
+            user2084882603Diamonds: transformedDiamonds.filter(d => d.stockNumber === '105604')
+          });
+          
+          dataCache = {
+            data: transformedDiamonds,
+            timestamp: Date.now()
+          };
 
         setDiamonds(transformedDiamonds);
       } else {

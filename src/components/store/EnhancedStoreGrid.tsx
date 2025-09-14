@@ -20,6 +20,19 @@ export function EnhancedStoreGrid({ diamonds, loading, error, onUpdate }: Enhanc
     const withImages = diamonds.filter(d => d.imageUrl && d.imageUrl.trim() && !d.gem360Url).length;
     const infoOnly = diamonds.length - with3D - withImages;
     
+    // ENHANCED DEBUGGING for media stats
+    console.log('🔍 MEDIA STATS DEBUG:', {
+      totalDiamonds: diamonds.length,
+      with3D: with3D,
+      withImages: withImages,
+      infoOnly: infoOnly,
+      diamondsWithGem360Url: diamonds.map(d => ({
+        stock: d.stockNumber,
+        gem360Url: d.gem360Url,
+        imageUrl: d.imageUrl
+      }))
+    });
+    
     return { with3D, withImages, infoOnly, total: diamonds.length };
   }, [diamonds]);
 

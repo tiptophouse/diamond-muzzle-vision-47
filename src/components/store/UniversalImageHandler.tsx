@@ -23,6 +23,16 @@ export function UniversalImageHandler({
 }: UniversalImageHandlerProps) {
   const [isFixing, setIsFixing] = useState(false);
 
+  // ENHANCED DEBUGGING for user 2084882603
+  console.log('🔍 UNIVERSAL IMAGE HANDLER DEBUG:', {
+    stockNumber,
+    imageUrl, 
+    imageUrlType: typeof imageUrl,
+    imageUrlLength: imageUrl?.length,
+    isSegoma: imageUrl?.includes('segoma.com'),
+    isVAspx: imageUrl?.includes('v.aspx')
+  });
+
   // Enhanced detection for all client storage formats with improved Segoma support
   const detectProvider = (url: string) => {
     const cleanUrl = url.toLowerCase().trim();
@@ -65,6 +75,14 @@ export function UniversalImageHandler({
   };
 
   const detection = detectProvider(imageUrl);
+
+  // ENHANCED DEBUGGING for detection results
+  console.log('🔍 PROVIDER DETECTION RESULT:', {
+    stockNumber,
+    imageUrl,
+    detection,
+    isSegoma: imageUrl?.includes('segoma.com')
+  });
 
   const attemptAutoFix = () => {
     setIsFixing(true);
