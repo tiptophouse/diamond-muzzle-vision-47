@@ -2,13 +2,14 @@ import React, { useCallback, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Diamond, TrendingUp, Users, Sparkles, Copy, Share, MessageCircle, Search, User, Phone, Bot } from 'lucide-react';
+import { Diamond, TrendingUp, Users, Sparkles, Copy, Share, MessageCircle, Search, User, Phone, Bot, Send } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
 import { useInventoryQuickSearch } from '@/hooks/useInventoryQuickSearch';
 import { useInventoryData } from '@/hooks/useInventoryData';
+import { useTelegramMessaging } from '@/hooks/useTelegramMessaging';
 import { QuickReplyWithGPT } from './QuickReplyWithGPT';
 
 interface DiamondMatch {
@@ -57,6 +58,7 @@ export function TelegramDiamondNotificationCard({
   const { toast } = useToast();
   const { allDiamonds } = useInventoryData();
   const { searchByCriteria, createQuickReplyButtons } = useInventoryQuickSearch(allDiamonds);
+  const { sendDiamondInquiry, sendQuickReply, isSending } = useTelegramMessaging();
   
   const isDiamondMatch = notification.type === 'diamond_match';
   const metadata = notification.data;
@@ -127,6 +129,13 @@ export function TelegramDiamondNotificationCard({
     });
   }, [impactOccurred, toast]);
 
+  const handleSendDiamondMessage = useCallback(async (diamond: DiamondMatch, userId: number) => {
+    const success = await sendDiamondInquiry(userId, diamond);
+    if (success) {
+      handleMarkAsRead();
+    }
+  }, [sendDiamondInquiry, handleMarkAsRead]);
+
   const handleQuickSearch = useCallback((criteria: any) => {
     impactOccurred('light');
     const result = searchByCriteria(criteria);
@@ -189,25 +198,25 @@ export function TelegramDiamondNotificationCard({
         transition-all duration-300 border backdrop-blur-sm
         ${notification.read ? 'opacity-75' : 'shadow-lg'} 
         ${getTypeGradient(notification.type)}
-        touch-manipulation
+        touch-manipulation mx-auto max-w-2xl
       `}
     >
       {/* Header */}
-      <div className="p-4 pb-2">
+      <div className="p-3 md:p-4 pb-2">
         <div className="flex items-start justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-background/50 rounded-full">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="p-1.5 md:p-2 bg-background/50 rounded-full flex-shrink-0">
               {getTypeIcon(notification.type)}
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-sm leading-tight">{notification.title}</h3>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-xs md:text-sm leading-tight truncate">{notification.title}</h3>
               <p className="text-xs text-muted-foreground">
                 {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
               </p>
             </div>
           </div>
           {!notification.read && (
-            <Badge variant="secondary" className="bg-primary/20 text-primary text-xs px-2 py-1">
+            <Badge variant="secondary" className="bg-primary/20 text-primary text-xs px-2 py-1 flex-shrink-0">
               New
             </Badge>
           )}
@@ -223,29 +232,42 @@ export function TelegramDiamondNotificationCard({
         {/* User Contact Info */}
         {getUserInfo().userId && (
           <div className="bg-background/60 backdrop-blur-sm rounded-lg p-3 border border-border/50">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="font-medium text-sm">{getUserInfo().name}</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-medium text-sm truncate">{getUserInfo().name}</p>
                   <p className="text-xs text-muted-foreground">ID: {getUserInfo().userId}</p>
                 </div>
               </div>
-              <div className="flex gap-1">
+              <div className="flex gap-1.5 justify-end">
                 <Button
                   size="sm"
                   onClick={() => handleDirectContact(getUserInfo().userId!)}
-                  className="h-8 px-3"
+                  className="h-8 px-2 md:px-3"
+                  variant="outline"
                 >
                   <MessageCircle className="h-3 w-3 mr-1" />
-                  צ'אט
+                  <span className="hidden sm:inline">צ'אט</span>
                 </Button>
+                {topMatch && (
+                  <Button
+                    size="sm"
+                    onClick={() => handleSendDiamondMessage(topMatch, getUserInfo().userId!)}
+                    className="h-8 px-2 md:px-3"
+                    disabled={isSending}
+                  >
+                    <Send className="h-3 w-3 mr-1" />
+                    <span className="hidden sm:inline">שלח הודעה</span>
+                    <span className="sm:hidden">שלח</span>
+                  </Button>
+                )}
                 {getUserInfo().phone && (
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => window.open(`tel:${getUserInfo().phone}`, '_blank')}
-                    className="h-8 px-3"
+                    className="h-8 px-2 md:px-3"
                   >
                     <Phone className="h-3 w-3" />
                   </Button>
@@ -274,7 +296,7 @@ export function TelegramDiamondNotificationCard({
                   )}
                 </div>
                 
-                <div className="grid grid-cols-2 gap-2 mb-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
                   <div className="text-center bg-background/50 rounded p-2">
                     <p className="text-xs text-muted-foreground">Shape & Weight</p>
                     <p className="font-semibold text-sm">{topMatch.shape} {topMatch.weight}ct</p>
@@ -299,33 +321,33 @@ export function TelegramDiamondNotificationCard({
                 </div>
 
                 {/* Quick Actions */}
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => handleCopyDiamond(topMatch)}
-                    className="flex-1 h-8 text-xs"
+                    className="flex-1 sm:flex-none h-8 text-xs px-2 md:px-3"
                   >
                     <Copy className="h-3 w-3 mr-1" />
-                    Copy
+                    <span className="hidden sm:inline">Copy</span>
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => handleShareDiamond(topMatch)}
-                    className="flex-1 h-8 text-xs"
+                    className="flex-1 sm:flex-none h-8 text-xs px-2 md:px-3"
                   >
                     <Share className="h-3 w-3 mr-1" />
-                    Share
+                    <span className="hidden sm:inline">Share</span>
                   </Button>
                   {(metadata?.customer_info || metadata?.searcher_info) && (
                     <Button
                       size="sm"
                       onClick={() => handleContactCustomer(topMatch)}
-                      className="flex-1 h-8 text-xs"
+                      className="flex-1 sm:flex-none h-8 text-xs px-2 md:px-3"
                     >
                       <MessageCircle className="h-3 w-3 mr-1" />
-                      Contact
+                      <span className="hidden sm:inline">Contact</span>
                     </Button>
                   )}
                   {/* Quick Reply with GPT Button */}
@@ -336,10 +358,11 @@ export function TelegramDiamondNotificationCard({
                       setShowQuickReply(!showQuickReply);
                       impactOccurred('light');
                     }}
-                    className="flex-1 h-8 text-xs"
+                    className="flex-1 sm:flex-none h-8 text-xs px-2 md:px-3"
                   >
                     <Bot className="h-3 w-3 mr-1" />
-                    Quick Reply
+                    <span className="hidden sm:inline">Quick Reply</span>
+                    <span className="sm:hidden">Reply</span>
                   </Button>
                 </div>
               </div>

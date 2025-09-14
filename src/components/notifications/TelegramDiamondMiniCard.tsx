@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Diamond, Copy, Share, Eye, Sparkles } from 'lucide-react';
+import { Diamond, Copy, Share, Eye, Sparkles, MessageCircle } from 'lucide-react';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { useToast } from '@/hooks/use-toast';
@@ -160,36 +160,42 @@ export function TelegramDiamondMiniCard({
       <div className={compact ? "flex gap-1" : "space-y-2"}>
         {compact ? (
           <>
-            <Button size="sm" variant="outline" onClick={handleViewDetails} className="flex-1 h-7 text-xs">
+            <Button size="sm" variant="outline" onClick={handleViewDetails} className="flex-1 h-7 text-xs touch-target">
               <Eye className="h-3 w-3" />
             </Button>
-            <Button size="sm" variant="outline" onClick={handleCopy} className="flex-1 h-7 text-xs">
+            <Button size="sm" variant="outline" onClick={handleCopy} className="flex-1 h-7 text-xs touch-target">
               <Copy className="h-3 w-3" />
             </Button>
-            <Button size="sm" variant="outline" onClick={handleShare} className="flex-1 h-7 text-xs">
+            <Button size="sm" variant="outline" onClick={handleShare} className="flex-1 h-7 text-xs touch-target">
               <Share className="h-3 w-3" />
             </Button>
+            {onContact && (
+              <Button size="sm" onClick={handleContact} className="flex-1 h-7 text-xs touch-target">
+                <MessageCircle className="h-3 w-3" />
+              </Button>
+            )}
           </>
         ) : (
           <>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={handleCopy} className="flex-1 h-8 text-xs">
+              <Button size="sm" variant="outline" onClick={handleCopy} className="flex-1 h-9 text-xs touch-target">
                 <Copy className="h-3 w-3 mr-1" />
                 Copy
               </Button>
-              <Button size="sm" variant="outline" onClick={handleShare} className="flex-1 h-8 text-xs">
+              <Button size="sm" variant="outline" onClick={handleShare} className="flex-1 h-9 text-xs touch-target">
                 <Share className="h-3 w-3 mr-1" />
                 Share
               </Button>
             </div>
             
-            <Button size="sm" onClick={handleViewDetails} className="w-full h-8 text-xs">
+            <Button size="sm" onClick={handleViewDetails} className="w-full h-9 text-xs touch-target">
               <Eye className="h-3 w-3 mr-1" />
               View Details
             </Button>
             
             {onContact && (
-              <Button size="sm" variant="secondary" onClick={handleContact} className="w-full h-8 text-xs">
+              <Button size="sm" variant="secondary" onClick={handleContact} className="w-full h-9 text-xs touch-target">
+                <MessageCircle className="h-3 w-3 mr-1" />
                 Contact for This Diamond
               </Button>
             )}
