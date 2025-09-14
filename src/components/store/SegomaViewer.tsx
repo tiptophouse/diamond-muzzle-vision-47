@@ -18,10 +18,27 @@ export function SegomaViewer({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
+  // Enhanced debugging for Segoma URLs - User 2084882603 focus
+  console.log('🔍 SEGOMA VIEWER DEBUG:', {
+    stockNumber,
+    segomaUrl,
+    isInline,
+    isSegomaUrl: segomaUrl?.includes('segoma.com'),
+    hasVAspx: segomaUrl?.includes('v.aspx'),
+    hasTypeView: segomaUrl?.includes('type=view')
+  });
+
   useEffect(() => {
     setIsLoading(true);
     setHasError(false);
-  }, [segomaUrl]);
+    
+    // Log when Segoma URL changes for debugging
+    console.log('🔄 SEGOMA VIEWER: URL Changed:', {
+      stockNumber,
+      newUrl: segomaUrl,
+      timestamp: new Date().toISOString()
+    });
+  }, [segomaUrl, stockNumber]);
 
   const handleLoad = () => {
     setIsLoading(false);

@@ -77,15 +77,16 @@ export function useStoreData() {
       if (field && typeof field === 'string' && field.trim()) {
         const url = field.trim();
         
-        // Enhanced detection patterns for 360° formats with better Segoma support
+        // ENHANCED detection patterns for 360° formats with PRIORITY Segoma support
         const is360Url = 
+          url.includes('segoma.com') ||         // HIGH PRIORITY: Segoma detection
+          url.includes('v.aspx') ||             // HIGH PRIORITY: Segoma viewer pattern
+          url.includes('type=view') ||          // HIGH PRIORITY: Segoma parameter
+          /segoma\.com.*v\.aspx/.test(url) ||   // HIGH PRIORITY: Segoma regex pattern
           url.includes('my360.fab') ||          
           url.includes('my360.sela') ||         
           url.includes('v360.in') ||            
           url.includes('diamondview.aspx') ||   
-          url.includes('segoma.com') ||         // Enhanced Segoma detection
-          url.includes('v.aspx') ||             // Segoma viewer pattern
-          url.includes('type=view') ||          // Segoma parameter
           url.includes('gem360') ||             
           url.includes('sarine') ||             
           url.includes('360') ||                
@@ -165,14 +166,26 @@ export function useStoreData() {
         // PHASE 1: Detect 360° URLs first (highest priority)
         const final360Url = detect360Url(item);
         
-        // ENHANCED DEBUGGING for 360° detection
-        if (item.stock_number === '105604' || String(item.id).includes('105604')) {
-          console.log('🔍 DIAMOND 105604 DEBUG:', {
+        // ENHANCED DEBUGGING for 360° detection - User 2084882603 focus
+        if (item.stock_number === '105604' || String(item.id).includes('105604') || 
+            item['3D Link']?.includes('segoma.com') || item['aa']?.includes('segoma.com')) {
+          console.log('🔍 USER 2084882603 DIAMOND DEBUG:', {
             stock_number: item.stock_number,
             '3D Link': item['3D Link'],
+            'aa column': item['aa'],
+            'AA column': item['AA'], 
             segoma_url: item.segoma_url,
             final360Url: final360Url,
-            allFields: Object.keys(item)
+            allSegomaFields: {
+              '3D Link': item['3D Link'],
+              'aa': item['aa'],
+              'AA': item['AA'],
+              'segoma_url': item.segoma_url
+            },
+            csvFieldsCount: Object.keys(item).length,
+            hasSegomaInAnyField: Object.values(item).some(val => 
+              typeof val === 'string' && val.includes('segoma.com')
+            )
           });
         }
         

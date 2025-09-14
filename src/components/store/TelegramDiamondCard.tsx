@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { OptimizedDiamondImage } from "./OptimizedDiamondImage";
+import { UniversalImageHandler } from "./UniversalImageHandler";
 import { TelegramShareButton } from "./TelegramShareButton";
 import { LimitedGroupShareButton } from "./LimitedGroupShareButton";
 import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
@@ -87,15 +88,25 @@ View details: ${window.location.origin}/diamond/${diamond.stockNumber}`;
     >
       {/* Optimized Image Container */}
       <div className="relative h-48">
-        <OptimizedDiamondImage
-          imageUrl={diamond.imageUrl}
-          gem360Url={diamond.gem360Url}
-          stockNumber={diamond.stockNumber}
-          shape={diamond.shape}
-          className="w-full h-full"
-          priority={isPriority}
-          onLoad={() => setImageLoaded(true)}
-        />
+        {/* Enhanced image handling with Segoma support for user 2084882603 */}
+        {diamond.gem360Url ? (
+          <UniversalImageHandler
+            imageUrl={diamond.gem360Url}
+            stockNumber={diamond.stockNumber}
+            isInline={true}
+            className="w-full h-full"
+          />
+        ) : (
+          <OptimizedDiamondImage
+            imageUrl={diamond.imageUrl}
+            gem360Url={diamond.gem360Url}
+            stockNumber={diamond.stockNumber}
+            shape={diamond.shape}
+            className="w-full h-full"
+            priority={isPriority}
+            onLoad={() => setImageLoaded(true)}
+          />
+        )}
         
         {/* Status Badge */}
         <div className="absolute top-3 right-3">

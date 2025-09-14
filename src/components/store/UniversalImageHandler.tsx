@@ -23,23 +23,45 @@ export function UniversalImageHandler({
 }: UniversalImageHandlerProps) {
   const [isFixing, setIsFixing] = useState(false);
 
-  // ENHANCED DEBUGGING for user 2084882603
+  // ENHANCED DEBUGGING for user 2084882603 - Segoma detection
   console.log('🔍 UNIVERSAL IMAGE HANDLER DEBUG:', {
     stockNumber,
     imageUrl, 
     imageUrlType: typeof imageUrl,
     imageUrlLength: imageUrl?.length,
     isSegoma: imageUrl?.includes('segoma.com'),
-    isVAspx: imageUrl?.includes('v.aspx')
+    isVAspx: imageUrl?.includes('v.aspx'),
+    hasTypeView: imageUrl?.includes('type=view'),
+    isSegomaPattern: /segoma\.com.*v\.aspx/.test(imageUrl || ''),
+    fullUrlCheck: imageUrl
   });
+
+  // Special logging for user 2084882603's Segoma URLs
+  if (stockNumber === '105604' || imageUrl?.includes('segoma.com')) {
+    console.log('🔍 SEGOMA SPECIFIC DEBUG:', {
+      stockNumber,
+      imageUrl,
+      containsSegoma: imageUrl?.includes('segoma.com'),
+      containsVAspx: imageUrl?.includes('v.aspx'),
+      containsTypeView: imageUrl?.includes('type=view'),
+      urlPattern: imageUrl ? imageUrl.match(/segoma\.com.*/) : null
+    });
+  }
 
   // Enhanced detection for all client storage formats with improved Segoma support
   const detectProvider = (url: string) => {
     const cleanUrl = url.toLowerCase().trim();
     
-    // Enhanced Segoma detection (segoma.com URLs - all formats)
-    if (cleanUrl.includes('segoma.com') || cleanUrl.includes('v.aspx')) {
-      console.log('🔍 SEGOMA DETECTED:', url);
+    // ENHANCED Segoma detection with comprehensive pattern matching
+    if (cleanUrl.includes('segoma.com') || 
+        cleanUrl.includes('v.aspx') ||
+        cleanUrl.includes('type=view') ||
+        /segoma\.com.*v\.aspx/.test(cleanUrl)) {
+      console.log('🔍 SEGOMA DETECTED:', {
+        originalUrl: url,
+        cleanUrl: cleanUrl,
+        pattern: 'segoma_detected'
+      });
       return { provider: 'segoma', type: '360_interactive', supported: true };
     }
     
