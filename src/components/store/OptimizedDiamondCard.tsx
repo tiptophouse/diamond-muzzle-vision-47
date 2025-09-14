@@ -76,6 +76,9 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
     diamond.gem360Url.includes('my360.sela') ||    // 360° platforms
     diamond.gem360Url.includes('gem360') ||
     diamond.gem360Url.includes('sarine') ||
+    diamond.gem360Url.includes('segoma.com') ||    // Segoma viewer
+    diamond.gem360Url.includes('v.aspx') ||        // Segoma viewer pattern
+    diamond.gem360Url.includes('type=view') ||     // Segoma viewer parameter
     diamond.gem360Url.includes('360') ||
     diamond.gem360Url.includes('.html') ||         // HTML viewers like your example
     diamond.gem360Url.match(/DAN\d+-\d+[A-Z]?\.jpg$/i) // Static 360° images

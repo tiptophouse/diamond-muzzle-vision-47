@@ -37,6 +37,10 @@ export function useStoreData() {
       item['3D Link'],        // CSV field for Segoma URLs - HIGH PRIORITY
       item['3DLink'],         // Alternative format
       item['3d_link'],        // Snake case variant
+      item['aa'],             // CSV column letter reference
+      item['AA'],
+      item['Aa'],
+      item['aA'],
       item.segoma_url,        // Direct Segoma field
       item.segomaUrl,         // CamelCase Segoma
       item.picture,           
