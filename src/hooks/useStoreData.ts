@@ -32,8 +32,13 @@ export function useStoreData() {
 
   // Enhanced 360° URL detection with priority for my360.fab and HTML viewers
   const detect360Url = useCallback((item: any): string | undefined => {
-    // All possible fields that might contain 360° URLs
+    // All possible fields that might contain 360° URLs - INCLUDING CSV "3D Link" field
     const potential360Fields = [
+      item['3D Link'],        // CSV field for Segoma URLs - HIGH PRIORITY
+      item['3DLink'],         // Alternative format
+      item['3d_link'],        // Snake case variant
+      item.segoma_url,        // Direct Segoma field
+      item.segomaUrl,         // CamelCase Segoma
       item.picture,           
       item.image_url,         
       item.imageUrl,          
@@ -68,13 +73,15 @@ export function useStoreData() {
       if (field && typeof field === 'string' && field.trim()) {
         const url = field.trim();
         
-        // Enhanced detection patterns for 360° formats
+        // Enhanced detection patterns for 360° formats with better Segoma support
         const is360Url = 
           url.includes('my360.fab') ||          
           url.includes('my360.sela') ||         
           url.includes('v360.in') ||            
           url.includes('diamondview.aspx') ||   
-          url.includes('segoma.com') ||         // Add Segoma support
+          url.includes('segoma.com') ||         // Enhanced Segoma detection
+          url.includes('v.aspx') ||             // Segoma viewer pattern
+          url.includes('type=view') ||          // Segoma parameter
           url.includes('gem360') ||             
           url.includes('sarine') ||             
           url.includes('360') ||                
@@ -273,6 +280,20 @@ export function useStoreData() {
         error: result.error,
         firstItem: result.data?.[0]
       });
+
+      // SPECIAL DEBUG for user 2084882603 - Segoma issue
+      if (String(user?.id) === '2084882603' && result.data?.length > 0) {
+        console.log('🔍 SEGOMA DEBUG for user 2084882603:', {
+          totalDiamonds: result.data.length,
+          firstDiamond: result.data[0],
+          segoma3DLinks: result.data.map(item => ({
+            stock: item.stock_number,
+            '3D Link': item['3D Link'],
+            segoma_url: item.segoma_url,
+            picture: item.picture
+          }))
+        });
+      }
 
       if (result.error) {
         setError(result.error);

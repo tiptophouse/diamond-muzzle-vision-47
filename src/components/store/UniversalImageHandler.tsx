@@ -23,12 +23,13 @@ export function UniversalImageHandler({
 }: UniversalImageHandlerProps) {
   const [isFixing, setIsFixing] = useState(false);
 
-  // Enhanced detection for all client storage formats
+  // Enhanced detection for all client storage formats with improved Segoma support
   const detectProvider = (url: string) => {
     const cleanUrl = url.toLowerCase().trim();
     
-    // Segoma detection (segoma.com URLs)
-    if (cleanUrl.includes('segoma.com')) {
+    // Enhanced Segoma detection (segoma.com URLs - all formats)
+    if (cleanUrl.includes('segoma.com') || cleanUrl.includes('v.aspx')) {
+      console.log('🔍 SEGOMA DETECTED:', url);
       return { provider: 'segoma', type: '360_interactive', supported: true };
     }
     
@@ -179,7 +180,7 @@ export function UniversalImageHandler({
           variant="outline" 
           className="absolute top-2 right-2 z-50 text-xs bg-white/90"
         >
-          {detection.provider}
+          {detection.provider} | {stockNumber}
         </Badge>
       )}
       

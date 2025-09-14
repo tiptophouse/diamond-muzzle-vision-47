@@ -85,8 +85,14 @@ export function useInventoryData() {
       return undefined;
     }
 
-    // Accept any valid HTTP/HTTPS URL that might be a 360° viewer
+    // Accept any valid HTTP/HTTPS URL that might be a 360° viewer with enhanced Segoma support
     if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+      // Enhanced Segoma pattern detection
+      if (trimmedUrl.includes('segoma.com') || 
+          trimmedUrl.includes('v.aspx') || 
+          trimmedUrl.includes('type=view')) {
+        console.log('🔍 SEGOMA URL DETECTED in inventory:', trimmedUrl);
+      }
       return trimmedUrl;
     }
 
@@ -109,6 +115,11 @@ export function useInventoryData() {
       
       console.log('📥 INVENTORY HOOK: Fetching inventory data...');
       
+      // SPECIAL DEBUG for user 2084882603 - Segoma issue
+      if (String(user?.id) === '2084882603') {
+        console.log('🔍 SEGOMA INVENTORY DEBUG for user 2084882603 - fetching data...');
+      }
+      
       const transformedDiamonds = await inventoryCache.getOrFetch(cacheKey, async () => {
         const result = await fetchInventoryData();
         
@@ -118,6 +129,20 @@ export function useInventoryData() {
 
         if (result.data && result.data.length > 0) {
           console.log('📥 INVENTORY HOOK: Processing', result.data.length, 'diamonds');
+          
+          // SPECIAL DEBUG for user 2084882603 - Segoma issue
+          if (String(user?.id) === '2084882603') {
+            console.log('🔍 SEGOMA INVENTORY DEBUG for user 2084882603:', {
+              totalDiamonds: result.data.length,
+              firstDiamond: result.data[0],
+              segoma3DLinks: result.data.map(item => ({
+                stock: item.stock_number,
+                '3D Link': item['3D Link'],
+                segoma_url: item.segoma_url,
+                picture: item.picture
+              }))
+            });
+          }
           
           // Transform data to match Diamond interface with enhanced field mapping
           return result.data.map(item => {
@@ -164,16 +189,21 @@ export function useInventoryData() {
               status: item.status || item.Availability || 'Available',
               fluorescence: item.fluorescence || item.FluorescenceIntensity || undefined,
               imageUrl: finalImageUrl,
-              // ENHANCED 360° URL PROCESSING - Accept ALL FastAPI 360 fields
-              gem360Url: detect360Url(item.gem360Url) || 
-                         detect360Url(item['Video link']) || 
-                         detect360Url(item.videoLink) ||
-                         detect360Url(item.video_url) ||
-                         detect360Url(item.v360_url) ||
-                         detect360Url(item.sarine_url) ||
-                         detect360Url(item.three_d_url) ||
-                         detect360Url(item.viewer_url) ||
-                         undefined,
+            // ENHANCED 360° URL PROCESSING - Accept ALL FastAPI 360 fields INCLUDING CSV "3D Link"
+            gem360Url: detect360Url(item['3D Link']) ||      // CSV Segoma field - HIGH PRIORITY
+                       detect360Url(item['3DLink']) ||       // Alternative format
+                       detect360Url(item['3d_link']) ||      // Snake case
+                       detect360Url(item.segoma_url) ||      // Direct Segoma
+                       detect360Url(item.segomaUrl) ||       // CamelCase Segoma
+                       detect360Url(item.gem360Url) || 
+                       detect360Url(item['Video link']) || 
+                       detect360Url(item.videoLink) ||
+                       detect360Url(item.video_url) ||
+                       detect360Url(item.v360_url) ||
+                       detect360Url(item.sarine_url) ||
+                       detect360Url(item.three_d_url) ||
+                       detect360Url(item.viewer_url) ||
+                       undefined,
               store_visible: item.store_visible !== false,
               certificateNumber: item.certificate_number || 
                                item.certificateNumber || 
