@@ -21,9 +21,13 @@ export async function fetchApi<T>(
     
     const authHeaders = await getAuthHeaders();
     if (!authHeaders.Authorization) {
-      const errorMsg = 'No JWT token available - user must be authenticated first';
-      console.error('❌ API: Missing JWT token');
-      throw new Error(errorMsg);
+      if (endpoint.includes('/api/v1/alive')) {
+        console.warn('⚠️ API: No JWT token for health check, proceeding without Authorization');
+      } else {
+        const errorMsg = 'No JWT token available - user must be authenticated first';
+        console.error('❌ API: Missing JWT token');
+        throw new Error(errorMsg);
+      }
     }
     
     let headers: Record<string, string> = {
