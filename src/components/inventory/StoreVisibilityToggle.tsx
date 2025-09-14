@@ -3,34 +3,48 @@ import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { updateDiamond } from "@/api/diamonds";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useTutorial } from "@/contexts/TutorialContext";
 
 interface StoreVisibilityToggleProps {
   stockNumber: string;
+  diamondId: string; // Add diamond ID for FastAPI update
   isVisible: boolean;
   onToggle: (stockNumber: string, isVisible: boolean) => void;
 }
 
-export function StoreVisibilityToggle({ stockNumber, isVisible, onToggle }: StoreVisibilityToggleProps) {
+export function StoreVisibilityToggle({ stockNumber, diamondId, isVisible, onToggle }: StoreVisibilityToggleProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useTelegramAuth();
   const tutorial = useTutorial();
   const handleRequiredClick = tutorial?.handleRequiredClick || (() => {});
 
   const handleToggle = async () => {
+    if (!user?.id) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to update diamond visibility",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setLoading(true);
     
     // Handle tutorial interaction
     handleRequiredClick();
     
     try {
-      const { error } = await supabase
-        .from('inventory')
-        .update({ store_visible: !isVisible })
-        .eq('stock_number', stockNumber);
+      // Use FastAPI to update diamond store visibility
+      const response = await updateDiamond(diamondId, {
+        store_visible: !isVisible
+      }, user.id);
 
-      if (error) throw error;
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to update visibility');
+      }
 
       onToggle(stockNumber, !isVisible);
       
@@ -42,7 +56,7 @@ export function StoreVisibilityToggle({ stockNumber, isVisible, onToggle }: Stor
       console.error('Error toggling store visibility:', error);
       toast({
         title: "Error",
-        description: "Failed to update store visibility",
+        description: error instanceof Error ? error.message : "Failed to update store visibility",
         variant: "destructive",
       });
     } finally {

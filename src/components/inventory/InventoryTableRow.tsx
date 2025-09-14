@@ -84,6 +84,7 @@ export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle, on
           {onStoreToggle && (
             <StoreVisibilityToggle 
               stockNumber={diamond.stockNumber}
+              diamondId={diamond.diamondId || diamond.id}
               isVisible={diamond.store_visible || false}
               onToggle={onStoreToggle}
             />
