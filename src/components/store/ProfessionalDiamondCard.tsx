@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, Eye, Share, Edit, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,7 @@ import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { AdminStoreControls } from "./AdminStoreControls";
 import { Gem360Viewer } from "./Gem360Viewer";
-
-const ADMIN_TELEGRAM_ID = 2138564172;
+import { isAdminTelegramId } from "@/lib/api/secureConfig";
 
 interface ProfessionalDiamondCardProps {
   diamond: Diamond;
@@ -18,10 +17,22 @@ interface ProfessionalDiamondCardProps {
 export function ProfessionalDiamondCard({ diamond, onUpdate }: ProfessionalDiamondCardProps) {
   const [imageError, setImageError] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { user, isTelegramEnvironment } = useTelegramAuth();
   const navigate = useNavigate();
   
-  const isAdmin = user?.id === ADMIN_TELEGRAM_ID && isTelegramEnvironment;
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (user?.id && isTelegramEnvironment) {
+        const adminStatus = await isAdminTelegramId(user.id);
+        setIsAdmin(adminStatus);
+      } else {
+        setIsAdmin(false);
+      }
+    };
+
+    checkAdminStatus();
+  }, [user?.id, isTelegramEnvironment]);
 
   // Enhanced Gem360 URL detection - check all possible sources
   const getGem360Url = () => {

@@ -14,6 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_telegram_id: number
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          resource_id: string | null
+          resource_type: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          admin_telegram_id: number
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          admin_telegram_id?: number
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      admin_roles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          role: string
+          telegram_id: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          role?: string
+          telegram_id: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          role?: string
+          telegram_id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       analytics_events: {
         Row: {
           created_at: string
@@ -2236,6 +2302,10 @@ export type Database = {
           users_with_phone: number
         }[]
       }
+      is_admin: {
+        Args: { telegram_id_param: number }
+        Returns: boolean
+      }
       is_admin_user: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -2244,6 +2314,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      log_admin_action: {
+        Args: {
+          action_param: string
+          admin_telegram_id_param: number
+          metadata_param?: Json
+          resource_id_param?: string
+          resource_type_param?: string
+        }
+        Returns: undefined
+      }
       remove_all_duplicate_certificates: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -2251,6 +2331,10 @@ export type Database = {
       remove_duplicate_certificates: {
         Args: { p_user_id: number }
         Returns: number
+      }
+      set_admin_session_context: {
+        Args: { telegram_id_param: number }
+        Returns: undefined
       }
       set_session_context: {
         Args: { key: string; value: string }

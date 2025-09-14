@@ -59,31 +59,39 @@ export function useDiamondDistribution() {
         const response = await api.get<any[]>(`/api/v1/get_all_stones?user_id=${user.id}`);
         
         if (response.data && Array.isArray(response.data)) {
-          diamonds = response.data.map(d => ({
-            id: d.id || d.stock_number || '',
-            shape: d.shape || 'Round',
-            color: d.color || 'H',
-            clarity: d.clarity || 'VS1',
-            carat: Number(d.weight || d.carat || 1),
-            price: Number(d.price_per_carat || d.price || 0),
-            certificate_number: String(d.certificate_number || ''),
-            created_at: d.created_at || new Date().toISOString()
-          }));
+          diamonds = response.data.map(d => {
+            const weight = Number(d.weight || d.carat || 1);
+            const pricePerCarat = Number(d.price_per_carat || d.price || 0);
+            
+            // Calculate total price correctly
+            const totalPrice = pricePerCarat * weight;
+            
+            return {
+              id: d.id || d.stock_number || '',
+              shape: d.shape || 'Round',
+              color: d.color || 'H',
+              clarity: d.clarity || 'VS1',
+              carat: weight,
+              price: totalPrice, // This should be total price, not per carat
+              certificate_number: String(d.certificate_number || ''),
+              created_at: d.created_at || new Date().toISOString()
+            };
+          });
         }
         
         console.log('📊 Received diamonds for distribution:', diamonds.length);
       } else {
         console.log('🔍 Not authenticated, using demo data for diamond distribution');
-        // Provide demo data for better UX
+        // Provide realistic demo data with proper total prices
         diamonds = [
-          { id: '1', shape: 'Round', color: 'D', clarity: 'FL', carat: 2.5, price: 15000, certificate_number: '12345', created_at: new Date().toISOString() },
-          { id: '2', shape: 'Princess', color: 'E', clarity: 'VVS1', carat: 1.8, price: 12000, certificate_number: '12346', created_at: new Date().toISOString() },
-          { id: '3', shape: 'Emerald', color: 'F', clarity: 'VVS2', carat: 3.2, price: 18000, certificate_number: '12347', created_at: new Date().toISOString() },
-          { id: '4', shape: 'Round', color: 'G', clarity: 'VS1', carat: 1.5, price: 8000, certificate_number: '12348', created_at: new Date().toISOString() },
-          { id: '5', shape: 'Oval', color: 'H', clarity: 'VS2', carat: 2.1, price: 11000, certificate_number: '12349', created_at: new Date().toISOString() },
-          { id: '6', shape: 'Cushion', color: 'I', clarity: 'SI1', carat: 1.9, price: 9500, certificate_number: '12350', created_at: new Date().toISOString() },
-          { id: '7', shape: 'Pear', color: 'J', clarity: 'SI2', carat: 2.3, price: 10500, certificate_number: '12351', created_at: new Date().toISOString() },
-          { id: '8', shape: 'Marquise', color: 'K', clarity: 'I1', carat: 1.7, price: 7500, certificate_number: '12352', created_at: new Date().toISOString() }
+          { id: '1', shape: 'Round', color: 'D', clarity: 'FL', carat: 2.5, price: 37500, certificate_number: '12345', created_at: new Date().toISOString() }, // 15000 * 2.5
+          { id: '2', shape: 'Princess', color: 'E', clarity: 'VVS1', carat: 1.8, price: 21600, certificate_number: '12346', created_at: new Date().toISOString() }, // 12000 * 1.8
+          { id: '3', shape: 'Emerald', color: 'F', clarity: 'VVS2', carat: 3.2, price: 57600, certificate_number: '12347', created_at: new Date().toISOString() }, // 18000 * 3.2
+          { id: '4', shape: 'Round', color: 'G', clarity: 'VS1', carat: 1.5, price: 12000, certificate_number: '12348', created_at: new Date().toISOString() }, // 8000 * 1.5
+          { id: '5', shape: 'Oval', color: 'H', clarity: 'VS2', carat: 2.1, price: 23100, certificate_number: '12349', created_at: new Date().toISOString() }, // 11000 * 2.1
+          { id: '6', shape: 'Cushion', color: 'I', clarity: 'SI1', carat: 1.9, price: 18050, certificate_number: '12350', created_at: new Date().toISOString() }, // 9500 * 1.9
+          { id: '7', shape: 'Pear', color: 'J', clarity: 'SI2', carat: 2.3, price: 24150, certificate_number: '12351', created_at: new Date().toISOString() }, // 10500 * 2.3
+          { id: '8', shape: 'Marquise', color: 'K', clarity: 'I1', carat: 1.7, price: 12750, certificate_number: '12352', created_at: new Date().toISOString() } // 7500 * 1.7
         ];
       }
 

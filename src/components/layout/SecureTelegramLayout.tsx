@@ -82,8 +82,8 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
         {children}
       </main>
 
-      {/* Bottom Navigation - Enhanced with solid background */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-lg z-50 pb-safe">
+      {/* Bottom Navigation - Only for authenticated users with safe area */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border z-50 pb-safe">
         <div className="grid grid-cols-5 max-w-screen-sm mx-auto">
           {navigationItems.map((item) => {
             const Icon = item.icon;
@@ -95,25 +95,20 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
                 to={item.to}
                 onClick={handleNavClick}
                 className={cn(
-                  "flex flex-col items-center justify-center py-3 px-2 text-xs transition-all duration-200 clickable relative",
+                  "flex flex-col items-center justify-center py-3 px-2 text-xs transition-colors duration-200 clickable",
                   active 
                     ? "text-primary" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                {/* Active indicator */}
-                {active && (
-                  <div className="absolute top-1 w-4 h-0.5 bg-primary rounded-full" />
-                )}
-                
                 <Icon 
                   className={cn(
-                    "h-5 w-5 mb-1 transition-transform duration-200",
-                    active && "text-primary scale-110"
+                    "h-5 w-5 mb-1",
+                    active && "text-primary"
                   )} 
                 />
                 <span className={cn(
-                  "font-medium text-[10px]",
+                  "font-medium",
                   active && "text-primary"
                 )}>
                   {item.label}

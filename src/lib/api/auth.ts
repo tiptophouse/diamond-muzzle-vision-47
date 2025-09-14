@@ -129,10 +129,9 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
     "X-Client-Timestamp": Date.now().toString(),
   };
   
-  // Use centralized getter so we also read from the tokenManager cache
-  const token = getBackendAuthToken();
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+  if (backendAuthToken) {
+    // FIXED: Use proper Bearer token format as required by FastAPI
+    headers["Authorization"] = `Bearer ${backendAuthToken}`;
     console.log('🔑 AUTH HEADERS: Added Bearer token for protected endpoint');
   } else {
     console.warn('⚠️ AUTH HEADERS: No JWT token available - this will fail for protected endpoints');
@@ -169,45 +168,6 @@ export async function verifyTelegramUser(initData: string): Promise<TelegramVeri
   }
   
   return { success: false, user_id: 0, user_data: null, message: 'Failed to parse user data' };
-}
-
-// Development/Sandbox fallback auth: obtain a temporary API token for previews
-export async function initDevAuthIfNeeded(): Promise<{ userId: number; token: string } | null> {
-  try {
-    const host = window.location.hostname;
-    const isSandbox = host === 'localhost' || host.includes('lovable.dev');
-    if (!isSandbox) return null;
-
-    const existing = getBackendAuthToken();
-    if (existing) {
-      const cached = tokenManager.getCachedAuthState();
-      return { userId: cached?.userId || 2138564172, token: existing };
-    }
-
-    const adminId = 2138564172; // Default admin for preview/dev
-    const { supabase } = await import('@/integrations/supabase/client');
-    const { data, error } = await supabase.functions.invoke('get-api-token', { body: {} });
-
-    if (error || !data?.token) {
-      console.warn('⚠️ DEV AUTH: Failed to fetch preview API token:', error || data);
-      return null;
-    }
-
-    const token: string = data.token;
-    backendAuthToken = token;
-    setCurrentUserId(adminId);
-    tokenManager.setToken(token, adminId);
-    tokenManager.cacheAuthState(
-      { id: adminId, first_name: 'Admin', username: 'admin', language_code: 'en', is_premium: true } as any,
-      token
-    );
-
-    console.log('✅ DEV AUTH: Initialized with preview token for user', adminId);
-    return { userId: adminId, token };
-  } catch (e) {
-    console.warn('⚠️ DEV AUTH: Initialization failed:', e);
-    return null;
-  }
 }
 
 export function getSecurityMetrics() {

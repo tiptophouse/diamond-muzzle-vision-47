@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTelegramWebApp } from './useTelegramWebApp';
-import { getAdminTelegramId } from '@/lib/api/secureConfig';
+import { isAdminTelegramId } from '@/lib/api/secureConfig';
 
 export function useIsAdmin() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -10,16 +10,19 @@ export function useIsAdmin() {
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (!user?.id) {
+        console.log('🔍 useIsAdmin: No user ID found');
         setIsAdmin(false);
         setLoading(false);
         return;
       }
 
       try {
-        const adminTelegramId = await getAdminTelegramId();
-        setIsAdmin(user.id === adminTelegramId);
+        console.log('🔍 useIsAdmin: Checking admin status for Telegram ID:', user.id);
+        const adminStatus = await isAdminTelegramId(user.id);
+        console.log('🔍 useIsAdmin: Admin status result:', adminStatus);
+        setIsAdmin(adminStatus);
       } catch (error) {
-        console.error('Error checking admin status:', error);
+        console.error('❌ useIsAdmin: Error checking admin status:', error);
         setIsAdmin(false);
       } finally {
         setLoading(false);

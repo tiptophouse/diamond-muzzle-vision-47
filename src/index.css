@@ -4,94 +4,76 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Vibrant design system with solid colors */
+/* Modern clean theme inspired by 21.dev */
 :root {
-  /* Rich color palette with solid backgrounds */
-  --background: var(--tg-theme-bg-color, 0 0% 100%);
-  --foreground: var(--tg-theme-text-color, 222 47% 11%);
-  --card: var(--tg-theme-secondary-bg-color, 0 0% 100%);
-  --card-foreground: var(--tg-theme-text-color, 222 47% 11%);
-  --popover: var(--tg-theme-secondary-bg-color, 0 0% 100%);
-  --popover-foreground: var(--tg-theme-text-color, 222 47% 11%);
-  --primary: var(--tg-theme-button-color, 262 100% 65%);
-  --primary-foreground: var(--tg-theme-button-text-color, 0 0% 100%);
-  --secondary: var(--tg-theme-secondary-bg-color, 262 30% 95%);  
-  --secondary-foreground: var(--tg-theme-text-color, 262 80% 25%);
-  --muted: var(--tg-theme-secondary-bg-color, 220 13% 91%);
-  --muted-foreground: var(--tg-theme-hint-color, 220 9% 46%);
-  --accent: var(--tg-theme-secondary-bg-color, 262 30% 95%);
-  --accent-foreground: var(--tg-theme-text-color, 262 80% 25%);
-  --destructive: var(--tg-theme-destructive-text-color, 0 84% 60%);
-  --destructive-foreground: var(--tg-theme-bg-color, 0 0% 100%);
-  --border: var(--tg-theme-secondary-bg-color, 220 13% 91%);
-  --input: var(--tg-theme-secondary-bg-color, 0 0% 100%);
-  --ring: var(--tg-theme-button-color, 262 100% 65%);
+  --background: 0 0% 98%;
+  --foreground: 240 10% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 3.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 3.9%;
+  --primary: 240 5.9% 10%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 4.8% 95.9%;
+  --secondary-foreground: 240 5.9% 10%;
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --accent: 240 4.8% 95.9%;
+  --accent-foreground: 240 5.9% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 240 5.9% 10%;
   --radius: 0.75rem;
   
-  /* Telegram-native viewport handling with fullscreen support */
-  --tg-viewport-height: 100vh;
-  --tg-viewport-stable-height: 100vh;
-  --tg-fullscreen-height: 100vh;
-  --tg-safe-area-inset-top: env(safe-area-inset-top);
-  --tg-safe-area-inset-bottom: env(safe-area-inset-bottom);
-  --tg-safe-area-inset-left: env(safe-area-inset-left);
-  --tg-safe-area-inset-right: env(safe-area-inset-right);
+  /* Premium gradients */
+  --gradient-primary: linear-gradient(135deg, hsl(240 5.9% 10%) 0%, hsl(240 3.8% 25%) 100%);
+  --gradient-surface: linear-gradient(180deg, hsl(0 0% 98%) 0%, hsl(240 4.8% 95.9%) 100%);
+  --gradient-accent: linear-gradient(135deg, hsl(240 4.8% 95.9%) 0%, hsl(0 0% 100%) 100%);
   
-  /* Vibrant gradients with solid colors */
-  --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(262 100% 55%) 100%);
-  --gradient-surface: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--secondary)) 100%);
-  --gradient-accent: linear-gradient(135deg, hsl(262 30% 95%) 0%, hsl(0 0% 100%) 100%);
-  --gradient-hero: linear-gradient(135deg, hsl(262 100% 65%) 0%, hsl(300 100% 70%) 50%, hsl(220 100% 75%) 100%);
-  
-  /* Enhanced shadows with color */  
-  --shadow-soft: 0 1px 3px 0 hsl(262 100% 65% / 0.1), 0 1px 2px 0 hsl(220 9% 46% / 0.06);
-  --shadow-medium: 0 4px 6px -1px hsl(262 100% 65% / 0.15), 0 2px 4px -1px hsl(220 9% 46% / 0.06);
-  --shadow-large: 0 20px 25px -5px hsl(262 100% 65% / 0.15), 0 10px 10px -5px hsl(220 9% 46% / 0.04);
-  --shadow-glow: 0 0 30px hsl(262 100% 65% / 0.3);
+  /* Shadows */
+  --shadow-soft: 0 1px 3px 0 hsl(240 3.8% 46.1% / 0.1), 0 1px 2px 0 hsl(240 3.8% 46.1% / 0.06);
+  --shadow-medium: 0 4px 6px -1px hsl(240 3.8% 46.1% / 0.1), 0 2px 4px -1px hsl(240 3.8% 46.1% / 0.06);
+  --shadow-large: 0 20px 25px -5px hsl(240 3.8% 46.1% / 0.1), 0 10px 10px -5px hsl(240 3.8% 46.1% / 0.04);
 }
 
 body {
-  font-family: var(--tg-theme-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: hsl(var(--background));
+  background: var(--gradient-surface);
   color: hsl(var(--foreground));
-  line-height: 1.5;
+  line-height: 1.6;
   letter-spacing: -0.01em;
-  /* Telegram-optimized touch handling */
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
 }
 
-/* Telegram-native components */
-.tg-card {
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-  box-shadow: var(--shadow-soft);
-  border-radius: var(--radius);
-  color: hsl(var(--card-foreground));
+/* Clean, modern components */
+.glass-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: var(--shadow-large);
 }
 
-.tg-button {
-  background: hsl(var(--primary));
+.premium-button {
+  background: var(--gradient-primary);
   color: hsl(var(--primary-foreground));
   border: none;
-  padding: 0.75rem 1.5rem;
+  padding: 1rem 2rem;
   border-radius: var(--radius);
-  font-weight: 500;
-  font-size: 0.875rem;
-  min-height: 44px;
-  min-width: 44px;
-  box-shadow: var(--shadow-soft);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
+  font-weight: 600;
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+  box-shadow: var(--shadow-medium);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.tg-button:active {
-  transform: scale(0.98);
-  box-shadow: var(--shadow-medium);
+.premium-button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-large);
 }
 
 /* Enhanced image loading optimizations */
@@ -134,7 +116,7 @@ img {
   }
 }
 
-/* iOS optimizations for native Telegram WebApp feel with fullscreen support */
+/* iOS optimizations for native Telegram WebApp feel */
 @supports (-webkit-touch-callout: none) {
   /* Enable native iOS scrolling - DO NOT use position: fixed or overflow: hidden */
   body {
@@ -194,81 +176,34 @@ img {
     min-height: var(--tg-viewport-stable-height, 100vh);
   }
   
-  /* Fullscreen mode support */
-  .ios-viewport.fullscreen {
-    height: var(--tg-fullscreen-height, 100vh);
-    min-height: var(--tg-fullscreen-height, 100vh);
-  }
-  
   /* Bottom navigation safe area optimization for iOS */
   .bottom-nav-ios {
     bottom: var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-  }
-  
-  .bottom-nav-ios.fullscreen {
-    padding-bottom: max(var(--tg-safe-area-inset-bottom), 8px);
-  }
-  
-  /* Fullscreen specific styles */
-  .fullscreen-container {
-    height: var(--tg-fullscreen-height, 100vh);
-    min-height: var(--tg-fullscreen-height, 100vh);
-    width: 100vw;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .fullscreen-content {
-    height: calc(var(--tg-fullscreen-height, 100vh) - var(--tg-safe-area-inset-bottom, 0px));
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  /* Touch targets - minimum 44px for iOS guidelines */
-  .mobile-tap {
-    min-height: 44px;
-    touch-action: manipulation;
-  }
-  
-  /* Prevent iOS zoom on input focus */
-  input, select, textarea {
-    font-size: 16px;
   }
 }
 
-/* Dark theme with vibrant colors */
+/* Dynamic theme based on Telegram */
 .dark {
-  --background: var(--tg-theme-bg-color, 222 47% 11%);
-  --foreground: var(--tg-theme-text-color, 213 31% 91%);
-  --card: var(--tg-theme-secondary-bg-color, 222 47% 15%);
-  --card-foreground: var(--tg-theme-text-color, 213 31% 91%);
-  --popover: var(--tg-theme-secondary-bg-color, 222 47% 15%);
-  --popover-foreground: var(--tg-theme-text-color, 213 31% 91%);
-  --primary: var(--tg-theme-button-color, 262 100% 75%);
-  --primary-foreground: var(--tg-theme-button-text-color, 222 47% 11%);
-  --secondary: var(--tg-theme-secondary-bg-color, 222 47% 20%);
-  --secondary-foreground: var(--tg-theme-text-color, 213 31% 91%);
-  --muted: var(--tg-theme-secondary-bg-color, 222 47% 20%);
-  --muted-foreground: var(--tg-theme-hint-color, 215 20% 65%);
-  --accent: var(--tg-theme-secondary-bg-color, 222 47% 20%);
-  --accent-foreground: var(--tg-theme-text-color, 213 31% 91%);
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 213 31% 91%;
-  --border: var(--tg-theme-secondary-bg-color, 222 47% 20%);
-  --input: var(--tg-theme-secondary-bg-color, 222 47% 15%);
-  --ring: var(--tg-theme-button-color, 262 100% 75%);
-}
-
-/* Global fullscreen mode class for document-level adjustments */
-.telegram-fullscreen {
-  /* Fullscreen-specific global styles */
-}
-
-.telegram-fullscreen body {
-  height: var(--tg-fullscreen-height, 100vh);
-  min-height: var(--tg-fullscreen-height, 100vh);
+  /* These will be dynamically set by Telegram theme */
+  --background: var(--tg-theme-bg-color, 222.2 84% 4.9%);
+  --foreground: var(--tg-theme-text-color, 210 40% 98%);
+  --card: var(--tg-theme-secondary-bg-color, 222.2 84% 4.9%);
+  --card-foreground: var(--tg-theme-text-color, 210 40% 98%);
+  --popover: var(--tg-theme-secondary-bg-color, 222.2 84% 4.9%);
+  --popover-foreground: var(--tg-theme-text-color, 210 40% 98%);
+  --primary: var(--tg-theme-button-color, 210 40% 98%);
+  --primary-foreground: var(--tg-theme-button-text-color, 222.2 84% 4.9%);
+  --secondary: var(--tg-theme-secondary-bg-color, 217.2 32.6% 17.5%);
+  --secondary-foreground: var(--tg-theme-text-color, 210 40% 98%);
+  --muted: var(--tg-theme-secondary-bg-color, 217.2 32.6% 17.5%);
+  --muted-foreground: var(--tg-theme-hint-color, 215 20.2% 65.1%);
+  --accent: var(--tg-theme-secondary-bg-color, 217.2 32.6% 17.5%);
+  --accent-foreground: var(--tg-theme-text-color, 210 40% 98%);
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: var(--tg-theme-secondary-bg-color, 217.2 32.6% 17.5%);
+  --input: var(--tg-theme-secondary-bg-color, 217.2 32.6% 17.5%);
+  --ring: var(--tg-theme-button-color, 212.7 26.8% 83.9%);
 }
 
 /* Mobile responsive utilities */

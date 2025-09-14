@@ -142,38 +142,6 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
 
     } catch (error) {
       const errorType = error instanceof Error ? error.message : 'system_error';
-
-      // Developer/Sandbox fallback: allow preview outside Telegram by fetching a temporary API token
-      if (errorType === 'not_telegram_environment' || errorType === 'no_init_data') {
-        try {
-          const { initDevAuthIfNeeded } = await import('@/lib/api/auth');
-          const devAuth = await initDevAuthIfNeeded();
-          if (devAuth) {
-            const devUser: TelegramUser = {
-              id: devAuth.userId,
-              first_name: 'Admin',
-              username: 'admin',
-              language_code: 'en',
-              is_premium: true,
-            } as any;
-
-            updateState({
-              user: devUser,
-              isAuthenticated: true,
-              isLoading: false,
-              error: null,
-              accessDeniedReason: null,
-              isTelegramEnvironment: false,
-            });
-
-            console.log('✅ AUTH: Using developer preview authentication');
-            initializedRef.current = true;
-            return; // Stop normal error handling
-          }
-        } catch (e) {
-          console.warn('⚠️ AUTH: Developer preview auth failed:', e);
-        }
-      }
       
       retryCount.current++;
       if (retryCount.current < maxRetries && errorType !== 'not_telegram_environment') {
