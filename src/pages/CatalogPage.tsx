@@ -18,7 +18,7 @@ import { TelegramStoreFilters } from "@/components/store/TelegramStoreFilters";
 import { TelegramSortSheet } from "@/components/store/TelegramSortSheet";
 import { getTelegramWebApp } from "@/utils/telegramWebApp";
 import { InventoryPagination } from "@/components/inventory/InventoryPagination";
-import { preloadDiamondImages, cleanupImageMemory } from "@/utils/imagePreloader";
+import { preloadDiamondImages, clearImageCache } from "@/utils/telegramImageOptimizer";
 
 // Telegram memory management
 const tg = getTelegramWebApp();
@@ -59,10 +59,10 @@ function CatalogPage() {
       }
     }
     
-    // Cleanup image memory on unmount
+    // Cleanup Telegram image cache on unmount
     return () => {
-      console.log('🧹 CATALOG: Cleaning up image memory on unmount');
-      cleanupImageMemory();
+      console.log('🧹 CATALOG: Cleaning up Telegram image cache on unmount');
+      clearImageCache();
     };
   }, []);
 

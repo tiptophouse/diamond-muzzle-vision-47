@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTelegramSDK } from '@/hooks/useTelegramSDK';
-import { useTelegramImageLoader } from '@/hooks/useTelegramImageLoader';
+import { useTelegramOptimizedImageLoader } from '@/hooks/useTelegramOptimizedImageLoader';
 import { V360Viewer } from './V360Viewer';
 import { Eye, RotateCcw, Zap, Gem, Sparkles, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -32,19 +32,22 @@ export function OptimizedDiamondImage({
   const containerRef = useRef<HTMLDivElement>(null);
   const { haptic } = useTelegramSDK();
 
-  // Use Telegram native image loading with cache
+  // Use Telegram SDK optimized image loading with CloudStorage cache
   const {
     imageUrl: cachedImageUrl,
     isLoading,
     hasError,
     isCached,
     loadTime,
-    retryLoad
-  } = useTelegramImageLoader({
+    format,
+    networkQuality,
+    retryLoad,
+    metrics
+  } = useTelegramOptimizedImageLoader({
     stockNumber,
     originalUrl: imageUrl,
     fallbackUrl: `https://miniapp.mazalbot.com/api/diamond-image/${stockNumber}`,
-    priority
+    priority: priority ? 'high' : 'medium'
   });
 
   // Determine what type of media we have
@@ -142,10 +145,15 @@ export function OptimizedDiamondImage({
               <Gem className="h-8 w-8 text-primary/40 animate-pulse" />
             </div>
           </div>
-          {/* Cache indicator */}
+          {/* Cache and network quality indicators */}
           <div className="absolute top-2 left-2 bg-blue-500/80 backdrop-blur-sm text-white px-2 py-1 rounded text-xs font-medium">
-            {isCached ? '📱 Cache' : '🌐 Loading'}
+            {isCached ? '📱 Cached' : networkQuality === 'slow' ? '🐌 Loading' : '🌐 Loading'}
           </div>
+          {format && (
+            <div className="absolute top-2 right-2 bg-green-500/80 backdrop-blur-sm text-white px-2 py-1 rounded text-xs font-medium">
+              {format.toUpperCase()}
+            </div>
+          )}
         </div>
       )}
 
@@ -192,7 +200,7 @@ export function OptimizedDiamondImage({
         </div>
       )}
 
-      {/* Success indicator with cache status */}
+      {/* Success indicator with Telegram optimization metrics */}
       {imageLoaded && !hasError && (
         <div className="absolute top-2 right-2 flex items-center gap-1">
           <div className="w-3 h-3 bg-green-500 rounded-full shadow-lg animate-pulse" />
@@ -204,6 +212,16 @@ export function OptimizedDiamondImage({
           {loadTime && loadTime < 100 && (
             <div className="bg-green-500/80 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-xs font-medium">
               ⚡
+            </div>
+          )}
+          {format === 'webp' && (
+            <div className="bg-purple-500/80 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-xs font-medium">
+              WebP
+            </div>
+          )}
+          {networkQuality === 'slow' && (
+            <div className="bg-orange-500/80 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-xs font-medium">
+              📶
             </div>
           )}
         </div>

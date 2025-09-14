@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Diamond } from "@/components/inventory/InventoryTable";
-import { LazyImage } from "@/components/ui/LazyImage";
+import { TelegramOptimizedImage } from "@/components/ui/TelegramOptimizedImage";
 import { UniversalImageHandler } from "./UniversalImageHandler";
 import { TelegramShareButton } from "./TelegramShareButton";
 import { LimitedGroupShareButton } from "./LimitedGroupShareButton";
@@ -107,19 +107,15 @@ View details: ${window.location.origin}/diamond/${diamond.stockNumber}`;
             className="w-full h-full"
           />
         ) : (
-          <LazyImage
+          <TelegramOptimizedImage
+            stockNumber={diamond.stockNumber}
             src={diamond.imageUrl}
             alt={`${diamond.carat}ct ${diamond.shape} Diamond - Stock #${diamond.stockNumber}`}
             className="w-full h-full"
-            priority={isPriority}
-            quality={isPriority ? 90 : 75}
-            fallbacks={[
-              `https://miniapp.mazalbot.com/api/diamond-image/${diamond.stockNumber}`,
-              `https://via.placeholder.com/400x400/f3f4f6/6b7280?text=${diamond.shape}`
-            ]}
+            priority={isPriority ? 'high' : 'medium'}
+            fallbackUrl={`https://miniapp.mazalbot.com/api/diamond-image/${diamond.stockNumber}`}
             onLoad={() => setImageLoaded(true)}
-            rootMargin="100px"
-            threshold={0.1}
+            showMetrics={process.env.NODE_ENV === 'development'}
           />
         )}
         
