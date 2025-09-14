@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Share2, ExternalLink, Camera, Award, Gem, Palette, Eye, MessageSquare, Upload, X, Sparkles } from "lucide-react";
 import { V360Viewer } from "@/components/store/V360Viewer";
 import { Gem360Viewer } from "@/components/store/Gem360Viewer";
+import { UniversalImageHandler } from "@/components/store/UniversalImageHandler";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -317,14 +318,23 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
             <div className="space-y-4">
               <Card className="overflow-hidden">
                 <div className="aspect-square bg-gradient-to-br from-slate-100 to-slate-200 relative">
-                  <OptimizedDiamondImage
-                    imageUrl={diamond.imageUrl}
-                    gem360Url={diamond.gem360Url}
-                    stockNumber={diamond.stockNumber}
-                    shape={diamond.shape}
-                    className="w-full h-full"
-                    priority={true}
-                  />
+{diamond.gem360Url ? (
+                    <UniversalImageHandler
+                      imageUrl={diamond.gem360Url}
+                      stockNumber={diamond.stockNumber}
+                      isInline={true}
+                      className="w-full h-full"
+                    />
+                  ) : (
+                    <OptimizedDiamondImage
+                      imageUrl={diamond.imageUrl}
+                      gem360Url={diamond.gem360Url}
+                      stockNumber={diamond.stockNumber}
+                      shape={diamond.shape}
+                      className="w-full h-full"
+                      priority={true}
+                    />
+                  )}
                   
                   {/* Admin Image Upload Button */}
                   {isAdmin && (
