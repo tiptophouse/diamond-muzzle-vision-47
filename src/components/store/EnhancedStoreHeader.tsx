@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowUpDown, SlidersHorizontal } from "lucide-react";
+import { ShareQuotaIndicator } from "./ShareQuotaIndicator";
 
 interface SortOption {
   value: string;
@@ -31,37 +32,40 @@ export function EnhancedStoreHeader({
   onOpenFilters 
 }: EnhancedStoreHeaderProps) {
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Diamond collection</h1>
-          <p className="text-sm text-slate-600 mt-1">
-            {totalDiamonds} diamonds found
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onOpenFilters}
-            className="p-2"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-          </Button>
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Diamond collection</h1>
+            <p className="text-sm text-slate-600 mt-1">
+              {totalDiamonds} diamonds found
+            </p>
+          </div>
           
-          <Button
-            variant="outline"
-            size="sm"
-            className="p-2"
-          >
-            <ArrowUpDown className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onOpenFilters}
+              className="p-2"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              className="p-2"
+            >
+              <ArrowUpDown className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {/* Sort Dropdown */}
+        {/* Share Quota Indicator */}
+        <ShareQuotaIndicator />
+
+        {/* Sort Dropdown */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-slate-600">
           Sort by

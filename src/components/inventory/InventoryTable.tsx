@@ -77,9 +77,9 @@ export function InventoryTable({ data, loading = false, onEdit, onDelete, onStor
   }
   
   return (
-    <div className="w-full rounded-md border overflow-hidden bg-background">
-      <div className="w-full overflow-x-auto">
-        <Table className="w-full min-w-full">
+    <div className="w-full rounded-md border bg-background">
+      <div className="w-full">
+        <Table className="w-full">
           <InventoryTableHeader />
           <TableBody>
             {data.length === 0 ? (

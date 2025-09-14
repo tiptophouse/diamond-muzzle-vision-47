@@ -15,6 +15,7 @@ interface AdminUserTableProps {
   onEditUser: (user: any) => void;
   onToggleBlock: (user: any) => void;
   onDeleteUser: (user: any) => void;
+  onSendMessage: (user: any) => void;
 }
 
 export function AdminUserTable({ 
@@ -26,7 +27,8 @@ export function AdminUserTable({
   onViewUser, 
   onEditUser, 
   onToggleBlock, 
-  onDeleteUser 
+  onDeleteUser,
+  onSendMessage
 }: AdminUserTableProps) {
   const telegramIds = filteredUsers.map(u => u.telegram_id).filter(Boolean);
   const { countries } = useUsersCountry(telegramIds);
@@ -64,6 +66,7 @@ export function AdminUserTable({
               onEditUser={onEditUser}
               onToggleBlock={onToggleBlock}
               onDeleteUser={onDeleteUser}
+              onSendMessage={onSendMessage}
               countryCode={country?.country_code}
               countryName={country?.country_name}
             />

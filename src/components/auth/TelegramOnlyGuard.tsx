@@ -2,6 +2,7 @@
 import { ReactNode } from 'react';
 import { useStrictTelegramAuth } from '@/hooks/useStrictTelegramAuth';
 import { Shield, Smartphone, ExternalLink, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface TelegramOnlyGuardProps {
   children: ReactNode;
@@ -37,43 +38,58 @@ export function TelegramOnlyGuard({ children }: TelegramOnlyGuardProps) {
   if (!isAuthenticated || accessDeniedReason) {
     const getAccessDeniedContent = () => {
       switch (accessDeniedReason) {
-        case 'web_access_blocked':
-        case 'not_telegram':
+        case 'not_telegram_environment':
           return {
             icon: <Smartphone className="h-12 w-12 text-blue-600" />,
             title: 'Telegram Mini App Only',
             message: 'This application can only be accessed through Telegram Mini App.',
             instructions: [
               'Open Telegram on your mobile device',
-              'Search for our bot or use the link provided',
+              'Search for our bot or use the provided link',
               'Start the Mini App from within Telegram',
               'Do not access via web browser'
             ],
             showTelegramButton: true
           };
         
-        case 'invalid_telegram_data':
+        case 'no_init_data':
           return {
             icon: <AlertTriangle className="h-12 w-12 text-orange-600" />,
-            title: 'Invalid Telegram Data',
-            message: 'The Telegram authentication data is invalid or expired.',
+            title: 'Authentication Data Missing',
+            message: 'Telegram authentication data is required but not found.',
             instructions: [
-              'Close and reopen the Mini App',
-              'Make sure you\'re using the latest version of Telegram',
-              'Try restarting Telegram if the issue persists'
+              'Close and reopen the Mini App from Telegram',
+              'Make sure you\'re using the latest Telegram version',
+              'Try restarting Telegram if the issue persists',
+              'Contact support if the problem continues'
             ],
             showRefreshButton: true
           };
         
-        case 'authentication_failed':
+        case 'backend_auth_failed':
           return {
             icon: <Shield className="h-12 w-12 text-red-600" />,
             title: 'Authentication Failed',
-            message: 'Unable to verify your Telegram identity.',
+            message: 'Unable to verify your identity with our servers.',
             instructions: [
-              'Make sure you\'re logged into Telegram',
+              'Check your internet connection',
               'Try closing and reopening the Mini App',
+              'Make sure you\'re logged into Telegram',
               'Contact support if the issue continues'
+            ],
+            showRefreshButton: true
+          };
+        
+        case 'invalid_user_data':
+          return {
+            icon: <AlertTriangle className="h-12 w-12 text-orange-600" />,
+            title: 'Invalid User Data',
+            message: 'The authentication data format is invalid.',
+            instructions: [
+              'Close and reopen the Mini App',
+              'Update Telegram to the latest version',
+              'Clear Telegram cache if possible',
+              'Contact support if the issue persists'
             ],
             showRefreshButton: true
           };
@@ -84,8 +100,9 @@ export function TelegramOnlyGuard({ children }: TelegramOnlyGuardProps) {
             title: 'Access Denied',
             message: error || 'Unable to access the application.',
             instructions: [
-              'Please try again',
-              'Make sure you\'re using Telegram Mini App'
+              'Please restart the app from Telegram',
+              'Ensure you\'re using Telegram Mini App',
+              'Check your internet connection'
             ],
             showRefreshButton: true
           };
@@ -105,7 +122,7 @@ export function TelegramOnlyGuard({ children }: TelegramOnlyGuardProps) {
           <p className="text-gray-600 mb-6">{content.message}</p>
           
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <h4 className="font-medium text-blue-800 mb-3">How to Access:</h4>
+            <h4 className="font-medium text-blue-800 mb-3">How to Fix:</h4>
             <ul className="text-blue-700 text-sm space-y-2 text-left">
               {content.instructions.map((instruction, index) => (
                 <li key={index} className="flex items-start gap-2">
@@ -118,27 +135,28 @@ export function TelegramOnlyGuard({ children }: TelegramOnlyGuardProps) {
           
           <div className="space-y-3">
             {content.showRefreshButton && (
-              <button
+              <Button
                 onClick={() => window.location.reload()}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+                className="w-full flex items-center justify-center gap-2"
               >
                 <RefreshCw size={18} />
                 Try Again
-              </button>
+              </Button>
             )}
             
             {content.showTelegramButton && (
-              <button
+              <Button
                 onClick={() => {
                   // Try to open in Telegram if possible
                   const telegramUrl = `tg://resolve?domain=your_bot_username`;
                   window.open(telegramUrl, '_blank');
                 }}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+                variant="outline"
+                className="w-full flex items-center justify-center gap-2"
               >
                 <ExternalLink size={18} />
                 Open in Telegram
-              </button>
+              </Button>
             )}
           </div>
           
@@ -153,6 +171,7 @@ export function TelegramOnlyGuard({ children }: TelegramOnlyGuardProps) {
                 <div>User ID: {user?.id || 'None'}</div>
                 <div>Access Denied Reason: {accessDeniedReason || 'None'}</div>
                 <div>Error: {error || 'None'}</div>
+                <div>InitData Available: {typeof window !== 'undefined' && window.Telegram?.WebApp?.initData ? 'Yes' : 'No'}</div>
               </div>
             </div>
           )}
