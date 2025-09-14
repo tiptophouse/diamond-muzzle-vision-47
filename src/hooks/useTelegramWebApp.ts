@@ -150,26 +150,14 @@ export function useTelegramWebApp() {
     }
   }, []);
 
-  // Haptic throttle to avoid duplicate vibrations
-  const lastHapticRef = useRef(0);
-  const canTriggerHaptic = () => {
-    const now = Date.now();
-    if (now - lastHapticRef.current < 150) return false;
-    lastHapticRef.current = now;
-    return true;
-  };
-
   const hapticFeedback = {
     impact: (style: 'light' | 'medium' | 'heavy' = 'medium') => {
-      if (!canTriggerHaptic()) return;
       webApp?.HapticFeedback?.impactOccurred(style);
     },
     notification: (type: 'error' | 'success' | 'warning') => {
-      if (!canTriggerHaptic()) return;
       webApp?.HapticFeedback?.notificationOccurred(type);
     },
     selection: () => {
-      if (!canTriggerHaptic()) return;
       webApp?.HapticFeedback?.selectionChanged();
     }
   };

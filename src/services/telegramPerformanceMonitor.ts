@@ -38,13 +38,10 @@ class TelegramPerformanceMonitor {
         this.flushMetrics();
       });
       
-      // Periodic performance reports (debounced while hidden)
-      const tick = () => {
-        if (document.visibilityState !== 'hidden') {
-          this.generatePerformanceReport();
-        }
-      };
-      setInterval(tick, this.REPORT_INTERVAL);
+      // Periodic performance reports
+      setInterval(() => {
+        this.generatePerformanceReport();
+      }, this.REPORT_INTERVAL);
     }
   }
 
