@@ -32,11 +32,17 @@ port = 54328
 [edge_functions]
 enabled = true
 
-# All edge functions now require JWT authentication for security
-# Only telegram-webhook remains public for external Telegram server access
-
-[functions.telegram-webhook]
+[functions.user-engagement-monitor]
 verify_jwt = false
 
-[functions.verify-telegram-initdata]
+[functions.send-telegram-message]
+verify_jwt = false
+
+[functions.user-engagement]
+verify_jwt = false
+
+[functions.openai-csv-enhancer]
+verify_jwt = false
+
+[functions.send-diamond-to-group]
 verify_jwt = false

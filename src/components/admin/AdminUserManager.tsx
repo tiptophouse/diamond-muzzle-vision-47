@@ -1,15 +1,18 @@
 
 import React, { useState } from 'react';
 import { Settings } from 'lucide-react';
-import { useEnhancedAnalytics } from '@/hooks/useEnhancedAnalytics';
+import { useAllUsers } from '@/hooks/useAllUsers';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
 import { UserDetailsModal } from './UserDetailsModal';
 import { AddUserModal } from './AddUserModal';
 import { EditUserModal } from './EditUserModal';
+import { SendMessageDialog } from './SendMessageDialog';
 import { AdminHeader } from './AdminHeader';
 import { AdminStatsGrid } from './AdminStatsGrid';
 import { AdminUserTable } from './AdminUserTable';
 import { NotificationSender } from './NotificationSender';
+import { BulkUserAdder } from './BulkUserAdder';
+import { BulkSubscriptionManager } from './BulkSubscriptionManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,7 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface AdminUserManagerProps {}
 
 export function AdminUserManager({}: AdminUserManagerProps) {
-  const { enhancedUsers, isLoading, getUserEngagementScore, getUserStats, refetch } = useEnhancedAnalytics();
+  const { allUsers, isLoading, getUserEngagementScore, getUserStats, refetch } = useAllUsers();
   const { isUserBlocked, blockUser, unblockUser, blockedUsers } = useBlockedUsers();
   const { toast } = useToast();
   
@@ -26,12 +29,16 @@ export function AdminUserManager({}: AdminUserManagerProps) {
   const [showUserDetails, setShowUserDetails] = useState(false);
   const [showAddUser, setShowAddUser] = useState(false);
   const [showEditUser, setShowEditUser] = useState(false);
+  const [showSendMessage, setShowSendMessage] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const stats = getUserStats();
 
-  const filteredUsers = enhancedUsers.filter(user => {
+  console.log(`👥 AdminUserManager: Total users loaded: ${allUsers.length}`);
+  console.log(`📊 User stats:`, stats);
+
+  const filteredUsers = allUsers.filter(user => {
     // Create a comprehensive search that includes real names
     const searchLower = searchTerm.toLowerCase();
     
@@ -56,6 +63,8 @@ export function AdminUserManager({}: AdminUserManagerProps) {
     );
   });
 
+  console.log(`🔍 Filtered users: ${filteredUsers.length} out of ${allUsers.length} total`);
+
   const handleViewUser = (user: any) => {
     setSelectedUser(user);
     setShowUserDetails(true);
@@ -64,6 +73,11 @@ export function AdminUserManager({}: AdminUserManagerProps) {
   const handleEditUser = (user: any) => {
     setEditingUser(user);
     setShowEditUser(true);
+  };
+
+  const handleSendMessage = (user: any) => {
+    setSelectedUser(user);
+    setShowSendMessage(true);
   };
 
   const handleDeleteUser = async (user: any) => {
@@ -234,14 +248,15 @@ export function AdminUserManager({}: AdminUserManagerProps) {
             <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto mb-6"></div>
             <Settings className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-blue-600" />
           </div>
-          <div className="text-xl font-semibold text-gray-900">Loading dashboard...</div>
+          <div className="text-xl font-semibold text-gray-900">Loading user management...</div>
+          <div className="text-sm text-gray-600 mt-2">Fetching all users from user_profiles table...</div>
         </div>
       </div>
     );
   }
 
-  const averageEngagement = enhancedUsers.length > 0 
-    ? Math.round(enhancedUsers.reduce((sum, u) => sum + getUserEngagementScore(u), 0) / enhancedUsers.length)
+  const averageEngagement = allUsers.length > 0 
+    ? Math.round(allUsers.reduce((sum, u) => sum + getUserEngagementScore(u), 0) / allUsers.length)
     : 0;
 
   return (
@@ -256,6 +271,9 @@ export function AdminUserManager({}: AdminUserManagerProps) {
           >
             Delete All Mock Data
           </button>
+          <div className="text-sm text-gray-600 flex items-center">
+            📊 Showing {allUsers.length} total users from database
+          </div>
         </div>
 
         <AdminStatsGrid 
@@ -265,9 +283,19 @@ export function AdminUserManager({}: AdminUserManagerProps) {
         />
 
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6 bg-white">
-            <TabsTrigger value="users" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">User Management</TabsTrigger>
-            <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Send Notifications</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 mb-6 bg-white">
+            <TabsTrigger value="users" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              User Management ({allUsers.length} users total)
+            </TabsTrigger>
+            <TabsTrigger value="bulk-add" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              הוספה בכמות
+            </TabsTrigger>
+            <TabsTrigger value="bulk-subscriptions" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              ניהול מנויים
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              Send Notifications
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="users">
@@ -281,7 +309,20 @@ export function AdminUserManager({}: AdminUserManagerProps) {
               onEditUser={handleEditUser}
               onToggleBlock={handleToggleBlock}
               onDeleteUser={handleDeleteUser}
+              onSendMessage={handleSendMessage}
             />
+          </TabsContent>
+
+          <TabsContent value="bulk-add">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <BulkUserAdder onUsersAdded={refetch} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="bulk-subscriptions">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <BulkSubscriptionManager onComplete={refetch} />
+            </div>
           </TabsContent>
           
           <TabsContent value="notifications">
@@ -312,6 +353,14 @@ export function AdminUserManager({}: AdminUserManagerProps) {
             user={editingUser}
             isOpen={showEditUser}
             onClose={() => setShowEditUser(false)}
+          />
+        )}
+
+        {showSendMessage && selectedUser && (
+          <SendMessageDialog
+            user={selectedUser}
+            open={showSendMessage}
+            onOpenChange={setShowSendMessage}
           />
         )}
       </div>

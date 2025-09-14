@@ -17,6 +17,8 @@ interface DiamondCountStats {
   usersWithZeroDiamonds: number;
   totalDiamonds: number;
   avgDiamondsPerUser: number;
+  premiumUsers: number;
+  fastapiConnectedUsers: number;
 }
 
 class UserDiamondCountsCache {

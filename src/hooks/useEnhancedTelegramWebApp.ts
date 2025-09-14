@@ -50,8 +50,15 @@ export function useEnhancedTelegramWebApp() {
       WebApp.ready();
       WebApp.expand();
       
-      // Enable modern features
+      // Enable modern features for stable experience
       WebApp.enableClosingConfirmation();
+      
+      // iPhone scrolling fixes - Use ONLY disableVerticalSwipes to prevent app closing
+      // This prevents the mini app from closing on vertical swipes while allowing native scrolling
+      if (typeof WebApp.disableVerticalSwipes === 'function') {
+        WebApp.disableVerticalSwipes();
+        console.log('✅ Disabled vertical swipes to prevent app closing - native scrolling enabled');
+      }
       
       // Set optimal theme for better UX
       WebApp.setHeaderColor('#1f2937');
@@ -66,16 +73,82 @@ export function useEnhancedTelegramWebApp() {
         document.documentElement.style.setProperty('--tg-safe-area-inset-top', `${WebApp.safeAreaInset?.top || 0}px`);
         document.documentElement.style.setProperty('--tg-safe-area-inset-bottom', `${WebApp.safeAreaInset?.bottom || 0}px`);
         
-        // Optimize viewport for iPhone
-        document.documentElement.style.setProperty('--tg-viewport-height', `${WebApp.viewportStableHeight || WebApp.viewportHeight}px`);
+        // Optimize viewport for iPhone - Always use viewportStableHeight for iOS
+        const stableHeight = WebApp.viewportStableHeight || WebApp.viewportHeight;
+        document.documentElement.style.setProperty('--tg-viewport-height', `${stableHeight}px`);
+        document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableHeight}px`);
         
         // Prevent iOS zoom on input focus
         const metaViewport = document.querySelector('meta[name=viewport]');
         if (metaViewport) {
           metaViewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
         }
+        
+        // Apply Telegram theme colors
+        applyTelegramTheme();
       } else {
         document.documentElement.style.setProperty('--tg-viewport-height', `${WebApp.viewportHeight}px`);
+        // Apply Telegram theme colors for non-iOS too
+        applyTelegramTheme();
+      }
+
+      // Function to apply Telegram's dynamic theme
+      function applyTelegramTheme() {
+        const theme = WebApp.themeParams;
+        console.log('🎨 Applying Telegram theme:', theme);
+        
+        if (theme) {
+          // Apply Telegram colors to CSS variables
+          if (theme.bg_color) {
+            document.documentElement.style.setProperty('--background', convertToHSL(theme.bg_color));
+          }
+          if (theme.text_color) {
+            document.documentElement.style.setProperty('--foreground', convertToHSL(theme.text_color));
+          }
+          if (theme.hint_color) {
+            document.documentElement.style.setProperty('--muted-foreground', convertToHSL(theme.hint_color));
+          }
+          if (theme.link_color) {
+            document.documentElement.style.setProperty('--primary', convertToHSL(theme.link_color));
+          }
+          if (theme.button_color) {
+            document.documentElement.style.setProperty('--primary', convertToHSL(theme.button_color));
+          }
+          if (theme.button_text_color) {
+            document.documentElement.style.setProperty('--primary-foreground', convertToHSL(theme.button_text_color));
+          }
+          if (theme.secondary_bg_color) {
+            document.documentElement.style.setProperty('--card', convertToHSL(theme.secondary_bg_color));
+            document.documentElement.style.setProperty('--secondary', convertToHSL(theme.secondary_bg_color));
+          }
+        }
+      }
+
+      // Convert hex color to HSL for CSS variables
+      function convertToHSL(hex: string): string {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        if (!result) return '0 0% 50%';
+        
+        const r = parseInt(result[1], 16) / 255;
+        const g = parseInt(result[2], 16) / 255;
+        const b = parseInt(result[3], 16) / 255;
+        
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        let h = 0, s = 0, l = (max + min) / 2;
+        
+        if (max !== min) {
+          const d = max - min;
+          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+          switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+          }
+          h /= 6;
+        }
+        
+        return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
       }
 
       // Set up enhanced WebApp state
@@ -127,8 +200,28 @@ export function useEnhancedTelegramWebApp() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       initializeWebApp();
+      
+      // Listen for viewport changes to update CSS variables dynamically
+      const handleViewportChanged = () => {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isIOS && webApp) {
+          const stableHeight = WebApp.viewportStableHeight || WebApp.viewportHeight;
+          document.documentElement.style.setProperty('--tg-viewport-height', `${WebApp.viewportHeight}px`);
+          document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableHeight}px`);
+          console.log('📱 iOS viewport updated:', { viewportHeight: WebApp.viewportHeight, stableHeight });
+        }
+      };
+      
+      // Set up viewport change listener
+      if (typeof WebApp !== 'undefined' && WebApp.onEvent) {
+        WebApp.onEvent('viewportChanged', handleViewportChanged);
+        
+        return () => {
+          WebApp.offEvent('viewportChanged', handleViewportChanged);
+        };
+      }
     }
-  }, [initializeWebApp]);
+  }, [initializeWebApp, webApp]);
 
   // Helper function to ensure color format is valid for Telegram SDK
   const formatColor = (color: string): `#${string}` => {

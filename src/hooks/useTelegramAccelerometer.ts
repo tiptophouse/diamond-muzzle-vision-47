@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { telegramSDK } from '@/lib/telegram/telegramSDK';
+import { TelegramWebApp } from '../types/telegram';
 
 interface AccelerometerData {
   x: number;
@@ -35,13 +35,13 @@ export function useTelegramAccelerometer(enabled: boolean = false, refreshRate: 
     }
   }, []);
 
-  // Start accelerometer using optimized SDK
+  // Start accelerometer
   const startAccelerometer = useCallback(() => {
-    const webApp = telegramSDK.getWebApp();
-    if (webApp?.Accelerometer && !webApp.Accelerometer.isStarted) {
+    const tg = window.Telegram?.WebApp as TelegramWebApp;
+    if (tg?.Accelerometer && !tg.Accelerometer.isStarted) {
       try {
-        webApp.Accelerometer.start({ refresh_rate: refreshRate });
-        webApp.DeviceOrientation?.start({ refresh_rate: refreshRate });
+        tg.Accelerometer.start({ refresh_rate: refreshRate });
+        tg.DeviceOrientation?.start({ refresh_rate: refreshRate });
         setIsActive(true);
         console.log('🎯 Accelerometer started at', refreshRate, 'Hz');
       } catch (error) {
@@ -50,13 +50,13 @@ export function useTelegramAccelerometer(enabled: boolean = false, refreshRate: 
     }
   }, [refreshRate]);
 
-  // Stop accelerometer using optimized SDK
+  // Stop accelerometer
   const stopAccelerometer = useCallback(() => {
-    const webApp = telegramSDK.getWebApp();
-    if (webApp?.Accelerometer && webApp.Accelerometer.isStarted) {
+    const tg = window.Telegram?.WebApp as TelegramWebApp;
+    if (tg?.Accelerometer && tg.Accelerometer.isStarted) {
       try {
-        webApp.Accelerometer.stop();
-        webApp.DeviceOrientation?.stop();
+        tg.Accelerometer.stop();
+        tg.DeviceOrientation?.stop();
         setIsActive(false);
         console.log('🎯 Accelerometer stopped');
       } catch (error) {
@@ -65,12 +65,12 @@ export function useTelegramAccelerometer(enabled: boolean = false, refreshRate: 
     }
   }, []);
 
-  // Lock orientation using optimized SDK
+  // Lock orientation for better motion control
   const lockOrientation = useCallback((orientation: 'portrait' | 'landscape') => {
-    const webApp = telegramSDK.getWebApp();
-    if (webApp?.lockOrientation) {
+    const tg = window.Telegram?.WebApp as TelegramWebApp;
+    if (tg?.lockOrientation) {
       try {
-        webApp.lockOrientation(orientation);
+        tg.lockOrientation(orientation);
         console.log('🔒 Orientation locked to:', orientation);
       } catch (error) {
         console.error('Failed to lock orientation:', error);
@@ -78,12 +78,12 @@ export function useTelegramAccelerometer(enabled: boolean = false, refreshRate: 
     }
   }, []);
 
-  // Unlock orientation using optimized SDK
+  // Unlock orientation
   const unlockOrientation = useCallback(() => {
-    const webApp = telegramSDK.getWebApp();
-    if (webApp?.unlockOrientation) {
+    const tg = window.Telegram?.WebApp as TelegramWebApp;
+    if (tg?.unlockOrientation) {
       try {
-        webApp.unlockOrientation();
+        tg.unlockOrientation();
         console.log('🔓 Orientation unlocked');
       } catch (error) {
         console.error('Failed to unlock orientation:', error);
@@ -91,10 +91,10 @@ export function useTelegramAccelerometer(enabled: boolean = false, refreshRate: 
     }
   }, []);
 
-  // Initialize using optimized SDK
+  // Initialize
   useEffect(() => {
-    const webApp = telegramSDK.getWebApp();
-    if (webApp?.Accelerometer) {
+    const tg = window.Telegram?.WebApp as TelegramWebApp;
+    if (tg?.Accelerometer) {
       setIsSupported(true);
       
       // Add event listeners

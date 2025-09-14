@@ -1,137 +1,354 @@
-// React hook for optimized Telegram SDK usage
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { telegramSDK, TelegramUser } from '@/lib/telegram/telegramSDK';
+/**
+ * React Hook for Telegram Mini App SDK
+ * Provides easy access to all Telegram Mini App features
+ */
+
+import { useEffect, useState, useCallback, useRef } from 'react';
+import telegramSDK from '@/services/TelegramMiniAppSDK';
 
 interface TelegramSDKState {
   isInitialized: boolean;
-  isTelegramEnvironment: boolean;
-  user: TelegramUser | null;
-  initData: string | null;
-  isInitDataValid: boolean;
-  theme: {
-    colorScheme: 'light' | 'dark';
-    themeParams: Record<string, string>;
-    isExpanded: boolean;
+  user: any;
+  chat: any;
+    theme: {
+      colorScheme: 'light' | 'dark';
+      themeParams: Record<string, string>;
+    };
+  device: {
+    platform: string;
+    version: string;
     viewportHeight: number;
     viewportStableHeight: number;
-  } | null;
-  error: string | null;
+    isExpanded: boolean;
+    isFullscreen: boolean;
+  };
+  features: {
+    cloudStorage: boolean;
+    biometric: boolean;
+    location: boolean;
+    fullscreen: boolean;
+    homeScreen: boolean;
+  };
 }
 
 export function useTelegramSDK() {
   const [state, setState] = useState<TelegramSDKState>({
     isInitialized: false,
-    isTelegramEnvironment: false,
     user: null,
-    initData: null,
-    isInitDataValid: false,
-    theme: null,
-    error: null
+    chat: null,
+    theme: {
+      colorScheme: 'light',
+      themeParams: {},
+    },
+    device: {
+      platform: 'unknown',
+      version: '1.0',
+      viewportHeight: window.innerHeight,
+      viewportStableHeight: window.innerHeight,
+      isExpanded: false,
+      isFullscreen: false,
+    },
+    features: {
+      cloudStorage: false,
+      biometric: false,
+      location: false,
+      fullscreen: false,
+      homeScreen: false,
+    },
   });
 
-  const initAttempted = useRef(false);
+  const mountedRef = useRef(true);
 
+  // Update state from SDK
   const updateState = useCallback(() => {
-    const isTelegramEnv = telegramSDK.isTelegramWebAppEnvironment();
-    const user = telegramSDK.getUser();
-    const initData = telegramSDK.getInitData();
-    const isInitDataValid = telegramSDK.isInitDataValid();
-    const theme = telegramSDK.getTheme();
+    if (!mountedRef.current) return;
 
-    setState(prev => ({
-      ...prev,
-      isTelegramEnvironment: isTelegramEnv,
-      user,
-      initData,
-      isInitDataValid,
-      theme
-    }));
+    const webApp = telegramSDK.getWebApp();
+    
+    setState({
+      isInitialized: telegramSDK.isInitialized(),
+      user: telegramSDK.getUser(),
+      chat: telegramSDK.getChat(),
+      theme: telegramSDK.getTheme() as { colorScheme: "light" | "dark"; themeParams: Record<string, string>; },
+      device: telegramSDK.getDeviceInfo(),
+      features: {
+        cloudStorage: !!webApp?.CloudStorage,
+        biometric: !!webApp?.BiometricManager,
+        location: !!webApp?.LocationManager,
+        fullscreen: typeof webApp?.requestFullscreen === 'function',
+        homeScreen: typeof webApp?.addToHomeScreen === 'function',
+      },
+    });
   }, []);
 
-  const initialize = useCallback(async () => {
-    if (initAttempted.current) return;
-    initAttempted.current = true;
-
-    try {
-      console.log('🚀 useTelegramSDK: Initializing...');
-      setState(prev => ({ ...prev, error: null }));
-
-      const success = await telegramSDK.initialize();
-      
-      setState(prev => ({
-        ...prev,
-        isInitialized: success,
-        error: success ? null : 'Failed to initialize Telegram SDK'
-      }));
-
-      if (success) {
+  useEffect(() => {
+    mountedRef.current = true;
+    
+    // Initial state update
+    const initialUpdate = () => {
+      if (telegramSDK.isInitialized()) {
         updateState();
-        console.log('✅ useTelegramSDK: Initialization successful');
       } else {
-        console.warn('⚠️ useTelegramSDK: Initialization failed');
+        // Wait for initialization
+        setTimeout(initialUpdate, 100);
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('❌ useTelegramSDK: Initialization error:', errorMessage);
-      setState(prev => ({
-        ...prev,
-        isInitialized: false,
-        error: errorMessage
-      }));
-    }
+    };
+    initialUpdate();
+
+    // Listen for SDK events
+    const handleViewportChange = () => updateState();
+    const handleThemeChange = () => updateState();
+    const handleFullscreenChange = () => updateState();
+
+    telegramSDK.on('viewportChanged', handleViewportChange);
+    telegramSDK.on('themeChanged', handleThemeChange);
+    telegramSDK.on('fullscreenChanged', handleFullscreenChange);
+
+    return () => {
+      mountedRef.current = false;
+      telegramSDK.off('viewportChanged', handleViewportChange);
+      telegramSDK.off('themeChanged', handleThemeChange);
+      telegramSDK.off('fullscreenChanged', handleFullscreenChange);
+    };
   }, [updateState]);
 
-  useEffect(() => {
-    initialize();
-  }, [initialize]);
+  // UI Controls
+  const mainButton = {
+    show: useCallback((text: string, onClick: () => void, options?: { color?: string; textColor?: string }) => {
+      telegramSDK.mainButton.show(text, onClick, options);
+    }, []),
+    hide: useCallback(() => {
+      telegramSDK.mainButton.hide();
+    }, []),
+    setText: useCallback((text: string) => {
+      telegramSDK.mainButton.setText(text);
+    }, []),
+    showProgress: useCallback(() => {
+      telegramSDK.mainButton.showProgress();
+    }, []),
+    hideProgress: useCallback(() => {
+      telegramSDK.mainButton.hideProgress();
+    }, []),
+    enable: useCallback(() => {
+      telegramSDK.mainButton.enable();
+    }, []),
+    disable: useCallback(() => {
+      telegramSDK.mainButton.disable();
+    }, []),
+  };
 
-  // Optimized haptic feedback methods
+  const backButton = {
+    show: useCallback((onClick: () => void) => {
+      telegramSDK.backButton.show(onClick);
+    }, []),
+    hide: useCallback(() => {
+      telegramSDK.backButton.hide();
+    }, []),
+  };
+
+  const settingsButton = {
+    show: useCallback((onClick: () => void) => {
+      telegramSDK.settingsButton.show(onClick);
+    }, []),
+    hide: useCallback(() => {
+      telegramSDK.settingsButton.hide();
+    }, []),
+  };
+
+  // Haptic Feedback
   const haptic = {
     impact: useCallback((style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft' = 'medium') => {
-      telegramSDK.haptic.impact(style);
+      telegramSDK.hapticFeedback.impact(style);
     }, []),
-    notification: useCallback((type: 'error' | 'success' | 'warning' = 'success') => {
-      telegramSDK.haptic.notification(type);
+    notification: useCallback((type: 'error' | 'success' | 'warning') => {
+      telegramSDK.hapticFeedback.notification(type);
     }, []),
     selection: useCallback(() => {
-      telegramSDK.haptic.selection();
-    }, [])
+      telegramSDK.hapticFeedback.selection();
+    }, []),
   };
 
-  // Main button methods
-  const mainButton = {
-    show: useCallback((text?: string, callback?: () => void) => telegramSDK.mainButton.show(text, callback), []),
-    hide: useCallback(() => telegramSDK.mainButton.hide(), []),
-    setText: useCallback((text: string) => telegramSDK.mainButton.setText(text), []),
-    onClick: useCallback((callback: () => void) => telegramSDK.mainButton.onClick(callback), []),
-    offClick: useCallback((callback: () => void) => telegramSDK.mainButton.offClick(callback), [])
+  // Cloud Storage
+  const cloudStorage = {
+    setItem: useCallback(async (key: string, value: string) => {
+      return await telegramSDK.cloudStorage.setItem(key, value);
+    }, []),
+    getItem: useCallback(async (key: string) => {
+      return await telegramSDK.cloudStorage.getItem(key);
+    }, []),
+    removeItem: useCallback(async (key: string) => {
+      return await telegramSDK.cloudStorage.removeItem(key);
+    }, []),
+    getKeys: useCallback(async () => {
+      return await telegramSDK.cloudStorage.getKeys();
+    }, []),
   };
 
-  // Back button methods  
-  const backButton = {
-    show: useCallback((callback?: () => void) => telegramSDK.backButton.show(callback), []),
-    hide: useCallback(() => telegramSDK.backButton.hide(), []),
-    onClick: useCallback((callback: () => void) => telegramSDK.backButton.onClick(callback), [])
+  // Biometric Authentication
+  const biometric = {
+    isAvailable: useCallback(() => {
+      return telegramSDK.biometric.isAvailable();
+    }, []),
+    getType: useCallback(() => {
+      return telegramSDK.biometric.getType();
+    }, []),
+    requestAccess: useCallback(async (reason: string) => {
+      return await telegramSDK.biometric.requestAccess(reason);
+    }, []),
+    authenticate: useCallback(async (reason: string) => {
+      return await telegramSDK.biometric.authenticate(reason);
+    }, []),
+    updateToken: useCallback((token: string, callback?: (ok: boolean) => void) => {
+      telegramSDK.biometric.updateToken(token, callback);
+    }, []),
   };
 
-  // Close method
+  // Location Services
+  const location = {
+    isAvailable: useCallback(() => {
+      return telegramSDK.location.isAvailable();
+    }, []),
+    getLocation: useCallback(async () => {
+      return await telegramSDK.location.getLocation();
+    }, []),
+  };
+
+  // Popups and Alerts
+  const showAlert = useCallback(async (message: string) => {
+    return await telegramSDK.showAlert(message);
+  }, []);
+
+  const showConfirm = useCallback(async (message: string) => {
+    return await telegramSDK.showConfirm(message);
+  }, []);
+
+  const showPopup = useCallback(async (params: any) => {
+    return await telegramSDK.showPopup(params);
+  }, []);
+
+  // QR Scanner
+  const scanQr = useCallback(async (text?: string) => {
+    return await telegramSDK.scanQr(text);
+  }, []);
+
+  // Navigation and Links
+  const openLink = useCallback((url: string, options?: { try_instant_view?: boolean }) => {
+    telegramSDK.openLink(url, options);
+  }, []);
+
+  const openTelegramLink = useCallback((url: string) => {
+    telegramSDK.openTelegramLink(url);
+  }, []);
+
+  const share = useCallback((query: string, chatTypes?: string[]) => {
+    telegramSDK.share(query, chatTypes);
+  }, []);
+
+  // Fullscreen (New 2024 feature)
+  const requestFullscreen = useCallback(async () => {
+    return await telegramSDK.requestFullscreen();
+  }, []);
+
+  const exitFullscreen = useCallback(() => {
+    telegramSDK.exitFullscreen();
+  }, []);
+
+  // Home Screen (New 2024 feature)
+  const addToHomeScreen = useCallback(async () => {
+    return await telegramSDK.addToHomeScreen();
+  }, []);
+
+  // App Badge
+  const setBadge = useCallback((count: number) => {
+    telegramSDK.setBadge(count);
+  }, []);
+
+  const clearBadge = useCallback(() => {
+    telegramSDK.clearBadge();
+  }, []);
+
+  // Theme and Display
+  const setHeaderColor = useCallback((color: string) => {
+    telegramSDK.setHeaderColor(color);
+  }, []);
+
+  const setBackgroundColor = useCallback((color: string) => {
+    telegramSDK.setBackgroundColor(color);
+  }, []);
+
+  // Permissions
+  const requestWriteAccess = useCallback(async () => {
+    return await telegramSDK.requestWriteAccess();
+  }, []);
+
+  const requestContact = useCallback(async () => {
+    return await telegramSDK.requestContact();
+  }, []);
+
+  // Clipboard
+  const readClipboard = useCallback(async () => {
+    return await telegramSDK.readClipboard();
+  }, []);
+
+  // Lifecycle
   const close = useCallback(() => {
     telegramSDK.close();
   }, []);
 
-  // Refresh state method
-  const refresh = useCallback(() => {
-    updateState();
-  }, [updateState]);
+  const sendData = useCallback((data: string) => {
+    telegramSDK.sendData(data);
+  }, []);
 
   return {
+    // State
     ...state,
-    haptic,
+    
+    // UI Controls
     mainButton,
     backButton,
+    settingsButton,
+    
+    // Interactions
+    haptic,
+    showAlert,
+    showConfirm,
+    showPopup,
+    scanQr,
+    
+    // Storage
+    cloudStorage,
+    
+    // Authentication
+    biometric,
+    
+    // Location
+    location,
+    
+    // Navigation
+    openLink,
+    openTelegramLink,
+    share,
+    
+    // 2024 Features
+    requestFullscreen,
+    exitFullscreen,
+    addToHomeScreen,
+    setBadge,
+    clearBadge,
+    
+    // Theme
+    setHeaderColor,
+    setBackgroundColor,
+    
+    // Permissions
+    requestWriteAccess,
+    requestContact,
+    
+    // Clipboard
+    readClipboard,
+    
+    // Lifecycle
     close,
-    refresh,
-    // Direct access to SDK for advanced usage
-    sdk: telegramSDK
+    sendData,
   };
 }

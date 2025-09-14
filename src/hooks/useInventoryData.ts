@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Diamond } from '@/components/inventory/InventoryTable';
 import { fetchInventoryData } from '@/services/inventoryDataService';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
+import { useRequestCache } from '@/hooks/useRequestCache';
 
 export function useInventoryData() {
   const { user, isLoading: authLoading } = useTelegramAuth();
@@ -11,6 +12,7 @@ export function useInventoryData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { subscribeToInventoryChanges } = useInventoryDataSync();
+  const inventoryCache = useRequestCache<Diamond[]>({ ttl: 2 * 60 * 1000 }); // 2 minutes cache
 
   // Map API shape formats to display formats
   const normalizeShape = (apiShape: string): string => {
@@ -119,96 +121,98 @@ export function useInventoryData() {
   }, []);
 
   const fetchData = useCallback(async () => {
+    if (!user) return;
+    
     try {
       setLoading(true);
       setError(null);
 
+      const cacheKey = `inventory_${user.id}`;
+      
       console.log('📥 INVENTORY HOOK: Fetching inventory data...');
-      const result = await fetchInventoryData();
-
-      if (result.error) {
-        console.error('📥 INVENTORY HOOK: Fetch failed:', result.error);
-        setError(result.error);
-        setDiamonds([]);
-        setAllDiamonds([]);
-        return;
-      }
-
-      if (result.data && result.data.length > 0) {
-        console.log('📥 INVENTORY HOOK: Processing', result.data.length, 'diamonds');
+      
+      const transformedDiamonds = await inventoryCache.getOrFetch(cacheKey, async () => {
+        const result = await fetchInventoryData();
         
-        // Transform data to match Diamond interface with enhanced field mapping
-        const transformedDiamonds: Diamond[] = result.data.map(item => {
-          // Enhanced image URL detection with multiple fallbacks
-          let finalImageUrl = undefined;
-          const imageFields = [
-            item.picture,
-            item.image_url,
-            item.imageUrl,
-            item.Image, // CSV field
-            item.image,
-          ];
+        if (result.error) {
+          throw new Error(result.error);
+        }
+
+        if (result.data && result.data.length > 0) {
+          console.log('📥 INVENTORY HOOK: Processing', result.data.length, 'diamonds');
           
-          // Process each potential image field
-          for (const imageField of imageFields) {
-            const processedUrl = processImageUrl(imageField);
-            if (processedUrl) {
-              finalImageUrl = processedUrl;
-              break;
+          // Transform data to match Diamond interface with enhanced field mapping
+          return result.data.map(item => {
+            // Enhanced image URL detection with multiple fallbacks
+            let finalImageUrl = undefined;
+            const imageFields = [
+              item.picture,
+              item.image_url,
+              item.imageUrl,
+              item.Image, // CSV field
+              item.image,
+            ];
+            
+            // Process each potential image field
+            for (const imageField of imageFields) {
+              const processedUrl = processImageUrl(imageField);
+              if (processedUrl) {
+                finalImageUrl = processedUrl;
+                break;
+              }
             }
-          }
 
-          return {
-            id: item.id || `${item.stock || item.stock_number || item.VendorStockNumber}-${Date.now()}`,
-            diamondId: item.id || item.diamond_id,
-            stockNumber: item.stock || item.stock_number || item.stockNumber || item.VendorStockNumber || '',
-            shape: normalizeShape(item.shape || item.Shape),
-            carat: parseFloat((item.weight || item.carat || item.Weight || 0).toString()) || 0,
-            color: (item.color || item.Color || 'D').toUpperCase(),
-            clarity: (item.clarity || item.Clarity || 'FL').toUpperCase(),
-            cut: item.cut || item.Cut || item.Make || 'Excellent',
-            polish: item.polish || item.Polish || undefined,
-            symmetry: item.symmetry || item.Symmetry || undefined,
-            price: Number(
-              item.price_per_carat ? 
-                item.price_per_carat * (item.weight || item.carat || item.Weight) : 
-                item.price || item.Price || item.RapnetAskingPrice || item.IndexAskingPrice || 0
-            ) || 0,
-            status: item.status || item.Availability || 'Available',
-            fluorescence: item.fluorescence || item.FluorescenceIntensity || undefined,
-            imageUrl: finalImageUrl,
-            // Enhanced 360° URL detection from multiple fields
-            gem360Url: detect360Url(item.gem360Url) || 
-                       detect360Url(item['Video link']) || 
-                       detect360Url(item.videoLink) ||
-                       detect360Url(item.video_url) ||
-                       detect360Url(item.v360_url) ||
-                       undefined,
-            store_visible: item.store_visible !== false,
-            certificateNumber: item.certificate_number || 
-                             item.certificateNumber || 
-                             item.CertificateID || 
-                             undefined,
-            lab: item.lab || item.Lab || undefined,
-            certificateUrl: item.certificate_url || item.certificateUrl || undefined,
-          };
-        });
+            return {
+              id: item.id || `${item.stock || item.stock_number || item.VendorStockNumber}-${Date.now()}`,
+              diamondId: item.id || item.diamond_id,
+              stockNumber: item.stock || item.stock_number || item.stockNumber || item.VendorStockNumber || '',
+              shape: normalizeShape(item.shape || item.Shape),
+              carat: parseFloat((item.weight || item.carat || item.Weight || 0).toString()) || 0,
+              color: (item.color || item.Color || 'D').toUpperCase(),
+              clarity: (item.clarity || item.Clarity || 'FL').toUpperCase(),
+              cut: item.cut || item.Cut || item.Make || 'Excellent',
+              polish: item.polish || item.Polish || undefined,
+              symmetry: item.symmetry || item.Symmetry || undefined,
+              price: Number(
+                item.price_per_carat ? 
+                  item.price_per_carat * (item.weight || item.carat || item.Weight) : 
+                  item.price || item.Price || item.RapnetAskingPrice || item.IndexAskingPrice || 0
+              ) || 0,
+              status: item.status || item.Availability || 'Available',
+              fluorescence: item.fluorescence || item.FluorescenceIntensity || undefined,
+              imageUrl: finalImageUrl,
+              // Enhanced 360° URL detection from multiple fields
+              gem360Url: detect360Url(item.gem360Url) || 
+                         detect360Url(item['Video link']) || 
+                         detect360Url(item.videoLink) ||
+                         detect360Url(item.video_url) ||
+                         detect360Url(item.v360_url) ||
+                         undefined,
+              store_visible: item.store_visible !== false,
+              certificateNumber: item.certificate_number || 
+                               item.certificateNumber || 
+                               item.CertificateID || 
+                               undefined,
+              lab: item.lab || item.Lab || undefined,
+              certificateUrl: item.certificate_url || item.certificateUrl || undefined,
+            };
+          });
+        } else {
+          console.log('📥 INVENTORY HOOK: No diamonds found');
+          return [];
+        }
+      });
 
-        console.log('📥 INVENTORY HOOK: Transformed diamonds with image URLs:', 
-          transformedDiamonds.map(d => ({ 
-            stock: d.stockNumber, 
-            imageUrl: d.imageUrl,
-            gem360Url: d.gem360Url 
-          }))
-        );
-        
-        setDiamonds(transformedDiamonds);
-        setAllDiamonds(transformedDiamonds);
-      } else {
-        console.log('📥 INVENTORY HOOK: No diamonds found');
-        setDiamonds([]);
-        setAllDiamonds([]);
-      }
+      console.log('📥 INVENTORY HOOK: Transformed diamonds with image URLs:', 
+        transformedDiamonds.map(d => ({ 
+          stock: d.stockNumber, 
+          imageUrl: d.imageUrl,
+          gem360Url: d.gem360Url 
+        }))
+      );
+      
+      setDiamonds(transformedDiamonds);
+      setAllDiamonds(transformedDiamonds);
     } catch (err) {
       console.error('📥 INVENTORY HOOK: Unexpected error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load inventory';
@@ -218,7 +222,7 @@ export function useInventoryData() {
     } finally {
       setLoading(false);
     }
-  }, [processImageUrl, detect360Url]);
+  }, [user, processImageUrl, detect360Url, inventoryCache]);
 
   const handleRefresh = useCallback(() => {
     console.log('🔄 INVENTORY HOOK: Manual refresh triggered');
