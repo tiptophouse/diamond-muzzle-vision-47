@@ -1,4 +1,3 @@
-
 import { TelegramUser } from '@/types/telegram';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -26,25 +25,10 @@ export function extractTelegramUserData(telegramUser: TelegramUser): ExtractedUs
   };
 }
 
-export async function upsertUserProfile(userData: ExtractedUserData, welcomeMessageAlreadySent: boolean = false): Promise<void> {
+export async function upsertUserProfile(userData: ExtractedUserData): Promise<void> {
   try {
     console.log('🔄 Upserting user profile with real data:', userData);
     
-    // First check if user already exists
-    const { data: existingUser, error: fetchError } = await supabase
-      .from('user_profiles')
-      .select('telegram_id, created_at')
-      .eq('telegram_id', userData.telegram_id)
-      .single();
-
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      console.error('❌ Error checking existing user:', fetchError);
-      throw fetchError;
-    }
-
-    const isNewUser = !existingUser;
-    console.log(`👤 User ${userData.telegram_id} is ${isNewUser ? 'NEW' : 'EXISTING'}`);
-
     const { error } = await supabase
       .from('user_profiles')
       .upsert({
@@ -64,50 +48,54 @@ export async function upsertUserProfile(userData: ExtractedUserData, welcomeMess
 
     if (error) {
       console.error('❌ Error upserting user profile:', error);
-      throw error;
     } else {
       console.log('✅ User profile upserted successfully');
       
-      // Only send welcome message for truly new users and if not already sent
-      if (isNewUser && !welcomeMessageAlreadySent) {
-        await sendWelcomeMessageToNewUser(userData);
-      } else if (!isNewUser) {
-        console.log('📝 Existing user - skipping welcome message');
-      } else {
-        console.log('📝 Welcome message already sent - skipping');
-      }
+      // Check if this is a new user and send welcome message
+      await sendWelcomeMessageToNewUser(userData);
     }
   } catch (err) {
     console.error('❌ Failed to upsert user profile:', err);
-    throw err;
   }
 }
 
 async function sendWelcomeMessageToNewUser(userData: ExtractedUserData): Promise<void> {
   try {
-    console.log('🎉 Sending welcome message to NEW user:', userData.first_name);
-    
-    // Send welcome message using edge function
-    const { error } = await supabase.functions.invoke('send-welcome-message', {
-      body: {
-        user: {
-          telegram_id: userData.telegram_id,
-          first_name: userData.first_name,
-          language_code: userData.language_code
-        },
-        isNewUser: true
-      }
-    });
+    // Check if user was created recently (within last 5 minutes) to determine if they're new
+    const fiveMinutesAgo = new Date();
+    fiveMinutesAgo.setMinutes(fiveMinutesAgo.getMinutes() - 5);
 
-    if (error) {
-      console.error('❌ Failed to send welcome message:', error);
-      throw error;
-    } else {
-      console.log('✅ Welcome message sent successfully to new user');
+    const { data: existingUser } = await supabase
+      .from('user_profiles')
+      .select('created_at')
+      .eq('telegram_id', userData.telegram_id)
+      .single();
+
+    const isNewUser = existingUser && new Date(existingUser.created_at) > fiveMinutesAgo;
+
+    if (isNewUser) {
+      console.log('🎉 New user detected, sending welcome message:', userData.first_name);
+      
+      // Send welcome message using edge function
+      const { error } = await supabase.functions.invoke('send-welcome-message', {
+        body: {
+          user: {
+            telegram_id: userData.telegram_id,
+            first_name: userData.first_name,
+            language_code: userData.language_code
+          },
+          isNewUser: true
+        }
+      });
+
+      if (error) {
+        console.error('❌ Failed to send welcome message:', error);
+      } else {
+        console.log('✅ Welcome message sent successfully');
+      }
     }
   } catch (error) {
-    console.error('❌ Error sending welcome message:', error);
-    throw error;
+    console.error('❌ Error checking/sending welcome message:', error);
   }
 }
 

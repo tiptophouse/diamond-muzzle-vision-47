@@ -104,9 +104,9 @@ export function InventoryTableRow({ diamond, onEdit, onDelete, onStoreToggle, on
           )}
           {onDelete && (
             <Button
-              variant="ghost"  
+              variant="ghost"
               size="sm"
-              onClick={() => onDelete(diamond.diamondId || diamond.id)}
+              onClick={() => onDelete(diamond.id)}
               className="h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400"
             >
               <Trash className="h-4 w-4" />

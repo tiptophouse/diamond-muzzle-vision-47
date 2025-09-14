@@ -125,10 +125,14 @@ export function useAddDiamond(onSuccess?: () => void) {
         console.log('✅ ADD: FastAPI response:', response.data);
 
         // Show success message - API call succeeded
-        if (response.data) {
+        if (response.data && (
+          (response.data as any)?.id || 
+          (response.data as any)?.stock_number || 
+          (response.data as any)?.message
+        )) {
           toast({
-            title: "✅ יהלום נוסף בהצלחה!",
-            description: `אבן "${data.stockNumber}" נוספה למלאי שלך ונראית בחנות`,
+            title: "✅ Diamond Added Successfully!",
+            description: `Stone "${data.stockNumber}" has been added to your inventory and is now available in your store`,
           });
           
           // Send notification with direct link to the specific diamond
@@ -163,7 +167,7 @@ export function useAddDiamond(onSuccess?: () => void) {
           if (onSuccess) onSuccess();
           return true;
         } else {
-          throw new Error("No data returned from FastAPI");
+          throw new Error("No success confirmation received from server");
         }
         
       } catch (apiError) {
@@ -193,44 +197,11 @@ export function useAddDiamond(onSuccess?: () => void) {
         // Show specific error message to user with API details
         toast({
           variant: "destructive",
-          title: "❌ נכשל בהוספת יהלום",
+          title: "❌ Failed to Add Diamond",
           description: errorMessage,
         });
         
-        // Fallback to localStorage with clear messaging
-        console.log('🔄 ADD: Falling back to localStorage...');
-        const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
-        
-        // Convert to inventory format
-        const newDiamond = {
-          id: generateDiamondId(),
-          stockNumber: diamondDataPayload.stock,
-          shape: diamondDataPayload.shape,
-          carat: diamondDataPayload.weight,
-          color: diamondDataPayload.color,
-          clarity: diamondDataPayload.clarity,
-          cut: diamondDataPayload.cut,
-          price: diamondDataPayload.price_per_carat * diamondDataPayload.weight,
-          status: 'Available',
-          store_visible: true,
-          certificateNumber: diamondDataPayload.certificate_number.toString(),
-          certificateUrl: diamondDataPayload.picture,
-          lab: diamondDataPayload.lab,
-          user_id: user.id,
-          created_at: new Date().toISOString()
-        };
-        
-        existingData.push(newDiamond);
-        localStorage.setItem('diamond_inventory', JSON.stringify(existingData));
-        
-        toast({
-          title: "⚠️ אבן נשמרה מקומית", 
-          description: `אבן "${data.stockNumber}" נשמרה במצב לא מקוון. שגיאת שרת: ${errorMessage}`,
-          variant: "default",
-        });
-        
-        if (onSuccess) onSuccess();
-        return true;
+        return false;
       }
       
     } catch (error) {

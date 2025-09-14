@@ -75,13 +75,11 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
       const storeUrl = `${baseUrl}/store?${params.toString()}`;
       console.log('🔗 Generated store URL with parameters:', storeUrl);
       
-      const response = await fetch('https://uhhljqgxhdhbbhpohxll.supabase.co/functions/v1/send-telegram-message', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGxqcWd4aGRoYmJocG9oeGxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0ODY1NTMsImV4cCI6MjA2MzA2MjU1M30._CGnKnTyltp1lIUmmOVI1nC4jRew2WkAU-bSf22HCDE`,
-        },
-        body: JSON.stringify({
+      // Use proper JWT authentication through Supabase client
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      const { data, error } = await supabase.functions.invoke('send-telegram-message', {
+        body: {
           telegramId: user.id,
           stoneData: {
             stockNumber: stoneData.stockNumber,
@@ -93,25 +91,24 @@ export function useInventoryCrud({ onSuccess, removeDiamondFromState, restoreDia
             polish: stoneData.polish,
             symmetry: stoneData.symmetry,
             fluorescence: stoneData.fluorescence,
-            pricePerCarat: stoneData.pricePerCarat,
+            price_per_carat: stoneData.pricePerCarat,
             lab: stoneData.lab,
-            certificateNumber: stoneData.certificateNumber
+            certificate: stoneData.certificateNumber
           },
           storeUrl
-        }),
+        }
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log('✅ Telegram notification sent successfully:', result);
-        toast({
-          title: "📱 Telegram Sent",
-          description: "Stone summary sent to your Telegram!",
-        });
-      } else {
-        const error = await response.text();
+      if (error) {
         console.error('❌ Failed to send Telegram notification:', error);
+        throw new Error(`Failed to send message: ${error.message}`);
       }
+
+      console.log('✅ Telegram notification sent successfully:', data);
+      toast({
+        title: "📱 Telegram Sent",
+        description: "Stone summary sent to your Telegram!",
+      });
     } catch (error) {
       console.error('❌ Error sending Telegram notification:', error);
     }

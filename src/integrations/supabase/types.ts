@@ -14,72 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      admin_audit_log: {
-        Row: {
-          action: string
-          admin_telegram_id: number
-          created_at: string
-          id: string
-          ip_address: unknown | null
-          metadata: Json | null
-          resource_id: string | null
-          resource_type: string | null
-          user_agent: string | null
-        }
-        Insert: {
-          action: string
-          admin_telegram_id: number
-          created_at?: string
-          id?: string
-          ip_address?: unknown | null
-          metadata?: Json | null
-          resource_id?: string | null
-          resource_type?: string | null
-          user_agent?: string | null
-        }
-        Update: {
-          action?: string
-          admin_telegram_id?: number
-          created_at?: string
-          id?: string
-          ip_address?: unknown | null
-          metadata?: Json | null
-          resource_id?: string | null
-          resource_type?: string | null
-          user_agent?: string | null
-        }
-        Relationships: []
-      }
-      admin_roles: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          id: string
-          is_active: boolean
-          role: string
-          telegram_id: number
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          is_active?: boolean
-          role?: string
-          telegram_id: number
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          is_active?: boolean
-          role?: string
-          telegram_id?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
       analytics_events: {
         Row: {
           created_at: string
@@ -207,90 +141,6 @@ export type Database = {
           id?: string
           reason?: string | null
           telegram_id?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      bot_usage_analytics: {
-        Row: {
-          api_version: string | null
-          bot_token_type: string
-          chat_id: number
-          chat_type: string
-          command: string | null
-          created_at: string
-          id: string
-          message_data: Json | null
-          message_type: string
-          processed_at: string | null
-          response_sent: boolean | null
-          response_time_ms: number | null
-          telegram_id: number
-          user_info: Json | null
-        }
-        Insert: {
-          api_version?: string | null
-          bot_token_type?: string
-          chat_id: number
-          chat_type?: string
-          command?: string | null
-          created_at?: string
-          id?: string
-          message_data?: Json | null
-          message_type: string
-          processed_at?: string | null
-          response_sent?: boolean | null
-          response_time_ms?: number | null
-          telegram_id: number
-          user_info?: Json | null
-        }
-        Update: {
-          api_version?: string | null
-          bot_token_type?: string
-          chat_id?: number
-          chat_type?: string
-          command?: string | null
-          created_at?: string
-          id?: string
-          message_data?: Json | null
-          message_type?: string
-          processed_at?: string | null
-          response_sent?: boolean | null
-          response_time_ms?: number | null
-          telegram_id?: number
-          user_info?: Json | null
-        }
-        Relationships: []
-      }
-      buyer_requests: {
-        Row: {
-          buyer_id: number
-          confidence_score: number | null
-          created_at: string
-          extracted_criteria_json: Json
-          id: string
-          original_message: string | null
-          status: string | null
-          updated_at: string
-        }
-        Insert: {
-          buyer_id: number
-          confidence_score?: number | null
-          created_at?: string
-          extracted_criteria_json?: Json
-          id?: string
-          original_message?: string | null
-          status?: string | null
-          updated_at?: string
-        }
-        Update: {
-          buyer_id?: number
-          confidence_score?: number | null
-          created_at?: string
-          extracted_criteria_json?: Json
-          id?: string
-          original_message?: string | null
-          status?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -434,51 +284,6 @@ export type Database = {
           title?: string | null
           updated_at?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      chatbot_messages: {
-        Row: {
-          chat_id: number
-          chat_title: string | null
-          chat_type: string
-          confidence_score: number | null
-          created_at: string | null
-          id: string
-          message_text: string
-          message_timestamp: string
-          parsed_data: Json | null
-          processed: boolean | null
-          sender_info: Json
-          telegram_id: number
-        }
-        Insert: {
-          chat_id: number
-          chat_title?: string | null
-          chat_type?: string
-          confidence_score?: number | null
-          created_at?: string | null
-          id?: string
-          message_text: string
-          message_timestamp: string
-          parsed_data?: Json | null
-          processed?: boolean | null
-          sender_info: Json
-          telegram_id: number
-        }
-        Update: {
-          chat_id?: number
-          chat_title?: string | null
-          chat_type?: string
-          confidence_score?: number | null
-          created_at?: string | null
-          id?: string
-          message_text?: string
-          message_timestamp?: string
-          parsed_data?: Json | null
-          processed?: boolean | null
-          sender_info?: Json
-          telegram_id?: number
         }
         Relationships: []
       }
@@ -721,48 +526,48 @@ export type Database = {
         }
         Relationships: []
       }
-      error_reports: {
+      ftp_accounts: {
         Row: {
-          additional_context: Json | null
           created_at: string
-          error_message: string
-          error_stack: string | null
-          error_type: string
+          expires_at: string | null
+          ftp_folder_path: string
+          ftp_username: string
           id: string
-          severity: string
-          timestamp: string
+          last_used_at: string | null
+          password_changed_at: string | null
+          password_hash: string
+          status: string
+          telegram_id: number
           updated_at: string
-          url: string | null
-          user_agent: string | null
-          user_id: string | null
+          user_id: number
         }
         Insert: {
-          additional_context?: Json | null
           created_at?: string
-          error_message: string
-          error_stack?: string | null
-          error_type: string
+          expires_at?: string | null
+          ftp_folder_path: string
+          ftp_username: string
           id?: string
-          severity: string
-          timestamp?: string
+          last_used_at?: string | null
+          password_changed_at?: string | null
+          password_hash: string
+          status?: string
+          telegram_id: number
           updated_at?: string
-          url?: string | null
-          user_agent?: string | null
-          user_id?: string | null
+          user_id: number
         }
         Update: {
-          additional_context?: Json | null
           created_at?: string
-          error_message?: string
-          error_stack?: string | null
-          error_type?: string
+          expires_at?: string | null
+          ftp_folder_path?: string
+          ftp_username?: string
           id?: string
-          severity?: string
-          timestamp?: string
+          last_used_at?: string | null
+          password_changed_at?: string | null
+          password_hash?: string
+          status?: string
+          telegram_id?: number
           updated_at?: string
-          url?: string | null
-          user_agent?: string | null
-          user_id?: string | null
+          user_id?: number
         }
         Relationships: []
       }
@@ -1002,42 +807,6 @@ export type Database = {
           seller_telegram_id?: number
           status?: string
           terms?: Json | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      match_notifications: {
-        Row: {
-          buyer_id: number
-          confidence_score: number | null
-          created_at: string
-          details_json: Json | null
-          diamond_id: string
-          id: string
-          is_match: boolean
-          seller_id: number
-          updated_at: string
-        }
-        Insert: {
-          buyer_id: number
-          confidence_score?: number | null
-          created_at?: string
-          details_json?: Json | null
-          diamond_id: string
-          id?: string
-          is_match?: boolean
-          seller_id: number
-          updated_at?: string
-        }
-        Update: {
-          buyer_id?: number
-          confidence_score?: number | null
-          created_at?: string
-          details_json?: Json | null
-          diamond_id?: string
-          id?: string
-          is_match?: boolean
-          seller_id?: number
           updated_at?: string
         }
         Relationships: []
@@ -1318,48 +1087,6 @@ export type Database = {
         }
         Relationships: []
       }
-      sftp_requests: {
-        Row: {
-          created_at: string
-          first_name: string
-          id: string
-          last_name: string | null
-          notes: string | null
-          processed_at: string | null
-          requested_at: string
-          status: string
-          telegram_id: number
-          updated_at: string
-          username: string | null
-        }
-        Insert: {
-          created_at?: string
-          first_name: string
-          id?: string
-          last_name?: string | null
-          notes?: string | null
-          processed_at?: string | null
-          requested_at?: string
-          status?: string
-          telegram_id: number
-          updated_at?: string
-          username?: string | null
-        }
-        Update: {
-          created_at?: string
-          first_name?: string
-          id?: string
-          last_name?: string | null
-          notes?: string | null
-          processed_at?: string | null
-          requested_at?: string
-          status?: string
-          telegram_id?: number
-          updated_at?: string
-          username?: string | null
-        }
-        Relationships: []
-      }
       store_item_reshares: {
         Row: {
           created_at: string | null
@@ -1628,6 +1355,7 @@ export type Database = {
           error_message: string | null
           file_size_bytes: number | null
           filename: string
+          ftp_account_id: string
           id: string
           processing_completed_at: string | null
           processing_started_at: string | null
@@ -1642,6 +1370,7 @@ export type Database = {
           error_message?: string | null
           file_size_bytes?: number | null
           filename: string
+          ftp_account_id: string
           id?: string
           processing_completed_at?: string | null
           processing_started_at?: string | null
@@ -1656,6 +1385,7 @@ export type Database = {
           error_message?: string | null
           file_size_bytes?: number | null
           filename?: string
+          ftp_account_id?: string
           id?: string
           processing_completed_at?: string | null
           processing_started_at?: string | null
@@ -1663,7 +1393,15 @@ export type Database = {
           updated_at?: string
           user_id?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "upload_jobs_ftp_account_id_fkey"
+            columns: ["ftp_account_id"]
+            isOneToOne: false
+            referencedRelation: "ftp_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_activity_log: {
         Row: {
@@ -1963,7 +1701,6 @@ export type Database = {
           payment_status: string | null
           phone_number: string | null
           photo_url: string | null
-          shares_remaining: number
           status: string | null
           subscription_plan: string | null
           telegram_id: number
@@ -1989,7 +1726,6 @@ export type Database = {
           payment_status?: string | null
           phone_number?: string | null
           photo_url?: string | null
-          shares_remaining?: number
           status?: string | null
           subscription_plan?: string | null
           telegram_id: number
@@ -2015,7 +1751,6 @@ export type Database = {
           payment_status?: string | null
           phone_number?: string | null
           photo_url?: string | null
-          shares_remaining?: number
           status?: string | null
           subscription_plan?: string | null
           telegram_id?: number
@@ -2093,66 +1828,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      user_share_history: {
-        Row: {
-          analytics_data: Json
-          created_at: string
-          diamond_stock_number: string
-          id: string
-          share_type: string
-          shares_remaining_after: number
-          user_telegram_id: number
-        }
-        Insert: {
-          analytics_data?: Json
-          created_at?: string
-          diamond_stock_number: string
-          id?: string
-          share_type?: string
-          shares_remaining_after: number
-          user_telegram_id: number
-        }
-        Update: {
-          analytics_data?: Json
-          created_at?: string
-          diamond_stock_number?: string
-          id?: string
-          share_type?: string
-          shares_remaining_after?: number
-          user_telegram_id?: number
-        }
-        Relationships: []
-      }
-      user_share_quotas: {
-        Row: {
-          created_at: string
-          id: string
-          quota_reset_at: string | null
-          shares_granted: number
-          shares_used: number
-          updated_at: string
-          user_telegram_id: number
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          quota_reset_at?: string | null
-          shares_granted?: number
-          shares_used?: number
-          updated_at?: string
-          user_telegram_id: number
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          quota_reset_at?: string | null
-          shares_granted?: number
-          shares_used?: number
-          updated_at?: string
-          user_telegram_id?: number
-        }
-        Relationships: []
       }
       users: {
         Row: {
@@ -2260,22 +1935,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
-      get_bot_usage_summary: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          active_chats: number
-          avg_response_time_ms: number
-          bot_distribution: Json
-          commands_used_today: number
-          most_used_commands: Json
-          total_messages_today: number
-          unique_users_today: number
-        }[]
-      }
-      get_current_user_telegram_id: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
       get_public_diamond_count: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -2302,10 +1961,6 @@ export type Database = {
           users_with_phone: number
         }[]
       }
-      is_admin: {
-        Args: { telegram_id_param: number }
-        Returns: boolean
-      }
       is_admin_user: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -2313,16 +1968,6 @@ export type Database = {
       is_current_user_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
-      }
-      log_admin_action: {
-        Args: {
-          action_param: string
-          admin_telegram_id_param: number
-          metadata_param?: Json
-          resource_id_param?: string
-          resource_type_param?: string
-        }
-        Returns: undefined
       }
       remove_all_duplicate_certificates: {
         Args: Record<PropertyKey, never>
@@ -2332,20 +1977,12 @@ export type Database = {
         Args: { p_user_id: number }
         Returns: number
       }
-      set_admin_session_context: {
-        Args: { telegram_id_param: number }
-        Returns: undefined
-      }
       set_session_context: {
         Args: { key: string; value: string }
         Returns: undefined
       }
       update_diamond_for_user: {
         Args: { p_stock_number: string; p_update_data: Json; p_user_id: number }
-        Returns: boolean
-      }
-      use_share_quota: {
-        Args: { p_diamond_stock_number: string; p_user_telegram_id: number }
         Returns: boolean
       }
     }

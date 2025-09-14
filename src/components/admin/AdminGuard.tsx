@@ -4,7 +4,7 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { Shield, AlertTriangle, Settings, Crown, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { isAdminTelegramId } from '@/lib/api/secureConfig';
+import { getAdminTelegramId } from '@/lib/api/secureConfig';
 
 interface AdminGuardProps {
   children: ReactNode;
@@ -13,32 +13,33 @@ interface AdminGuardProps {
 export function AdminGuard({ children }: AdminGuardProps) {
   const { user, isLoading, isTelegramEnvironment, isAuthenticated } = useTelegramAuth();
   const navigate = useNavigate();
-  const [isAdminUser, setIsAdminUser] = useState(false);
+  const [adminTelegramId, setAdminTelegramId] = useState<number | null>(null);
   const [isLoadingAdmin, setIsLoadingAdmin] = useState(true);
 
   useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (!user?.id) {
-        setIsAdminUser(false);
-        setIsLoadingAdmin(false);
-        return;
-      }
-
+    const loadAdminConfig = async () => {
       try {
-        const adminStatus = await isAdminTelegramId(user.id);
-        setIsAdminUser(adminStatus);
+        const adminId = await getAdminTelegramId();
+        setAdminTelegramId(adminId);
       } catch (error) {
-        console.error('❌ Failed to check admin status:', error);
-        setIsAdminUser(false);
+        console.error('❌ Failed to load admin configuration:', error);
+        setAdminTelegramId(2138564172); // fallback
       } finally {
         setIsLoadingAdmin(false);
       }
     };
 
-    checkAdminStatus();
-  }, [user?.id]);
+    loadAdminConfig();
+  }, []);
+
+  console.log('🔍 AdminGuard - Current user:', user);
+  console.log('🔍 AdminGuard - User ID:', user?.id);
+  console.log('🔍 AdminGuard - Admin ID:', adminTelegramId);
+  console.log('🔍 AdminGuard - Is Loading:', isLoading || isLoadingAdmin);
+  console.log('🔍 AdminGuard - Is Authenticated:', isAuthenticated);
 
   if (isLoading || isLoadingAdmin) {
+    console.log('⏳ AdminGuard - Still loading...');
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
@@ -55,6 +56,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
 
   // Check if user is authenticated first
   if (!isAuthenticated || !user) {
+    console.log('❌ AdminGuard - User not authenticated');
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
@@ -76,8 +78,13 @@ export function AdminGuard({ children }: AdminGuardProps) {
     );
   }
 
-  // Secure admin verification using database validation
-  if (!isAdminUser) {
+  // Enhanced admin verification using secure configuration
+  const isAdmin = adminTelegramId && user.id === adminTelegramId;
+  
+  console.log('🔍 AdminGuard - Is Admin?', isAdmin);
+  
+  if (!isAdmin) {
+    console.log('❌ AdminGuard - Access denied for user:', user.id);
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
@@ -95,6 +102,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
           
           <button
             onClick={() => {
+              console.log('🔄 Redirecting to dashboard');
               window.location.hash = '#/dashboard';
             }}
             className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors w-full"
@@ -106,6 +114,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
     );
   }
 
+  console.log('✅ AdminGuard - Access granted to verified admin user');
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="bg-white border-b sticky top-0 z-50 shadow-sm">

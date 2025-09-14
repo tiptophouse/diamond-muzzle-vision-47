@@ -1,9 +1,10 @@
 
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { SafeDashboardWrapper } from '@/components/dashboard/SafeDashboardWrapper';
+import { DataDrivenDashboard } from '@/components/dashboard/DataDrivenDashboard';
 import { DashboardLoading } from '@/components/dashboard/DashboardLoading';
 import { SecurityMonitor } from '@/components/auth/SecurityMonitor';
+import { getVerificationResult } from '@/lib/api';
 import { useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -11,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
   const { loading, allDiamonds, fetchData } = useInventoryData();
+  const verificationResult = getVerificationResult();
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
 
@@ -38,6 +40,7 @@ export default function Dashboard() {
   console.log('- Auth loading:', authLoading);
   console.log('- Is authenticated:', isAuthenticated);
   console.log('- User:', user);
+  console.log('- FastAPI verification:', verificationResult);
   console.log('- Inventory loading:', loading);
   console.log('- Diamonds count:', allDiamonds.length);
 
@@ -57,19 +60,15 @@ export default function Dashboard() {
   if (!isAuthenticated || !user) {
     return (
       <>
-        <div className="min-h-screen flex items-center justify-center bg-background p-4">
-          <div className="text-center p-6 bg-card/60 backdrop-blur-sm rounded-2xl border border-border/30 shadow-lg max-w-sm w-full">
-            <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <div className="w-8 h-8 bg-red-500/20 rounded-full"></div>
-            </div>
-            <h2 className="text-lg font-semibold text-foreground mb-3">Authentication Required</h2>
-            <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-              Please authenticate through Telegram to access your dashboard.
-            </p>
-            <div className="text-xs text-muted-foreground space-y-1 bg-muted/30 rounded-xl p-3">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Enhanced Authentication Required</h2>
+            <p className="text-gray-600 mb-4">Please authenticate through Telegram to access your dashboard.</p>
+            <div className="text-sm text-gray-500 space-y-1">
               <p>Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
               <p>Is Authenticated: {isAuthenticated ? 'Yes' : 'No'}</p>
               <p>User: {user ? `${user.first_name} (${user.id})` : 'None'}</p>
+              <p>Enhanced Verification: {verificationResult ? 'Success' : 'Failed'}</p>
             </div>
           </div>
         </div>
@@ -80,11 +79,13 @@ export default function Dashboard() {
 
   return (
     <>
-      <SafeDashboardWrapper 
-        allDiamonds={allDiamonds} 
-        loading={loading}
-        fetchData={fetchData} 
-      />
+      <div className="min-h-screen bg-gray-50">
+        <DataDrivenDashboard 
+          allDiamonds={allDiamonds} 
+          loading={loading}
+          fetchData={fetchData} 
+        />
+      </div>
       <SecurityMonitor />
     </>
   );
