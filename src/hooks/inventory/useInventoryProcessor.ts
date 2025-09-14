@@ -32,16 +32,20 @@ export function useInventoryProcessor() {
   };
   
   const showSuccessToast = (count: number) => {
+    const isMockData = count === 5; // Our mock service returns exactly 5 diamonds
+    
     toast({
       title: `✅ ${count} diamonds loaded`,
-      description: `Successfully loaded your inventory from the backend!`,
+      description: isMockData ? 
+        "Sample diamonds loaded. Connect your FastAPI server for real inventory." :
+        `Successfully loaded your inventory from the backend!`,
     });
   };
   
   const showErrorToast = (error: string, title?: string) => {
     toast({
-      title: title || "⚠️ Connection Error", 
-      description: `${error}`,
+      title: title || "⚠️ Loading Issue", 
+      description: `Using sample data. ${error}`,
       variant: "destructive",
     });
   };

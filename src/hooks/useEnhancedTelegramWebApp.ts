@@ -50,41 +50,8 @@ export function useEnhancedTelegramWebApp() {
       WebApp.ready();
       WebApp.expand();
       
-      // Enable modern features for stable experience
+      // Enable modern features
       WebApp.enableClosingConfirmation();
-      
-      // CRITICAL: Lock orientation to portrait mode
-      try {
-        if (typeof WebApp.lockOrientation === 'function') {
-          WebApp.lockOrientation();
-          console.log('📱 Orientation locked to portrait mode');
-        } else if (typeof window !== 'undefined' && 'screen' in window && 'orientation' in window.screen) {
-          // Fallback for browsers that support Screen Orientation API
-          (window.screen.orientation as any).lock('portrait').catch(() => {
-            console.log('📱 Screen orientation lock not supported by browser');
-          });
-        }
-      } catch (error) {
-        console.log('📱 Orientation lock not available:', error);
-      }
-      
-      // Enhanced fullscreen and scrolling management
-      if (typeof WebApp.disableVerticalSwipes === 'function') {
-        WebApp.disableVerticalSwipes();
-        console.log('✅ Disabled vertical swipes to prevent app closing - native scrolling enabled');
-      }
-
-      // Handle fullscreen mode if available
-      if (typeof WebApp.requestFullscreen === 'function') {
-        console.log('📱 Fullscreen mode available - optimizing layout');
-        
-        // Auto-request fullscreen for better UX
-        try {
-          WebApp.requestFullscreen();
-        } catch (error) {
-          console.log('📱 Fullscreen request handled by user choice');
-        }
-      }
       
       // Set optimal theme for better UX
       WebApp.setHeaderColor('#1f2937');
@@ -99,89 +66,16 @@ export function useEnhancedTelegramWebApp() {
         document.documentElement.style.setProperty('--tg-safe-area-inset-top', `${WebApp.safeAreaInset?.top || 0}px`);
         document.documentElement.style.setProperty('--tg-safe-area-inset-bottom', `${WebApp.safeAreaInset?.bottom || 0}px`);
         
-        // Optimize viewport for iPhone with fullscreen support
-        const stableHeight = WebApp.viewportStableHeight || WebApp.viewportHeight;
-        const currentHeight = WebApp.viewportHeight;
-        
-        document.documentElement.style.setProperty('--tg-viewport-height', `${currentHeight}px`);
-        document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableHeight}px`);
-        
-        // Set fullscreen height if in fullscreen mode
-        if (WebApp.isExpanded && currentHeight >= window.screen.height * 0.9) {
-          document.documentElement.style.setProperty('--tg-fullscreen-height', `${currentHeight}px`);
-        }
+        // Optimize viewport for iPhone
+        document.documentElement.style.setProperty('--tg-viewport-height', `${WebApp.viewportStableHeight || WebApp.viewportHeight}px`);
         
         // Prevent iOS zoom on input focus
         const metaViewport = document.querySelector('meta[name=viewport]');
         if (metaViewport) {
           metaViewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
         }
-        
-        // Apply Telegram theme colors
-        applyTelegramTheme();
       } else {
         document.documentElement.style.setProperty('--tg-viewport-height', `${WebApp.viewportHeight}px`);
-        // Apply Telegram theme colors for non-iOS too
-        applyTelegramTheme();
-      }
-
-      // Function to apply Telegram's dynamic theme
-      function applyTelegramTheme() {
-        const theme = WebApp.themeParams;
-        console.log('🎨 Applying Telegram theme:', theme);
-        
-        if (theme) {
-          // Apply Telegram colors to CSS variables
-          if (theme.bg_color) {
-            document.documentElement.style.setProperty('--background', convertToHSL(theme.bg_color));
-          }
-          if (theme.text_color) {
-            document.documentElement.style.setProperty('--foreground', convertToHSL(theme.text_color));
-          }
-          if (theme.hint_color) {
-            document.documentElement.style.setProperty('--muted-foreground', convertToHSL(theme.hint_color));
-          }
-          if (theme.link_color) {
-            document.documentElement.style.setProperty('--primary', convertToHSL(theme.link_color));
-          }
-          if (theme.button_color) {
-            document.documentElement.style.setProperty('--primary', convertToHSL(theme.button_color));
-          }
-          if (theme.button_text_color) {
-            document.documentElement.style.setProperty('--primary-foreground', convertToHSL(theme.button_text_color));
-          }
-          if (theme.secondary_bg_color) {
-            document.documentElement.style.setProperty('--card', convertToHSL(theme.secondary_bg_color));
-            document.documentElement.style.setProperty('--secondary', convertToHSL(theme.secondary_bg_color));
-          }
-        }
-      }
-
-      // Convert hex color to HSL for CSS variables
-      function convertToHSL(hex: string): string {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        if (!result) return '0 0% 50%';
-        
-        const r = parseInt(result[1], 16) / 255;
-        const g = parseInt(result[2], 16) / 255;
-        const b = parseInt(result[3], 16) / 255;
-        
-        const max = Math.max(r, g, b);
-        const min = Math.min(r, g, b);
-        let h = 0, s = 0, l = (max + min) / 2;
-        
-        if (max !== min) {
-          const d = max - min;
-          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-          switch (max) {
-            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-            case g: h = (b - r) / d + 2; break;
-            case b: h = (r - g) / d + 4; break;
-          }
-          h /= 6;
-        }
-        
-        return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
       }
 
       // Set up enhanced WebApp state
@@ -233,44 +127,8 @@ export function useEnhancedTelegramWebApp() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       initializeWebApp();
-      
-      // Listen for viewport changes with fullscreen support
-      const handleViewportChanged = () => {
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        const currentHeight = WebApp.viewportHeight;
-        const stableHeight = WebApp.viewportStableHeight || currentHeight;
-        
-        // Update viewport variables
-        document.documentElement.style.setProperty('--tg-viewport-height', `${currentHeight}px`);
-        document.documentElement.style.setProperty('--tg-viewport-stable-height', `${stableHeight}px`);
-        
-        // Handle fullscreen mode detection and CSS updates
-        const isFullscreenLike = WebApp.isExpanded && currentHeight >= window.screen.height * 0.9;
-        if (isFullscreenLike) {
-          document.documentElement.style.setProperty('--tg-fullscreen-height', `${currentHeight}px`);
-          document.documentElement.classList.add('telegram-fullscreen');
-        } else {
-          document.documentElement.classList.remove('telegram-fullscreen');
-        }
-        
-        console.log('📱 Viewport updated:', { 
-          viewportHeight: currentHeight, 
-          stableHeight, 
-          isFullscreen: isFullscreenLike,
-          isExpanded: WebApp.isExpanded 
-        });
-      };
-      
-      // Set up viewport change listener
-      if (typeof WebApp !== 'undefined' && WebApp.onEvent) {
-        WebApp.onEvent('viewportChanged', handleViewportChanged);
-        
-        return () => {
-          WebApp.offEvent('viewportChanged', handleViewportChanged);
-        };
-      }
     }
-  }, [initializeWebApp, webApp]);
+  }, [initializeWebApp]);
 
   // Helper function to ensure color format is valid for Telegram SDK
   const formatColor = (color: string): `#${string}` => {

@@ -1,5 +1,5 @@
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -34,16 +34,17 @@ export function StatCard({
   useEffect(() => {
     if (loading) return;
     
-    const duration = 800;
+    const duration = 1000;
     const startTime = Date.now();
     const startValue = displayValue;
+    const targetValue = Number.isFinite(value) ? value : 0;
     
     const updateValue = () => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      const easedProgress = 1 - Math.pow(1 - progress, 3); // Cubic ease-out
       
-      const nextValue = Math.floor(startValue + (value - startValue) * easedProgress);
+      const nextValue = Math.floor(startValue + (targetValue - startValue) * easedProgress);
       setDisplayValue(nextValue);
       
       if (progress < 1) {
@@ -56,8 +57,8 @@ export function StatCard({
   
   const trendClassName = trend 
     ? trend > 0 
-      ? "text-emerald-600" 
-      : "text-red-500" 
+      ? "text-green-600" 
+      : "text-red-600" 
     : "";
     
   const trendSign = trend 
@@ -67,45 +68,33 @@ export function StatCard({
     : "";
   
   return (
-    <Card className={cn(
-      "border-0 shadow-sm rounded-2xl transition-all duration-300 hover:shadow-md hover:scale-[1.02] active:scale-[0.98]", 
-      className
-    )}>
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className="w-8 h-8 rounded-xl bg-background/60 flex items-center justify-center">
-            <Icon className="h-4 w-4 text-foreground/80" />
-          </div>
+    <Card className={cn("border-0 bg-card shadow-sm rounded-lg", className)}>
+      <CardContent className="p-3">
+        <div className="flex items-center justify-between mb-2">
+          <Icon className="h-4 w-4 text-[#0088cc]" />
           {trend !== undefined && (
-            <div className={cn(
-              "text-xs font-semibold px-2 py-1 rounded-lg bg-background/60",
-              trendClassName
-            )}>
+            <span className={cn("text-xs font-medium", trendClassName)}>
               {trendSign}{Math.abs(trend)}%
-            </div>
+            </span>
           )}
         </div>
         
         {loading ? (
-          <div className="space-y-2">
-            <div className="h-6 w-16 bg-muted animate-pulse rounded-lg" />
-            <div className="h-3 w-12 bg-muted animate-pulse rounded" />
-          </div>
+          <div className="h-7 w-16 bg-muted animate-pulse rounded" />
         ) : (
-          <div className="space-y-1">
-            <div className="text-xl font-bold text-foreground leading-none">
-              {prefix}
-              {displayValue.toLocaleString()}
-              {suffix}
-            </div>
-            <div className="space-y-0.5">
-              <p className="text-xs font-medium text-foreground/80 leading-none">{title}</p>
-              {description && (
-                <p className="text-xs text-muted-foreground leading-none">{description}</p>
-              )}
-            </div>
+          <div className="text-2xl font-bold text-foreground mb-1">
+            {prefix}
+            {displayValue.toLocaleString()}
+            {suffix}
           </div>
         )}
+        
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-foreground">{title}</p>
+          {description && (
+            <p className="text-xs text-muted-foreground">{description}</p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

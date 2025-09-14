@@ -1,5 +1,5 @@
 
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -11,16 +11,9 @@ interface User {
 
 export function useWelcomeMessage() {
   const { toast } = useToast();
-  const sentMessagesRef = useRef(new Set<number>());
 
   const sendWelcomeMessage = useCallback(async (user: User, isNewUser: boolean = true) => {
     try {
-      // Prevent duplicate sends in the same session
-      if (sentMessagesRef.current.has(user.telegram_id)) {
-        console.log('⚠️ Welcome message already sent to user in this session:', user.telegram_id);
-        return { success: true, data: null };
-      }
-
       console.log('🚀 Sending welcome message to:', user.first_name);
       
       const { data, error } = await supabase.functions.invoke('send-welcome-message', {
@@ -36,9 +29,6 @@ export function useWelcomeMessage() {
       }
 
       console.log('✅ Welcome message sent successfully:', data);
-      
-      // Mark as sent in this session
-      sentMessagesRef.current.add(user.telegram_id);
       
       toast({
         title: 'Welcome Message Sent',

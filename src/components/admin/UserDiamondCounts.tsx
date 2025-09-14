@@ -13,11 +13,7 @@ import {
   TrendingUp,
   AlertCircle,
   Clock,
-  Database,
-  Crown,
-  Wifi,
-  WifiOff,
-  AlertTriangle
+  Database
 } from 'lucide-react';
 
 export function UserDiamondCounts() {
@@ -31,7 +27,7 @@ export function UserDiamondCounts() {
   } = useUserDiamondCounts();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'with_diamonds' | 'zero_diamonds' | 'premium' | 'fastapi_connected' | 'fastapi_no_data'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'with_diamonds' | 'zero_diamonds'>('all');
 
   const filteredUsers = userCounts.filter(user => {
     const matchesSearch = !searchTerm || 
@@ -43,10 +39,7 @@ export function UserDiamondCounts() {
     const matchesFilter = 
       filterStatus === 'all' || 
       (filterStatus === 'with_diamonds' && user.diamond_count > 0) ||
-      (filterStatus === 'zero_diamonds' && user.diamond_count === 0) ||
-      (filterStatus === 'premium' && user.is_premium) ||
-      (filterStatus === 'fastapi_connected' && user.fastapi_status === 'connected') ||
-      (filterStatus === 'fastapi_no_data' && user.fastapi_status === 'no_data');
+      (filterStatus === 'zero_diamonds' && user.diamond_count === 0);
     
     return matchesSearch && matchesFilter;
   });
@@ -56,19 +49,6 @@ export function UserDiamondCounts() {
     if (count < 10) return 'bg-yellow-100 text-yellow-800';
     if (count < 50) return 'bg-blue-100 text-blue-800';
     return 'bg-green-100 text-green-800';
-  };
-
-  const getFastApiBadge = (status: string) => {
-    switch (status) {
-      case 'connected':
-        return <Badge className="bg-green-100 text-green-800"><Wifi className="h-3 w-3 mr-1" />Connected</Badge>;
-      case 'no_data':
-        return <Badge className="bg-gray-100 text-gray-800"><WifiOff className="h-3 w-3 mr-1" />No Data</Badge>;
-      case 'error':
-        return <Badge className="bg-red-100 text-red-800"><AlertTriangle className="h-3 w-3 mr-1" />Error</Badge>;
-      default:
-        return <Badge className="bg-gray-100 text-gray-800">Unknown</Badge>;
-    }
   };
 
   const formatLastUpdated = (date: Date | null) => {
@@ -91,7 +71,7 @@ export function UserDiamondCounts() {
         <CardContent className="p-6">
           <div className="flex items-center justify-center space-x-2">
             <RefreshCw className="h-6 w-6 animate-spin" />
-            <span>Loading all users and checking FastAPI diamond data...</span>
+            <span>Loading diamond counts from FastAPI...</span>
           </div>
         </CardContent>
       </Card>
@@ -100,29 +80,28 @@ export function UserDiamondCounts() {
 
   return (
     <div className="space-y-6">
-      {/* Enhanced Stats Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
+      {/* Cache Status & Stats Overview */}
+      <div className="grid grid-cols-1 lg:grid-cols-6 gap-4">
+        {/* Cache Status */}
+        <Card className="lg:col-span-1">
+          <CardContent className="p-4 text-center">
+            <Database className={`h-8 w-8 mx-auto mb-2 ${cacheInfo.isValid ? 'text-green-600' : 'text-orange-600'}`} />
+            <div className="text-sm font-medium">Cache Status</div>
+            <div className={`text-xs ${cacheInfo.isValid ? 'text-green-600' : 'text-orange-600'}`}>
+              {cacheInfo.isValid ? 'Fresh' : 'Expired'}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {formatLastUpdated(lastUpdated)}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Statistics */}
         <Card>
           <CardContent className="p-4 text-center">
             <Users className="h-8 w-8 mx-auto mb-2 text-blue-600" />
             <div className="text-2xl font-bold">{stats.totalUsers}</div>
             <div className="text-sm text-muted-foreground">Total Users</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Crown className="h-8 w-8 mx-auto mb-2 text-purple-600" />
-            <div className="text-2xl font-bold">{stats.premiumUsers}</div>
-            <div className="text-sm text-muted-foreground">Premium Users</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Wifi className="h-8 w-8 mx-auto mb-2 text-green-600" />
-            <div className="text-2xl font-bold">{stats.fastapiConnectedUsers}</div>
-            <div className="text-sm text-muted-foreground">FastAPI Connected</div>
           </CardContent>
         </Card>
         
@@ -138,7 +117,7 @@ export function UserDiamondCounts() {
           <CardContent className="p-4 text-center">
             <AlertCircle className="h-8 w-8 mx-auto mb-2 text-red-600" />
             <div className="text-2xl font-bold">{stats.usersWithZeroDiamonds}</div>
-            <div className="text-sm text-muted-foreground">No Diamonds</div>
+            <div className="text-sm text-muted-foreground">Zero Diamonds</div>
           </CardContent>
         </Card>
         
@@ -164,8 +143,8 @@ export function UserDiamondCounts() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              All Users & Diamond Data ({stats.totalUsers} Total)
+              <Diamond className="h-5 w-5" />
+              User Diamond Counts (Cached FastAPI Data)
             </CardTitle>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Clock className="h-4 w-4" />
@@ -187,27 +166,13 @@ export function UserDiamondCounts() {
               </div>
             </div>
             
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2">
               <Button
                 variant={filterStatus === 'all' ? 'default' : 'outline'}
                 onClick={() => setFilterStatus('all')}
                 size="sm"
               >
                 All ({stats.totalUsers})
-              </Button>
-              <Button
-                variant={filterStatus === 'premium' ? 'default' : 'outline'}
-                onClick={() => setFilterStatus('premium')}
-                size="sm"
-              >
-                Premium ({stats.premiumUsers})
-              </Button>
-              <Button
-                variant={filterStatus === 'fastapi_connected' ? 'default' : 'outline'}
-                onClick={() => setFilterStatus('fastapi_connected')}
-                size="sm"
-              >
-                FastAPI Data ({stats.fastapiConnectedUsers})
               </Button>
               <Button
                 variant={filterStatus === 'with_diamonds' ? 'default' : 'outline'}
@@ -217,17 +182,17 @@ export function UserDiamondCounts() {
                 With Diamonds ({stats.usersWithDiamonds})
               </Button>
               <Button
-                variant={filterStatus === 'fastapi_no_data' ? 'default' : 'outline'}
-                onClick={() => setFilterStatus('fastapi_no_data')}
+                variant={filterStatus === 'zero_diamonds' ? 'default' : 'outline'}
+                onClick={() => setFilterStatus('zero_diamonds')}
                 size="sm"
               >
-                No FastAPI Data ({stats.totalUsers - stats.fastapiConnectedUsers})
+                Zero Diamonds ({stats.usersWithZeroDiamonds})
               </Button>
             </div>
             
             <Button onClick={forceRefresh} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
+              Force Refresh
             </Button>
           </div>
 
@@ -238,9 +203,8 @@ export function UserDiamondCounts() {
                 <tr className="border-b">
                   <th className="text-left p-2">User</th>
                   <th className="text-left p-2">Telegram ID</th>
-                  <th className="text-center p-2">Premium</th>
-                  <th className="text-center p-2">FastAPI Status</th>
                   <th className="text-center p-2">Diamond Count</th>
+                  <th className="text-left p-2">Last Upload</th>
                   <th className="text-left p-2">Registered</th>
                 </tr>
               </thead>
@@ -259,21 +223,15 @@ export function UserDiamondCounts() {
                     </td>
                     <td className="p-2 font-mono text-sm">{user.telegram_id.toString()}</td>
                     <td className="p-2 text-center">
-                      {user.is_premium ? (
-                        <Badge className="bg-purple-100 text-purple-800">
-                          <Crown className="h-3 w-3 mr-1" />Premium
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-gray-100 text-gray-800">Free</Badge>
-                      )}
-                    </td>
-                    <td className="p-2 text-center">
-                      {getFastApiBadge(user.fastapi_status)}
-                    </td>
-                    <td className="p-2 text-center">
                       <Badge className={getDiamondBadgeColor(user.diamond_count)}>
                         {user.diamond_count} diamonds
                       </Badge>
+                    </td>
+                    <td className="p-2 text-sm">
+                      {user.last_upload 
+                        ? new Date(user.last_upload).toLocaleDateString()
+                        : 'Never'
+                      }
                     </td>
                     <td className="p-2 text-sm">
                       {new Date(user.created_at).toLocaleDateString()}

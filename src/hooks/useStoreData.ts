@@ -15,7 +15,7 @@ export function useStoreData() {
   const { user, isLoading: authLoading } = useTelegramAuth();
   const { subscribeToInventoryChanges } = useInventoryDataSync();
   const [diamonds, setDiamonds] = useState<Diamond[]>([]);
-  const [loading, setLoading] = useState(!dataCache);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Helper function to parse numbers from various formats
@@ -74,14 +74,13 @@ export function useStoreData() {
           url.includes('my360.sela') ||         
           url.includes('v360.in') ||            
           url.includes('diamondview.aspx') ||   
-          url.includes('segoma.com') ||         // Add Segoma support
           url.includes('gem360') ||             
           url.includes('sarine') ||             
           url.includes('360') ||                
           url.includes('3d') ||                 
           url.includes('rotate') ||             
           url.includes('.html') ||              
-          url.match(/DAN\d+-\d+[A-Z]?\.jpg$/i);
+          url.match(/DAN\d+-\d+[A-Z]?\.jpg$/i); 
 
         if (is360Url) {
           let processedUrl = url;
@@ -89,6 +88,7 @@ export function useStoreData() {
             processedUrl = `https://${processedUrl}`;
           }
           
+          console.log('✨ DETECTED 360° URL for', item.stock_number || item.stock || 'unknown', ':', processedUrl);
           return processedUrl;
         }
       }
@@ -119,11 +119,11 @@ export function useStoreData() {
         trimmedUrl.includes('v360.in') ||
         trimmedUrl.includes('my360.fab') ||
         trimmedUrl.includes('my360.sela') ||
-        trimmedUrl.includes('segoma.com') ||        // Add Segoma exclusion
         trimmedUrl.includes('sarine') ||
         trimmedUrl.includes('360') ||
         trimmedUrl.includes('3d') ||
         trimmedUrl.includes('rotate')) {
+      console.log('🔄 SKIPPING 360° URL in image field:', trimmedUrl);
       return undefined;
     }
 
@@ -140,6 +140,7 @@ export function useStoreData() {
                              trimmedUrl.includes('h=');   
 
     if (hasImageExtension || isImageServiceUrl) {
+      console.log('✅ VALID IMAGE URL processed:', trimmedUrl);
       return trimmedUrl;
     }
 
@@ -148,6 +149,7 @@ export function useStoreData() {
 
   // Direct data transformation with enhanced media processing
   const transformData = useCallback((rawData: any[]): Diamond[] => {
+    console.log('🔧 TRANSFORM DATA: Processing', rawData.length, 'items from FastAPI');
     
     const transformedData = rawData
       .map((item, index) => {
@@ -222,11 +224,24 @@ export function useStoreData() {
           certificateNumber: item.certificate_number || item.certificateNumber || undefined,
           lab: item.lab || item.Lab || undefined,
           certificateUrl: item.certificate_url || item.certificateUrl || undefined,
-          // Preserve original CSV image fields for sharing functionality
-          Image: item.Image || item.picture || undefined,
-          image: item.image || undefined,
-          picture: item.picture || undefined,
         };
+
+        // Debug first few items
+        if (index < 3) {
+          console.log(`🔧 TRANSFORM DEBUG [${index}]:`, {
+            stockNumber: result.stockNumber,
+            hasImage: !!result.imageUrl,
+            has360: !!result.gem360Url,
+            price: result.price,
+            priceSource: totalPrice > 0 ? 'total_price' : pricePerCarat > 0 ? 'calculated' : 'none',
+            rawPriceData: {
+              total_price: item.price,
+              price_per_carat: item.price_per_carat,
+              weight: item.weight,
+              calculated: pricePerCarat * weight
+            }
+          });
+        }
 
         return result;
       })
@@ -235,8 +250,21 @@ export function useStoreData() {
         const isVisible = diamond.store_visible !== false;
         const isAvailable = diamond.status === 'Available';
         
+        if (!isVisible || !isAvailable) {
+          console.log('🚫 FILTERED OUT:', diamond.stockNumber, { isVisible, isAvailable });
+        }
+        
         return isVisible && isAvailable;
       });
+
+    console.log('🎯 FINAL TRANSFORM RESULT:', {
+      originalCount: rawData.length,
+      transformedCount: transformedData.length,
+      filteredOut: rawData.length - transformedData.length,
+      withImages: transformedData.filter(d => d.imageUrl).length,
+      with360: transformedData.filter(d => d.gem360Url).length,
+      withPrices: transformedData.filter(d => d.price > 0).length
+    });
 
     return transformedData;
   }, [processImageUrl, detect360Url, parseNumber]);
@@ -244,20 +272,8 @@ export function useStoreData() {
   const fetchStoreData = useCallback(async (useCache = true) => {
     try {
       setError(null);
-      
-      console.log('🔍 STORE DATA: Starting fetch process');
-      
-      // Wait for user authentication before making API calls
-      if (!user) {
-        console.log('⏳ STORE DATA: Waiting for user authentication');
-        setError('Please log in to view your diamonds');
-        setDiamonds([]);
-        setLoading(false);
-        return;
-      }
 
       if (useCache && dataCache && (Date.now() - dataCache.timestamp) < CACHE_DURATION) {
-        console.log('✅ STORE DATA: Using cached data');
         setDiamonds(dataCache.data);
         setLoading(false);
         return;
@@ -299,7 +315,7 @@ export function useStoreData() {
     } finally {
       setLoading(false);
     }
-  }, [transformData, user]);
+  }, [transformData]);
 
   // Telegram memory optimization
   useEffect(() => {
@@ -318,37 +334,28 @@ export function useStoreData() {
 
   useEffect(() => {
     if (authLoading) {
-      console.log('⏳ STORE DATA: Auth loading, waiting...');
       return;
     }
-    
     if (user) {
-      console.log('✅ STORE DATA: User authenticated, fetching data');
       fetchStoreData();
     } else {
-      console.log('❌ STORE DATA: No user, clearing data');
       setLoading(false);
       setDiamonds([]);
-      setError("Please log in to view your diamonds");
+      setError("Please log in to view your store items.");
     }
   }, [user, authLoading, fetchStoreData]);
 
   useEffect(() => {
-    const unsubscribe = subscribeToInventoryChanges(() => {
-      console.log('🔄 STORE DATA: Inventory change detected');
+    return subscribeToInventoryChanges(() => {
       if (user && !authLoading) {
-        console.log('🔄 STORE DATA: Refreshing data after inventory change');
-        dataCache = null; // Clear cache to force fresh fetch
+        dataCache = null;
         fetchStoreData(false);
       }
     });
-
-    return unsubscribe;
   }, [user, authLoading, subscribeToInventoryChanges, fetchStoreData]);
 
   const refetch = useCallback(() => {
-    console.log('🔄 STORE DATA: Manual refetch requested');
-    dataCache = null; // Clear cache to force fresh fetch
+    dataCache = null;
     return fetchStoreData(false);
   }, [fetchStoreData]);
 

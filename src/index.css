@@ -4,94 +4,38 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Vibrant design system with solid colors */
+/* Force light theme */
 :root {
-  /* Rich color palette with solid backgrounds */
-  --background: var(--tg-theme-bg-color, 0 0% 100%);
-  --foreground: var(--tg-theme-text-color, 222 47% 11%);
-  --card: var(--tg-theme-secondary-bg-color, 0 0% 100%);
-  --card-foreground: var(--tg-theme-text-color, 222 47% 11%);
-  --popover: var(--tg-theme-secondary-bg-color, 0 0% 100%);
-  --popover-foreground: var(--tg-theme-text-color, 222 47% 11%);
-  --primary: var(--tg-theme-button-color, 262 100% 65%);
-  --primary-foreground: var(--tg-theme-button-text-color, 0 0% 100%);
-  --secondary: var(--tg-theme-secondary-bg-color, 262 30% 95%);  
-  --secondary-foreground: var(--tg-theme-text-color, 262 80% 25%);
-  --muted: var(--tg-theme-secondary-bg-color, 220 13% 91%);
-  --muted-foreground: var(--tg-theme-hint-color, 220 9% 46%);
-  --accent: var(--tg-theme-secondary-bg-color, 262 30% 95%);
-  --accent-foreground: var(--tg-theme-text-color, 262 80% 25%);
-  --destructive: var(--tg-theme-destructive-text-color, 0 84% 60%);
-  --destructive-foreground: var(--tg-theme-bg-color, 0 0% 100%);
-  --border: var(--tg-theme-secondary-bg-color, 220 13% 91%);
-  --input: var(--tg-theme-secondary-bg-color, 0 0% 100%);
-  --ring: var(--tg-theme-button-color, 262 100% 65%);
-  --radius: 0.75rem;
-  
-  /* Telegram-native viewport handling with fullscreen support */
-  --tg-viewport-height: 100vh;
-  --tg-viewport-stable-height: 100vh;
-  --tg-fullscreen-height: 100vh;
-  --tg-safe-area-inset-top: env(safe-area-inset-top);
-  --tg-safe-area-inset-bottom: env(safe-area-inset-bottom);
-  --tg-safe-area-inset-left: env(safe-area-inset-left);
-  --tg-safe-area-inset-right: env(safe-area-inset-right);
-  
-  /* Vibrant gradients with solid colors */
-  --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(262 100% 55%) 100%);
-  --gradient-surface: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--secondary)) 100%);
-  --gradient-accent: linear-gradient(135deg, hsl(262 30% 95%) 0%, hsl(0 0% 100%) 100%);
-  --gradient-hero: linear-gradient(135deg, hsl(262 100% 65%) 0%, hsl(300 100% 70%) 50%, hsl(220 100% 75%) 100%);
-  
-  /* Enhanced shadows with color */  
-  --shadow-soft: 0 1px 3px 0 hsl(262 100% 65% / 0.1), 0 1px 2px 0 hsl(220 9% 46% / 0.06);
-  --shadow-medium: 0 4px 6px -1px hsl(262 100% 65% / 0.15), 0 2px 4px -1px hsl(220 9% 46% / 0.06);
-  --shadow-large: 0 20px 25px -5px hsl(262 100% 65% / 0.15), 0 10px 10px -5px hsl(220 9% 46% / 0.04);
-  --shadow-glow: 0 0 30px hsl(262 100% 65% / 0.3);
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+  --radius: 0.5rem;
 }
 
 body {
-  font-family: var(--tg-theme-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: hsl(var(--background));
+  background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  line-height: 1.5;
-  letter-spacing: -0.01em;
-  /* Telegram-optimized touch handling */
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-}
-
-/* Telegram-native components */
-.tg-card {
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-  box-shadow: var(--shadow-soft);
-  border-radius: var(--radius);
-  color: hsl(var(--card-foreground));
-}
-
-.tg-button {
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: var(--radius);
-  font-weight: 500;
-  font-size: 0.875rem;
-  min-height: 44px;
-  min-width: 44px;
-  box-shadow: var(--shadow-soft);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.tg-button:active {
-  transform: scale(0.98);
-  box-shadow: var(--shadow-medium);
 }
 
 /* Enhanced image loading optimizations */
@@ -134,27 +78,26 @@ img {
   }
 }
 
-/* iOS optimizations for native Telegram WebApp feel with fullscreen support */
+/* iOS specific fixes for Telegram WebApp */
 @supports (-webkit-touch-callout: none) {
-  /* Enable native iOS scrolling - DO NOT use position: fixed or overflow: hidden */
+  /* iOS Safari specific styles */
   body {
-    /* Use Telegram's stable viewport height for iOS */
-    min-height: 100vh;
-    min-height: var(--tg-viewport-stable-height, 100vh);
-    /* Enable native momentum scrolling */
-    -webkit-overflow-scrolling: touch;
-    overflow-x: hidden; /* Only prevent horizontal scroll */
+    position: fixed;
+    overflow: hidden;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for iOS */
   }
   
-  /* Native iOS scrolling for main content */
-  main {
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-    /* Use Telegram's viewport height */
-    min-height: var(--tg-viewport-stable-height, 100vh);
+  /* Fix for iOS back button jumping */
+  .tg-viewport {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    position: relative;
   }
   
-  /* Prevent text size adjustments but allow native behavior */
+  /* Prevent text jumping on iOS */
   * {
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
@@ -162,140 +105,48 @@ img {
     -moz-osx-font-smoothing: grayscale;
   }
   
-  /* Enhanced touch scrolling for all scrollable elements */
-  .ios-scroll {
+  /* Fix for viewport meta tag issues on iOS */
+  html {
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  
+  /* Smooth scroll fix for iOS */
+  .smooth-scroll {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
   }
   
-  /* Safe area handling with Telegram's built-in values */
+  /* Safe area handling for iOS */
   .pb-safe {
-    padding-bottom: max(var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom)), 16px);
+    padding-bottom: max(env(safe-area-inset-bottom), 16px);
   }
   
   .pt-safe {
-    padding-top: max(var(--tg-safe-area-inset-top, env(safe-area-inset-top)), 16px);
-  }
-  
-  /* Optimize touch targets for iPhone */
-  button, .clickable {
-    min-height: 44px; /* iOS minimum touch target */
-    min-width: 44px;
-  }
-  
-  /* Prevent rubber band effect only at document level, not content */
-  html {
-    overscroll-behavior-y: none;
-  }
-  
-  /* Dynamic viewport height for iOS with Telegram's stable height */
-  .ios-viewport {
-    height: var(--tg-viewport-stable-height, 100vh);
-    min-height: var(--tg-viewport-stable-height, 100vh);
-  }
-  
-  /* Fullscreen mode support */
-  .ios-viewport.fullscreen {
-    height: var(--tg-fullscreen-height, 100vh);
-    min-height: var(--tg-fullscreen-height, 100vh);
-  }
-  
-  /* Bottom navigation safe area optimization for iOS */
-  .bottom-nav-ios {
-    bottom: var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-  }
-  
-  .bottom-nav-ios.fullscreen {
-    padding-bottom: max(var(--tg-safe-area-inset-bottom), 8px);
-  }
-  
-  /* Fullscreen specific styles */
-  .fullscreen-container {
-    height: var(--tg-fullscreen-height, 100vh);
-    min-height: var(--tg-fullscreen-height, 100vh);
-    width: 100vw;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .fullscreen-content {
-    height: calc(var(--tg-fullscreen-height, 100vh) - var(--tg-safe-area-inset-bottom, 0px));
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  /* Touch targets - minimum 44px for iOS guidelines */
-  .mobile-tap {
-    min-height: 44px;
-    touch-action: manipulation;
-  }
-  
-  /* Prevent iOS zoom on input focus */
-  input, select, textarea {
-    font-size: 16px;
+    padding-top: max(env(safe-area-inset-top), 16px);
   }
 }
 
-/* Dark theme with vibrant colors */
+/* Ensure light theme always */
 .dark {
-  --background: var(--tg-theme-bg-color, 222 47% 11%);
-  --foreground: var(--tg-theme-text-color, 213 31% 91%);
-  --card: var(--tg-theme-secondary-bg-color, 222 47% 15%);
-  --card-foreground: var(--tg-theme-text-color, 213 31% 91%);
-  --popover: var(--tg-theme-secondary-bg-color, 222 47% 15%);
-  --popover-foreground: var(--tg-theme-text-color, 213 31% 91%);
-  --primary: var(--tg-theme-button-color, 262 100% 75%);
-  --primary-foreground: var(--tg-theme-button-text-color, 222 47% 11%);
-  --secondary: var(--tg-theme-secondary-bg-color, 222 47% 20%);
-  --secondary-foreground: var(--tg-theme-text-color, 213 31% 91%);
-  --muted: var(--tg-theme-secondary-bg-color, 222 47% 20%);
-  --muted-foreground: var(--tg-theme-hint-color, 215 20% 65%);
-  --accent: var(--tg-theme-secondary-bg-color, 222 47% 20%);
-  --accent-foreground: var(--tg-theme-text-color, 213 31% 91%);
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 213 31% 91%;
-  --border: var(--tg-theme-secondary-bg-color, 222 47% 20%);
-  --input: var(--tg-theme-secondary-bg-color, 222 47% 15%);
-  --ring: var(--tg-theme-button-color, 262 100% 75%);
-}
-
-/* Global fullscreen mode class for document-level adjustments */
-.telegram-fullscreen {
-  /* Fullscreen-specific global styles */
-}
-
-.telegram-fullscreen body {
-  height: var(--tg-fullscreen-height, 100vh);
-  min-height: var(--tg-fullscreen-height, 100vh);
-}
-
-/* Mobile responsive utilities */
-.scrollbar-hide {
-  -ms-overflow-style: none;  /* Internet Explorer 10+ */
-  scrollbar-width: none;  /* Firefox */
-}
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;  /* Safari and Chrome */
-}
-
-/* Smooth scroll for horizontal tabs */
-.tab-scroll {
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
-}
-
-/* Mobile touch enhancements */
-@media (max-width: 768px) {
-  .touch-pan-x {
-    touch-action: pan-x;
-  }
-  
-  .mobile-tap {
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-  }
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
 }

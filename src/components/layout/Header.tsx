@@ -7,33 +7,32 @@ export function Header() {
   const { user } = useTelegramAuth();
 
   return (
-    <header className="bg-card/80 backdrop-blur-xl border-b border-border/30 px-6 py-5 shadow-sm">
-      <div className="flex items-center justify-between max-w-7xl mx-auto">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-3xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 ring-4 ring-primary/10">
-            <Diamond className="text-primary-foreground h-7 w-7" />
-          </div>
-          <div className="flex flex-col">
-            <h1 className="text-2xl font-bold text-foreground tracking-tight bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text">
-              BrilliantBot
-            </h1>
-            <p className="text-sm text-muted-foreground font-medium">Professional Diamond Management</p>
+    <header className="bg-card/60 backdrop-blur-xl border-b border-border/30 px-4 sm:px-6 py-4 shadow-sm">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg flex-shrink-0 hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <Diamond className="text-white h-5 w-5 sm:h-6 sm:w-6" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight truncate bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
+                BrilliantBot
+              </h1>
+              <p className="text-xs text-muted-foreground hidden sm:block font-medium">AI Diamond Assistant</p>
+            </div>
           </div>
         </div>
         
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
           <TutorialTrigger />
           
           {user && (
-            <div className="flex items-center gap-4">
-              <div className="hidden md:flex flex-col items-end">
-                <span className="text-sm font-semibold text-foreground">
-                  Welcome, {user.first_name}
-                </span>
-                <span className="text-xs text-muted-foreground">Telegram User</span>
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="hidden md:block text-sm text-muted-foreground">
+                Welcome, <span className="font-semibold text-foreground">{user.first_name}</span>
               </div>
-              <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-primary/20">
-                <span className="text-base font-bold text-primary-foreground">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary to-primary-dark rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-primary/20">
+                <span className="text-sm sm:text-base font-bold text-white">
                   {user.first_name?.charAt(0)}
                 </span>
               </div>

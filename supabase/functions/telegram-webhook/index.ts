@@ -69,24 +69,9 @@ serve(async (req) => {
 
   try {
     console.log('📱 Telegram webhook called');
-    const startTime = Date.now();
     
-    // Parse the request body to get the update
     const update: TelegramUpdate = await req.json();
-    console.log('📥 Received Telegram update:', { 
-      update_id: update.update_id, 
-      has_message: !!update.message,
-      has_web_app_data: !!update.message?.web_app_data
-    });
-    
-    // Handle web app data (diamond sharing)
-    if (update.message?.web_app_data) {
-      console.log('🌐 Handling web app data');
-      return await handleWebAppData(update.message);
-    }
-
-    // Track bot usage analytics
-    await trackBotUsage(update, startTime);
+    console.log('📱 Received update:', JSON.stringify(update, null, 2));
 
     if (!update.message?.text || !update.message?.chat) {
       console.log('📱 No text message or chat info, skipping');
@@ -100,13 +85,6 @@ serve(async (req) => {
     if (message.chat.type === 'private' && message.text?.startsWith('/start')) {
       const parts = message.text.split(' ');
       const startParam = parts[1] || '';
-      
-      // Handle SFTP setup requests
-      if (startParam === 'provide_sftp') {
-        await handleSFTPSetupRequest(message.from);
-        return new Response('OK', { status: 200, headers: corsHeaders });
-      }
-      
       const { error: insertError } = await supabase
         .from('group_cta_clicks')
         .insert([{
@@ -122,12 +100,6 @@ serve(async (req) => {
       }
       return new Response('OK', { status: 200, headers: corsHeaders });
     }
-
-    // Handle direct SFTP command in private chats
-    if (message.chat.type === 'private' && message.text?.toLowerCase().includes('/provide_sftp')) {
-      await handleSFTPSetupRequest(message.from);
-      return new Response('OK', { status: 200, headers: corsHeaders });
-    }
     
     // Only process messages from the B2B group
     if (b2bGroupId && chatId !== b2bGroupId) {
@@ -136,9 +108,6 @@ serve(async (req) => {
     }
 
     console.log('📱 Processing message from B2B group:', message.text);
-
-    // Save incoming message to chatbot_messages table
-    await saveIncomingMessage(message);
 
     // Check for payment confirmation message
     if (message.text.includes('✅ Payment for post in group confirmed')) {
@@ -325,68 +294,6 @@ async function findMatchingDiamonds(request: DiamondRequest) {
   }
 }
 
-async function handleSFTPSetupRequest(user: any) {
-  console.log('🔗 SFTP setup request from user:', user.id, user.first_name);
-  
-  try {
-    // Send response message to user
-    const message = `שלום ${user.first_name}! 👋
-
-🚀 בקשתך לחיבור SFTP התקבלה בהצלחה!
-
-צוות Acadia יצור איתך קשר בקרוב עם פרטי החיבור והוראות ההתקנה.
-
-📧 במקביל, תוכל גם לפנות ישירות ל:
-info@accadiasoftware.com
-
-💎 בינתיים, תוכל להמשיך להשתמש במערכת דרך האפליקציה.
-
-תודה על הפנייה! 🙏`;
-
-    // Log the SFTP request in database for Acadia team follow-up
-    const { error: logError } = await supabase
-      .from('sftp_requests')
-      .insert([{
-        telegram_id: user.id,
-        first_name: user.first_name,
-        last_name: user.last_name || null,
-        username: user.username || null,
-        status: 'pending',
-        requested_at: new Date().toISOString()
-      }]);
-
-    if (logError) {
-      console.error('❌ Error logging SFTP request:', logError);
-    } else {
-      console.log('✅ SFTP request logged successfully');
-    }
-
-    // Send confirmation message to user via Telegram Bot API
-    const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
-    if (botToken) {
-      const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
-      const response = await fetch(telegramApiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: user.id,
-          text: message,
-          parse_mode: 'HTML'
-        })
-      });
-
-      if (!response.ok) {
-        console.error('❌ Failed to send Telegram message:', await response.text());
-      } else {
-        console.log('✅ Confirmation message sent to user');
-      }
-    }
-
-  } catch (error) {
-    console.error('❌ Error handling SFTP setup request:', error);
-  }
-}
-
 async function generateDiamondPostFromPayment(message: any) {
   try {
     console.log('💎 Generating diamond post for payment confirmation');
@@ -423,39 +330,6 @@ async function generateDiamondPostFromPayment(message: any) {
   }
 }
 
-async function saveIncomingMessage(message: any) {
-  try {
-    const diamondRequest = parseDiamondRequest(message.text);
-    
-    const { error } = await supabase
-      .from('chatbot_messages')
-      .insert([{
-        telegram_id: message.from.id,
-        message_text: message.text,
-        chat_id: message.chat.id,
-        chat_type: message.chat.type,
-        chat_title: message.chat.title,
-        sender_info: {
-          id: message.from.id,
-          first_name: message.from.first_name,
-          last_name: message.from.last_name,
-          username: message.from.username
-        },
-        parsed_data: diamondRequest,
-        confidence_score: diamondRequest.confidence,
-        message_timestamp: new Date(message.date * 1000).toISOString()
-      }]);
-
-    if (error) {
-      console.error('❌ Error saving incoming message:', error);
-    } else {
-      console.log(`✅ Saved incoming message from ${message.from.first_name}`);
-    }
-  } catch (error) {
-    console.error('❌ Error in saveIncomingMessage:', error);
-  }
-}
-
 async function createGroupNotification(notification: any) {
   try {
     const { error } = await supabase
@@ -475,51 +349,6 @@ async function createGroupNotification(notification: any) {
     }
   } catch (error) {
     console.error('❌ Error in createGroupNotification:', error);
-  }
-}
-
-async function handleWebAppData(message: any) {
-  try {
-    console.log('🌐 Processing web app data from message');
-    
-    const webAppData = JSON.parse(message.web_app_data.data);
-    console.log('📱 Parsed web app data:', webAppData);
-
-    if (webAppData.action === 'share_diamond_with_registration_check') {
-      const { data } = webAppData;
-      const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN')!;
-      
-      // Send diamond card to group with inline buttons
-      const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: message.chat.id,
-          text: data.message,
-          parse_mode: 'Markdown',
-          reply_markup: {
-            inline_keyboard: data.inline_keyboard
-          }
-        })
-      });
-
-      if (!telegramResponse.ok) {
-        throw new Error(`Telegram API error: ${telegramResponse.statusText}`);
-      }
-
-      const result = await telegramResponse.json();
-      console.log('✅ Diamond shared to group successfully:', result.message_id);
-      
-      return new Response('OK', { status: 200, headers: corsHeaders });
-    }
-
-    return new Response('OK', { status: 200, headers: corsHeaders });
-  } catch (error) {
-    console.error('❌ Error handling web app data:', error);
-    return new Response('Error processing web app data', { 
-      status: 500, 
-      headers: corsHeaders 
-    });
   }
 }
 

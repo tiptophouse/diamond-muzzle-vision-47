@@ -1,12 +1,73 @@
 import { toast } from "@/components/ui/use-toast";
 import { API_BASE_URL, getCurrentUserId } from './config';
 import { getAuthHeaders } from './auth';
+import { getBackendAccessToken } from './secureConfig';
 
 interface ApiResponse<T> {
   data?: T;
   error?: string;
 }
 
+// Fast connectivity cache to avoid repeated tests
+let connectivityCache: { isConnected: boolean; lastChecked: number } | null = null;
+const CONNECTIVITY_CACHE_DURATION = 30000; // 30 seconds
+
+// Fast backend connectivity test with timeout
+async function testBackendConnectivity(): Promise<boolean> {
+  // Check cache first
+  if (connectivityCache && (Date.now() - connectivityCache.lastChecked < CONNECTIVITY_CACHE_DURATION)) {
+    console.log('🔍 API: Using cached connectivity status:', connectivityCache.isConnected);
+    return connectivityCache.isConnected;
+  }
+
+  try {
+    console.log('🔍 API: Testing FastAPI backend connectivity to:', API_BASE_URL);
+    
+    const backendToken = await getBackendAccessToken();
+    if (!backendToken) {
+      console.error('❌ API: No secure backend access token available for connectivity test');
+      connectivityCache = { isConnected: false, lastChecked: Date.now() };
+      return false;
+    }
+    
+    // Fast connectivity test with 2 second timeout
+    const testUrl = `${API_BASE_URL}/`;
+    console.log('🔍 API: Testing root endpoint with 2s timeout:', testUrl);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
+    
+    const response = await fetch(testUrl, {
+      method: 'GET',
+      mode: 'cors',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${backendToken}`,
+      },
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
+    
+    const isConnected = response.ok || response.status === 404;
+    console.log('🔍 API: Fast connectivity test result:', isConnected);
+    
+    // Cache the result
+    connectivityCache = { isConnected, lastChecked: Date.now() };
+    
+    if (isConnected) {
+      console.log('✅ API: FastAPI backend is reachable - your diamonds should be accessible');
+    } else {
+      console.log('❌ API: FastAPI backend not reachable - status:', response.status);
+    }
+    
+    return isConnected;
+  } catch (error) {
+    console.error('❌ API: Fast connectivity test failed:', error);
+    connectivityCache = { isConnected: false, lastChecked: Date.now() };
+    return false;
+  }
+}
 
 export async function fetchApi<T>(
   endpoint: string,
@@ -17,15 +78,43 @@ export async function fetchApi<T>(
   try {
     console.log('🚀 API: Making FastAPI request:', url);
     console.log('🚀 API: Method:', options.method || 'GET');
-    console.log('🚀 API: Current user ID:', getCurrentUserId(), 'type:', typeof getCurrentUserId());
     
-    const authHeaders = await getAuthHeaders();
-    if (!authHeaders.Authorization) {
-      const errorMsg = 'No JWT token available - user must be authenticated first';
-      console.error('❌ API: Missing JWT token');
+    const currentUserId = getCurrentUserId();
+    console.log('🚀 API: Current user ID:', currentUserId, 'type:', typeof currentUserId);
+    
+    // Validate user permissions for user-specific endpoints
+    const urlParams = new URLSearchParams(url.split('?')[1] || '');
+    const requestedUserId = urlParams.get('user_id');
+    
+    if (requestedUserId && currentUserId) {
+      const requestedUserIdNum = parseInt(requestedUserId);
+      const ADMIN_TELEGRAM_ID = 2138564172;
+      
+      // Allow admin to access any user's data, but restrict regular users to their own data
+      if (currentUserId !== ADMIN_TELEGRAM_ID && currentUserId !== requestedUserIdNum) {
+        console.error('❌ API: Access denied - User', currentUserId, 'cannot access data for user', requestedUserIdNum);
+        throw new Error('Access denied: You can only access your own data');
+      }
+      
+      console.log('✅ API: Permission validated - User', currentUserId, 'accessing data for user', requestedUserIdNum);
+    }
+    
+    if (options.method === 'POST') {
+      console.log('📤 API: This is a POST request (CREATE diamond)');
+      console.log('📤 API: Should create diamond in FastAPI backend');
+    } else {
+      console.log('🚀 API: This should return your diamonds, not mock data');
+    }
+    
+    // Test connectivity first
+    const isBackendReachable = await testBackendConnectivity();
+    if (!isBackendReachable) {
+      const errorMsg = 'FastAPI backend server is not reachable. Please check if the server is running at ' + API_BASE_URL;
+      console.error('❌ API: Backend unreachable - this forces fallback to 5 mock diamonds');
       throw new Error(errorMsg);
     }
     
+    const authHeaders = await getAuthHeaders();
     let headers: Record<string, string> = {
       "Content-Type": "application/json",
       "Accept": "application/json",
@@ -41,16 +130,19 @@ export async function fetchApi<T>(
       credentials: 'omit',
     };
     
-    console.log('🚀 API: Request with JWT authentication:', {
+    console.log('🚀 API: Fetch options for real data:', {
       url,
       method: fetchOptions.method || 'GET',
       hasAuth: !!headers.Authorization,
       hasBody: !!fetchOptions.body,
+      headers: Object.keys(headers),
+      currentUserId,
+      requestedUserId
     });
     
-    // Add timeout to main request
+    // Add timeout to main request too
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for main request
     
     const response = await fetch(url, {
       ...fetchOptions,
@@ -110,38 +202,32 @@ export async function fetchApi<T>(
     return { data: data as T };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error('❌ API: FastAPI request error:', errorMessage);
+    console.error('❌ API: FastAPI request error - this is why you see 5 mock diamonds instead of 500 real ones:', errorMessage);
     console.error('❌ API: Error details:', error);
     
     // Show specific toast messages for different error types
-    if (errorMessage.includes('No JWT token')) {
-      toast({
-        title: "🔐 Authentication Required",
-        description: "Please authenticate with Telegram to access your diamonds.",
-        variant: "destructive",
-      });
-    } else if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+    if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
       toast({
         title: "🌐 Connection Error",
-        description: `Cannot reach FastAPI server. Please check your connection.`,
+        description: `Cannot reach FastAPI server at ${API_BASE_URL}. Your 500 diamonds are not accessible. Please check if the server is running.`,
+        variant: "destructive",
+      });
+    } else if (errorMessage.includes('not reachable')) {
+      toast({
+        title: "🔌 FastAPI Server Offline",
+        description: `The FastAPI backend at ${API_BASE_URL} is not responding. This is why you see 5 mock diamonds instead of your 500 real diamonds.`,
         variant: "destructive",
       });
     } else if (errorMessage.includes('CORS')) {
       toast({
         title: "🚫 CORS Issue",
-        description: "Server configuration issue. Please try again later.",
-        variant: "destructive",
-      });
-    } else if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
-      toast({
-        title: "🔐 Authentication Failed",
-        description: "Your session has expired. Please refresh the app.",
+        description: "FastAPI server CORS configuration issue. Please check server settings to access your real diamond data.",
         variant: "destructive",
       });
     } else {
       toast({
-        title: "❌ API Error",
-        description: `Request failed: ${errorMessage}`,
+        title: "❌ FastAPI Error",
+        description: `FastAPI request failed: ${errorMessage}. Falling back to mock data (5 diamonds).`,
         variant: "destructive",
       });
     }
