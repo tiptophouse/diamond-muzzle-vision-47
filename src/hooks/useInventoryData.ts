@@ -43,7 +43,7 @@ export function useInventoryData() {
     return shapeMap[normalized] || apiShape.charAt(0).toUpperCase() + apiShape.slice(1).toLowerCase();
   };
 
-  // Enhanced image URL processing - separate from 360° URLs
+  // Enhanced image URL processing - USE IMAGES DIRECTLY FROM FASTAPI
   const processImageUrl = useCallback((imageUrl: string | undefined): string | undefined => {
     if (!imageUrl || typeof imageUrl !== 'string') {
       return undefined;
@@ -60,28 +60,15 @@ export function useInventoryData() {
       return undefined;
     }
 
-    // Skip 360° viewers (these should go to gem360Url field instead)
-    if (trimmedUrl.includes('.html') ||
-        trimmedUrl.includes('diamondview.aspx') ||
-        trimmedUrl.includes('v360.in') ||
-        trimmedUrl.includes('sarine')) {
-      return undefined;
+    // Accept ALL HTTP/HTTPS URLs directly from FastAPI - no filtering
+    if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+      return trimmedUrl;
     }
 
-    // Must be a valid HTTP/HTTPS URL
-    if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
-      return undefined;
-    }
-
-    // Must end with valid image extension
-    if (!trimmedUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i)) {
-      return undefined;
-    }
-
-    return trimmedUrl;
+    return undefined;
   }, []);
 
-  // Enhanced 360° URL detection and processing
+  // Enhanced 360° URL detection - ACCEPT ALL FASTAPI URLS
   const detect360Url = useCallback((url: string | undefined): string | undefined => {
     if (!url || typeof url !== 'string') {
       return undefined;
@@ -98,26 +85,17 @@ export function useInventoryData() {
       return undefined;
     }
 
-    // Check for 360° indicators
-    const is360Url = trimmedUrl.includes('v360.in') ||
-                     trimmedUrl.includes('diamondview.aspx') ||
-                     trimmedUrl.includes('my360.sela') ||
-                     trimmedUrl.includes('gem360') ||
-                     trimmedUrl.includes('sarine') ||
-                     trimmedUrl.includes('360') ||
-                     trimmedUrl.includes('.html') ||
-                     trimmedUrl.match(/DAN\d+-\d+[A-Z]?\.jpg$/i);
-
-    if (!is360Url) {
-      return undefined;
+    // Accept any valid HTTP/HTTPS URL that might be a 360° viewer
+    if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+      return trimmedUrl;
     }
 
-    // Ensure proper protocol
-    if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
+    // If URL doesn't have protocol, add https
+    if (trimmedUrl.includes('.') && !trimmedUrl.startsWith('http')) {
       return `https://${trimmedUrl}`;
     }
 
-    return trimmedUrl;
+    return undefined;
   }, []);
 
   const fetchData = useCallback(async () => {
@@ -143,17 +121,22 @@ export function useInventoryData() {
           
           // Transform data to match Diamond interface with enhanced field mapping
           return result.data.map(item => {
-            // Enhanced image URL detection with multiple fallbacks
+            // ENHANCED IMAGE URL PROCESSING - Accept ALL FastAPI image fields
             let finalImageUrl = undefined;
             const imageFields = [
-              item.picture,
-              item.image_url,
-              item.imageUrl,
-              item.Image, // CSV field
-              item.image,
+              item.picture,          // Primary FastAPI image field
+              item.image_url,        // Alternative FastAPI field
+              item.imageUrl,         // CamelCase variant
+              item.Image,            // CSV field
+              item.image,            // Generic field
+              item.photo_url,        // Photo URL field
+              item.diamond_image,    // Diamond-specific image
+              item.media_url,        // Media URL
+              item.thumbnail_url,    // Thumbnail
+              item.product_image,    // Product image
             ];
             
-            // Process each potential image field
+            // Accept FIRST valid image URL from FastAPI without strict filtering
             for (const imageField of imageFields) {
               const processedUrl = processImageUrl(imageField);
               if (processedUrl) {
@@ -181,12 +164,15 @@ export function useInventoryData() {
               status: item.status || item.Availability || 'Available',
               fluorescence: item.fluorescence || item.FluorescenceIntensity || undefined,
               imageUrl: finalImageUrl,
-              // Enhanced 360° URL detection from multiple fields
+              // ENHANCED 360° URL PROCESSING - Accept ALL FastAPI 360 fields
               gem360Url: detect360Url(item.gem360Url) || 
                          detect360Url(item['Video link']) || 
                          detect360Url(item.videoLink) ||
                          detect360Url(item.video_url) ||
                          detect360Url(item.v360_url) ||
+                         detect360Url(item.sarine_url) ||
+                         detect360Url(item.three_d_url) ||
+                         detect360Url(item.viewer_url) ||
                          undefined,
               store_visible: item.store_visible !== false,
               certificateNumber: item.certificate_number || 
