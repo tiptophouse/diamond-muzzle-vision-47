@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useState } from "react";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { UploadSuccessCard } from "@/components/upload/UploadSuccessCard";
+import { InventoryDebugger } from "@/components/debug/InventoryDebugger";
 
 export default function InventoryPage() {
   const {
@@ -148,6 +149,11 @@ export default function InventoryPage() {
             setShowAddForm(true);
           }}
         />
+        
+        {/* Debug Panel - Show when no diamonds found */}
+        {!loading && allDiamonds.length === 0 && (
+          <InventoryDebugger />
+        )}
         
         <div className="space-y-4 w-full">
           <InventorySearch
