@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useOptimizedTelegramAuth } from '@/hooks/useOptimizedTelegramAuth';
+import { useStrictTelegramAuth } from '@/hooks/useStrictTelegramAuth';
 import { useUserDataPersistence } from '@/hooks/useUserDataPersistence';
 
 interface TelegramUser {
@@ -26,17 +26,30 @@ interface TelegramAuthContextType {
 const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(undefined);
 
 export function TelegramAuthProvider({ children }: { children: ReactNode }) {
-  const authState = useOptimizedTelegramAuth();
+  const authState = useStrictTelegramAuth();
   
-  console.log('🔍 TelegramAuthProvider - Optimized auth state:', { 
+  console.log('🔍 TelegramAuthProvider - Auth state:', { 
     user: authState.user, 
     isAuthenticated: authState.isAuthenticated,
-    isTelegramEnvironment: authState.isTelegramEnvironment,
-    loadTime: authState.loadTime
+    isTelegramEnvironment: authState.isTelegramEnvironment 
   });
   
   // Automatically persist user data when authenticated
   useUserDataPersistence(authState.user, authState.isTelegramEnvironment);
+
+  // Enhanced logging for analytics debugging
+  React.useEffect(() => {
+    if (authState.isAuthenticated && authState.user) {
+      console.log('✅ User authenticated - analytics tracking should initialize');
+      console.log('👤 User details:', {
+        id: authState.user.id,
+        name: authState.user.first_name,
+        telegram: authState.isTelegramEnvironment
+      });
+    } else {
+      console.log('❌ User not authenticated - analytics tracking disabled');
+    }
+  }, [authState.isAuthenticated, authState.user, authState.isTelegramEnvironment]);
 
   return (
     <TelegramAuthContext.Provider value={authState}>

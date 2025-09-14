@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -6,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useGroupCTA } from '@/hooks/useGroupCTA';
 import { useToast } from '@/components/ui/use-toast';
 import { Send, Users, TrendingUp, Zap, DollarSign } from 'lucide-react';
-import { GroupLaunchMessage } from './GroupLaunchMessage';
 
 export function GroupCTASender({ onSendNotification }: { onSendNotification?: (notification: any) => void }) {
   const [message, setMessage] = useState('');
@@ -172,10 +172,6 @@ export function GroupCTASender({ onSendNotification }: { onSendNotification?: (n
 
   return (
     <div className="space-y-6">
-      {/* Special Launch Message */}
-      <GroupLaunchMessage />
-
-      {/* Regular CTA Sender */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -262,7 +258,7 @@ export function GroupCTASender({ onSendNotification }: { onSendNotification?: (n
         </CardContent>
       </Card>
 
-      {/* CTA Templates */}
+      {/* CTA Templates with 400+ */}
       <Card>
         <CardHeader>
           <CardTitle>תבניות CTA עם 400+ משתמשים</CardTitle>

@@ -129,7 +129,7 @@ export function useUserTracking() {
     }
   };
 
-  // Fetch all sessions (admin only) - OPTIMIZED: Only fetch when needed
+  // Fetch all sessions (admin only)
   const fetchSessions = async () => {
     try {
       const { data, error } = await supabase
@@ -153,7 +153,7 @@ export function useUserTracking() {
     }
   };
 
-  // Fetch all page visits (admin only) - OPTIMIZED: Only fetch when needed
+  // Fetch all page visits (admin only)
   const fetchPageVisits = async () => {
     try {
       const { data, error } = await supabase
@@ -177,8 +177,11 @@ export function useUserTracking() {
     }
   };
 
-  // OPTIMIZED: Don't auto-fetch admin data on every mount - only fetch when explicitly requested
-  // This removes the expensive automatic API calls that were causing slow loading
+  // Load data on mount
+  useEffect(() => {
+    fetchSessions();
+    fetchPageVisits();
+  }, []);
 
   // Track page changes
   useEffect(() => {

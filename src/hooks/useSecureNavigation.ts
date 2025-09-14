@@ -29,7 +29,7 @@ export function useSecureNavigation() {
     }
   }, [navigation]);
 
-  // Enhanced back button with proper cleanup - always stays in app
+  // Enhanced back button with proper cleanup
   const showSecureBackButton = useCallback((onClick?: () => void) => {
     if (!isInitialized) return;
 
@@ -37,23 +37,12 @@ export function useSecureNavigation() {
 
     const handler = onClick || (() => {
       haptics.light();
-      // Smart navigation - go to home if no history or navigate within app
-      if (window.history.length <= 1 || location.pathname === '/') {
-        navigate('/');
-      } else {
-        // Check if we can safely go back within the app
-        const canGoBack = document.referrer.includes(window.location.hostname) || window.history.length > 1;
-        if (canGoBack) {
-          navigate(-1);
-        } else {
-          navigate('/');
-        }
-      }
+      navigate(-1);
     });
 
     navigationState.current.backButtonHandler = handler;
     navigation.showBackButton(handler);
-  }, [isInitialized, cleanupNavigation, haptics, navigate, navigation, location.pathname]);
+  }, [isInitialized, cleanupNavigation, haptics, navigate, navigation]);
 
   // Enhanced main button with proper cleanup
   const showSecureMainButton = useCallback((text: string, onClick?: () => void, color?: string) => {

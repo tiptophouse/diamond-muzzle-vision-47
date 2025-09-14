@@ -26,16 +26,13 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
 
     console.log('🗑️ DELETE: Starting delete for diamond:', diamondId);
     
-    // diamondId is now already the correct FastAPI ID from the table row
-    const fastApiDiamondId = diamondId;
+    // Use the actual FastAPI diamond ID if available
+    const fastApiDiamondId = diamondData?.diamondId || diamondId;
     console.log('🗑️ DELETE: Using FastAPI diamond ID:', fastApiDiamondId);
-    
-    // Find the diamond in UI for optimistic removal
-    const localDiamondId = diamondData?.id || diamondId;
 
-    // Optimistically remove from UI using the local diamond ID
+    // Optimistically remove from UI
     if (removeDiamondFromState) {
-      removeDiamondFromState(localDiamondId);
+      removeDiamondFromState(diamondId);
     }
 
     try {
@@ -53,8 +50,8 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
         console.log('✅ DELETE: FastAPI response:', response.data);
 
         toast({
-          title: "✅ יהלום נמחק בהצלחה",
-          description: "היהלום הוסר מהמלאי, הדאשבורד והחנות שלך",
+          title: "✅ Diamond Deleted Successfully",
+          description: "Diamond has been removed from your inventory, dashboard, and store",
         });
         
         if (onSuccess) onSuccess();
@@ -66,23 +63,21 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
         // Show user-friendly error message about API connection
         toast({
           variant: "destructive",
-          title: "⚠️ בעיית חיבור לשרת",
-          description: "לא ניתן להתחבר לשרת. היהלום יוסר מקומית עד לחידוש החיבור.",
+          title: "⚠️ API Connection Issue",
+          description: "Unable to connect to server. Diamond will be removed locally until connection is restored.",
         });
         
         // Fallback to localStorage with user notification
         console.log('🔄 DELETE: Falling back to localStorage...');
         const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
-        const filteredData = existingData.filter((item: any) => 
-          item.id !== localDiamondId && item.diamondId !== fastApiDiamondId && item.stockNumber !== diamondData?.stockNumber
-        );
+        const filteredData = existingData.filter((item: any) => item.id !== diamondId);
         
         if (filteredData.length < existingData.length) {
           localStorage.setItem('diamond_inventory', JSON.stringify(filteredData));
           
           toast({
-            title: "✅ יהלום נמחק מקומית",
-            description: "היהלום הוסר במצב לא מקוון ויסונכרן כשהחיבור לשרת יתחדש",
+            title: "✅ Diamond Deleted Locally",
+            description: "Diamond has been removed offline and will sync when server connection is restored",
           });
           
           if (onSuccess) onSuccess();
@@ -104,8 +99,8 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
       
       toast({
         variant: "destructive",
-        title: "❌ מחיקה נכשלה",
-        description: "נכשל במחיקת היהלום. אנא נסה שוב.",
+        title: "❌ Delete Failed",
+        description: "Failed to delete diamond. Please try again.",
       });
       
       return false;

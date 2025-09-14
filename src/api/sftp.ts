@@ -1,68 +1,52 @@
 
 // src/api/sftp.ts
-import { http } from "./http";
+import { api } from "@/lib/api";
 
-// Updated to match actual FastAPI response format (flat structure)
 export type SFTPProvisionResponse = {
+  sftp_server: string;
+  username: string;
+  password: string;
+  test_result: boolean;
+};
+
+export type SFTPCredentials = {
   host: string;
   port: number;
   username: string;
   password: string;
   folder_path: string;
-  ftp_username: string;
-  status: string;
-  created_at: string;
-  id?: string;
-  last_used_at?: string;
-  expires_at?: string;
+  test_result: boolean;
 };
 
-export type SFTPStatusResponse = {
-  id: string;
-  ftp_username: string;
-  ftp_folder_path: string;
-  status: string;
-  created_at: string;
-  last_used_at?: string;
-  expires_at?: string;
-};
-
-export type SFTPTestConnectionResponse = {
-  status: 'success' | 'failed';
-  message?: string;
-};
-
-export async function provisionSftp(telegram_id: number): Promise<SFTPProvisionResponse> {
-  console.log('📡 API: Calling SFTP provision endpoint for user:', telegram_id);
+export async function provisionSftp(telegramId: number): Promise<SFTPCredentials> {
+  console.log('🔐 SFTP: Provisioning SFTP account for user:', telegramId);
   
-  return http<SFTPProvisionResponse>("/api/v1/sftp/provision", { 
-    method: "POST",
-    body: JSON.stringify({ telegram_id })
+  const response = await api.post<SFTPProvisionResponse>('/api/v1/sftp/provision', {
+    telegram_id: telegramId
   });
-}
-
-export async function getSftpStatus(telegram_id: number): Promise<SFTPStatusResponse> {
-  console.log('📡 API: Getting SFTP status for user:', telegram_id);
   
-  return http<SFTPStatusResponse>(`/api/v1/sftp/status/${telegram_id}`, { 
-    method: "GET" 
-  });
-}
-
-export async function testSftpConnection(telegram_id: number): Promise<SFTPTestConnectionResponse> {
-  console.log('📡 API: Testing SFTP connection for user:', telegram_id);
+  if (response.error || !response.data) {
+    throw new Error(response.error || 'Failed to provision SFTP account');
+  }
   
-  return http<SFTPTestConnectionResponse>("/api/v1/sftp/test-connection", {
-    method: "POST",
-    body: JSON.stringify({ telegram_id })
-  });
-}
-
-export async function deactivateSftp(telegram_id: number): Promise<{ status: string; message: string }> {
-  console.log('📡 API: Deactivating SFTP for user:', telegram_id);
+  const data = response.data;
   
-  return http<{ status: string; message: string }>("/api/v1/sftp/deactivate", {
-    method: "POST", 
-    body: JSON.stringify({ telegram_id })
+  // Map the FastAPI response to our expected format
+  const credentials: SFTPCredentials = {
+    host: data.sftp_server,
+    port: 22, // Default SFTP port
+    username: data.username,
+    password: data.password,
+    folder_path: `/home/${data.username}/inbox`, // Derive folder path from username
+    test_result: data.test_result
+  };
+  
+  console.log('✅ SFTP: Account provisioned successfully:', {
+    host: credentials.host,
+    username: credentials.username,
+    folder_path: credentials.folder_path,
+    test_result: credentials.test_result
   });
+  
+  return credentials;
 }

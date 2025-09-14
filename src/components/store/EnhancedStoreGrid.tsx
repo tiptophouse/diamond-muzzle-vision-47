@@ -4,7 +4,6 @@ import { DiamondCardSkeleton } from "./DiamondCardSkeleton";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { AlertCircle, Sparkles, Camera, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { ShareQuotaIndicator } from "./ShareQuotaIndicator";
 
 interface EnhancedStoreGridProps {
   diamonds: Diamond[];
@@ -69,30 +68,25 @@ export function EnhancedStoreGrid({ diamonds, loading, error, onUpdate }: Enhanc
     <div className="space-y-4">
       {/* PHASE 5: Media Statistics Display */}
       {mediaStats.total > 0 && (
-        <div className="space-y-4">
-          <div className="bg-white rounded-lg border p-4">
-            <h3 className="text-sm font-medium text-gray-900 mb-3">Catalog Overview</h3>
-            <div className="flex flex-wrap gap-3">
-              <Badge variant="default" className="gap-1">
-                <Sparkles className="h-3 w-3" />
-                {mediaStats.with3D} with 3D View
-              </Badge>
-              <Badge variant="secondary" className="gap-1">
-                <Camera className="h-3 w-3" />
-                {mediaStats.withImages} with Photos
-              </Badge>
-              <Badge variant="outline" className="gap-1">
-                <FileText className="h-3 w-3" />
-                {mediaStats.infoOnly} Info Only
-              </Badge>
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              Showing {mediaStats.total} diamonds prioritized by media availability (3D → Photos → Info)
-            </p>
+        <div className="bg-white rounded-lg border p-4">
+          <h3 className="text-sm font-medium text-gray-900 mb-3">Catalog Overview</h3>
+          <div className="flex flex-wrap gap-3">
+            <Badge variant="default" className="gap-1">
+              <Sparkles className="h-3 w-3" />
+              {mediaStats.with3D} with 3D View
+            </Badge>
+            <Badge variant="secondary" className="gap-1">
+              <Camera className="h-3 w-3" />
+              {mediaStats.withImages} with Photos
+            </Badge>
+            <Badge variant="outline" className="gap-1">
+              <FileText className="h-3 w-3" />
+              {mediaStats.infoOnly} Info Only
+            </Badge>
           </div>
-
-          {/* Share Quota Indicator */}
-          <ShareQuotaIndicator />
+          <p className="text-xs text-gray-500 mt-2">
+            Showing {mediaStats.total} diamonds prioritized by media availability (3D → Photos → Info)
+          </p>
         </div>
       )}
 

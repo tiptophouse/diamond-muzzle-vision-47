@@ -1,7 +1,8 @@
 
 import { API_BASE_URL } from './config';
+import { apiEndpoints } from './endpoints';
 import { setCurrentUserId } from './config';
-import { tokenManager } from './tokenManager';
+import { getBackendAccessToken } from './secureConfig';
 
 export interface TelegramVerificationResponse {
   success: boolean;
@@ -16,165 +17,176 @@ export interface TelegramVerificationResponse {
   };
 }
 
-// Enhanced token management with caching
+// Store verification result and backend auth token
+let verificationResult: TelegramVerificationResponse | null = null;
 let backendAuthToken: string | null = null;
 
+export function getVerificationResult(): TelegramVerificationResponse | null {
+  return verificationResult;
+}
+
 export function getBackendAuthToken(): string | null {
-  // Try memory first, then token manager
-  const token = backendAuthToken || tokenManager.getToken();
-  console.log('🔑 Getting backend auth token:', token ? 'EXISTS' : 'NULL');
-  return token;
+  return backendAuthToken;
 }
 
-export function clearBackendAuthToken(): void {
-  console.log('🔑 Clearing backend auth token');
-  backendAuthToken = null;
-  tokenManager.clear();
-}
-
-// THE ONLY TRUE AUTHENTICATION METHOD: Telegram initData → FastAPI sign-in → JWT
+// Backend sign-in function
 export async function signInToBackend(initData: string): Promise<string | null> {
   try {
-    console.log('🔐 MAIN AUTH: Starting FastAPI backend authentication');
-    console.log('🔐 MAIN AUTH: InitData length:', initData?.length || 0);
+    console.log('🔐 API: Signing in to backend with initData');
     
     if (!initData || initData.length === 0) {
-      console.error('🔐 MAIN AUTH: No initData provided');
+      console.error('🔐 API: No initData provided for sign-in');
       return null;
     }
 
-    const signInUrl = `${API_BASE_URL}/api/v1/sign-in/`;
-    console.log('🔐 MAIN AUTH: Sign-in URL:', signInUrl);
-
-    const response = await fetch(signInUrl, {
+    const response = await fetch(`${API_BASE_URL}${apiEndpoints.signIn()}`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Origin': window.location.origin,
       },
       mode: 'cors',
-      credentials: 'omit',
       body: JSON.stringify({
         init_data: initData
       }),
     });
 
-    console.log('🔐 MAIN AUTH: Response status:', response.status);
-    console.log('🔐 MAIN AUTH: Response headers:', Object.fromEntries(response.headers.entries()));
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('🔐 MAIN AUTH: Sign-in failed:', response.status, errorText);
+      console.error('🔐 API: Backend sign-in failed:', response.status, errorText);
       return null;
     }
 
     const result = await response.json();
-    console.log('🔐 MAIN AUTH: Response data keys:', Object.keys(result));
     
-    // FIXED: According to OpenAPI spec, the field is "token", not "access_token"
-    const token = result.token;
-    
-    if (token) {
-      backendAuthToken = token;
-      console.log('✅ MAIN AUTH: JWT token received and stored');
-      
-      // Extract user ID and store token in manager
-      try {
-        const urlParams = new URLSearchParams(initData);
-        const userParam = urlParams.get('user');
-        
-        if (userParam) {
-          const user = JSON.parse(decodeURIComponent(userParam));
-          if (user.id) {
-            setCurrentUserId(user.id);
-            tokenManager.setToken(token, user.id);
-            console.log('✅ MAIN AUTH: User ID extracted and token cached:', user.id);
-            
-            // Set session context for RLS policies
-            try {
-              const { supabase } = await import('@/integrations/supabase/client');
-              await supabase.rpc('set_session_context', {
-                key: 'app.current_user_id',
-                value: user.id.toString()
-              });
-              console.log('✅ MAIN AUTH: Session context set for user:', user.id);
-            } catch (contextError) {
-              console.warn('⚠️ MAIN AUTH: Failed to set session context, continuing:', contextError);
-              // Don't throw - this is not critical for basic functionality
-            }
-          }
-        }
-      } catch (error) {
-        console.error('🔐 MAIN AUTH: Failed to extract user ID from initData:', error);
-      }
-      
-      return backendAuthToken;
+    if (result.token) {
+      backendAuthToken = result.token;
+      console.log('✅ API: Backend sign-in successful, token stored');
+      return result.token;
     } else {
-      console.error('🔐 MAIN AUTH: No token in response:', Object.keys(result));
+      console.error('🔐 API: No token in sign-in response');
       return null;
     }
   } catch (error) {
-    console.error('❌ MAIN AUTH: Sign-in error:', error);
+    console.error('❌ API: Backend sign-in error:', error);
     return null;
   }
 }
 
-// Get auth headers with JWT token for protected endpoints
+// Strict Telegram verification - no fallbacks
+export async function verifyTelegramUser(initData: string): Promise<TelegramVerificationResponse | null> {
+  try {
+    console.log('🔐 API: Strict Telegram verification starting');
+    
+    if (!initData || initData.length === 0) {
+      console.error('🔐 API: No initData provided');
+      return null;
+    }
+    
+    // Strict validation checks
+    const urlParams = new URLSearchParams(initData);
+    const authDate = urlParams.get('auth_date');
+    const hash = urlParams.get('hash');
+    const userParam = urlParams.get('user');
+    
+    if (!authDate || !hash || !userParam) {
+      console.error('🔐 API: Missing required initData parameters');
+      return null;
+    }
+
+    // Strict timestamp validation (5 minutes max)
+    const authDateTime = parseInt(authDate) * 1000;
+    const now = Date.now();
+    const maxAge = 5 * 60 * 1000; // 5 minutes (stricter than before)
+    
+    if (now - authDateTime > maxAge) {
+      console.error('🔐 API: InitData too old for strict validation:', (now - authDateTime) / 1000, 'seconds');
+      return null;
+    }
+    
+    // Get secure backend access token
+    const backendToken = await getBackendAccessToken();
+    if (!backendToken) {
+      console.error('🔐 API: No backend access token available');
+      return null;
+    }
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${backendToken}`,
+      'X-Timestamp': now.toString(),
+      'X-Client-Version': '2.0.0',
+      'X-Security-Level': 'strict'
+    };
+    
+    console.log('🔐 API: Sending strict verification request');
+    
+    const response = await fetch(`${API_BASE_URL}${apiEndpoints.verifyTelegram()}`, {
+      method: 'POST',
+      headers,
+      mode: 'cors',
+      body: JSON.stringify({
+        init_data: initData,
+        client_timestamp: now,
+        security_level: 'strict',
+        validation_mode: 'production'
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('🔐 API: Strict verification failed:', response.status, errorText);
+      return null;
+    }
+
+    const result: TelegramVerificationResponse = await response.json();
+    
+    if (!result.success) {
+      console.error('🔐 API: Backend rejected verification:', result.message);
+      return null;
+    }
+    
+    console.log('✅ API: Strict Telegram verification successful');
+    
+    verificationResult = result;
+    if (result.user_id) {
+      setCurrentUserId(result.user_id);
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('❌ API: Strict verification error:', error);
+    return null;
+  }
+}
+
 export async function getAuthHeaders(): Promise<Record<string, string>> {
+  // Use backend auth token if available, otherwise fallback to secure config token
+  const authToken = backendAuthToken || await getBackendAccessToken();
+  
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "Accept": "application/json",
-    "Origin": window.location.origin,
     "X-Client-Timestamp": Date.now().toString(),
+    "X-Security-Level": "strict"
   };
   
-  if (backendAuthToken) {
-    // FIXED: Use proper Bearer token format as required by FastAPI
-    headers["Authorization"] = `Bearer ${backendAuthToken}`;
-    console.log('🔑 AUTH HEADERS: Added Bearer token for protected endpoint');
-  } else {
-    console.warn('⚠️ AUTH HEADERS: No JWT token available - this will fail for protected endpoints');
+  if (authToken) {
+    headers["Authorization"] = `Bearer ${authToken}`;
+  }
+  
+  if (verificationResult && verificationResult.success) {
+    const telegramAuth = `telegram_verified_${verificationResult.user_id}_${Date.now()}`;
+    headers["X-Telegram-Auth"] = telegramAuth;
   }
   
   return headers;
 }
 
-// Legacy function for compatibility - redirects to main auth
-export async function verifyTelegramUser(initData: string): Promise<TelegramVerificationResponse | null> {
-  console.warn('⚠️ LEGACY AUTH: verifyTelegramUser called - redirecting to signInToBackend');
-  
-  const token = await signInToBackend(initData);
-  if (!token) {
-    return { success: false, user_id: 0, user_data: null, message: 'Authentication failed' };
-  }
-  
-  // Extract user data from initData for compatibility
-  try {
-    const urlParams = new URLSearchParams(initData);
-    const userParam = urlParams.get('user');
-    
-    if (userParam) {
-      const user = JSON.parse(decodeURIComponent(userParam));
-      return {
-        success: true,
-        user_id: user.id,
-        user_data: user,
-        message: 'Success via main auth flow'
-      };
-    }
-  } catch (error) {
-    console.error('Failed to parse user data:', error);
-  }
-  
-  return { success: false, user_id: 0, user_data: null, message: 'Failed to parse user data' };
-}
-
 export function getSecurityMetrics() {
   return {
-    lastVerification: backendAuthToken ? new Date().toISOString() : null,
-    verificationStatus: !!backendAuthToken,
-    securityInfo: null,
+    lastVerification: verificationResult ? new Date().toISOString() : null,
+    verificationStatus: verificationResult?.success || false,
+    securityInfo: verificationResult?.security_info || null,
     securityLevel: 'strict'
   };
 }

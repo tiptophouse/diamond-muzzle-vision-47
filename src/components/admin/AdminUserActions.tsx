@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Eye, Edit, UserCheck, UserX, Trash2, MessageSquare } from 'lucide-react';
+import { Eye, Edit, UserCheck, UserX, Trash2 } from 'lucide-react';
 
 interface AdminUserActionsProps {
   user: any;
@@ -9,7 +9,6 @@ interface AdminUserActionsProps {
   onEditUser: (user: any) => void;
   onToggleBlock: (user: any) => void;
   onDeleteUser: (user: any) => void;
-  onSendMessage: (user: any) => void;
 }
 
 export function AdminUserActions({ 
@@ -18,8 +17,7 @@ export function AdminUserActions({
   onViewUser, 
   onEditUser, 
   onToggleBlock, 
-  onDeleteUser,
-  onSendMessage
+  onDeleteUser 
 }: AdminUserActionsProps) {
   return (
     <div className="flex gap-2">
@@ -38,14 +36,6 @@ export function AdminUserActions({
         className="glass-card border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 touch-target min-h-[44px] min-w-[44px] p-2"
       >
         <Edit className="h-4 w-4" />
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => onSendMessage(user)}
-        className="glass-card border-blue-500/30 text-blue-300 hover:bg-blue-500/20 touch-target min-h-[44px] min-w-[44px] p-2"
-      >
-        <MessageSquare className="h-4 w-4" />
       </Button>
       <Button
         variant={isBlocked ? "outline" : "destructive"}

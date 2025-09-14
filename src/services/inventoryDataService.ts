@@ -23,24 +23,10 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   try {
     // First, try to get data from FastAPI backend using get_all_stones
     console.log('🔍 INVENTORY SERVICE: Attempting FastAPI connection...');
-    
-    // Add timeout and error boundary around API call
     const endpoint = apiEndpoints.getAllStones(userId);
     console.log('🔍 INVENTORY SERVICE: Using endpoint:', endpoint);
     
-    // Wrap API call with comprehensive error handling
-    let result;
-    try {
-      result = await Promise.race([
-        api.get(endpoint),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('API timeout')), 10000)
-        )
-      ]) as any;
-    } catch (apiError) {
-      console.error('❌ INVENTORY SERVICE: FastAPI call failed:', apiError);
-      throw apiError;
-    }
+    const result = await api.get(endpoint);
     
     if (result.data && !result.error) {
       let dataArray: any[] = [];
@@ -66,7 +52,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       if (dataArray && dataArray.length > 0) {
         console.log('✅ INVENTORY SERVICE: Successfully fetched', dataArray.length, 'diamonds from FastAPI');
         
-        // Log EXACTLY what FastAPI is sending for debugging
+        // PHASE 4: Critical debugging - Log EXACTLY what FastAPI is sending
         console.log('🚨 FASTAPI RESPONSE ANALYSIS:', {
           totalCount: dataArray.length,
           firstItem: {
@@ -156,16 +142,17 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       }
     }
     
-    // Return error instead of mock data - clients should not see mock data
-    console.log('❌ INVENTORY SERVICE: No real data found - returning error instead of mock data');
+    // Final fallback to mock data
+    console.log('🔄 INVENTORY SERVICE: No real data found, using mock data');
+    const mockResult = await fetchMockInventoryData();
     
     return {
-      error: 'No inventory data available. Please ensure your FastAPI backend is running and accessible.',
+      ...mockResult,
       debugInfo: {
         ...debugInfo,
-        step: 'ERROR: No real data available',
-        dataSource: 'none',
-        recommendation: 'Check FastAPI backend connectivity'
+        ...mockResult.debugInfo,
+        step: 'FALLBACK: Using mock data',
+        dataSource: 'mock'
       }
     };
     
@@ -197,15 +184,16 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       }
     }
     
-    // Return error instead of mock data - clients should not see mock data
+    // Ultimate fallback to mock data
+    const mockResult = await fetchMockInventoryData();
     return {
-      error: error instanceof Error ? error.message : String(error),
+      ...mockResult,
       debugInfo: {
         ...debugInfo,
-        step: 'ERROR: All data sources failed',
+        ...mockResult.debugInfo,
+        step: 'ULTIMATE FALLBACK: Mock data after all failures',
         error: error instanceof Error ? error.message : String(error),
-        dataSource: 'none',
-        recommendation: 'Check authentication and FastAPI backend connectivity'
+        dataSource: 'mock_emergency'
       }
     };
   }

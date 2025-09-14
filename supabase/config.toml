@@ -43,6 +43,3 @@ verify_jwt = false
 
 [functions.openai-csv-enhancer]
 verify_jwt = false
-
-[functions.send-diamond-to-group]
-verify_jwt = false

@@ -13,7 +13,7 @@ import { Link } from "react-router-dom"
 import { useTelegramAuth } from "@/context/TelegramAuthContext"
 import { useEffect, useState } from "react"
 import { useLocation } from 'react-router-dom';
-import { Home, Upload, Sparkle, Settings, Users, LogOut, TrendingUp, Package, MessageCircle, BarChart3, Bell, User, Heart } from "lucide-react";
+import { Home, Upload, Sparkle, Settings, Users, LogOut, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEnhancedUserTracking } from '@/hooks/useEnhancedUserTracking';
 
@@ -35,19 +35,9 @@ export function TelegramLayout({ children }: TelegramLayoutProps) {
 
   const navigationItems = [
     {
-      to: '/dashboard',
+      to: '/',
       icon: Home,
       label: 'Dashboard',
-    },
-    {
-      to: '/inventory',
-      icon: Package,
-      label: 'Inventory',
-    },
-    {
-      to: '/store',
-      icon: Sparkle,
-      label: 'Store',
     },
     {
       to: '/upload',
@@ -55,29 +45,14 @@ export function TelegramLayout({ children }: TelegramLayoutProps) {
       label: 'Upload',
     },
     {
-      to: '/insights',
-      icon: BarChart3,
-      label: 'Insights',
+      to: '/store',
+      icon: Sparkle,
+      label: 'Store',
     },
     {
-      to: '/chat',
-      icon: MessageCircle,
-      label: 'Chat',
-    },
-    {
-      to: '/notifications',
-      icon: Bell,
-      label: 'Notifications',
-    },
-    {
-      to: '/profile',
-      icon: User,
-      label: 'Profile',
-    },
-    {
-      to: '/wishlist',
-      icon: Heart,
-      label: 'Wishlist',
+      to: '/clients',
+      icon: Users,
+      label: 'Clients',
     },
     {
       to: '/settings',
