@@ -99,11 +99,11 @@ const Index = () => {
     return <Navigate to="/admin" replace />;
   }
 
-  // For regular users, redirect to dashboard to see their data
+  // For regular users, redirect to store to see diamond collection
   if (isAuthenticated && user) {
-    console.log('✅ Regular user detected - redirecting to dashboard');
+    console.log('✅ Regular user detected - redirecting to store');
     redirectHandledRef.current = true;
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/store" replace />;
   }
 
   // Fallback for unauthenticated users
@@ -131,13 +131,21 @@ const Index = () => {
             <p>This app works exclusively within Telegram Mini App environment for security.</p>
           </div>
           
-          <button onClick={() => window.location.reload()} className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-muted-foreground bg-muted rounded-xl hover:bg-muted/90 transition-all duration-200 shadow-soft hover:shadow-medium hover:-translate-y-0.5">
+          <button 
+            onClick={() => window.location.reload()} 
+            className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-muted-foreground bg-muted rounded-xl hover:bg-muted/90 transition-all duration-200 shadow-soft hover:shadow-medium hover:-translate-y-0.5"
+          >
             🔄 Retry Authentication
           </button>
         </div>
         
         {/* Debug info in development */}
-        {process.env.NODE_ENV === 'development'}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="text-xs text-left bg-card p-4 rounded-lg border shadow-soft max-w-md mx-auto">
+            <div className="font-semibold mb-2 text-foreground">Debug Info:</div>
+            {debugInfo.map((info, i) => <div key={i} className="text-muted-foreground">{info}</div>)}
+          </div>
+        )}
       </div>
     </div>;
 };

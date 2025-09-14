@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTelegramSDK } from '@/hooks/useTelegramSDK';
-import { useTelegramImageLoader } from '@/hooks/useTelegramImageLoader';
 import { V360Viewer } from './V360Viewer';
-import { Eye, RotateCcw, Zap, Gem, Sparkles, RefreshCw } from 'lucide-react';
+import { Eye, RotateCcw, Zap, Gem, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface OptimizedDiamondImageProps {
@@ -26,40 +25,46 @@ export function OptimizedDiamondImage({
   onLoad,
   onError
 }: OptimizedDiamondImageProps) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [show360, setShow360] = useState(false);
   const [isInView, setIsInView] = useState(priority);
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { haptic } = useTelegramSDK();
 
-  // Use Telegram native image loading with cache
-  const {
-    imageUrl: cachedImageUrl,
-    isLoading,
-    hasError,
-    isCached,
-    loadTime,
-    retryLoad
-  } = useTelegramImageLoader({
-    stockNumber,
-    originalUrl: imageUrl,
-    fallbackUrl: `https://miniapp.mazalbot.com/api/diamond-image/${stockNumber}`,
-    priority
-  });
-
   // Determine what type of media we have
   const has3D = gem360Url && gem360Url.trim() && gem360Url !== 'null';
-  const imageLoaded = !!cachedImageUrl && !isLoading && !hasError;
+  const hasImage = imageUrl && imageUrl.trim() && imageUrl !== 'default' && imageUrl !== 'null';
+  const fallbackUrl = `https://miniapp.mazalbot.com/api/diamond-image/${stockNumber}`;
+  const finalImageUrl = hasImage ? imageUrl : fallbackUrl;
 
-  // Handle load/error callbacks for parent components
-  useEffect(() => {
-    if (imageLoaded && onLoad) {
-      onLoad();
+  // Native image loading with telegram haptic feedback
+  const handleImageLoad = useCallback(() => {
+    setIsLoading(false);
+    setImageLoaded(true);
+    setHasError(false);
+    
+    // Haptic feedback for successful load
+    if (haptic?.notification) {
+      haptic.notification('success');
     }
-    if (hasError && onError) {
-      onError();
+    
+    onLoad?.();
+  }, [onLoad, haptic]);
+
+  const handleImageError = useCallback(() => {
+    setIsLoading(false);
+    setHasError(true);
+    
+    // Haptic feedback for error
+    if (haptic?.notification) {
+      haptic.notification('error');
     }
-  }, [imageLoaded, hasError, onLoad, onError]);
+    
+    onError?.();
+  }, [onError, haptic]);
 
   const handle360Toggle = useCallback(() => {
     if (has3D) {
@@ -101,11 +106,6 @@ export function OptimizedDiamondImage({
     return () => observer.disconnect();
   }, [priority]);
 
-  const handleRetry = useCallback(() => {
-    haptic?.impact?.('light');
-    retryLoad();
-  }, [haptic, retryLoad]);
-
   // Show 360° viewer if active
   if (show360 && has3D) {
     return (
@@ -126,7 +126,7 @@ export function OptimizedDiamondImage({
     );
   }
 
-  const shouldShowImage = isInView && cachedImageUrl && !hasError;
+  const shouldShowImage = isInView && (hasImage || !hasError);
 
   return (
     <div 
@@ -134,17 +134,13 @@ export function OptimizedDiamondImage({
       className={`relative overflow-hidden bg-gradient-to-br from-primary/5 to-primary-glow/10 ${className}`}
     >
       {/* Loading shimmer effect */}
-      {isLoading && (
+      {isLoading && shouldShowImage && (
         <div className="absolute inset-0 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 animate-pulse">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent -skew-x-12 animate-[shimmer_2s_infinite]" />
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary-glow/20 rounded-full flex items-center justify-center">
               <Gem className="h-8 w-8 text-primary/40 animate-pulse" />
             </div>
-          </div>
-          {/* Cache indicator */}
-          <div className="absolute top-2 left-2 bg-blue-500/80 backdrop-blur-sm text-white px-2 py-1 rounded text-xs font-medium">
-            {isCached ? '📱 Cache' : '🌐 Loading'}
           </div>
         </div>
       )}
@@ -153,11 +149,13 @@ export function OptimizedDiamondImage({
       {shouldShowImage && (
         <img
           ref={imageRef}
-          src={cachedImageUrl}
+          src={finalImageUrl}
           alt={`${shape} diamond - Stock #${stockNumber}`}
           className={`w-full h-full object-cover transition-all duration-500 ${
             imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
           }`}
+          onLoad={handleImageLoad}
+          onError={handleImageError}
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"
           style={{
@@ -168,8 +166,8 @@ export function OptimizedDiamondImage({
         />
       )}
 
-      {/* Error state with retry */}
-      {(hasError || (!shouldShowImage && !isLoading)) && (
+      {/* Error state or no image */}
+      {(hasError || !shouldShowImage) && (
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <div className="relative">
             <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-glow rounded-full flex items-center justify-center shadow-lg">
@@ -180,33 +178,12 @@ export function OptimizedDiamondImage({
             </div>
           </div>
           <p className="text-sm font-medium mt-2 text-muted-foreground">Stock #{stockNumber}</p>
-          {hasError && (
-            <button 
-              onClick={handleRetry}
-              className="mt-2 bg-primary/10 hover:bg-primary/20 text-primary px-3 py-1 rounded-full text-xs font-medium transition-colors flex items-center gap-1"
-            >
-              <RefreshCw className="h-3 w-3" />
-              Retry
-            </button>
-          )}
         </div>
       )}
 
-      {/* Success indicator with cache status */}
+      {/* Success indicator */}
       {imageLoaded && !hasError && (
-        <div className="absolute top-2 right-2 flex items-center gap-1">
-          <div className="w-3 h-3 bg-green-500 rounded-full shadow-lg animate-pulse" />
-          {isCached && (
-            <div className="bg-blue-500/80 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-xs font-medium">
-              📱
-            </div>
-          )}
-          {loadTime && loadTime < 100 && (
-            <div className="bg-green-500/80 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-xs font-medium">
-              ⚡
-            </div>
-          )}
-        </div>
+        <div className="absolute top-2 right-2 w-3 h-3 bg-green-500 rounded-full shadow-lg animate-pulse" />
       )}
 
       {/* 360° Badge */}

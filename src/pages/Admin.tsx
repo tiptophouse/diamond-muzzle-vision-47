@@ -214,15 +214,9 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-[env(safe-area-inset-bottom)] overflow-y-auto" style={{ 
-      height: 'var(--tg-viewport-height, 100vh)',
-      paddingTop: 'var(--tg-safe-area-inset-top, 0px)',
-      paddingBottom: 'var(--tg-safe-area-inset-bottom, 0px)',
-      WebkitOverflowScrolling: 'touch',
-      overscrollBehavior: 'contain'
-    }}>
+    <div>
       {/* Clean Admin Header with Force Refresh */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -284,11 +278,11 @@ export default function Admin() {
         />
       </div>
 
-      {/* Main Admin Content with iPhone scrolling optimization */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 pb-8 overflow-visible">
+      {/* Main Admin Content */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 pb-8">
         <Tabs defaultValue="monitor" className="space-y-4">
           <div className="relative">
-            <TabsList className="w-full h-auto p-1 bg-muted rounded-lg overflow-x-auto scrollbar-hide" style={{ overscrollBehavior: 'contain' }}>
+            <TabsList className="w-full h-auto p-1 bg-muted rounded-lg overflow-x-auto scrollbar-hide">
               <div className="flex gap-1 min-w-max">
                  <TabsTrigger 
                    value="monitor" 
