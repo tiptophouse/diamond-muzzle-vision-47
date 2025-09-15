@@ -19,12 +19,14 @@ interface SmartNotificationCardProps {
   };
   onMarkAsRead: (id: string) => void;
   onContactCustomer?: (customerInfo: any) => void;
+  isLoading?: boolean;
 }
 
 export function SmartNotificationCard({ 
   notification, 
   onMarkAsRead,
-  onContactCustomer 
+  onContactCustomer,
+  isLoading = false
 }: SmartNotificationCardProps) {
   const isDiamondMatch = notification.type === 'diamond_match';
   const metadata = notification.data;
@@ -70,15 +72,15 @@ export function SmartNotificationCard({
   return (
     <Card 
       className={`transition-all duration-200 ${
-        notification.read ? 'opacity-75' : 'shadow-md'
+        notification.read ? 'opacity-75' : 'shadow-sm'
       } ${getTypeColor(notification.type)}`}
     >
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {getTypeIcon(notification.type)}
             <div>
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="text-sm flex items-center gap-2">
                 {notification.title}
                 {!notification.read && (
                   <Badge variant="secondary" className="text-xs">
@@ -86,7 +88,7 @@ export function SmartNotificationCard({
                   </Badge>
                 )}
               </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground">
+              <CardDescription className="text-xs text-muted-foreground">
                 {formatDistanceToNow(new Date(notification.created_at), { 
                   addSuffix: true,
                   locale: he 
@@ -97,8 +99,8 @@ export function SmartNotificationCard({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
-        <div className="whitespace-pre-line text-sm">
+      <CardContent className="space-y-3">
+        <div className="whitespace-pre-line text-xs">
           {notification.message}
         </div>
 
@@ -177,9 +179,10 @@ export function SmartNotificationCard({
                         variant="outline"
                         onClick={() => onContactCustomer?.(metadata.customer_info)}
                         className="h-6 text-xs"
+                        disabled={isLoading}
                       >
                         <Phone className="h-3 w-3 mr-1" />
-                        צור קשר
+                        {isLoading ? 'שולח...' : 'שלח הודעה'}
                       </Button>
                     </div>
                   )}
