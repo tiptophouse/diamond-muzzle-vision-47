@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import WebApp from '@twa-dev/sdk';
 import { Gem, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -40,6 +41,19 @@ export function SegomaViewer({
     });
   }, [segomaUrl, stockNumber]);
 
+  // Fallback when iframe is blocked by X-Frame-Options (onError may not fire)
+  useEffect(() => {
+    if (!isInline) return;
+    const timer = setTimeout(() => {
+      if (isLoading) {
+        console.warn('Segoma iframe likely blocked, falling back to external link', { stockNumber, segomaUrl });
+        setHasError(true);
+        setIsLoading(false);
+      }
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [isInline, isLoading, segomaUrl, stockNumber]);
+
   const handleLoad = () => {
     setIsLoading(false);
     setHasError(false);
@@ -51,7 +65,16 @@ export function SegomaViewer({
   };
 
   const openInNewTab = () => {
-    window.open(segomaUrl, '_blank', 'noopener,noreferrer');
+    try {
+      if (WebApp?.openLink) {
+        WebApp.openLink(segomaUrl, { try_instant_view: false });
+      } else {
+        window.open(segomaUrl, '_blank', 'noopener,noreferrer');
+      }
+    } catch (e) {
+      console.error('Failed to open Segoma link via Telegram SDK, falling back', e);
+      window.open(segomaUrl, '_blank', 'noopener,noreferrer');
+    }
   };
 
   if (hasError) {
@@ -96,6 +119,7 @@ export function SegomaViewer({
           onLoad={handleLoad}
           onError={handleError}
           allow="fullscreen"
+          allowFullScreen
           loading="lazy"
         />
       ) : (
