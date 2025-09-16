@@ -67,9 +67,9 @@ export function useEnhancedInsights(diamonds: Diamond[]) {
       { range: '$10,000+', count: diamonds.filter(d => d.price >= 10000).length },
     ];
 
-    // Realistic calculations for velocity and profit margin
-    const inventoryVelocity = Math.round((Math.random() * 0.15 + 0.08) * 100) / 100; // 8-23% realistic turnover
-    const profitMargin = Math.round((Math.random() * 0.12 + 0.18) * 100) / 100; // 18-30% realistic profit
+    // Mock calculations for velocity and profit margin
+    const inventoryVelocity = Math.random() * 0.3 + 0.1; // 10-40% turnover
+    const profitMargin = Math.random() * 0.2 + 0.15; // 15-35% profit
 
     return {
       totalValue,

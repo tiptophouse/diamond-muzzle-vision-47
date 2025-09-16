@@ -151,23 +151,17 @@ export function useInsightsData() {
         
         setDemandInsights(demandData);
 
-        // Calculate real personal insights from actual diamond values
+        // Calculate real personal insights
         if (diamonds.length > 0) {
-          // Calculate actual inventory value - no caps, show real worth
-          const inventoryValue = diamonds.reduce((sum, d) => sum + ((d.price_per_carat || 0) * (d.weight || 0)), 0);
-          
-          // Calculate actual average price per carat from real data
+          const totalValue = diamonds.reduce((sum, d) => sum + ((d.price_per_carat || 0) * (d.weight || 0)), 0);
           const avgPricePerCarat = diamonds.reduce((sum, d) => sum + (d.price_per_carat || 0), 0) / diamonds.length;
           
-          // Generate realistic portfolio growth (0-12% range)
-          const portfolioGrowth = Math.round((Math.random() * 12) * 10) / 10;
-          
           const personalInsight: PersonalInsight = {
-            inventoryValue: Math.round(inventoryValue),
+            inventoryValue: totalValue,
             mostProfitableShape: trends[0]?.category || 'round brilliant',
             leastProfitableShape: trends[trends.length - 1]?.category || 'cushion',
-            avgPricePerCarat: Math.round(avgPricePerCarat),
-            portfolioGrowth
+            avgPricePerCarat,
+            portfolioGrowth: 0 // Would need historical data for real growth
           };
           setPersonalInsights(personalInsight);
         }
