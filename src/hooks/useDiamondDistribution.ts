@@ -60,11 +60,24 @@ export function useDiamondDistribution() {
         
         if (response.data && Array.isArray(response.data)) {
           diamonds = response.data.map(d => {
-            const weight = Number(d.weight || d.carat || 1);
-            const pricePerCarat = Number(d.price_per_carat || d.price || 0);
-            
-            // Calculate total price correctly
-            const totalPrice = pricePerCarat * weight;
+            const weight = Number(d.weight ?? d.carat ?? 0);
+            const rawPpc = Number(d.price_per_carat);
+            const rawTotal = Number(d.price);
+
+            // Robust total price calculation to avoid unrealistic billions
+            let totalPrice = 0;
+            if (rawPpc > 100 && rawPpc < 200000 && weight > 0 && weight < 50) {
+              // Looks like a valid price-per-carat
+              totalPrice = Math.round(rawPpc * weight);
+            } else if (rawTotal > 0 && rawTotal < 5000000 && weight > 0 && weight < 50) {
+              // Treat provided price as total price when it’s in a sane range (< $5M per stone)
+              totalPrice = Math.round(rawTotal);
+            } else if (!isNaN(rawPpc) && rawPpc > 0 && weight > 0 && weight < 50) {
+              // Fallback if PPC is present but slightly outside preferred bounds
+              totalPrice = Math.round(rawPpc * weight);
+            } else {
+              totalPrice = 0;
+            }
             
             return {
               id: d.id || d.stock_number || '',
@@ -72,7 +85,7 @@ export function useDiamondDistribution() {
               color: d.color || 'H',
               clarity: d.clarity || 'VS1',
               carat: weight,
-              price: totalPrice, // This should be total price, not per carat
+              price: totalPrice, // store a sane total price
               certificate_number: String(d.certificate_number || ''),
               created_at: d.created_at || new Date().toISOString()
             };
