@@ -151,15 +151,13 @@ export function useInsightsData() {
         
         setDemandInsights(demandData);
 
-        // Calculate realistic personal insights
+        // Calculate real personal insights from actual diamond values
         if (diamonds.length > 0) {
-          // Calculate realistic inventory value (cap at reasonable amounts)
-          const rawTotalValue = diamonds.reduce((sum, d) => sum + ((d.price_per_carat || 0) * (d.weight || 0)), 0);
-          const inventoryValue = Math.min(rawTotalValue, 2500000); // Cap at $2.5M for realism
+          // Calculate actual inventory value - no caps, show real worth
+          const inventoryValue = diamonds.reduce((sum, d) => sum + ((d.price_per_carat || 0) * (d.weight || 0)), 0);
           
-          // Calculate realistic average price per carat (typical range $1,000-$15,000)
-          const rawAvgPricePerCarat = diamonds.reduce((sum, d) => sum + (d.price_per_carat || 0), 0) / diamonds.length;
-          const avgPricePerCarat = Math.min(Math.max(rawAvgPricePerCarat || 3500, 1200), 18000);
+          // Calculate actual average price per carat from real data
+          const avgPricePerCarat = diamonds.reduce((sum, d) => sum + (d.price_per_carat || 0), 0) / diamonds.length;
           
           // Generate realistic portfolio growth (0-12% range)
           const portfolioGrowth = Math.round((Math.random() * 12) * 10) / 10;
