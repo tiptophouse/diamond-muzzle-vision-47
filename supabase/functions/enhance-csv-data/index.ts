@@ -65,7 +65,7 @@ Return only the JSON array of mappings, no explanation text.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
           { role: 'system', content: 'You are a diamond industry data cleaning expert. Always respond with valid JSON only.' },
           { role: 'user', content: prompt }

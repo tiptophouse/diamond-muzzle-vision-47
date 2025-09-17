@@ -202,7 +202,7 @@ Keep responses professional, knowledgeable, and data-driven using the user's rea
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: messages,
         max_tokens: 1500,
         temperature: 0.7,
