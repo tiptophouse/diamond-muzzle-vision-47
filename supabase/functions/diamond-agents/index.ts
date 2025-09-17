@@ -1,6 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { Agent, run, tool } from 'https://esm.sh/@openai/agents@1.0.0';
+import { Agent, run, tool } from 'https://esm.sh/@openai/agents@0.1.1';
 import { z } from 'https://esm.sh/zod@3.23.8';
 
 const corsHeaders = {
