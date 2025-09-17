@@ -282,7 +282,19 @@ export function SecureDiamondViewer() {
                   <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg">
                     <label className="text-sm font-medium text-purple-700">Total Estimated Price</label>
                     <p className="text-2xl font-bold text-purple-800">
-                      ${(diamond.price_per_carat * diamond.weight).toLocaleString()}
+                      ${(() => {
+                        const weight = diamond.weight || 0;
+                        const rawPpc = diamond.price_per_carat || 0;
+                        let totalPrice = 0;
+                        if (rawPpc > 100 && rawPpc < 50000 && weight > 0 && weight < 20) {
+                          totalPrice = Math.round(rawPpc * weight);
+                        } else if (rawPpc > 0 && rawPpc < 1000000) {
+                          totalPrice = Math.round(rawPpc);
+                        } else {
+                          totalPrice = Math.round(weight * 15000);
+                        }
+                        return totalPrice.toLocaleString();
+                      })()}
                     </p>
                   </div>
                 )}

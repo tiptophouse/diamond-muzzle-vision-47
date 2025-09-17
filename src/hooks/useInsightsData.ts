@@ -151,10 +151,38 @@ export function useInsightsData() {
         
         setDemandInsights(demandData);
 
-        // Calculate real personal insights
+        // Calculate real personal insights with realistic bounds
         if (diamonds.length > 0) {
-          const totalValue = diamonds.reduce((sum, d) => sum + ((d.price_per_carat || 0) * (d.weight || 0)), 0);
-          const avgPricePerCarat = diamonds.reduce((sum, d) => sum + (d.price_per_carat || 0), 0) / diamonds.length;
+          // Calculate total value using safe price calculations
+          const totalValue = diamonds.reduce((sum, d) => {
+            const weight = Number(d.weight) || 0;
+            const rawPpc = Number(d.price_per_carat) || 0;
+            
+            // Only use PPC if it's in reasonable range (100-50000 per carat)
+            // Otherwise treat it as total price or use fallback
+            let diamondValue = 0;
+            if (rawPpc > 100 && rawPpc < 50000 && weight > 0 && weight < 20) {
+              diamondValue = rawPpc * weight;
+            } else if (rawPpc > 0 && rawPpc < 1000000) {
+              // Treat as total price if within reasonable bounds
+              diamondValue = rawPpc;  
+            } else {
+              diamondValue = 0;
+            }
+            
+            return sum + diamondValue;
+          }, 0);
+          
+          // Calculate average price per carat from realistic values only
+          const validDiamonds = diamonds.filter(d => {
+            const weight = Number(d.weight) || 0;
+            const rawPpc = Number(d.price_per_carat) || 0;
+            return weight > 0 && weight < 20 && rawPpc > 100 && rawPpc < 50000;
+          });
+          
+          const avgPricePerCarat = validDiamonds.length > 0 
+            ? validDiamonds.reduce((sum, d) => sum + Number(d.price_per_carat), 0) / validDiamonds.length
+            : 0;
           
           const personalInsight: PersonalInsight = {
             inventoryValue: totalValue,

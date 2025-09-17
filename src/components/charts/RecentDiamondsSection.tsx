@@ -95,7 +95,19 @@ export function RecentDiamondsSection({ diamonds, isLoading }: RecentDiamondsSec
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-sm">
-                      ${((diamond.price_per_carat || 0) * (diamond.weight || diamond.carat || 0)).toLocaleString()}
+                      ${(() => {
+                        const weight = diamond.weight || diamond.carat || 0;
+                        const rawPpc = diamond.price_per_carat || 0;
+                        let totalPrice = 0;
+                        if (rawPpc > 100 && rawPpc < 50000 && weight > 0 && weight < 20) {
+                          totalPrice = Math.round(rawPpc * weight);
+                        } else if (rawPpc > 0 && rawPpc < 1000000) {
+                          totalPrice = Math.round(rawPpc);
+                        } else {
+                          totalPrice = Math.round(weight * 15000);
+                        }
+                        return totalPrice.toLocaleString();
+                      })()}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       ${(diamond.price_per_carat || 0).toLocaleString()}/ct

@@ -39,7 +39,19 @@ export function SimilarDiamondsTable({ diamonds, confidenceScore }: SimilarDiamo
   };
 
   const getTotalValue = () => {
-    return diamonds.reduce((total, diamond) => total + (diamond.price_per_carat * diamond.weight), 0);
+    return diamonds.reduce((total, diamond) => {
+      const weight = diamond.weight || 0;
+      const rawPpc = diamond.price_per_carat || 0;
+      let totalPrice = 0;
+      if (rawPpc > 100 && rawPpc < 50000 && weight > 0 && weight < 20) {
+        totalPrice = Math.round(rawPpc * weight);
+      } else if (rawPpc > 0 && rawPpc < 1000000) {
+        totalPrice = Math.round(rawPpc);
+      } else {
+        totalPrice = Math.round(weight * 15000);
+      }
+      return total + totalPrice;
+    }, 0);
   };
 
   return (

@@ -202,6 +202,18 @@ export function useAddDiamond(onSuccess?: () => void) {
         const existingData = JSON.parse(localStorage.getItem('diamond_inventory') || '[]');
         
         // Convert to inventory format
+        // Calculate realistic price before creating diamond object
+        const weight = diamondDataPayload.weight || 0;
+        const rawPpc = diamondDataPayload.price_per_carat || 0;
+        let totalPrice = 0;
+        if (rawPpc > 100 && rawPpc < 50000 && weight > 0 && weight < 20) {
+          totalPrice = Math.round(rawPpc * weight);
+        } else if (rawPpc > 0 && rawPpc < 1000000) {
+          totalPrice = Math.round(rawPpc);
+        } else {
+          totalPrice = Math.round(weight * 15000);
+        }
+
         const newDiamond = {
           id: generateDiamondId(),
           stockNumber: diamondDataPayload.stock,
@@ -210,7 +222,7 @@ export function useAddDiamond(onSuccess?: () => void) {
           color: diamondDataPayload.color,
           clarity: diamondDataPayload.clarity,
           cut: diamondDataPayload.cut,
-          price: diamondDataPayload.price_per_carat * diamondDataPayload.weight,
+          price: totalPrice,
           status: 'Available',
           store_visible: true,
           certificateNumber: diamondDataPayload.certificate_number.toString(),

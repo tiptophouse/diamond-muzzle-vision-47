@@ -89,7 +89,21 @@ export function BulkDiamondShare() {
     try {
       setIsLoading(true);
       
-      const totalPrice = diamond.price_per_carat * diamond.weight;
+      // Calculate realistic total price
+      const weight = diamond.weight || 0;
+      const rawPpc = diamond.price_per_carat || 0;
+      
+      let totalPrice = 0;
+      if (rawPpc > 100 && rawPpc < 50000 && weight > 0 && weight < 20) {
+        // Valid price per carat range
+        totalPrice = Math.round(rawPpc * weight);
+      } else if (rawPpc > 0 && rawPpc < 1000000) {
+        // Treat as total price if in reasonable range
+        totalPrice = Math.round(rawPpc);
+      } else {
+        // Fallback realistic price
+        totalPrice = Math.round(weight * 15000); // $15k per carat average
+      }
       
       const diamondMessage = `💎 *${diamond.weight} ct ${diamond.shape} Diamond*
 
@@ -105,7 +119,7 @@ export function BulkDiamondShare() {
 💡 Click the button below to view full details and connect with the seller!`;
 
       // Call our bulk message sender with diamond data
-      const { data, error } = await supabase.functions.invoke('send-bulk-diamond-share', {
+      const { data, error } = await supabase.functions.invoke('send-diamond-to-group', {
         body: {
           diamond: {
             id: diamond.id,
@@ -160,7 +174,21 @@ export function BulkDiamondShare() {
     try {
       setIsLoading(true);
       
-      const totalPrice = diamond.price_per_carat * diamond.weight;
+      // Calculate realistic total price
+      const weight = diamond.weight || 0;
+      const rawPpc = diamond.price_per_carat || 0;
+      
+      let totalPrice = 0;
+      if (rawPpc > 100 && rawPpc < 50000 && weight > 0 && weight < 20) {
+        // Valid price per carat range
+        totalPrice = Math.round(rawPpc * weight);
+      } else if (rawPpc > 0 && rawPpc < 1000000) {
+        // Treat as total price if in reasonable range
+        totalPrice = Math.round(rawPpc);
+      } else {
+        // Fallback realistic price
+        totalPrice = Math.round(weight * 15000); // $15k per carat average
+      }
       
       const testMessage = `🧪 *Test Diamond Share*
 
@@ -174,7 +202,7 @@ export function BulkDiamondShare() {
 
 ✨ *This is a test message - would be sent to ${userCounts.length} users*`;
 
-      const { data, error } = await supabase.functions.invoke('send-bulk-diamond-share', {
+      const { data, error } = await supabase.functions.invoke('send-diamond-to-group', {
         body: {
           diamond: {
             id: diamond.id,
@@ -281,7 +309,19 @@ export function BulkDiamondShare() {
                   <div className="flex items-center gap-2">
                     <Gem className="h-4 w-4" />
                     <span>
-                      {diamond.weight}ct {diamond.shape} - {diamond.color}/{diamond.clarity} - ${(diamond.price_per_carat * diamond.weight).toLocaleString()}
+                      {diamond.weight}ct {diamond.shape} - {diamond.color}/{diamond.clarity} - ${(() => {
+                        const weight = diamond.weight || 0;
+                        const rawPpc = diamond.price_per_carat || 0;
+                        let totalPrice = 0;
+                        if (rawPpc > 100 && rawPpc < 50000 && weight > 0 && weight < 20) {
+                          totalPrice = Math.round(rawPpc * weight);
+                        } else if (rawPpc > 0 && rawPpc < 1000000) {
+                          totalPrice = Math.round(rawPpc);
+                        } else {
+                          totalPrice = Math.round(weight * 15000);
+                        }
+                        return totalPrice.toLocaleString();
+                      })()}
                     </span>
                   </div>
                 </SelectItem>
@@ -299,7 +339,19 @@ export function BulkDiamondShare() {
               <div><strong>Color:</strong> {selectedDiamondData.color}</div>
               <div><strong>Clarity:</strong> {selectedDiamondData.clarity}</div>
               <div><strong>Cut:</strong> {selectedDiamondData.cut}</div>
-              <div><strong>Price:</strong> ${(selectedDiamondData.price_per_carat * selectedDiamondData.weight).toLocaleString()}</div>
+              <div><strong>Price:</strong> ${(() => {
+                const weight = selectedDiamondData.weight || 0;
+                const rawPpc = selectedDiamondData.price_per_carat || 0;
+                let totalPrice = 0;
+                if (rawPpc > 100 && rawPpc < 50000 && weight > 0 && weight < 20) {
+                  totalPrice = Math.round(rawPpc * weight);
+                } else if (rawPpc > 0 && rawPpc < 1000000) {
+                  totalPrice = Math.round(rawPpc);
+                } else {
+                  totalPrice = Math.round(weight * 15000);
+                }
+                return totalPrice.toLocaleString();
+              })()}</div>
               <div><strong>Stock:</strong> {selectedDiamondData.stock_number}</div>
             </div>
           </div>

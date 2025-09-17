@@ -164,7 +164,8 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
         const validPrices = validDiamonds
           .map(d => {
             const price = Number(d?.price) || 0;
-            return (isFinite(price) && price > 0 && price < 500000) ? price : 0;
+            // Cap individual diamond prices at reasonable amounts (under $200K per stone)
+            return (isFinite(price) && price > 0 && price < 200000) ? price : 0;
           })
           .filter(price => price > 0);
         
@@ -197,9 +198,10 @@ export function DataDrivenDashboard({ allDiamonds, loading, fetchData }: DataDri
           try {
             const price = Number(d?.price) || 0;
             const carat = Number(d?.carat) || 0;
+            // More conservative bounds: price under $200K, carat under 10ct
             return (
-              isFinite(price) && price > 0 && price < 500000 && 
-              isFinite(carat) && carat > 0 && carat < 20
+              isFinite(price) && price > 0 && price < 200000 && 
+              isFinite(carat) && carat > 0 && carat < 10
             );
           } catch {
             return false;
