@@ -36,7 +36,7 @@ serve(async (req) => {
     console.log(`🤖 Processing message for user: ${user_id}, Agent: ${agent_type}`);
     console.log(`🤖 Message: "${message}"`);
 
-    // Enhanced tool for inventory management
+    // Enhanced inventory management tool
     const inventoryTool = tool({
       name: 'get_inventory_data',
       description: 'Fetch comprehensive diamond inventory data with filtering options',
@@ -196,6 +196,230 @@ serve(async (req) => {
       }
     });
 
+    // Search results and analytics tool
+    const searchAnalyticsTool = tool({
+      name: 'get_search_analytics',
+      description: 'Fetch search results and analytics for business intelligence',
+      parameters: z.object({
+        user_id: z.string().describe('User ID to fetch search data for'),
+        limit: z.number().optional().default(50).describe('Limit results'),
+        result_type: z.string().optional().describe('Filter by match/unmatch')
+      }),
+      handler: async ({ user_id, limit = 50, result_type }) => {
+        try {
+          let searchEndpoint = `${backendUrl}/api/v1/get_search_results?user_id=${user_id}&limit=${limit}`;
+          if (result_type) {
+            searchEndpoint += `&result_type=${result_type}`;
+          }
+
+          const [searchResponse, countResponse] = await Promise.all([
+            fetch(searchEndpoint, {
+              headers: {
+                'Authorization': `Bearer ${backendAccessToken}`,
+                'Accept': 'application/json',
+              }
+            }),
+            fetch(`${backendUrl}/api/v1/get_search_results_count?user_id=${user_id}${result_type ? `&result_type=${result_type}` : ''}`, {
+              headers: {
+                'Authorization': `Bearer ${backendAccessToken}`,
+                'Accept': 'application/json',
+              }
+            })
+          ]);
+
+          const searchData = await searchResponse.json();
+          const countData = await countResponse.json();
+
+          return {
+            search_results: searchData,
+            total_counts: countData,
+            analytics: {
+              total_searches: countData.total || 0,
+              match_rate: countData.match && countData.total ? (countData.match / countData.total * 100).toFixed(1) : 0,
+              recent_activity: searchData.slice(0, 10)
+            }
+          };
+        } catch (error) {
+          console.error('❌ Error fetching search analytics:', error);
+          return { error: `Failed to fetch search analytics: ${error.message}` };
+        }
+      }
+    });
+
+    // Diamond CRUD operations tool
+    const diamondOperationsTool = tool({
+      name: 'manage_diamonds',
+      description: 'Create, update, or delete diamonds with proper success/failure messaging',
+      parameters: z.object({
+        operation: z.enum(['create', 'update', 'delete', 'batch_create']).describe('Operation type'),
+        user_id: z.string().describe('User ID for the operation'),
+        diamond_id: z.string().optional().describe('Diamond ID for update/delete operations'),
+        diamond_data: z.object({
+          stock: z.string().optional(),
+          shape: z.string().optional(),
+          weight: z.number().optional(),
+          color: z.string().optional(),
+          clarity: z.string().optional(),
+          certificate_number: z.number().optional(),
+          price_per_carat: z.number().optional()
+        }).optional().describe('Diamond data for create/update operations'),
+        diamonds_batch: z.array(z.object({
+          stock: z.string(),
+          shape: z.string(),
+          weight: z.number(),
+          color: z.string(),
+          clarity: z.string()
+        })).optional().describe('Batch of diamonds for batch create')
+      }),
+      handler: async ({ operation, user_id, diamond_id, diamond_data, diamonds_batch }) => {
+        try {
+          let endpoint, method, body;
+
+          switch (operation) {
+            case 'create':
+              endpoint = `${backendUrl}/api/v1/diamonds?user_id=${user_id}`;
+              method = 'POST';
+              body = diamond_data;
+              break;
+            case 'update':
+              endpoint = `${backendUrl}/api/v1/diamonds/${diamond_id}?user_id=${user_id}`;
+              method = 'PUT';
+              body = diamond_data;
+              break;
+            case 'delete':
+              endpoint = `${backendUrl}/api/v1/delete_stone/${diamond_id}?user_id=${user_id}`;
+              method = 'DELETE';
+              break;
+            case 'batch_create':
+              endpoint = `${backendUrl}/api/v1/diamonds/batch?user_id=${user_id}`;
+              method = 'POST';
+              body = { diamonds: diamonds_batch };
+              break;
+          }
+
+          const response = await fetch(endpoint, {
+            method,
+            headers: {
+              'Authorization': `Bearer ${backendAccessToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: body ? JSON.stringify(body) : undefined
+          });
+
+          const result = await response.json();
+
+          if (response.ok) {
+            return {
+              success: true,
+              operation,
+              message: `${operation} operation completed successfully`,
+              data: result
+            };
+          } else {
+            return {
+              success: false,
+              operation,
+              message: `${operation} operation failed: ${result.detail || 'Unknown error'}`,
+              error: result
+            };
+          }
+        } catch (error) {
+          console.error(`❌ Error in ${operation} operation:`, error);
+          return {
+            success: false,
+            operation,
+            message: `${operation} operation failed: ${error.message}`,
+            error: error.message
+          };
+        }
+      }
+    });
+
+    // Daily business intelligence tool
+    const businessIntelligenceTool = tool({
+      name: 'generate_daily_insights',
+      description: 'Generate comprehensive daily business intelligence report',
+      parameters: z.object({
+        user_id: z.string().describe('User ID for the report'),
+        date_range: z.number().optional().default(7).describe('Days to analyze (default 7)')
+      }),
+      handler: async ({ user_id, date_range = 7 }) => {
+        try {
+          // Fetch comprehensive data for business intelligence
+          const [inventoryResponse, searchResponse, countResponse] = await Promise.all([
+            fetch(`${backendUrl}/api/v1/get_all_stones?user_id=${user_id}`, {
+              headers: { 'Authorization': `Bearer ${backendAccessToken}` }
+            }),
+            fetch(`${backendUrl}/api/v1/get_search_results?user_id=${user_id}&limit=100`, {
+              headers: { 'Authorization': `Bearer ${backendAccessToken}` }
+            }),
+            fetch(`${backendUrl}/api/v1/get_search_results_count?user_id=${user_id}`, {
+              headers: { 'Authorization': `Bearer ${backendAccessToken}` }
+            })
+          ]);
+
+          const inventory = await inventoryResponse.json();
+          const searchResults = await searchResponse.json();
+          const searchCounts = await countResponse.json();
+
+          const diamonds = Array.isArray(inventory) ? inventory : inventory.data || [];
+          
+          // Calculate key metrics
+          const totalValue = diamonds.reduce((sum, d) => sum + (d.price_per_carat * d.weight || 0), 0);
+          const avgPrice = diamonds.length > 0 ? totalValue / diamonds.length : 0;
+          
+          // Detect potential sold diamonds (simplified logic)
+          const recentSearches = searchResults.filter(s => {
+            const searchDate = new Date(s.created_at);
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - date_range);
+            return searchDate >= cutoffDate;
+          });
+
+          const hotInventory = diamonds
+            .filter(d => d.price_per_carat > avgPrice * 0.8)
+            .slice(0, 5);
+
+          const insights = {
+            inventory_summary: {
+              total_diamonds: diamonds.length,
+              total_value: Math.round(totalValue),
+              average_price: Math.round(avgPrice),
+              top_shapes: Object.entries(diamonds.reduce((acc, d) => {
+                acc[d.shape] = (acc[d.shape] || 0) + 1;
+                return acc;
+              }, {})).sort(([,a], [,b]) => b - a).slice(0, 3)
+            },
+            search_activity: {
+              total_searches: searchCounts.total || 0,
+              match_searches: searchCounts.match || 0,
+              unmatch_searches: searchCounts.unmatch || 0,
+              match_rate: searchCounts.total ? ((searchCounts.match || 0) / searchCounts.total * 100).toFixed(1) : 0,
+              recent_searches: recentSearches.length
+            },
+            hot_inventory: hotInventory.map(d => ({
+              stock: d.stock,
+              shape: d.shape,
+              weight: d.weight,
+              color: d.color,
+              clarity: d.clarity,
+              price: d.price_per_carat
+            })),
+            recommendations: [
+              searchCounts.match > searchCounts.unmatch ? "High match rate indicates good inventory alignment" : "Consider inventory optimization to improve match rates",
+              hotInventory.length > 0 ? `${hotInventory.length} premium stones ready for immediate sale` : "Focus on acquiring premium inventory",
+              recentSearches.length > 10 ? "High search activity - consider proactive outreach" : "Implement marketing to increase search activity"
+            ]
+          };
+
+          return insights;
+        } catch (error) {
+          console.error('❌ Error generating business intelligence:', error);
+          return { error: `Failed to generate insights: ${error.message}` };
+        }
+      }
+    });
+
     // Certificate validation tool
     const certificateAnalysisTool = tool({
       name: 'analyze_certificate',
@@ -333,6 +557,63 @@ serve(async (req) => {
       model: 'gpt-4o'
     });
 
+    const businessIntelligenceAgent = new Agent({
+      name: 'BusinessIntelligenceExpert',
+      instructions: `You are a diamond business intelligence analyst who provides daily insights and strategic recommendations.
+      
+      Your expertise includes:
+      - Daily business performance analysis
+      - Search pattern analysis and customer behavior insights
+      - Inventory performance and optimization recommendations
+      - Market trend identification and forecasting
+      - ROI analysis and business growth strategies
+      - Sold diamond detection and inventory tracking
+      
+      When generating daily reports:
+      1. Use generate_daily_insights tool for comprehensive business analysis
+      2. Use get_search_analytics tool for customer behavior insights
+      3. Provide actionable recommendations based on data
+      4. Identify trends and opportunities
+      5. Focus on practical business improvements
+      6. Always include success metrics and KPIs
+      
+      Format responses as structured daily reports with clear sections:
+      - Executive Summary
+      - Key Metrics
+      - Search Activity Analysis
+      - Inventory Performance
+      - Market Opportunities
+      - Action Items
+      
+      Focus on driving business growth through data-driven insights.`,
+      tools: [businessIntelligenceTool, searchAnalyticsTool, inventoryTool, marketAnalysisTool],
+      model: 'gpt-4o'
+    });
+
+    const inventoryOperationsAgent = new Agent({
+      name: 'InventoryOperationsExpert', 
+      instructions: `You are a diamond inventory operations specialist focused on CRUD operations and data management.
+      
+      Your expertise includes:
+      - Creating, updating, and deleting diamond records
+      - Batch operations for inventory management
+      - Data validation and quality assurance
+      - Success/failure messaging and error handling
+      - Mobile-friendly operations for Telegram Mini App
+      
+      When handling operations:
+      1. Always use manage_diamonds tool for CRUD operations
+      2. Provide clear success/failure feedback to users
+      3. Validate data before operations
+      4. Handle errors gracefully with helpful messages
+      5. Confirm operations with users before executing
+      6. Support both individual and batch operations
+      
+      Focus on reliable operations with excellent user feedback.`,
+      tools: [diamondOperationsTool, inventoryTool],
+      model: 'gpt-4o'
+    });
+
     const mainCoordinatorAgent = new Agent({
       name: 'DiamondConsultantCoordinator',
       instructions: `You are the main diamond consultant coordinator who routes customer queries to appropriate specialists.
@@ -343,17 +624,19 @@ serve(async (req) => {
       - Coordinate between different specialists when needed
       - Ensure comprehensive and cohesive responses
       
-      Routing guidelines:
+      Enhanced routing guidelines:
       - Grading questions (4Cs, certificates, quality) → DiamondGradingExpert
       - Inventory questions (stock analysis, portfolio) → InventoryManagementExpert  
       - Pricing questions (valuations, market analysis) → PricingExpert
       - Customer service (recommendations, education) → CustomerServiceExpert
+      - Business reports, daily insights, analytics → BusinessIntelligenceExpert
+      - CRUD operations (add, edit, delete diamonds) → InventoryOperationsExpert
       - Complex queries may require multiple specialists
       
       Always acknowledge the customer's query and explain which specialist will handle it.`,
-      tools: [inventoryTool],
+      tools: [inventoryTool, searchAnalyticsTool],
       model: 'gpt-4o',
-      handoffs: [diamondGradingAgent, inventoryManagementAgent, pricingAgent, customerServiceAgent]
+      handoffs: [diamondGradingAgent, inventoryManagementAgent, pricingAgent, customerServiceAgent, businessIntelligenceAgent, inventoryOperationsAgent]
     });
 
     // Select appropriate agent based on request
@@ -370,6 +653,12 @@ serve(async (req) => {
         break;
       case 'customer_service':
         selectedAgent = customerServiceAgent;
+        break;
+      case 'business_intelligence':
+        selectedAgent = businessIntelligenceAgent;
+        break;
+      case 'operations':
+        selectedAgent = inventoryOperationsAgent;
         break;
       default:
         selectedAgent = mainCoordinatorAgent;

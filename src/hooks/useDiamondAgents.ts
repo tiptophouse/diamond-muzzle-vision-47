@@ -12,7 +12,7 @@ export interface AgentMessage {
   turns_used?: number;
 }
 
-export type AgentType = 'main' | 'grading' | 'inventory' | 'pricing' | 'customer_service';
+export type AgentType = 'main' | 'grading' | 'inventory' | 'pricing' | 'customer_service' | 'business_intelligence' | 'operations';
 
 export interface AgentCapabilities {
   name: string;
@@ -51,6 +51,18 @@ export const AGENT_TYPES: Record<AgentType, AgentCapabilities> = {
     description: 'Specialist in customer consultation and personalized recommendations',
     icon: '🤝',
     expertise: ['Customer Education', 'Personalized Recommendations', 'Sales Support', 'Relationship Building']
+  },
+  business_intelligence: {
+    name: 'Business Intelligence Expert',
+    description: 'Daily insights, analytics, and strategic business recommendations',
+    icon: '📈',
+    expertise: ['Daily Reports', 'Search Analytics', 'Business Insights', 'Performance Tracking', 'Sold Diamond Detection']
+  },
+  operations: {
+    name: 'Inventory Operations Expert',
+    description: 'CRUD operations, data management, and mobile-friendly diamond operations',
+    icon: '⚙️',
+    expertise: ['Add Diamonds', 'Edit Records', 'Delete Stones', 'Batch Operations', 'Data Validation']
   }
 };
 

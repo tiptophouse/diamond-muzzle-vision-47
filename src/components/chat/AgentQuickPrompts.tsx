@@ -41,6 +41,18 @@ const QUICK_PROMPTS: Record<AgentType, QuickPrompt[]> = {
       prompt: 'Help me provide personalized diamond recommendations for customers based on their preferences and budget.',
       targetAgent: 'customer_service',
       icon: '🤝'
+    },
+    {
+      text: '📈 Daily Business Report',
+      prompt: 'Generate my daily business intelligence report with search analytics, sold diamond detection, and growth opportunities.',
+      targetAgent: 'business_intelligence',
+      icon: '📈'
+    },
+    {
+      text: '⚙️ Add New Diamond',
+      prompt: 'I want to add a new diamond to my inventory with proper validation and success confirmation.',
+      targetAgent: 'operations',
+      icon: '⚙️'
     }
   ],
   grading: [
@@ -149,6 +161,60 @@ const QUICK_PROMPTS: Record<AgentType, QuickPrompt[]> = {
       text: 'Relationship Building',
       prompt: 'What strategies work best for building long-term relationships with diamond customers?',
       icon: '🤝'
+    }
+  ],
+  business_intelligence: [
+    {
+      text: 'Daily Report',
+      prompt: 'Generate my daily business intelligence report with key metrics, search activity, and actionable insights.',
+      icon: '📊'
+    },
+    {
+      text: 'Search Analytics',
+      prompt: 'Analyze my search results patterns - how many matches vs mismatches and what does this tell me about my inventory alignment?',
+      icon: '🔍'
+    },
+    {
+      text: 'Hot Inventory',
+      prompt: 'Which diamonds in my inventory are currently the hottest sellers and most in-demand?',
+      icon: '🔥'
+    },
+    {
+      text: 'Sold Detection',
+      prompt: 'Detect recently sold diamonds and analyze which types are moving fastest in the market.',
+      icon: '💸'
+    },
+    {
+      text: 'Growth Opportunities',
+      prompt: 'Based on my data, what are the biggest growth opportunities I should focus on this week?',
+      icon: '🚀'
+    }
+  ],
+  operations: [
+    {
+      text: 'Add Diamond',
+      prompt: 'I want to add a new diamond to my inventory. Guide me through the process and required information.',
+      icon: '➕'
+    },
+    {
+      text: 'Edit Records',
+      prompt: 'Help me update diamond information. What fields can I modify and how do I ensure data accuracy?',
+      icon: '✏️'
+    },
+    {
+      text: 'Delete Stone',
+      prompt: 'I need to remove a diamond from my inventory. Walk me through the deletion process safely.',
+      icon: '🗑️'
+    },
+    {
+      text: 'Batch Upload',
+      prompt: 'I have multiple diamonds to add at once. How can I efficiently batch upload them?',
+      icon: '📦'
+    },
+    {
+      text: 'Data Validation',
+      prompt: 'Check my diamond data for any errors or inconsistencies that need to be corrected.',
+      icon: '✅'
     }
   ]
 };
