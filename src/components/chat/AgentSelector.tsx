@@ -50,7 +50,7 @@ interface AgentCardProps {
 function AgentCard({ agentType, agent, isSelected, onSelect, isLoading }: AgentCardProps) {
   return (
     <Card 
-      className={`cursor-pointer transition-all hover:shadow-md ${
+      className={`cursor-pointer transition-all hover:shadow-md min-h-[100px] touch-manipulation ${
         isSelected 
           ? 'ring-2 ring-primary bg-primary/5 border-primary' 
           : 'hover:border-primary/50'
@@ -91,8 +91,8 @@ function AgentCard({ agentType, agent, isSelected, onSelect, isLoading }: AgentC
         
         <Button 
           variant={isSelected ? "default" : "outline"}
-          size="sm"
-          className="w-full mt-3 h-8"
+          size="default"
+          className="w-full mt-3 min-h-[44px] text-base font-medium"
           disabled={isLoading || isSelected}
           onClick={(e) => {
             e.stopPropagation();

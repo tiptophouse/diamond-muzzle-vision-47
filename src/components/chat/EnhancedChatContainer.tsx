@@ -81,13 +81,13 @@ export function EnhancedChatContainer() {
 
             <Dialog open={showAgentSelector} onOpenChange={setShowAgentSelector}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="lg" className="min-h-[44px] px-4">
                   Switch Agent
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md">
+              <DialogContent className="max-w-md mx-4">
                 <DialogHeader>
-                  <DialogTitle>Choose Diamond Expert</DialogTitle>
+                  <DialogTitle className="text-lg">Choose Diamond Expert</DialogTitle>
                 </DialogHeader>
                 <AgentSelector
                   currentAgent={currentAgent}
@@ -132,9 +132,9 @@ export function EnhancedChatContainer() {
           {messages.length > 0 && (
             <Button
               variant="ghost"
-              size="sm"
+              size="default"
               onClick={clearMessages}
-              className="text-xs h-6 px-2"
+              className="text-sm min-h-[40px] px-3"
             >
               Clear Chat
             </Button>

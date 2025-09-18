@@ -234,3 +234,36 @@ img {
     user-select: none;
   }
 }
+
+/* Telegram Mini App Mobile Optimizations */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.mobile-button {
+  @apply min-h-[44px] px-4 py-3 text-base font-medium touch-manipulation;
+}
+
+.mobile-nav-item {
+  @apply min-h-[64px] py-4 px-3 touch-manipulation;
+}
+
+/* Enhanced safe area handling for fullscreen */
+.pb-safe-or-4 {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+.pt-safe-or-3 {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+}
+
+/* Telegram dialog optimizations */
+.telegram-dialog {
+  @apply mx-4 max-w-md;
+}
+
+.telegram-button {
+  @apply min-h-[48px] px-6 py-3 text-base font-medium rounded-xl touch-manipulation;
+  @apply active:scale-95 transition-transform duration-150;
+}
