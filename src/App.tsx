@@ -16,7 +16,7 @@ import SimpleDashboard from './pages/SimpleDashboard';
 import CatalogPage from './pages/CatalogPage';
 import UploadSingleStonePage from './pages/UploadSingleStonePage';
 import InsightsPage from './pages/InsightsPage';
-import ChatPage from './pages/ChatPage';
+import DiamondAgentsPage from './pages/DiamondAgentsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import ProfilePage from './pages/ProfilePage';
 import WishlistPage from './pages/WishlistPage';
@@ -102,11 +102,11 @@ function App() {
                       <InsightsPage />
                     </AuthenticatedRoute>
                   } />
-                  <Route path="/chat" element={
-                    <AuthenticatedRoute>
-                      <ChatPage />
-                    </AuthenticatedRoute>
-                  } />
+                   <Route path="/diamond-agents" element={
+                     <AuthenticatedRoute>
+                       <DiamondAgentsPage />
+                     </AuthenticatedRoute>
+                   } />
                   <Route path="/notifications" element={
                     <AuthenticatedRoute>
                       <NotificationsPage />

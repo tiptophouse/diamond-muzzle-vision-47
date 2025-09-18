@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { Home, Package, Store, MessageCircle, BarChart3, Shield } from 'lucide-react';
+import { Home, Package, Store, Bot, BarChart3, Shield, Sparkles } from 'lucide-react';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { cn } from '@/lib/utils';
@@ -29,10 +29,11 @@ const navigationItems = [
     activePattern: /^\/store|catalog/
   },
   {
-    to: '/chat',
-    icon: MessageCircle,
-    label: 'Chat',
-    activePattern: /^\/chat/
+    to: '/diamond-agents',
+    icon: Bot,
+    label: 'AI Agents',
+    activePattern: /^\/diamond-agents/,
+    badge: 'NEW'
   },
   {
     to: '/insights',
@@ -95,7 +96,7 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
                 to={item.to}
                 onClick={handleNavClick}
                 className={cn(
-                  "flex flex-col items-center justify-center py-3 px-2 text-xs transition-colors duration-200 clickable",
+                  "flex flex-col items-center justify-center py-3 px-2 text-xs transition-colors duration-200 clickable relative",
                   active 
                     ? "text-primary" 
                     : "text-muted-foreground hover:text-foreground"
@@ -113,6 +114,12 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
                 )}>
                   {item.label}
                 </span>
+                {item.badge && (
+                  <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded-full font-bold animate-pulse flex items-center gap-1">
+                    <Sparkles className="h-2 w-2" />
+                    {item.badge}
+                  </div>
+                )}
               </Link>
             );
           })}

@@ -4,6 +4,7 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { SafeDashboardWrapper } from '@/components/dashboard/SafeDashboardWrapper';
 import { DashboardLoading } from '@/components/dashboard/DashboardLoading';
 import { SecurityMonitor } from '@/components/auth/SecurityMonitor';
+import { AIDashboardWidget } from '@/components/ai/AIDashboardWidget';
 import { useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -80,11 +81,14 @@ export default function Dashboard() {
 
   return (
     <>
-      <SafeDashboardWrapper 
-        allDiamonds={allDiamonds} 
-        loading={loading}
-        fetchData={fetchData} 
-      />
+      <div className="space-y-6">
+        <AIDashboardWidget user={user} allDiamonds={allDiamonds} />
+        <SafeDashboardWrapper 
+          allDiamonds={allDiamonds} 
+          loading={loading}
+          fetchData={fetchData} 
+        />
+      </div>
       <SecurityMonitor />
     </>
   );
