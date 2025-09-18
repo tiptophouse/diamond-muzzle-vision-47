@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Bot, MessageSquare, X, Sparkles, TrendingUp, AlertTriangle } from 'lucide-react';
-import { useDiamondAgents, AGENT_TYPES } from '@/hooks/useDiamondAgents';
+import { useAGUIClient, AGENT_TYPES } from '@/hooks/useAGUIClient';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -15,7 +15,7 @@ export function AIFloatingAssistant({ className }: AIFloatingAssistantProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const navigate = useNavigate();
-  const { switchAgent, sendMessage } = useDiamondAgents();
+  const { switchAgent, sendMessage } = useAGUIClient();
 
   if (!isVisible) return null;
 

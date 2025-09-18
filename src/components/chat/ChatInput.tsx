@@ -7,9 +7,10 @@ import { Send } from 'lucide-react';
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
   disabled?: boolean;
+  placeholder?: string;
 }
 
-export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled }) => {
+export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled, placeholder = "Message Diamond Assistant..." }) => {
   const [message, setMessage] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -34,7 +35,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled })
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder="Message Diamond Assistant..."
+          placeholder={placeholder}
           disabled={disabled}
           className="min-h-[44px] max-h-[100px] sm:max-h-[120px] resize-none pr-12 rounded-2xl border-muted-foreground/20 focus:border-primary bg-background text-sm sm:text-base w-full"
           rows={1}

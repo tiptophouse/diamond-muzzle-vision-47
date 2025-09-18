@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AgentType, AGENT_TYPES, AgentCapabilities } from '@/hooks/useDiamondAgents';
+import { AgentType, AGENT_TYPES, AgentCapabilities } from '@/hooks/useAGUIClient';
 
 interface AgentSelectorProps {
   currentAgent: AgentType;

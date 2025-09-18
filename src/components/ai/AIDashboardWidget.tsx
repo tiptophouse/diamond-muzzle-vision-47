@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Bot, Brain, TrendingUp, Search, DollarSign, AlertTriangle, Sparkles, MessageSquare, BarChart3, Zap } from 'lucide-react';
-import { useDiamondAgents, AgentType, AGENT_TYPES } from '@/hooks/useDiamondAgents';
+import { useAGUIClient, AgentType, AGENT_TYPES } from '@/hooks/useAGUIClient';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
@@ -18,7 +18,7 @@ interface AIDashboardWidgetProps {
 export function AIDashboardWidget({ user, allDiamonds }: AIDashboardWidgetProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { currentAgent, switchAgent, sendMessage } = useDiamondAgents();
+  const { currentAgent, switchAgent, sendMessage } = useAGUIClient();
   const [isGeneratingInsights, setIsGeneratingInsights] = useState(false);
   const [dailyInsights, setDailyInsights] = useState<any>(null);
 

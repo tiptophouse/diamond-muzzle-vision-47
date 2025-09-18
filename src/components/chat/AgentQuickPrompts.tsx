@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AgentType } from '@/hooks/useDiamondAgents';
+import { AgentType } from '@/hooks/useAGUIClient';
 
 interface QuickPrompt {
   text: string;
