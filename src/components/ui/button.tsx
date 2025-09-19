@@ -5,25 +5,25 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-xl active:scale-95 rounded-2xl",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-lg hover:shadow-xl active:scale-95 rounded-2xl",
+        outline: "border-2 border-primary/20 bg-background hover:bg-primary/5 hover:border-primary/30 active:scale-95 rounded-2xl",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-md hover:shadow-lg active:scale-95 rounded-2xl",
+        ghost: "hover:bg-accent hover:text-accent-foreground active:scale-95 rounded-xl",
+        link: "text-primary underline-offset-4 hover:underline active:scale-95",
+        premium: "bg-gradient-to-r from-primary to-primary-muted text-primary-foreground shadow-lg hover:shadow-xl active:scale-95 rounded-2xl font-semibold",
+        success: "bg-success text-success-foreground hover:bg-success/90 shadow-lg hover:shadow-xl active:scale-95 rounded-2xl",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
+        default: "h-12 px-6 py-3",
+        sm: "h-10 px-4 py-2 text-sm rounded-xl",
+        lg: "h-14 px-8 py-4 text-base rounded-2xl",
+        icon: "h-12 w-12 rounded-2xl",
+        mobile: "h-12 px-6 py-3 min-w-[120px] rounded-2xl",
       },
     },
     defaultVariants: {
@@ -46,13 +46,15 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <Comp
         className={cn(
           buttonVariants({ variant, size }),
-          // Enhanced Telegram-specific styling
-          "touch-target select-none tap-highlight-transparent",
-          "min-h-[44px] min-w-[44px]", // Ensure minimum touch target size
-          "flex items-center justify-center gap-2", // Proper icon + text alignment
-          "text-sm font-medium", // Consistent text sizing
-          "[&>span]:truncate [&>span]:block", // Prevent text overflow
+          // Enhanced Telegram Mini App styling
+          "touch-target select-none tap-highlight-none",
+          "min-h-[44px] min-w-[44px]", // iOS minimum touch target
+          "flex items-center justify-center gap-2", // Proper alignment
+          "font-medium tracking-tight", // Better typography
+          "[&>span]:truncate [&>span]:block", // Prevent overflow
           "[&_svg]:flex-shrink-0 [&_svg]:pointer-events-none", // Icon stability
+          "will-change-transform", // Optimize animations
+          "active:transition-none", // Instant feedback on tap
           className
         )}
         ref={ref}

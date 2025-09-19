@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { Diamond, Package, TrendingUp, AlertCircle, RefreshCw } from 'lucide-react';
+import { Diamond, Package, TrendingUp, AlertCircle, RefreshCw, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api/client';
 import { MobileTelegramDashboard } from '@/components/dashboard/MobileTelegramDashboard';
+import { LoadingSpinner, LoadingCard } from '@/components/ui/loading-spinner';
+import { FloatingActionButton } from '@/components/ui/floating-action-button';
+import { useTelegramPerformance } from '@/hooks/useTelegramPerformance';
 
 interface DashboardData {
   totalDiamonds: number;
@@ -20,6 +23,7 @@ export default function SimpleDashboard() {
   const { user, isAuthenticated } = useTelegramAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { trackNavigation, haptic } = useTelegramPerformance();
   const [data, setData] = useState<DashboardData>({
     totalDiamonds: 0,
     totalValue: 0,
@@ -27,6 +31,12 @@ export default function SimpleDashboard() {
     loading: true,
     error: null
   });
+
+  const handleAddDiamond = () => {
+    haptic('medium');
+    trackNavigation();
+    navigate('/upload-single-stone');
+  };
 
   const fetchDashboardData = async () => {
     if (!user || !isAuthenticated) {
@@ -37,7 +47,7 @@ export default function SimpleDashboard() {
     try {
       setData(prev => ({ ...prev, loading: true, error: null }));
       
-      console.log('🔍 Simple Dashboard: Fetching data for user:', user.id);
+      console.log('🔍 Dashboard: Fetching data for user:', user.id);
       
       // Use the proper API client with JWT authentication
       const response = await api.get<any[]>(`/api/v1/get_all_stones?user_id=${user.id}`);
@@ -47,7 +57,7 @@ export default function SimpleDashboard() {
       }
       
       const diamonds = response.data || [];
-      console.log('✅ Simple Dashboard: Received', diamonds.length, 'diamonds');
+      console.log('✅ Dashboard: Received', diamonds.length, 'diamonds');
 
       if (Array.isArray(diamonds)) {
         const totalValue = diamonds.reduce((sum, diamond) => {
@@ -64,15 +74,12 @@ export default function SimpleDashboard() {
           error: null
         });
 
-        toast({
-          title: "Dashboard Updated",
-          description: `Loaded ${diamonds.length} diamonds from your inventory`,
-        });
+        haptic('success');
       } else {
         throw new Error('Invalid response format');
       }
     } catch (error) {
-      console.error('❌ Simple Dashboard: Error fetching data:', error);
+      console.error('❌ Dashboard: Error fetching data:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to load data';
       
       setData(prev => ({
@@ -81,14 +88,7 @@ export default function SimpleDashboard() {
         error: errorMessage
       }));
 
-      // Only show toast for non-authentication errors (auth errors are handled by API client)
-      if (!errorMessage.includes('JWT token') && !errorMessage.includes('Authentication')) {
-        toast({
-          variant: "destructive",
-          title: "Failed to load dashboard",
-          description: errorMessage,
-        });
-      }
+      haptic('error');
     }
   };
 
@@ -98,12 +98,34 @@ export default function SimpleDashboard() {
     }
   }, [isAuthenticated]); // Only run when authentication status changes
 
+  // Show loading state
+  if (data.loading) {
+    return (
+      <div className="p-4 space-y-4 animate-slide-up">
+        <div className="text-center py-8">
+          <LoadingSpinner size="lg" className="mx-auto text-primary mb-4" />
+          <p className="text-muted-foreground">Loading your dashboard...</p>
+        </div>
+        <LoadingCard />
+        <LoadingCard />
+      </div>
+    );
+  }
+
   // Show data even without authentication for better UX
   if (!isAuthenticated || !user) {
-    // Still show dashboard with limited data
     return <MobileTelegramDashboard />;
   }
 
   // Use the new mobile-optimized dashboard
-  return <MobileTelegramDashboard />;
+  return (
+    <>
+      <MobileTelegramDashboard />
+      <FloatingActionButton 
+        onClick={handleAddDiamond}
+        className="bottom-24 right-4"
+        icon={Plus}
+      />
+    </>
+  );
 }

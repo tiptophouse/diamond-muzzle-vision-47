@@ -1,209 +1,263 @@
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Modern clean theme inspired by 21.dev */
-:root {
-  --background: 0 0% 98%;
-  --foreground: 240 10% 3.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 240 10% 3.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 3.9%;
-  --primary: 240 5.9% 10%;
-  --primary-foreground: 0 0% 98%;
-  --secondary: 240 4.8% 95.9%;
-  --secondary-foreground: 240 5.9% 10%;
-  --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 46.1%;
-  --accent: 240 4.8% 95.9%;
-  --accent-foreground: 240 5.9% 10%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 5.9% 90%;
-  --input: 240 5.9% 90%;
-  --ring: 240 5.9% 10%;
-  --radius: 0.75rem;
-  
-  /* Premium gradients */
-  --gradient-primary: linear-gradient(135deg, hsl(240 5.9% 10%) 0%, hsl(240 3.8% 25%) 100%);
-  --gradient-surface: linear-gradient(180deg, hsl(0 0% 98%) 0%, hsl(240 4.8% 95.9%) 100%);
-  --gradient-accent: linear-gradient(135deg, hsl(240 4.8% 95.9%) 0%, hsl(0 0% 100%) 100%);
-  
-  /* Shadows */
-  --shadow-soft: 0 1px 3px 0 hsl(240 3.8% 46.1% / 0.1), 0 1px 2px 0 hsl(240 3.8% 46.1% / 0.06);
-  --shadow-medium: 0 4px 6px -1px hsl(240 3.8% 46.1% / 0.1), 0 2px 4px -1px hsl(240 3.8% 46.1% / 0.06);
-  --shadow-large: 0 20px 25px -5px hsl(240 3.8% 46.1% / 0.1), 0 10px 10px -5px hsl(240 3.8% 46.1% / 0.04);
-}
-
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background: var(--gradient-surface);
-  color: hsl(var(--foreground));
-  line-height: 1.6;
-  letter-spacing: -0.01em;
-}
-
-/* Clean, modern components */
-.glass-card {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: var(--shadow-large);
-}
-
-.premium-button {
-  background: var(--gradient-primary);
-  color: hsl(var(--primary-foreground));
-  border: none;
-  padding: 1rem 2rem;
-  border-radius: var(--radius);
-  font-weight: 600;
-  font-size: 1.1rem;
-  letter-spacing: -0.01em;
-  box-shadow: var(--shadow-medium);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.premium-button:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-large);
-}
-
-/* Enhanced image loading optimizations */
-img {
-  image-rendering: optimizeQuality;
-  image-rendering: -webkit-optimize-contrast;
-  backface-visibility: hidden;
-  transform: translateZ(0);
-}
-
-/* Improved loading animations */
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
+/* Enhanced Telegram Mini App Design System */
+@layer base {
+  :root {
+    /* Primary Telegram-inspired color system */
+    --primary: 216 87 70;           /* Telegram blue #2481cc */
+    --primary-foreground: 255 255 255;
+    --primary-muted: 216 87 85;     /* Lighter telegram blue */
+    --primary-dark: 216 100 45;     /* Darker telegram blue */
+    
+    /* Background system with perfect contrast */
+    --background: 255 255 255;
+    --foreground: 17 24 39;
+    --muted: 248 250 252;
+    --muted-foreground: 71 85 105;
+    
+    /* Card system with subtle elevation */
+    --card: 255 255 255;
+    --card-foreground: 17 24 39;
+    --card-hover: 249 250 251;
+    
+    /* Interactive elements */
+    --accent: 239 246 255;          /* Light blue for accents */
+    --accent-foreground: 30 64 175;
+    --secondary: 241 245 249;
+    --secondary-foreground: 51 65 85;
+    
+    /* Feedback colors */
+    --success: 34 197 94;
+    --success-foreground: 255 255 255;
+    --warning: 245 158 11;
+    --warning-foreground: 255 255 255;
+    --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
+    
+    /* UI elements */
+    --border: 226 232 240;
+    --input: 241 245 249;
+    --ring: 216 87 70;
+    --popover: 255 255 255;
+    --popover-foreground: 17 24 39;
+    
+    /* Design tokens */
+    --radius: 16px;
+    --spacing-mobile: 16px;
+    --touch-target: 44px;
+    
+    /* Advanced gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-muted)) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(156 100% 45%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(var(--muted)) 100%);
+    --gradient-glass: linear-gradient(145deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
+    
+    /* Enhanced shadows system */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-base: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-primary: 0 8px 25px -8px hsl(var(--primary) / 0.4);
+    --shadow-glow: 0 0 20px hsl(var(--primary) / 0.3);
+    
+    /* Telegram WebApp integration */
+    --tg-theme-bg-color: var(--background);
+    --tg-theme-text-color: var(--foreground);
+    --tg-theme-hint-color: var(--muted-foreground);
+    --tg-theme-link-color: var(--primary);
+    --tg-theme-button-color: var(--primary);
+    --tg-theme-button-text-color: var(--primary-foreground);
   }
-  100% {
-    transform: translateX(100%);
-  }
-}
 
-.animate-shimmer {
-  animation: shimmer 2s infinite;
-}
-
-/* Better scroll performance */
-* {
-  scroll-behavior: smooth;
-}
-
-/* Mobile optimizations */
-@media (max-width: 640px) {
-  .grid {
-    gap: 0.75rem;
+  /* Dark mode optimizations */
+  .dark {
+    --background: 15 23 42;
+    --foreground: 248 250 252;
+    --muted: 30 41 59;
+    --muted-foreground: 148 163 184;
+    
+    --card: 30 41 59;
+    --card-foreground: 248 250 252;
+    --card-hover: 51 65 85;
+    
+    --accent: 30 58 138;
+    --accent-foreground: 248 250 252;
+    --secondary: 51 65 85;
+    --secondary-foreground: 203 213 225;
+    
+    --border: 51 65 85;
+    --input: 51 65 85;
+    --popover: 30 41 59;
+    --popover-foreground: 248 250 252;
+    
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(var(--muted)) 100%);
+    --shadow-base: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
   }
   
-  .aspect-square img {
-    object-fit: cover;
-    width: 100%;
-    height: 100%;
-  }
-}
-
-/* iOS optimizations for native Telegram WebApp feel */
-@supports (-webkit-touch-callout: none) {
-  /* Enable native iOS scrolling - DO NOT use position: fixed or overflow: hidden */
   body {
-    /* Use Telegram's stable viewport height for iOS */
-    min-height: 100vh;
-    min-height: var(--tg-viewport-stable-height, 100vh);
-    /* Enable native momentum scrolling */
-    -webkit-overflow-scrolling: touch;
-    overflow-x: hidden; /* Only prevent horizontal scroll */
-  }
-  
-  /* Native iOS scrolling for main content */
-  main {
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-    /* Use Telegram's viewport height */
-    min-height: var(--tg-viewport-stable-height, 100vh);
-  }
-  
-  /* Prevent text size adjustments but allow native behavior */
-  * {
-    -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
+    @apply font-sans bg-background text-foreground antialiased;
+    line-height: 1.6;
+    letter-spacing: -0.011em;
+    text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  
-  /* Enhanced touch scrolling for all scrollable elements */
-  .ios-scroll {
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
+}
+
+/* Enhanced Component Styles */
+@layer components {
+  /* Glass morphism card */
+  .glass-card {
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+    box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    background: var(--gradient-glass);
   }
   
-  /* Safe area handling with Telegram's built-in values */
-  .pb-safe {
-    padding-bottom: max(var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom)), 16px);
+  /* Premium interactive elements */
+  .premium-button {
+    background: var(--gradient-primary);
+    @apply text-white font-semibold shadow-lg border-0 transition-all duration-300;
+    box-shadow: var(--shadow-primary);
   }
   
-  .pt-safe {
-    padding-top: max(var(--tg-safe-area-inset-top, env(safe-area-inset-top)), 16px);
+  .premium-button:hover {
+    @apply scale-105 shadow-xl;
+    box-shadow: var(--shadow-glow);
   }
   
-  /* Optimize touch targets for iPhone */
-  button, .clickable {
-    min-height: 44px; /* iOS minimum touch target */
-    min-width: 44px;
+  .premium-button:active {
+    @apply scale-95;
+    transition-duration: 100ms;
   }
   
-  /* Prevent rubber band effect only at document level, not content */
-  html {
-    overscroll-behavior-y: none;
+  /* Mobile-optimized touch targets */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] select-none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
   
-  /* Dynamic viewport height for iOS with Telegram's stable height */
-  .ios-viewport {
-    height: var(--tg-viewport-stable-height, 100vh);
-    min-height: var(--tg-viewport-stable-height, 100vh);
+  /* Enhanced loading states */
+  .skeleton {
+    @apply bg-muted animate-pulse rounded-lg;
+    background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--muted-foreground) / 0.1) 50%, hsl(var(--muted)) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
   }
   
-  /* Bottom navigation safe area optimization for iOS */
-  .bottom-nav-ios {
-    bottom: var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  /* Smooth transitions */
+  .smooth-transition {
+    @apply transition-all duration-300 ease-out;
   }
 }
 
-/* Dynamic theme based on Telegram */
-.dark {
-  /* These will be dynamically set by Telegram theme */
-  --background: var(--tg-theme-bg-color, 222.2 84% 4.9%);
-  --foreground: var(--tg-theme-text-color, 210 40% 98%);
-  --card: var(--tg-theme-secondary-bg-color, 222.2 84% 4.9%);
-  --card-foreground: var(--tg-theme-text-color, 210 40% 98%);
-  --popover: var(--tg-theme-secondary-bg-color, 222.2 84% 4.9%);
-  --popover-foreground: var(--tg-theme-text-color, 210 40% 98%);
-  --primary: var(--tg-theme-button-color, 210 40% 98%);
-  --primary-foreground: var(--tg-theme-button-text-color, 222.2 84% 4.9%);
-  --secondary: var(--tg-theme-secondary-bg-color, 217.2 32.6% 17.5%);
-  --secondary-foreground: var(--tg-theme-text-color, 210 40% 98%);
-  --muted: var(--tg-theme-secondary-bg-color, 217.2 32.6% 17.5%);
-  --muted-foreground: var(--tg-theme-hint-color, 215 20.2% 65.1%);
-  --accent: var(--tg-theme-secondary-bg-color, 217.2 32.6% 17.5%);
-  --accent-foreground: var(--tg-theme-text-color, 210 40% 98%);
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  --border: var(--tg-theme-secondary-bg-color, 217.2 32.6% 17.5%);
-  --input: var(--tg-theme-secondary-bg-color, 217.2 32.6% 17.5%);
-  --ring: var(--tg-theme-button-color, 212.7 26.8% 83.9%);
+/* Enhanced Animations */
+@keyframes shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes scale-in {
+  0% { transform: scale(0.95); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes slide-up {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px hsl(var(--primary) / 0.2); }
+  50% { box-shadow: 0 0 40px hsl(var(--primary) / 0.4); }
+}
+
+@keyframes tap-feedback {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+/* iOS & Telegram WebApp Optimizations */
+.ios-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+}
+
+/* Enhanced safe area handling */
+.pt-safe { padding-top: max(env(safe-area-inset-top), 16px); }
+.pb-safe { padding-bottom: max(env(safe-area-inset-bottom), 16px); }
+.pb-safe-or-4 { padding-bottom: max(env(safe-area-inset-bottom), 16px); }
+
+/* Advanced Mobile & Telegram Optimizations */
+@layer utilities {
+  /* Smooth scrolling with overscroll control */
+  .scroll-smooth-contained {
+    @apply scroll-smooth;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Enhanced touch interactions */
+  .tap-highlight-none {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Performance optimizations */
+  .will-change-transform { will-change: transform; }
+  .transform-gpu { transform: translateZ(0); }
+  
+  /* Telegram viewport handling */
+  .telegram-viewport {
+    height: var(--tg-viewport-height, 100vh);
+    height: var(--tg-viewport-stable-height, 100dvh);
+  }
+  
+  /* Animation utilities */
+  .animate-scale-in { animation: scale-in 0.3s ease-out; }
+  .animate-slide-up { animation: slide-up 0.4s ease-out; }
+  .animate-float { animation: float 3s ease-in-out infinite; }
+  .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+  .animate-tap-feedback { animation: tap-feedback 0.15s ease-out; }
+}
+
+/* iPhone-specific fixes */
+@supports (-webkit-touch-callout: none) {
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+    min-height: 100dvh;
+  }
+  
+  body {
+    -webkit-text-size-adjust: 100%;
+    touch-action: manipulation;
+  }
+}
+
+/* Telegram Theme Integration */
+@media (prefers-color-scheme: dark) {
+  .telegram-theme-dark {
+    --background: var(--tg-theme-bg-color, 15 23 42);
+    --foreground: var(--tg-theme-text-color, 248 250 252);
+    --muted: var(--tg-theme-secondary-bg-color, 30 41 59);
+    --muted-foreground: var(--tg-theme-hint-color, 148 163 184);
+    --primary: var(--tg-theme-button-color, 216 87 70);
+    --primary-foreground: var(--tg-theme-button-text-color, 255 255 255);
+    --accent: var(--tg-theme-link-color, 59 130 246);
+    --border: var(--tg-theme-section-separator-color, 51 65 85);
+  }
 }
 
 /* Mobile responsive utilities */
@@ -215,52 +269,16 @@ img {
   display: none;  /* Safari and Chrome */
 }
 
-/* Smooth scroll for horizontal tabs */
-.tab-scroll {
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
-}
-
-/* Mobile touch enhancements */
-@media (max-width: 768px) {
-  .touch-pan-x {
-    touch-action: pan-x;
-  }
-  
-  .mobile-tap {
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-  }
-}
-
-/* Telegram Mini App Mobile Optimizations */
-.touch-target {
-  min-height: 44px;
-  min-width: 44px;
-}
-
+/* Enhanced mobile button styles */
 .mobile-button {
-  @apply min-h-[44px] px-4 py-3 text-base font-medium touch-manipulation;
+  @apply min-h-[48px] px-6 py-3 text-base font-semibold rounded-2xl touch-manipulation;
+  @apply active:scale-95 transition-all duration-150 ease-out;
+  @apply shadow-lg hover:shadow-xl will-change-transform;
 }
 
 .mobile-nav-item {
   @apply min-h-[64px] py-4 px-3 touch-manipulation;
-}
-
-/* Enhanced safe area handling for fullscreen */
-.pb-safe-or-4 {
-  padding-bottom: max(1rem, env(safe-area-inset-bottom));
-}
-
-.pt-safe-or-3 {
-  padding-top: max(0.75rem, env(safe-area-inset-top));
-}
-
-/* Telegram dialog optimizations */
-.telegram-dialog {
-  @apply mx-4 max-w-md;
+  @apply active:scale-95 transition-all duration-150 ease-out;
 }
 
 .telegram-button {
