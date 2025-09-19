@@ -1,5 +1,4 @@
-
-import { Layout } from '@/components/layout/Layout';
+import { TelegramMiniAppLayout } from '@/components/layout/TelegramMiniAppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -12,13 +11,15 @@ import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useLeads } from '@/hooks/useLeads';
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { User, Crown, TrendingUp, Users } from 'lucide-react';
+import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
+import { User, Crown, TrendingUp, Users, Edit3, Save } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user } = useTelegramAuth();
   const { subscriptions } = useSubscriptions();
   const { leads } = useLeads();
   const { toast } = useToast();
+  const { selectionChanged, notificationOccurred } = useTelegramHapticFeedback();
   
   const [isEditing, setIsEditing] = useState(false);
   const [bio, setBio] = useState('Diamond dealer passionate about connecting customers with perfect stones.');
@@ -36,7 +37,8 @@ export default function ProfilePage() {
     'Diamond Muzzle User';
 
   const handleSaveProfile = () => {
-    // In a real app, you'd save this to a user profile table
+    selectionChanged();
+    notificationOccurred('success');
     toast({
       title: "Profile updated",
       description: "Your profile information has been saved.",
@@ -44,163 +46,158 @@ export default function ProfilePage() {
     setIsEditing(false);
   };
 
+  const handleEditToggle = () => {
+    selectionChanged();
+    setIsEditing(!isEditing);
+  };
+
   return (
-    <Layout>
-      <div className="space-y-6">
+    <TelegramMiniAppLayout>
+      <div className="p-4 space-y-4">
+        {/* Mobile Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
+          <h1 className="text-xl font-semibold text-foreground">Profile</h1>
           <Button 
+            size="sm"
             variant={isEditing ? "default" : "outline"}
-            onClick={() => isEditing ? handleSaveProfile() : setIsEditing(true)}
+            onClick={() => isEditing ? handleSaveProfile() : handleEditToggle()}
+            className="min-h-[44px] px-4"
           >
-            {isEditing ? "Save Changes" : "Edit Profile"}
+            {isEditing ? (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Save
+              </>
+            ) : (
+              <>
+                <Edit3 className="h-4 w-4 mr-2" />
+                Edit
+              </>
+            )}
           </Button>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
-          {/* Profile Card */}
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <div className="flex items-center gap-4">
-                <Avatar className="h-20 w-20">
-                  {user?.photo_url && (
-                    <AvatarImage src={user.photo_url} alt={displayName} />
-                  )}
-                  <AvatarFallback className="bg-diamond-100 text-diamond-700 text-xl">
-                    {userInitials}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <CardTitle className="text-2xl">{displayName}</CardTitle>
-                  <CardDescription className="flex items-center gap-2 mt-1">
-                    {user?.username && (
-                      <>
-                        @{user.username}
-                        {activeSubscription && (
-                          <Badge variant="secondary" className="bg-diamond-100 text-diamond-700">
-                            <Crown className="h-3 w-3 mr-1" />
-                            {activeSubscription.plan_name}
-                          </Badge>
-                        )}
-                      </>
-                    )}
+        {/* Mobile-First Profile Card */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-12 w-12">
+                {user?.photo_url && (
+                  <AvatarImage src={user.photo_url} alt={displayName} />
+                )}
+                <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                  {userInitials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <CardTitle className="text-lg leading-tight">{displayName}</CardTitle>
+                {user?.username && (
+                  <CardDescription className="text-sm">
+                    @{user.username}
                   </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="company">Company</Label>
-                {isEditing ? (
-                  <Input
-                    id="company"
-                    value={company}
-                    onChange={(e) => setCompany(e.target.value)}
-                    className="mt-1"
-                  />
-                ) : (
-                  <p className="mt-1 text-sm text-muted-foreground">{company}</p>
                 )}
               </div>
-              
-              <div>
-                <Label htmlFor="bio">Bio</Label>
-                {isEditing ? (
-                  <Textarea
-                    id="bio"
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    className="mt-1"
-                    rows={3}
-                  />
-                ) : (
-                  <p className="mt-1 text-sm text-muted-foreground">{bio}</p>
-                )}
-              </div>
-
-              {user?.username && (
-                <div>
-                  <Label>Telegram</Label>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Connected as @{user.username}
-                  </p>
-                </div>
+            </div>
+            {activeSubscription && (
+              <Badge variant="secondary" className="w-fit">
+                <Crown className="h-3 w-3 mr-1" />
+                {activeSubscription.plan_name}
+              </Badge>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="company" className="text-sm font-medium">Company</Label>
+              {isEditing ? (
+                <Input
+                  id="company"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  className="mt-2 min-h-[44px]"
+                />
+              ) : (
+                <p className="mt-2 text-sm text-muted-foreground">{company}</p>
               )}
+            </div>
+            
+            <div>
+              <Label htmlFor="bio" className="text-sm font-medium">Bio</Label>
+              {isEditing ? (
+                <Textarea
+                  id="bio"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  className="mt-2 min-h-[88px]"
+                  rows={3}
+                />
+              ) : (
+                <p className="mt-2 text-sm text-muted-foreground">{bio}</p>
+              )}
+            </div>
+
+            {user?.username && (
+              <div>
+                <Label className="text-sm font-medium">Telegram</Label>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Connected as @{user.username}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Mobile Stats */}
+        <div className="grid grid-cols-2 gap-3">
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="flex flex-col items-center gap-2">
+                <Users className="h-5 w-5 text-primary" />
+                <div className="text-2xl font-semibold">{activeLeads}</div>
+                <div className="text-xs text-muted-foreground">Active Leads</div>
+              </div>
             </CardContent>
           </Card>
-
-          {/* Stats Card */}
+          
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Quick Stats
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Active Leads</span>
-                </div>
-                <Badge variant="secondary">{activeLeads}</Badge>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Crown className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Subscription</span>
-                </div>
-                <Badge variant={activeSubscription ? "default" : "secondary"}>
+            <CardContent className="p-4 text-center">
+              <div className="flex flex-col items-center gap-2">
+                <Crown className="h-5 w-5 text-primary" />
+                <div className="text-sm font-semibold">
                   {activeSubscription ? activeSubscription.plan_name : "Free"}
-                </Badge>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Member Since</span>
                 </div>
-                <span className="text-sm text-muted-foreground">
-                  {new Date().toLocaleDateString()}
-                </span>
+                <div className="text-xs text-muted-foreground">Plan</div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Subscription Details */}
+        {/* Subscription Details - Mobile Optimized */}
         {activeSubscription && (
           <Card>
-            <CardHeader>
-              <CardTitle>Subscription Details</CardTitle>
-              <CardDescription>
-                Manage your current subscription plan
-              </CardDescription>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Subscription</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div>
-                  <Label>Plan</Label>
-                  <p className="mt-1 font-medium">{activeSubscription.plan_name}</p>
-                </div>
-                <div>
-                  <Label>Status</Label>
-                  <Badge className="mt-1" variant={activeSubscription.status === 'active' ? 'default' : 'secondary'}>
-                    {activeSubscription.status}
-                  </Badge>
-                </div>
-                <div>
-                  <Label>Started</Label>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {new Date(activeSubscription.start_date).toLocaleDateString()}
-                  </p>
-                </div>
+            <CardContent className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Plan</span>
+                <span className="font-medium">{activeSubscription.plan_name}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Status</span>
+                <Badge variant={activeSubscription.status === 'active' ? 'default' : 'secondary'}>
+                  {activeSubscription.status}
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Started</span>
+                <span className="text-sm">
+                  {new Date(activeSubscription.start_date).toLocaleDateString()}
+                </span>
               </div>
             </CardContent>
           </Card>
         )}
       </div>
-    </Layout>
+    </TelegramMiniAppLayout>
   );
 }

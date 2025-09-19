@@ -43,46 +43,36 @@ const Index = () => {
     }
   }, [trackPageVisit, isLoading, loadingConfig]);
 
-  // Show loading state while auth is initializing
+  // Show loading state while auth is initializing - Mobile optimized
   if (isLoading || loadingConfig) {
-    return <div className="min-h-screen flex items-center justify-center px-6">
-        <div className="text-center space-y-12 max-w-2xl animate-fade-in">
-          {/* Clean, minimal loader */}
-          <div className="relative mx-auto w-24 h-24">
-            <div className="absolute inset-0 rounded-full border-2 border-muted animate-pulse"></div>
+    return <div className="min-h-screen flex items-center justify-center px-4 bg-background">
+        <div className="text-center space-y-6 w-full max-w-xs">
+          {/* Compact mobile loader */}
+          <div className="relative mx-auto w-16 h-16">
+            <div className="absolute inset-0 rounded-full border-2 border-border animate-pulse"></div>
             <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary animate-spin"></div>
-            <div className="absolute inset-4 rounded-full bg-primary/10 flex items-center justify-center">
-              <Diamond className="w-8 h-8 text-primary" />
+            <div className="absolute inset-3 rounded-full bg-primary/10 flex items-center justify-center">
+              <Diamond className="w-6 h-6 text-primary" />
             </div>
           </div>
           
-          {/* Large, clean typography like 21.dev */}
-          <div className="space-y-8">
-            <h1 className="text-6xl md:text-7xl font-bold text-foreground tracking-tight leading-none">
+          {/* Mobile-optimized typography */}
+          <div className="space-y-4">
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">
               BrilliantBot
             </h1>
             
-            <p className="text-xl md:text-2xl text-muted-foreground font-normal leading-relaxed max-w-xl mx-auto">
-              {loadingConfig ? 'Loading configuration...' : 'Equipping diamond traders with AI-powered tools for tomorrow\'s market'}
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {loadingConfig ? 'Loading...' : 'AI-powered diamond trading'}
             </p>
             
-            {/* Minimal status indicator */}
-            <div className="flex items-center justify-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
-              <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse" style={{
-              animationDelay: '0.2s'
-            }}></div>
-              <div className="w-1.5 h-1.5 rounded-full bg-primary/30 animate-pulse" style={{
-              animationDelay: '0.4s'
-            }}></div>
+            {/* Compact loading dots */}
+            <div className="flex items-center justify-center gap-1">
+              <div className="w-1 h-1 rounded-full bg-primary animate-pulse"></div>
+              <div className="w-1 h-1 rounded-full bg-primary/60 animate-pulse" style={{animationDelay: '0.2s'}}></div>
+              <div className="w-1 h-1 rounded-full bg-primary/30 animate-pulse" style={{animationDelay: '0.4s'}}></div>
             </div>
           </div>
-          
-          {/* Debug info in development */}
-          {process.env.NODE_ENV === 'development' && <div className="text-xs text-left bg-card p-4 rounded-lg border shadow-soft max-w-md mx-auto">
-              <div className="font-semibold mb-2 text-foreground">Debug Info:</div>
-              {debugInfo.map((info, i) => <div key={i} className="text-muted-foreground">{info}</div>)}
-            </div>}
         </div>
       </div>;
   }
@@ -106,38 +96,38 @@ const Index = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Fallback for unauthenticated users
-  return <div className="min-h-screen flex items-center justify-center px-6">
-      <div className="text-center space-y-12 max-w-2xl">
-        {/* Clean icon */}
-        <div className="mx-auto w-20 h-20 rounded-2xl bg-card border shadow-soft flex items-center justify-center">
-          <Diamond className="w-10 h-10 text-primary" />
+  // Fallback for unauthenticated users - Mobile optimized
+  return <div className="min-h-screen flex items-center justify-center px-4 bg-background">
+      <div className="text-center space-y-6 w-full max-w-xs">
+        {/* Compact mobile icon */}
+        <div className="mx-auto w-14 h-14 rounded-xl bg-card border flex items-center justify-center">
+          <Diamond className="w-7 h-7 text-primary" />
         </div>
         
-        {/* Large, clean typography */}
-        <div className="space-y-8">
-          <h1 className="text-6xl md:text-7xl font-bold text-foreground tracking-tight leading-none">
+        {/* Mobile typography */}
+        <div className="space-y-4">
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">
             BrilliantBot
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground font-normal leading-relaxed">
-            Loading your personalized diamond trading experience
+          <p className="text-sm text-muted-foreground">
+            Secure Telegram access required
           </p>
         </div>
         
-        {/* Information for unauthenticated users */}
-        <div className="flex flex-col gap-4">
-          <div className="bg-muted/50 rounded-xl p-4 text-sm text-muted-foreground">
-            <p className="font-medium mb-2">🔐 Secure Access Required</p>
-            <p>This app works exclusively within Telegram Mini App environment for security.</p>
+        {/* Compact mobile info */}
+        <div className="space-y-3">
+          <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground">
+            <p className="font-medium mb-1">🔐 Telegram Only</p>
+            <p>This app works within Telegram Mini App for security.</p>
           </div>
           
-          <button onClick={() => window.location.reload()} className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-muted-foreground bg-muted rounded-xl hover:bg-muted/90 transition-all duration-200 shadow-soft hover:shadow-medium hover:-translate-y-0.5">
+          <button 
+            onClick={() => window.location.reload()} 
+            className="w-full min-h-[44px] px-4 py-3 text-sm font-medium text-foreground bg-muted rounded-lg hover:bg-muted/90 transition-colors touch-manipulation active:scale-95"
+          >
             🔄 Retry Authentication
           </button>
         </div>
-        
-        {/* Debug info in development */}
-        {process.env.NODE_ENV === 'development'}
       </div>
     </div>;
 };

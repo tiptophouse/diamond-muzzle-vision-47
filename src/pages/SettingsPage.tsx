@@ -1,22 +1,26 @@
 
-import { TelegramLayout } from "@/components/layout/TelegramLayout";
+import { TelegramMiniAppLayout } from "@/components/layout/TelegramMiniAppLayout";
 import { AccountSettings } from "@/components/settings/AccountSettings";
 import { SFTPSettings } from "@/components/settings/SFTPSettings";
+import { Settings } from "lucide-react";
 
 export default function SettingsPage() {
   return (
-    <TelegramLayout>
-      <div className="space-y-6 max-w-4xl mx-auto">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">הגדרות חשבון</h1>
-          <p className="text-muted-foreground mt-1">
-            נהל את המידע האישי שלך והעדפות החשבון
-          </p>
+    <TelegramMiniAppLayout>
+      <div className="p-4 space-y-4">
+        <div className="flex items-center gap-3 pb-2">
+          <Settings className="h-5 w-5 text-primary" />
+          <div>
+            <h1 className="text-xl font-semibold text-foreground">Settings</h1>
+            <p className="text-sm text-muted-foreground">
+              Manage your account and preferences
+            </p>
+          </div>
         </div>
         
         <AccountSettings />
         <SFTPSettings />
       </div>
-    </TelegramLayout>
+    </TelegramMiniAppLayout>
   );
 }
