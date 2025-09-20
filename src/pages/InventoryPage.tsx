@@ -1,4 +1,5 @@
 
+import { memo, useState, useCallback, useMemo } from "react";
 import { TelegramMiniAppLayout } from "@/components/layout/TelegramMiniAppLayout";
 import { InventoryHeader } from "@/components/inventory/InventoryHeader";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -10,9 +11,10 @@ import { InventoryFilters } from "@/components/inventory/InventoryFilters";
 import { useInventoryData } from "@/hooks/useInventoryData";
 import { useInventorySearch } from "@/hooks/useInventorySearch";
 import { useInventoryCrud } from "@/hooks/useInventoryCrud";
+import { useOptimizedDelete } from "@/hooks/useOptimizedDelete";
+import { useInventoryState } from "@/hooks/inventory/useInventoryState";
 import { DiamondForm } from "@/components/inventory/DiamondForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useState } from "react";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { UploadSuccessCard } from "@/components/upload/UploadSuccessCard";
 
@@ -24,6 +26,25 @@ export default function InventoryPage() {
     handleRefresh,
   } = useInventoryData();
 
+  const {
+    diamonds: stateDiamonds,
+    allDiamonds: stateAllDiamonds,
+    removeDiamondFromState,
+    restoreDiamondToState,
+    updateDiamonds
+  } = useInventoryState();
+
+  // Use state diamonds if available, otherwise use fetched diamonds
+  const displayDiamonds = stateAllDiamonds.length > 0 ? stateAllDiamonds : allDiamonds;
+  const currentDiamonds = stateDiamonds.length > 0 ? stateDiamonds : diamonds;
+
+  // Update state when new data arrives
+  useMemo(() => {
+    if (allDiamonds.length > 0 && stateAllDiamonds.length === 0) {
+      updateDiamonds(allDiamonds);
+    }
+  }, [allDiamonds, stateAllDiamonds.length, updateDiamonds]);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState<Record<string, string>>({});
 
@@ -33,7 +54,7 @@ export default function InventoryPage() {
     filteredDiamonds,
     totalPages,
     handleSearch,
-  } = useInventorySearch(allDiamonds, currentPage, filters);
+  } = useInventorySearch(displayDiamonds, currentPage, filters);
 
   const { 
     addDiamond,
@@ -45,6 +66,15 @@ export default function InventoryPage() {
       console.log('🔄 CRUD operation completed, refreshing inventory...');
       handleRefresh();
     },
+    removeDiamondFromState,
+    restoreDiamondToState,
+  });
+
+  // Optimized delete with better UX
+  const { handleDelete: optimizedDelete } = useOptimizedDelete({
+    onDelete: deleteDiamond,
+    onOptimisticRemove: removeDiamondFromState,
+    onOptimisticRestore: restoreDiamondToState,
   });
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -52,30 +82,25 @@ export default function InventoryPage() {
   const [showAddSuccess, setShowAddSuccess] = useState(false);
   const [viewType, setViewType] = useState<'cards' | 'table'>('cards');
 
-  const handleEdit = (diamond: Diamond) => {
+  const handleEdit = useCallback((diamond: Diamond) => {
     console.log('📝 Edit diamond clicked:', diamond.stockNumber);
     setEditingDiamond(diamond);
-  };
+  }, []);
 
-  const handleDelete = async (diamondId: string) => {
+  const handleDelete = useCallback(async (diamondId: string) => {
     console.log('🗑️ Delete diamond clicked:', diamondId);
     if (window.confirm('Are you sure you want to delete this diamond?')) {
       // Find diamond by either diamondId (FastAPI) or id (local)
-      const diamond = allDiamonds.find(d => d.diamondId === diamondId || d.id === diamondId);
+      const diamond = displayDiamonds.find(d => d.diamondId === diamondId || d.id === diamondId);
       console.log('🗑️ Deleting diamond:', diamond?.stockNumber, 'FastAPI ID:', diamond?.diamondId, 'Local ID:', diamond?.id);
       
-      const success = await deleteDiamond(diamondId, diamond);
-      if (success) {
-        console.log('✅ Diamond deleted successfully');
-      } else {
-        console.error('❌ Failed to delete diamond');
-      }
+      await optimizedDelete(diamondId, diamond);
     }
-  };
+  }, [displayDiamonds, optimizedDelete]);
 
-  const handleStoreToggle = async (stockNumber: string, isVisible: boolean) => {
+  const handleStoreToggle = useCallback(async (stockNumber: string, isVisible: boolean) => {
     console.log('👁️ Store visibility toggle:', stockNumber, isVisible);
-    const diamond = allDiamonds.find(d => d.stockNumber === stockNumber);
+    const diamond = displayDiamonds.find(d => d.stockNumber === stockNumber);
     if (diamond) {
       const updateData = {
         stockNumber: diamond.stockNumber,
@@ -97,9 +122,9 @@ export default function InventoryPage() {
         console.log('✅ Store visibility updated successfully');
       }
     }
-  };
+  }, [displayDiamonds, updateDiamond]);
 
-  const handleEditSubmit = async (data: any) => {
+  const handleEditSubmit = useCallback(async (data: any) => {
     console.log('💾 Saving edited diamond:', data);
     if (editingDiamond) {
       // Use the FastAPI diamond ID if available for the update
@@ -112,9 +137,9 @@ export default function InventoryPage() {
         setEditingDiamond(null);
       }
     }
-  };
+  }, [editingDiamond, updateDiamond]);
 
-  const handleAddSubmit = async (data: any) => {
+  const handleAddSubmit = useCallback(async (data: any) => {
     console.log('➕ Adding new diamond:', data);
     const success = await addDiamond(data);
     if (success) {
@@ -124,13 +149,27 @@ export default function InventoryPage() {
     } else {
       console.error('❌ Failed to add diamond from inventory page');
     }
-  };
+  }, [addDiamond]);
 
-  if (loading && allDiamonds.length === 0) {
+  const handleAddDiamond = useCallback(() => {
+    console.log('➕ Add diamond button clicked');
+    setShowAddForm(true);
+  }, []);
+
+  // Memoize the loading state to prevent unnecessary re-renders
+  const isInitialLoading = useMemo(() => loading && displayDiamonds.length === 0, [loading, displayDiamonds.length]);
+
+  if (isInitialLoading) {
     return (
       <TelegramMiniAppLayout>
         <div className="text-center py-8">
-          <p className="text-muted-foreground">Loading inventory...</p>
+          <div className="space-y-4">
+            <div className="animate-pulse">
+              <div className="h-4 bg-muted rounded w-32 mx-auto mb-2"></div>
+              <div className="h-3 bg-muted rounded w-24 mx-auto"></div>
+            </div>
+            <p className="text-muted-foreground text-sm">Loading inventory...</p>
+          </div>
         </div>
       </TelegramMiniAppLayout>
     );
@@ -140,13 +179,10 @@ export default function InventoryPage() {
     <TelegramMiniAppLayout>
       <div className="p-4 space-y-4 max-w-full overflow-hidden">
         <InventoryHeader 
-          totalCount={allDiamonds.length}
+          totalCount={displayDiamonds.length}
           onRefresh={handleRefresh}
           loading={loading}
-          onAddDiamond={() => {
-            console.log('➕ Add diamond button clicked');
-            setShowAddForm(true);
-          }}
+          onAddDiamond={handleAddDiamond}
         />
         
         <div className="space-y-4 w-full">
@@ -154,7 +190,7 @@ export default function InventoryPage() {
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             onSubmit={handleSearch}
-            allDiamonds={allDiamonds}
+            allDiamonds={displayDiamonds}
             data-tutorial="inventory-search"
           />
           <InventoryFilters
@@ -177,15 +213,15 @@ export default function InventoryPage() {
                 onStoreToggle={handleStoreToggle}
               />
             ) : (
-              <InventoryTable
-                data={filteredDiamonds}
-                loading={loading}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onStoreToggle={handleStoreToggle}
-                onImageUpdate={handleRefresh}
-                data-tutorial="inventory-table"
-              />
+        <InventoryTable
+          data={filteredDiamonds}
+          loading={false}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onStoreToggle={handleStoreToggle}
+          onImageUpdate={handleRefresh}
+          data-tutorial="inventory-table"
+        />
             )}
             
             <InventoryPagination

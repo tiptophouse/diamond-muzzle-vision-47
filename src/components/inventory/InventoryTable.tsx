@@ -5,10 +5,11 @@ import {
 } from "@/components/ui/table";
 import { InventoryTableHeader } from "./InventoryTableHeader";
 import { InventoryTableRow } from "./InventoryTableRow";
-import { InventoryTableLoading } from "./InventoryTableLoading";
 import { InventoryTableEmpty } from "./InventoryTableEmpty";
 import { InventoryMobileCard } from "./InventoryMobileCard";
+import { InventoryLoadingSkeleton } from "./InventoryLoadingSkeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { memo } from 'react';
 
 export interface Diamond {
   id: string;
@@ -48,11 +49,11 @@ interface InventoryTableProps {
   onImageUpdate?: () => void;
 }
 
-export function InventoryTable({ data, loading = false, onEdit, onDelete, onStoreToggle, onImageUpdate }: InventoryTableProps) {
+export const InventoryTable = memo(function InventoryTable({ data, loading = false, onEdit, onDelete, onStoreToggle, onImageUpdate }: InventoryTableProps) {
   const isMobile = useIsMobile();
 
   if (loading) {
-    return <InventoryTableLoading />;
+    return <InventoryLoadingSkeleton />;
   }
 
   if (isMobile) {
@@ -101,4 +102,4 @@ export function InventoryTable({ data, loading = false, onEdit, onDelete, onStor
       </div>
     </div>
   );
-}
+});

@@ -14,10 +14,8 @@ export function useInventoryData() {
   const { subscribeToInventoryChanges } = useInventoryDataSync();
   const inventoryCache = useRequestCache<Diamond[]>({ ttl: 2 * 60 * 1000 }); // 2 minutes cache
 
-  // Map API shape formats to display formats
-  const normalizeShape = (apiShape: string): string => {
-    if (!apiShape) return 'Round';
-    
+  // Memoize shape normalization to prevent recalculation
+  const normalizeShape = useMemo(() => {
     const shapeMap: Record<string, string> = {
       'round brilliant': 'Round',
       'round': 'Round',
@@ -39,9 +37,12 @@ export function useInventoryData() {
       'bg': 'Baguette' // From CSV
     };
     
-    const normalized = apiShape.toLowerCase().trim();
-    return shapeMap[normalized] || apiShape.charAt(0).toUpperCase() + apiShape.slice(1).toLowerCase();
-  };
+    return (apiShape: string): string => {
+      if (!apiShape) return 'Round';
+      const normalized = apiShape.toLowerCase().trim();
+      return shapeMap[normalized] || apiShape.charAt(0).toUpperCase() + apiShape.slice(1).toLowerCase();
+    };
+  }, []);
 
   // Enhanced image URL processing - USE IMAGES DIRECTLY FROM FASTAPI
   const processImageUrl = useCallback((imageUrl: string | undefined): string | undefined => {
