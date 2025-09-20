@@ -23,6 +23,7 @@ import WishlistPage from './pages/WishlistPage';
 import Admin from './pages/Admin';
 import AdminAnalytics from './pages/AdminAnalytics';
 import DiamondDetailPage from './pages/DiamondDetailPage';
+import ChatPage from './pages/ChatPage';
 import SecureDiamondPage from './pages/SecureDiamondPage';
 import DiamondSwipe from './pages/DiamondSwipe';
 import SecureDiamondViewerPage from './pages/SecureDiamondViewerPage';
@@ -77,11 +78,16 @@ function App() {
                       <CatalogPage />
                     </AuthenticatedRoute>
                   } />
-                  <Route path="/store" element={
-                    <AuthenticatedRoute>
-                      <CatalogPage />
-                    </AuthenticatedRoute>
-                  } />
+                   <Route path="/store" element={
+                     <AuthenticatedRoute>
+                       <CatalogPage />
+                     </AuthenticatedRoute>
+                   } />
+                   <Route path="/chat" element={
+                     <AuthenticatedRoute>
+                       <ChatPage />
+                     </AuthenticatedRoute>
+                   } />
                    <Route path="/upload" element={
                      <AuthenticatedRoute>
                        <LazyUpload />
