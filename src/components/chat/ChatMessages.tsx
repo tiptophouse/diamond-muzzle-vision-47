@@ -66,7 +66,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
             <ChatMessage
               key={message.id}
               message={message}
-              isOwnMessage={message.user_id === currentUserId}
+              user={{ id: currentUserId }}
             />
           ))}
           {isLoading && (

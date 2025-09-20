@@ -6,18 +6,22 @@ import { formatDistanceToNow } from 'date-fns';
 interface Message {
   id: string;
   content: string;
-  role: 'user' | 'assistant';
-  user_id: string | null;
-  created_at: string;
+  role: 'user' | 'assistant' | 'system';
+  user_id?: string | null;
+  created_at?: string;
+  timestamp?: string;
 }
 
 interface ChatMessageProps {
   message: Message;
-  isOwnMessage: boolean;
+  user?: any;
 }
 
-export const ChatMessage: React.FC<ChatMessageProps> = ({ message, isOwnMessage }) => {
-  const timestamp = formatDistanceToNow(new Date(message.created_at), { addSuffix: true });
+export const ChatMessage: React.FC<ChatMessageProps> = ({ message, user }) => {
+  const isOwnMessage = message.role === 'user';
+  const timestamp = message.timestamp ? 
+    formatDistanceToNow(new Date(message.timestamp), { addSuffix: true }) :
+    message.created_at ? formatDistanceToNow(new Date(message.created_at), { addSuffix: true }) : '';
 
   return (
     <div className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
