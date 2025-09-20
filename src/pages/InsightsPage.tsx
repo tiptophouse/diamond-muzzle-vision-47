@@ -11,13 +11,14 @@ import { QuickStatsGrid } from "@/components/insights/QuickStatsGrid";
 import { MarketDemandCard } from "@/components/insights/MarketDemandCard";
 import { GroupInsightsCard } from "@/components/insights/GroupInsightsCard";
 import { PersonalInsightsCard } from "@/components/insights/PersonalInsightsCard";
-import { ProfitabilityInsights } from "@/components/insights/ProfitabilityInsights";
-import { MarketComparison } from "@/components/insights/MarketComparison";
-import { InventoryVelocity } from "@/components/insights/InventoryVelocity";
+import { RevenueAnalyticsDashboard } from "@/components/insights/RevenueAnalyticsDashboard";
+import { LeadGenerationAnalytics } from "@/components/insights/LeadGenerationAnalytics";
+import { AIBusinessIntelligence } from "@/components/insights/AIBusinessIntelligence";
+import { ROIDashboard } from "@/components/insights/ROIDashboard";
 import { useInsightsData } from "@/hooks/useInsightsData";
 import { useEnhancedInsights } from "@/hooks/useEnhancedInsights";
 import { useStoreData } from "@/hooks/useStoreData";
-import { BarChart3, TrendingUp, Zap, Target, RefreshCw, Upload } from "lucide-react";
+import { BarChart3, TrendingUp, Zap, Target, RefreshCw, Upload, Brain, Users } from "lucide-react";
 import { InteractiveAnalyticsChart } from "@/components/insights/InteractiveAnalyticsChart";
 
 export default function InsightsPage() {
@@ -105,25 +106,48 @@ export default function InsightsPage() {
             </CardContent>
           </Card>
         ) : (
-          <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+          <Tabs defaultValue="revenue" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="revenue" className="flex items-center gap-2">
+                <Target className="h-4 w-4" />
+                <span className="hidden sm:inline">Revenue</span>
+              </TabsTrigger>
+              <TabsTrigger value="leads" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Leads</span>
+              </TabsTrigger>
+              <TabsTrigger value="ai-insights" className="flex items-center gap-2">
+                <Brain className="h-4 w-4" />
+                <span className="hidden sm:inline">AI Insights</span>
+              </TabsTrigger>
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4" />
                 <span className="hidden sm:inline">Overview</span>
               </TabsTrigger>
-              <TabsTrigger value="profitability" className="flex items-center gap-2">
-                <Target className="h-4 w-4" />
-                <span className="hidden sm:inline">Profitability</span>
-              </TabsTrigger>
-              <TabsTrigger value="market" className="flex items-center gap-2">
+              <TabsTrigger value="performance" className="flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />
-                <span className="hidden sm:inline">Market</span>
-              </TabsTrigger>
-              <TabsTrigger value="velocity" className="flex items-center gap-2">
-                <Zap className="h-4 w-4" />
-                <span className="hidden sm:inline">Velocity</span>
+                <span className="hidden sm:inline">Performance</span>
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="revenue" className="space-y-6 pb-8">
+              <RevenueAnalyticsDashboard diamonds={diamonds} />
+              <ROIDashboard diamonds={diamonds} />
+            </TabsContent>
+
+            <TabsContent value="leads" className="space-y-6 pb-8">
+              <LeadGenerationAnalytics 
+                shareAnalytics={groupInsights ? [] : []} // Will be connected to real share analytics
+                totalDiamonds={diamonds.length}
+              />
+            </TabsContent>
+
+            <TabsContent value="ai-insights" className="space-y-6 pb-8">
+              <AIBusinessIntelligence 
+                diamonds={diamonds}
+                shareAnalytics={[]} // Will be connected to real share analytics
+              />
+            </TabsContent>
 
             <TabsContent value="overview" className="space-y-6 pb-8">
               <InsightsHeader
@@ -195,38 +219,33 @@ export default function InsightsPage() {
                 </Card>
             </TabsContent>
 
-            <TabsContent value="profitability" className="space-y-6 pb-8">
+            <TabsContent value="performance" className="space-y-6 pb-8">
               <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Target className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Profitability Analysis</h3>
-                  <p className="text-muted-foreground text-center">
-                    Profit margin: {(enhancedInsights.profitMargin * 100).toFixed(1)}%
-                  </p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="market" className="space-y-6 pb-8">
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <TrendingUp className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Market Analysis</h3>
-                  <p className="text-muted-foreground text-center">
-                    Based on {enhancedInsights.totalCount} diamonds in your inventory.
-                  </p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="velocity" className="space-y-6 pb-8">
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Zap className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Inventory Velocity</h3>
-                  <p className="text-muted-foreground text-center">
-                    Turnover rate: {(enhancedInsights.inventoryVelocity * 100).toFixed(1)}%
-                  </p>
+                <CardHeader>
+                  <CardTitle>Performance Metrics</CardTitle>
+                  <CardDescription>Key performance indicators for your diamond business</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center p-4 border rounded-lg">
+                      <div className="text-2xl font-bold text-green-600">
+                        {(enhancedInsights.profitMargin * 100).toFixed(1)}%
+                      </div>
+                      <p className="text-sm text-muted-foreground">Profit Margin</p>
+                    </div>
+                    <div className="text-center p-4 border rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {(enhancedInsights.inventoryVelocity * 100).toFixed(1)}%
+                      </div>
+                      <p className="text-sm text-muted-foreground">Turnover Rate</p>
+                    </div>
+                    <div className="text-center p-4 border rounded-lg">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {enhancedInsights.totalCount}
+                      </div>
+                      <p className="text-sm text-muted-foreground">Total Inventory</p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
