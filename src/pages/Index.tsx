@@ -281,13 +281,23 @@ const Index = () => {
             <p>This app works within Telegram Mini App for security.</p>
           </div>
           
-          <Button 
-            onClick={() => window.location.reload()} 
-            className="w-full"
-            variant="outline"
-          >
-            🔄 Retry Authentication
-          </Button>
+          <div className="space-y-2">
+            <Button 
+              onClick={() => window.location.reload()} 
+              className="w-full"
+              variant="outline"
+            >
+              🔄 Retry Authentication
+            </Button>
+            
+            <Button 
+              onClick={() => window.location.href = '/admin'} 
+              className="w-full"
+              variant="default"
+            >
+              👑 Go to Admin Dashboard
+            </Button>
+          </div>
         </div>
       </div>
 
