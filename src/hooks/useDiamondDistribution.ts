@@ -60,24 +60,25 @@ export function useDiamondDistribution() {
         
         if (response.data && Array.isArray(response.data)) {
           diamonds = response.data.map(d => {
-            const weight = Number(d.weight ?? d.carat ?? 0);
+            let weight = Number(d.weight ?? d.carat ?? 0);
             const rawPpc = Number(d.price_per_carat);
             const rawTotal = Number(d.price);
 
-            // Robust total price calculation to avoid unrealistic billions
+            // Best practice: Use actual price data without artificial constraints
             let totalPrice = 0;
-            if (rawPpc > 100 && rawPpc < 200000 && weight > 0 && weight < 50) {
-              // Looks like a valid price-per-carat
-              totalPrice = Math.round(rawPpc * weight);
-            } else if (rawTotal > 0 && rawTotal < 5000000 && weight > 0 && weight < 50) {
-              // Treat provided price as total price when it’s in a sane range (< $5M per stone)
+            
+            // Priority 1: Use total price if available and valid
+            if (rawTotal > 0 && !isNaN(rawTotal)) {
               totalPrice = Math.round(rawTotal);
-            } else if (!isNaN(rawPpc) && rawPpc > 0 && weight > 0 && weight < 50) {
-              // Fallback if PPC is present but slightly outside preferred bounds
+            } 
+            // Priority 2: Calculate from price per carat if available
+            else if (rawPpc > 0 && !isNaN(rawPpc) && weight > 0) {
               totalPrice = Math.round(rawPpc * weight);
-            } else {
-              totalPrice = 0;
             }
+            
+            // Data validation: ensure reasonable bounds without artificial caps
+            if (totalPrice < 0) totalPrice = 0;
+            if (weight < 0) weight = 0;
             
             return {
               id: d.id || d.stock_number || '',
@@ -85,7 +86,7 @@ export function useDiamondDistribution() {
               color: d.color || 'H',
               clarity: d.clarity || 'VS1',
               carat: weight,
-              price: totalPrice, // store a sane total price
+              price: totalPrice, // store actual calculated price
               certificate_number: String(d.certificate_number || ''),
               created_at: d.created_at || new Date().toISOString()
             };
@@ -97,14 +98,14 @@ export function useDiamondDistribution() {
         console.log('🔍 Not authenticated, using demo data for diamond distribution');
         // Provide realistic demo data with proper total prices
         diamonds = [
-          { id: '1', shape: 'Round', color: 'D', clarity: 'FL', carat: 2.5, price: 37500, certificate_number: '12345', created_at: new Date().toISOString() }, // 15000 * 2.5
-          { id: '2', shape: 'Princess', color: 'E', clarity: 'VVS1', carat: 1.8, price: 21600, certificate_number: '12346', created_at: new Date().toISOString() }, // 12000 * 1.8
-          { id: '3', shape: 'Emerald', color: 'F', clarity: 'VVS2', carat: 3.2, price: 57600, certificate_number: '12347', created_at: new Date().toISOString() }, // 18000 * 3.2
-          { id: '4', shape: 'Round', color: 'G', clarity: 'VS1', carat: 1.5, price: 12000, certificate_number: '12348', created_at: new Date().toISOString() }, // 8000 * 1.5
-          { id: '5', shape: 'Oval', color: 'H', clarity: 'VS2', carat: 2.1, price: 23100, certificate_number: '12349', created_at: new Date().toISOString() }, // 11000 * 2.1
-          { id: '6', shape: 'Cushion', color: 'I', clarity: 'SI1', carat: 1.9, price: 18050, certificate_number: '12350', created_at: new Date().toISOString() }, // 9500 * 1.9
-          { id: '7', shape: 'Pear', color: 'J', clarity: 'SI2', carat: 2.3, price: 24150, certificate_number: '12351', created_at: new Date().toISOString() }, // 10500 * 2.3
-          { id: '8', shape: 'Marquise', color: 'K', clarity: 'I1', carat: 1.7, price: 12750, certificate_number: '12352', created_at: new Date().toISOString() } // 7500 * 1.7
+          { id: '1', shape: 'Round', color: 'D', clarity: 'FL', carat: 2.5, price: 37500, certificate_number: '12345', created_at: new Date().toISOString() },
+          { id: '2', shape: 'Princess', color: 'E', clarity: 'VVS1', carat: 1.8, price: 21600, certificate_number: '12346', created_at: new Date().toISOString() },
+          { id: '3', shape: 'Emerald', color: 'F', clarity: 'VVS2', carat: 3.2, price: 57600, certificate_number: '12347', created_at: new Date().toISOString() },
+          { id: '4', shape: 'Round', color: 'G', clarity: 'VS1', carat: 1.5, price: 12000, certificate_number: '12348', created_at: new Date().toISOString() },
+          { id: '5', shape: 'Oval', color: 'H', clarity: 'VS2', carat: 2.1, price: 23100, certificate_number: '12349', created_at: new Date().toISOString() },
+          { id: '6', shape: 'Cushion', color: 'I', clarity: 'SI1', carat: 1.9, price: 18050, certificate_number: '12350', created_at: new Date().toISOString() },
+          { id: '7', shape: 'Pear', color: 'J', clarity: 'SI2', carat: 2.3, price: 24150, certificate_number: '12351', created_at: new Date().toISOString() },
+          { id: '8', shape: 'Marquise', color: 'K', clarity: 'I1', carat: 1.7, price: 12750, certificate_number: '12352', created_at: new Date().toISOString() }
         ];
       }
 
@@ -163,7 +164,8 @@ export function useDiamondDistribution() {
       console.log('📊 Distribution calculated:', {
         colors: colorDistribution.length,
         clarities: clarityDistribution.length,
-        total: diamonds.length
+        total: diamonds.length,
+        totalValue: diamonds.reduce((sum, d) => sum + d.price, 0)
       });
 
     } catch (error) {

@@ -242,13 +242,20 @@ export function useStoreData() {
         const pricePerCarat = parseNumber(item.price_per_carat || item.pricePerCarat || item.price_carat || 0);
         const totalPrice = parseNumber(item.price || item.total_price || item.totalPrice || 0);
         
-        // Calculate final price with better logic
+        // Best practice: Consistent price calculation matching backend expectations
         let finalPrice = 0;
+        
+        // Priority 1: Use total price if available and positive
         if (totalPrice > 0) {
-          finalPrice = totalPrice;
-        } else if (pricePerCarat > 0 && weight > 0) {
-          finalPrice = pricePerCarat * weight;
+          finalPrice = Math.round(totalPrice);
+        } 
+        // Priority 2: Calculate from price per carat if available
+        else if (pricePerCarat > 0 && weight > 0) {
+          finalPrice = Math.round(pricePerCarat * weight);
         }
+        
+        // Ensure non-negative values
+        finalPrice = Math.max(0, finalPrice);
 
         // Determine color type based on the color value
         const colorType = item.color_type || (detectFancyColor(item.color).isFancyColor ? 'Fancy' : 'Standard');
