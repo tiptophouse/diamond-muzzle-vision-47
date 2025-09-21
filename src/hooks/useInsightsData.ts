@@ -162,15 +162,15 @@ export function useInsightsData() {
             // Otherwise treat it as total price or use fallback
             let diamondValue = 0;
             if (rawPpc > 100 && rawPpc < 50000 && weight > 0 && weight < 20) {
-              diamondValue = rawPpc * weight;
-            } else if (rawPpc > 0 && rawPpc < 1000000) {
-              // Treat as total price if within reasonable bounds
-              diamondValue = rawPpc;  
+              diamondValue = Math.min(rawPpc * weight, 2000000); // Cap individual stones at 2M
+            } else if (rawPpc > 0 && rawPpc < 2000000) {
+              // Treat as total price if within reasonable bounds (cap at 2M per stone)
+              diamondValue = Math.min(rawPpc, 2000000);  
             } else {
               diamondValue = 0;
             }
             
-            return sum + diamondValue;
+            return sum + Math.min(diamondValue, 2000000); // Double-check individual stone cap
           }, 0);
           
           // Calculate average price per carat from realistic values only

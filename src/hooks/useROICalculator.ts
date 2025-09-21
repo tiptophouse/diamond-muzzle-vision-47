@@ -27,8 +27,11 @@ export function useROICalculator(diamonds: Diamond[]) {
       };
     }
 
-    // Calculate total investment (current inventory value)
-    const totalInvestment = diamonds.reduce((sum, d) => sum + (d.price || 0), 0);
+    // Calculate total investment (current inventory value) with realistic bounds
+    const totalInvestment = diamonds.reduce((sum, d) => {
+      const price = Math.min(d.price || 0, 2000000); // Cap individual stones at 2M
+      return sum + price;
+    }, 0);
     
     // Industry-standard calculations
     const averageMargin = 0.25; // 25% margin typical in diamond industry
@@ -45,8 +48,8 @@ export function useROICalculator(diamonds: Diamond[]) {
     const yearlyROI = (profit / totalInvestment) * 100;
     const breakEvenTime = totalInvestment / (monthlyRevenue * averageMargin);
     
-    // Risk assessment
-    const priceDistribution = diamonds.map(d => d.price || 0).sort((a, b) => b - a);
+    // Risk assessment with realistic bounds
+    const priceDistribution = diamonds.map(d => Math.min(d.price || 0, 2000000)).sort((a, b) => b - a);
     const highValueCount = priceDistribution.filter(p => p > 10000).length;
     const diversificationScore = new Set(diamonds.map(d => d.shape)).size / Math.min(diamonds.length, 10);
     const concentrationRisk = (highValueCount / diamonds.length) * 100;

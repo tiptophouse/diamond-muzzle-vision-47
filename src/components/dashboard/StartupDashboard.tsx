@@ -75,13 +75,13 @@ export function StartupDashboard() {
   };
 
   useEffect(() => {
-    // Simulate real-time metrics updates
+    // Simulate real-time metrics updates with realistic bounds
     const interval = setInterval(() => {
       setMetrics(prev => ({
         ...prev,
-        activeToday: prev.activeToday + Math.floor(Math.random() * 3),
-        searchMatches: prev.searchMatches + Math.floor(Math.random() * 2),
-        totalRevenue: prev.totalRevenue + Math.floor(Math.random() * 500)
+        activeToday: Math.min(120, prev.activeToday + Math.floor(Math.random() * 3)), // Cap at 120 daily active
+        searchMatches: Math.min(100, prev.searchMatches + Math.floor(Math.random() * 2)), // Cap at 100 matches
+        totalRevenue: Math.min(50000, prev.totalRevenue + Math.floor(Math.random() * 200)) // Cap at 50K monthly revenue
       }));
     }, 10000);
 
