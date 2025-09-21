@@ -43,11 +43,8 @@ export function RevenueAnalyticsDashboard({ diamonds }: RevenueAnalyticsDashboar
       };
     }
 
-    // Calculate total inventory value with realistic bounds
-    const totalInventoryValue = diamonds.reduce((sum, d) => {
-      const price = Math.min(d.price || 0, 2000000); // Cap individual stones at 2M
-      return sum + price;
-    }, 0);
+    // Calculate total inventory value from actual FastAPI data
+    const totalInventoryValue = diamonds.reduce((sum, d) => sum + (d.price || 0), 0);
     
     // Calculate monthly revenue potential (based on industry turnover rates)
     const monthlyRevenuePotential = totalInventoryValue * 0.15; // 15% monthly turnover

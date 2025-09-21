@@ -13,15 +13,12 @@ export const safeParseNumber = (value: any): number => {
 export const formatCurrency = (amount: number | string): string => {
   const numAmount = safeParseNumber(amount);
   
-  // Cap extremely large values to prevent unrealistic displays
-  const cappedAmount = Math.min(numAmount, 100000000); // Cap at 100M per item
-  
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(cappedAmount);
+  }).format(numAmount);
 };
 
 export const formatPricePerCarat = (totalPrice: number | string, carat: number | string): number => {
