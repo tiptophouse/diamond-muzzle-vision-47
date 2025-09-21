@@ -34,15 +34,15 @@ export function TelegramShareButton({
     hapticFeedback.impact('medium');
 
     try {
-      const shareContent = url ? `${title}\n\n${text}\n\n${url}` : `${title}\n\n${text}`;
-      
-      // Best practice: Progressive enhancement with proper error boundaries
+      // Best practice: Use Telegram deep links that work within the ecosystem
       
       // Method 1: Telegram native sharing (highest priority)
       const tgWebApp = window.Telegram?.WebApp as any;
       if (tgWebApp?.switchInlineQuery) {
         try {
-          await tgWebApp.switchInlineQuery(shareContent, ['users', 'groups', 'channels']);
+          // For Telegram sharing, use the deep link format that opens in the bot
+          const telegramShareText = `${title}\n\n${text}${url ? `\n\n${url}` : ''}`;
+          await tgWebApp.switchInlineQuery(telegramShareText, ['users', 'groups', 'channels']);
           toast.success('Share dialog opened!');
           return;
         } catch (telegramError) {
@@ -69,6 +69,7 @@ export function TelegramShareButton({
       }
 
       // Method 3: Clipboard fallback with better UX
+      const shareContent = url ? `${title}\n\n${text}\n\n${url}` : `${title}\n\n${text}`;
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(shareContent);
         

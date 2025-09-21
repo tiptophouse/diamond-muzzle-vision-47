@@ -20,6 +20,7 @@ import DiamondAgentsPage from './pages/DiamondAgentsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import ProfilePage from './pages/ProfilePage';
 import WishlistPage from './pages/WishlistPage';
+import PublicDiamondPage from './pages/PublicDiamondPage';
 import Admin from './pages/Admin';
 import AdminAnalytics from './pages/AdminAnalytics';
 import DiamondDetailPage from './pages/DiamondDetailPage';
@@ -78,11 +79,15 @@ function App() {
                       <CatalogPage />
                     </AuthenticatedRoute>
                   } />
-                   <Route path="/store" element={
-                     <AuthenticatedRoute>
-                       <CatalogPage />
-                     </AuthenticatedRoute>
-                   } />
+                  <Route path="/store" element={
+                    <AuthenticatedRoute>
+                      <CatalogPage />
+                    </AuthenticatedRoute>
+                  } />
+                  
+                  {/* Public diamond sharing - no JWT required */}
+                  <Route path="/public/diamond/:stockNumber" element={<PublicDiamondPage />} />
+                  
                    <Route path="/chat" element={
                      <AuthenticatedRoute>
                        <ChatPage />

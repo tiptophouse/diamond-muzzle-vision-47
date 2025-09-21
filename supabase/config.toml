@@ -49,3 +49,6 @@ verify_jwt = false
 
 [functions.send-diamond-to-group]
 verify_jwt = false
+
+[functions.public-diamond-share]
+verify_jwt = false

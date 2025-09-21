@@ -54,16 +54,31 @@ export function canWebShare(data: ShareData): boolean {
   }));
 }
 
-/**
- * Creates a deep link for sharing diamonds in the store
- */
-export function createDiamondShareUrl(stockNumber: string, baseUrl?: string): string {
-  const base = baseUrl || window.location.origin;
-  return `${base}/store?stock=${encodeURIComponent(stockNumber)}`;
+export interface DiamondShareUrls {
+  webUrl: string;
+  telegramUrl: string;
+  shareUrl: string;
 }
 
 /**
- * Generates formatted diamond share text with proper Hebrew/English support
+ * Creates a proper Telegram deep link for sharing diamonds
+ * Uses the public endpoint that works without JWT authentication
+ */
+export function createDiamondShareUrl(stockNumber: string, baseUrl?: string): DiamondShareUrls {
+  const base = baseUrl || window.location.origin;
+  // Create both public web URL and Telegram deep link
+  return {
+    // Public web URL for browsers/social media
+    webUrl: `${base}/public/diamond/${encodeURIComponent(stockNumber)}`,
+    // Telegram deep link that opens in the bot
+    telegramUrl: `https://t.me/diamondmazalbot?startapp=diamond_${encodeURIComponent(stockNumber)}`,
+    // Share-friendly URL for external sharing
+    shareUrl: `${base}/public/diamond/${encodeURIComponent(stockNumber)}`
+  };
+}
+
+/**
+ * Generates formatted diamond share text with proper Telegram deep links
  */
 export function formatDiamondShareText(diamond: {
   carat: number;
@@ -72,8 +87,8 @@ export function formatDiamondShareText(diamond: {
   clarity: string;
   price: number;
   stockNumber: string;
-}): { title: string; text: string } {
-  const title = `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond`;
+}): { title: string; text: string; telegramUrl: string; webUrl: string } {
+  const title = `💎 ${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond`;
   const priceFormatted = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -81,15 +96,23 @@ export function formatDiamondShareText(diamond: {
     maximumFractionDigits: 0,
   }).format(diamond.price);
   
+  const shareUrls = createDiamondShareUrl(diamond.stockNumber);
+  
   const text = `💎 Premium Diamond Available\n\n` +
     `📏 Weight: ${diamond.carat} carat\n` +
     `💠 Shape: ${diamond.shape}\n` +
     `🎨 Color: ${diamond.color}\n` +
     `✨ Clarity: ${diamond.clarity}\n` +
     `💰 Price: ${priceFormatted}\n` +
-    `📦 Stock: ${diamond.stockNumber}`;
+    `📦 Stock: ${diamond.stockNumber}\n\n` +
+    `👆 Tap to view details`;
     
-  return { title, text };
+  return { 
+    title, 
+    text,
+    telegramUrl: shareUrls.telegramUrl,
+    webUrl: shareUrls.webUrl
+  };
 }
 
 /**
