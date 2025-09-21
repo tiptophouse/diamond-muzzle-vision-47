@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Share2, Users, Send, Copy, ExternalLink } from "lucide-react";
+import { Share2, Users, Send, Copy, ExternalLink, MessageCircle, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
 import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 import { toast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/numberUtils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface P2PShareButtonProps {
   diamond: Diamond;
@@ -60,6 +61,79 @@ View full details: ${url}
     createShareUrl();
     setShowShareDialog(true);
   };
+
+  const handleTelegramShareViaBotAPI = useCallback(async () => {
+    impactOccurred('medium');
+    
+    try {
+      // Show loading state
+      toast({
+        title: "Sending diamond message...",
+        description: "Processing request",
+      });
+
+      // Try to get user ID from different sources
+      let userId = webApp?.initDataUnsafe?.user?.id;
+      
+      if (!userId) {
+        toast({
+          title: "User identification error",
+          description: "Cannot identify user. Please refresh the page.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Send diamond message to personal chat via Bot API
+      const { data, error } = await supabase.functions.invoke('send-diamond-to-group', {
+        body: {
+          diamond: {
+            id: diamond.id,
+            stockNumber: diamond.stockNumber,
+            carat: diamond.carat,
+            shape: diamond.shape,
+            color: diamond.color,
+            clarity: diamond.clarity,
+            cut: diamond.cut,
+            price: diamond.price,
+            imageUrl: diamond.imageUrl,
+            gem360Url: diamond.gem360Url,
+            // Include CSV image fallbacks
+            Image: (diamond as any).Image,
+            image: (diamond as any).image,
+            picture: (diamond as any).picture
+          },
+          sharedBy: userId,
+          testMode: true // This sends to personal chat with Bot API
+        }
+      });
+
+      if (error) {
+        impactOccurred('heavy');
+        toast({
+          title: "Sharing error",
+          description: error.message || "An unexpected error occurred",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      impactOccurred('light');
+      toast({
+        title: "✅ Diamond message sent successfully!",
+        description: "Check your personal chat in Telegram to see the message",
+      });
+      
+      setShowShareDialog(false);
+    } catch (error) {
+      impactOccurred('heavy');
+      toast({
+        title: "Sharing error",
+        description: "Failed to send diamond message",
+        variant: "destructive"
+      });
+    }
+  }, [diamond, webApp, impactOccurred]);
 
   const handleTelegramShare = useCallback(() => {
     impactOccurred('medium');
@@ -182,7 +256,7 @@ View full details: ${url}
           className={`flex items-center gap-2 ${className}`}
         >
           <Share2 className="h-4 w-4" />
-          <span className="hidden sm:inline">Share P2P</span>
+          <span className="hidden sm:inline">Bot API Share</span>
         </Button>
       </DialogTrigger>
       
@@ -190,10 +264,10 @@ View full details: ${url}
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Share2 className="h-5 w-5 text-blue-600" />
-            Share Diamond P2P
+            Share Diamond via Bot API
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Share this diamond directly with anyone
+            Send diamond with image and interactive buttons via Telegram Bot
           </p>
         </DialogHeader>
         
@@ -202,11 +276,18 @@ View full details: ${url}
           <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200">
             <div className="flex items-center gap-3">
               {diamond.imageUrl && (
-                <img 
-                  src={diamond.imageUrl} 
-                  alt={`${diamond.shape} diamond`}
-                  className="w-16 h-16 object-cover rounded-lg border"
-                />
+                <div className="relative">
+                  <img 
+                    src={diamond.imageUrl} 
+                    alt={`${diamond.shape} diamond`}
+                    className="w-16 h-16 object-cover rounded-lg border"
+                  />
+                  <div className="absolute top-1 right-1">
+                    <Badge variant="secondary" className="text-xs">
+                      <Camera className="h-2 w-2 mr-1" />
+                    </Badge>
+                  </div>
+                </div>
               )}
               <div className="flex-1">
                 <h4 className="font-semibold text-blue-800">
@@ -217,6 +298,9 @@ View full details: ${url}
                 </p>
                 <p className="text-sm font-medium text-blue-700">
                   {diamond.price > 0 ? formatCurrency(diamond.price) : 'Contact for Price'}
+                </p>
+                <p className="text-xs text-blue-500 mt-1">
+                  Stock: #{diamond.stockNumber}
                 </p>
               </div>
             </div>
@@ -231,8 +315,22 @@ View full details: ${url}
             <TabsContent value="telegram" className="space-y-3">
               <div className="space-y-2">
                 <Button 
-                  onClick={handleDirectMessage}
+                  onClick={handleTelegramShareViaBotAPI}
                   className="w-full flex items-center gap-2 bg-blue-500 hover:bg-blue-600"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Send via Bot API
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  {diamond.imageUrl ? "Sends diamond with image" : "Sends diamond details"} + interactive buttons
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Button 
+                  onClick={handleDirectMessage}
+                  variant="outline"
+                  className="w-full flex items-center gap-2"
                 >
                   <Send className="h-4 w-4" />
                   Send Direct Message
@@ -293,13 +391,14 @@ View full details: ${url}
           </Tabs>
 
           <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-            <h4 className="font-medium text-green-800 mb-1">P2P Sharing Benefits:</h4>
+            <h4 className="font-medium text-green-800 mb-1">Enhanced Bot API Sharing:</h4>
             <ul className="text-xs text-green-700 space-y-1">
-              <li>• No sharing limits or quotas</li>
-              <li>• Direct person-to-person communication</li>
-              <li>• Recipient gets full diamond details</li>
-              <li>• Works with any messaging app</li>
-              <li>• Instant sharing and viewing</li>
+              <li>• {diamond.imageUrl ? "Sends diamond image with message" : "Sends detailed diamond information"}</li>
+              <li>• Interactive buttons for direct viewing</li>
+              <li>• Deep links to specific diamond page</li>
+              <li>• Professional presentation with inline keyboard</li>
+              <li>• Works seamlessly in Telegram chats</li>
+              <li>• Recipients get immediate access to full details</li>
             </ul>
           </div>
 

@@ -424,6 +424,7 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
             diamond={diamond} 
             size="sm"
             className="flex-1"
+            variant="default"
           />
         </div>
       </div>
