@@ -12,6 +12,7 @@ import { SessionUsersDisplay } from '@/components/admin/SessionUsersDisplay';
 import { UserUploadAnalysis } from '@/components/admin/UserUploadAnalysis';
 import { OptimizedUserDiamondCounts } from '@/components/admin/OptimizedUserDiamondCounts';
 import { ForceRefreshButton } from '@/components/admin/ForceRefreshButton';
+import { AuthDiagnostics } from '@/components/debug/AuthDiagnostics';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
@@ -456,6 +457,7 @@ export default function Admin() {
             </TabsContent>
             
             <TabsContent value="diagnostics" className="space-y-4">
+              <AuthDiagnostics />
               <WebhookDiagnostics />
             </TabsContent>
             

@@ -6,6 +6,7 @@ import { getAdminTelegramId } from '@/lib/api/secureConfig';
 import { Plus, Gem, Store, PieChart, BarChart3, TrendingUp, Users, Search, MessageSquare } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { AuthDiagnostics } from "@/components/debug/AuthDiagnostics";
 
 interface NavigationCardProps {
   icon: React.ReactNode;
@@ -257,10 +258,10 @@ const Index = () => {
     );
   }
 
-  // Fallback for unauthenticated users
+  // Fallback for unauthenticated users - Show full diagnostics
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-background">
-      <div className="text-center space-y-6 w-full max-w-xs">
+    <div className="min-h-screen flex flex-col items-center justify-start px-4 bg-background py-8">
+      <div className="text-center space-y-6 w-full max-w-xs mb-8">
         <div className="mx-auto w-14 h-14 rounded-xl bg-card border flex items-center justify-center">
           <Gem className="w-7 h-7 text-primary" />
         </div>
@@ -289,6 +290,9 @@ const Index = () => {
           </Button>
         </div>
       </div>
+
+      {/* Full Authentication Diagnostics */}
+      <AuthDiagnostics />
     </div>
   );
 };
