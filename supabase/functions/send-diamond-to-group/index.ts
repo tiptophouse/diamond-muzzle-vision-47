@@ -94,32 +94,53 @@ serve(async (req) => {
       }
     }
 
-    // Get best available image URL with fallbacks
-    const imageUrl = diamond.imageUrl || diamond.Image || diamond.image || diamond.picture;
-    console.log('🖼️ Image URL check:', {
-      imageUrl: !!diamond.imageUrl,
-      Image: !!diamond.Image, 
-      image: !!diamond.image,
-      picture: !!diamond.picture,
-      finalUrl: !!imageUrl,
-      imageUrlValue: diamond.imageUrl?.substring(0, 50) + '...',
-      ImageValue: diamond.Image?.substring(0, 50) + '...',
-      imageValue: diamond.image?.substring(0, 50) + '...',
-      pictureValue: diamond.picture?.substring(0, 50) + '...'
-    });
+    // Get best available image URL with validation
+    let imageUrl = diamond.imageUrl || diamond.Image || diamond.image || diamond.picture;
+    
+    // Validate and fix image URL format
+    if (imageUrl) {
+      // Convert .html URLs to actual image URLs if needed
+      if (imageUrl.includes('.html')) {
+        const stockNumber = diamond.stockNumber;
+        imageUrl = `https://s3.eu-west-1.amazonaws.com/my360.fab/${stockNumber}.jpg`;
+      }
+      
+      // Ensure HTTPS for Telegram compatibility
+      if (imageUrl.startsWith('http://')) {
+        imageUrl = imageUrl.replace('http://', 'https://');
+      }
+      
+      console.log('🖼️ Image URL processed:', {
+        original: diamond.imageUrl?.substring(0, 50) + '...',
+        processed: imageUrl?.substring(0, 50) + '...',
+        isValid: imageUrl && (imageUrl.endsWith('.jpg') || imageUrl.endsWith('.jpeg') || imageUrl.endsWith('.png') || imageUrl.endsWith('.webp'))
+      });
+      
+      // Validate image URL format for Telegram
+      if (!imageUrl.match(/\.(jpg|jpeg|png|webp)$/i)) {
+        console.warn('⚠️ Invalid image format, sending text only');
+        imageUrl = null;
+      }
+    }
 
-    // Create enhanced diamond share message
-    const shareMessage = `${messagePrefix}💎 *יהלום איכותי זמין עכשיו*
+    // Create enhanced diamond share message with better formatting
+    const priceText = diamond.price && diamond.price > 0 
+      ? `$${diamond.price.toLocaleString()}` 
+      : 'צור קשר למחיר';
+      
+    const shareMessage = `${messagePrefix}💎 *יהלום פרמיום זמין עכשיו!*
 
-✨ *פרטי היהלום:*
-💍 *${diamond.carat} קראט • ${diamond.shape}*
-🌈 *צבע ${diamond.color} • ניקיון ${diamond.clarity}*
-⚡ *חיתוך ${diamond.cut}*
-💰 *$${diamond.price?.toLocaleString() || 'צור קשר למחיר'}*
+🔸 *מפרט היהלום:*
+💠 **${diamond.carat} קראט • ${diamond.shape.toUpperCase()}**
+🌈 צבע **${diamond.color}** • ניקיון **${diamond.clarity}**
+⚡ חיתוך **${diamond.cut}** 
+💰 מחיר: **${priceText}**
+📋 מק"ט: \`${diamond.stockNumber}\`
 
-👨‍💼 *שותף עסקי:* ${sharerName}
+👤 *מוצע על ידי:* ${sharerName}
 
-🔥 *למידע נוסף ופרטים מלאים - לחץ על הכפתור למטה*`;
+🎯 *לפרטים נוספים, תמונות ויצירת קשר - לחץ על הכפתורים למטה*
+${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה*' : ''}`;
 
     // Create inline keyboard with working URL buttons only
     const baseUrl = 'https://uhhljqgxhdhbbhpohxll.supabase.co';
@@ -184,22 +205,73 @@ serve(async (req) => {
       hasImage: !!diamond.imageUrl
     });
     
-    // Send diamond to target chat with image if available
+    // Send diamond to target chat with enhanced error handling
     let response;
     if (imageUrl) {
-      console.log('📸 Sending with image:', imageUrl.substring(0, 50) + '...');
-      // Send as photo with caption
-      response = await fetch(`${telegramApiUrl}/sendPhoto`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: targetChatId,
-          photo: imageUrl,
-          caption: shareMessage,
-          parse_mode: 'Markdown',
-          ...inlineKeyboard
-        })
-      });
+      console.log('📸 Attempting to send with image:', imageUrl.substring(0, 50) + '...');
+      
+      try {
+        // First try sending as photo
+        response = await fetch(`${telegramApiUrl}/sendPhoto`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: targetChatId,
+            photo: imageUrl,
+            caption: shareMessage,
+            parse_mode: 'Markdown',
+            ...inlineKeyboard
+          })
+        });
+        
+        // Check if photo send failed
+        const photoResult = await response.json();
+        if (!response.ok || !photoResult.ok) {
+          console.warn('📸 Photo send failed, falling back to text:', photoResult.description);
+          
+          // Fallback to text message
+          response = await fetch(`${telegramApiUrl}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: targetChatId,
+              text: `${shareMessage}\n\n🖼️ [תמונת היהלום זמינה במערכת]`,
+              parse_mode: 'Markdown',
+              ...inlineKeyboard
+            })
+          });
+        } else {
+          // Photo sent successfully, return the result
+          const result = photoResult;
+          console.log('✅ Photo sent successfully');
+          return new Response(
+            JSON.stringify({
+              success: true,
+              messageId: result.result.message_id,
+              diamond: diamond,
+              message: 'Diamond shared with image successfully'
+            }),
+            {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 200,
+            }
+          );
+        }
+      } catch (photoError) {
+        console.warn('📸 Photo send error, falling back to text:', photoError);
+        
+        // Fallback to text message
+        response = await fetch(`${telegramApiUrl}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: targetChatId,
+            text: `${shareMessage}\n\n📷 [תמונה זמינה באפליקציה]`,
+            parse_mode: 'Markdown',
+            ...inlineKeyboard
+          })
+        });
+      }
     } else {
       console.log('📝 Sending text only (no image available)');
       // Send as text message
