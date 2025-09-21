@@ -123,23 +123,29 @@ serve(async (req) => {
       }
     }
 
-    // Create enhanced diamond share message with better formatting
+    // Create enhanced diamond share message with better formatting and bigger focus
     const priceText = diamond.price && diamond.price > 0 
-      ? `$${diamond.price.toLocaleString()}` 
-      : 'צור קשר למחיר';
+      ? `💰 $${diamond.price.toLocaleString()}` 
+      : '💰 צור קשר למחיר';
       
-    const shareMessage = `${messagePrefix}💎 *יהלום פרמיום זמין עכשיו!*
+    const shareMessage = `${messagePrefix}✨💎 **${diamond.carat}ct ${diamond.shape.toUpperCase()} BRILLIANT** 💎✨
 
-🔸 *מפרט היהלום:*
-💠 **${diamond.carat} קראט • ${diamond.shape.toUpperCase()}**
-🌈 צבע **${diamond.color}** • ניקיון **${diamond.clarity}**
-⚡ חיתוך **${diamond.cut}** 
-💰 מחיר: **${priceText}**
-📋 מק"ט: \`${diamond.stockNumber}\`
+🏆 **יהלום פרמיום זמין עכשיו!**
+*${diamond.color} צבע • ${diamond.clarity} ניקיון • ${diamond.cut} חיתוך*
 
-👤 *מוצע על ידי:* ${sharerName}
+💎 **${priceText}**
 
-🎯 *לפרטים נוספים, תמונות ויצירת קשר - לחץ על הכפתורים למטה*
+🔥 **למה הלקוח יבחר ביהלום הזה?**
+• ✨ איכות פרמיום עם תעודת ${diamond.cut === 'EXCELLENT' ? 'מעולה' : diamond.cut}
+• 📊 מדדי איכות מושלמים
+• 🎯 מחיר תחרותי במיוחד
+• ⚡ זמין לאספקה מיידית
+• 🔒 אחריות מלאה ותעודה
+
+📋 **מק"ט:** \`${diamond.stockNumber}\`
+👤 **מוצע על ידי:** ${sharerName}
+
+🎯 **רוצה לראות עוד פרטים? לחץ על הכפתורים למטה! 👇**
 ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה*' : ''}`;
 
     // Create inline keyboard with working URL buttons only
@@ -173,23 +179,27 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
             }
           ]
         ] : [
-          // Group chat - only URL buttons work reliably  
+          // Group chat - enhanced buttons with better flow
           [
             {
-              text: '💎 פרטים מלאים ומחיר',
+              text: '💎 פרטים מלאים + תמונות HD',
               url: `${baseUrl}/diamond/${diamond.id}?shared=true&from=${sharedBy}&verify=true`
             }
           ],
           [
             {
-              text: '📱 צור קשר עם המוכר',
+              text: '📱 צור קשר למחיר ולפרטים',
               url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
             }
           ],
           [
             {
-              text: '🏪 עוד יהלומים מהמוכר',
-              url: `${baseUrl}/?seller=${sharedBy}&shared=true`
+              text: '🏪 עוד יהלומים באותו סגנון',
+              url: `${baseUrl}/?seller=${sharedBy}&shared=true&similar=${diamond.shape}&carat=${diamond.carat}`
+            },
+            {
+              text: '🤖 עזרה ביבחירה',
+              url: `${telegramBotUrl}?start=ai_assistant_${diamond.stockNumber}`
             }
           ]
         ]

@@ -48,6 +48,10 @@ export const apiEndpoints = {
   getUserPayments: (userId: number) => `/api/v1/users/${userId}/payments`,
   getPaymentStats: () => `/api/v1/payments/stats`,
 
+  // Search endpoints - ADDED
+  getSearchResults: (userId: number, limit: number = 10, offset: number = 0) => `/api/v1/get_search_results?user_id=${userId}&limit=${limit}&offset=${offset}`,
+  getSearchResultsCount: (userId: number) => `/api/v1/get_search_results_count?user_id=${userId}`,
+  
   // Client and admin endpoints
   getAllClients: () => `/api/v1/clients`,
   getClientById: (clientId: number) => `/api/v1/clients/${clientId}`,
