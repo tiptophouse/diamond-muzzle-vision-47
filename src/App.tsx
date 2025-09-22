@@ -33,6 +33,7 @@ import StandardizeCsvPage from './pages/StandardizeCsvPage';
 import BulkUploadPage from './pages/BulkUploadPage';
 import AnalyticsPage from "./pages/AnalyticsPage";
 import TelegramNotificationsDemo from "./pages/TelegramNotificationsDemo";
+import AdminStatsPage from './pages/AdminStatsPage';
 
 function App() {
   const queryClient = new QueryClient({
@@ -149,6 +150,13 @@ function App() {
                      <AuthenticatedRoute>
                        <EnhancedTelegramAdminGuard>
                          <AdminAnalytics />
+                       </EnhancedTelegramAdminGuard>
+                     </AuthenticatedRoute>
+                   } />
+                   <Route path="/admin-stats" element={
+                     <AuthenticatedRoute>
+                       <EnhancedTelegramAdminGuard>
+                         <AdminStatsPage />
                        </EnhancedTelegramAdminGuard>
                      </AuthenticatedRoute>
                    } />
