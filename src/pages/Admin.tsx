@@ -1,5 +1,4 @@
-
-import { AdminHeader } from '@/components/admin/AdminHeader';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminStatsGrid } from '@/components/admin/AdminStatsGrid';
 import { AdminUserManager } from '@/components/admin/AdminUserManager';
 import { NotificationCenter } from '@/components/admin/NotificationCenter';
@@ -16,8 +15,7 @@ import { AuthDiagnostics } from '@/components/debug/AuthDiagnostics';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { Users, Settings, MessageSquare, CreditCard, Upload, BarChart3, Diamond, Send, Shield } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { IndividualMessageSender } from '@/components/admin/IndividualMessageSender';
 import { SFTPPromotionSender } from '@/components/admin/SFTPPromotionSender';
@@ -36,16 +34,19 @@ import { BotWebhookTester } from '@/components/admin/BotWebhookTester';
 import { WebhookDiagnostics } from '@/components/admin/WebhookDiagnostics';
 import { CampaignManager } from '@/components/admin/CampaignManager';
 import { RealTimeMonitor } from '@/components/admin/RealTimeMonitor';
+import { useSearchParams } from 'react-router-dom';
 
 export default function Admin() {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'monitor';
   const [notifications, setNotifications] = useState([]);
 
   // Real bot usage stats - Updated to refresh more frequently
   const [stats, setStats] = useState({
     totalUsers: 0,
-    activeUsers: 0,
+    activeUsers: 0, 
     premiumUsers: 0,
     totalRevenue: 0,
     totalCosts: 0,
@@ -214,406 +215,121 @@ export default function Admin() {
     );
   }
 
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'monitor':
+        return (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  📊 Real-Time Bot Usage
+                  <ForceRefreshButton />
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border">
+                    <div className="text-sm font-medium text-gray-600">Total Users</div>
+                    <div className="text-2xl font-bold text-blue-700">{stats.totalUsers}</div>
+                  </div>
+                  <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border">
+                    <div className="text-sm font-medium text-gray-600">Premium Users</div>
+                    <div className="text-2xl font-bold text-green-700">{stats.premiumUsers}</div>
+                  </div>
+                  <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg border">
+                    <div className="text-sm font-medium text-gray-600">Active Subscriptions</div>
+                    <div className="text-2xl font-bold text-purple-700">{subscriptionStats.activeSubscriptions}</div>
+                  </div>
+                  <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 p-4 rounded-lg border">
+                    <div className="text-sm font-medium text-gray-600">Total Revenue</div>
+                    <div className="text-2xl font-bold text-emerald-700">${subscriptionStats.totalRevenue.toFixed(0)}</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm font-medium text-gray-600">Today</div>
+                    <div className="text-xl font-bold">{realTimeStats.todayLogins}</div>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm font-medium text-gray-600">This Week</div>  
+                    <div className="text-xl font-bold">{realTimeStats.weeklyLogins}</div>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm font-medium text-gray-600">This Month</div>
+                    <div className="text-xl font-bold">{realTimeStats.monthlyLogins}</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <AdminStatsGrid
+              stats={stats}
+              blockedUsersCount={blockedUsersCount}  
+              averageEngagement={averageEngagement}
+            />
+            <RealTimeMonitor />
+          </div>
+        );
+      case 'analytics':
+        return (
+          <div className="space-y-6">  
+            <RealTimeBotAnalytics />
+            <DiamondShareAnalytics />
+          </div>
+        );
+      case 'users':
+        return <AdminUserManager />;
+      case 'blocked-users':
+        return <BlockedUsersManager />;
+      case 'sessions':
+        return <SessionUsersDisplay />;
+      case 'diamond-counts':
+        return <OptimizedUserDiamondCounts />;
+      case 'upload-analysis':
+        return <UserUploadAnalysis />;
+      case 'campaigns':
+        return <CampaignManager />;
+      case 'notifications':
+        return (
+          <NotificationCenter 
+            notifications={notifications}
+            onRefresh={handleRefreshNotifications}
+          />
+        );
+      case 'bulk-share':
+        return <BulkDiamondShare />;
+      case 'group-cta':
+        return (
+          <div className="space-y-6">
+            <GroupCTASender />
+            <GroupCTAAnalytics />
+            <CTATrackingFix />
+          </div>
+        );
+      case 'payments':
+        return <PaymentManagement />;
+      case 'diagnostics':
+        return <AuthDiagnostics />;
+      case 'webhook-test':
+        return (
+          <div className="space-y-6">
+            <BotWebhookTester />
+            <WebhookDiagnostics />
+          </div>
+        );
+      default:
+        return (
+          <div className="text-center py-12">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Section Not Found</h3>
+            <p className="text-gray-600">The requested admin section could not be found.</p>
+          </div>
+        );
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background pb-[env(safe-area-inset-bottom)] overflow-y-auto" style={{ 
-      height: 'var(--tg-viewport-height, 100vh)',
-      paddingTop: 'var(--tg-safe-area-inset-top, 0px)',
-      paddingBottom: 'var(--tg-safe-area-inset-bottom, 0px)',
-      WebkitOverflowScrolling: 'touch',
-      overscrollBehavior: 'contain'
-    }}>
-      {/* Clean Admin Header with Force Refresh */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="text-gray-600 mt-1 text-sm sm:text-base">Welcome back, {user.first_name || 'Admin'}</p>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-3">
-              <ForceRefreshButton />
-              <Settings className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-              <span className="text-xs sm:text-sm text-gray-500 hidden sm:inline">System Status: Online</span>
-              <span className="text-xs text-green-600 sm:hidden">●</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Enhanced Real-Time Stats */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4">
-        <div className="mb-4 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h3 className="font-semibold text-blue-900 mb-3 text-sm sm:text-base">📊 Real-Time Bot Usage</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs sm:text-sm">
-            <div className="bg-white p-2 rounded border">
-              <div className="font-medium text-gray-600">Total Users</div>
-              <div className="text-blue-700 font-bold text-lg">{stats.totalUsers}</div>
-            </div>
-            <div className="bg-white p-2 rounded border">
-              <div className="font-medium text-gray-600">Premium</div>
-              <div className="text-green-700 font-bold text-lg">{stats.premiumUsers}</div>
-            </div>
-            <div className="bg-white p-2 rounded border">
-              <div className="font-medium text-gray-600">Subscriptions</div>
-              <div className="text-purple-700 font-bold text-lg">{subscriptionStats.activeSubscriptions}</div>
-            </div>
-            <div className="bg-white p-2 rounded border">
-              <div className="font-medium text-gray-600">Revenue</div>
-              <div className="text-emerald-700 font-bold text-lg">${subscriptionStats.totalRevenue.toFixed(0)}</div>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-xs mt-3">
-            <div className="text-center">
-              <div className="font-medium text-gray-600">Today</div>
-              <div className="font-bold">{realTimeStats.todayLogins}</div>
-            </div>
-            <div className="text-center">
-              <div className="font-medium text-gray-600">Week</div>
-              <div className="font-bold">{realTimeStats.weeklyLogins}</div>
-            </div>
-            <div className="text-center">
-              <div className="font-medium text-gray-600">Month</div>
-              <div className="font-bold">{realTimeStats.monthlyLogins}</div>
-            </div>
-          </div>
-        </div>
-        
-        <AdminStatsGrid
-          stats={stats}
-          blockedUsersCount={blockedUsersCount}
-          averageEngagement={averageEngagement}
-        />
-      </div>
-
-      {/* Main Admin Content with iPhone scrolling optimization */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 pb-8 overflow-visible">
-        <Tabs defaultValue="monitor" className="space-y-4">
-          <div className="relative">
-            <TabsList className="w-full h-auto p-1 bg-muted rounded-lg overflow-x-auto scrollbar-hide" style={{ overscrollBehavior: 'contain' }}>
-              <div className="flex gap-1 min-w-max">
-                 <TabsTrigger 
-                   value="monitor" 
-                   className="flex items-center gap-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
-                 >
-                   <BarChart3 className="h-3 w-3 flex-shrink-0" />
-                   <span className="hidden sm:inline">Monitor</span>
-                   <span className="sm:hidden">📊</span>
-                 </TabsTrigger>
-                 <TabsTrigger 
-                   value="campaigns" 
-                   className="flex items-center gap-1 data-[state=active]:bg-green-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
-                 >
-                   <Send className="h-3 w-3 flex-shrink-0" />
-                   <span className="hidden sm:inline">Campaigns</span>
-                   <span className="sm:hidden">🚀</span>
-                 </TabsTrigger>
-                 <TabsTrigger 
-                   value="diagnostics" 
-                   className="flex items-center gap-1 data-[state=active]:bg-red-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
-                 >
-                   <MessageSquare className="h-3 w-3 flex-shrink-0" />
-                   <span className="hidden sm:inline">Diagnostics</span>
-                   <span className="sm:hidden">🔧</span>
-                 </TabsTrigger>
-                 <TabsTrigger 
-                   value="analytics" 
-                   className="flex items-center gap-1 data-[state=active]:bg-purple-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
-                 >
-                   <BarChart3 className="h-3 w-3 flex-shrink-0" />
-                   <span className="hidden sm:inline">Analytics</span>
-                   <span className="sm:hidden">📈</span>
-                 </TabsTrigger>
-                <TabsTrigger 
-                  value="blocked-users" 
-                  className="flex items-center gap-1 data-[state=active]:bg-red-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
-                >
-                  <Shield className="h-3 w-3 flex-shrink-0" />
-                  <span className="hidden sm:inline">Blocked</span>
-                  <span className="sm:hidden">Block</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="diamond-counts" 
-                  className="flex items-center gap-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
-                >
-                  <Diamond className="h-3 w-3 flex-shrink-0" />
-                  <span className="hidden sm:inline">Diamonds</span>
-                  <span className="sm:hidden">💎</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="upload-analysis" 
-                  className="flex items-center gap-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
-                >
-                  <BarChart3 className="h-3 w-3 flex-shrink-0" />
-                  <span className="hidden sm:inline">Analysis</span>
-                  <span className="sm:hidden">📊</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="users" 
-                  className="flex items-center gap-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
-                >
-                  <Users className="h-3 w-3 flex-shrink-0" />
-                  <span className="hidden sm:inline">Users</span>
-                  <span className="sm:hidden">👥</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="sessions" 
-                  className="flex items-center gap-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
-                >
-                  <Users className="h-3 w-3 flex-shrink-0" />
-                  <span className="hidden sm:inline">Sessions</span>
-                  <span className="sm:hidden">📱</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="payments" 
-                  className="flex items-center gap-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
-                >
-                  <CreditCard className="h-3 w-3 flex-shrink-0" />
-                  <span className="hidden sm:inline">Payments</span>
-                  <span className="sm:hidden">💳</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="group-cta" 
-                  className="flex items-center gap-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
-                >
-                  <Send className="h-3 w-3 flex-shrink-0" />
-                  <span className="hidden sm:inline">Group CTA</span>
-                  <span className="sm:hidden">📢</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="notifications" 
-                  className="flex items-center gap-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
-                >
-                  <MessageSquare className="h-3 w-3 flex-shrink-0" />
-                  <span className="hidden sm:inline">Messages</span>
-                  <span className="sm:hidden">💬</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="bulk-share" 
-                  className="flex items-center gap-1 data-[state=active]:bg-purple-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
-                >
-                  <Diamond className="h-3 w-3 flex-shrink-0" />
-                  <span className="hidden sm:inline">Bulk Share</span>
-                  <span className="sm:hidden">🔄</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="acadia-message" 
-                  className="flex items-center gap-1 data-[state=active]:bg-green-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
-                >
-                  <MessageSquare className="h-3 w-3 flex-shrink-0" />
-                  <span className="hidden sm:inline">Acadia Msg</span>
-                  <span className="sm:hidden">🏢</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="settings" 
-                  className="flex items-center gap-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
-                >
-                  <Settings className="h-3 w-3 flex-shrink-0" />
-                  <span className="hidden sm:inline">Settings</span>
-                  <span className="sm:hidden">⚙️</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="re-engagement" 
-                  className="flex items-center gap-1 data-[state=active]:bg-indigo-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
-                >
-                  <MessageSquare className="h-3 w-3 flex-shrink-0" />
-                  <span className="hidden sm:inline">Re-engage</span>
-                  <span className="sm:hidden">🔄</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="engagement-tracker" 
-                  className="flex items-center gap-1 data-[state=active]:bg-orange-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
-                >
-                  <BarChart3 className="h-3 w-3 flex-shrink-0" />
-                  <span className="hidden sm:inline">Activity</span>
-                  <span className="sm:hidden">📊</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="gamification" 
-                  className="flex items-center gap-1 data-[state=active]:bg-purple-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
-                >
-                  <Diamond className="h-3 w-3 flex-shrink-0" />
-                  <span className="hidden sm:inline">Gamify</span>
-                  <span className="sm:hidden">🎮</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="webhook-test" 
-                  className="flex items-center gap-1 data-[state=active]:bg-red-600 data-[state=active]:text-white px-3 py-2 text-xs font-medium whitespace-nowrap min-w-fit"
-                >
-                  <MessageSquare className="h-3 w-3 flex-shrink-0" />
-                  <span className="hidden sm:inline">Webhook</span>
-                  <span className="sm:hidden">🤖</span>
-                </TabsTrigger>
-              </div>
-            </TabsList>
-          </div>
-          
-          <div className="mt-4">
-            <TabsContent value="monitor" className="space-y-4">
-              <RealTimeMonitor />
-            </TabsContent>
-            
-            <TabsContent value="campaigns" className="space-y-4">
-              <CampaignManager />
-            </TabsContent>
-            
-            <TabsContent value="diagnostics" className="space-y-4">
-              <AuthDiagnostics />
-              <WebhookDiagnostics />
-            </TabsContent>
-            
-            <TabsContent value="analytics" className="space-y-4">
-              <AdminStatsGrid
-                stats={stats}
-                blockedUsersCount={blockedUsersCount}
-                averageEngagement={averageEngagement}
-              />
-              <RealTimeBotAnalytics />
-              <DiamondShareAnalytics />
-              <GroupCTAAnalytics />
-            </TabsContent>
-            
-            <TabsContent value="blocked-users" className="space-y-0">
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <div className="p-3 sm:p-6">
-                  <BlockedUsersManager />
-                </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="diamond-counts" className="space-y-0">
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <OptimizedUserDiamondCounts />
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="upload-analysis" className="space-y-0">
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <UserUploadAnalysis />
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="users" className="space-y-0">
-              <AdminUserManager />
-            </TabsContent>
-            
-            <TabsContent value="sessions" className="space-y-0">
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <SessionUsersDisplay />
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="payments" className="space-y-0">
-              <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
-                <PaymentManagement />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="group-cta" className="space-y-0">
-              <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
-                <CTATrackingFix />
-                <div className="mt-6 sm:mt-8">
-                  <GroupCTASender />
-                </div>
-                <div className="mt-4 sm:mt-6">
-                  <GroupCTAAnalytics />
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="notifications" className="space-y-0">
-              <div className="grid gap-4 sm:gap-6">
-                <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
-                  <SFTPTestMessageSender />
-                </div>
-                <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
-                  <SFTPGroupMessageSender />
-                </div>
-                <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
-                  <IndividualMessageSender />
-                </div>
-                <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
-                  <SFTPPromotionSender />
-                </div>
-                <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
-                  <UploadReminderNotifier />
-                </div>
-                <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-                  <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
-                    <NotificationSender onSendNotification={(notification) => console.log('Sent notification:', notification)} />
-                  </div>
-                  <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
-                    <NotificationCenter notifications={notifications} onRefresh={handleRefreshNotifications} />
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="bulk-share" className="space-y-0">
-              <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
-                <BulkDiamondShare />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="acadia-message" className="space-y-0">
-              <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
-                <AcadiaBulkMessageSender />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="re-engagement" className="space-y-0">
-              <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
-                <ReEngagementCampaign />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="engagement-tracker" className="space-y-0">
-              <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
-                <UserEngagementTracker />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="gamification" className="space-y-0">
-              <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
-                <GamificationManager />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="webhook-test" className="space-y-0">
-              <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
-                <BotWebhookTester />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="settings" className="space-y-0">
-              <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-6">
-                <h3 className="text-base sm:text-lg font-semibold mb-4">System Settings</h3>
-                <p className="text-gray-600 text-sm sm:text-base">Admin settings panel coming soon...</p>
-              </div>
-            </TabsContent>
-
-          </div>
-        </Tabs>
-      </div>
-
-      {/* Debug info in development */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 pb-6">
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4 text-sm">
-            <h4 className="font-bold mb-2 text-xs sm:text-sm">🔧 Admin Debug Info</h4>
-            <div className="space-y-1 text-xs text-gray-600">
-              <p>User ID: {user.id}</p>
-              <p>User Name: {user.first_name} {user.last_name}</p>
-              <p>Username: {user.username}</p>
-              <p>Authenticated: {isAuthenticated ? 'Yes' : 'No'}</p>
-              <p>Loading: {isLoading ? 'Yes' : 'No'}</p>
-              <p>Total Users in DB: {stats.totalUsers}</p>
-              <p>Premium Users: {stats.premiumUsers}</p>
-              <p>Active Subscriptions: {subscriptionStats.activeSubscriptions}</p>
-              <p>Page Rendered: {new Date().toLocaleTimeString()}</p>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    <AdminLayout>
+      {renderContent()}
+    </AdminLayout>
   );
 }
