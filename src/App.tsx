@@ -8,7 +8,7 @@ import { SecureTelegramLayout } from './components/layout/SecureTelegramLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthenticatedRoute } from './components/auth/AuthenticatedRoute';
 import { PublicRoute } from './components/auth/PublicRoute';
-import { AdminGuard } from './components/admin/AdminGuard';
+import { EnhancedTelegramAdminGuard } from './components/admin/EnhancedTelegramAdminGuard';
 import Index from './pages/Index';
 // Lazy load heavy components to improve initial loading speed
 import { LazyInventory, LazyUpload, LazySettings } from './components/performance/LazyRoute';
@@ -138,20 +138,20 @@ function App() {
                       <WishlistPage />
                     </AuthenticatedRoute>
                   } />
-                  <Route path="/admin" element={
-                    <AuthenticatedRoute>
-                      <AdminGuard>
-                        <Admin />
-                      </AdminGuard>
-                    </AuthenticatedRoute>
-                  } />
-                  <Route path="/admin/analytics" element={
-                    <AuthenticatedRoute>
-                      <AdminGuard>
-                        <AdminAnalytics />
-                      </AdminGuard>
-                    </AuthenticatedRoute>
-                  } />
+                   <Route path="/admin" element={
+                     <AuthenticatedRoute>
+                       <EnhancedTelegramAdminGuard>
+                         <Admin />
+                       </EnhancedTelegramAdminGuard>
+                     </AuthenticatedRoute>
+                   } />
+                   <Route path="/admin/analytics" element={
+                     <AuthenticatedRoute>
+                       <EnhancedTelegramAdminGuard>
+                         <AdminAnalytics />
+                       </EnhancedTelegramAdminGuard>
+                     </AuthenticatedRoute>
+                   } />
                   <Route path="/diamond/:stockNumber" element={
                     <AuthenticatedRoute>
                       <DiamondDetailPage />
