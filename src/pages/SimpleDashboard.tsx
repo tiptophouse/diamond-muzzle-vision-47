@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api/client';
 import { MobileTelegramDashboard } from '@/components/dashboard/MobileTelegramDashboard';
+import { FloatingAdminButton } from '@/components/admin/FloatingAdminButton';
 
 interface DashboardData {
   totalDiamonds: number;
@@ -98,12 +99,21 @@ export default function SimpleDashboard() {
     }
   }, [isAuthenticated]); // Only run when authentication status changes
 
-  // Show data even without authentication for better UX
   if (!isAuthenticated || !user) {
     // Still show dashboard with limited data
-    return <MobileTelegramDashboard />;
+    return (
+      <>
+        <MobileTelegramDashboard />
+        <FloatingAdminButton className="bottom-6 right-6" />
+      </>
+    );
   }
 
-  // Use the new mobile-optimized dashboard
-  return <MobileTelegramDashboard />;
+  // Use the new mobile-optimized dashboard  
+  return (
+    <>
+      <MobileTelegramDashboard />
+      <FloatingAdminButton className="bottom-6 right-6" />
+    </>
+  );
 }
