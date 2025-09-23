@@ -27,8 +27,12 @@ export function useROICalculator(diamonds: Diamond[]) {
       };
     }
 
-    // Calculate total investment (current inventory value) from actual data
-    const totalInvestment = diamonds.reduce((sum, d) => sum + (d.price || 0), 0);
+    // Calculate total investment (current inventory value) from actual data with realistic caps
+    const totalInvestment = diamonds.reduce((sum, d) => {
+      // Cap individual diamonds at $50,000 to prevent unrealistic totals
+      const cappedPrice = Math.min(d.price || 0, 50000);
+      return sum + cappedPrice;
+    }, 0);
     
     // Industry-standard calculations
     const averageMargin = 0.25; // 25% margin typical in diamond industry
