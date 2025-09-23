@@ -43,8 +43,8 @@ export function PublicRoute({ children, redirectTo }: PublicRouteProps) {
     // Check if user is admin
     const isAdmin = adminTelegramId && user.id === adminTelegramId;
     
-    // Use custom redirectTo if provided, otherwise redirect admins to /admin and users to /dashboard
-    const targetRoute = redirectTo || (isAdmin ? '/admin' : '/dashboard');
+    // Use custom redirectTo if provided, otherwise redirect admins to /admin-stats and users to /dashboard
+    const targetRoute = redirectTo || (isAdmin ? '/admin-stats' : '/dashboard');
     
     return <Navigate to={targetRoute} replace />;
   }
