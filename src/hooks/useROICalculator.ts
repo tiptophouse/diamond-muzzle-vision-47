@@ -27,10 +27,27 @@ export function useROICalculator(diamonds: Diamond[]) {
       };
     }
 
-    // Calculate total investment (current inventory value) from actual data with realistic caps
+    // Calculate total investment (current inventory value) with realistic pricing
     const totalInvestment = diamonds.reduce((sum, d) => {
-      // Cap individual diamonds at $50,000 to prevent unrealistic totals
-      const cappedPrice = Math.min(d.price || 0, 50000);
+      // Skip diamonds with invalid or unrealistic prices
+      if (!d.price || d.price <= 0 || d.price > 100000) return sum;
+      
+      // Calculate realistic price based on carat weight and market rates
+      const caratWeight = d.carat || 1;
+      const basePrice = d.price;
+      
+      // Apply realistic caps based on carat size
+      let cappedPrice = basePrice;
+      if (caratWeight < 0.5) {
+        cappedPrice = Math.min(basePrice, 5000);
+      } else if (caratWeight < 1) {
+        cappedPrice = Math.min(basePrice, 15000);
+      } else if (caratWeight < 2) {
+        cappedPrice = Math.min(basePrice, 35000);
+      } else {
+        cappedPrice = Math.min(basePrice, 75000);
+      }
+      
       return sum + cappedPrice;
     }, 0);
     
