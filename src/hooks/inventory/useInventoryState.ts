@@ -19,13 +19,13 @@ export function useInventoryState() {
   };
   
   const removeDiamondFromState = (diamondId: string) => {
-    console.log('Optimistically removing diamond from state:', diamondId);
+    // Optimistically remove diamond from state
     setAllDiamonds(prev => prev.filter(diamond => diamond.id !== diamondId));
     setDiamonds(prev => prev.filter(diamond => diamond.id !== diamondId));
   };
 
   const restoreDiamondToState = (diamond: Diamond) => {
-    console.log('Restoring diamond to state:', diamond.id);
+    // Restore diamond to state
     setAllDiamonds(prev => [...prev, diamond]);
     setDiamonds(prev => [...prev, diamond]);
   };

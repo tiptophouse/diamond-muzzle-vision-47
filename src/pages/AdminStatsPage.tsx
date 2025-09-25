@@ -86,7 +86,7 @@ export default function AdminStatsPage() {
 
       setLastUpdate(new Date().toLocaleTimeString());
     } catch (error) {
-      console.error('Error fetching admin stats:', error);
+      // Error fetching admin stats - silently continue
     } finally {
       setIsLoading(false);
     }

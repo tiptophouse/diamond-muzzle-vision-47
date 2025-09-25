@@ -19,7 +19,7 @@ export function PublicRoute({ children, redirectTo }: PublicRouteProps) {
         const adminId = await getAdminTelegramId();
         setAdminTelegramId(adminId);
       } catch (error) {
-        console.error('Failed to load admin configuration:', error);
+        // Failed to load admin configuration, using fallback
         setAdminTelegramId(2138564172); // fallback
       } finally {
         setIsCheckingAdmin(false);
@@ -43,8 +43,8 @@ export function PublicRoute({ children, redirectTo }: PublicRouteProps) {
     // Check if user is admin
     const isAdmin = adminTelegramId && user.id === adminTelegramId;
     
-    // Use custom redirectTo if provided, otherwise redirect admins to /admin-stats and users to /dashboard
-    const targetRoute = redirectTo || (isAdmin ? '/admin-stats' : '/dashboard');
+    // Use custom redirectTo if provided, otherwise redirect admins to /admin and users to /dashboard
+    const targetRoute = redirectTo || (isAdmin ? '/admin' : '/dashboard');
     
     return <Navigate to={targetRoute} replace />;
   }
