@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useMemo, memo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
+import { useP2PStoreData } from "@/hooks/useP2PStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
 import { EnhancedStoreGrid } from "@/components/store/EnhancedStoreGrid";
 import { TelegramDiamondCard } from "@/components/store/TelegramDiamondCard";
@@ -26,14 +27,36 @@ const ITEMS_PER_PAGE = 24; // Show more items per page
 const SKELETON_COUNT = 3; // Fewer skeletons
 
 function CatalogPage() {
-  const { diamonds, loading, error, refetch } = useStoreData();
+  const [searchParams] = useSearchParams();
+  const sellerId = searchParams.get('seller'); // Add seller parameter support
+  const stockNumber = searchParams.get('stock');
+  
+  // Use P2P store data if seller ID is provided, otherwise use regular store data
+  const { 
+    diamonds: regularDiamonds, 
+    loading: regularLoading, 
+    error: regularError, 
+    refetch: regularRefetch 
+  } = useStoreData();
+  
+  const { 
+    diamonds: p2pDiamonds, 
+    loading: p2pLoading, 
+    error: p2pError, 
+    refetch: p2pRefetch,
+    ownerInfo 
+  } = useP2PStoreData(sellerId || undefined);
+
+  // Use appropriate data source based on whether we're viewing a P2P store
+  const diamonds = sellerId ? p2pDiamonds : regularDiamonds;
+  const loading = sellerId ? p2pLoading : regularLoading;
+  const error = sellerId ? p2pError : regularError;
+  const refetch = sellerId ? p2pRefetch : regularRefetch;
   const { filters, filteredDiamonds, updateFilter, clearFilters } = useStoreFilters(diamonds || []);
   const [showFilters, setShowFilters] = useState(false);
   const [showSort, setShowSort] = useState(false);
   const [sortBy, setSortBy] = useState("media-priority");
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchParams] = useSearchParams();
-  const stockNumber = searchParams.get('stock');
   const { selectionChanged, impactOccurred } = useTelegramHapticFeedback();
   const { navigateWithFeedback } = useTelegramNavigation({
     showBackButton: false, // Store page doesn't need back button
@@ -100,9 +123,9 @@ function CatalogPage() {
 
   // Memoized sorted diamonds with STRICT media priority ordering
   const sortedDiamonds = useMemo(() => {
-    const diamonds = [...filteredDiamonds];
+    let processedDiamonds = [...filteredDiamonds];
     
-    diamonds.sort((a, b) => {
+    processedDiamonds.sort((a, b) => {
       const priorityA = getMediaPriority(a);
       const priorityB = getMediaPriority(b);
       
@@ -147,8 +170,7 @@ function CatalogPage() {
     if (diamonds.length > 0) {
       preloadDiamondImages(diamonds, 0);
     }
-    
-    return diamonds;
+    return processedDiamonds;
   }, [filteredDiamonds, sortBy, getMediaPriority]);
 
   // Preload next batch when scrolling - after sortedDiamonds is defined

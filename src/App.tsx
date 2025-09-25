@@ -34,6 +34,7 @@ import BulkUploadPage from './pages/BulkUploadPage';
 import AnalyticsPage from "./pages/AnalyticsPage";
 import TelegramNotificationsDemo from "./pages/TelegramNotificationsDemo";
 import AdminStatsPage from './pages/AdminStatsPage';
+import { StartParamInitializer } from './components/layout/StartParamInitializer';
 
 function App() {
   const queryClient = new QueryClient({
@@ -56,6 +57,7 @@ function App() {
             <TutorialProvider>
               <InteractiveWizardProvider>
                 <SecureTelegramLayout>
+                <StartParamInitializer />
                 <Routes>
                   {/* Public route - redirects to dashboard if authenticated */}
                   <Route path="/" element={

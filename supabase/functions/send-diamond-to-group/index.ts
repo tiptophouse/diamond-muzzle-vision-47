@@ -148,19 +148,18 @@ serve(async (req) => {
 🎯 **רוצה לראות עוד פרטים? לחץ על הכפתורים למטה! 👇**
 ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה*' : ''}`;
 
-    // Create inline keyboard with working URL buttons only
-    const baseUrl = 'https://uhhljqgxhdhbbhpohxll.supabase.co';
-    const telegramBotUrl = `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'BrilliantBot_bot'}`;
+    // Create inline keyboard with Telegram deep links (fixes the broken URLs)
+    const telegramBotUrl = `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot'}`;
     
     const inlineKeyboard = {
       reply_markup: {
         inline_keyboard: testMode ? [
-          // Personal chat - can use web_app buttons
+          // Personal chat - use web_app with proper deep links
           [
             {
               text: '💎 פרטים מלאים',
               web_app: {
-                url: `${baseUrl}/diamond/${diamond.id}?shared=true&from=${sharedBy}&verify=true`
+                url: `${telegramBotUrl}/app?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
               }
             }
           ],
@@ -172,18 +171,16 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
           ],
           [
             {
-              text: '📝 הרשמה',
-              web_app: {
-                url: `${baseUrl}/?register=true&from=${sharedBy}`
-              }
+              text: '🏪 עוד יהלומים מהמוכר',
+              url: `${telegramBotUrl}?startapp=store_${sharedBy}`
             }
           ]
         ] : [
-          // Group chat - enhanced buttons with better flow
+          // Group chat - use Telegram deep links that actually work
           [
             {
               text: '💎 פרטים מלאים + תמונות HD',
-              url: `${baseUrl}/diamond/${diamond.id}?shared=true&from=${sharedBy}&verify=true`
+              url: `${telegramBotUrl}?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
             }
           ],
           [
@@ -194,11 +191,11 @@ ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה
           ],
           [
             {
-              text: '🏪 עוד יהלומים באותו סגנון',
-              url: `${baseUrl}/?seller=${sharedBy}&shared=true&similar=${diamond.shape}&carat=${diamond.carat}`
+              text: '🏪 עוד יהלומים מהמוכר',
+              url: `${telegramBotUrl}?startapp=store_${sharedBy}`
             },
             {
-              text: '🤖 עזרה ביבחירה',
+              text: '🤖 עזרה בבחירה',
               url: `${telegramBotUrl}?start=ai_assistant_${diamond.stockNumber}`
             }
           ]
