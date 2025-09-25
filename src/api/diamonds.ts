@@ -1,5 +1,6 @@
 import { http } from "./http";
 import { apiEndpoints } from "@/lib/api/endpoints";
+import { logger } from '@/utils/logger';
 
 export interface DeleteDiamondResponse {
   success: boolean;
@@ -14,7 +15,7 @@ export interface CreateDiamondResponse {
 }
 
 export async function deleteDiamond(stockNumber: string, userId: number): Promise<DeleteDiamondResponse> {
-  console.log('🗑️ API: Calling delete diamond endpoint:', { stockNumber, userId });
+  logger.info('Diamond delete operation started', { stockNumber, userId });
   
   try {
     const response = await http<DeleteDiamondResponse>(
@@ -22,16 +23,16 @@ export async function deleteDiamond(stockNumber: string, userId: number): Promis
       { method: "DELETE" }
     );
     
-    console.log('✅ API: Delete response:', response);
+    logger.info('Diamond deleted successfully', { stockNumber, response });
     return response;
   } catch (error) {
-    console.error('❌ API: Delete diamond failed:', error);
+    logger.error('Diamond delete operation failed', error, { stockNumber, userId });
     throw error;
   }
 }
 
 export async function createDiamond(diamondData: any, userId: number): Promise<CreateDiamondResponse> {
-  console.log('➕ API: Creating diamond:', { diamondData, userId });
+  logger.info('Diamond creation started', { diamondData, userId });
   
   try {
     const response = await http<CreateDiamondResponse>(
@@ -42,16 +43,16 @@ export async function createDiamond(diamondData: any, userId: number): Promise<C
       }
     );
     
-    console.log('✅ API: Create response:', response);
+    logger.info('Diamond created successfully', { diamondData, response });
     return response;
   } catch (error) {
-    console.error('❌ API: Create diamond failed:', error);
+    logger.error('Diamond creation failed', error, { diamondData, userId });
     throw error;
   }
 }
 
 export async function updateDiamond(diamondId: string, diamondData: any, userId: number): Promise<CreateDiamondResponse> {
-  console.log('✏️ API: Updating diamond:', { diamondId, diamondData, userId });
+  logger.info('Diamond update started', { diamondId, diamondData, userId });
   
   try {
     const response = await http<CreateDiamondResponse>(
@@ -62,16 +63,16 @@ export async function updateDiamond(diamondId: string, diamondData: any, userId:
       }
     );
     
-    console.log('✅ API: Update response:', response);
+    logger.info('Diamond updated successfully', { diamondId, diamondData, response });
     return response;
   } catch (error) {
-    console.error('❌ API: Update diamond failed:', error);
+    logger.error('Diamond update failed', error, { diamondId, diamondData, userId });
     throw error;
   }
 }
 
 export async function createDiamondsBatch(diamondsData: any[], userId: number): Promise<CreateDiamondResponse> {
-  console.log('📦 API: Creating diamonds batch:', { count: diamondsData.length, userId });
+  logger.info('Batch diamond creation started', { count: diamondsData.length, userId });
   
   try {
     const response = await http<CreateDiamondResponse>(
@@ -82,10 +83,10 @@ export async function createDiamondsBatch(diamondsData: any[], userId: number): 
       }
     );
     
-    console.log('✅ API: Batch create response:', response);
+    logger.info('Batch diamonds created successfully', { count: diamondsData.length, response });
     return response;
   } catch (error) {
-    console.error('❌ API: Batch create diamonds failed:', error);
+    logger.error('Batch diamond creation failed', error, { count: diamondsData.length, userId });
     throw error;
   }
 }
