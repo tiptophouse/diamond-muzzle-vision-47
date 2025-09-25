@@ -169,22 +169,22 @@ export default function PublicDiamondPage() {
 
       {/* Content */}
       <div className="container max-w-2xl mx-auto px-4 py-6 space-y-6">
-        {/* Diamond Image */}
+        {/* Diamond Image - Large Hero Display */}
         <Card>
           <CardContent className="p-0">
-            <div className="aspect-square relative bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden">
+            <div className="aspect-square relative bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden h-96 md:h-[500px]">
               {diamond.imageUrl ? (
                 <OptimizedDiamondImage
                   imageUrl={diamond.imageUrl}
                   stockNumber={diamond.stockNumber}
                   shape="Round"
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <div className="text-center">
-                    <Sparkles className="h-16 w-16 text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-500">Diamond Image</p>
+                    <Sparkles className="h-24 w-24 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 text-lg">Diamond Image</p>
                   </div>
                 </div>
               )}
