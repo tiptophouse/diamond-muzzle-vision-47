@@ -43,8 +43,8 @@ export function FloatingNotificationButton({ className }: FloatingNotificationBu
           "touch-manipulation select-none"
         )}
         style={{
-          backgroundColor: themeParams.button_color || undefined,
-          color: themeParams.button_text_color || undefined,
+          backgroundColor: themeParams?.button_color || undefined,
+          color: themeParams?.button_text_color || undefined,
         }}
       >
         <Bell size={18} className="md:w-[22px] md:h-[22px] drop-shadow-sm" />
