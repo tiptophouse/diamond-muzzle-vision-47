@@ -1,7 +1,7 @@
-
 import { API_BASE_URL } from './config';
 import { setCurrentUserId } from './config';
 import { tokenManager } from './tokenManager';
+import { jwtDecode } from 'jwt-decode';
 
 export interface TelegramVerificationResponse {
   success: boolean;
@@ -79,34 +79,29 @@ export async function signInToBackend(initData: string): Promise<string | null> 
       backendAuthToken = token;
       console.log('✅ MAIN AUTH: JWT token received and stored');
       
-      // Extract user ID and store token in manager
+      // Decode JWT to extract user info (source of truth)
       try {
-        const urlParams = new URLSearchParams(initData);
-        const userParam = urlParams.get('user');
+        const decoded = jwtDecode<{ user_id: number; telegram_id?: number; exp: number }>(token);
+        const userId = decoded.user_id;
         
-        if (userParam) {
-          const user = JSON.parse(decodeURIComponent(userParam));
-          if (user.id) {
-            setCurrentUserId(user.id);
-            tokenManager.setToken(token, user.id);
-            console.log('✅ MAIN AUTH: User ID extracted and token cached:', user.id);
-            
-            // Set session context for RLS policies
-            try {
-              const { supabase } = await import('@/integrations/supabase/client');
-              await supabase.rpc('set_session_context', {
-                key: 'app.current_user_id',
-                value: user.id.toString()
-              });
-              console.log('✅ MAIN AUTH: Session context set for user:', user.id);
-            } catch (contextError) {
-              console.warn('⚠️ MAIN AUTH: Failed to set session context, continuing:', contextError);
-              // Don't throw - this is not critical for basic functionality
-            }
-          }
+        setCurrentUserId(userId);
+        tokenManager.setToken(token, userId);
+        console.log('✅ MAIN AUTH: User ID decoded from JWT:', userId);
+        
+        // Set session context for RLS policies
+        try {
+          const { supabase } = await import('@/integrations/supabase/client');
+          await supabase.rpc('set_session_context', {
+            key: 'app.current_user_id',
+            value: userId.toString()
+          });
+          console.log('✅ MAIN AUTH: Session context set for user:', userId);
+        } catch (contextError) {
+          console.warn('⚠️ MAIN AUTH: Failed to set session context, continuing:', contextError);
         }
       } catch (error) {
-        console.error('🔐 MAIN AUTH: Failed to extract user ID from initData:', error);
+        console.error('🔐 MAIN AUTH: Failed to decode JWT:', error);
+        return null;
       }
       
       return backendAuthToken;
