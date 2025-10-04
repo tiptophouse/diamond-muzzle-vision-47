@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { api } from '@/lib/api/client';
+import { http } from '@/api/http';
 
 interface DiamondData {
   id: string;
@@ -56,10 +56,10 @@ export function useDiamondDistribution() {
         console.log('🔍 Fetching diamond distribution for authenticated user:', user.id);
         
         // Fetch diamonds from correct FastAPI endpoint
-        const response = await api.get<any[]>(`/api/v1/get_all_stones?user_id=${user.id}`);
+        const rawDiamonds = await http<any[]>(`/api/v1/get_all_stones?user_id=${user.id}`, { method: 'GET' });
         
-        if (response.data && Array.isArray(response.data)) {
-          diamonds = response.data.map(d => {
+        if (rawDiamonds && Array.isArray(rawDiamonds)) {
+          diamonds = rawDiamonds.map(d => {
             let weight = Number(d.weight ?? d.carat ?? 0);
             const rawPpc = Number(d.price_per_carat);
             const rawTotal = Number(d.price);
