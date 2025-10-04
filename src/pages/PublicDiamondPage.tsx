@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2, ExternalLink, Eye, Sparkles, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { OptimizedDiamondImage } from '@/components/store/OptimizedDiamondImage';
+import { useDiamondShareAnalytics } from '@/hooks/useDiamondShareAnalytics';
+import { useSharedDiamondAccess } from '@/hooks/useSharedDiamondAccess';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 
 interface PublicDiamond {
   stockNumber: string;
@@ -32,10 +35,16 @@ interface PublicDiamond {
 
 export default function PublicDiamondPage() {
   const { stockNumber } = useParams<{ stockNumber: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { webApp } = useTelegramWebApp();
   const [diamond, setDiamond] = useState<PublicDiamond | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Analytics and access tracking
+  const { trackDiamondView } = useDiamondShareAnalytics(stockNumber || '');
+  const { validateAndTrackAccess, sendAccessNotification } = useSharedDiamondAccess();
 
   useEffect(() => {
     if (!stockNumber) {
@@ -47,14 +56,55 @@ export default function PublicDiamondPage() {
     fetchPublicDiamond(stockNumber);
   }, [stockNumber]);
 
+  // Track analytics when component mounts and diamond is loaded
+  useEffect(() => {
+    if (!diamond || !stockNumber) return;
+
+    const trackView = async () => {
+      try {
+        // Track diamond view with viewer info
+        if (webApp?.initDataUnsafe?.user) {
+          await trackDiamondView({
+            viewerTelegramId: webApp.initDataUnsafe.user.id,
+            userAgent: navigator.userAgent,
+            deviceType: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+            referrer: document.referrer
+          });
+        }
+
+        // Handle shared access validation and notification
+        const isShared = searchParams.get('shared') === 'true';
+        const fromUserId = searchParams.get('from');
+        
+        if (isShared && fromUserId) {
+          console.log('🔔 Processing shared diamond access notification');
+          
+          // Validate and track the shared access
+          const accessValid = await validateAndTrackAccess(stockNumber);
+          
+          if (accessValid) {
+            // Send notification to the diamond owner
+            await sendAccessNotification(stockNumber, parseInt(fromUserId));
+            console.log('✅ Owner notification sent for diamond view');
+          }
+        }
+
+      } catch (error) {
+        console.error('❌ Error tracking diamond view:', error);
+      }
+    };
+
+    trackView();
+  }, [diamond, stockNumber, webApp, searchParams, trackDiamondView, validateAndTrackAccess, sendAccessNotification]);
+
   const fetchPublicDiamond = async (stock: string) => {
     try {
       setLoading(true);
       setError(null);
 
-      // Use the public edge function that doesn't require JWT
+      // Use the correct Supabase functions URL (fixes the broken API calls)
       const response = await fetch(
-        `${window.location.origin}/functions/v1/public-diamond-share?stock=${encodeURIComponent(stock)}`,
+        `https://uhhljqgxhdhbbhpohxll.supabase.co/functions/v1/public-diamond-share?stock=${encodeURIComponent(stock)}`,
         {
           method: 'GET',
           headers: {
@@ -169,22 +219,22 @@ export default function PublicDiamondPage() {
 
       {/* Content */}
       <div className="container max-w-2xl mx-auto px-4 py-6 space-y-6">
-        {/* Diamond Image */}
+        {/* Diamond Image - Large Hero Display */}
         <Card>
           <CardContent className="p-0">
-            <div className="aspect-square relative bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden">
+            <div className="aspect-square relative bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden h-96 md:h-[500px]">
               {diamond.imageUrl ? (
                 <OptimizedDiamondImage
                   imageUrl={diamond.imageUrl}
                   stockNumber={diamond.stockNumber}
                   shape="Round"
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <div className="text-center">
-                    <Sparkles className="h-16 w-16 text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-500">Diamond Image</p>
+                    <Sparkles className="h-24 w-24 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 text-lg">Diamond Image</p>
                   </div>
                 </div>
               )}

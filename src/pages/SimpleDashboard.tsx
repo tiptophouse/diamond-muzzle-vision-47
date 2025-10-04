@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { api } from '@/lib/api/client';
+import { http } from '@/api/http';
 import { MobileTelegramDashboard } from '@/components/dashboard/MobileTelegramDashboard';
 import { FloatingAdminButton } from '@/components/admin/FloatingAdminButton';
 
@@ -41,16 +41,11 @@ export default function SimpleDashboard() {
       console.log('🔍 Simple Dashboard: Fetching data for user:', user.id);
       
       // Use the proper API client with JWT authentication
-      const response = await api.get<any[]>(`/api/v1/get_all_stones?user_id=${user.id}`);
+      const diamonds = await http<any[]>(`/api/v1/get_all_stones?user_id=${user.id}`, { method: 'GET' });
       
-      if (response.error) {
-        throw new Error(response.error);
-      }
-      
-      const diamonds = response.data || [];
-      console.log('✅ Simple Dashboard: Received', diamonds.length, 'diamonds');
+      console.log('✅ Simple Dashboard: Received', diamonds?.length || 0, 'diamonds');
 
-      if (Array.isArray(diamonds)) {
+      if (diamonds && Array.isArray(diamonds)) {
         const totalValue = diamonds.reduce((sum, diamond) => {
           const price = Number(diamond.price_per_carat || diamond.price || 0);
           const weight = Number(diamond.weight || diamond.carat || 0);

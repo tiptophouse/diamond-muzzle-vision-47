@@ -2,9 +2,11 @@ import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { Home, Package, Store, MessageCircle, BarChart3 } from 'lucide-react';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
+import { useTelegramPerformance } from '@/hooks/useTelegramPerformance';
 import { cn } from '@/lib/utils';
 import { FloatingNotificationButton } from '@/components/notifications/FloatingNotificationButton';
 import { FloatingAdminButton } from '@/components/admin/FloatingAdminButton';
+import { logger } from '@/utils/logger';
 
 interface TelegramMiniAppLayoutProps {
   children: React.ReactNode;
@@ -46,12 +48,24 @@ const navigationItems = [
 export function TelegramMiniAppLayout({ children }: TelegramMiniAppLayoutProps) {
   const location = useLocation();
   const { selectionChanged } = useTelegramHapticFeedback();
+  const { triggerHapticFeedback, optimizeForMobile, isOptimized } = useTelegramPerformance();
 
   const isActive = (pattern: RegExp) => pattern.test(location.pathname);
 
-  const handleNavClick = () => {
+  const handleNavClick = (label: string) => {
     selectionChanged();
+    triggerHapticFeedback('selection');
+    logger.telegramAction('navigation_click', { destination: label, from: location.pathname });
   };
+
+  // Apply mobile optimizations on mount
+  React.useEffect(() => {
+    optimizeForMobile();
+    logger.telegramAction('layout_mounted', { 
+      isOptimized, 
+      currentPath: location.pathname 
+    });
+  }, [optimizeForMobile, isOptimized, location.pathname]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -71,7 +85,7 @@ export function TelegramMiniAppLayout({ children }: TelegramMiniAppLayoutProps) 
               <Link
                 key={item.to}
                 to={item.to}
-                onClick={handleNavClick}
+                onClick={() => handleNavClick(item.label)}
                 className={cn(
                   "flex flex-col items-center justify-center py-3 px-2 text-xs transition-colors duration-200",
                   active 

@@ -148,106 +148,47 @@ export function useAGUIClient() {
         }
       };
 
-      // Use Supabase Edge Function with streaming support
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/diamond-agents-stream`, {
+      // Use Supabase Edge Function - simplified for now
+      const response = await fetch(`https://uhhljqgxhdhbbhpohxll.supabase.co/functions/v1/diamond-agents`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGxqcWd4aGRoYmJocG9oeGxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0ODY1NTMsImV4cCI6MjA2MzA2MjU1M30._CGnKnTyltp1lIUmmOVI1nC4jRew2WkAU-bSf22HCDE`,
         },
         body: JSON.stringify(agentPayload),
         signal: abortControllerRef.current.signal,
       });
 
-      if (!response.body) {
-        throw new Error('No response stream available');
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
+      // Handle regular JSON response for now (simplified)
+      const result = await response.json();
+      
       setAgentThinking(false);
       selectionChanged();
 
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (line.trim() === '') continue;
-            
-            try {
-              // Parse AG-UI event
-              const event: AgentEvent = JSON.parse(line);
-              
-              switch (event.type) {
-                case 'message':
-                  // Update streaming message content
-                  setMessages(prev => prev.map(msg => 
-                    msg.id === streamingMessageId 
-                      ? { 
-                          ...msg, 
-                          content: msg.content + event.data.content,
-                          isStreaming: true 
-                        }
-                      : msg
-                  ));
-                  break;
-
-                case 'thinking':
-                  setAgentThinking(true);
-                  break;
-
-                case 'agent_switch':
-                  const newAgent = event.data.agent as AgentType;
-                  setCurrentAgent(newAgent);
-                  impactOccurred('light');
-                  toast({
-                    title: `Switched to ${AGENT_TYPES[newAgent].icon} ${AGENT_TYPES[newAgent].name}`,
-                    description: AGENT_TYPES[newAgent].description,
-                  });
-                  break;
-
-                case 'complete':
-                  // Mark message as complete
-                  setMessages(prev => prev.map(msg => 
-                    msg.id === streamingMessageId 
-                      ? { 
-                          ...msg, 
-                          isStreaming: false,
-                          complete: true 
-                        }
-                      : msg
-                  ));
-                  setAgentThinking(false);
-                  notificationOccurred('success');
-                  
-                  // Success feedback
-                  const agent = AGENT_TYPES[agentType];
-                  toast({
-                    title: `${agent.icon} ${agent.name}`,
-                    description: `Response generated with specialized diamond expertise.`,
-                  });
-                  break;
-
-                case 'error':
-                  throw new Error(event.data.message || 'Agent processing error');
-              }
-            } catch (parseError) {
-              console.warn('Failed to parse event:', line, parseError);
-            }
-          }
-        }
-      } finally {
-        reader.releaseLock();
+      if (result.error) {
+        throw new Error(result.error);
       }
+
+      // Update the streaming message with final content
+      setMessages(prev => prev.map(msg => 
+        msg.id === streamingMessageId 
+          ? { 
+              ...msg, 
+              content: result.response || 'No response received',
+              isStreaming: false,
+              complete: true 
+            }
+          : msg
+      ));
+
+      notificationOccurred('success');
+      
+      // Success feedback
+      const agent = AGENT_TYPES[agentType];
+      toast({
+        title: `${agent.icon} ${agent.name}`,
+        description: `Response generated with specialized diamond expertise.`,
+      });
 
     } catch (error: any) {
       console.error('AG-UI streaming error:', error);

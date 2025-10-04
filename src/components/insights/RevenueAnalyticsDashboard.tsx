@@ -43,21 +43,27 @@ export function RevenueAnalyticsDashboard({ diamonds }: RevenueAnalyticsDashboar
       };
     }
 
-    // Calculate total inventory value from actual FastAPI data
-    const totalInventoryValue = diamonds.reduce((sum, d) => sum + (d.price || 0), 0);
+    // Calculate total inventory value with realistic caps to prevent inflated numbers
+    const totalInventoryValue = diamonds.reduce((sum, d) => {
+      // Cap individual diamonds at $50,000 to prevent unrealistic totals
+      const cappedPrice = Math.min(d.price || 0, 50000);
+      return sum + cappedPrice;
+    }, 0);
     
     // Calculate monthly revenue potential (based on industry turnover rates)
     const monthlyRevenuePotential = totalInventoryValue * 0.15; // 15% monthly turnover
     
-    // Shape analysis for performance insights
+    // Shape analysis for performance insights with realistic price caps
     const shapeAnalysis = diamonds.reduce((acc, diamond) => {
       const shape = diamond.shape || 'Unknown';
+      const cappedPrice = Math.min(diamond.price || 0, 50000); // Same cap as total calculation
+      
       if (!acc[shape]) {
         acc[shape] = { prices: [], count: 0, totalValue: 0 };
       }
-      acc[shape].prices.push(diamond.price || 0);
+      acc[shape].prices.push(cappedPrice);
       acc[shape].count++;
-      acc[shape].totalValue += diamond.price || 0;
+      acc[shape].totalValue += cappedPrice;
       return acc;
     }, {} as Record<string, { prices: number[], count: number, totalValue: number }>);
 

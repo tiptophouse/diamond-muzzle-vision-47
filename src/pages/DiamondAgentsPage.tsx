@@ -1,6 +1,6 @@
 import React from 'react';
 import { TelegramMiniAppLayout } from '@/components/layout/TelegramMiniAppLayout';
-import { StreamingChatContainer } from '@/components/chat/StreamingChatContainer';
+import { EnhancedChatContainer } from '@/components/chat/EnhancedChatContainer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Users, MessageCircle, TrendingUp } from 'lucide-react';
@@ -94,9 +94,9 @@ export default function DiamondAgentsPage() {
           </Card>
         </div>
 
-        {/* AG-UI Streaming Chat Interface */}
+        {/* Enhanced Chat Interface */}
         <div className="flex-1 overflow-hidden">
-          <StreamingChatContainer />
+          <EnhancedChatContainer />
         </div>
       </div>
     </TelegramMiniAppLayout>

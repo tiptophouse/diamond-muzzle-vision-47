@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useUserTracking } from '@/hooks/useUserTracking';
-import { getAdminTelegramId } from '@/lib/api/secureConfig';
+import { getFirstAdminTelegramId } from '@/lib/secureAdmin';
 import { Plus, Gem, Store, PieChart, BarChart3, TrendingUp, Users, Search, MessageSquare } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -53,11 +53,11 @@ const Index = () => {
   useEffect(() => {
     const loadAdminId = async () => {
       try {
-        const adminId = await getAdminTelegramId();
+        const adminId = await getFirstAdminTelegramId();
         setAdminTelegramId(adminId);
       } catch (error) {
         console.error('Failed to load admin ID:', error);
-        setAdminTelegramId(2138564172); // fallback
+        setAdminTelegramId(null); // No hardcoded fallback
       } finally {
         setLoadingConfig(false);
       }

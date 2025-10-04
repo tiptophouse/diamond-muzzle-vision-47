@@ -141,33 +141,42 @@ export function LimitedGroupShareButton({
         description: "מעבד את הבקשה",
       });
 
-      // First use the share quota
-      const success = await useShare(diamond.stockNumber);
-      
-      if (success) {
-        // Then share the diamond
-        const shared = await shareWithInlineButtons(diamond);
-        
-        if (shared) {
-          impactOccurred('light');
-          toast({
-            title: "✅ יהלום נשלח לקבוצה בהצלחה!",
-            description: "החברים בקבוצה יכולים כעת לצפות ביהלום",
-          });
-          setShowConfirmDialog(false);
-        } else {
+      // First use the share quota (skip for admin)
+      if (!isAdmin) {
+        const success = await useShare(diamond.stockNumber);
+        if (!success) {
           impactOccurred('heavy');
           toast({
-            title: "שגיאה בשליחת היהלום",
-            description: "אירעה שגיאה בשליחת היהלום לקבוצה",
+            title: "שגיאה בשימוש בחלק",
+            description: "לא ניתן להשתמש בחלק הנוכחי",
             variant: "destructive"
           });
+          return;
         }
+      }
+      
+      // Then share the diamond
+      const shared = await shareWithInlineButtons(diamond);
+      
+      if (shared) {
+        impactOccurred('light');
+        toast({
+          title: "✅ יהלום נשלח לקבוצה!",
+          description: "עובר לצ'אט הקבוצה...",
+        });
+        setShowConfirmDialog(false);
+        
+        // Redirect to group chat after successful share
+        setTimeout(() => {
+          if (window.Telegram?.WebApp) {
+            window.Telegram.WebApp.close();
+          }
+        }, 1000);
       } else {
         impactOccurred('heavy');
         toast({
-          title: "שגיאה בשימוש בחלק",
-          description: "לא ניתן להשתמש בחלק הנוכחי",
+          title: "שגיאה בשליחת היהלום",
+          description: "אירעה שגיאה בשליחת היהלום לקבוצה",
           variant: "destructive"
         });
       }
@@ -233,7 +242,7 @@ export function LimitedGroupShareButton({
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="w-[95vw] max-w-md mx-auto">
+      <DialogContent className="w-[95vw] max-w-md mx-auto max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Users className="h-5 w-5 text-purple-600" />
@@ -314,29 +323,21 @@ export function LimitedGroupShareButton({
             </ul>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-3 mt-6">
             <Button 
-              variant="outline" 
-              className="flex-1"
-              onClick={() => setShowConfirmDialog(false)}
-            >
-              Cancel
-            </Button>
-            {isAdmin && (
-              <Button 
-                variant="outline"
-                className="flex-1 border-blue-500 text-blue-500 hover:bg-blue-50"
-                onClick={handleTestShare}
-              >
-                🧪 Test Message
-              </Button>
-            )}
-            <Button 
-              className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium text-base"
               onClick={handleConfirmShare}
             >
               <Sparkles className="h-4 w-4 mr-2" />
-              Share Now
+              שתף עכשיו ועבור לצ'אט
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="w-full h-10"
+              onClick={() => setShowConfirmDialog(false)}
+            >
+              ביטול
             </Button>
           </div>
 
