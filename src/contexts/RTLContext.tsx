@@ -10,10 +10,10 @@ interface RTLContextType {
 const RTLContext = createContext<RTLContextType | undefined>(undefined);
 
 export function RTLProvider({ children }: { children: React.ReactNode }) {
-  const [direction, setDirection] = useState<'rtl' | 'ltr'>('rtl');
+  const [direction, setDirection] = useState<'rtl' | 'ltr'>('ltr');
   
   useEffect(() => {
-    // Set initial direction
+    // Set initial direction to LTR
     document.documentElement.setAttribute('dir', direction);
     document.documentElement.setAttribute('lang', direction === 'rtl' ? 'he' : 'en');
     

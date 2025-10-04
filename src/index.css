@@ -3,16 +3,24 @@
 @tailwind components;
 @tailwind utilities;
 
-/* RTL Support Layer */
+/* Automatic RTL for Hebrew text only */
 @layer base {
+  /* Default is LTR */
+  html {
+    direction: ltr;
+    text-align: left;
+  }
+  
+  /* Automatically detect and apply RTL to Hebrew text */
+  [lang="he"],
   [dir="rtl"] {
     direction: rtl;
     text-align: start;
   }
   
-  [dir="ltr"] {
-    direction: ltr;
-    text-align: start;
+  /* Auto-detect Hebrew content */
+  [dir="auto"] {
+    unicode-bidi: plaintext;
   }
 }
 
@@ -51,7 +59,7 @@
 }
 
 body {
-  font-family: 'Heebo', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -60,17 +68,16 @@ body {
   color: hsl(var(--foreground));
   line-height: 1.6;
   letter-spacing: -0.01em;
+  direction: ltr;
+  text-align: left;
+}
+
+/* Hebrew text gets Heebo font and RTL direction automatically */
+:lang(he),
+[lang="he"] {
+  font-family: 'Heebo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   direction: rtl;
   text-align: start;
-}
-
-/* RTL-specific Typography */
-[dir="rtl"] body {
-  font-family: 'Heebo', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-}
-
-[dir="ltr"] body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 /* Clean, modern components */
@@ -293,49 +300,72 @@ img {
 
 /* RTL-Aware Utility Classes */
 @layer utilities {
-  /* Direction-aware margins */
-  .ms-auto {
-    margin-inline-start: auto;
+  /* Auto-direction utilities - use dir="auto" for automatic text direction */
+  .text-auto {
+    direction: auto;
+    unicode-bidi: plaintext;
   }
   
-  .me-auto {
-    margin-inline-end: auto;
+  /* Hebrew content wrapper */
+  .hebrew-text {
+    font-family: 'Heebo', sans-serif;
+    direction: rtl;
+    text-align: start;
   }
   
-  .ms-2 {
-    margin-inline-start: 0.5rem;
+  /* Direction-aware margins - only apply in RTL context */
+  [dir="rtl"] .ms-auto {
+    margin-right: auto;
+    margin-left: 0;
   }
   
-  .me-2 {
-    margin-inline-end: 0.5rem;
+  [dir="rtl"] .me-auto {
+    margin-left: auto;
+    margin-right: 0;
   }
   
-  .ms-4 {
-    margin-inline-start: 1rem;
+  [dir="rtl"] .ms-2 {
+    margin-right: 0.5rem;
+    margin-left: 0;
   }
   
-  .me-4 {
-    margin-inline-end: 1rem;
+  [dir="rtl"] .me-2 {
+    margin-left: 0.5rem;
+    margin-right: 0;
   }
   
-  /* Direction-aware paddings */
-  .ps-2 {
-    padding-inline-start: 0.5rem;
+  [dir="rtl"] .ms-4 {
+    margin-right: 1rem;
+    margin-left: 0;
   }
   
-  .pe-2 {
-    padding-inline-end: 0.5rem;
+  [dir="rtl"] .me-4 {
+    margin-left: 1rem;
+    margin-right: 0;
   }
   
-  .ps-4 {
-    padding-inline-start: 1rem;
+  /* Direction-aware paddings - only apply in RTL context */
+  [dir="rtl"] .ps-2 {
+    padding-right: 0.5rem;
+    padding-left: 0;
   }
   
-  .pe-4 {
-    padding-inline-end: 1rem;
+  [dir="rtl"] .pe-2 {
+    padding-left: 0.5rem;
+    padding-right: 0;
   }
   
-  /* Direction-aware text alignment */
+  [dir="rtl"] .ps-4 {
+    padding-right: 1rem;
+    padding-left: 0;
+  }
+  
+  [dir="rtl"] .pe-4 {
+    padding-left: 1rem;
+    padding-right: 0;
+  }
+  
+  /* Text alignment */
   .text-start {
     text-align: start;
   }
@@ -344,27 +374,13 @@ img {
     text-align: end;
   }
   
-  /* Direction-aware borders */
-  .border-s {
-    border-inline-start-width: 1px;
-  }
-  
-  .border-e {
-    border-inline-end-width: 1px;
-  }
-  
-  /* RTL transform flips */
-  [dir="rtl"] .flip-x {
-    transform: scaleX(-1);
-  }
-  
   /* Icons that should flip in RTL */
   [dir="rtl"] .icon-flip {
     transform: scaleX(-1);
   }
 }
 
-/* RTL-specific component adjustments */
+/* Only apply RTL-specific component adjustments when in RTL context */
 [dir="rtl"] .dropdown-menu,
 [dir="rtl"] .popover-content {
   text-align: start;
@@ -374,22 +390,18 @@ img {
   flex-direction: row-reverse;
 }
 
-/* Ensure buttons maintain proper spacing in RTL */
-[dir="rtl"] button:not(:last-child),
-[dir="rtl"] .button-group > *:not(:last-child) {
-  margin-inline-end: 0.5rem;
-  margin-inline-start: 0;
-}
-
-/* Dialog and modal RTL adjustments */
-[dir="rtl"] .dialog-content,
-[dir="rtl"] .modal-content {
+/* Form elements - auto-detect direction */
+input,
+textarea,
+select {
+  direction: auto;
   text-align: start;
 }
 
-/* Form elements RTL support */
-[dir="rtl"] input,
-[dir="rtl"] textarea,
-[dir="rtl"] select {
-  text-align: start;
+/* Hebrew input fields */
+input[lang="he"],
+textarea[lang="he"],
+select[lang="he"] {
+  font-family: 'Heebo', sans-serif;
+  direction: rtl;
 }
