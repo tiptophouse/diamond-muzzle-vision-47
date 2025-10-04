@@ -35,6 +35,8 @@ import BulkUploadPage from './pages/BulkUploadPage';
 import AnalyticsPage from "./pages/AnalyticsPage";
 import TelegramNotificationsDemo from "./pages/TelegramNotificationsDemo";
 import AdminStatsPage from './pages/AdminStatsPage';
+import ImmersiveDiamondPage from './pages/ImmersiveDiamondPage';
+import DiamondShareAnalytics from './pages/DiamondShareAnalytics';
 import { StartParamInitializer } from './components/layout/StartParamInitializer';
 
 // Register service worker for offline support in Telegram Mini App
@@ -202,6 +204,21 @@ function App() {
                       <SecureDiamondViewerPage />
                     </AuthenticatedRoute>
                   } />
+
+                  {/* Immersive Diamond Viewer with Motion Controls */}
+                  <Route path="/diamond/:stockNumber/immersive" element={
+                    <AuthenticatedRoute>
+                      <ImmersiveDiamondPage />
+                    </AuthenticatedRoute>
+                  } />
+
+                  {/* Diamond Share Analytics */}
+                  <Route path="/analytics/shares" element={
+                    <AuthenticatedRoute>
+                      <DiamondShareAnalytics />
+                    </AuthenticatedRoute>
+                  } />
+
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 </SecureTelegramLayout>
