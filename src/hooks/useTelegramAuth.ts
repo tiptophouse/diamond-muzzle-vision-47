@@ -89,7 +89,8 @@ export function useTelegramAuth() {
         }
 
         console.log('🔐 Found initData, verifying with backend...');
-        
+        // Use SetError to show debug data in telegram web app
+        setError(tg.initData);
         const verificationResult = await verifyTelegramUser(tg.initData);
         
         if (verificationResult && verificationResult.success) {
@@ -115,8 +116,8 @@ export function useTelegramAuth() {
           console.error('❌ Backend verification failed');
           
           toast.error('Authentication failed. Please try again.');
-          
-          setError('Backend authentication failed');
+          // Temporary comment to not overwrite debug info
+          // setError('Backend authentication failed');
           setIsLoading(false);
           return;
         }
