@@ -43,19 +43,20 @@ import { StartParamInitializer } from './components/layout/StartParamInitializer
 // Register service worker for offline support in Telegram Mini App
 registerServiceWorker();
 
-function App() {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: 1, // Reduce retries for faster failure
-        staleTime: 10 * 60 * 1000, // 10 minutes - cache data longer
-        gcTime: 15 * 60 * 1000, // 15 minutes - keep cached data longer
-        refetchOnWindowFocus: false, // Don't refetch on window focus
-        refetchOnMount: false, // Don't refetch on mount if data exists
-      },
+// Create QueryClient outside component to prevent recreation on every render
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 10 * 60 * 1000,
+      gcTime: 15 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
     },
-  });
-  
+  },
+});
+
+function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
