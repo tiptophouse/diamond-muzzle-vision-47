@@ -18,8 +18,7 @@ export function EnhancedTelegramAdminGuard({ children }: EnhancedTelegramAdminGu
     device, 
     theme, 
     features,
-    biometric, 
-    haptic 
+    biometric
   } = useTelegramSDK();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -83,30 +82,27 @@ export function EnhancedTelegramAdminGuard({ children }: EnhancedTelegramAdminGu
         
         if (hasAccess) {
           console.log('🎉 Enhanced Admin Access Granted');
-          // Haptic feedback for successful admin login
-          haptic?.notification('success');
+          // Silent login - no haptic feedback on admin entry
           
           toast({
             title: "Admin Access Granted",
             description: `Welcome, ${user.first_name}! Secure admin session initialized.`,
-            duration: 3000,
+            duration: 2000,
           });
         } else {
           console.log('❌ Enhanced Admin Access Denied');
-          haptic?.notification('error');
         }
 
       } catch (error) {
         console.error('❌ Enhanced Admin Security Check Failed:', error);
         setIsAdminUser(false);
-        haptic?.notification('error');
       } finally {
         setIsLoadingAdmin(false);
       }
     };
 
     performSecurityChecks();
-  }, [user?.id, isTelegramEnvironment, isInitialized, biometric, haptic, toast]);
+  }, [user?.id, isTelegramEnvironment, isInitialized, biometric, toast]);
 
   // Loading state with enhanced security indicators
   if (isLoading || isLoadingAdmin) {
