@@ -4,7 +4,7 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { Shield, UserX, Clock, Crown } from 'lucide-react';
-import { getFirstAdminTelegramId } from '@/lib/secureAdmin';
+import { getAdminTelegramId } from '@/lib/api/secureConfig';
 
 interface AuthorizationGuardProps {
   children: ReactNode;
@@ -19,7 +19,7 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
 
   useEffect(() => {
     const loadAdminId = async () => {
-      const adminId = await getFirstAdminTelegramId();
+      const adminId = await getAdminTelegramId();
       setAdminTelegramId(adminId);
     };
     loadAdminId();

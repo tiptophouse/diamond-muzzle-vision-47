@@ -1,24 +1,86 @@
 import { useEffect, useState, useRef } from 'react';
 import WebApp from '@twa-dev/sdk';
-import { TelegramWebApp } from '@/types/telegram';
 
-interface UseTelegramWebAppReturn {
-  webApp: TelegramWebApp | null;
-  user: any;
-  isReady: boolean;
-  hapticFeedback: any;
-  mainButton: any;
-  backButton: any;
-  showAlert: (message: string, callback?: () => void) => void;
-  showConfirm: (message: string, callback?: (confirmed: boolean) => void) => void;
-  share: (url: string, text?: string) => void;
-  openLink: (url: string, options?: { try_instant_view?: boolean }) => void;
-  themeParams: TelegramWebApp['themeParams'];
-  platform: string;
+interface TelegramWebApp {
+  ready: () => void;
+  expand: () => void;
+  close: () => void;
+  MainButton: {
+    text: string;
+    color: string;
+    textColor: string;
+    isVisible: boolean;
+    isActive: boolean;
+    show: () => void;
+    hide: () => void;
+    enable: () => void;
+    disable: () => void;
+    setText: (text: string) => void;
+    onClick: (callback: () => void) => void;
+    offClick: (callback: () => void) => void;
+  };
+  BackButton: {
+    isVisible: boolean;
+    show: () => void;
+    hide: () => void;
+    onClick: (callback: () => void) => void;
+    offClick: (callback: () => void) => void;
+  };
+  HapticFeedback: {
+    impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void;
+    notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
+    selectionChanged: () => void;
+  };
+  themeParams: {
+    bg_color?: string;
+    text_color?: string;
+    hint_color?: string;
+    link_color?: string;
+    button_color?: string;
+    button_text_color?: string;
+    secondary_bg_color?: string;
+  };
+  initData: string;
+  initDataUnsafe: {
+    user?: {
+      id: number;
+      first_name: string;
+      last_name?: string;
+      username?: string;
+      language_code?: string;
+      is_premium?: boolean;
+    };
+  };
   version: string;
+  platform: string;
+  colorScheme: 'light' | 'dark';
+  isExpanded: boolean;
+  viewportHeight: number;
+  viewportStableHeight: number;
+  headerColor: string;
+  backgroundColor: string;
+  setHeaderColor: (color: string) => void;
+  setBackgroundColor: (color: string) => void;
+  enableClosingConfirmation: () => void;
+  disableClosingConfirmation: () => void;
+  onEvent: (eventType: string, eventHandler: () => void) => void;
+  offEvent: (eventType: string, eventHandler: () => void) => void;
+  sendData: (data: string) => void;
+  switchInlineQuery: (query: string, choose_chat_types?: string[]) => void;
+  openLink: (url: string, options?: { try_instant_view?: boolean }) => void;
+  openTelegramLink: (url: string) => void;
+  openInvoice: (url: string) => void;
+  showPopup: (params: { title?: string; message: string; buttons?: Array<{ id?: string; type?: string; text: string }> }) => void;
+  showAlert: (message: string) => void;
+  showConfirm: (message: string) => void;
+  showScanQrPopup: (params: { text?: string }) => void;
+  closeScanQrPopup: () => void;
+  readTextFromClipboard: () => Promise<string>;
+  requestWriteAccess: () => Promise<boolean>;
+  requestContact: () => Promise<boolean>;
 }
 
-export function useTelegramWebApp(): UseTelegramWebAppReturn {
+export function useTelegramWebApp() {
   const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
   const [user, setUser] = useState<any>(null);
   const [isReady, setIsReady] = useState(false);
@@ -36,8 +98,8 @@ export function useTelegramWebApp(): UseTelegramWebAppReturn {
       tg.expand();
       
       // Set theme colors for better integration
-      if (tg.setHeaderColor) tg.setHeaderColor('#ffffff');
-      if (tg.setBackgroundColor) tg.setBackgroundColor('#f8fafc');
+      tg.setHeaderColor('#ffffff');
+      tg.setBackgroundColor('#f8fafc');
       
       // Handle viewport changes for better responsiveness
       const handleViewportChange = () => {
@@ -64,7 +126,7 @@ export function useTelegramWebApp(): UseTelegramWebAppReturn {
       setIsReady(true);
       
       // Enable closing confirmation for better UX
-      if (tg.enableClosingConfirmation) tg.enableClosingConfirmation();
+      tg.enableClosingConfirmation();
       
       console.log('🚀 Telegram WebApp initialized:', {
         version: tg.version,
@@ -210,12 +272,8 @@ export function useTelegramWebApp(): UseTelegramWebAppReturn {
     }
   };
 
-  const openLink = (url: string, options?: { try_instant_view?: boolean }) => {
-    if (webApp?.openLink) {
-      webApp.openLink(url, options);
-    } else {
-      window.open(url, '_blank');
-    }
+  const openLink = (url: string) => {
+    webApp?.openLink(url, { try_instant_view: true });
   };
 
   return {
@@ -229,14 +287,7 @@ export function useTelegramWebApp(): UseTelegramWebAppReturn {
     showConfirm,
     share,
     openLink,
-    themeParams: webApp?.themeParams || {
-      bg_color: '',
-      text_color: '',
-      hint_color: '',
-      link_color: '',
-      button_color: '',
-      button_text_color: ''
-    },
+    themeParams: webApp?.themeParams || {},
     platform: webApp?.platform || 'unknown',
     version: webApp?.version || '1.0'
   };

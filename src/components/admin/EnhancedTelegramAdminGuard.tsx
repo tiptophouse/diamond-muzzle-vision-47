@@ -4,7 +4,7 @@ import { useTelegramSDK } from '@/hooks/useTelegramSDK';
 import { Shield, AlertTriangle, Settings, Crown, Home, Fingerprint, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { isAdminTelegramId } from '@/lib/secureAdmin';
+import { isAdminTelegramId } from '@/lib/api/secureConfig';
 import { useToast } from '@/hooks/use-toast';
 
 interface EnhancedTelegramAdminGuardProps {

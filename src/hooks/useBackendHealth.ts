@@ -3,8 +3,6 @@ import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '@/lib/api/config';
 import { useToast } from '@/hooks/use-toast';
 
-import { logger } from '@/utils/logger';
-
 interface HealthCheckResult {
   isHealthy: boolean | null;
   isChecking: boolean;
@@ -24,7 +22,7 @@ export function useBackendHealth() {
     setHealth(prev => ({ ...prev, isChecking: true, errorMessage: undefined }));
     
     try {
-      logger.debug('Checking backend health', { url: API_BASE_URL });
+      console.log('🏥 Checking backend health:', API_BASE_URL);
       
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
@@ -59,7 +57,7 @@ export function useBackendHealth() {
         });
       }
       
-      logger.debug('Health check result', { isHealthy });
+      console.log('🏥 Health check result:', isHealthy);
       return isHealthy;
       
     } catch (error: any) {
@@ -82,8 +80,8 @@ export function useBackendHealth() {
         });
       }
       
-        logger.error('Health check failed', error as Error);
-        return false;
+      console.error('🏥 Health check failed:', error);
+      return false;
     }
   };
 

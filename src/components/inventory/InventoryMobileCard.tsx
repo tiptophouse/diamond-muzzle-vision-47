@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Diamond } from "./InventoryTable";
 import { Edit, Trash } from "lucide-react";
-import { OptimizedDiamondImage } from "@/components/store/OptimizedDiamondImage";
+import { OptimizedDiamondImage } from "./OptimizedDiamondImage";
 
 interface InventoryMobileCardProps {
   diamond: Diamond;
@@ -17,13 +17,13 @@ export const InventoryMobileCard = memo(function InventoryMobileCard({ diamond, 
     <Card className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors">
       <CardContent className="p-3 sm:p-4 w-full">
         <div className="flex gap-4 mb-3">
+          {/* Diamond Image */}
           <div className="flex-shrink-0">
             <OptimizedDiamondImage
-              imageUrl={diamond.imageUrl}
-              gem360Url={diamond.gem360Url}
-              stockNumber={diamond.stockNumber}
-              shape={diamond.shape}
-              className="w-20 h-20 rounded border"
+              src={diamond.imageUrl}
+              alt={`Diamond ${diamond.stockNumber}`}
+              className="w-20 h-20 object-cover rounded border"
+              fallbackClassName="w-20 h-20 flex items-center justify-center bg-muted rounded border"
             />
           </div>
 
@@ -104,7 +104,7 @@ export const InventoryMobileCard = memo(function InventoryMobileCard({ diamond, 
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onDelete(diamond.stockNumber)}
+                onClick={() => onDelete(diamond.id)}
                 className="flex-1 h-9 text-sm text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
               >
                 <Trash className="h-4 w-4 mr-2" />

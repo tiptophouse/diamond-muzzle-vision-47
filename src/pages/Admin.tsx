@@ -54,7 +54,6 @@ export default function Admin() {
   });
   const [blockedUsersCount, setBlockedUsersCount] = useState(0);
   const [averageEngagement, setAverageEngagement] = useState(0);
-  const [totalDiamonds, setTotalDiamonds] = useState(0);
   const [realTimeStats, setRealTimeStats] = useState({
     todayLogins: 0,
     weeklyLogins: 0,
@@ -66,6 +65,11 @@ export default function Admin() {
   });
 
   useEffect(() => {
+    console.log('🔍 Admin page mounted');
+    console.log('🔍 User:', user);
+    console.log('🔍 Is authenticated:', isAuthenticated);
+    console.log('🔍 Is loading:', isLoading);
+    
     // Load real bot usage statistics
     loadBotUsageStats();
     
@@ -77,61 +81,86 @@ export default function Admin() {
 
   const loadBotUsageStats = async () => {
     try {
-      // Get actual user counts with fresh queries using existing table structure
-      const [
-        totalUsersResult,
-        activeUsersResult,
-        premiumUsersResult,
-        blockedUsersResult,
-        diamondsResult,
-        visibleDiamondsResult,
-        todaySessionsResult,
-        weeklySessionsResult,
-        monthlySessionsResult
-      ] = await Promise.all([
-        supabase.from('user_profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('user_profiles').select('id', { count: 'exact', head: true }).gte('last_active', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
-        supabase.from('user_profiles').select('id', { count: 'exact', head: true }).eq('is_premium', true),
-        supabase.from('blocked_users').select('id', { count: 'exact', head: true }),
-        supabase.from('inventory').select('id', { count: 'exact', head: true }).is('deleted_at', null),
-        supabase.from('inventory').select('id', { count: 'exact', head: true }).eq('store_visible', true).is('deleted_at', null),
-        supabase.from('user_sessions').select('telegram_id', { count: 'exact', head: true }).gte('session_start', new Date().toISOString().split('T')[0]),
-        supabase.from('user_sessions').select('telegram_id', { count: 'exact', head: true }).gte('session_start', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
-        supabase.from('user_sessions').select('telegram_id', { count: 'exact', head: true }).gte('session_start', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
-      ]);
+      console.log('📊 Loading fresh stats from database...');
+      
+      // Get actual user counts with fresh queries
+      const { data: totalUsersData, count: totalUsersCount } = await supabase
+        .from('user_profiles')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false });
 
-      // Calculate engagement rate
-      const totalUsers = totalUsersResult.count || 0;
-      const activeUsers = activeUsersResult.count || 0;
-      const engagementRate = totalUsers > 0 ? Math.round((activeUsers / totalUsers) * 100) : 0;
+      const { data: activeUsersData, count: activeUsersCount } = await supabase
+        .from('user_profiles')
+        .select('*', { count: 'exact' })
+        .gte('last_login', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
+      const { data: premiumUsersData, count: premiumUsersCount } = await supabase
+        .from('user_profiles')
+        .select('*', { count: 'exact' })
+        .eq('is_premium', true);
+
+      const { data: subscriptionsData, count: subscriptionsCount } = await supabase
+        .from('subscriptions')
+        .select('amount', { count: 'exact' })
+        .eq('status', 'active');
+
+      const { data: blockedData, count: blockedCount } = await supabase
+        .from('blocked_users')
+        .select('*', { count: 'exact' });
+
+      // Calculate total revenue from active subscriptions
+      const totalRevenue = subscriptionsData?.reduce((sum, sub) => sum + (sub.amount || 0), 0) || 0;
+
+      // Get login statistics
+      const { count: todayLoginsCount } = await supabase
+        .from('user_logins')
+        .select('*', { count: 'exact', head: true })
+        .gte('login_timestamp', new Date().toISOString().split('T')[0]);
+
+      const { count: weeklyLoginsCount } = await supabase
+        .from('user_logins')
+        .select('*', { count: 'exact', head: true })
+        .gte('login_timestamp', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
+      const { count: monthlyLoginsCount } = await supabase
+        .from('user_logins')
+        .select('*', { count: 'exact', head: true })
+        .gte('login_timestamp', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
 
       // Update all stats
       setStats({
-        totalUsers,
-        activeUsers,
-        premiumUsers: premiumUsersResult.count || 0,
-        totalRevenue: 0, // Will be calculated from actual revenue data
+        totalUsers: totalUsersCount || 0,
+        activeUsers: activeUsersCount || 0,
+        premiumUsers: premiumUsersCount || 0,
+        totalRevenue,
         totalCosts: 0,
-        profit: 0
+        profit: totalRevenue
       });
 
-      setBlockedUsersCount(blockedUsersResult.count || 0);
-      setAverageEngagement(engagementRate);
-      setTotalDiamonds(diamondsResult.count || 0);
-      setRealTimeStats({
-        todayLogins: todaySessionsResult.count || 0,
-        weeklyLogins: weeklySessionsResult.count || 0,
-        monthlyLogins: monthlySessionsResult.count || 0
-      });
-
-      // Update subscription stats with actual data
       setSubscriptionStats({
-        activeSubscriptions: premiumUsersResult.count || 0,
-        totalRevenue: 0
+        activeSubscriptions: subscriptionsCount || 0,
+        totalRevenue
+      });
+
+      setBlockedUsersCount(blockedCount || 0);
+      setRealTimeStats({
+        todayLogins: todayLoginsCount || 0,
+        weeklyLogins: weeklyLoginsCount || 0,
+        monthlyLogins: monthlyLoginsCount || 0
+      });
+
+      console.log('📊 Updated stats:', {
+        totalUsers: totalUsersCount || 0,
+        activeUsers: activeUsersCount || 0,
+        premiumUsers: premiumUsersCount || 0,
+        activeSubscriptions: subscriptionsCount || 0,
+        totalRevenue,
+        todayLogins: todayLoginsCount || 0,
+        weeklyLogins: weeklyLoginsCount || 0
       });
 
     } catch (error) {
-      // Silently handle error for production
+      console.error('❌ Error loading bot usage stats:', error);
       toast({
         title: "Error",
         description: "Failed to load usage statistics",
@@ -141,6 +170,7 @@ export default function Admin() {
   };
 
   const handleExportData = () => {
+    console.log('Exporting data...');
     toast({
       title: "Export Started",
       description: "Your data export is being prepared",
@@ -148,6 +178,7 @@ export default function Admin() {
   };
 
   const handleAddUser = () => {
+    console.log('Adding new user...');
     toast({
       title: "Add User",
       description: "User creation feature coming soon",
@@ -155,6 +186,7 @@ export default function Admin() {
   };
 
   const handleRefreshNotifications = () => {
+    console.log('Refreshing notifications...');
     toast({
       title: "Notifications Refreshed",
       description: "Notification data has been updated",
@@ -191,36 +223,27 @@ export default function Admin() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  📊 Real-Time Dashboard
+                  📊 Real-Time Bot Usage
                   <ForceRefreshButton />
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                   <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border">
                     <div className="text-sm font-medium text-gray-600">Total Users</div>
                     <div className="text-2xl font-bold text-blue-700">{stats.totalUsers}</div>
                   </div>
                   <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border">
-                    <div className="text-sm font-medium text-gray-600">Active Users</div>
-                    <div className="text-2xl font-bold text-green-700">{stats.activeUsers}</div>
-                    <div className="text-xs text-gray-500">Last 7 days</div>
+                    <div className="text-sm font-medium text-gray-600">Premium Users</div>
+                    <div className="text-2xl font-bold text-green-700">{stats.premiumUsers}</div>
                   </div>
                   <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg border">
-                    <div className="text-sm font-medium text-gray-600">Premium Users</div>
-                    <div className="text-2xl font-bold text-purple-700">{stats.premiumUsers}</div>
-                  </div>
-                  <div className="bg-gradient-to-r from-amber-50 to-amber-100 p-4 rounded-lg border">
-                    <div className="text-sm font-medium text-gray-600">Total Diamonds</div>
-                    <div className="text-2xl font-bold text-amber-700">{totalDiamonds}</div>
-                  </div>
-                  <div className="bg-gradient-to-r from-red-50 to-red-100 p-4 rounded-lg border">
-                    <div className="text-sm font-medium text-gray-600">Blocked Users</div>
-                    <div className="text-2xl font-bold text-red-700">{blockedUsersCount}</div>
+                    <div className="text-sm font-medium text-gray-600">Active Subscriptions</div>
+                    <div className="text-2xl font-bold text-purple-700">{subscriptionStats.activeSubscriptions}</div>
                   </div>
                   <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 p-4 rounded-lg border">
-                    <div className="text-sm font-medium text-gray-600">Engagement</div>
-                    <div className="text-2xl font-bold text-emerald-700">{averageEngagement}%</div>
+                    <div className="text-sm font-medium text-gray-600">Total Revenue</div>
+                    <div className="text-2xl font-bold text-emerald-700">${subscriptionStats.totalRevenue.toFixed(0)}</div>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-4">

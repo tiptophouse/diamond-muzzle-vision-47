@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { isAdminTelegramId } from '@/lib/secureAdmin';
+import { isAdminTelegramId } from '@/lib/api/secureConfig';
 
 interface SecureAdminCheckProps {
   telegramId: number | undefined;

@@ -4,7 +4,7 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { Shield, AlertTriangle, Settings, Crown, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { isAdminTelegramId } from '@/lib/secureAdmin';
+import { isAdminTelegramId } from '@/lib/api/secureConfig';
 
 interface AdminGuardProps {
   children: ReactNode;

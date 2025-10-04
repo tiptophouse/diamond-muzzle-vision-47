@@ -37,14 +37,14 @@ export function FloatingNotificationButton({ className }: FloatingNotificationBu
           "text-[var(--tg-theme-button-text-color,hsl(var(--primary-foreground)))]",
           // Border for better definition
           "border border-white/20",
-          // Subtle highlight for new notifications
-          unreadCount > 0 && "ring-2 ring-primary/30",
+          // Animation for new notifications
+          unreadCount > 0 && "animate-pulse",
           // Mobile optimizations
           "touch-manipulation select-none"
         )}
         style={{
-          backgroundColor: themeParams?.button_color || undefined,
-          color: themeParams?.button_text_color || undefined,
+          backgroundColor: themeParams.button_color || undefined,
+          color: themeParams.button_text_color || undefined,
         }}
       >
         <Bell size={18} className="md:w-[22px] md:h-[22px] drop-shadow-sm" />
@@ -65,7 +65,7 @@ export function FloatingNotificationButton({ className }: FloatingNotificationBu
         
         {/* Subtle glow effect for active notifications */}
         {unreadCount > 0 && (
-          <div className="absolute inset-0 rounded-full bg-[var(--tg-theme-button-color,hsl(var(--primary)))] opacity-20" />
+          <div className="absolute inset-0 rounded-full bg-[var(--tg-theme-button-color,hsl(var(--primary)))] opacity-30 animate-ping" />
         )}
       </Button>
     </div>

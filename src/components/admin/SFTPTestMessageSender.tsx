@@ -1,27 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, TestTube } from 'lucide-react';
-import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { getFirstAdminTelegramId } from '@/lib/secureAdmin';
 
 export function SFTPTestMessageSender() {
   const [isLoading, setIsLoading] = useState(false);
-  const [adminId, setAdminId] = useState<number | null>(null);
   const { toast } = useToast();
-  const { user } = useTelegramAuth();
 
-  // Get admin Telegram ID from database
-  useEffect(() => {
-    async function loadAdminId() {
-      // Try to use current user if logged in, otherwise get first admin
-      const id = user?.id || await getFirstAdminTelegramId();
-      setAdminId(id);
-    }
-    loadAdminId();
-  }, [user]);
+  // Admin Telegram ID for testing
+  const adminTelegramId = 2138564172;
 
   const sftpTestMessage = `🔗 **BrilliantBot – חיבור חדש למשתמשי Acadia 💎**
 
@@ -40,15 +29,6 @@ export function SFTPTestMessageSender() {
 💼 **BrilliantBot – לא רק למסחר, אלא להפוך את העבודה שלכם ליותר חכמה**`;
 
   const sendTestMessage = async () => {
-    if (!adminId) {
-      toast({
-        title: "❌ Error",
-        description: "No admin ID found. Please make sure you're logged in.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setIsLoading(true);
     
     try {
@@ -56,7 +36,7 @@ export function SFTPTestMessageSender() {
       
       const { data, error } = await supabase.functions.invoke('send-individual-message', {
         body: {
-          telegramId: adminId,
+          telegramId: adminTelegramId,
           message: sftpTestMessage,
           buttons: [
             {
@@ -159,11 +139,7 @@ export function SFTPTestMessageSender() {
         </Button>
 
         <div className="text-xs text-muted-foreground text-center">
-          {adminId ? (
-            `הודעה תישלח לטלגרם ID: ${adminId}`
-          ) : (
-            'טוען מזהה מנהל...'
-          )}
+          הודעה תישלח לטלגרם ID: {adminTelegramId}
         </div>
       </CardContent>
     </Card>

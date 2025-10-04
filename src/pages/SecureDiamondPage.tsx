@@ -11,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Share2, ExternalLink, Gem, Award, Eye, Shield, Clock, Users, Smartphone } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { OptimizedDiamondImage } from "@/components/store/OptimizedDiamondImage";
 
 export default function SecureDiamondPage() {
   const { encryptedData } = useParams<{ encryptedData: string }>();
@@ -210,21 +209,20 @@ export default function SecureDiamondPage() {
 
         <div className="container mx-auto px-4 py-8 max-w-6xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Image Section - Large Hero Display */}
+            {/* Image Section */}
             <div className="space-y-4">
               <Card className="overflow-hidden">
-                <div className="aspect-square bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center relative h-96 md:h-[500px]">
+                <div className="aspect-square bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center relative">
                   {diamond.imageUrl ? (
-                    <OptimizedDiamondImage
-                      imageUrl={diamond.imageUrl}
-                      stockNumber={diamond.stockNumber}
-                      shape={diamond.shape}
+                    <img 
+                      src={diamond.imageUrl} 
+                      alt={`${diamond.shape} Diamond`}
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <div className="text-center">
-                      <Gem className="h-32 w-32 text-slate-400 mx-auto mb-6" />
-                      <p className="text-slate-500 text-xl">Diamond Image</p>
+                      <Gem className="h-24 w-24 text-slate-400 mx-auto mb-4" />
+                      <p className="text-slate-500">Diamond Image</p>
                     </div>
                   )}
                 </div>

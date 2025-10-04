@@ -2,13 +2,8 @@ export const apiEndpoints = {
   // Health check
   alive: () => `/api/v1/alive`,
   
-  // Stone/Diamond management - CORRECTED to match FastAPI spec with pagination support
-  getAllStones: (userId: number, limit?: number, offset?: number) => {
-    let url = `/api/v1/get_all_stones?user_id=${userId}`;
-    if (limit !== undefined) url += `&limit=${limit}`;
-    if (offset !== undefined) url += `&offset=${offset}`;
-    return url;
-  },
+  // Stone/Diamond management - CORRECTED to match FastAPI spec
+  getAllStones: (userId: number) => `/api/v1/get_all_stones?user_id=${userId}`,
   
   // Create diamond - POST /api/v1/diamonds?user_id={user_id}
   addDiamond: (userId: number) => `/api/v1/diamonds?user_id=${userId}`,

@@ -63,23 +63,16 @@ export function EnhancedShareButton({
 
       const shared = await shareWithInlineButtons(diamond);
       
-        if (shared) {
-          impactOccurred('light');
-          toast({
-            title: "✅ יהלום נשלח לקבוצת הלקוחות!",
-            description: "עובר לצ'אט הקבוצה...",
-          });
-          setShowShareDialog(false);
-          
-          // Redirect to group chat after successful share
-          setTimeout(() => {
-            if (window.Telegram?.WebApp) {
-              window.Telegram.WebApp.close();
-            }
-          }, 1000);
-        } else {
-          throw new Error("Failed to share to group");
-        }
+      if (shared) {
+        impactOccurred('light');
+        toast({
+          title: "✅ יהלום נשלח לקבוצת הלקוחות!",
+          description: "הלקוחות יכולים כעת לצפות ביהלום ויצירת קשר",
+        });
+        setShowShareDialog(false);
+      } else {
+        throw new Error("Failed to share to group");
+      }
     } catch (error) {
       impactOccurred('heavy');
       toast({
@@ -225,7 +218,7 @@ export function EnhancedShareButton({
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="w-[95vw] max-w-md mx-auto max-h-[85vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-md mx-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Share2 className="h-5 w-5 text-purple-600" />
@@ -370,24 +363,13 @@ export function EnhancedShareButton({
             </TabsContent>
           </Tabs>
 
-          <div className="flex flex-col gap-3 mt-4">
-            <Button 
-              onClick={handleGroupShare}
-              disabled={!isAdmin && (!quotaData || quotaData.sharesRemaining <= 0) || isSharing}
-              className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium text-base"
-            >
-              <Users className="h-4 w-4 mr-2" />
-              {isSharing ? "שולח..." : "שתף ועבור לצ'אט"}
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              onClick={() => setShowShareDialog(false)}
-              className="w-full h-10"
-            >
-              ביטול
-            </Button>
-          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowShareDialog(false)}
+            className="w-full"
+          >
+            סגור
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
