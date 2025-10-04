@@ -88,58 +88,9 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
         console.warn('⚠️ AUTH: WebApp init warning:', e);
       }
 
-      // Validate initData - with admin bypass for development
+      // Validate initData
       if (!tg.initData?.length) {
-        // Check if this is admin accessing without initData (development mode)
-        console.log('⚠️ AUTH: No initData - checking for admin bypass...');
-        
-        // Try to get admin telegram_id from app_settings
-        const { data: adminSettings } = await supabase
-          .from('app_settings')
-          .select('setting_value')
-          .eq('setting_key', 'admin_telegram_id')
-          .single();
-        
-        const adminTelegramId = adminSettings?.setting_value ? 
-          (typeof adminSettings.setting_value === 'number' ? adminSettings.setting_value :
-           typeof adminSettings.setting_value === 'object' && 'value' in adminSettings.setting_value ? adminSettings.setting_value.value :
-           typeof adminSettings.setting_value === 'object' && 'admin_telegram_id' in adminSettings.setting_value ? adminSettings.setting_value.admin_telegram_id :
-           2138564172) : 2138564172;
-        
-        // Create admin user without backend auth (development only)
-        const adminUser: TelegramUser = {
-          id: adminTelegramId as number,
-          first_name: 'Admin',
-          last_name: 'User',
-          username: 'admin',
-          language_code: 'en'
-        };
-        
-        console.log('✅ AUTH: Admin bypass activated for development');
-        setCurrentUserId(adminUser.id);
-        
-        // Set session context for RLS
-        try {
-          await supabase.rpc('set_session_context', {
-            key: 'app.current_user_id',
-            value: adminUser.id.toString()
-          });
-          console.log('✅ AUTH: Set admin session context for RLS');
-        } catch (error) {
-          console.warn('⚠️ AUTH: Failed to set session context:', error);
-        }
-        
-        retryCount.current = 0;
-        updateState({
-          user: adminUser,
-          isAuthenticated: true,
-          isLoading: false,
-          error: null,
-          accessDeniedReason: null
-        });
-        
-        toast.success('Admin mode: Development access granted', { duration: 2000 });
-        return;
+        throw new Error('no_init_data');
       }
 
       console.log('🚀 AUTH: Fast authentication starting...');
