@@ -123,31 +123,37 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
         throw new Error('backend_auth_failed');
       }
 
-      // Store token for future use
-      const userData = extractUserData(initData);
-      if (!userData) {
+      // SECURITY: Extract user data ONLY from JWT (source of truth), not from initData
+      // The JWT is already decoded in signInToBackend, so we get userId from there
+      const { jwtDecode } = await import('jwt-decode');
+      const decoded = jwtDecode<{ user_id: number; telegram_id?: number; exp: number }>(jwtToken);
+      
+      // Also parse user display data from initData for UI purposes only
+      const displayData = extractUserData(initData);
+      if (!displayData) {
         throw new Error('invalid_user_data');
       }
 
-      tokenManager.setToken(jwtToken, userData.id);
-      setCurrentUserId(userData.id);
+      // Use JWT user_id as source of truth for authentication
+      tokenManager.setToken(jwtToken, decoded.user_id);
+      setCurrentUserId(decoded.user_id);
       
       // Set telegram_id in Supabase session context for RLS
       try {
         await supabase.rpc('set_session_context', {
           key: 'app.current_user_id',
-          value: userData.id.toString()
+          value: decoded.user_id.toString()
         });
         console.log('✅ AUTH: Set Supabase session context for RLS');
       } catch (error) {
         console.warn('⚠️ AUTH: Failed to set session context, continuing without it:', error);
-        // Don't throw - this is not critical for basic functionality
       }
       
-      // Cache complete auth state
+      // Cache complete auth state using display data for UI but JWT user_id for auth
+      const userData = { ...displayData, id: decoded.user_id };
       tokenManager.cacheAuthState(userData, jwtToken);
 
-      console.log('✅ AUTH: Fast authentication complete');
+      console.log('✅ AUTH: Fast authentication complete with JWT validation');
       
       retryCount.current = 0;
       updateState({

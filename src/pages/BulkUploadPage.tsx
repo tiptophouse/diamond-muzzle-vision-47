@@ -109,31 +109,21 @@ export default function BulkUploadPage() {
       let failureCount = 0;
       const errors: any[] = [];
 
+      // SECURITY FIX: Use http client with JWT authentication
+      const { http } = await import('@/api/http');
+      
       for (let i = 0; i < diamondsData.length; i++) {
         const diamond = diamondsData[i];
         try {
-          const fastApiUrl = `https://api.mazalbot.com/api/v1/diamonds?user_id=${user.id}`;
-          
           console.log(`📤 Sending diamond ${i + 1}/${diamondsData.length}:`, diamond.stock);
           
-          const response = await fetch(fastApiUrl, {
+          await http<any>(`/api/v1/diamonds?user_id=${user.id}`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
             body: JSON.stringify(diamond)
           });
 
-          if (response.ok) {
-            successCount++;
-            console.log(`✅ Diamond ${diamond.stock} uploaded successfully`);
-          } else {
-            failureCount++;
-            const errorData = await response.json();
-            errors.push({ stock: diamond.stock, error: errorData.detail || 'Upload failed' });
-            console.error(`❌ Diamond ${diamond.stock} failed:`, errorData);
-          }
+          successCount++;
+          console.log(`✅ Diamond ${diamond.stock} uploaded successfully`);
         } catch (error) {
           failureCount++;
           errors.push({ stock: diamond.stock, error: error instanceof Error ? error.message : 'Unknown error' });
