@@ -1,8 +1,20 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* RTL Support Layer */
+@layer base {
+  [dir="rtl"] {
+    direction: rtl;
+    text-align: start;
+  }
+  
+  [dir="ltr"] {
+    direction: ltr;
+    text-align: start;
+  }
+}
 
 /* Modern clean theme inspired by 21.dev */
 :root {
@@ -39,7 +51,7 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  font-family: 'Heebo', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -48,6 +60,17 @@ body {
   color: hsl(var(--foreground));
   line-height: 1.6;
   letter-spacing: -0.01em;
+  direction: rtl;
+  text-align: start;
+}
+
+/* RTL-specific Typography */
+[dir="rtl"] body {
+  font-family: 'Heebo', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+[dir="ltr"] body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 /* Clean, modern components */
@@ -266,4 +289,107 @@ img {
 .telegram-button {
   @apply min-h-[48px] px-6 py-3 text-base font-medium rounded-xl touch-manipulation;
   @apply active:scale-95 transition-transform duration-150;
+}
+
+/* RTL-Aware Utility Classes */
+@layer utilities {
+  /* Direction-aware margins */
+  .ms-auto {
+    margin-inline-start: auto;
+  }
+  
+  .me-auto {
+    margin-inline-end: auto;
+  }
+  
+  .ms-2 {
+    margin-inline-start: 0.5rem;
+  }
+  
+  .me-2 {
+    margin-inline-end: 0.5rem;
+  }
+  
+  .ms-4 {
+    margin-inline-start: 1rem;
+  }
+  
+  .me-4 {
+    margin-inline-end: 1rem;
+  }
+  
+  /* Direction-aware paddings */
+  .ps-2 {
+    padding-inline-start: 0.5rem;
+  }
+  
+  .pe-2 {
+    padding-inline-end: 0.5rem;
+  }
+  
+  .ps-4 {
+    padding-inline-start: 1rem;
+  }
+  
+  .pe-4 {
+    padding-inline-end: 1rem;
+  }
+  
+  /* Direction-aware text alignment */
+  .text-start {
+    text-align: start;
+  }
+  
+  .text-end {
+    text-align: end;
+  }
+  
+  /* Direction-aware borders */
+  .border-s {
+    border-inline-start-width: 1px;
+  }
+  
+  .border-e {
+    border-inline-end-width: 1px;
+  }
+  
+  /* RTL transform flips */
+  [dir="rtl"] .flip-x {
+    transform: scaleX(-1);
+  }
+  
+  /* Icons that should flip in RTL */
+  [dir="rtl"] .icon-flip {
+    transform: scaleX(-1);
+  }
+}
+
+/* RTL-specific component adjustments */
+[dir="rtl"] .dropdown-menu,
+[dir="rtl"] .popover-content {
+  text-align: start;
+}
+
+[dir="rtl"] .flex-row-reverse {
+  flex-direction: row-reverse;
+}
+
+/* Ensure buttons maintain proper spacing in RTL */
+[dir="rtl"] button:not(:last-child),
+[dir="rtl"] .button-group > *:not(:last-child) {
+  margin-inline-end: 0.5rem;
+  margin-inline-start: 0;
+}
+
+/* Dialog and modal RTL adjustments */
+[dir="rtl"] .dialog-content,
+[dir="rtl"] .modal-content {
+  text-align: start;
+}
+
+/* Form elements RTL support */
+[dir="rtl"] input,
+[dir="rtl"] textarea,
+[dir="rtl"] select {
+  text-align: start;
 }

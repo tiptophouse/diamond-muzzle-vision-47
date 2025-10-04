@@ -10,6 +10,9 @@ export default {
     "./src/**/*.{ts,tsx}",
   ],
   prefix: "",
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
   theme: {
 		container: {
 			center: true,
@@ -19,6 +22,11 @@ export default {
 			}
 		},
     extend: {
+      fontFamily: {
+        'heebo': ['Heebo', 'Arial', 'sans-serif'],
+        'inter': ['Inter', 'Arial', 'sans-serif'],
+        'sans': ['Heebo', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+      },
       spacing: {
         'safe': 'env(safe-area-inset-bottom)',
         'safe-top': 'env(safe-area-inset-top)',
@@ -147,5 +155,8 @@ export default {
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [
+    require("tailwindcss-animate"),
+    require("tailwindcss-rtl"),
+  ],
 } satisfies Config;

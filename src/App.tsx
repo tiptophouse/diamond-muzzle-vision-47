@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TelegramAuthProvider } from './context/TelegramAuthContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
+import { RTLProvider } from './contexts/RTLContext';
 import { SecureTelegramLayout } from './components/layout/SecureTelegramLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthenticatedRoute } from './components/auth/AuthenticatedRoute';
@@ -58,13 +59,14 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <TelegramAuthProvider>
-          <Router>
-            <TutorialProvider>
-              <InteractiveWizardProvider>
-                <SecureTelegramLayout>
-                <StartParamInitializer />
-                <Routes>
+        <RTLProvider>
+          <TelegramAuthProvider>
+            <Router>
+              <TutorialProvider>
+                <InteractiveWizardProvider>
+                  <SecureTelegramLayout>
+                  <StartParamInitializer />
+                  <Routes>
                   {/* Public route - redirects to dashboard if authenticated */}
                   <Route path="/" element={
                     <PublicRoute>
@@ -226,6 +228,7 @@ function App() {
             </TutorialProvider>
           </Router>
         </TelegramAuthProvider>
+        </RTLProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );
