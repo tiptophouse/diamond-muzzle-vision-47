@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTelegramWebApp } from './useTelegramWebApp';
-import { isAdminTelegramId } from '@/lib/api/secureConfig';
+import { isAdminTelegramId } from '@/lib/secureAdmin';
 
 export function useIsAdmin() {
   const [isAdmin, setIsAdmin] = useState(false);
