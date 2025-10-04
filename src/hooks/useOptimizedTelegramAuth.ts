@@ -112,14 +112,19 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
       }
 
       console.log('🚀 AUTH: Fast authentication starting...');
+      console.log('🚀 AUTH: InitData available:', !!initData, 'Length:', initData?.length);
       
       // Clear any stale tokens
       clearBackendAuthToken();
       
-      // Authenticate with backend
+      // Authenticate with backend - DETAILED ERROR HANDLING
+      console.log('🚀 AUTH: Calling signInToBackend with initData...');
       const jwtToken = await signInToBackend(initData);
+      console.log('🚀 AUTH: signInToBackend returned:', jwtToken ? 'TOKEN RECEIVED' : 'NULL');
       
       if (!jwtToken) {
+        console.error('❌ AUTH: Backend sign-in returned null - check backend logs');
+        console.error('❌ AUTH: InitData was:', initData?.substring(0, 100) + '...');
         throw new Error('backend_auth_failed');
       }
 

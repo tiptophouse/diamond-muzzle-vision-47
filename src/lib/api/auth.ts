@@ -46,6 +46,11 @@ export async function signInToBackend(initData: string): Promise<string | null> 
     const signInUrl = `${API_BASE_URL}/api/v1/sign-in/`;
     console.log('🔐 MAIN AUTH: Sign-in URL:', signInUrl);
 
+    // DETAILED LOGGING: Log exact request details
+    const requestPayload = { init_data: initData };
+    console.log('🔐 MAIN AUTH: Request payload keys:', Object.keys(requestPayload));
+    console.log('🔐 MAIN AUTH: InitData sample (first 100 chars):', initData.substring(0, 100));
+    
     const response = await fetch(signInUrl, {
       method: 'POST',
       headers: {
@@ -55,17 +60,33 @@ export async function signInToBackend(initData: string): Promise<string | null> 
       },
       mode: 'cors',
       credentials: 'omit',
-      body: JSON.stringify({
-        init_data: initData
-      }),
+      body: JSON.stringify(requestPayload),
     });
 
     console.log('🔐 MAIN AUTH: Response status:', response.status);
+    console.log('🔐 MAIN AUTH: Response ok:', response.ok);
     console.log('🔐 MAIN AUTH: Response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('🔐 MAIN AUTH: Sign-in failed:', response.status, errorText);
+      let errorDetails = '';
+      try {
+        const errorJson = await response.json();
+        errorDetails = JSON.stringify(errorJson);
+        console.error('🔐 MAIN AUTH: Error JSON:', errorJson);
+      } catch {
+        errorDetails = await response.text();
+        console.error('🔐 MAIN AUTH: Error text:', errorDetails);
+      }
+      console.error('🔐 MAIN AUTH: Sign-in failed:', response.status, errorDetails);
+      
+      // Show user-friendly error
+      const { toast } = await import('@/components/ui/use-toast');
+      toast({
+        title: "❌ Authentication Failed",
+        description: `Backend error (${response.status}): ${errorDetails.substring(0, 200)}`,
+        variant: "destructive",
+      });
+      
       return null;
     }
 
