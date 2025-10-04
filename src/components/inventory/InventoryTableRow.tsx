@@ -6,7 +6,7 @@ import { Diamond } from "./InventoryTable";
 import { Edit, Trash } from "lucide-react";
 import { StoreVisibilityToggle } from "./StoreVisibilityToggle";
 import { UserImageUpload } from "./UserImageUpload";
-import { OptimizedDiamondImage } from "./OptimizedDiamondImage";
+import { OptimizedDiamondImage } from "@/components/store/OptimizedDiamondImage";
 
 interface InventoryTableRowProps {
   diamond: Diamond & { store_visible?: boolean; picture?: string };
@@ -23,8 +23,11 @@ export const InventoryTableRow = memo(function InventoryTableRow({ diamond, onEd
       <TableCell className="p-2">
         <div className="flex items-center space-x-2">
           <OptimizedDiamondImage
-            src={diamond.imageUrl}
-            alt={`Diamond ${diamond.stockNumber}`}
+            imageUrl={diamond.imageUrl}
+            gem360Url={diamond.gem360Url}
+            stockNumber={diamond.stockNumber}
+            shape={diamond.shape}
+            className="w-12 h-12 rounded"
           />
           <UserImageUpload 
             diamond={diamond}

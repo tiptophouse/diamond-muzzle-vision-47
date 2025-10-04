@@ -9,6 +9,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthenticatedRoute } from './components/auth/AuthenticatedRoute';
 import { PublicRoute } from './components/auth/PublicRoute';
 import { EnhancedTelegramAdminGuard } from './components/admin/EnhancedTelegramAdminGuard';
+import { registerServiceWorker } from './lib/serviceWorker';
 import Index from './pages/Index';
 // Lazy load heavy components to improve initial loading speed
 import { LazyInventory, LazyUpload, LazySettings } from './components/performance/LazyRoute';
@@ -35,6 +36,9 @@ import AnalyticsPage from "./pages/AnalyticsPage";
 import TelegramNotificationsDemo from "./pages/TelegramNotificationsDemo";
 import AdminStatsPage from './pages/AdminStatsPage';
 import { StartParamInitializer } from './components/layout/StartParamInitializer';
+
+// Register service worker for offline support in Telegram Mini App
+registerServiceWorker();
 
 function App() {
   const queryClient = new QueryClient({

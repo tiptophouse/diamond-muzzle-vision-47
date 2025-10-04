@@ -2240,6 +2240,14 @@ export type Database = {
         Args: { p_certificate_number: number; p_user_id: number }
         Returns: boolean
       }
+      check_is_admin_role: {
+        Args: { check_telegram_id: number }
+        Returns: boolean
+      }
+      check_is_super_admin: {
+        Args: { check_telegram_id: number }
+        Returns: boolean
+      }
       clean_expired_cache: {
         Args: Record<PropertyKey, never>
         Returns: undefined
