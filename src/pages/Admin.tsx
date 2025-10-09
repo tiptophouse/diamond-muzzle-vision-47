@@ -35,6 +35,7 @@ import { WebhookDiagnostics } from '@/components/admin/WebhookDiagnostics';
 import { CampaignManager } from '@/components/admin/CampaignManager';
 import { RealTimeMonitor } from '@/components/admin/RealTimeMonitor';
 import { useSearchParams } from 'react-router-dom';
+import { useAdminDataCache } from '@/hooks/useAdminDataCache';
 
 export default function Admin() {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
@@ -42,6 +43,9 @@ export default function Admin() {
   const [searchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'monitor';
   const [notifications, setNotifications] = useState([]);
+  
+  // SDK 2.0 Cloud Storage for caching
+  const { cachedData, isLoadingCache, saveToCache, isCacheSupported } = useAdminDataCache();
 
   // Real bot usage stats - Updated to refresh more frequently
   const [stats, setStats] = useState({
@@ -64,6 +68,19 @@ export default function Admin() {
     activeSubscriptions: 0,
     totalRevenue: 0
   });
+
+  // Load cached data first, then fetch fresh data
+  useEffect(() => {
+    if (cachedData && !isLoadingCache) {
+      console.log('📦 Using cached admin data');
+      setStats(cachedData.stats);
+      setBlockedUsersCount(cachedData.blockedUsersCount);
+      setAverageEngagement(cachedData.averageEngagement);
+      setTotalDiamonds(cachedData.totalDiamonds);
+      setRealTimeStats(cachedData.realTimeStats);
+      setSubscriptionStats(cachedData.subscriptionStats);
+    }
+  }, [cachedData, isLoadingCache]);
 
   useEffect(() => {
     // Load real bot usage statistics
@@ -125,10 +142,34 @@ export default function Admin() {
       });
 
       // Update subscription stats with actual data
-      setSubscriptionStats({
+      const newSubscriptionStats = {
         activeSubscriptions: premiumUsersResult.count || 0,
         totalRevenue: 0
-      });
+      };
+      setSubscriptionStats(newSubscriptionStats);
+
+      // Save to Telegram Cloud Storage for instant loading next time
+      if (isCacheSupported) {
+        await saveToCache({
+          stats: {
+            totalUsers,
+            activeUsers,
+            premiumUsers: premiumUsersResult.count || 0,
+            totalRevenue: 0,
+            totalCosts: 0,
+            profit: 0
+          },
+          blockedUsersCount: blockedUsersResult.count || 0,
+          averageEngagement: engagementRate,
+          totalDiamonds: diamondsResult.count || 0,
+          realTimeStats: {
+            todayLogins: todaySessionsResult.count || 0,
+            weeklyLogins: weeklySessionsResult.count || 0,
+            monthlyLogins: monthlySessionsResult.count || 0
+          },
+          subscriptionStats: newSubscriptionStats
+        });
+      }
 
     } catch (error) {
       // Silently handle error for production

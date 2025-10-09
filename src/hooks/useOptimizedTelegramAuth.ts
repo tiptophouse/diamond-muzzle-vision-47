@@ -62,6 +62,23 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
     }
   }, []);
 
+  // Wait for Telegram initData to become available (polling up to 2500ms)
+  const waitForInitData = async (tg: any, timeoutMs = 2500): Promise<string | null> => {
+    const start = Date.now();
+    if (tg?.initData?.length) return tg.initData as string;
+    while (Date.now() - start < timeoutMs) {
+      await new Promise((r) => setTimeout(r, 100));
+      if (tg?.initData?.length) return tg.initData as string;
+    }
+    // Fallback: some environments expose init data in URL as 'init_data'
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const urlInit = params.get('init_data');
+      if (urlInit && urlInit.length > 0) return urlInit;
+    } catch {}
+    return null;
+  };
+
   const authenticateWithBackoff = useCallback(async (attempt: number = 0): Promise<void> => {
     if (initializedRef.current || !mountedRef.current) return;
 
@@ -88,48 +105,60 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
         console.warn('⚠️ AUTH: WebApp init warning:', e);
       }
 
-      // Validate initData
-      if (!tg.initData?.length) {
+      // Acquire initData (wait briefly if needed)
+      const initData = await waitForInitData(tg);
+      if (!initData) {
         throw new Error('no_init_data');
       }
 
       console.log('🚀 AUTH: Fast authentication starting...');
+      console.log('🚀 AUTH: InitData available:', !!initData, 'Length:', initData?.length);
       
       // Clear any stale tokens
       clearBackendAuthToken();
       
-      // Authenticate with backend
-      const jwtToken = await signInToBackend(tg.initData);
+      // Authenticate with backend - DETAILED ERROR HANDLING
+      console.log('🚀 AUTH: Calling signInToBackend with initData...');
+      const jwtToken = await signInToBackend(initData);
+      console.log('🚀 AUTH: signInToBackend returned:', jwtToken ? 'TOKEN RECEIVED' : 'NULL');
       
       if (!jwtToken) {
+        console.error('❌ AUTH: Backend sign-in returned null - check backend logs');
+        console.error('❌ AUTH: InitData was:', initData?.substring(0, 100) + '...');
         throw new Error('backend_auth_failed');
       }
 
-      // Store token for future use
-      const userData = extractUserData(tg.initData);
-      if (!userData) {
+      // SECURITY: Extract user data ONLY from JWT (source of truth), not from initData
+      // The JWT is already decoded in signInToBackend, so we get userId from there
+      const { jwtDecode } = await import('jwt-decode');
+      const decoded = jwtDecode<{ user_id: number; telegram_id?: number; exp: number }>(jwtToken);
+      
+      // Also parse user display data from initData for UI purposes only
+      const displayData = extractUserData(initData);
+      if (!displayData) {
         throw new Error('invalid_user_data');
       }
 
-      tokenManager.setToken(jwtToken, userData.id);
-      setCurrentUserId(userData.id);
+      // Use JWT user_id as source of truth for authentication
+      tokenManager.setToken(jwtToken, decoded.user_id);
+      setCurrentUserId(decoded.user_id);
       
       // Set telegram_id in Supabase session context for RLS
       try {
         await supabase.rpc('set_session_context', {
           key: 'app.current_user_id',
-          value: userData.id.toString()
+          value: decoded.user_id.toString()
         });
         console.log('✅ AUTH: Set Supabase session context for RLS');
       } catch (error) {
         console.warn('⚠️ AUTH: Failed to set session context, continuing without it:', error);
-        // Don't throw - this is not critical for basic functionality
       }
       
-      // Cache complete auth state
+      // Cache complete auth state using display data for UI but JWT user_id for auth
+      const userData = { ...displayData, id: decoded.user_id };
       tokenManager.cacheAuthState(userData, jwtToken);
 
-      console.log('✅ AUTH: Fast authentication complete');
+      console.log('✅ AUTH: Fast authentication complete with JWT validation');
       
       retryCount.current = 0;
       updateState({

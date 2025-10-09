@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { api, apiEndpoints } from "@/lib/api";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { getAdminTelegramId } from "@/lib/api/secureConfig";
+import { getFirstAdminTelegramId } from "@/lib/secureAdmin";
 import { useEffect } from "react";
 import { AdminImageUpload } from "./AdminImageUpload";
 
@@ -37,7 +37,7 @@ export function AdminStoreControls({ diamond, onUpdate, onDelete }: AdminStoreCo
 
   useEffect(() => {
     const loadAdminId = async () => {
-      const adminId = await getAdminTelegramId();
+      const adminId = await getFirstAdminTelegramId();
       setAdminTelegramId(adminId);
     };
     loadAdminId();

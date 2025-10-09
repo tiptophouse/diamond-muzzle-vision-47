@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useUserTracking } from '@/hooks/useUserTracking';
-import { getAdminTelegramId } from '@/lib/api/secureConfig';
+import { getFirstAdminTelegramId } from '@/lib/secureAdmin';
 import { Plus, Gem, Store, PieChart, BarChart3, TrendingUp, Users, Search, MessageSquare } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -53,11 +53,11 @@ const Index = () => {
   useEffect(() => {
     const loadAdminId = async () => {
       try {
-        const adminId = await getAdminTelegramId();
+        const adminId = await getFirstAdminTelegramId();
         setAdminTelegramId(adminId);
       } catch (error) {
         console.error('Failed to load admin ID:', error);
-        setAdminTelegramId(2138564172); // fallback
+        setAdminTelegramId(null); // No hardcoded fallback
       } finally {
         setLoadingConfig(false);
       }
@@ -192,7 +192,7 @@ const Index = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
+          <div className="text-center mb-6">
             <div className="inline-flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center">
                 <Gem className="h-6 w-6" />
@@ -208,7 +208,7 @@ const Index = () => {
             <NavigationCard
               icon={<PieChart className="h-8 w-8" />}
               title="Dashboard"
-              description="Your diamond portfolio"
+              description="View your diamond inventory & matches"
               href="/dashboard"
               className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600"
             />
