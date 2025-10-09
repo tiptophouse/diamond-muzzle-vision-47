@@ -32,47 +32,24 @@ export function clearBackendAuthToken(): void {
   tokenManager.clear();
 }
 
-// THE ONLY TRUE AUTHENTICATION METHOD: Telegram initData → HMAC Verification → FastAPI sign-in → JWT
+// THE ONLY TRUE AUTHENTICATION METHOD: Telegram initData → FastAPI sign-in → JWT
 export async function signInToBackend(initData: string): Promise<string | null> {
   try {
-    console.log('🔐 SECURE AUTH: Starting cryptographically verified authentication');
-    console.log('🔐 SECURE AUTH: InitData length:', initData?.length || 0);
+    console.log('🔐 MAIN AUTH: Starting FastAPI backend authentication');
+    console.log('🔐 MAIN AUTH: InitData length:', initData?.length || 0);
     
     if (!initData || initData.length === 0) {
-      console.error('🔐 SECURE AUTH: No initData provided');
+      console.error('🔐 MAIN AUTH: No initData provided');
       return null;
     }
-
-    // STEP 1: Verify HMAC-SHA256 signature via secure edge function
-    console.log('🔐 SECURE AUTH: Step 1 - Verifying HMAC signature');
-    const { supabase } = await import('@/integrations/supabase/client');
-    const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
-      'verify-telegram-init-data',
-      { body: { init_data: initData } }
-    );
-
-    if (verifyError || !verifyData?.success) {
-      console.error('❌ SECURE AUTH: HMAC verification failed', verifyError);
-      const { toast } = await import('@/components/ui/use-toast');
-      toast({
-        title: "❌ Security Verification Failed",
-        description: "Invalid Telegram authentication signature",
-        variant: "destructive",
-      });
-      return null;
-    }
-
-    console.log('✅ SECURE AUTH: HMAC signature verified successfully');
-    console.log('🔐 SECURE AUTH: Security info:', verifyData.security_info);
-
-    // STEP 2: Proceed with FastAPI sign-in to get JWT
-    console.log('🔐 SECURE AUTH: Step 2 - Getting JWT from FastAPI backend');
 
     const signInUrl = `${API_BASE_URL}/api/v1/sign-in/`;
-    console.log('🔐 SECURE AUTH: FastAPI sign-in URL:', signInUrl);
+    console.log('🔐 MAIN AUTH: Sign-in URL:', signInUrl);
 
+    // DETAILED LOGGING: Log exact request details
     const requestPayload = { init_data: initData };
-    console.log('🔐 SECURE AUTH: Sending HMAC-verified initData to FastAPI');
+    console.log('🔐 MAIN AUTH: Request payload keys:', Object.keys(requestPayload));
+    console.log('🔐 MAIN AUTH: InitData sample (first 100 chars):', initData.substring(0, 100));
     
     const response = await fetch(signInUrl, {
       method: 'POST',
@@ -86,8 +63,9 @@ export async function signInToBackend(initData: string): Promise<string | null> 
       body: JSON.stringify(requestPayload),
     });
 
-    console.log('🔐 SECURE AUTH: FastAPI response status:', response.status);
-    console.log('🔐 SECURE AUTH: Response ok:', response.ok);
+    console.log('🔐 MAIN AUTH: Response status:', response.status);
+    console.log('🔐 MAIN AUTH: Response ok:', response.ok);
+    console.log('🔐 MAIN AUTH: Response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       let errorDetails = '';
@@ -97,14 +75,15 @@ export async function signInToBackend(initData: string): Promise<string | null> 
         console.error('🔐 MAIN AUTH: Error JSON:', errorJson);
       } catch {
         errorDetails = await response.text();
-        console.error('🔐 SECURE AUTH: Error text:', errorDetails);
+        console.error('🔐 MAIN AUTH: Error text:', errorDetails);
       }
-      console.error('🔐 SECURE AUTH: FastAPI sign-in failed:', response.status, errorDetails);
+      console.error('🔐 MAIN AUTH: Sign-in failed:', response.status, errorDetails);
       
+      // Show user-friendly error
       const { toast } = await import('@/components/ui/use-toast');
       toast({
         title: "❌ Authentication Failed",
-        description: `Backend sign-in failed (${response.status})`,
+        description: `Backend error (${response.status}): ${errorDetails.substring(0, 200)}`,
         variant: "destructive",
       });
       
@@ -112,11 +91,14 @@ export async function signInToBackend(initData: string): Promise<string | null> 
     }
 
     const result = await response.json();
+    console.log('🔐 MAIN AUTH: Response data keys:', Object.keys(result));
+    
+    // FIXED: According to OpenAPI spec, the field is "token", not "access_token"
     const token = result.token;
     
     if (token) {
       backendAuthToken = token;
-      console.log('✅ SECURE AUTH: JWT token received from FastAPI');
+      console.log('✅ MAIN AUTH: JWT token received and stored');
       
       // Decode JWT to extract user info (source of truth)
       try {
@@ -125,8 +107,7 @@ export async function signInToBackend(initData: string): Promise<string | null> 
         
         setCurrentUserId(userId);
         tokenManager.setToken(token, userId);
-        console.log('✅ SECURE AUTH: User ID decoded from JWT:', userId);
-        console.log('✅ SECURE AUTH: Authentication flow complete - HMAC verified + JWT issued');
+        console.log('✅ MAIN AUTH: User ID decoded from JWT:', userId);
         
         // Set session context for RLS policies
         try {
@@ -135,22 +116,22 @@ export async function signInToBackend(initData: string): Promise<string | null> 
             key: 'app.current_user_id',
             value: userId.toString()
           });
-          console.log('✅ SECURE AUTH: Session context set for user:', userId);
+          console.log('✅ MAIN AUTH: Session context set for user:', userId);
         } catch (contextError) {
-          console.warn('⚠️ SECURE AUTH: Failed to set session context, continuing:', contextError);
+          console.warn('⚠️ MAIN AUTH: Failed to set session context, continuing:', contextError);
         }
       } catch (error) {
-        console.error('🔐 SECURE AUTH: Failed to decode JWT:', error);
+        console.error('🔐 MAIN AUTH: Failed to decode JWT:', error);
         return null;
       }
       
       return backendAuthToken;
     } else {
-      console.error('🔐 SECURE AUTH: No token in FastAPI response');
+      console.error('🔐 MAIN AUTH: No token in response:', Object.keys(result));
       return null;
     }
   } catch (error) {
-    console.error('❌ SECURE AUTH: Authentication error:', error);
+    console.error('❌ MAIN AUTH: Sign-in error:', error);
     return null;
   }
 }
