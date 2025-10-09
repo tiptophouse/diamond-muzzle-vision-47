@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { Navigate } from 'react-router-dom';
-import { isAdminTelegramId } from '@/lib/secureAdmin';
+import { getAdminTelegramId } from '@/lib/api/secureConfig';
 
 interface PublicRouteProps {
   children: React.ReactNode;
@@ -10,30 +10,24 @@ interface PublicRouteProps {
 
 export function PublicRoute({ children, redirectTo }: PublicRouteProps) {
   const { isAuthenticated, isLoading, user } = useTelegramAuth();
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [adminTelegramId, setAdminTelegramId] = useState<number | null>(null);
   const [isCheckingAdmin, setIsCheckingAdmin] = useState(true);
 
   useEffect(() => {
-    const checkAdmin = async () => {
-      if (!user?.id) {
-        setIsAdmin(false);
-        setIsCheckingAdmin(false);
-        return;
-      }
-
+    const loadAdminConfig = async () => {
       try {
-        const adminStatus = await isAdminTelegramId(user.id);
-        setIsAdmin(adminStatus);
+        const adminId = await getAdminTelegramId();
+        setAdminTelegramId(adminId);
       } catch (error) {
-        console.error('Failed to check admin status:', error);
-        setIsAdmin(false);
+        // Failed to load admin configuration, using fallback
+        setAdminTelegramId(2138564172); // fallback
       } finally {
         setIsCheckingAdmin(false);
       }
     };
 
     if (isAuthenticated && user) {
-      checkAdmin();
+      loadAdminConfig();
     } else {
       setIsCheckingAdmin(false);
     }
@@ -46,6 +40,9 @@ export function PublicRoute({ children, redirectTo }: PublicRouteProps) {
 
   // If user is authenticated, redirect based on admin status
   if (isAuthenticated && user) {
+    // Check if user is admin
+    const isAdmin = adminTelegramId && user.id === adminTelegramId;
+    
     // Use custom redirectTo if provided, otherwise redirect admins to /admin and users to /dashboard
     const targetRoute = redirectTo || (isAdmin ? '/admin' : '/dashboard');
     

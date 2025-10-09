@@ -41,9 +41,8 @@ export function ApiTestButton() {
     try {
       console.log('🧪 Testing FastAPI connection:', `${API_BASE_URL}/api/v1/diamonds?user_id=2138564172`);
       console.log('🧪 Test payload:', testData);
-      // SECURITY FIX: Use http client with JWT authentication
-      const { http } = await import('@/api/http');
-      const response = await http<any>(`/api/v1/diamonds?user_id=2138564172`, {
+
+      const response = await fetch(`${API_BASE_URL}/api/v1/diamonds?user_id=2138564172`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

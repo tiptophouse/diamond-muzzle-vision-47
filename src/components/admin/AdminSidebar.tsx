@@ -78,7 +78,7 @@ const adminMenuItems = [
 ];
 
 export function AdminSidebar() {
-  const { state, isMobile, setOpenMobile } = useSidebar();
+  const { state } = useSidebar();
   const { user } = useTelegramAuth();
   const location = useLocation();
   const currentPath = location.pathname + location.search;
@@ -91,12 +91,6 @@ export function AdminSidebar() {
       return location.search.includes(`tab=${tabParam}`);
     }
     return currentPath === url;
-  };
-
-  const handleMenuClick = () => {
-    if (isMobile) {
-      setOpenMobile(false);
-    }
   };
 
   return (
@@ -138,11 +132,7 @@ export function AdminSidebar() {
                       `}
                       tooltip={isCollapsed ? item.title : undefined}
                     >
-                      <NavLink 
-                        to={item.url} 
-                        className="flex items-center gap-3 w-full"
-                        onClick={handleMenuClick}
-                      >
+                      <NavLink to={item.url} className="flex items-center gap-3 w-full">
                         <item.icon className="h-4 w-4 flex-shrink-0" />
                         {!isCollapsed && (
                           <div className="flex flex-col items-start">

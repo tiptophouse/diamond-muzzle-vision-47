@@ -4,7 +4,7 @@ import { useTelegramSDK } from '@/hooks/useTelegramSDK';
 import { Shield, AlertTriangle, Settings, Crown, Home, Fingerprint, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { isAdminTelegramId } from '@/lib/secureAdmin';
+import { isAdminTelegramId } from '@/lib/api/secureConfig';
 import { useToast } from '@/hooks/use-toast';
 
 interface EnhancedTelegramAdminGuardProps {
@@ -18,7 +18,8 @@ export function EnhancedTelegramAdminGuard({ children }: EnhancedTelegramAdminGu
     device, 
     theme, 
     features,
-    biometric
+    biometric, 
+    haptic 
   } = useTelegramSDK();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -82,27 +83,30 @@ export function EnhancedTelegramAdminGuard({ children }: EnhancedTelegramAdminGu
         
         if (hasAccess) {
           console.log('🎉 Enhanced Admin Access Granted');
-          // Silent login - no haptic feedback on admin entry
+          // Haptic feedback for successful admin login
+          haptic?.notification('success');
           
           toast({
             title: "Admin Access Granted",
             description: `Welcome, ${user.first_name}! Secure admin session initialized.`,
-            duration: 2000,
+            duration: 3000,
           });
         } else {
           console.log('❌ Enhanced Admin Access Denied');
+          haptic?.notification('error');
         }
 
       } catch (error) {
         console.error('❌ Enhanced Admin Security Check Failed:', error);
         setIsAdminUser(false);
+        haptic?.notification('error');
       } finally {
         setIsLoadingAdmin(false);
       }
     };
 
     performSecurityChecks();
-  }, [user?.id, isTelegramEnvironment, isInitialized, biometric, toast]);
+  }, [user?.id, isTelegramEnvironment, isInitialized, biometric, haptic, toast]);
 
   // Loading state with enhanced security indicators
   if (isLoading || isLoadingAdmin) {

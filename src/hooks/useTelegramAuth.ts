@@ -90,7 +90,6 @@ export function useTelegramAuth() {
 
         console.log('🔐 Found initData, verifying with backend...');
         
-        setError(tg.initData);
         const verificationResult = await verifyTelegramUser(tg.initData);
         
         if (verificationResult && verificationResult.success) {
@@ -117,7 +116,7 @@ export function useTelegramAuth() {
           
           toast.error('Authentication failed. Please try again.');
           
-          // setError('Backend authentication failed');
+          setError('Backend authentication failed');
           setIsLoading(false);
           return;
         }

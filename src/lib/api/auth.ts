@@ -1,7 +1,7 @@
+
 import { API_BASE_URL } from './config';
 import { setCurrentUserId } from './config';
 import { tokenManager } from './tokenManager';
-import { jwtDecode } from 'jwt-decode';
 
 export interface TelegramVerificationResponse {
   success: boolean;
@@ -46,11 +46,6 @@ export async function signInToBackend(initData: string): Promise<string | null> 
     const signInUrl = `${API_BASE_URL}/api/v1/sign-in/`;
     console.log('🔐 MAIN AUTH: Sign-in URL:', signInUrl);
 
-    // DETAILED LOGGING: Log exact request details
-    const requestPayload = { init_data: initData };
-    console.log('🔐 MAIN AUTH: Request payload keys:', Object.keys(requestPayload));
-    console.log('🔐 MAIN AUTH: InitData sample (first 100 chars):', initData.substring(0, 100));
-    
     const response = await fetch(signInUrl, {
       method: 'POST',
       headers: {
@@ -60,33 +55,17 @@ export async function signInToBackend(initData: string): Promise<string | null> 
       },
       mode: 'cors',
       credentials: 'omit',
-      body: JSON.stringify(requestPayload),
+      body: JSON.stringify({
+        init_data: initData
+      }),
     });
 
     console.log('🔐 MAIN AUTH: Response status:', response.status);
-    console.log('🔐 MAIN AUTH: Response ok:', response.ok);
     console.log('🔐 MAIN AUTH: Response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
-      let errorDetails = '';
-      try {
-        const errorJson = await response.json();
-        errorDetails = JSON.stringify(errorJson);
-        console.error('🔐 MAIN AUTH: Error JSON:', errorJson);
-      } catch {
-        errorDetails = await response.text();
-        console.error('🔐 MAIN AUTH: Error text:', errorDetails);
-      }
-      console.error('🔐 MAIN AUTH: Sign-in failed:', response.status, errorDetails);
-      
-      // Show user-friendly error
-      const { toast } = await import('@/components/ui/use-toast');
-      toast({
-        title: "❌ Authentication Failed",
-        description: `Backend error (${response.status}): ${errorDetails.substring(0, 200)}`,
-        variant: "destructive",
-      });
-      
+      const errorText = await response.text();
+      console.error('🔐 MAIN AUTH: Sign-in failed:', response.status, errorText);
       return null;
     }
 
@@ -100,29 +79,34 @@ export async function signInToBackend(initData: string): Promise<string | null> 
       backendAuthToken = token;
       console.log('✅ MAIN AUTH: JWT token received and stored');
       
-      // Decode JWT to extract user info (source of truth)
+      // Extract user ID and store token in manager
       try {
-        const decoded = jwtDecode<{ user_id: number; telegram_id?: number; exp: number }>(token);
-        const userId = decoded.user_id;
+        const urlParams = new URLSearchParams(initData);
+        const userParam = urlParams.get('user');
         
-        setCurrentUserId(userId);
-        tokenManager.setToken(token, userId);
-        console.log('✅ MAIN AUTH: User ID decoded from JWT:', userId);
-        
-        // Set session context for RLS policies
-        try {
-          const { supabase } = await import('@/integrations/supabase/client');
-          await supabase.rpc('set_session_context', {
-            key: 'app.current_user_id',
-            value: userId.toString()
-          });
-          console.log('✅ MAIN AUTH: Session context set for user:', userId);
-        } catch (contextError) {
-          console.warn('⚠️ MAIN AUTH: Failed to set session context, continuing:', contextError);
+        if (userParam) {
+          const user = JSON.parse(decodeURIComponent(userParam));
+          if (user.id) {
+            setCurrentUserId(user.id);
+            tokenManager.setToken(token, user.id);
+            console.log('✅ MAIN AUTH: User ID extracted and token cached:', user.id);
+            
+            // Set session context for RLS policies
+            try {
+              const { supabase } = await import('@/integrations/supabase/client');
+              await supabase.rpc('set_session_context', {
+                key: 'app.current_user_id',
+                value: user.id.toString()
+              });
+              console.log('✅ MAIN AUTH: Session context set for user:', user.id);
+            } catch (contextError) {
+              console.warn('⚠️ MAIN AUTH: Failed to set session context, continuing:', contextError);
+              // Don't throw - this is not critical for basic functionality
+            }
+          }
         }
       } catch (error) {
-        console.error('🔐 MAIN AUTH: Failed to decode JWT:', error);
-        return null;
+        console.error('🔐 MAIN AUTH: Failed to extract user ID from initData:', error);
       }
       
       return backendAuthToken;
