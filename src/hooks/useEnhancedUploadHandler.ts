@@ -187,30 +187,45 @@ export function useEnhancedUploadHandler() {
           console.log('📤 FastAPI URL:', fastApiUrl);
           console.log('📤 Payload sample:', JSON.stringify({ diamonds: validDiamonds.slice(0, 1) }, null, 2));
           
-          // SECURITY FIX: Use http client with JWT authentication
-          const { http } = await import('@/api/http');
-          const responseData = await http<any>(`/api/v1/diamonds/batch?user_id=${user.id}`, {
+          const response = await fetch(fastApiUrl, {
             method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
             body: JSON.stringify(payload)
           });
           
-          console.log('✅ Response data:', responseData);
-          successCount = validDiamonds.length;
-          console.log(`✅ Successfully sent ${successCount} diamonds to FastAPI`);
+          console.log('📤 Response status:', response.status);
+          const responseData = await response.json();
+          console.log('📤 Response data:', responseData);
           
-          // Send bulk upload notification if count > 80
-          if (successCount > 80) {
-            console.log('📢 Sending bulk upload notification to Telegram group...');
-            await sendBulkUploadNotification({
-              diamondCount: successCount,
-              uploadType: 'csv'
+          if (response.ok) {
+            successCount = validDiamonds.length;
+            console.log(`✅ Successfully sent ${successCount} diamonds to FastAPI`);
+            
+            // Send bulk upload notification if count > 80
+            if (successCount > 80) {
+              console.log('📢 Sending bulk upload notification to Telegram group...');
+              await sendBulkUploadNotification({
+                diamondCount: successCount,
+                uploadType: 'csv'
+              });
+            }
+            
+            toast({
+              title: "🎉 Upload Successful!",
+              description: `${successCount} diamonds uploaded successfully${successCount > 80 ? ' and community notified!' : ''}`,
+            });
+          } else {
+            errors.push(`API Error: ${responseData.detail || 'Upload failed'}`);
+            
+            toast({
+              title: "❌ Upload Failed",
+              description: `API Error: ${responseData.detail || 'Upload failed'}`,
+              variant: "destructive",
             });
           }
-          
-          toast({
-            title: "🎉 Upload Successful!",
-            description: `${successCount} diamonds uploaded successfully${successCount > 80 ? ' and community notified!' : ''}`,
-          });
         } catch (error) {
           console.error('❌ FastAPI upload error:', error);
           const errorMessage = error instanceof Error ? error.message : 'Upload failed';

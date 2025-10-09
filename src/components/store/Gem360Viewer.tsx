@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, memo } from 'react';
 import { Maximize2, RotateCcw, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useTelegramAdvanced } from '@/hooks/useTelegramAdvanced';
+import { useTelegramAccelerometer } from '@/hooks/useTelegramAccelerometer';
 
 interface Gem360ViewerProps {
   gem360Url: string;
@@ -17,8 +17,7 @@ const Gem360Viewer = memo(({ gem360Url, stockNumber, isInline = false, className
   const [loadError, setLoadError] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
-  const [isMotionActive, setIsMotionActive] = useState(false);
-  const { deviceOrientation, features, isInitialized } = useTelegramAdvanced();
+  const { accelerometerData, orientationData, isSupported, startAccelerometer, stopAccelerometer } = useTelegramAccelerometer(isInline);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
@@ -35,34 +34,16 @@ const Gem360Viewer = memo(({ gem360Url, stockNumber, isInline = false, className
   const isStaticImage = gem360Url.match(/\.(jpg|jpeg|png)(\?.*)?$/i) && 
     (gem360Url.includes('my360.sela') || gem360Url.includes('DAN'));
 
-  // Enhanced device motion for tilt control using Telegram SDK 2.0
+  // Handle device motion for tilt control
   useEffect(() => {
-    if (!isInline || !isMotionActive || !features.hasDeviceOrientation) return;
-
-    const started = deviceOrientation.start((data) => {
-      const { beta, gamma } = data;
+    if (isSupported && orientationData && isInline) {
+      const { beta, gamma } = orientationData;
       setRotation({
-        x: Math.max(-20, Math.min(20, (beta || 0) * 0.4)),
-        y: Math.max(-20, Math.min(20, (gamma || 0) * 0.4))
+        x: Math.max(-15, Math.min(15, beta * 0.3)),
+        y: Math.max(-15, Math.min(15, gamma * 0.3))
       });
-    }, false, 60);
-
-    if (!started) {
-      console.warn('Failed to start device orientation for 360 viewer');
-      setIsMotionActive(false);
     }
-
-    return () => {
-      deviceOrientation.stop();
-    };
-  }, [isInline, isMotionActive, features.hasDeviceOrientation, deviceOrientation]);
-
-  // Auto-enable motion on inline view if supported
-  useEffect(() => {
-    if (isInline && features.hasDeviceOrientation && !isMotionActive) {
-      setIsMotionActive(true);
-    }
-  }, [isInline, features.hasDeviceOrientation, isMotionActive]);
+  }, [orientationData, isSupported, isInline]);
 
   // Touch controls for manual rotation
   const handleTouchStart = (e: React.TouchEvent) => {

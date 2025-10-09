@@ -103,27 +103,16 @@ export function ActionFocusedDashboard({ allDiamonds }: ActionFocusedDashboardPr
 
   return (
     <div className="space-y-6 pb-20">
-      {/* Total Diamonds - Prominent Display */}
-      <Card className="p-6 bg-gradient-to-br from-primary via-primary/90 to-primary/80 border-primary shadow-lg">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-              <Gem className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <div className="text-sm font-medium text-white/80">Total Diamonds</div>
-              <div className="text-3xl font-bold text-white">{quickStats.diamondCount}</div>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-sm font-medium text-white/80">Portfolio Value</div>
-            <div className="text-2xl font-bold text-white">{formatValue(quickStats.totalValue)}</div>
-          </div>
-        </div>
-      </Card>
-
       {/* Quick Stats */}
       <div className="grid grid-cols-2 gap-3">
+        <Card className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+          <div className="flex items-center gap-2 mb-2">
+            <Gem className="h-4 w-4 text-primary" />
+            <span className="text-xs font-medium text-muted-foreground">Diamonds</span>
+          </div>
+          <div className="text-xl font-bold text-foreground">{quickStats.diamondCount}</div>
+          <div className="text-xs text-muted-foreground">{formatValue(quickStats.totalValue)} total</div>
+        </Card>
 
         <Card className="p-4 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
           <div className="flex items-center gap-2 mb-2">

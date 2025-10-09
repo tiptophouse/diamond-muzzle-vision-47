@@ -1,51 +1,40 @@
-import React, { lazy, Suspense } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TelegramAuthProvider } from './context/TelegramAuthContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
-import { RTLProvider } from './contexts/RTLContext';
 import { SecureTelegramLayout } from './components/layout/SecureTelegramLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthenticatedRoute } from './components/auth/AuthenticatedRoute';
 import { PublicRoute } from './components/auth/PublicRoute';
 import { EnhancedTelegramAdminGuard } from './components/admin/EnhancedTelegramAdminGuard';
-import { registerServiceWorker } from './lib/serviceWorker';
-import { DashboardLoading } from './components/dashboard/DashboardLoading';
+import Index from './pages/Index';
+// Lazy load heavy components to improve initial loading speed
+import { LazyInventory, LazyUpload, LazySettings } from './components/performance/LazyRoute';
+import SimpleDashboard from './pages/SimpleDashboard';
+import CatalogPage from './pages/CatalogPage';
+import UploadSingleStonePage from './pages/UploadSingleStonePage';
+import InsightsPage from './pages/InsightsPage';
+import DiamondAgentsPage from './pages/DiamondAgentsPage';
+import NotificationsPage from './pages/NotificationsPage';
+import ProfilePage from './pages/ProfilePage';
+import WishlistPage from './pages/WishlistPage';
+import PublicDiamondPage from './pages/PublicDiamondPage';
+import Admin from './pages/Admin';
+import AdminAnalytics from './pages/AdminAnalytics';
+import DiamondDetailPage from './pages/DiamondDetailPage';
+import ChatPage from './pages/ChatPage';
+import SecureDiamondPage from './pages/SecureDiamondPage';
+import DiamondSwipe from './pages/DiamondSwipe';
+import SecureDiamondViewerPage from './pages/SecureDiamondViewerPage';
+import NotFound from './pages/NotFound';
+import StandardizeCsvPage from './pages/StandardizeCsvPage';
+import BulkUploadPage from './pages/BulkUploadPage';
+import AnalyticsPage from "./pages/AnalyticsPage";
+import TelegramNotificationsDemo from "./pages/TelegramNotificationsDemo";
+import AdminStatsPage from './pages/AdminStatsPage';
 import { StartParamInitializer } from './components/layout/StartParamInitializer';
-
-// Code splitting: Lazy load ALL pages to reduce initial bundle size from 1.5MB to ~300KB
-const Index = lazy(() => import('./pages/Index'));
-const SimpleDashboard = lazy(() => import('./pages/SimpleDashboard'));
-const CatalogPage = lazy(() => import('./pages/CatalogPage'));
-const UploadSingleStonePage = lazy(() => import('./pages/UploadSingleStonePage'));
-const InsightsPage = lazy(() => import('./pages/InsightsPage'));
-const DiamondAgentsPage = lazy(() => import('./pages/DiamondAgentsPage'));
-const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
-const ProfilePage = lazy(() => import('./pages/ProfilePage'));
-const WishlistPage = lazy(() => import('./pages/WishlistPage'));
-const PublicDiamondPage = lazy(() => import('./pages/PublicDiamondPage'));
-const Admin = lazy(() => import('./pages/Admin'));
-const AdminAnalytics = lazy(() => import('./pages/AdminAnalytics'));
-const DiamondDetailPage = lazy(() => import('./pages/DiamondDetailPage'));
-const ChatPage = lazy(() => import('./pages/ChatPage'));
-const SecureDiamondPage = lazy(() => import('./pages/SecureDiamondPage'));
-const DiamondSwipe = lazy(() => import('./pages/DiamondSwipe'));
-const SecureDiamondViewerPage = lazy(() => import('./pages/SecureDiamondViewerPage'));
-const NotFound = lazy(() => import('./pages/NotFound'));
-const StandardizeCsvPage = lazy(() => import('./pages/StandardizeCsvPage'));
-const BulkUploadPage = lazy(() => import('./pages/BulkUploadPage'));
-const InventoryPage = lazy(() => import('./pages/InventoryPage'));
-const UploadPage = lazy(() => import('./pages/UploadPage'));
-const SettingsPage = lazy(() => import('./pages/SettingsPage'));
-const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
-const TelegramNotificationsDemo = lazy(() => import('./pages/TelegramNotificationsDemo'));
-const AdminStatsPage = lazy(() => import('./pages/AdminStatsPage'));
-const ImmersiveDiamondPage = lazy(() => import('./pages/ImmersiveDiamondPage'));
-const DiamondShareAnalytics = lazy(() => import('./pages/DiamondShareAnalytics'));
-
-// Register service worker for offline support in Telegram Mini App
-registerServiceWorker();
 
 function App() {
   const queryClient = new QueryClient({
@@ -63,15 +52,13 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <RTLProvider>
-          <TelegramAuthProvider>
-            <Router>
-              <TutorialProvider>
-                <InteractiveWizardProvider>
-                  <SecureTelegramLayout>
-                  <StartParamInitializer />
-                  <Suspense fallback={<DashboardLoading onEmergencyMode={() => {}} />}>
-                  <Routes>
+        <TelegramAuthProvider>
+          <Router>
+            <TutorialProvider>
+              <InteractiveWizardProvider>
+                <SecureTelegramLayout>
+                <StartParamInitializer />
+                <Routes>
                   {/* Public route - redirects to dashboard if authenticated */}
                   <Route path="/" element={
                     <PublicRoute>
@@ -87,7 +74,7 @@ function App() {
                    } />
                    <Route path="/inventory" element={
                      <AuthenticatedRoute>
-                       <InventoryPage />
+                       <LazyInventory />
                      </AuthenticatedRoute>
                    } />
                   <Route path="/catalog" element={
@@ -111,7 +98,7 @@ function App() {
                    } />
                    <Route path="/upload" element={
                      <AuthenticatedRoute>
-                       <UploadPage />
+                       <LazyUpload />
                      </AuthenticatedRoute>
                    } />
                   <Route path="/upload/bulk" element={
@@ -146,7 +133,7 @@ function App() {
                   } />
                    <Route path="/settings" element={
                      <AuthenticatedRoute>
-                       <SettingsPage />
+                       <LazySettings />
                      </AuthenticatedRoute>
                    } />
                   <Route path="/wishlist" element={
@@ -211,30 +198,13 @@ function App() {
                       <SecureDiamondViewerPage />
                     </AuthenticatedRoute>
                   } />
-
-                  {/* Immersive Diamond Viewer with Motion Controls */}
-                  <Route path="/diamond/:stockNumber/immersive" element={
-                    <AuthenticatedRoute>
-                      <ImmersiveDiamondPage />
-                    </AuthenticatedRoute>
-                  } />
-
-                  {/* Diamond Share Analytics */}
-                  <Route path="/analytics/shares" element={
-                    <AuthenticatedRoute>
-                      <DiamondShareAnalytics />
-                    </AuthenticatedRoute>
-                  } />
-
-                   <Route path="*" element={<NotFound />} />
-                 </Routes>
-                 </Suspense>
-                 </SecureTelegramLayout>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+                </SecureTelegramLayout>
               </InteractiveWizardProvider>
             </TutorialProvider>
           </Router>
         </TelegramAuthProvider>
-        </RTLProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

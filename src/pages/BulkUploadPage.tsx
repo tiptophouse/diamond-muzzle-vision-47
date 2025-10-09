@@ -11,7 +11,7 @@ import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 import { useBulkCsvProcessor } from "@/hooks/useBulkCsvProcessor";
 import { useToast } from "@/hooks/use-toast";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
-import { http } from "@/api/http";
+import { api } from "@/lib/api/client";
 
 export default function BulkUploadPage() {
   const { hapticFeedback } = useTelegramWebApp();
@@ -109,21 +109,31 @@ export default function BulkUploadPage() {
       let failureCount = 0;
       const errors: any[] = [];
 
-      // SECURITY FIX: Use http client with JWT authentication
-      const { http } = await import('@/api/http');
-      
       for (let i = 0; i < diamondsData.length; i++) {
         const diamond = diamondsData[i];
         try {
+          const fastApiUrl = `https://api.mazalbot.com/api/v1/diamonds?user_id=${user.id}`;
+          
           console.log(`📤 Sending diamond ${i + 1}/${diamondsData.length}:`, diamond.stock);
           
-          await http<any>(`/api/v1/diamonds?user_id=${user.id}`, {
+          const response = await fetch(fastApiUrl, {
             method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
             body: JSON.stringify(diamond)
           });
 
-          successCount++;
-          console.log(`✅ Diamond ${diamond.stock} uploaded successfully`);
+          if (response.ok) {
+            successCount++;
+            console.log(`✅ Diamond ${diamond.stock} uploaded successfully`);
+          } else {
+            failureCount++;
+            const errorData = await response.json();
+            errors.push({ stock: diamond.stock, error: errorData.detail || 'Upload failed' });
+            console.error(`❌ Diamond ${diamond.stock} failed:`, errorData);
+          }
         } catch (error) {
           failureCount++;
           errors.push({ stock: diamond.stock, error: error instanceof Error ? error.message : 'Unknown error' });

@@ -565,51 +565,6 @@ export type Database = {
           },
         ]
       }
-      diamond_offers: {
-        Row: {
-          buyer_contact: string | null
-          buyer_name: string | null
-          buyer_telegram_id: number
-          created_at: string
-          diamond_owner_telegram_id: number
-          diamond_stock_number: string
-          id: string
-          message: string | null
-          offered_price: number
-          responded_at: string | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          buyer_contact?: string | null
-          buyer_name?: string | null
-          buyer_telegram_id: number
-          created_at?: string
-          diamond_owner_telegram_id: number
-          diamond_stock_number: string
-          id?: string
-          message?: string | null
-          offered_price: number
-          responded_at?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          buyer_contact?: string | null
-          buyer_name?: string | null
-          buyer_telegram_id?: number
-          created_at?: string
-          diamond_owner_telegram_id?: number
-          diamond_stock_number?: string
-          id?: string
-          message?: string | null
-          offered_price?: number
-          responded_at?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       diamond_share_analytics: {
         Row: {
           created_at: string | null
@@ -2283,14 +2238,6 @@ export type Database = {
       }
       check_certificate_exists: {
         Args: { p_certificate_number: number; p_user_id: number }
-        Returns: boolean
-      }
-      check_is_admin_role: {
-        Args: { check_telegram_id: number }
-        Returns: boolean
-      }
-      check_is_super_admin: {
-        Args: { check_telegram_id: number }
         Returns: boolean
       }
       clean_expired_cache: {

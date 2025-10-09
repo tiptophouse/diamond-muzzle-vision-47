@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { getFirstAdminTelegramId } from '@/lib/secureAdmin';
+import { getAdminTelegramId } from '@/lib/api/secureConfig';
 import {
   Home,
   Package,
@@ -48,7 +48,7 @@ export function Sidebar({ className }: SidebarProps) {
     const checkAdminStatus = async () => {
       if (user?.id) {
         try {
-          const adminId = await getFirstAdminTelegramId();
+          const adminId = await getAdminTelegramId();
           setIsAdmin(user.id === adminId);
         } catch (error) {
           console.error('Error checking admin status:', error);

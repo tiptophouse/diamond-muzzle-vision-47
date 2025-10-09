@@ -18,7 +18,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
         userId: null,
         timestamp: new Date().toISOString(),
         dataSource: 'none',
-        recommendation: 'User must authenticate with Telegram first. Check Telegram WebApp initData.'
+        recommendation: 'User must authenticate with Telegram first'
       }
     };
   }
@@ -36,8 +36,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     // ONLY use FastAPI - no cache, no localStorage fallbacks
     console.log('🔍 INVENTORY SERVICE: Calling FastAPI get_all_stones endpoint...');
     
-    // Add pagination for large inventories (>5000 diamonds load in batches)
-    const endpoint = apiEndpoints.getAllStones(userId, 10000, 0); // Fetch up to 10k diamonds
+    const endpoint = apiEndpoints.getAllStones(userId);
     console.log('🔍 INVENTORY SERVICE: Using endpoint:', endpoint);
     
     const result = await api.get(endpoint);
@@ -56,11 +55,6 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     
     if (result.data && Array.isArray(result.data)) {
       console.log('✅ INVENTORY SERVICE: Successfully fetched', result.data.length, 'diamonds from FastAPI');
-      
-      // Warn if inventory is extremely large
-      if (result.data.length >= 10000) {
-        console.warn('⚠️ INVENTORY SERVICE: User has 10,000+ diamonds. Some diamonds may not be visible. Consider pagination.');
-      }
       
       // Log image fields available in FastAPI response
       if (result.data.length > 0) {
@@ -111,24 +105,13 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     console.error("❌ INVENTORY SERVICE: FastAPI request failed:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     
-    // Check if it's an authentication error
-    const isAuthError = errorMessage.toLowerCase().includes('auth') || 
-                        errorMessage.toLowerCase().includes('401') ||
-                        errorMessage.toLowerCase().includes('403') ||
-                        errorMessage.toLowerCase().includes('unauthorized');
-    
     return {
-      error: isAuthError 
-        ? `Authentication failed. Please log in with Telegram to view your inventory.`
-        : `Failed to load inventory from FastAPI: ${errorMessage}`,
+      error: `Failed to load inventory from FastAPI: ${errorMessage}`,
       debugInfo: {
         ...debugInfo,
         step: 'ERROR: FastAPI request failed',
         error: errorMessage,
-        isAuthError,
-        recommendation: isAuthError 
-          ? 'User needs to authenticate via Telegram WebApp. Check initData availability.'
-          : 'Check FastAPI backend connectivity and authentication'
+        recommendation: 'Check FastAPI backend connectivity and authentication'
       }
     };
   }
