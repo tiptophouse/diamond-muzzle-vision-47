@@ -1,5 +1,7 @@
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { MobileAdminLayout } from '@/components/admin/MobileAdminLayout';
 import { AdminStatsGrid } from '@/components/admin/AdminStatsGrid';
+import { VibrantStatsCard } from '@/components/admin/VibrantStatsCard';
 import { AdminUserManager } from '@/components/admin/AdminUserManager';
 import { NotificationCenter } from '@/components/admin/NotificationCenter';
 import { NotificationSender } from '@/components/admin/NotificationSender';
@@ -35,8 +37,19 @@ import { WebhookDiagnostics } from '@/components/admin/WebhookDiagnostics';
 import { CampaignManager } from '@/components/admin/CampaignManager';
 import { RealTimeMonitor } from '@/components/admin/RealTimeMonitor';
 import { useSearchParams } from 'react-router-dom';
+import { Users, Activity, Gem, TrendingUp, CreditCard, UserX } from 'lucide-react';
 
 export default function Admin() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
@@ -187,63 +200,77 @@ export default function Admin() {
     switch (activeTab) {
       case 'monitor':
         return (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  📊 Real-Time Dashboard
+          <div className="space-y-4">
+            {/* Vibrant Stats Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+              <VibrantStatsCard
+                title="Total Users"
+                value={stats.totalUsers}
+                icon={Users}
+                gradient="primary"
+                trend={{ value: 12, isPositive: true }}
+              />
+              <VibrantStatsCard
+                title="Active Users"
+                value={stats.activeUsers}
+                subtitle="Last 7 days"
+                icon={Activity}
+                gradient="success"
+                trend={{ value: 8, isPositive: true }}
+              />
+              <VibrantStatsCard
+                title="Premium Users"
+                value={stats.premiumUsers}
+                icon={CreditCard}
+                gradient="secondary"
+                trend={{ value: 5, isPositive: true }}
+              />
+              <VibrantStatsCard
+                title="Total Diamonds"
+                value={totalDiamonds}
+                icon={Gem}
+                gradient="accent"
+              />
+              <VibrantStatsCard
+                title="Engagement"
+                value={`${averageEngagement}%`}
+                icon={TrendingUp}
+                gradient="warning"
+              />
+              <VibrantStatsCard
+                title="Blocked Users"
+                value={blockedUsersCount}
+                icon={UserX}
+                gradient="danger"
+              />
+            </div>
+
+            {/* Login Stats */}
+            <Card className="shadow-lg">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  📈 Login Activity
                   <ForceRefreshButton />
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
-                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border">
-                    <div className="text-sm font-medium text-gray-600">Total Users</div>
-                    <div className="text-2xl font-bold text-blue-700">{stats.totalUsers}</div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="text-center p-4 bg-primary/5 rounded-xl border border-primary/10">
+                    <div className="text-sm font-medium text-muted-foreground mb-1">Today</div>
+                    <div className="text-2xl font-bold text-primary">{realTimeStats.todayLogins}</div>
                   </div>
-                  <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border">
-                    <div className="text-sm font-medium text-gray-600">Active Users</div>
-                    <div className="text-2xl font-bold text-green-700">{stats.activeUsers}</div>
-                    <div className="text-xs text-gray-500">Last 7 days</div>
+                  <div className="text-center p-4 bg-accent/5 rounded-xl border border-accent/10">
+                    <div className="text-sm font-medium text-muted-foreground mb-1">This Week</div>  
+                    <div className="text-2xl font-bold text-accent">{realTimeStats.weeklyLogins}</div>
                   </div>
-                  <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg border">
-                    <div className="text-sm font-medium text-gray-600">Premium Users</div>
-                    <div className="text-2xl font-bold text-purple-700">{stats.premiumUsers}</div>
-                  </div>
-                  <div className="bg-gradient-to-r from-amber-50 to-amber-100 p-4 rounded-lg border">
-                    <div className="text-sm font-medium text-gray-600">Total Diamonds</div>
-                    <div className="text-2xl font-bold text-amber-700">{totalDiamonds}</div>
-                  </div>
-                  <div className="bg-gradient-to-r from-red-50 to-red-100 p-4 rounded-lg border">
-                    <div className="text-sm font-medium text-gray-600">Blocked Users</div>
-                    <div className="text-2xl font-bold text-red-700">{blockedUsersCount}</div>
-                  </div>
-                  <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 p-4 rounded-lg border">
-                    <div className="text-sm font-medium text-gray-600">Engagement</div>
-                    <div className="text-2xl font-bold text-emerald-700">{averageEngagement}%</div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center p-3 bg-gray-50 rounded-lg">
-                    <div className="text-sm font-medium text-gray-600">Today</div>
-                    <div className="text-xl font-bold">{realTimeStats.todayLogins}</div>
-                  </div>
-                  <div className="text-center p-3 bg-gray-50 rounded-lg">
-                    <div className="text-sm font-medium text-gray-600">This Week</div>  
-                    <div className="text-xl font-bold">{realTimeStats.weeklyLogins}</div>
-                  </div>
-                  <div className="text-center p-3 bg-gray-50 rounded-lg">
-                    <div className="text-sm font-medium text-gray-600">This Month</div>
-                    <div className="text-xl font-bold">{realTimeStats.monthlyLogins}</div>
+                  <div className="text-center p-4 bg-secondary/5 rounded-xl border border-secondary/10">
+                    <div className="text-sm font-medium text-muted-foreground mb-1">This Month</div>
+                    <div className="text-2xl font-bold text-secondary">{realTimeStats.monthlyLogins}</div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            <AdminStatsGrid
-              stats={stats}
-              blockedUsersCount={blockedUsersCount}  
-              averageEngagement={averageEngagement}
-            />
+            
             <RealTimeMonitor />
           </div>
         );
@@ -304,9 +331,11 @@ export default function Admin() {
     }
   };
 
+  const Layout = isMobile ? MobileAdminLayout : AdminLayout;
+
   return (
-    <AdminLayout>
+    <Layout>
       {renderContent()}
-    </AdminLayout>
+    </Layout>
   );
 }
