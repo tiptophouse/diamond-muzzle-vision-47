@@ -200,15 +200,26 @@ export default function Admin() {
     switch (activeTab) {
       case 'monitor':
         return (
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {/* Welcome Section */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-secondary p-8 text-white shadow-2xl">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15),transparent)]" />
+              <div className="relative">
+                <h2 className="text-3xl font-bold mb-2">Welcome back, Admin! 👋</h2>
+                <p className="text-white/80 text-lg">Here's what's happening with your platform today</p>
+              </div>
+              <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
+            </div>
+
             {/* Vibrant Stats Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <VibrantStatsCard
                 title="Total Users"
                 value={stats.totalUsers}
                 icon={Users}
                 gradient="primary"
                 trend={{ value: 12, isPositive: true }}
+                delay={0}
               />
               <VibrantStatsCard
                 title="Active Users"
@@ -217,6 +228,7 @@ export default function Admin() {
                 icon={Activity}
                 gradient="success"
                 trend={{ value: 8, isPositive: true }}
+                delay={100}
               />
               <VibrantStatsCard
                 title="Premium Users"
@@ -224,48 +236,70 @@ export default function Admin() {
                 icon={CreditCard}
                 gradient="secondary"
                 trend={{ value: 5, isPositive: true }}
+                delay={200}
               />
               <VibrantStatsCard
                 title="Total Diamonds"
                 value={totalDiamonds}
                 icon={Gem}
                 gradient="accent"
+                delay={300}
               />
               <VibrantStatsCard
                 title="Engagement"
                 value={`${averageEngagement}%`}
                 icon={TrendingUp}
                 gradient="warning"
+                delay={400}
               />
               <VibrantStatsCard
                 title="Blocked Users"
                 value={blockedUsersCount}
                 icon={UserX}
                 gradient="danger"
+                delay={500}
               />
             </div>
 
-            {/* Login Stats */}
-            <Card className="shadow-lg">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  📈 Login Activity
+            {/* Login Activity with beautiful cards */}
+            <Card className="shadow-2xl border-0 bg-gradient-to-br from-card to-card/50 backdrop-blur-xl overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32" />
+              <CardHeader className="pb-4 relative">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-2xl font-bold flex items-center gap-3">
+                    <div className="p-3 bg-gradient-to-br from-primary to-secondary rounded-2xl text-white shadow-lg">
+                      📈
+                    </div>
+                    Login Activity
+                  </CardTitle>
                   <ForceRefreshButton />
-                </CardTitle>
+                </div>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="text-center p-4 bg-primary/5 rounded-xl border border-primary/10">
-                    <div className="text-sm font-medium text-muted-foreground mb-1">Today</div>
-                    <div className="text-2xl font-bold text-primary">{realTimeStats.todayLogins}</div>
+              <CardContent className="relative">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="group relative overflow-hidden text-center p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl border border-primary/20 hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="relative">
+                      <div className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Today</div>
+                      <div className="text-4xl font-black text-primary mb-1">{realTimeStats.todayLogins}</div>
+                      <div className="text-xs text-muted-foreground font-medium">Logins</div>
+                    </div>
                   </div>
-                  <div className="text-center p-4 bg-accent/5 rounded-xl border border-accent/10">
-                    <div className="text-sm font-medium text-muted-foreground mb-1">This Week</div>  
-                    <div className="text-2xl font-bold text-accent">{realTimeStats.weeklyLogins}</div>
+                  <div className="group relative overflow-hidden text-center p-6 bg-gradient-to-br from-accent/10 to-accent/5 rounded-2xl border border-accent/20 hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className="absolute inset-0 bg-gradient-to-br from-accent/0 to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="relative">
+                      <div className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wide">This Week</div>  
+                      <div className="text-4xl font-black text-accent mb-1">{realTimeStats.weeklyLogins}</div>
+                      <div className="text-xs text-muted-foreground font-medium">Logins</div>
+                    </div>
                   </div>
-                  <div className="text-center p-4 bg-secondary/5 rounded-xl border border-secondary/10">
-                    <div className="text-sm font-medium text-muted-foreground mb-1">This Month</div>
-                    <div className="text-2xl font-bold text-secondary">{realTimeStats.monthlyLogins}</div>
+                  <div className="group relative overflow-hidden text-center p-6 bg-gradient-to-br from-secondary/10 to-secondary/5 rounded-2xl border border-secondary/20 hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className="absolute inset-0 bg-gradient-to-br from-secondary/0 to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="relative">
+                      <div className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wide">This Month</div>
+                      <div className="text-4xl font-black text-secondary mb-1">{realTimeStats.monthlyLogins}</div>
+                      <div className="text-xs text-muted-foreground font-medium">Logins</div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
