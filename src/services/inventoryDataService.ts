@@ -56,12 +56,23 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     if (result.data && Array.isArray(result.data)) {
       console.log('✅ INVENTORY SERVICE: Successfully fetched', result.data.length, 'diamonds from FastAPI');
       
-      // Log image fields available in FastAPI response
+      // COMPREHENSIVE DIAGNOSTIC LOGGING - Capture FULL FastAPI response
       if (result.data.length > 0) {
         const sampleItem = result.data[0];
-        console.log('📸 INVENTORY SERVICE: Available image fields in FastAPI response:', {
+        
+        // Log ALL keys returned by FastAPI
+        console.log('🔍 FASTAPI DIAGNOSTIC: ALL response keys:', Object.keys(sampleItem));
+        
+        // Log FULL first item (raw data from FastAPI)
+        console.log('🔍 FASTAPI DIAGNOSTIC: FULL FIRST ITEM:', JSON.stringify(sampleItem, null, 2));
+        
+        // Log specific image-related fields
+        console.log('📸 INVENTORY SERVICE: Image fields in FastAPI response:', {
           picture: sampleItem.picture,
+          Picture: sampleItem.Picture,
+          PICTURE: sampleItem.PICTURE,
           image_url: sampleItem.image_url,
+          ImageURL: sampleItem.ImageURL,
           imageUrl: sampleItem.imageUrl,
           Image: sampleItem.Image,
           image: sampleItem.image,
@@ -73,6 +84,26 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
             key.toLowerCase().includes('photo')
           )
         });
+        
+        // Special diagnostic for Adam Knipel (user_id: 38166518)
+        if (String(userId) === '38166518') {
+          console.log('🚨 ADAM KNIPEL IMAGE DIAGNOSTIC:', {
+            userId: userId,
+            totalDiamonds: result.data.length,
+            firstDiamondAllKeys: Object.keys(sampleItem),
+            firstDiamondImageFields: Object.keys(sampleItem).filter(key => 
+              key.toLowerCase().includes('image') || 
+              key.toLowerCase().includes('picture') || 
+              key.toLowerCase().includes('photo')
+            ),
+            firstDiamondStockNumber: sampleItem.stock || sampleItem.stock_number,
+            rawPictureValue: sampleItem.picture,
+            rawImageUrlValue: sampleItem.image_url,
+            allImageFieldValues: Object.keys(sampleItem)
+              .filter(key => key.toLowerCase().includes('image') || key.toLowerCase().includes('picture') || key.toLowerCase().includes('photo'))
+              .reduce((acc, key) => ({ ...acc, [key]: sampleItem[key] }), {})
+          });
+        }
       }
       
       return {

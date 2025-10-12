@@ -57,13 +57,23 @@ export function useInventoryData() {
         trimmedUrl === 'default' || 
         trimmedUrl === 'null' || 
         trimmedUrl === 'undefined' ||
-        trimmedUrl.length < 10) {
+        trimmedUrl.length < 3) { // Changed from 10 to 3 to allow shorter paths
       return undefined;
     }
 
     // Accept ALL HTTP/HTTPS URLs directly from FastAPI - no filtering
     if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
       return trimmedUrl;
+    }
+    
+    // Handle relative URLs - prepend FastAPI base URL
+    if (trimmedUrl.startsWith('/')) {
+      return `https://api.mazalbot.com${trimmedUrl}`;
+    }
+    
+    // Handle URLs without protocol but with domain
+    if (trimmedUrl.includes('.') && trimmedUrl.includes('/')) {
+      return `https://${trimmedUrl}`;
     }
 
     return undefined;
@@ -147,20 +157,34 @@ export function useInventoryData() {
           
           // Transform data to match Diamond interface with enhanced field mapping
           return result.data.map(item => {
-            // ENHANCED IMAGE URL PROCESSING - Accept ALL FastAPI image fields
+            // ENHANCED IMAGE URL PROCESSING - Accept ALL FastAPI image fields (case-insensitive)
             let finalImageUrl = undefined;
             const imageFields = [
-              item.picture,          // Primary FastAPI image field
-              item.image_url,        // Alternative FastAPI field
-              item.imageUrl,         // CamelCase variant
-              item.Image,            // CSV field
-              item.image,            // Generic field
-              item.photo_url,        // Photo URL field
-              item.diamond_image,    // Diamond-specific image
-              item.media_url,        // Media URL
-              item.thumbnail_url,    // Thumbnail
-              item.product_image,    // Product image
+              item.picture || item.Picture || item.PICTURE,          // Primary FastAPI image field
+              item.image_url || item.ImageURL || item.IMAGE_URL,     // Alternative FastAPI field
+              item.imageUrl || item.ImageUrl || item.imageURL,       // CamelCase variant
+              item.Image || item.IMAGE,                              // CSV field
+              item.image,                                            // Generic field
+              item.photo_url || item.PhotoURL,                       // Photo URL field
+              item.diamond_image || item.DiamondImage,               // Diamond-specific image
+              item.media_url || item.MediaURL,                       // Media URL
+              item.thumbnail_url || item.ThumbnailURL,               // Thumbnail
+              item.product_image || item.ProductImage,               // Product image
             ];
+            
+            // Special diagnostic for Adam Knipel
+            if (String(user?.id) === '38166518') {
+              console.log('🚨 ADAM KNIPEL IMAGE PROCESSING:', {
+                stockNumber: item.stock || item.stock_number,
+                allKeys: Object.keys(item),
+                imageFieldsRaw: imageFields.filter(f => f),
+                imageFieldsChecked: imageFields.map((field, idx) => ({
+                  index: idx,
+                  value: field,
+                  processed: processImageUrl(field)
+                }))
+              });
+            }
             
             // Accept FIRST valid image URL from FastAPI without strict filtering
             for (const imageField of imageFields) {
@@ -169,6 +193,14 @@ export function useInventoryData() {
                 finalImageUrl = processedUrl;
                 break;
               }
+            }
+            
+            // Additional diagnostic for Adam Knipel
+            if (String(user?.id) === '38166518') {
+              console.log('🚨 ADAM KNIPEL FINAL IMAGE URL:', {
+                stockNumber: item.stock || item.stock_number,
+                finalImageUrl: finalImageUrl
+              });
             }
 
             return {
