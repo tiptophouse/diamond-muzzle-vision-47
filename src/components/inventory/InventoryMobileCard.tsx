@@ -24,6 +24,7 @@ export const InventoryMobileCard = memo(function InventoryMobileCard({ diamond, 
               alt={`Diamond ${diamond.stockNumber}`}
               className="w-20 h-20 object-cover rounded border"
               fallbackClassName="w-20 h-20 flex items-center justify-center bg-muted rounded border"
+              stockNumber={diamond.stockNumber}
             />
           </div>
 

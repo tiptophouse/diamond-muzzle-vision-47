@@ -25,6 +25,7 @@ export const InventoryTableRow = memo(function InventoryTableRow({ diamond, onEd
           <OptimizedDiamondImage
             src={diamond.imageUrl}
             alt={`Diamond ${diamond.stockNumber}`}
+            stockNumber={diamond.stockNumber}
           />
           <UserImageUpload 
             diamond={diamond}
