@@ -45,7 +45,7 @@ export function useInventoryData() {
   }, []);
 
   // Enhanced image URL processing - USE IMAGES DIRECTLY FROM FASTAPI
-  const processImageUrl = useCallback((imageUrl: string | undefined): string | undefined => {
+  const processImageUrl = useCallback((imageUrl: string | undefined, stockNumber?: string): string | undefined => {
     if (!imageUrl || typeof imageUrl !== 'string') {
       return undefined;
     }
@@ -57,27 +57,63 @@ export function useInventoryData() {
         trimmedUrl === 'default' || 
         trimmedUrl === 'null' || 
         trimmedUrl === 'undefined' ||
-        trimmedUrl.length < 3) { // Changed from 10 to 3 to allow shorter paths
+        trimmedUrl.length < 3) {
       return undefined;
+    }
+
+    // DIAGNOSTIC: Log all image URLs for Adam Knipel
+    if (String(user?.id) === '38166518') {
+      console.log('🔍 ADAM IMAGE URL PROCESSING:', {
+        stockNumber,
+        rawUrl: imageUrl,
+        trimmedUrl,
+        length: trimmedUrl.length
+      });
     }
 
     // Accept ALL HTTP/HTTPS URLs directly from FastAPI - no filtering
     if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
-      return trimmedUrl;
+      const finalUrl = trimmedUrl;
+      if (String(user?.id) === '38166518') {
+        console.log('✅ ADAM IMAGE URL ACCEPTED (HTTP/HTTPS):', { stockNumber, finalUrl });
+      }
+      return finalUrl;
     }
     
     // Handle relative URLs - prepend FastAPI base URL
     if (trimmedUrl.startsWith('/')) {
-      return `https://api.mazalbot.com${trimmedUrl}`;
+      const finalUrl = `https://api.mazalbot.com${trimmedUrl}`;
+      if (String(user?.id) === '38166518') {
+        console.log('✅ ADAM IMAGE URL ACCEPTED (RELATIVE):', { stockNumber, finalUrl });
+      }
+      return finalUrl;
     }
     
     // Handle URLs without protocol but with domain
     if (trimmedUrl.includes('.') && trimmedUrl.includes('/')) {
-      return `https://${trimmedUrl}`;
+      const finalUrl = `https://${trimmedUrl}`;
+      if (String(user?.id) === '38166518') {
+        console.log('✅ ADAM IMAGE URL ACCEPTED (NO PROTOCOL):', { stockNumber, finalUrl });
+      }
+      return finalUrl;
+    }
+
+    // AGGRESSIVE: Try to accept ANY string that looks like it could be a URL
+    // This catches edge cases like malformed URLs
+    if (trimmedUrl.includes('.') || trimmedUrl.length > 10) {
+      const finalUrl = trimmedUrl.startsWith('//') ? `https:${trimmedUrl}` : `https://${trimmedUrl}`;
+      if (String(user?.id) === '38166518') {
+        console.log('⚠️ ADAM IMAGE URL GUESSED:', { stockNumber, originalUrl: trimmedUrl, finalUrl });
+      }
+      return finalUrl;
+    }
+
+    if (String(user?.id) === '38166518') {
+      console.log('❌ ADAM IMAGE URL REJECTED:', { stockNumber, url: trimmedUrl });
     }
 
     return undefined;
-  }, []);
+  }, [user]);
 
   // Enhanced 360° URL detection - ACCEPT ALL FASTAPI URLS
   const detect360Url = useCallback((url: string | undefined): string | undefined => {
@@ -158,6 +194,17 @@ export function useInventoryData() {
           // Transform data to match Diamond interface with enhanced field mapping
           return result.data.map(item => {
             // ENHANCED IMAGE URL PROCESSING - Accept ALL FastAPI image fields (case-insensitive)
+            const stockNumber = item.stock || item.stock_number || item.stockNumber || item.VendorStockNumber;
+            
+            // DIAGNOSTIC: Log RAW item data for Adam Knipel
+            if (String(user?.id) === '38166518') {
+              console.log('🔍 ADAM RAW ITEM DATA:', {
+                stockNumber,
+                allKeys: Object.keys(item),
+                fullItem: JSON.stringify(item, null, 2)
+              });
+            }
+            
             let finalImageUrl = undefined;
             const imageFields = [
               item.picture || item.Picture || item.PICTURE,          // Primary FastAPI image field
@@ -170,36 +217,58 @@ export function useInventoryData() {
               item.media_url || item.MediaURL,                       // Media URL
               item.thumbnail_url || item.ThumbnailURL,               // Thumbnail
               item.product_image || item.ProductImage,               // Product image
+              item.img || item.Img || item.IMG,                      // Short form
+              item.url || item.URL || item.Url,                      // Generic URL
+              item.src || item.Src || item.SRC,                      // Source
             ];
             
-            // Special diagnostic for Adam Knipel
+            // DIAGNOSTIC: Log all possible image fields for Adam Knipel
             if (String(user?.id) === '38166518') {
-              console.log('🚨 ADAM KNIPEL IMAGE PROCESSING:', {
-                stockNumber: item.stock || item.stock_number,
-                allKeys: Object.keys(item),
-                imageFieldsRaw: imageFields.filter(f => f),
-                imageFieldsChecked: imageFields.map((field, idx) => ({
+              console.log('🔍 ADAM IMAGE FIELDS CHECK:', {
+                stockNumber,
+                imageFieldsRaw: imageFields.map((field, idx) => ({
                   index: idx,
                   value: field,
-                  processed: processImageUrl(field)
-                }))
+                  type: typeof field,
+                  length: field?.length
+                })),
+                nonEmptyFields: imageFields.filter(f => f && f !== 'null' && f !== 'undefined')
               });
             }
             
             // Accept FIRST valid image URL from FastAPI without strict filtering
-            for (const imageField of imageFields) {
-              const processedUrl = processImageUrl(imageField);
+            for (let i = 0; i < imageFields.length; i++) {
+              const imageField = imageFields[i];
+              const processedUrl = processImageUrl(imageField, stockNumber);
+              
+              if (String(user?.id) === '38166518') {
+                console.log(`🔍 ADAM FIELD ${i} PROCESSING:`, {
+                  stockNumber,
+                  rawValue: imageField,
+                  processedUrl,
+                  accepted: !!processedUrl
+                });
+              }
+              
               if (processedUrl) {
                 finalImageUrl = processedUrl;
+                if (String(user?.id) === '38166518') {
+                  console.log('✅ ADAM FINAL IMAGE SELECTED:', {
+                    stockNumber,
+                    fieldIndex: i,
+                    finalImageUrl
+                  });
+                }
                 break;
               }
             }
             
-            // Additional diagnostic for Adam Knipel
+            // Final diagnostic for Adam Knipel
             if (String(user?.id) === '38166518') {
-              console.log('🚨 ADAM KNIPEL FINAL IMAGE URL:', {
-                stockNumber: item.stock || item.stock_number,
-                finalImageUrl: finalImageUrl
+              console.log('🎯 ADAM FINAL RESULT:', {
+                stockNumber,
+                finalImageUrl,
+                hasImage: !!finalImageUrl
               });
             }
 
