@@ -18,7 +18,7 @@ interface MobileAdminLayoutProps {
 }
 
 const bottomNavItems = [
-  { id: 'monitor', label: 'Monitor', icon: LayoutDashboard, url: '?tab=monitor' },
+  { id: 'overview', label: 'Dashboard', icon: LayoutDashboard, url: '?tab=overview' },
   { id: 'analytics', label: 'Analytics', icon: BarChart3, url: '?tab=analytics' },
   { id: 'users', label: 'Users', icon: Users, url: '?tab=users' },
   { id: 'campaigns', label: 'Campaigns', icon: Share2, url: '?tab=campaigns' },
@@ -27,7 +27,7 @@ const bottomNavItems = [
 export function MobileAdminLayout({ children }: MobileAdminLayoutProps) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'monitor';
+  const activeTab = searchParams.get('tab') || 'overview';
 
   const handleTabChange = (tabId: string) => {
     setSearchParams({ tab: tabId });

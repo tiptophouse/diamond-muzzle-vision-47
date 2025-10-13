@@ -1,6 +1,7 @@
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { MobileAdminLayout } from '@/components/admin/MobileAdminLayout';
 import { AdminStatsGrid } from '@/components/admin/AdminStatsGrid';
+import { AdminOverview } from '@/components/admin/AdminOverview';
 import { VibrantStatsCard } from '@/components/admin/VibrantStatsCard';
 import { AdminUserManager } from '@/components/admin/AdminUserManager';
 import { NotificationCenter } from '@/components/admin/NotificationCenter';
@@ -53,7 +54,7 @@ export default function Admin() {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'monitor';
+  const activeTab = searchParams.get('tab') || 'overview';
   const [notifications, setNotifications] = useState([]);
 
   // Real bot usage stats - Updated to refresh more frequently
@@ -198,6 +199,16 @@ export default function Admin() {
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'overview':
+        return (
+          <AdminOverview
+            stats={stats}
+            blockedUsersCount={blockedUsersCount}
+            averageEngagement={averageEngagement}
+            totalDiamonds={totalDiamonds}
+            realTimeStats={realTimeStats}
+          />
+        );
       case 'monitor':
         return (
           <div className="space-y-6">
