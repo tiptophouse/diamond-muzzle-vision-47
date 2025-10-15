@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCheck, Crown, Shield, Gem, TrendingUp, DollarSign, Activity } from 'lucide-react';
 import { QuickMessageSender } from './QuickMessageSender';
 import { ContactsModal } from './ContactsModal';
+import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 
 interface AdminOverviewProps {
   stats: {
@@ -33,6 +34,12 @@ export function AdminOverview({
   allUsers = []
 }: AdminOverviewProps) {
   const [showContactsModal, setShowContactsModal] = useState(false);
+  const { impactOccurred, notificationOccurred } = useTelegramHapticFeedback();
+
+  const handleOpenContacts = () => {
+    impactOccurred('medium');
+    setShowContactsModal(true);
+  };
 
   // Calculate real users count (excluding mock data)
   const realUsersCount = allUsers.filter(user => {
@@ -48,8 +55,8 @@ export function AdminOverview({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Total Users - Now Clickable */}
         <Card 
-          className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800 cursor-pointer hover:shadow-lg transition-shadow"
-          onClick={() => setShowContactsModal(true)}
+          className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800 cursor-pointer hover:shadow-lg transition-all active:scale-95 min-h-[120px]"
+          onClick={handleOpenContacts}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-blue-900 dark:text-blue-100">Total Users</CardTitle>

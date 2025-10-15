@@ -39,18 +39,23 @@ import { CampaignManager } from '@/components/admin/CampaignManager';
 import { RealTimeMonitor } from '@/components/admin/RealTimeMonitor';
 import { useSearchParams } from 'react-router-dom';
 import { Users, Activity, Gem, TrendingUp, CreditCard, UserX } from 'lucide-react';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 
 export default function Admin() {
+  const { webApp } = useTelegramWebApp();
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      // Always use mobile layout in Telegram Mini App
+      const isTelegramMiniApp = webApp && (webApp.platform === 'android' || webApp.platform === 'ios' || webApp.platform === 'tdesktop');
+      setIsMobile(window.innerWidth < 768 || isTelegramMiniApp);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  }, [webApp]);
+  
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();

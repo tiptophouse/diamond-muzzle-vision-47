@@ -1,18 +1,14 @@
-import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { MessageCircle, Phone, Mail, Search, Users } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { MessageSquare, Phone, Mail, Search, User } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
+import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
+import { cn } from '@/lib/utils';
 
 interface ContactsModalProps {
   isOpen: boolean;
@@ -23,12 +19,14 @@ interface ContactsModalProps {
 export function ContactsModal({ isOpen, onClose, users }: ContactsModalProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
+  const { webApp, isReady } = useTelegramWebApp();
+  const { impactOccurred, notificationOccurred } = useTelegramHapticFeedback();
 
   // Filter real users only (not mock data)
   const realUsers = users.filter(user => {
     const isReal = user.first_name && 
       !['Test', 'Telegram', 'Emergency', 'Unknown'].includes(user.first_name) &&
-      user.telegram_id > 1000000; // Valid telegram IDs are typically > 1M
+      user.telegram_id > 1000000;
     return isReal;
   });
 
@@ -38,52 +36,73 @@ export function ContactsModal({ isOpen, onClose, users }: ContactsModalProps) {
     const lastName = (user.last_name || '').toLowerCase();
     const fullName = `${firstName} ${lastName}`.trim();
     const username = (user.username || '').toLowerCase();
-    const phone = user.phone_number || '';
+    const telegramId = String(user.telegram_id || '');
     
     return (
       firstName.includes(searchLower) ||
       lastName.includes(searchLower) ||
       fullName.includes(searchLower) ||
       username.includes(searchLower) ||
-      phone.includes(searchTerm)
+      telegramId.includes(searchTerm)
     );
   });
 
   const handleSendMessage = (user: any) => {
-    if (user.telegram_id) {
-      const telegramUrl = `https://t.me/${user.username || user.telegram_id}`;
+    impactOccurred('medium');
+    
+    if (isReady && webApp) {
+      // Use Telegram native method to open user profile
+      const telegramUrl = `https://t.me/${user.username || `user${user.telegram_id}`}`;
+      webApp.openTelegramLink(telegramUrl);
+    } else {
+      // Fallback for non-Telegram environment
+      const telegramUrl = `https://t.me/${user.username || `user${user.telegram_id}`}`;
       window.open(telegramUrl, '_blank');
-      toast({
-        title: "Opening Telegram",
-        description: `Opening chat with ${user.first_name}`,
-      });
     }
+    
+    notificationOccurred('success');
+    toast({
+      title: "Opening Telegram",
+      description: `Opening chat with ${user.first_name || 'User'}`,
+    });
   };
 
   const handleCall = (user: any) => {
+    impactOccurred('medium');
+    
     if (user.phone_number) {
-      window.open(`tel:${user.phone_number}`);
-      toast({
-        title: "Calling",
-        description: `Calling ${user.first_name}`,
-      });
+      if (isReady && webApp) {
+        webApp.openLink(`tel:${user.phone_number}`);
+      } else {
+        window.open(`tel:${user.phone_number}`, '_self');
+      }
+      notificationOccurred('success');
     } else {
+      notificationOccurred('error');
       toast({
-        title: "No phone number",
-        description: "This user has no phone number on file",
-        variant: "destructive",
+        title: "No Phone Number",
+        description: "This user hasn't shared their phone number",
+        variant: "destructive"
       });
     }
   };
 
   const handleEmail = (user: any) => {
+    impactOccurred('medium');
+    
     if (user.email) {
-      window.open(`mailto:${user.email}`);
+      if (isReady && webApp) {
+        webApp.openLink(`mailto:${user.email}`);
+      } else {
+        window.open(`mailto:${user.email}`, '_self');
+      }
+      notificationOccurred('success');
     } else {
+      notificationOccurred('error');
       toast({
-        title: "No email",
-        description: "This user has no email on file",
-        variant: "destructive",
+        title: "No Email",
+        description: "This user hasn't shared their email",
+        variant: "destructive"
       });
     }
   };
@@ -96,115 +115,104 @@ export function ContactsModal({ isOpen, onClose, users }: ContactsModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-2xl">
-            <Users className="h-6 w-6 text-primary" />
-            All Contacts ({realUsers.length} users)
-          </DialogTitle>
-          <DialogDescription>
-            View and contact all registered users
-          </DialogDescription>
+      <DialogContent className={cn(
+        "flex flex-col",
+        "max-w-full sm:max-w-4xl",
+        "h-[100dvh] sm:h-auto sm:max-h-[90vh]",
+        "p-0 gap-0"
+      )}>
+        <DialogHeader className="px-4 pt-6 pb-4 border-b">
+          <DialogTitle className="text-2xl font-bold">User Contacts ({filteredContacts.length})</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name, username, or phone..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+        {/* Search Bar */}
+        <div className="relative px-4 py-3 border-b">
+          <Search className="absolute left-7 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search by name, username, or telegram ID..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              impactOccurred('light');
+            }}
+            className="pl-10 h-12 text-base"
+          />
+        </div>
 
-          {/* Stats */}
-          <div className="flex gap-2 text-sm text-muted-foreground">
-            <span>Showing {filteredContacts.length} of {realUsers.length} contacts</span>
-          </div>
-
-          {/* Contacts List */}
-          <ScrollArea className="h-[500px] pr-4">
-            <div className="space-y-2">
-              {filteredContacts.map((user) => (
+        {/* Contacts List */}
+        <ScrollArea className="flex-1 px-4">
+          <div className="space-y-2 py-3">
+            {filteredContacts.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <User className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>No contacts found</p>
+              </div>
+            ) : (
+              filteredContacts.map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                  className="flex items-center gap-3 p-4 rounded-lg border bg-card hover:bg-accent transition-colors min-h-[80px]"
                 >
-                  {/* Avatar */}
-                  <Avatar className="h-12 w-12">
+                  <Avatar className="h-12 w-12 flex-shrink-0">
+                    <AvatarImage src={user.avatar_url} />
                     <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                       {getInitials(user)}
                     </AvatarFallback>
                   </Avatar>
-
-                  {/* User Info */}
+                  
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-foreground truncate">
-                        {user.first_name} {user.last_name}
-                      </h3>
-                      {user.is_premium && (
-                        <Badge variant="secondary" className="text-xs">Premium</Badge>
-                      )}
+                    <div className="font-semibold text-foreground truncate text-base">
+                      {user.first_name} {user.last_name}
                     </div>
-                    <div className="text-sm text-muted-foreground space-y-1">
-                      {user.username && (
-                        <p className="truncate">@{user.username}</p>
-                      )}
-                      {user.phone_number && (
-                        <p className="truncate">{user.phone_number}</p>
-                      )}
-                      {user.email && (
-                        <p className="truncate">{user.email}</p>
-                      )}
+                    <div className="text-sm text-muted-foreground truncate">
+                      {user.username ? `@${user.username}` : `ID: ${user.telegram_id}`}
                     </div>
+                    {user.phone_number && (
+                      <div className="text-xs text-muted-foreground mt-1">{user.phone_number}</div>
+                    )}
                   </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 shrink-0">
+                  
+                  <div className="flex gap-2 flex-shrink-0">
                     <Button
-                      size="sm"
-                      variant="outline"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleSendMessage(user)}
+                      className="h-11 w-11 min-w-[44px] min-h-[44px]"
                       title="Send Telegram message"
                     >
-                      <MessageCircle className="h-4 w-4" />
+                      <MessageSquare className="h-5 w-5" />
                     </Button>
+                    
                     {user.phone_number && (
                       <Button
-                        size="sm"
-                        variant="outline"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleCall(user)}
-                        title="Call user"
+                        className="h-11 w-11 min-w-[44px] min-h-[44px]"
+                        title="Call"
                       >
-                        <Phone className="h-4 w-4" />
+                        <Phone className="h-5 w-5" />
                       </Button>
                     )}
+                    
                     {user.email && (
                       <Button
-                        size="sm"
-                        variant="outline"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleEmail(user)}
+                        className="h-11 w-11 min-w-[44px] min-h-[44px]"
                         title="Send email"
                       >
-                        <Mail className="h-4 w-4" />
+                        <Mail className="h-5 w-5" />
                       </Button>
                     )}
                   </div>
                 </div>
-              ))}
-
-              {filteredContacts.length === 0 && (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No contacts found</p>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-        </div>
+              ))
+            )}
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
