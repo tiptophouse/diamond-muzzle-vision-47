@@ -117,68 +117,71 @@ export function ContactsModal({ isOpen, onClose, users }: ContactsModalProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className={cn(
         "flex flex-col",
-        "max-w-full sm:max-w-4xl",
-        "h-[100dvh] sm:h-auto sm:max-h-[90vh]",
-        "p-0 gap-0"
+        "w-full max-w-full sm:max-w-4xl",
+        "h-[100dvh] sm:h-auto sm:max-h-[85vh]",
+        "p-0 gap-0 m-0",
+        "sm:rounded-lg rounded-none"
       )}>
-        <DialogHeader className="px-4 pt-6 pb-4 border-b">
-          <DialogTitle className="text-2xl font-bold">User Contacts ({filteredContacts.length})</DialogTitle>
+        <DialogHeader className="px-4 sm:px-6 pt-6 pb-4 border-b flex-shrink-0">
+          <DialogTitle className="text-xl sm:text-2xl font-bold">
+            User Contacts ({filteredContacts.length})
+          </DialogTitle>
         </DialogHeader>
 
         {/* Search Bar */}
-        <div className="relative px-4 py-3 border-b">
-          <Search className="absolute left-7 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="relative px-4 sm:px-6 py-3 border-b flex-shrink-0 bg-background">
+          <Search className="absolute left-7 sm:left-9 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search by name, username, or telegram ID..."
+            placeholder="Search by name, username, or ID..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
               impactOccurred('light');
             }}
-            className="pl-10 h-12 text-base"
+            className="pl-10 sm:pl-12 h-12 text-base touch-target"
           />
         </div>
 
         {/* Contacts List */}
-        <ScrollArea className="flex-1 px-4">
-          <div className="space-y-2 py-3">
+        <ScrollArea className="flex-1 px-4 sm:px-6">
+          <div className="space-y-3 py-4">
             {filteredContacts.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <User className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>No contacts found</p>
+              <div className="text-center py-16 text-muted-foreground">
+                <User className="h-16 w-16 mx-auto mb-3 opacity-50" />
+                <p className="text-base">No contacts found</p>
               </div>
             ) : (
               filteredContacts.map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center gap-3 p-4 rounded-lg border bg-card hover:bg-accent transition-colors min-h-[80px]"
+                  className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border bg-card hover:bg-accent active:bg-accent/80 transition-colors min-h-[88px] touch-target"
                 >
-                  <Avatar className="h-12 w-12 flex-shrink-0">
+                  <Avatar className="h-14 w-14 sm:h-12 sm:w-12 flex-shrink-0">
                     <AvatarImage src={user.avatar_url} />
-                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-base">
                       {getInitials(user)}
                     </AvatarFallback>
                   </Avatar>
                   
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-foreground truncate text-base">
+                    <div className="font-semibold text-foreground truncate text-base sm:text-sm">
                       {user.first_name} {user.last_name}
                     </div>
-                    <div className="text-sm text-muted-foreground truncate">
+                    <div className="text-sm sm:text-xs text-muted-foreground truncate">
                       {user.username ? `@${user.username}` : `ID: ${user.telegram_id}`}
                     </div>
                     {user.phone_number && (
-                      <div className="text-xs text-muted-foreground mt-1">{user.phone_number}</div>
+                      <div className="text-xs text-muted-foreground mt-1 truncate">{user.phone_number}</div>
                     )}
                   </div>
                   
-                  <div className="flex gap-2 flex-shrink-0">
+                  <div className="flex gap-1 sm:gap-2 flex-shrink-0">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => handleSendMessage(user)}
-                      className="h-11 w-11 min-w-[44px] min-h-[44px]"
+                      className="h-12 w-12 min-w-[48px] min-h-[48px] sm:h-11 sm:w-11 touch-target"
                       title="Send Telegram message"
                     >
                       <MessageSquare className="h-5 w-5" />
@@ -189,7 +192,7 @@ export function ContactsModal({ isOpen, onClose, users }: ContactsModalProps) {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleCall(user)}
-                        className="h-11 w-11 min-w-[44px] min-h-[44px]"
+                        className="h-12 w-12 min-w-[48px] min-h-[48px] sm:h-11 sm:w-11 touch-target"
                         title="Call"
                       >
                         <Phone className="h-5 w-5" />
@@ -201,7 +204,7 @@ export function ContactsModal({ isOpen, onClose, users }: ContactsModalProps) {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleEmail(user)}
-                        className="h-11 w-11 min-w-[44px] min-h-[44px]"
+                        className="h-12 w-12 min-w-[48px] min-h-[48px] sm:h-11 sm:w-11 touch-target"
                         title="Send email"
                       >
                         <Mail className="h-5 w-5" />

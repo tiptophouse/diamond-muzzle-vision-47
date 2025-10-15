@@ -42,19 +42,25 @@ import { Users, Activity, Gem, TrendingUp, CreditCard, UserX } from 'lucide-reac
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 
 export default function Admin() {
-  const { webApp } = useTelegramWebApp();
+  const { webApp, isReady } = useTelegramWebApp();
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
       // Always use mobile layout in Telegram Mini App
-      const isTelegramMiniApp = webApp && (webApp.platform === 'android' || webApp.platform === 'ios' || webApp.platform === 'tdesktop');
-      setIsMobile(window.innerWidth < 768 || isTelegramMiniApp);
+      const isTelegramMiniApp = isReady && webApp && 
+        (webApp.platform === 'android' || 
+         webApp.platform === 'ios' || 
+         webApp.platform === 'tdesktop' ||
+         webApp.platform === 'mobile_safari' ||
+         webApp.platform === 'weba');
+      
+      setIsMobile(window.innerWidth < 768 || !!isTelegramMiniApp);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  }, [webApp]);
+  }, [webApp, isReady]);
   
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
   const { toast } = useToast();
