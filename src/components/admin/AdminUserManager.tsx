@@ -279,7 +279,8 @@ export function AdminUserManager({}: AdminUserManagerProps) {
         <AdminStatsGrid 
           stats={stats} 
           blockedUsersCount={blockedUsers.length} 
-          averageEngagement={averageEngagement} 
+          averageEngagement={averageEngagement}
+          allUsers={allUsers}
         />
 
         <Tabs defaultValue="users" className="w-full">

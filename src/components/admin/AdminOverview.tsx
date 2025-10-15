@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCheck, Crown, Shield, Gem, TrendingUp, DollarSign, Activity } from 'lucide-react';
 import { QuickMessageSender } from './QuickMessageSender';
+import { ContactsModal } from './ContactsModal';
 
 interface AdminOverviewProps {
   stats: {
@@ -20,6 +21,7 @@ interface AdminOverviewProps {
     weeklyLogins: number;
     monthlyLogins: number;
   };
+  allUsers?: any[];
 }
 
 export function AdminOverview({ 
@@ -27,21 +29,35 @@ export function AdminOverview({
   blockedUsersCount, 
   averageEngagement, 
   totalDiamonds,
-  realTimeStats 
+  realTimeStats,
+  allUsers = []
 }: AdminOverviewProps) {
+  const [showContactsModal, setShowContactsModal] = useState(false);
+
+  // Calculate real users count (excluding mock data)
+  const realUsersCount = allUsers.filter(user => {
+    const isReal = user.first_name && 
+      !['Test', 'Telegram', 'Emergency', 'Unknown'].includes(user.first_name) &&
+      user.telegram_id > 1000000;
+    return isReal;
+  }).length;
+
   return (
     <div className="space-y-6">
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Total Users */}
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
+        {/* Total Users - Now Clickable */}
+        <Card 
+          className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800 cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => setShowContactsModal(true)}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-blue-900 dark:text-blue-100">Total Users</CardTitle>
             <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-900 dark:text-blue-100">{stats.totalUsers.toLocaleString()}</div>
-            <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">Registered users</p>
+            <div className="text-3xl font-bold text-blue-900 dark:text-blue-100">{realUsersCount.toLocaleString()}</div>
+            <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">Click to view all contacts</p>
           </CardContent>
         </Card>
 
@@ -132,6 +148,13 @@ export function AdminOverview({
 
       {/* Quick Message Sender */}
       <QuickMessageSender />
+
+      {/* Contacts Modal */}
+      <ContactsModal
+        isOpen={showContactsModal}
+        onClose={() => setShowContactsModal(false)}
+        users={allUsers}
+      />
     </div>
   );
 }

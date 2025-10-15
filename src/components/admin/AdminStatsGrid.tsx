@@ -14,9 +14,18 @@ interface AdminStatsGridProps {
   };
   blockedUsersCount: number;
   averageEngagement: number;
+  allUsers?: any[];
 }
 
-export function AdminStatsGrid({ stats, blockedUsersCount, averageEngagement }: AdminStatsGridProps) {
+export function AdminStatsGrid({ stats, blockedUsersCount, averageEngagement, allUsers = [] }: AdminStatsGridProps) {
+  // Calculate real users count (excluding mock data)
+  const realUsersCount = allUsers.filter(user => {
+    const isReal = user.first_name && 
+      !['Test', 'Telegram', 'Emergency', 'Unknown'].includes(user.first_name) &&
+      user.telegram_id > 1000000;
+    return isReal;
+  }).length;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
       <Card>
@@ -25,7 +34,8 @@ export function AdminStatsGrid({ stats, blockedUsersCount, averageEngagement }: 
           <Users className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.totalUsers}</div>
+          <div className="text-2xl font-bold">{realUsersCount}</div>
+          <p className="text-xs text-muted-foreground">Real users only</p>
         </CardContent>
       </Card>
 

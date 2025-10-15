@@ -78,16 +78,35 @@ export default function Admin() {
     activeSubscriptions: 0,
     totalRevenue: 0
   });
+  const [allUsers, setAllUsers] = useState<any[]>([]);
 
   useEffect(() => {
     // Load real bot usage statistics
     loadBotUsageStats();
+    loadAllUsers();
     
     // Set up auto-refresh every 30 seconds
-    const interval = setInterval(loadBotUsageStats, 30000);
+    const interval = setInterval(() => {
+      loadBotUsageStats();
+      loadAllUsers();
+    }, 30000);
     
     return () => clearInterval(interval);
   }, [user, isAuthenticated, isLoading]);
+
+  const loadAllUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setAllUsers(data || []);
+    } catch (error) {
+      console.error('Error loading users:', error);
+    }
+  };
 
   const loadBotUsageStats = async () => {
     try {
@@ -207,6 +226,7 @@ export default function Admin() {
             averageEngagement={averageEngagement}
             totalDiamonds={totalDiamonds}
             realTimeStats={realTimeStats}
+            allUsers={allUsers}
           />
         );
       case 'monitor':
