@@ -248,6 +248,7 @@ export default function Admin() {
               stats={stats}
               blockedUsersCount={blockedUsersCount}
               averageEngagement={averageEngagement}
+              allUsers={allUsers}
             />
 
             {/* Diamond Statistics */}
