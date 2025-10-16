@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, UserCheck, Crown, Shield, Gem, TrendingUp, DollarSign, Activity } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Users, UserCheck, Crown, Shield, Gem, TrendingUp, DollarSign, Activity, Megaphone, BarChart3, Settings, MessageSquare } from 'lucide-react';
 import { QuickMessageSender } from './QuickMessageSender';
 import { ContactsModal } from './ContactsModal';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
+import { useNavigate } from 'react-router-dom';
 
 interface AdminOverviewProps {
   stats: {
@@ -35,10 +37,16 @@ export function AdminOverview({
 }: AdminOverviewProps) {
   const [showContactsModal, setShowContactsModal] = useState(false);
   const { impactOccurred, notificationOccurred } = useTelegramHapticFeedback();
+  const navigate = useNavigate();
 
   const handleOpenContacts = () => {
     impactOccurred('medium');
     setShowContactsModal(true);
+  };
+
+  const handleNavigate = (tab: string) => {
+    impactOccurred('light');
+    navigate(`/admin?tab=${tab}`);
   };
 
   // Calculate real users count (excluding mock data)
@@ -48,6 +56,8 @@ export function AdminOverview({
       user.telegram_id > 1000000;
     return isReal;
   }).length;
+
+  const averageDiamondsPerUser = stats.totalUsers > 0 ? Math.round(totalDiamonds / stats.totalUsers) : 0;
 
   return (
     <div className="space-y-6">
@@ -126,6 +136,78 @@ export function AdminOverview({
           </CardContent>
         </Card>
       </div>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Quick Admin Actions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Button 
+              onClick={() => handleNavigate('campaigns')}
+              className="h-20 flex flex-col gap-2"
+              variant="outline"
+            >
+              <Megaphone className="h-5 w-5" />
+              <span className="text-xs">Campaigns</span>
+            </Button>
+            <Button 
+              onClick={() => handleNavigate('analytics')}
+              className="h-20 flex flex-col gap-2"
+              variant="outline"
+            >
+              <BarChart3 className="h-5 w-5" />
+              <span className="text-xs">Analytics</span>
+            </Button>
+            <Button 
+              onClick={() => handleNavigate('users')}
+              className="h-20 flex flex-col gap-2"
+              variant="outline"
+            >
+              <Users className="h-5 w-5" />
+              <span className="text-xs">Users</span>
+            </Button>
+            <Button 
+              onClick={() => handleNavigate('notifications')}
+              className="h-20 flex flex-col gap-2"
+              variant="outline"
+            >
+              <MessageSquare className="h-5 w-5" />
+              <span className="text-xs">Messages</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Diamond Statistics Detailed */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Gem className="h-5 w-5" />
+            Diamond Inventory Details
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center p-6 bg-purple-50 dark:bg-purple-950 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="text-sm font-medium text-muted-foreground mb-2">Total Diamonds</div>
+              <div className="text-4xl font-bold text-purple-600 dark:text-purple-400">{totalDiamonds.toLocaleString()}</div>
+            </div>
+            <div className="text-center p-6 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="text-sm font-medium text-muted-foreground mb-2">Average per User</div>
+              <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">{averageDiamondsPerUser}</div>
+            </div>
+            <div className="text-center p-6 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
+              <div className="text-sm font-medium text-muted-foreground mb-2">Active Inventory</div>
+              <div className="text-4xl font-bold text-green-600 dark:text-green-400">{totalDiamonds.toLocaleString()}</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Login Activity Stats */}
       <Card>
