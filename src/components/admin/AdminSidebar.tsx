@@ -13,8 +13,7 @@ import {
   Send,
   TrendingUp,
   Activity,
-  Crown,
-  LayoutDashboard
+  Crown
 } from 'lucide-react';
 import {
   Sidebar,
@@ -35,7 +34,6 @@ const adminMenuItems = [
   {
     title: 'Overview',
     items: [
-      { title: 'Dashboard', url: '/admin?tab=overview', icon: LayoutDashboard, description: 'Main admin dashboard' },
       { title: 'Monitor', url: '/admin?tab=monitor', icon: Activity, description: 'Real-time system monitoring' },
       { title: 'Analytics', url: '/admin?tab=analytics', icon: BarChart3, description: 'Usage statistics & insights' },
     ]

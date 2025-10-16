@@ -1,8 +1,5 @@
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { MobileAdminLayout } from '@/components/admin/MobileAdminLayout';
 import { AdminStatsGrid } from '@/components/admin/AdminStatsGrid';
-import { AdminOverview } from '@/components/admin/AdminOverview';
-import { VibrantStatsCard } from '@/components/admin/VibrantStatsCard';
 import { AdminUserManager } from '@/components/admin/AdminUserManager';
 import { NotificationCenter } from '@/components/admin/NotificationCenter';
 import { NotificationSender } from '@/components/admin/NotificationSender';
@@ -38,34 +35,12 @@ import { WebhookDiagnostics } from '@/components/admin/WebhookDiagnostics';
 import { CampaignManager } from '@/components/admin/CampaignManager';
 import { RealTimeMonitor } from '@/components/admin/RealTimeMonitor';
 import { useSearchParams } from 'react-router-dom';
-import { Users, Activity, Gem, TrendingUp, CreditCard, UserX } from 'lucide-react';
-import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 
 export default function Admin() {
-  const { webApp, isReady } = useTelegramWebApp();
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      // Always use mobile layout in Telegram Mini App
-      const isTelegramMiniApp = isReady && webApp && 
-        (webApp.platform === 'android' || 
-         webApp.platform === 'ios' || 
-         webApp.platform === 'tdesktop' ||
-         webApp.platform === 'mobile_safari' ||
-         webApp.platform === 'weba');
-      
-      setIsMobile(window.innerWidth < 768 || !!isTelegramMiniApp);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, [webApp, isReady]);
-  
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'overview';
+  const activeTab = searchParams.get('tab') || 'monitor';
   const [notifications, setNotifications] = useState([]);
 
   // Real bot usage stats - Updated to refresh more frequently
@@ -89,35 +64,16 @@ export default function Admin() {
     activeSubscriptions: 0,
     totalRevenue: 0
   });
-  const [allUsers, setAllUsers] = useState<any[]>([]);
 
   useEffect(() => {
     // Load real bot usage statistics
     loadBotUsageStats();
-    loadAllUsers();
     
     // Set up auto-refresh every 30 seconds
-    const interval = setInterval(() => {
-      loadBotUsageStats();
-      loadAllUsers();
-    }, 30000);
+    const interval = setInterval(loadBotUsageStats, 30000);
     
     return () => clearInterval(interval);
   }, [user, isAuthenticated, isLoading]);
-
-  const loadAllUsers = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setAllUsers(data || []);
-    } catch (error) {
-      console.error('Error loading users:', error);
-    }
-  };
 
   const loadBotUsageStats = async () => {
     try {
@@ -229,78 +185,65 @@ export default function Admin() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'overview':
-        return (
-          <AdminOverview
-            stats={stats}
-            blockedUsersCount={blockedUsersCount}
-            averageEngagement={averageEngagement}
-            totalDiamonds={totalDiamonds}
-            realTimeStats={realTimeStats}
-            allUsers={allUsers}
-          />
-        );
       case 'monitor':
         return (
           <div className="space-y-6">
-            {/* Simple Stats Grid */}
-            <AdminStatsGrid 
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  📊 Real-Time Dashboard
+                  <ForceRefreshButton />
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border">
+                    <div className="text-sm font-medium text-gray-600">Total Users</div>
+                    <div className="text-2xl font-bold text-blue-700">{stats.totalUsers}</div>
+                  </div>
+                  <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border">
+                    <div className="text-sm font-medium text-gray-600">Active Users</div>
+                    <div className="text-2xl font-bold text-green-700">{stats.activeUsers}</div>
+                    <div className="text-xs text-gray-500">Last 7 days</div>
+                  </div>
+                  <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg border">
+                    <div className="text-sm font-medium text-gray-600">Premium Users</div>
+                    <div className="text-2xl font-bold text-purple-700">{stats.premiumUsers}</div>
+                  </div>
+                  <div className="bg-gradient-to-r from-amber-50 to-amber-100 p-4 rounded-lg border">
+                    <div className="text-sm font-medium text-gray-600">Total Diamonds</div>
+                    <div className="text-2xl font-bold text-amber-700">{totalDiamonds}</div>
+                  </div>
+                  <div className="bg-gradient-to-r from-red-50 to-red-100 p-4 rounded-lg border">
+                    <div className="text-sm font-medium text-gray-600">Blocked Users</div>
+                    <div className="text-2xl font-bold text-red-700">{blockedUsersCount}</div>
+                  </div>
+                  <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 p-4 rounded-lg border">
+                    <div className="text-sm font-medium text-gray-600">Engagement</div>
+                    <div className="text-2xl font-bold text-emerald-700">{averageEngagement}%</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm font-medium text-gray-600">Today</div>
+                    <div className="text-xl font-bold">{realTimeStats.todayLogins}</div>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm font-medium text-gray-600">This Week</div>  
+                    <div className="text-xl font-bold">{realTimeStats.weeklyLogins}</div>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm font-medium text-gray-600">This Month</div>
+                    <div className="text-xl font-bold">{realTimeStats.monthlyLogins}</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <AdminStatsGrid
               stats={stats}
-              blockedUsersCount={blockedUsersCount}
+              blockedUsersCount={blockedUsersCount}  
               averageEngagement={averageEngagement}
-              allUsers={allUsers}
             />
-
-            {/* Diamond Statistics */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Gem className="h-5 w-5" />
-                  Diamond Inventory Overview
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="text-center p-6 bg-primary/5 rounded-lg border border-primary/20">
-                    <div className="text-sm font-medium text-muted-foreground mb-2">Total Diamonds in System</div>
-                    <div className="text-4xl font-bold text-primary">{totalDiamonds.toLocaleString()}</div>
-                  </div>
-                  <div className="text-center p-6 bg-accent/5 rounded-lg border border-accent/20">
-                    <div className="text-sm font-medium text-muted-foreground mb-2">Average per User</div>
-                    <div className="text-4xl font-bold text-accent">
-                      {stats.totalUsers > 0 ? Math.round(totalDiamonds / stats.totalUsers) : 0}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Login Activity */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  Login Activity
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="text-center p-6 bg-primary/5 rounded-lg">
-                    <div className="text-sm font-medium text-muted-foreground mb-2">Today's Logins</div>
-                    <div className="text-3xl font-bold text-primary">{realTimeStats.todayLogins}</div>
-                  </div>
-                  <div className="text-center p-6 bg-accent/5 rounded-lg">
-                    <div className="text-sm font-medium text-muted-foreground mb-2">Weekly Logins</div>
-                    <div className="text-3xl font-bold text-accent">{realTimeStats.weeklyLogins}</div>
-                  </div>
-                  <div className="text-center p-6 bg-secondary/5 rounded-lg">
-                    <div className="text-sm font-medium text-muted-foreground mb-2">Monthly Logins</div>
-                    <div className="text-3xl font-bold text-secondary">{realTimeStats.monthlyLogins}</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
             <RealTimeMonitor />
           </div>
         );
@@ -361,11 +304,9 @@ export default function Admin() {
     }
   };
 
-  const Layout = isMobile ? MobileAdminLayout : AdminLayout;
-
   return (
-    <Layout>
+    <AdminLayout>
       {renderContent()}
-    </Layout>
+    </AdminLayout>
   );
 }

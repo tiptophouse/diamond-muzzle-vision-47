@@ -4,7 +4,7 @@ import { useTelegramSDK } from '@/hooks/useTelegramSDK';
 import { Shield, AlertTriangle, Settings, Crown, Home, Fingerprint, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { isAdminTelegramId } from '@/lib/api/secureConfig';
+import { isAdminTelegramId } from '@/lib/secureAdmin';
 import { useToast } from '@/hooks/use-toast';
 
 interface EnhancedTelegramAdminGuardProps {
@@ -24,10 +24,6 @@ export function EnhancedTelegramAdminGuard({ children }: EnhancedTelegramAdminGu
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // DEV MODE: Bypass security checks in Lovable preview
-  const isLovablePreview = window.location.hostname.includes('lovableproject.com');
-  const devModeBypass = isLovablePreview || localStorage.getItem('dev_mode') === 'true';
-  
   const [isAdminUser, setIsAdminUser] = useState(false);
   const [isLoadingAdmin, setIsLoadingAdmin] = useState(true);
   const [securityChecks, setSecurityChecks] = useState({
@@ -40,20 +36,6 @@ export function EnhancedTelegramAdminGuard({ children }: EnhancedTelegramAdminGu
   // Enhanced security verification using Telegram SDK
   useEffect(() => {
     const performSecurityChecks = async () => {
-      // DEV MODE: Auto-grant admin access in preview
-      if (devModeBypass) {
-        console.log('🔓 DEV MODE: Admin access granted (bypassing security checks)');
-        setIsAdminUser(true);
-        setIsLoadingAdmin(false);
-        setSecurityChecks({
-          telegramEnvironment: true,
-          biometricAvailable: false,
-          deviceVerified: true,
-          adminVerified: true
-        });
-        return;
-      }
-
       if (!user?.id || !isTelegramEnvironment) {
         setIsAdminUser(false);
         setIsLoadingAdmin(false);
@@ -124,7 +106,7 @@ export function EnhancedTelegramAdminGuard({ children }: EnhancedTelegramAdminGu
     };
 
     performSecurityChecks();
-  }, [user?.id, isTelegramEnvironment, isInitialized, biometric, haptic, toast, devModeBypass]);
+  }, [user?.id, isTelegramEnvironment, isInitialized, biometric, haptic, toast]);
 
   // Loading state with enhanced security indicators
   if (isLoading || isLoadingAdmin) {
@@ -257,7 +239,7 @@ export function EnhancedTelegramAdminGuard({ children }: EnhancedTelegramAdminGu
             <Crown className="h-5 w-5 text-yellow-600" />
             <Shield className="h-4 w-4 text-blue-600" />
             <span className="font-semibold text-gray-900">
-              {devModeBypass ? '🔓 DEV MODE - ' : ''}Admin Dashboard {user?.first_name ? `- ${user.first_name}` : ''}
+              Secure Admin Dashboard - {user.first_name}
             </span>
           </div>
           <div className="flex items-center gap-2">

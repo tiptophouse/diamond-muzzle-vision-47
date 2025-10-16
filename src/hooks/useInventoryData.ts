@@ -45,7 +45,7 @@ export function useInventoryData() {
   }, []);
 
   // Enhanced image URL processing - USE IMAGES DIRECTLY FROM FASTAPI
-  const processImageUrl = useCallback((imageUrl: string | undefined, stockNumber?: string): string | undefined => {
+  const processImageUrl = useCallback((imageUrl: string | undefined): string | undefined => {
     if (!imageUrl || typeof imageUrl !== 'string') {
       return undefined;
     }
@@ -57,63 +57,17 @@ export function useInventoryData() {
         trimmedUrl === 'default' || 
         trimmedUrl === 'null' || 
         trimmedUrl === 'undefined' ||
-        trimmedUrl.length < 3) {
+        trimmedUrl.length < 10) {
       return undefined;
-    }
-
-    // DIAGNOSTIC: Log all image URLs for Adam Knipel
-    if (String(user?.id) === '38166518') {
-      console.log('🔍 ADAM IMAGE URL PROCESSING:', {
-        stockNumber,
-        rawUrl: imageUrl,
-        trimmedUrl,
-        length: trimmedUrl.length
-      });
     }
 
     // Accept ALL HTTP/HTTPS URLs directly from FastAPI - no filtering
     if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
-      const finalUrl = trimmedUrl;
-      if (String(user?.id) === '38166518') {
-        console.log('✅ ADAM IMAGE URL ACCEPTED (HTTP/HTTPS):', { stockNumber, finalUrl });
-      }
-      return finalUrl;
-    }
-    
-    // Handle relative URLs - prepend FastAPI base URL
-    if (trimmedUrl.startsWith('/')) {
-      const finalUrl = `https://api.mazalbot.com${trimmedUrl}`;
-      if (String(user?.id) === '38166518') {
-        console.log('✅ ADAM IMAGE URL ACCEPTED (RELATIVE):', { stockNumber, finalUrl });
-      }
-      return finalUrl;
-    }
-    
-    // Handle URLs without protocol but with domain
-    if (trimmedUrl.includes('.') && trimmedUrl.includes('/')) {
-      const finalUrl = `https://${trimmedUrl}`;
-      if (String(user?.id) === '38166518') {
-        console.log('✅ ADAM IMAGE URL ACCEPTED (NO PROTOCOL):', { stockNumber, finalUrl });
-      }
-      return finalUrl;
-    }
-
-    // AGGRESSIVE: Try to accept ANY string that looks like it could be a URL
-    // This catches edge cases like malformed URLs
-    if (trimmedUrl.includes('.') || trimmedUrl.length > 10) {
-      const finalUrl = trimmedUrl.startsWith('//') ? `https:${trimmedUrl}` : `https://${trimmedUrl}`;
-      if (String(user?.id) === '38166518') {
-        console.log('⚠️ ADAM IMAGE URL GUESSED:', { stockNumber, originalUrl: trimmedUrl, finalUrl });
-      }
-      return finalUrl;
-    }
-
-    if (String(user?.id) === '38166518') {
-      console.log('❌ ADAM IMAGE URL REJECTED:', { stockNumber, url: trimmedUrl });
+      return trimmedUrl;
     }
 
     return undefined;
-  }, [user]);
+  }, []);
 
   // Enhanced 360° URL detection - ACCEPT ALL FASTAPI URLS
   const detect360Url = useCallback((url: string | undefined): string | undefined => {
@@ -193,103 +147,28 @@ export function useInventoryData() {
           
           // Transform data to match Diamond interface with enhanced field mapping
           return result.data.map(item => {
-            // ENHANCED IMAGE URL PROCESSING - Accept ALL FastAPI image fields (case-insensitive)
-            const stockNumber = item.stock || item.stock_number || item.stockNumber || item.VendorStockNumber;
-            
-            // DIAGNOSTIC: Log RAW item data for Adam Knipel
-            if (String(user?.id) === '38166518') {
-              console.log('🔍 ADAM RAW ITEM DATA:', {
-                stockNumber,
-                allKeys: Object.keys(item),
-                fullItem: JSON.stringify(item, null, 2)
-              });
-            }
-            
+            // ENHANCED IMAGE URL PROCESSING - Accept ALL FastAPI image fields
             let finalImageUrl = undefined;
             const imageFields = [
-              item.picture || item.Picture || item.PICTURE,          // Primary FastAPI image field
-              item.image_url || item.ImageURL || item.IMAGE_URL,     // Alternative FastAPI field
-              item.imageUrl || item.ImageUrl || item.imageURL,       // CamelCase variant
-              item.Image || item.IMAGE,                              // CSV field
-              item.image,                                            // Generic field
-              item.photo_url || item.PhotoURL,                       // Photo URL field
-              item.diamond_image || item.DiamondImage,               // Diamond-specific image
-              item.media_url || item.MediaURL,                       // Media URL
-              item.thumbnail_url || item.ThumbnailURL,               // Thumbnail
-              item.product_image || item.ProductImage,               // Product image
-              item.img || item.Img || item.IMG,                      // Short form
-              item.url || item.URL || item.Url,                      // Generic URL
-              item.src || item.Src || item.SRC,                      // Source
+              item.picture,          // Primary FastAPI image field
+              item.image_url,        // Alternative FastAPI field
+              item.imageUrl,         // CamelCase variant
+              item.Image,            // CSV field
+              item.image,            // Generic field
+              item.photo_url,        // Photo URL field
+              item.diamond_image,    // Diamond-specific image
+              item.media_url,        // Media URL
+              item.thumbnail_url,    // Thumbnail
+              item.product_image,    // Product image
             ];
             
-            // DIAGNOSTIC: Log all possible image fields for Adam Knipel
-            if (String(user?.id) === '38166518') {
-              console.log('🔍 ADAM IMAGE FIELDS CHECK:', {
-                stockNumber,
-                imageFieldsRaw: imageFields.map((field, idx) => ({
-                  index: idx,
-                  value: field,
-                  type: typeof field,
-                  length: field?.length
-                })),
-                nonEmptyFields: imageFields.filter(f => f && f !== 'null' && f !== 'undefined')
-              });
-            }
-            
             // Accept FIRST valid image URL from FastAPI without strict filtering
-            for (let i = 0; i < imageFields.length; i++) {
-              const imageField = imageFields[i];
-              const processedUrl = processImageUrl(imageField, stockNumber);
-              
-              if (String(user?.id) === '38166518') {
-                console.log(`🔍 ADAM FIELD ${i} PROCESSING:`, {
-                  stockNumber,
-                  rawValue: imageField,
-                  processedUrl,
-                  accepted: !!processedUrl
-                });
-              }
-              
+            for (const imageField of imageFields) {
+              const processedUrl = processImageUrl(imageField);
               if (processedUrl) {
                 finalImageUrl = processedUrl;
-                if (String(user?.id) === '38166518') {
-                  console.log('✅ ADAM FINAL IMAGE SELECTED:', {
-                    stockNumber,
-                    fieldIndex: i,
-                    finalImageUrl
-                  });
-                }
                 break;
               }
-            }
-            
-            // Auto-detect ANY 360/Segoma URL from unknown fields if not mapped yet
-            let autoDetected360: string | undefined = undefined;
-            try {
-              for (const [key, value] of Object.entries(item)) {
-                if (typeof value === 'string') {
-                  const v = value.trim();
-                  if (
-                    v.includes('segoma.com') ||
-                    v.includes('v.aspx') ||
-                    v.includes('type=view') ||
-                    v.includes('v360.in') ||
-                    v.includes('diamondview.aspx') ||
-                    (v.endsWith('.html') && (v.toLowerCase().includes('360') || v.toLowerCase().includes('diamond')))
-                  ) {
-                    const candidate = detect360Url(v);
-                    if (candidate) {
-                      autoDetected360 = candidate;
-                      if (String(user?.id) === '38166518') {
-                        console.log('✅ ADAM AUTO-DETECTED 360 URL:', { stockNumber, key, candidate });
-                      }
-                      break;
-                    }
-                  }
-                }
-              }
-            } catch (e) {
-              console.warn('⚠️ Auto-detect 360 scan failed', e);
             }
 
             return {
@@ -311,26 +190,25 @@ export function useInventoryData() {
               status: item.status || item.Availability || 'Available',
               fluorescence: item.fluorescence || item.FluorescenceIntensity || undefined,
               imageUrl: finalImageUrl,
-              // ENHANCED 360° URL PROCESSING - Accept ALL FastAPI 360 fields INCLUDING CSV "3D Link" and fallback to auto-detect
-              gem360Url: autoDetected360 ||
-                         detect360Url(item['3D Link']) ||      // CSV Segoma field - HIGH PRIORITY
-                         detect360Url(item['3DLink']) ||       // Alternative format
-                         detect360Url(item['3d_link']) ||      // Snake case
-                         detect360Url(item['aa']) ||           // Column letter field
-                         detect360Url(item['AA']) ||
-                         detect360Url(item['Aa']) ||
-                         detect360Url(item['aA']) ||
-                         detect360Url(item.segoma_url) ||      // Direct Segoma
-                         detect360Url(item.segomaUrl) ||       // CamelCase Segoma
-                         detect360Url(item.gem360Url) || 
-                         detect360Url(item['Video link']) || 
-                         detect360Url(item.videoLink) ||
-                         detect360Url(item.video_url) ||
-                         detect360Url(item.v360_url) ||
-                         detect360Url(item.sarine_url) ||
-                         detect360Url(item.three_d_url) ||
-                         detect360Url(item.viewer_url) ||
-                         undefined,
+            // ENHANCED 360° URL PROCESSING - Accept ALL FastAPI 360 fields INCLUDING CSV "3D Link" and column letters like "aa"
+            gem360Url: detect360Url(item['3D Link']) ||      // CSV Segoma field - HIGH PRIORITY
+                       detect360Url(item['3DLink']) ||       // Alternative format
+                       detect360Url(item['3d_link']) ||      // Snake case
+                       detect360Url(item['aa']) ||           // Column letter field
+                       detect360Url(item['AA']) ||
+                       detect360Url(item['Aa']) ||
+                       detect360Url(item['aA']) ||
+                       detect360Url(item.segoma_url) ||      // Direct Segoma
+                       detect360Url(item.segomaUrl) ||       // CamelCase Segoma
+                       detect360Url(item.gem360Url) || 
+                       detect360Url(item['Video link']) || 
+                       detect360Url(item.videoLink) ||
+                       detect360Url(item.video_url) ||
+                       detect360Url(item.v360_url) ||
+                       detect360Url(item.sarine_url) ||
+                       detect360Url(item.three_d_url) ||
+                       detect360Url(item.viewer_url) ||
+                       undefined,
               store_visible: item.store_visible !== false,
               certificateNumber: item.certificate_number || 
                                item.certificateNumber || 

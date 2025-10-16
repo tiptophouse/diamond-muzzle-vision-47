@@ -4,11 +4,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TelegramAuthProvider } from './context/TelegramAuthContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
+import { RTLProvider } from './contexts/RTLContext';
 import { SecureTelegramLayout } from './components/layout/SecureTelegramLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthenticatedRoute } from './components/auth/AuthenticatedRoute';
 import { PublicRoute } from './components/auth/PublicRoute';
 import { EnhancedTelegramAdminGuard } from './components/admin/EnhancedTelegramAdminGuard';
+import { registerServiceWorker } from './lib/serviceWorker';
 import Index from './pages/Index';
 // Lazy load heavy components to improve initial loading speed
 import { LazyInventory, LazyUpload, LazySettings } from './components/performance/LazyRoute';
@@ -34,7 +36,12 @@ import BulkUploadPage from './pages/BulkUploadPage';
 import AnalyticsPage from "./pages/AnalyticsPage";
 import TelegramNotificationsDemo from "./pages/TelegramNotificationsDemo";
 import AdminStatsPage from './pages/AdminStatsPage';
+import ImmersiveDiamondPage from './pages/ImmersiveDiamondPage';
+import DiamondShareAnalytics from './pages/DiamondShareAnalytics';
 import { StartParamInitializer } from './components/layout/StartParamInitializer';
+
+// Register service worker for offline support in Telegram Mini App
+registerServiceWorker();
 
 function App() {
   const queryClient = new QueryClient({
@@ -52,13 +59,14 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <TelegramAuthProvider>
-          <Router>
-            <TutorialProvider>
-              <InteractiveWizardProvider>
-                <SecureTelegramLayout>
-                <StartParamInitializer />
-                <Routes>
+        <RTLProvider>
+          <TelegramAuthProvider>
+            <Router>
+              <TutorialProvider>
+                <InteractiveWizardProvider>
+                  <SecureTelegramLayout>
+                  <StartParamInitializer />
+                  <Routes>
                   {/* Public route - redirects to dashboard if authenticated */}
                   <Route path="/" element={
                     <PublicRoute>
@@ -198,6 +206,21 @@ function App() {
                       <SecureDiamondViewerPage />
                     </AuthenticatedRoute>
                   } />
+
+                  {/* Immersive Diamond Viewer with Motion Controls */}
+                  <Route path="/diamond/:stockNumber/immersive" element={
+                    <AuthenticatedRoute>
+                      <ImmersiveDiamondPage />
+                    </AuthenticatedRoute>
+                  } />
+
+                  {/* Diamond Share Analytics */}
+                  <Route path="/analytics/shares" element={
+                    <AuthenticatedRoute>
+                      <DiamondShareAnalytics />
+                    </AuthenticatedRoute>
+                  } />
+
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 </SecureTelegramLayout>
@@ -205,6 +228,7 @@ function App() {
             </TutorialProvider>
           </Router>
         </TelegramAuthProvider>
+        </RTLProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

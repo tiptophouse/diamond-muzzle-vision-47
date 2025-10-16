@@ -18,7 +18,7 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
         userId: null,
         timestamp: new Date().toISOString(),
         dataSource: 'none',
-        recommendation: 'User must authenticate with Telegram first'
+        recommendation: 'User must authenticate with Telegram first. Check Telegram WebApp initData.'
       }
     };
   }
@@ -36,7 +36,8 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     // ONLY use FastAPI - no cache, no localStorage fallbacks
     console.log('🔍 INVENTORY SERVICE: Calling FastAPI get_all_stones endpoint...');
     
-    const endpoint = apiEndpoints.getAllStones(userId);
+    // Add pagination for large inventories (>5000 diamonds load in batches)
+    const endpoint = apiEndpoints.getAllStones(userId, 10000, 0); // Fetch up to 10k diamonds
     console.log('🔍 INVENTORY SERVICE: Using endpoint:', endpoint);
     
     const result = await api.get(endpoint);
@@ -56,23 +57,17 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     if (result.data && Array.isArray(result.data)) {
       console.log('✅ INVENTORY SERVICE: Successfully fetched', result.data.length, 'diamonds from FastAPI');
       
-      // COMPREHENSIVE DIAGNOSTIC LOGGING - Capture FULL FastAPI response
+      // Warn if inventory is extremely large
+      if (result.data.length >= 10000) {
+        console.warn('⚠️ INVENTORY SERVICE: User has 10,000+ diamonds. Some diamonds may not be visible. Consider pagination.');
+      }
+      
+      // Log image fields available in FastAPI response
       if (result.data.length > 0) {
         const sampleItem = result.data[0];
-        
-        // Log ALL keys returned by FastAPI
-        console.log('🔍 FASTAPI DIAGNOSTIC: ALL response keys:', Object.keys(sampleItem));
-        
-        // Log FULL first item (raw data from FastAPI)
-        console.log('🔍 FASTAPI DIAGNOSTIC: FULL FIRST ITEM:', JSON.stringify(sampleItem, null, 2));
-        
-        // Log specific image-related fields
-        console.log('📸 INVENTORY SERVICE: Image fields in FastAPI response:', {
+        console.log('📸 INVENTORY SERVICE: Available image fields in FastAPI response:', {
           picture: sampleItem.picture,
-          Picture: sampleItem.Picture,
-          PICTURE: sampleItem.PICTURE,
           image_url: sampleItem.image_url,
-          ImageURL: sampleItem.ImageURL,
           imageUrl: sampleItem.imageUrl,
           Image: sampleItem.Image,
           image: sampleItem.image,
@@ -84,26 +79,6 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
             key.toLowerCase().includes('photo')
           )
         });
-        
-        // Special diagnostic for Adam Knipel (user_id: 38166518)
-        if (String(userId) === '38166518') {
-          console.log('🚨 ADAM KNIPEL IMAGE DIAGNOSTIC:', {
-            userId: userId,
-            totalDiamonds: result.data.length,
-            firstDiamondAllKeys: Object.keys(sampleItem),
-            firstDiamondImageFields: Object.keys(sampleItem).filter(key => 
-              key.toLowerCase().includes('image') || 
-              key.toLowerCase().includes('picture') || 
-              key.toLowerCase().includes('photo')
-            ),
-            firstDiamondStockNumber: sampleItem.stock || sampleItem.stock_number,
-            rawPictureValue: sampleItem.picture,
-            rawImageUrlValue: sampleItem.image_url,
-            allImageFieldValues: Object.keys(sampleItem)
-              .filter(key => key.toLowerCase().includes('image') || key.toLowerCase().includes('picture') || key.toLowerCase().includes('photo'))
-              .reduce((acc, key) => ({ ...acc, [key]: sampleItem[key] }), {})
-          });
-        }
       }
       
       return {
@@ -136,13 +111,24 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
     console.error("❌ INVENTORY SERVICE: FastAPI request failed:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     
+    // Check if it's an authentication error
+    const isAuthError = errorMessage.toLowerCase().includes('auth') || 
+                        errorMessage.toLowerCase().includes('401') ||
+                        errorMessage.toLowerCase().includes('403') ||
+                        errorMessage.toLowerCase().includes('unauthorized');
+    
     return {
-      error: `Failed to load inventory from FastAPI: ${errorMessage}`,
+      error: isAuthError 
+        ? `Authentication failed. Please log in with Telegram to view your inventory.`
+        : `Failed to load inventory from FastAPI: ${errorMessage}`,
       debugInfo: {
         ...debugInfo,
         step: 'ERROR: FastAPI request failed',
         error: errorMessage,
-        recommendation: 'Check FastAPI backend connectivity and authentication'
+        isAuthError,
+        recommendation: isAuthError 
+          ? 'User needs to authenticate via Telegram WebApp. Check initData availability.'
+          : 'Check FastAPI backend connectivity and authentication'
       }
     };
   }

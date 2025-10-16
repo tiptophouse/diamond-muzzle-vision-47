@@ -9,12 +9,8 @@ interface AuthenticatedRouteProps {
 export function AuthenticatedRoute({ children }: AuthenticatedRouteProps) {
   const { isAuthenticated, isLoading, error, isTelegramEnvironment, accessDeniedReason } = useTelegramAuth();
 
-  // DEV MODE: Bypass auth in Lovable preview
-  const isLovablePreview = window.location.hostname.includes('lovableproject.com');
-  const devModeBypass = isLovablePreview || localStorage.getItem('dev_mode') === 'true';
-
   // Show loading state
-  if (isLoading && !devModeBypass) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
         <div className="text-center bg-card rounded-xl shadow-lg p-8 max-w-md mx-auto border">
@@ -29,8 +25,8 @@ export function AuthenticatedRoute({ children }: AuthenticatedRouteProps) {
     );
   }
 
-  // Show access denied for unauthenticated users (unless dev mode)
-  if ((!isAuthenticated || error || accessDeniedReason) && !devModeBypass) {
+  // Show access denied for unauthenticated users
+  if (!isAuthenticated || error || accessDeniedReason) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
         <div className="text-center bg-card rounded-xl shadow-lg p-8 max-w-md mx-auto border">

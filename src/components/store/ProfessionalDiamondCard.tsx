@@ -7,7 +7,7 @@ import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { AdminStoreControls } from "./AdminStoreControls";
 import { Gem360Viewer } from "./Gem360Viewer";
-import { isAdminTelegramId } from "@/lib/api/secureConfig";
+import { isAdminTelegramId } from "@/lib/secureAdmin";
 
 interface ProfessionalDiamondCardProps {
   diamond: Diamond;

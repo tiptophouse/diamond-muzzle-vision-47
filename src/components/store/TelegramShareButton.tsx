@@ -1,10 +1,7 @@
 import { Share2, Copy, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useState, useCallback } from "react";
 import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
-import { useShareQuota } from "@/hooks/useShareQuota";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { toast } from 'sonner';
 import { cn } from "@/lib/utils";
 
@@ -16,8 +13,6 @@ interface TelegramShareButtonProps {
   variant?: "default" | "outline" | "ghost";
   size?: "default" | "sm" | "lg";
   children?: React.ReactNode;
-  diamondStockNumber?: string; // For quota tracking
-  showQuotaBadge?: boolean; // Show remaining shares badge
 }
 
 export function TelegramShareButton({ 
@@ -27,32 +22,13 @@ export function TelegramShareButton({
   className = "", 
   variant = "outline", 
   size = "default",
-  children,
-  diamondStockNumber,
-  showQuotaBadge = false
+  children 
 }: TelegramShareButtonProps) {
   const [isSharing, setIsSharing] = useState(false);
   const { webApp, share, showAlert, hapticFeedback } = useTelegramWebApp();
-  const { quotaData, loading, useShare } = useShareQuota();
-  const { isAdmin } = useIsAdmin();
 
   const handleShare = useCallback(async () => {
     if (isSharing) return; // Prevent double-clicks
-    
-    // Check quota before sharing (if stock number provided)
-    if (diamondStockNumber && !isAdmin) {
-      if (!quotaData || quotaData.sharesRemaining <= 0) {
-        toast.error('No shares remaining! You have used all your 5 shares for this period.');
-        return;
-      }
-      
-      // Deduct from quota
-      const success = await useShare(diamondStockNumber);
-      if (!success) {
-        toast.error('Failed to use share quota. Please try again.');
-        return;
-      }
-    }
     
     setIsSharing(true);
     hapticFeedback.impact('medium');
@@ -120,40 +96,27 @@ export function TelegramShareButton({
     } finally {
       setIsSharing(false);
     }
-  }, [title, text, url, webApp, hapticFeedback, isSharing, diamondStockNumber, isAdmin, quotaData, useShare]);
-
-  const sharesRemaining = isAdmin ? 999 : (quotaData?.sharesRemaining || 0);
-  const canShare = isAdmin || !diamondStockNumber || sharesRemaining > 0;
+  }, [title, text, url, webApp, hapticFeedback, isSharing]);
 
   return (
-    <div className="relative inline-flex items-center gap-2">
-      <Button
-        variant={variant}
-        size={size}
-        onClick={handleShare}
-        disabled={isSharing || loading || !canShare}
-        className={cn("flex items-center gap-2", className)}
-      >
-        <Share2 className="h-4 w-4" />
-        {children || (
-          <>
-            <span className="hidden sm:inline">
-              {isSharing ? 'Sharing...' : 'Share'}
-            </span>
-            <span className="sm:hidden">
-              {isSharing ? '...' : 'Share'}
-            </span>
-          </>
-        )}
-      </Button>
-      {showQuotaBadge && diamondStockNumber && (
-        <Badge 
-          variant={sharesRemaining <= 2 ? "destructive" : "secondary"}
-          className="absolute -top-2 -right-2 min-w-[20px] h-5 flex items-center justify-center px-1"
-        >
-          {isAdmin ? "∞" : sharesRemaining}
-        </Badge>
+    <Button
+      variant={variant}
+      size={size}
+      onClick={handleShare}
+      disabled={isSharing}
+      className={cn("flex items-center gap-2", className)}
+    >
+      <Share2 className="h-4 w-4" />
+      {children || (
+        <>
+          <span className="hidden sm:inline">
+            {isSharing ? 'Sharing...' : 'Share'}
+          </span>
+          <span className="sm:hidden">
+            {isSharing ? '...' : 'Share'}
+          </span>
+        </>
       )}
-    </div>
+    </Button>
   );
 }

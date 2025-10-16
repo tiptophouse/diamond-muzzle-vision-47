@@ -308,8 +308,6 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
               url={window.location.href}
               variant="ghost"
               size="sm"
-              diamondStockNumber={diamond.stockNumber}
-              showQuotaBadge={true}
             />
           </div>
         </div>

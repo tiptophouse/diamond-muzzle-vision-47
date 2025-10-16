@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import { api } from '@/lib/api/client';
+import { http } from '@/api/http';
 
 interface SearchResult {
   id: number;
@@ -33,21 +33,13 @@ export function useSearchResults() {
 
     try {
       // Fetch search results
-      const resultsResponse = await api.get<SearchResult[]>(`/api/v1/get_search_results?user_id=${user.id}&limit=10`);
-      
-      if (resultsResponse.error) {
-        throw new Error(resultsResponse.error);
-      }
+      const searchResults = await http<SearchResult[]>(`/api/v1/get_search_results?user_id=${user.id}&limit=10`, { method: 'GET' });
 
       // Fetch search results count
-      const countResponse = await api.get<SearchResultsCount>(`/api/v1/get_search_results_count?user_id=${user.id}`);
-      
-      if (countResponse.error) {
-        throw new Error(countResponse.error);
-      }
+      const count = await http<SearchResultsCount>(`/api/v1/get_search_results_count?user_id=${user.id}`, { method: 'GET' });
 
-      setSearchResults(resultsResponse.data || []);
-      setSearchResultsCount(countResponse.data || { total: 0, matches: 0, unmatches: 0 });
+      setSearchResults(searchResults || []);
+      setSearchResultsCount(count || { total: 0, matches: 0, unmatches: 0 });
       
     } catch (err) {
       console.error('❌ Failed to fetch search results:', err);

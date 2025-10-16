@@ -11,7 +11,7 @@ import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 import { useBulkCsvProcessor } from "@/hooks/useBulkCsvProcessor";
 import { useToast } from "@/hooks/use-toast";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
-import { api } from "@/lib/api/client";
+import { http } from "@/api/http";
 
 export default function BulkUploadPage() {
   const { hapticFeedback } = useTelegramWebApp();
