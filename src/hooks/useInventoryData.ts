@@ -263,13 +263,33 @@ export function useInventoryData() {
               }
             }
             
-            // Final diagnostic for Adam Knipel
-            if (String(user?.id) === '38166518') {
-              console.log('🎯 ADAM FINAL RESULT:', {
-                stockNumber,
-                finalImageUrl,
-                hasImage: !!finalImageUrl
-              });
+            // Auto-detect ANY 360/Segoma URL from unknown fields if not mapped yet
+            let autoDetected360: string | undefined = undefined;
+            try {
+              for (const [key, value] of Object.entries(item)) {
+                if (typeof value === 'string') {
+                  const v = value.trim();
+                  if (
+                    v.includes('segoma.com') ||
+                    v.includes('v.aspx') ||
+                    v.includes('type=view') ||
+                    v.includes('v360.in') ||
+                    v.includes('diamondview.aspx') ||
+                    (v.endsWith('.html') && (v.toLowerCase().includes('360') || v.toLowerCase().includes('diamond')))
+                  ) {
+                    const candidate = detect360Url(v);
+                    if (candidate) {
+                      autoDetected360 = candidate;
+                      if (String(user?.id) === '38166518') {
+                        console.log('✅ ADAM AUTO-DETECTED 360 URL:', { stockNumber, key, candidate });
+                      }
+                      break;
+                    }
+                  }
+                }
+              }
+            } catch (e) {
+              console.warn('⚠️ Auto-detect 360 scan failed', e);
             }
 
             return {
@@ -291,25 +311,26 @@ export function useInventoryData() {
               status: item.status || item.Availability || 'Available',
               fluorescence: item.fluorescence || item.FluorescenceIntensity || undefined,
               imageUrl: finalImageUrl,
-            // ENHANCED 360° URL PROCESSING - Accept ALL FastAPI 360 fields INCLUDING CSV "3D Link" and column letters like "aa"
-            gem360Url: detect360Url(item['3D Link']) ||      // CSV Segoma field - HIGH PRIORITY
-                       detect360Url(item['3DLink']) ||       // Alternative format
-                       detect360Url(item['3d_link']) ||      // Snake case
-                       detect360Url(item['aa']) ||           // Column letter field
-                       detect360Url(item['AA']) ||
-                       detect360Url(item['Aa']) ||
-                       detect360Url(item['aA']) ||
-                       detect360Url(item.segoma_url) ||      // Direct Segoma
-                       detect360Url(item.segomaUrl) ||       // CamelCase Segoma
-                       detect360Url(item.gem360Url) || 
-                       detect360Url(item['Video link']) || 
-                       detect360Url(item.videoLink) ||
-                       detect360Url(item.video_url) ||
-                       detect360Url(item.v360_url) ||
-                       detect360Url(item.sarine_url) ||
-                       detect360Url(item.three_d_url) ||
-                       detect360Url(item.viewer_url) ||
-                       undefined,
+              // ENHANCED 360° URL PROCESSING - Accept ALL FastAPI 360 fields INCLUDING CSV "3D Link" and fallback to auto-detect
+              gem360Url: autoDetected360 ||
+                         detect360Url(item['3D Link']) ||      // CSV Segoma field - HIGH PRIORITY
+                         detect360Url(item['3DLink']) ||       // Alternative format
+                         detect360Url(item['3d_link']) ||      // Snake case
+                         detect360Url(item['aa']) ||           // Column letter field
+                         detect360Url(item['AA']) ||
+                         detect360Url(item['Aa']) ||
+                         detect360Url(item['aA']) ||
+                         detect360Url(item.segoma_url) ||      // Direct Segoma
+                         detect360Url(item.segomaUrl) ||       // CamelCase Segoma
+                         detect360Url(item.gem360Url) || 
+                         detect360Url(item['Video link']) || 
+                         detect360Url(item.videoLink) ||
+                         detect360Url(item.video_url) ||
+                         detect360Url(item.v360_url) ||
+                         detect360Url(item.sarine_url) ||
+                         detect360Url(item.three_d_url) ||
+                         detect360Url(item.viewer_url) ||
+                         undefined,
               store_visible: item.store_visible !== false,
               certificateNumber: item.certificate_number || 
                                item.certificateNumber || 
