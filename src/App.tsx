@@ -38,6 +38,7 @@ import TelegramNotificationsDemo from "./pages/TelegramNotificationsDemo";
 import AdminStatsPage from './pages/AdminStatsPage';
 import ImmersiveDiamondPage from './pages/ImmersiveDiamondPage';
 import DiamondShareAnalytics from './pages/DiamondShareAnalytics';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import { StartParamInitializer } from './components/layout/StartParamInitializer';
 
 // Register service worker for offline support in Telegram Mini App
@@ -98,6 +99,9 @@ function App() {
                   
                   {/* Public diamond sharing - no JWT required */}
                   <Route path="/public/diamond/:stockNumber" element={<PublicDiamondPage />} />
+                  
+                  {/* Privacy Policy - public page for BotFather */}
+                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                   
                    <Route path="/chat" element={
                      <AuthenticatedRoute>
