@@ -35,6 +35,11 @@ import { WebhookDiagnostics } from '@/components/admin/WebhookDiagnostics';
 import { CampaignManager } from '@/components/admin/CampaignManager';
 import { RealTimeMonitor } from '@/components/admin/RealTimeMonitor';
 import { useSearchParams } from 'react-router-dom';
+import { DashboardQuickActions } from '@/components/admin/DashboardQuickActions';
+import { DashboardRecentActivity } from '@/components/admin/DashboardRecentActivity';
+import { DashboardMiniAnalytics } from '@/components/admin/DashboardMiniAnalytics';
+import { DashboardCampaignSummary } from '@/components/admin/DashboardCampaignSummary';
+import { DashboardSystemHealth } from '@/components/admin/DashboardSystemHealth';
 
 export default function Admin() {
   const { user, isAuthenticated, isLoading } = useTelegramAuth();
@@ -239,11 +244,23 @@ export default function Admin() {
                 </div>
               </CardContent>
             </Card>
-            <AdminStatsGrid
-              stats={stats}
-              blockedUsersCount={blockedUsersCount}  
-              averageEngagement={averageEngagement}
-            />
+
+            {/* Quick Actions */}
+            <DashboardQuickActions />
+
+            {/* Campaign Summary */}
+            <DashboardCampaignSummary />
+
+            {/* Mini Analytics */}
+            <DashboardMiniAnalytics />
+
+            {/* Recent Activity and System Health */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <DashboardRecentActivity />
+              <DashboardSystemHealth />
+            </div>
+
+            {/* Real-Time Monitor */}
             <RealTimeMonitor />
           </div>
         );
