@@ -166,10 +166,14 @@ serve(async (req) => {
           ]
         }).flat()
 
-        // Create the main message
+        // Create the main message with buyer contact info
+        const contactInfo = searcherName || `User ${searcherTelegramId}`
         const message = `🔍 *חיפוש יהלומים - ${diamonds.length} התאמות נמצאו!*
 
-👤 *הלקוח${searcherInfo} מחפש:*
+👤 *קונה מעוניין: ${contactInfo}*${searcherName ? `\n📱 Telegram: @${searcherName}` : ''}
+📞 *ליצירת קשר:* [לחץ כאן](tg://user?id=${searcherTelegramId})
+
+🔎 *מחפש:*
 • ${criteriaText}
 
 💎 *היהלומים שלך שמתאימים:*
@@ -184,7 +188,7 @@ _בחר יהלום לצפייה או שיתוף עם הלקוח_`
           inline_keyboard.push(diamondButtons.slice(i, i + 4))
         }
         
-        // Add action buttons
+        // Add action buttons with buyer's telegram ID for contact
         inline_keyboard.push([
           {
             text: `📊 צפה בכל ה-${diamonds.length} התאמות`,
@@ -196,12 +200,8 @@ _בחר יהלום לצפייה או שיתוף עם הלקוח_`
         
         inline_keyboard.push([
           {
-            text: `📞 צור קשר עם הלקוח`,
-            callback_data: `contact_searcher_${searcherTelegramId}`
-          },
-          {
-            text: `📝 שלח הצעת מחיר`,
-            callback_data: `send_quote_${searcherTelegramId}`
+            text: `💬 שלח הודעה ל${contactInfo}`,
+            url: `tg://user?id=${searcherTelegramId}`
           }
         ])
 
