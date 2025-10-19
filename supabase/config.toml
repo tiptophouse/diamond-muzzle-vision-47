@@ -32,6 +32,9 @@ port = 54328
 [edge_functions]
 enabled = true
 
+[functions.check-admin]
+verify_jwt = false
+
 [functions.user-engagement-monitor]
 verify_jwt = false
 

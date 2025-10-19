@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { 
   BarChart3, 
   Users, 
@@ -78,10 +77,9 @@ const adminMenuItems = [
 ];
 
 export function AdminSidebar() {
-  const { state } = useSidebar();
+  const { state, setOpenMobile } = useSidebar();
   const { user } = useTelegramAuth();
   const location = useLocation();
-  const navigate = useNavigate();
   
   const isCollapsed = state === 'collapsed';
   
@@ -93,8 +91,18 @@ export function AdminSidebar() {
     return location.pathname + location.search === url;
   };
 
-  const handleNavigation = (url: string) => {
-    navigate(url);
+  const getNavClassName = ({ isActive }: { isActive: boolean }) => 
+    `w-full flex items-center gap-2 px-2 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+      isActive 
+        ? 'bg-primary text-primary-foreground shadow-sm' 
+        : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+    } ${isCollapsed ? 'justify-center' : 'justify-start'}`;
+
+  const handleNavClick = () => {
+    // Close mobile sidebar on navigation
+    if (setOpenMobile) {
+      setOpenMobile(false);
+    }
   };
 
   return (
@@ -125,23 +133,24 @@ export function AdminSidebar() {
               <SidebarMenu className="space-y-0.5">
                 {section.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <button
-                      onClick={() => handleNavigation(item.url)}
-                      className={`
-                        w-full flex items-center gap-2 px-2 py-2 rounded-lg text-xs font-medium transition-all duration-200
-                        ${isActive(item.url) 
-                          ? 'bg-primary text-primary-foreground shadow-sm' 
-                          : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-                        }
-                        ${isCollapsed ? 'justify-center' : 'justify-start'}
-                      `}
-                      title={isCollapsed ? item.title : item.description}
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.url)}
+                      tooltip={isCollapsed ? item.title : undefined}
                     >
-                      <item.icon className="h-3.5 w-3.5 flex-shrink-0" />
-                      {!isCollapsed && (
-                        <span className="truncate text-left">{item.title}</span>
-                      )}
-                    </button>
+                      <NavLink 
+                        to={item.url} 
+                        end 
+                        className={getNavClassName}
+                        onClick={handleNavClick}
+                        title={item.description}
+                      >
+                        <item.icon className="h-3.5 w-3.5 flex-shrink-0" />
+                        {!isCollapsed && (
+                          <span className="truncate text-left">{item.title}</span>
+                        )}
+                      </NavLink>
+                    </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>

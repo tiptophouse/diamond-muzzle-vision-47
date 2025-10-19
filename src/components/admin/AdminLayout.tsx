@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { AdminSidebar } from './AdminSidebar';
 import {
   SidebarProvider,
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Home, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { useEnhancedTelegramWebApp } from '@/hooks/useEnhancedTelegramWebApp';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -17,6 +18,35 @@ interface AdminLayoutProps {
 export function AdminLayout({ children }: AdminLayoutProps) {
   const navigate = useNavigate();
   const { user } = useTelegramAuth();
+  const { navigation, haptics, webApp } = useEnhancedTelegramWebApp();
+
+  // Set up Telegram SDK controls
+  useEffect(() => {
+    if (!webApp) return;
+
+    // Show back button that goes to dashboard
+    navigation.showBackButton(() => {
+      haptics?.light();
+      navigate('/dashboard');
+    });
+
+    // Apply iOS safe area
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS && webApp.safeAreaInset) {
+      document.documentElement.style.setProperty(
+        '--admin-safe-area-top', 
+        `${webApp.safeAreaInset.top}px`
+      );
+      document.documentElement.style.setProperty(
+        '--admin-safe-area-bottom', 
+        `${webApp.safeAreaInset.bottom}px`
+      );
+    }
+
+    return () => {
+      navigation.hideBackButton();
+    };
+  }, [webApp, navigation, haptics, navigate]);
 
   return (
     <SidebarProvider defaultOpen={true}>
@@ -24,8 +54,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <AdminSidebar />
         
         <SidebarInset className="flex-1">
-          {/* Top Navigation Bar */}
-          <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
+          {/* Top Navigation Bar with iOS safe area */}
+          <header 
+            className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm"
+            style={{ paddingTop: 'var(--admin-safe-area-top, 0px)' }}
+          >
             <div className="flex items-center gap-4 px-6">
               <SidebarTrigger className="h-8 w-8 hover:bg-sidebar-accent" />
               
@@ -57,8 +90,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </div>
           </header>
 
-          {/* Main Content Area */}
-          <main className="flex-1 overflow-auto">
+          {/* Main Content Area with iOS safe area */}
+          <main 
+            className="flex-1 overflow-auto"
+            style={{ paddingBottom: 'var(--admin-safe-area-bottom, 0px)' }}
+          >
             <div className="container mx-auto p-6">
               {children}
             </div>

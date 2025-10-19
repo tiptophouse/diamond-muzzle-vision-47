@@ -26,7 +26,7 @@ const adminCache: AdminCache = {};
 
 /**
  * Check if a Telegram ID belongs to an admin user
- * Uses database validation with intelligent caching
+ * Uses edge function with service role to bypass RLS issues
  */
 export async function isAdminTelegramId(telegramId: number | undefined | null): Promise<boolean> {
   if (!telegramId) {
@@ -46,31 +46,27 @@ export async function isAdminTelegramId(telegramId: number | undefined | null): 
   console.log('🔐 SecureAdmin: Validating admin status for Telegram ID:', telegramId);
 
   try {
-    // Query admin_roles table with RLS
-    const { data, error } = await supabase
-      .from('admin_roles')
-      .select('role, is_active')
-      .eq('telegram_id', telegramId)
-      .eq('is_active', true)
-      .limit(1)
-      .single();
+    // Call edge function with service role (bypasses RLS)
+    const { data, error } = await supabase.functions.invoke('check-admin', {
+      body: { telegramId }
+    });
 
-    if (error && error.code !== 'PGRST116') { // Ignore "not found" errors
+    if (error) {
       console.error('🔐 SecureAdmin: Error checking admin status:', error);
-      // Don't cache errors
       return false;
     }
 
-    const isAdmin = !!data;
+    const isAdmin = data?.isAdmin || false;
+    const role = data?.role || null;
     
     // Cache the result
     adminCache[cacheKey] = {
       isAdmin,
       timestamp: now,
-      role: data?.role,
+      role,
     };
 
-    console.log('🔐 SecureAdmin: Admin status for', telegramId, '→', isAdmin, data?.role ? `(${data.role})` : '');
+    console.log('🔐 SecureAdmin: Admin status for', telegramId, '→', isAdmin, role ? `(${role})` : '');
     return isAdmin;
 
   } catch (error) {
@@ -87,15 +83,12 @@ export async function getAdminRole(telegramId: number | undefined | null): Promi
   if (!telegramId) return null;
 
   try {
-    const { data, error } = await supabase
-      .from('admin_roles')
-      .select('role')
-      .eq('telegram_id', telegramId)
-      .eq('is_active', true)
-      .limit(1)
-      .single();
+    // Call edge function
+    const { data, error } = await supabase.functions.invoke('check-admin', {
+      body: { telegramId }
+    });
 
-    if (error || !data) return null;
+    if (error || !data?.isAdmin) return null;
     return data.role;
   } catch {
     return null;
