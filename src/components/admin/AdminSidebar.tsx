@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
   BarChart3, 
   Users, 
@@ -81,7 +81,7 @@ export function AdminSidebar() {
   const { state } = useSidebar();
   const { user } = useTelegramAuth();
   const location = useLocation();
-  const currentPath = location.pathname + location.search;
+  const navigate = useNavigate();
   
   const isCollapsed = state === 'collapsed';
   
@@ -90,58 +90,58 @@ export function AdminSidebar() {
       const tabParam = url.split('?tab=')[1];
       return location.search.includes(`tab=${tabParam}`);
     }
-    return currentPath === url;
+    return location.pathname + location.search === url;
+  };
+
+  const handleNavigation = (url: string) => {
+    navigate(url);
   };
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border/50 bg-sidebar">
-      <SidebarHeader className="border-b border-sidebar-border/50 bg-gradient-to-r from-sidebar-accent/10 to-sidebar-accent/5">
-        <div className="flex items-center gap-3 px-2 py-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-            <Crown className="h-4 w-4" />
+      <SidebarHeader className="border-b border-sidebar-border/50 bg-gradient-to-r from-sidebar-accent/10 to-sidebar-accent/5 py-2">
+        <div className="flex items-center gap-2 px-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Crown className="h-3.5 w-3.5" />
           </div>
           {!isCollapsed && (
             <div className="flex flex-col">
-              <h2 className="text-sm font-semibold text-sidebar-foreground">Admin Portal</h2>
-              <p className="text-xs text-sidebar-foreground/60">{user?.first_name || 'Administrator'}</p>
+              <h2 className="text-xs font-semibold text-sidebar-foreground">Admin</h2>
+              <p className="text-[10px] text-sidebar-foreground/60">{user?.first_name || 'Admin'}</p>
             </div>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2">
+      <SidebarContent className="px-1.5 py-2">
         {adminMenuItems.map((section) => (
-          <SidebarGroup key={section.title}>
-            <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/70 px-2 mb-1">
-              {section.title}
-            </SidebarGroupLabel>
+          <SidebarGroup key={section.title} className="mb-3">
+            {!isCollapsed && (
+              <SidebarGroupLabel className="text-[10px] font-semibold text-sidebar-foreground/50 px-2 mb-1 uppercase tracking-wide">
+                {section.title}
+              </SidebarGroupLabel>
+            )}
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu className="space-y-0.5">
                 {section.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton 
-                      asChild 
+                    <button
+                      onClick={() => handleNavigation(item.url)}
                       className={`
-                        group relative w-full justify-start gap-3 px-3 py-2.5 text-sm font-medium transition-all duration-200
-                        hover:bg-sidebar-accent hover:text-sidebar-accent-foreground
+                        w-full flex items-center gap-2 px-2 py-2 rounded-lg text-xs font-medium transition-all duration-200
                         ${isActive(item.url) 
-                          ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90' 
-                          : 'text-sidebar-foreground/80'
+                          ? 'bg-primary text-primary-foreground shadow-sm' 
+                          : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                         }
-                        ${isCollapsed ? 'px-2 justify-center' : ''}
+                        ${isCollapsed ? 'justify-center' : 'justify-start'}
                       `}
-                      tooltip={isCollapsed ? item.title : undefined}
+                      title={isCollapsed ? item.title : item.description}
                     >
-                      <NavLink to={item.url} className="flex items-center gap-3 w-full">
-                        <item.icon className="h-4 w-4 flex-shrink-0" />
-                        {!isCollapsed && (
-                          <div className="flex flex-col items-start">
-                            <span className="truncate">{item.title}</span>
-                            <span className="text-xs opacity-60 truncate">{item.description}</span>
-                          </div>
-                        )}
-                      </NavLink>
-                    </SidebarMenuButton>
+                      <item.icon className="h-3.5 w-3.5 flex-shrink-0" />
+                      {!isCollapsed && (
+                        <span className="truncate text-left">{item.title}</span>
+                      )}
+                    </button>
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
@@ -150,11 +150,11 @@ export function AdminSidebar() {
         ))}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border/50 bg-sidebar-accent/10">
-        <div className="flex items-center gap-2 px-3 py-2">
-          <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+      <SidebarFooter className="border-t border-sidebar-border/50 bg-sidebar-accent/5 py-2">
+        <div className="flex items-center gap-1.5 px-2">
+          <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
           {!isCollapsed && (
-            <span className="text-xs text-sidebar-foreground/60">System Online</span>
+            <span className="text-[10px] text-sidebar-foreground/60">Online</span>
           )}
         </div>
       </SidebarFooter>
