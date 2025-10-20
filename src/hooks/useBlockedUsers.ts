@@ -128,7 +128,11 @@ export function useBlockedUsers() {
   };
 
   const isUserBlocked = (telegramId: number): boolean => {
-    return blockedUsers.some(blocked => blocked.telegram_id === telegramId);
+    const blocked = blockedUsers.some(blocked => blocked.telegram_id === telegramId);
+    if (blocked) {
+      console.log('🚫 User is blocked:', telegramId);
+    }
+    return blocked;
   };
 
   useEffect(() => {

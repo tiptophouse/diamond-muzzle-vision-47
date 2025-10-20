@@ -34,6 +34,8 @@ import { BotWebhookTester } from '@/components/admin/BotWebhookTester';
 import { WebhookDiagnostics } from '@/components/admin/WebhookDiagnostics';
 import { CampaignManager } from '@/components/admin/CampaignManager';
 import { RealTimeMonitor } from '@/components/admin/RealTimeMonitor';
+import { BulkMessageSender } from '@/components/admin/BulkMessageSender';
+import { BlockingTestPanel } from '@/components/admin/BlockingTestPanel';
 import { useSearchParams } from 'react-router-dom';
 import { DashboardQuickActions } from '@/components/admin/DashboardQuickActions';
 import { DashboardRecentActivity } from '@/components/admin/DashboardRecentActivity';
@@ -274,7 +276,12 @@ export default function Admin() {
       case 'users':
         return <AdminUserManager />;
       case 'blocked-users':
-        return <BlockedUsersManager />;
+        return (
+          <div className="space-y-6">
+            <BlockedUsersManager />
+            <BlockingTestPanel />
+          </div>
+        );
       case 'sessions':
         return <SessionUsersDisplay />;
       case 'diamond-counts':
@@ -282,7 +289,12 @@ export default function Admin() {
       case 'upload-analysis':
         return <UserUploadAnalysis />;
       case 'campaigns':
-        return <CampaignManager />;
+        return (
+          <div className="space-y-6">
+            <BulkMessageSender />
+            <CampaignManager />
+          </div>
+        );
       case 'notifications':
         return (
           <NotificationCenter 

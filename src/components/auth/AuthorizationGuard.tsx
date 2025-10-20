@@ -39,21 +39,27 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
       return;
     }
 
-    // Wait for other data to load for non-admin users
-    if (blockedLoading || settingsLoading) {
+    // Wait for blocked users data to load - CRITICAL CHECK
+    if (blockedLoading) {
+      console.log('⏳ Waiting for blocked users data...');
+      return;
+    }
+
+    // CRITICAL: Check if user is blocked FIRST - before any other checks
+    if (isUserBlocked(user.id)) {
+      console.log('🚫 BLOCKED USER DETECTED - DENYING ALL ACCESS:', user.id);
+      setIsAuthorized(false);
+      return;
+    }
+
+    // Wait for settings to load for other checks
+    if (settingsLoading) {
       return;
     }
 
     // Enhanced security: verify environment in production for non-admin users
     if (process.env.NODE_ENV === 'production' && !isTelegramEnvironment) {
       console.log('❌ Production requires Telegram environment for non-admin users');
-      setIsAuthorized(false);
-      return;
-    }
-
-    // Check if user is blocked (only applies to non-admin users)
-    if (isUserBlocked(user.id)) {
-      console.log('❌ User is blocked');
       setIsAuthorized(false);
       return;
     }
@@ -95,6 +101,8 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
     const isAdminUser = user && user.id === adminTelegramId;
     const invalidEnvironment = process.env.NODE_ENV === 'production' && !isTelegramEnvironment;
     
+    console.log('🚫 Access denied:', { isBlocked, isAdminUser, invalidEnvironment, userId: user?.id });
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md mx-4 border">
@@ -123,10 +131,21 @@ export function AuthorizationGuard({ children }: AuthorizationGuardProps) {
             {invalidEnvironment
               ? 'This application must be accessed through the official Telegram application for security reasons.'
               : isBlocked 
-                ? 'Your access to this application has been restricted by the administrator.'
+                ? 'Your account has been blocked by the administrator. If you believe this is an error, please contact support.'
                 : 'This application now requires manual authorization. Please contact the administrator to request access.'
             }
           </p>
+          
+          {isBlocked && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <p className="text-red-800 text-sm font-medium">
+                🚫 Account Status: <span className="font-bold">BLOCKED</span>
+              </p>
+              <p className="text-red-700 text-xs mt-2">
+                All access to the platform has been revoked. Contact the administrator for assistance.
+              </p>
+            </div>
+          )}
           
           <div className="text-sm text-gray-500 mb-8 space-y-1">
             <p>User ID: {user?.id || 'Unknown'}</p>
