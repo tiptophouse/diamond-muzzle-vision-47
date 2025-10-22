@@ -40,6 +40,7 @@ import ImmersiveDiamondPage from './pages/ImmersiveDiamondPage';
 import DiamondShareAnalytics from './pages/DiamondShareAnalytics';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import { StartParamInitializer } from './components/layout/StartParamInitializer';
+import { FloatingUploadButton } from './components/upload/FloatingUploadButton';
 
 // Register service worker for offline support in Telegram Mini App
 registerServiceWorker();
@@ -67,6 +68,7 @@ function App() {
                 <InteractiveWizardProvider>
                   <SecureTelegramLayout>
                   <StartParamInitializer />
+                  <FloatingUploadButton />
                   <Routes>
                   {/* Public route - redirects to dashboard if authenticated */}
                   <Route path="/" element={
