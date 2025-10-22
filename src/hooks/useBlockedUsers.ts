@@ -35,21 +35,30 @@ export function useBlockedUsers() {
   };
 
   const fetchBlockedUsers = async () => {
-    try {
-      await setUserContext();
+    if (!user?.id) {
+      setIsLoading(false);
+      return;
+    }
 
-      const { data, error } = await supabase
-        .from('blocked_users')
-        .select('*')
-        .order('created_at', { ascending: false });
+    try {
+      console.log('📋 Fetching blocked users via edge function...');
+      const { data, error } = await supabase.functions.invoke('admin-manage-blocked-users', {
+        body: {
+          action: 'list',
+          admin_telegram_id: user.id
+        }
+      });
 
       if (error) throw error;
-      setBlockedUsers(data || []);
+      if (!data.success) throw new Error(data.error || 'Failed to fetch blocked users');
+      
+      setBlockedUsers(data.data || []);
+      console.log('✅ Fetched blocked users:', data.data?.length || 0);
     } catch (error) {
-      console.error('Error fetching blocked users:', error);
+      console.error('❌ Error fetching blocked users:', error);
       toast({
         title: "Error",
-        description: "Failed to load blocked users",
+        description: error instanceof Error ? error.message : "Failed to load blocked users",
         variant: "destructive",
       });
     } finally {
@@ -68,17 +77,18 @@ export function useBlockedUsers() {
     }
 
     try {
-      await setUserContext();
-
-      const { error } = await supabase
-        .from('blocked_users')
-        .insert({
+      console.log('🚫 Blocking user:', telegramId, 'by admin:', user.id);
+      const { data, error } = await supabase.functions.invoke('admin-manage-blocked-users', {
+        body: {
+          action: 'block',
           telegram_id: telegramId,
-          blocked_by_telegram_id: user.id,
-          reason: reason || 'No reason provided'
-        });
+          reason: reason || 'No reason provided',
+          admin_telegram_id: user.id
+        }
+      });
 
       if (error) throw error;
+      if (!data.success) throw new Error(data.error || 'Failed to block user');
 
       toast({
         title: "User Blocked",
@@ -88,10 +98,10 @@ export function useBlockedUsers() {
       fetchBlockedUsers();
       return true;
     } catch (error) {
-      console.error('Error blocking user:', error);
+      console.error('❌ Error blocking user:', error);
       toast({
         title: "Error",
-        description: "Failed to block user",
+        description: error instanceof Error ? error.message : "Failed to block user",
         variant: "destructive",
       });
       return false;
@@ -99,15 +109,27 @@ export function useBlockedUsers() {
   };
 
   const unblockUser = async (blockedUserId: string) => {
-    try {
-      await setUserContext();
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to unblock users",
+        variant: "destructive",
+      });
+      return false;
+    }
 
-      const { error } = await supabase
-        .from('blocked_users')
-        .delete()
-        .eq('id', blockedUserId);
+    try {
+      console.log('✅ Unblocking user:', blockedUserId, 'by admin:', user.id);
+      const { data, error } = await supabase.functions.invoke('admin-manage-blocked-users', {
+        body: {
+          action: 'unblock',
+          blocked_user_id: blockedUserId,
+          admin_telegram_id: user.id
+        }
+      });
 
       if (error) throw error;
+      if (!data.success) throw new Error(data.error || 'Failed to unblock user');
 
       toast({
         title: "User Unblocked",
@@ -117,10 +139,10 @@ export function useBlockedUsers() {
       fetchBlockedUsers();
       return true;
     } catch (error) {
-      console.error('Error unblocking user:', error);
+      console.error('❌ Error unblocking user:', error);
       toast({
         title: "Error",
-        description: "Failed to unblock user",
+        description: error instanceof Error ? error.message : "Failed to unblock user",
         variant: "destructive",
       });
       return false;
