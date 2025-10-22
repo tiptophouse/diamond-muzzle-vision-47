@@ -169,9 +169,9 @@ export function TelegramDiamondNotificationCard({
   };
 
   const getUserInfo = () => {
-    const userId = metadata?.user_id;
     const searcherInfo = metadata?.searcher_info;
     const customerInfo = metadata?.customer_info;
+    const userId = searcherInfo?.telegram_id || customerInfo?.telegram_id || metadata?.user_id;
     
     return {
       userId,
