@@ -2,21 +2,18 @@ import { useCallback } from 'react';
 
 export function useTelegramHapticFeedback() {
   const impactOccurred = useCallback((style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft' = 'medium') => {
-    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.HapticFeedback) {
-      (window as any).Telegram.WebApp.HapticFeedback.impactOccurred(style);
-    }
+    // Haptic feedback disabled
+    return;
   }, []);
 
   const notificationOccurred = useCallback((type: 'error' | 'success' | 'warning' = 'success') => {
-    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.HapticFeedback) {
-      (window as any).Telegram.WebApp.HapticFeedback.notificationOccurred(type);
-    }
+    // Haptic feedback disabled
+    return;
   }, []);
 
   const selectionChanged = useCallback(() => {
-    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.HapticFeedback) {
-      (window as any).Telegram.WebApp.HapticFeedback.selectionChanged();
-    }
+    // Haptic feedback disabled
+    return;
   }, []);
 
   return {

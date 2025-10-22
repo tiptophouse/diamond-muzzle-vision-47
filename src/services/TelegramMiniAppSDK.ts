@@ -457,16 +457,19 @@ class TelegramMiniAppSDK {
     hide: () => this.webApp?.SettingsButton?.hide(),
   };
 
-  // Haptic Feedback
+  // Haptic Feedback (disabled)
   hapticFeedback = {
     impact: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft' = 'medium') => {
-      this.webApp?.HapticFeedback?.impactOccurred(style);
+      // Haptic feedback disabled
+      return;
     },
     notification: (type: 'error' | 'success' | 'warning') => {
-      this.webApp?.HapticFeedback?.notificationOccurred(type);
+      // Haptic feedback disabled
+      return;
     },
     selection: () => {
-      this.webApp?.HapticFeedback?.selectionChanged();
+      // Haptic feedback disabled
+      return;
     },
   };
 
