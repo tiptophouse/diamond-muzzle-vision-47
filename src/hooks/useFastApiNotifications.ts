@@ -98,44 +98,59 @@ export function useFastApiNotifications() {
         console.log('🔔 FastAPI search results:', searchResults);
         
         // Transform search results into notification format
-        const transformedNotifications = searchResults.map((result: any) => ({
-          id: result.id.toString(),
-          user_id: result.user_id,
-          search_query: result.search_query,
-          result_type: result.result_type,
-          diamonds_data: result.diamonds_data,
-          message_sent: result.message_sent,
-          created_at: result.created_at,
-          title: getNotificationTitle(result.result_type, result),
-          message: getNotificationMessage(result),
-          type: result.result_type === 'match' ? 'diamond_match' : 'search_result',
-          read: false, // FastAPI doesn't track read status yet
-          data: {
-            search_query: result.search_query,
-            diamonds_count: result.diamonds_data?.length || 0,
-            diamonds_data: result.diamonds_data,
-            searcher_info: extractSearcherInfo(result.search_query),
+        const transformedNotifications = searchResults
+          .filter((result: any) => {
+            // CRITICAL: Filter out notifications where the user is seeing their own searches
+            // Only show notifications where OTHERS searched and YOUR diamonds matched
+            const searcherInfo = result.searcher_info || extractSearcherInfo(result.search_query);
+            const searcherId = searcherInfo?.telegram_id || result.user_id;
+            
+            // Don't show if the searcher is the current user (can't contact yourself)
+            if (searcherId && searcherId === user.id) {
+              console.log(`🚫 Filtering out own search: ${result.id}`);
+              return false;
+            }
+            
+            return true;
+          })
+          .map((result: any) => ({
+            id: result.id.toString(),
             user_id: result.user_id,
-            matches: result.diamonds_data?.map((diamond: any) => ({
-              stock_number: diamond.stock_number || diamond.stockNumber,
-              shape: diamond.shape,
-              weight: diamond.weight || diamond.carat,
-              color: diamond.color,
-              clarity: diamond.clarity,
-              cut: diamond.cut,
-              price_per_carat: diamond.price_per_carat || diamond.price,
-              status: diamond.status || 'Available',
-              confidence: diamond.confidence || 0.8,
-              total_price: diamond.total_price || (diamond.price_per_carat * (diamond.weight || diamond.carat))
-            }))
-          }
-        }));
+            search_query: result.search_query,
+            result_type: result.result_type,
+            diamonds_data: result.diamonds_data,
+            message_sent: result.message_sent,
+            created_at: result.created_at,
+            title: getNotificationTitle(result.result_type, result),
+            message: getNotificationMessage(result),
+            type: result.result_type === 'match' ? 'diamond_match' : 'search_result',
+            read: false, // FastAPI doesn't track read status yet
+            data: {
+              search_query: result.search_query,
+              diamonds_count: result.diamonds_data?.length || 0,
+              diamonds_data: result.diamonds_data,
+              searcher_info: result.searcher_info || extractSearcherInfo(result.search_query),
+              user_id: result.user_id,
+              matches: result.diamonds_data?.map((diamond: any) => ({
+                stock_number: diamond.stock_number || diamond.stockNumber,
+                shape: diamond.shape,
+                weight: diamond.weight || diamond.carat,
+                color: diamond.color,
+                clarity: diamond.clarity,
+                cut: diamond.cut,
+                price_per_carat: diamond.price_per_carat || diamond.price,
+                status: diamond.status || 'Available',
+                confidence: diamond.confidence || 0.8,
+                total_price: diamond.total_price || (diamond.price_per_carat * (diamond.weight || diamond.carat))
+              }))
+            }
+          }));
 
         // Save notifications to database
         await saveNotificationsToDatabase(transformedNotifications);
         
         setNotifications(transformedNotifications);
-        console.log('🔔 Notifications set:', transformedNotifications.length, 'notifications');
+        console.log('🔔 Notifications set:', transformedNotifications.length, 'notifications (after filtering own searches)');
 
         // Show toast for new notifications if this is not the initial load
         if (transformedNotifications.length > 0) {

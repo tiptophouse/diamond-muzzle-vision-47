@@ -171,11 +171,20 @@ export function TelegramDiamondNotificationCard({
   const getUserInfo = () => {
     const searcherInfo = metadata?.searcher_info;
     const customerInfo = metadata?.customer_info;
-    const userId = searcherInfo?.telegram_id || customerInfo?.telegram_id || metadata?.user_id;
+    
+    // CRITICAL: Always use the BUYER/SEARCHER info, never the seller's own info
+    // The notification recipient is the seller, so we show the buyer who searched
+    const buyerTelegramId = searcherInfo?.telegram_id || customerInfo?.telegram_id;
+    
+    // Don't show contact button if buyer ID is missing or if it's your own search
+    // (In case you somehow get a notification for your own search)
+    if (!buyerTelegramId) {
+      return null;
+    }
     
     return {
-      userId,
-      name: searcherInfo?.name || customerInfo?.name || 'לקוח מעוניין',
+      userId: buyerTelegramId,
+      name: searcherInfo?.name || customerInfo?.name || 'Interested Buyer',
       telegram_username: searcherInfo?.telegram_username || customerInfo?.telegram_username,
       phone: searcherInfo?.phone || customerInfo?.phone
     };
@@ -221,7 +230,7 @@ export function TelegramDiamondNotificationCard({
         </p>
 
         {/* User Contact Info - Always show if buyer info exists, PROMINENT */}
-        {getUserInfo().userId && (
+        {getUserInfo() && getUserInfo()!.userId && (
           <div className="bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-sm rounded-lg p-3 border-2 border-primary/30 shadow-sm">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
@@ -229,8 +238,8 @@ export function TelegramDiamondNotificationCard({
                   <User className="h-3.5 w-3.5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-xs sm:text-sm text-primary truncate">👤 {getUserInfo().name}</p>
-                  <p className="text-[10px] text-muted-foreground">Buyer ID: {getUserInfo().userId}</p>
+                  <p className="font-semibold text-xs sm:text-sm text-primary truncate">👤 {getUserInfo()!.name}</p>
+                  <p className="text-[10px] text-muted-foreground">Buyer ID: {getUserInfo()!.userId}</p>
                 </div>
               </div>
               
@@ -238,17 +247,17 @@ export function TelegramDiamondNotificationCard({
               <div className="flex gap-1.5 w-full">
                 <Button
                   size="sm"
-                  onClick={() => handleDirectContact(getUserInfo().userId!)}
+                  onClick={() => handleDirectContact(getUserInfo()!.userId!)}
                   className="flex-1 h-9 text-xs font-semibold gap-1.5"
                 >
                   <MessageCircle className="h-3.5 w-3.5" />
                   צ'אט עם קונה
                 </Button>
-                {getUserInfo().phone && (
+                {getUserInfo()!.phone && (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => window.open(`tel:${getUserInfo().phone}`, '_blank')}
+                    onClick={() => window.open(`tel:${getUserInfo()!.phone}`, '_blank')}
                     className="h-9 px-3"
                   >
                     <Phone className="h-3.5 w-3.5" />
