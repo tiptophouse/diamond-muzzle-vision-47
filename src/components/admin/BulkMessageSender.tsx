@@ -10,6 +10,38 @@ export function BulkMessageSender() {
   const [result, setResult] = useState<any>(null);
   const { toast } = useToast();
 
+  const sendTestMessage = async () => {
+    setIsSending(true);
+    setResult(null);
+
+    try {
+      console.log('🧪 Sending test message to admin...');
+      
+      const { data, error } = await supabase.functions.invoke('send-bulk-payment-reminder', {
+        body: { testMode: true }
+      });
+
+      if (error) throw error;
+
+      console.log('✅ Test message sent:', data);
+      setResult(data);
+
+      toast({
+        title: "Test Message Sent!",
+        description: "Check your Telegram to see how the message looks",
+      });
+    } catch (error) {
+      console.error('❌ Test error:', error);
+      toast({
+        title: "Test Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   const sendBulkMessages = async () => {
     setIsSending(true);
     setResult(null);
@@ -63,24 +95,46 @@ export function BulkMessageSender() {
           </ul>
         </div>
 
-        <Button 
-          onClick={sendBulkMessages} 
-          disabled={isSending}
-          className="w-full"
-          size="lg"
-        >
-          {isSending ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-              Sending Messages...
-            </>
-          ) : (
-            <>
-              <Send className="mr-2 h-4 w-4" />
-              Send to All Users
-            </>
-          )}
-        </Button>
+        <div className="space-y-2">
+          <Button 
+            onClick={sendTestMessage} 
+            disabled={isSending}
+            className="w-full"
+            variant="outline"
+            size="lg"
+          >
+            {isSending ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent mr-2" />
+                Sending Test...
+              </>
+            ) : (
+              <>
+                <Send className="mr-2 h-4 w-4" />
+                🧪 Send Test to Me
+              </>
+            )}
+          </Button>
+
+          <Button 
+            onClick={sendBulkMessages} 
+            disabled={isSending}
+            className="w-full"
+            size="lg"
+          >
+            {isSending ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                Sending Messages...
+              </>
+            ) : (
+              <>
+                <Send className="mr-2 h-4 w-4" />
+                Send to All Users
+              </>
+            )}
+          </Button>
+        </div>
 
         {result && (
           <div className="space-y-2">

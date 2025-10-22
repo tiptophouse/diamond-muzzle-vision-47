@@ -19,7 +19,9 @@ serve(async (req) => {
   }
 
   try {
-    console.log('📢 Starting bulk payment reminder campaign');
+    const { testMode } = await req.json().catch(() => ({ testMode: false }));
+    
+    console.log(testMode ? '🧪 Starting test message to admin' : '📢 Starting bulk payment reminder campaign');
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -31,28 +33,58 @@ serve(async (req) => {
       throw new Error('TELEGRAM_BOT_TOKEN not configured');
     }
 
-    // Get all users from user_profiles
-    const { data: users, error: usersError } = await supabaseClient
-      .from('user_profiles')
-      .select('telegram_id, first_name, last_name, username')
-      .not('telegram_id', 'is', null);
+    let eligibleUsers: UserProfile[] = [];
+    let blockedCount = 0;
+    
+    if (testMode) {
+      // In test mode, get only admin users
+      const { data: adminUsers, error: adminError } = await supabaseClient
+        .from('admin_roles')
+        .select('telegram_id')
+        .eq('is_active', true)
+        .limit(1);
 
-    if (usersError) {
-      console.error('❌ Error fetching users:', usersError);
-      throw usersError;
+      if (adminError || !adminUsers?.length) {
+        throw new Error('No admin user found for test');
+      }
+
+      const { data: adminProfile, error: profileError } = await supabaseClient
+        .from('user_profiles')
+        .select('telegram_id, first_name, last_name, username')
+        .eq('telegram_id', adminUsers[0].telegram_id)
+        .single();
+
+      if (profileError || !adminProfile) {
+        throw new Error('Admin profile not found');
+      }
+
+      eligibleUsers = [adminProfile];
+      console.log(`🧪 Test mode: Sending to admin only (${adminProfile.telegram_id})`);
+    } else {
+      // Get all users from user_profiles
+      const { data: users, error: usersError } = await supabaseClient
+        .from('user_profiles')
+        .select('telegram_id, first_name, last_name, username')
+        .not('telegram_id', 'is', null);
+
+      if (usersError) {
+        console.error('❌ Error fetching users:', usersError);
+        throw usersError;
+      }
+
+      console.log(`👥 Found ${users?.length || 0} users to message`);
+
+      // Get blocked users to exclude
+      const { data: blockedUsers } = await supabaseClient
+        .from('blocked_users')
+        .select('telegram_id');
+
+      const blockedIds = new Set(blockedUsers?.map(b => b.telegram_id) || []);
+      eligibleUsers = users?.filter(u => !blockedIds.has(u.telegram_id)) || [];
+      blockedCount = blockedIds.size;
+
+      console.log(`✅ ${eligibleUsers.length} eligible users (${blockedCount} blocked)`);
     }
-
-    console.log(`👥 Found ${users?.length || 0} users to message`);
-
-    // Get blocked users to exclude
-    const { data: blockedUsers } = await supabaseClient
-      .from('blocked_users')
-      .select('telegram_id');
-
-    const blockedIds = new Set(blockedUsers?.map(b => b.telegram_id) || []);
-    const eligibleUsers = users?.filter(u => !blockedIds.has(u.telegram_id)) || [];
-
-    console.log(`✅ ${eligibleUsers.length} eligible users (${blockedIds.size} blocked)`);
 
     const botUsername = (await fetch(`https://api.telegram.org/bot${botToken}/getMe`).then(r => r.json())).result?.username || 'bot';
     const startLink = `https://t.me/${botUsername}?start=payment_reminder`;
@@ -145,7 +177,8 @@ serve(async (req) => {
         total_users: eligibleUsers.length,
         success: successCount,
         failed: failureCount,
-        blocked_excluded: blockedIds.size
+        blocked_excluded: blockedCount,
+        test_mode: testMode
       }
     });
 
@@ -158,7 +191,7 @@ serve(async (req) => {
           total_users: eligibleUsers.length,
           messages_sent: successCount,
           messages_failed: failureCount,
-          blocked_users_excluded: blockedIds.size,
+          blocked_users_excluded: blockedCount,
           start_link: startLink
         },
         errors: errors.slice(0, 10) // Return first 10 errors
