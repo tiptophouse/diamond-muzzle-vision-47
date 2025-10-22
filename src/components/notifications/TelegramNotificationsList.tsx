@@ -141,15 +141,15 @@ export function TelegramNotificationsList({
   }
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header with filters and stats */}
-      <div className="p-4 border-b bg-background/95 backdrop-blur-sm sticky top-0 z-10">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            <h2 className="font-semibold">Notifications</h2>
+    <div className="h-full flex flex-col w-full max-w-full overflow-hidden">
+      {/* Header with filters and stats - Mobile optimized */}
+      <div className="px-2 sm:px-4 py-3 border-b bg-background/95 backdrop-blur-sm sticky top-0 z-10">
+        <div className="flex items-center justify-between mb-2 gap-2">
+          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+            <Bell className="h-4 w-4 flex-shrink-0" />
+            <h2 className="font-semibold text-sm truncate">Notifications</h2>
             {unreadCount > 0 && (
-              <Badge variant="destructive" className="text-xs">
+              <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0">
                 {unreadCount}
               </Badge>
             )}
@@ -159,14 +159,14 @@ export function TelegramNotificationsList({
             size="sm"
             variant="outline"
             onClick={handleViewModeChange}
-            className="h-8 text-xs"
+            className="h-7 text-[10px] px-2 flex-shrink-0"
           >
-            {viewMode === 'cards' ? 'Mini View' : 'Card View'}
+            {viewMode === 'cards' ? 'Mini' : 'Cards'}
           </Button>
         </div>
 
-        {/* Filter tabs */}
-        <div className="flex gap-1 p-1 bg-muted/50 rounded-lg">
+        {/* Filter tabs - Mobile optimized */}
+        <div className="flex gap-0.5 p-0.5 bg-muted/50 rounded-lg">
           {[
             { key: 'all', label: 'All', icon: null },
             { key: 'unread', label: 'Unread', icon: BellOff },
@@ -177,12 +177,12 @@ export function TelegramNotificationsList({
               size="sm"
               variant={filter === key ? 'default' : 'ghost'}
               onClick={() => handleFilterChange(key as typeof filter)}
-              className="flex-1 h-7 text-xs"
+              className="flex-1 h-7 text-[10px] px-1 gap-0.5"
             >
-              {Icon && <Icon className="h-3 w-3 mr-1" />}
-              {label}
+              {Icon && <Icon className="h-3 w-3" />}
+              <span className="hidden xs:inline">{label}</span>
               {key === 'unread' && unreadCount > 0 && (
-                <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
+                <Badge variant="secondary" className="ml-0.5 h-3 px-1 text-[9px] leading-none">
                   {unreadCount}
                 </Badge>
               )}
@@ -191,14 +191,14 @@ export function TelegramNotificationsList({
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="p-4 space-y-4">
+      <ScrollArea className="flex-1 w-full">
+        <div className="px-2 sm:px-4 py-3 space-y-3 w-full">
           {/* Diamond matches summary */}
           {filter === 'all' && renderDiamondMatches()}
 
-          {/* Notifications list */}
+          {/* Notifications list - Mobile responsive */}
           {filteredNotifications.length > 0 ? (
-            <div className={viewMode === 'mini' ? 'grid grid-cols-1 sm:grid-cols-2 gap-3' : 'space-y-4'}>
+            <div className={viewMode === 'mini' ? 'grid grid-cols-1 gap-2' : 'space-y-3'}>
               {filteredNotifications.map(notification => (
                 viewMode === 'cards' ? (
                   <TelegramDiamondNotificationCard
@@ -222,10 +222,10 @@ export function TelegramNotificationsList({
               ))}
             </div>
           ) : (
-            <Card className="text-center py-8">
-              <CardContent>
-                <BellOff className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-                <p className="text-muted-foreground">
+            <Card className="text-center py-6 mx-2">
+              <CardContent className="py-4">
+                <BellOff className="h-10 w-10 mx-auto mb-2 text-muted-foreground/50" />
+                <p className="text-muted-foreground text-sm">
                   {filter === 'unread' ? 'No unread notifications' : 
                    filter === 'diamond_match' ? 'No diamond matches found' : 
                    'No notifications yet'}

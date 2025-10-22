@@ -186,68 +186,72 @@ export function TelegramDiamondNotificationCard({
   return (
     <Card 
       className={`
-        transition-all duration-300 border backdrop-blur-sm
+        transition-all duration-300 border backdrop-blur-sm w-full
         ${notification.read ? 'opacity-75' : 'shadow-lg'} 
         ${getTypeGradient(notification.type)}
         touch-manipulation
       `}
     >
-      {/* Header */}
-      <div className="p-4 pb-2">
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-background/50 rounded-full">
+      {/* Header - Mobile optimized */}
+      <div className="p-3 pb-2">
+        <div className="flex items-start justify-between mb-2 gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="p-1.5 bg-background/50 rounded-full flex-shrink-0">
               {getTypeIcon(notification.type)}
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-sm leading-tight">{notification.title}</h3>
-              <p className="text-xs text-muted-foreground">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-xs leading-tight truncate">{notification.title}</h3>
+              <p className="text-[10px] text-muted-foreground truncate">
                 {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
               </p>
             </div>
           </div>
           {!notification.read && (
-            <Badge variant="secondary" className="bg-primary/20 text-primary text-xs px-2 py-1">
+            <Badge variant="secondary" className="bg-primary/20 text-primary text-[10px] px-1.5 py-0.5 flex-shrink-0">
               New
             </Badge>
           )}
         </div>
       </div>
 
-      <CardContent className="pt-0 space-y-3">
+      <CardContent className="pt-0 space-y-2 px-3 pb-3">
         {/* Message */}
-        <p className="text-sm text-foreground/90 leading-relaxed">
+        <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed">
           {notification.message}
         </p>
 
-        {/* User Contact Info */}
+        {/* User Contact Info - Always show if buyer info exists, PROMINENT */}
         {getUserInfo().userId && (
-          <div className="bg-background/60 backdrop-blur-sm rounded-lg p-3 border border-border/50">
-            <div className="flex items-center justify-between">
+          <div className="bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-sm rounded-lg p-3 border-2 border-primary/30 shadow-sm">
+            <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="font-medium text-sm">{getUserInfo().name}</p>
-                  <p className="text-xs text-muted-foreground">ID: {getUserInfo().userId}</p>
+                <div className="p-1.5 bg-primary/20 rounded-full">
+                  <User className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-xs sm:text-sm text-primary truncate">👤 {getUserInfo().name}</p>
+                  <p className="text-[10px] text-muted-foreground">Buyer ID: {getUserInfo().userId}</p>
                 </div>
               </div>
-              <div className="flex gap-1">
+              
+              {/* Contact buttons - Full width and prominent */}
+              <div className="flex gap-1.5 w-full">
                 <Button
                   size="sm"
                   onClick={() => handleDirectContact(getUserInfo().userId!)}
-                  className="h-8 px-3"
+                  className="flex-1 h-9 text-xs font-semibold gap-1.5"
                 >
-                  <MessageCircle className="h-3 w-3 mr-1" />
-                  צ'אט
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  צ'אט עם קונה
                 </Button>
                 {getUserInfo().phone && (
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => window.open(`tel:${getUserInfo().phone}`, '_blank')}
-                    className="h-8 px-3"
+                    className="h-9 px-3"
                   >
-                    <Phone className="h-3 w-3" />
+                    <Phone className="h-3.5 w-3.5" />
                   </Button>
                 )}
               </div>
@@ -259,76 +263,75 @@ export function TelegramDiamondNotificationCard({
         {isDiamondMatch && metadata && (
           <div className="space-y-3">
             
-            {/* Top Match Highlight */}
+            {/* Top Match Highlight - Mobile optimized */}
             {topMatch && (
-              <div className="bg-background/60 backdrop-blur-sm rounded-lg p-3 border border-border/50">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-sm flex items-center gap-1">
+              <div className="bg-background/60 backdrop-blur-sm rounded-lg p-2.5 border border-border/50">
+                <div className="flex items-center justify-between mb-2 gap-1">
+                  <h4 className="font-medium text-xs flex items-center gap-1">
                     <Sparkles className="h-3 w-3" />
                     Best Match
                   </h4>
                   {topMatch.confidence && (
-                    <Badge variant="outline" className="text-xs">
-                      {Math.round(topMatch.confidence * 100)}% match
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                      {Math.round(topMatch.confidence * 100)}%
                     </Badge>
                   )}
                 </div>
                 
-                <div className="grid grid-cols-2 gap-2 mb-3">
-                  <div className="text-center bg-background/50 rounded p-2">
-                    <p className="text-xs text-muted-foreground">Shape & Weight</p>
-                    <p className="font-semibold text-sm">{topMatch.shape} {topMatch.weight}ct</p>
+                <div className="grid grid-cols-2 gap-1.5 mb-2">
+                  <div className="text-center bg-background/50 rounded p-1.5">
+                    <p className="text-[10px] text-muted-foreground">Shape & Weight</p>
+                    <p className="font-semibold text-xs">{topMatch.shape} {topMatch.weight}ct</p>
                   </div>
-                  <div className="text-center bg-background/50 rounded p-2">
-                    <p className="text-xs text-muted-foreground">Color & Clarity</p>
-                    <p className="font-semibold text-sm">{topMatch.color} {topMatch.clarity}</p>
+                  <div className="text-center bg-background/50 rounded p-1.5">
+                    <p className="text-[10px] text-muted-foreground">Color & Clarity</p>
+                    <p className="font-semibold text-xs">{topMatch.color} {topMatch.clarity}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-2 px-1">
                   <div>
-                    <p className="text-xs text-muted-foreground">Stock #{topMatch.stock_number}</p>
-                    <p className="font-bold text-primary">{formatPrice(topMatch)}</p>
+                    <p className="text-[10px] text-muted-foreground">Stock #{topMatch.stock_number}</p>
+                    <p className="font-bold text-primary text-sm">{formatPrice(topMatch)}</p>
                   </div>
                   <Badge 
                     variant={topMatch.status === 'Available' ? 'default' : 'secondary'}
-                    className="text-xs"
+                    className="text-[10px] px-1.5 py-0"
                   >
                     {topMatch.status}
                   </Badge>
                 </div>
 
-                {/* Quick Actions */}
-                <div className="flex gap-2">
+                {/* Quick Actions - Mobile responsive grid */}
+                <div className="grid grid-cols-2 gap-1.5">
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => handleCopyDiamond(topMatch)}
-                    className="flex-1 h-8 text-xs"
+                    className="h-8 text-[10px] px-2"
                   >
-                    <Copy className="h-3 w-3 mr-1" />
+                    <Copy className="h-3 w-3 mr-0.5" />
                     Copy
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => handleShareDiamond(topMatch)}
-                    className="flex-1 h-8 text-xs"
+                    className="h-8 text-[10px] px-2"
                   >
-                    <Share className="h-3 w-3 mr-1" />
+                    <Share className="h-3 w-3 mr-0.5" />
                     Share
                   </Button>
                   {(metadata?.customer_info || metadata?.searcher_info) && (
                     <Button
                       size="sm"
                       onClick={() => handleContactCustomer(topMatch)}
-                      className="flex-1 h-8 text-xs"
+                      className="h-8 text-[10px] px-2"
                     >
-                      <MessageCircle className="h-3 w-3 mr-1" />
+                      <MessageCircle className="h-3 w-3 mr-0.5" />
                       Contact
                     </Button>
                   )}
-                  {/* Quick Reply with GPT Button */}
                   <Button
                     size="sm"
                     variant="secondary"
@@ -336,10 +339,10 @@ export function TelegramDiamondNotificationCard({
                       setShowQuickReply(!showQuickReply);
                       impactOccurred('light');
                     }}
-                    className="flex-1 h-8 text-xs"
+                    className="h-8 text-[10px] px-2"
                   >
-                    <Bot className="h-3 w-3 mr-1" />
-                    Quick Reply
+                    <Bot className="h-3 w-3 mr-0.5" />
+                    AI Reply
                   </Button>
                 </div>
               </div>
@@ -359,48 +362,50 @@ export function TelegramDiamondNotificationCard({
               />
             )}
 
-            {/* Additional Matches */}
+            {/* Additional Matches - Mobile optimized */}
             {matches.length > 1 && (
-              <div className="bg-background/40 rounded-lg p-3">
-                <h5 className="font-medium text-xs text-muted-foreground mb-2">
+              <div className="bg-background/40 rounded-lg p-2">
+                <h5 className="font-medium text-[10px] text-muted-foreground mb-1.5">
                   +{matches.length - 1} More Matches
                 </h5>
-                <div className="grid grid-cols-1 gap-1">
+                <div className="space-y-1">
                   {matches.slice(1, 3).map((match, index) => (
-                    <div key={index} className="flex items-center justify-between text-xs p-2 bg-background/50 rounded">
-                      <span className="font-medium">{match.stock_number}</span>
-                      <span className="text-muted-foreground">
+                    <div key={index} className="flex flex-col gap-0.5 text-[10px] p-1.5 bg-background/50 rounded">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-xs">#{match.stock_number}</span>
+                        <span className="font-semibold text-primary text-xs">
+                          {formatPrice(match)}
+                        </span>
+                      </div>
+                      <span className="text-muted-foreground text-[10px]">
                         {match.shape} {match.weight}ct {match.color} {match.clarity}
-                      </span>
-                      <span className="font-semibold text-primary">
-                        {formatPrice(match)}
                       </span>
                     </div>
                   ))}
                 </div>
                 {matches.length > 3 && (
-                  <p className="text-xs text-muted-foreground text-center mt-2">
-                    +{matches.length - 3} more matches available
+                  <p className="text-[10px] text-muted-foreground text-center mt-1.5">
+                    +{matches.length - 3} more available
                   </p>
                 )}
               </div>
             )}
 
-            {/* Quick Reply Buttons */}
+            {/* Quick Reply Buttons - Mobile optimized */}
             {quickReplyButtons.length > 0 && (
-              <div className="bg-background/40 rounded-lg p-3">
-                <h5 className="font-medium text-xs text-muted-foreground mb-3 flex items-center gap-1">
+              <div className="bg-background/40 rounded-lg p-2">
+                <h5 className="font-medium text-[10px] text-muted-foreground mb-2 flex items-center gap-1">
                   <Search className="h-3 w-3" />
-                  חיפוש מהיר במלאי שלך
+                  חיפוש מהיר במלאי
                 </h5>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1">
                   {quickReplyButtons.map((button, index) => (
                     <Button
                       key={index}
                       size="sm"
                       variant="outline"
                       onClick={() => handleQuickSearch(button.criteria)}
-                      className="h-7 text-xs"
+                      className="h-6 text-[10px] px-2"
                     >
                       {button.text}
                     </Button>
@@ -409,19 +414,19 @@ export function TelegramDiamondNotificationCard({
               </div>
             )}
 
-            {/* Search Criteria */}
+            {/* Search Criteria - Mobile optimized */}
             {metadata.search_criteria && (
               <details className="bg-background/40 rounded-lg">
-                <summary className="p-3 cursor-pointer text-xs font-medium">
+                <summary className="p-2 cursor-pointer text-[10px] font-medium">
                   Search Criteria
                 </summary>
-                <div className="px-3 pb-3">
-                  <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="px-2 pb-2">
+                  <div className="grid grid-cols-2 gap-1 text-[10px]">
                     {Object.entries(metadata.search_criteria).map(([key, value]) => (
                       value && (
-                        <div key={key} className="flex justify-between">
-                          <span className="text-muted-foreground capitalize">{key.replace('_', ' ')}:</span>
-                          <span className="font-medium">{String(value)}</span>
+                        <div key={key} className="flex justify-between gap-1">
+                          <span className="text-muted-foreground capitalize truncate">{key.replace('_', ' ')}:</span>
+                          <span className="font-medium truncate">{String(value)}</span>
                         </div>
                       )
                     ))}
@@ -432,13 +437,13 @@ export function TelegramDiamondNotificationCard({
           </div>
         )}
 
-        {/* Action Button */}
+        {/* Action Button - Mobile optimized */}
         {!notification.read && (
           <Button
             size="sm"
             variant="outline"
             onClick={handleMarkAsRead}
-            className="w-full mt-3 h-9 text-sm"
+            className="w-full mt-2 h-8 text-xs"
           >
             Mark as Read
           </Button>
