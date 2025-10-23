@@ -168,26 +168,26 @@ export function TelegramDiamondNotificationCard({
     return price.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
   };
 
-  const getUserInfo = () => {
+  const getBuyerTelegramId = () => {
+    // Try ALL possible sources for buyer telegram ID
     const searcherInfo = metadata?.searcher_info;
     const customerInfo = metadata?.customer_info;
     
-    // CRITICAL: Always use the BUYER/SEARCHER info, never the seller's own info
-    // The notification recipient is the seller, so we show the buyer who searched
-    const buyerTelegramId = searcherInfo?.telegram_id || customerInfo?.telegram_id;
+    return searcherInfo?.telegram_id || 
+           customerInfo?.telegram_id || 
+           metadata?.user_id ||
+           null;
+  };
+
+  const getBuyerName = () => {
+    const searcherInfo = metadata?.searcher_info;
+    const customerInfo = metadata?.customer_info;
     
-    // Don't show contact button if buyer ID is missing or if it's your own search
-    // (In case you somehow get a notification for your own search)
-    if (!buyerTelegramId) {
-      return null;
-    }
-    
-    return {
-      userId: buyerTelegramId,
-      name: searcherInfo?.name || customerInfo?.name || 'Interested Buyer',
-      telegram_username: searcherInfo?.telegram_username || customerInfo?.telegram_username,
-      phone: searcherInfo?.phone || customerInfo?.phone
-    };
+    return searcherInfo?.name || 
+           customerInfo?.name || 
+           searcherInfo?.first_name ||
+           customerInfo?.first_name ||
+           'Buyer';
   };
 
   const quickReplyButtons = createQuickReplyButtons(notification);
@@ -229,44 +229,41 @@ export function TelegramDiamondNotificationCard({
           {notification.message}
         </p>
 
-        {/* User Contact Info - Always show if buyer info exists, PROMINENT */}
-        {getUserInfo() && getUserInfo()!.userId && (
-          <div className="bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-sm rounded-lg p-3 border-2 border-primary/30 shadow-sm">
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-primary/20 rounded-full">
-                  <User className="h-3.5 w-3.5 text-primary" />
+        {/* CONTACT BUYER BUTTON - ALWAYS VISIBLE */}
+        <div className="bg-gradient-to-br from-green-500/20 to-green-600/10 rounded-lg p-4 border-2 border-green-500/30 shadow-lg">
+          {getBuyerTelegramId() ? (
+            <>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="p-2 bg-green-500/20 rounded-full">
+                  <User className="h-4 w-4 text-green-600" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-xs sm:text-sm text-primary truncate">👤 {getUserInfo()!.name}</p>
-                  <p className="text-[10px] text-muted-foreground">Buyer ID: {getUserInfo()!.userId}</p>
+                <div className="flex-1">
+                  <p className="font-bold text-sm">👤 {getBuyerName()}</p>
+                  <p className="text-xs text-muted-foreground">ID: {getBuyerTelegramId()}</p>
                 </div>
               </div>
               
-              {/* Contact buttons - Full width and prominent */}
-              <div className="flex gap-1.5 w-full">
-                <Button
-                  size="sm"
-                  onClick={() => handleDirectContact(getUserInfo()!.userId!)}
-                  className="flex-1 h-9 text-xs font-semibold gap-1.5"
-                >
-                  <MessageCircle className="h-3.5 w-3.5" />
-                  צ'אט עם קונה
-                </Button>
-                {getUserInfo()!.phone && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => window.open(`tel:${getUserInfo()!.phone}`, '_blank')}
-                    className="h-9 px-3"
-                  >
-                    <Phone className="h-3.5 w-3.5" />
-                  </Button>
-                )}
-              </div>
+              <Button
+                size="lg"
+                onClick={() => handleDirectContact(getBuyerTelegramId()!)}
+                className="w-full h-12 text-base font-bold gap-2 bg-green-600 hover:bg-green-700"
+              >
+                <MessageCircle className="h-5 w-5" />
+                📱 צ'אט עם הקונה
+              </Button>
+            </>
+          ) : (
+            <div className="text-center space-y-2">
+              <p className="text-sm font-semibold text-destructive">⚠️ No buyer contact info</p>
+              <details className="text-xs text-left">
+                <summary className="cursor-pointer text-muted-foreground">Debug Info</summary>
+                <pre className="mt-2 p-2 bg-background/50 rounded text-[10px] overflow-auto">
+                  {JSON.stringify(metadata, null, 2)}
+                </pre>
+              </details>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Diamond Match Details */}
         {isDiamondMatch && metadata && (

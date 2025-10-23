@@ -145,10 +145,10 @@ export function GroupedNotificationCard({
           <Button
             size="lg"
             onClick={handleContact}
-            className="w-full h-14 text-base font-bold gap-2 bg-primary hover:bg-primary/90 shadow-lg touch-manipulation"
+            className="w-full h-14 text-base font-bold gap-2 bg-green-600 hover:bg-green-700 shadow-lg touch-manipulation"
           >
             <MessageCircle className="h-5 w-5" />
-            צ'אט עם {group.buyer.name}
+            📱 צ'אט עם {group.buyer.name}
           </Button>
         </CardContent>
       )}
