@@ -58,3 +58,9 @@ verify_jwt = false
 
 [functions.send-bulk-payment-reminder]
 verify_jwt = false
+
+[functions.admin-manage-blocked-users]
+verify_jwt = false
+
+[functions.set-session-context]
+verify_jwt = false

@@ -158,11 +158,19 @@ export function useBlockedUsers() {
   };
 
   useEffect(() => {
-    if (user?.id) {
-      fetchBlockedUsers();
-    } else {
-      setIsLoading(false);
-    }
+    const init = async () => {
+      if (user?.id) {
+        try {
+          await setUserContext();
+        } catch (e) {
+          console.warn('⚠️ Failed to set session context:', e);
+        }
+        await fetchBlockedUsers();
+      } else {
+        setIsLoading(false);
+      }
+    };
+    init();
   }, [user?.id]);
 
   return {
