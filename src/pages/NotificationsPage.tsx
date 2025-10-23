@@ -15,6 +15,7 @@ import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { useNotificationRealtimeUpdates } from '@/hooks/useNotificationRealtimeUpdates';
 import { useMemo, useCallback } from 'react';
 import { GroupedNotificationCard } from '@/components/notifications/GroupedNotificationCard';
@@ -32,6 +33,7 @@ const NotificationsPage = () => {
   const { user } = useTelegramAuth();
   const haptic = useTelegramHapticFeedback();
   const { toast } = useToast();
+  const { webApp } = useTelegramWebApp();
   
   // Initialize Telegram notification bridge
   useTelegramNotificationBridge();
@@ -112,28 +114,40 @@ const NotificationsPage = () => {
 
   const handleContactBuyer = useCallback(async (buyerInfo: any) => {
     haptic.impactOccurred('medium');
-    
-    if (!buyerInfo.userId) {
+
+    const id = buyerInfo?.userId || buyerInfo?.telegram_id;
+    const username = buyerInfo?.telegram_username || buyerInfo?.username;
+
+    if (!id && !username) {
       toast({
-        title: "שגיאה",
-        description: "לא נמצא מזהה טלגרם עבור הקונה",
-        variant: "destructive",
+        title: 'שגיאה',
+        description: 'לא נמצאו פרטי קשר של הקונה (ID או שם משתמש)',
+        variant: 'destructive',
       });
       return;
     }
 
-    // Open Telegram chat directly
-    if (window.Telegram?.WebApp) {
-      window.open(`tg://user?id=${buyerInfo.userId}`, '_blank');
-    } else {
-      window.open(`https://t.me/user?id=${buyerInfo.userId}`, '_blank');
+    const link = username ? `https://t.me/${username}` : `https://t.me/user?id=${id}`;
+
+    try {
+      if (webApp && typeof (webApp as any).openTelegramLink === 'function') {
+        (webApp as any).openTelegramLink(link);
+      } else {
+        window.open(link, '_blank');
+      }
+      toast({
+        title: 'פותח צ׳אט',
+        description: `פותח שיחה עם ${buyerInfo?.name || username || id}`,
+      });
+    } catch (error) {
+      console.error('Failed to open Telegram chat:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'לא ניתן לפתוח צ׳אט בטלגרם כרגע',
+        variant: 'destructive',
+      });
     }
-    
-    toast({
-      title: "פותח צ'אט",
-      description: `פותח שיחה עם ${buyerInfo.name}`,
-    });
-  }, [haptic, toast]);
+  }, [haptic, toast, webApp]);
 
   const handleMarkMultipleAsRead = useCallback((notificationIds: string[]) => {
     notificationIds.forEach(id => markAsRead(id));

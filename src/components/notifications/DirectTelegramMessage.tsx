@@ -45,7 +45,7 @@ export function DirectTelegramMessage({
     impactOccurred('medium');
 
     try {
-      const API_BASE = 'https://nzfctsazukglqumjjldf.supabase.co/functions/v1';
+      const API_BASE = 'https://uhhljqgxhdhbbhpohxll.supabase.co/functions/v1';
       
       // Format message with diamond info if available
       let fullMessage = message;

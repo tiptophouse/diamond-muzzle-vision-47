@@ -54,7 +54,7 @@ export function TelegramDiamondNotificationCard({
 }: TelegramDiamondNotificationCardProps) {
   const [showQuickReply, setShowQuickReply] = useState(false);
   const [showDirectMessage, setShowDirectMessage] = useState(false);
-  const { hapticFeedback, mainButton, showAlert, share } = useTelegramWebApp();
+  const { hapticFeedback, mainButton, showAlert, share, webApp } = useTelegramWebApp();
   const { impactOccurred, notificationOccurred, selectionChanged } = useTelegramHapticFeedback();
   const { toast } = useToast();
   const { allDiamonds } = useInventoryData();
@@ -179,6 +179,36 @@ export function TelegramDiamondNotificationCard({
            'Buyer';
   };
 
+  const getBuyerUsername = () => {
+    const searcherInfo = metadata?.searcher_info;
+    const customerInfo = metadata?.customer_info;
+    return searcherInfo?.telegram_username || customerInfo?.telegram_username || null;
+  };
+
+  const openChatByUsername = () => {
+    const username = getBuyerUsername();
+    if (!username) return;
+    try {
+      if (webApp && typeof (webApp as any).openTelegramLink === 'function') {
+        (webApp as any).openTelegramLink(`https://t.me/${username}`);
+      } else {
+        window.open(`https://t.me/${username}`, '_blank');
+      }
+      impactOccurred('medium');
+      toast({
+        title: "פותח צ'אט",
+        description: `פותח שיחה עם ${getBuyerName()}`,
+      });
+    } catch (error) {
+      console.error('Failed to open chat via username:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'לא ניתן לפתוח צ׳אט בטלגרם כרגע',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const quickReplyButtons = createQuickReplyButtons(notification);
 
   return (
@@ -260,14 +290,25 @@ export function TelegramDiamondNotificationCard({
               )}
             </>
           ) : (
-            <div className="text-center space-y-2">
-              <p className="text-sm font-semibold text-destructive">⚠️ No buyer contact info</p>
-              <details className="text-xs text-left">
-                <summary className="cursor-pointer text-muted-foreground">Debug Info</summary>
-                <pre className="mt-2 p-2 bg-background/50 rounded text-[10px] overflow-auto">
-                  {JSON.stringify(metadata, null, 2)}
-                </pre>
-              </details>
+            <div className="text-center space-y-3">
+              <p className="text-sm font-semibold text-destructive">⚠️ אין פרטי ID של הקונה</p>
+              {getBuyerUsername() ? (
+                <Button
+                  size="lg"
+                  onClick={openChatByUsername}
+                  className="w-full h-12 text-base font-bold gap-2 bg-green-600 hover:bg-green-700"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  📱 פתיחת צ'אט לפי שם משתמש (@{getBuyerUsername()})
+                </Button>
+              ) : (
+                <details className="text-xs text-left">
+                  <summary className="cursor-pointer text-muted-foreground">פרטי דיבאג</summary>
+                  <pre className="mt-2 p-2 bg-background/50 rounded text-[10px] overflow-auto">
+                    {JSON.stringify(metadata, null, 2)}
+                  </pre>
+                </details>
+              )}
             </div>
           )}
         </div>
