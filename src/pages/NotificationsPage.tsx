@@ -14,13 +14,19 @@ import { useTelegramMessaging } from '@/hooks/useTelegramMessaging';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { useNotificationRealtimeUpdates } from '@/hooks/useNotificationRealtimeUpdates';
+import { useMemo, useCallback } from 'react';
+import { GroupedNotificationCard } from '@/components/notifications/GroupedNotificationCard';
+import { EmptyStateVariations } from '@/components/notifications/EmptyStateVariations';
+import { NotificationSkeleton } from '@/components/notifications/NotificationSkeleton';
 import { Bell, BellRing, RefreshCw, Users, Diamond, Heart, TrendingUp, Search, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const NotificationsPage = () => {
-  const { notifications, isLoading, markAsRead, contactCustomer, refetch } = useFastApiNotifications();
+  const { notifications, isLoading, markAsRead, contactCustomer, refetch, loadMore, hasMore } = useFastApiNotifications();
   const { simulateSearchFromBot, isLoading: isSearching } = useDiamondSearch();
   const { sendMessage, isLoading: isSendingMessage } = useTelegramMessaging();
   const { user } = useTelegramAuth();
@@ -30,6 +36,62 @@ const NotificationsPage = () => {
   // Initialize Telegram notification bridge
   useTelegramNotificationBridge();
   
+  // Pull-to-refresh
+  const { isRefreshing, pullDistance, isPulling } = usePullToRefresh({
+    onRefresh: async () => {
+      await refetch();
+    },
+    threshold: 80,
+  });
+
+  // Real-time updates
+  useNotificationRealtimeUpdates({
+    onNewNotification: (newNotif) => {
+      console.log('📲 New notification received via realtime:', newNotif);
+      refetch(); // Refresh the list to include the new notification
+    }
+  });
+  
+  // Smart grouping by buyer
+  const groupedNotifications = useMemo(() => {
+    const groups = new Map<number, any>();
+    
+    notifications
+      .filter(n => n.type === 'diamond_match' && n.data?.searcher_info?.telegram_id)
+      .forEach(notif => {
+        const buyerId = notif.data.searcher_info.telegram_id;
+        
+        if (!groups.has(buyerId)) {
+          groups.set(buyerId, {
+            buyer: {
+              userId: buyerId,
+              name: notif.data.searcher_info.name || 'Interested Buyer',
+              telegram_username: notif.data.searcher_info.telegram_username,
+              phone: notif.data.searcher_info.phone,
+            },
+            matches: [],
+            totalCount: 0,
+            latestTimestamp: notif.created_at,
+            notificationIds: [],
+          });
+        }
+        
+        const group = groups.get(buyerId);
+        group.matches.push(...(notif.data.matches || []));
+        group.totalCount = group.matches.length;
+        group.notificationIds.push(notif.id);
+        
+        // Update to latest timestamp
+        if (new Date(notif.created_at) > new Date(group.latestTimestamp)) {
+          group.latestTimestamp = notif.created_at;
+        }
+      });
+    
+    return Array.from(groups.values()).sort(
+      (a, b) => new Date(b.latestTimestamp).getTime() - new Date(a.latestTimestamp).getTime()
+    );
+  }, [notifications]);
+
   const unreadCount = notifications.filter(n => !n.read).length;
   const businessNotifications = notifications.filter(n => 
     ['buyer_interest', 'interested_buyers', 'pair_match', 'diamond_pairs', 'group_demand', 'price_opportunity', 'price_opportunities'].includes(n.type)
@@ -39,14 +101,49 @@ const NotificationsPage = () => {
   const otherNotifications = notifications.filter(n => 
     !['buyer_interest', 'interested_buyers', 'pair_match', 'diamond_pairs', 'group_demand', 'price_opportunity', 'price_opportunities', 'group_diamond_request', 'diamond_match'].includes(n.type)
   );
+  
+  // Determine empty state type
+  const getEmptyStateType = useCallback(() => {
+    if (notifications.length === 0) return 'first_time';
+    if (unreadCount === 0 && notifications.length > 0) return 'all_read';
+    if (diamondMatches.length === 0) return 'no_matches';
+    return 'no_buyers';
+  }, [notifications.length, unreadCount, diamondMatches.length]);
 
-  if (isLoading) {
+  const handleContactBuyer = useCallback(async (buyerInfo: any) => {
+    haptic.impactOccurred('medium');
+    
+    if (!buyerInfo.userId) {
+      toast({
+        title: "שגיאה",
+        description: "לא נמצא מזהה טלגרם עבור הקונה",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Open Telegram chat directly
+    if (window.Telegram?.WebApp) {
+      window.open(`tg://user?id=${buyerInfo.userId}`, '_blank');
+    } else {
+      window.open(`https://t.me/user?id=${buyerInfo.userId}`, '_blank');
+    }
+    
+    toast({
+      title: "פותח צ'אט",
+      description: `פותח שיחה עם ${buyerInfo.name}`,
+    });
+  }, [haptic, toast]);
+
+  const handleMarkMultipleAsRead = useCallback((notificationIds: string[]) => {
+    notificationIds.forEach(id => markAsRead(id));
+  }, [markAsRead]);
+
+  if (isLoading && notifications.length === 0) {
     return (
       <TelegramMiniAppLayout>
-        <div className="p-3">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
+        <div className="p-4 space-y-3">
+          <NotificationSkeleton count={5} />
         </div>
       </TelegramMiniAppLayout>
     );
@@ -95,6 +192,26 @@ const NotificationsPage = () => {
 
   return (
     <TelegramMiniAppLayout>
+      {/* Pull-to-refresh indicator */}
+      {isPulling && (
+        <div 
+          className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-primary/10 transition-all"
+          style={{ 
+            height: `${Math.min(pullDistance, 60)}px`,
+            opacity: pullDistance / 80 
+          }}
+        >
+          <RefreshCw 
+            className={`h-6 w-6 text-primary transition-transform ${
+              isRefreshing ? 'animate-spin' : ''
+            }`}
+            style={{ 
+              transform: `rotate(${pullDistance * 2}deg)` 
+            }}
+          />
+        </div>
+      )}
+      
       <div className="p-3 space-y-4 pb-20">
         <Tabs defaultValue="enhanced" className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-4 h-auto">
@@ -113,6 +230,25 @@ const NotificationsPage = () => {
           </TabsList>
 
           <TabsContent value="enhanced" className="space-y-6">
+            {/* Grouped Notifications */}
+            {groupedNotifications.length > 0 && (
+              <div className="space-y-3">
+                <h2 className="text-sm font-semibold text-foreground flex items-center gap-2 px-2">
+                  <Users className="h-4 w-4 text-primary" />
+                  קונים מעוניינים ({groupedNotifications.length})
+                </h2>
+                {groupedNotifications.map((group) => (
+                  <GroupedNotificationCard
+                    key={group.buyer.userId}
+                    group={group}
+                    onContactBuyer={handleContactBuyer}
+                    onMarkAsRead={handleMarkMultipleAsRead}
+                  />
+                ))}
+              </div>
+            )}
+            
+            {/* Regular Notifications List */}
             <TelegramNotificationsList
               notifications={notifications}
               onMarkAsRead={markAsRead}
@@ -122,7 +258,46 @@ const NotificationsPage = () => {
                 });
               }}
               onContactCustomer={handleContactCustomer}
+              loading={isLoading}
             />
+            
+            {/* Empty State */}
+            {notifications.length === 0 && !isLoading && (
+              <EmptyStateVariations 
+                type={getEmptyStateType()}
+                onAction={(action) => {
+                  if (action === 'share_store') {
+                    toast({ title: "שיתוף החנות", description: "פתח את דף החנות לשיתוף" });
+                  } else if (action === 'start_tour') {
+                    toast({ title: "סיור מודרך", description: "מתחיל סיור באפליקציה" });
+                  }
+                }}
+              />
+            )}
+            
+            {/* Load More Button */}
+            {hasMore && notifications.length > 0 && (
+              <div className="flex justify-center py-4">
+                <Button
+                  onClick={loadMore}
+                  variant="outline"
+                  disabled={isLoading}
+                  className="gap-2"
+                >
+                  {isLoading ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      טוען...
+                    </>
+                  ) : (
+                    <>
+                      <Diamond className="h-4 w-4" />
+                      טען עוד התראות
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
           </TabsContent>
 
 

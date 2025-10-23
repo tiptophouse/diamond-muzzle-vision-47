@@ -22,8 +22,11 @@ interface SearchResultNotification {
 export function useFastApiNotifications() {
   const [notifications, setNotifications] = useState<SearchResultNotification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const { toast } = useToast();
   const { user } = useTelegramAuth();
+  const PAGE_SIZE = 20;
 
   const saveNotificationsToDatabase = async (notifications: SearchResultNotification[]) => {
     try {
@@ -72,7 +75,7 @@ export function useFastApiNotifications() {
     }
   };
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (pageNum: number = 1, append: boolean = false) => {
     if (!user?.id) {
       console.log('🔔 No user ID available, skipping notification fetch');
       setIsLoading(false);
@@ -82,11 +85,12 @@ export function useFastApiNotifications() {
     setIsLoading(true);
     
     try {
-      console.log('🔔 Fetching notifications from FastAPI for user:', user.id);
-      console.log('🔔 API endpoint:', `/api/v1/get_search_results?user_id=${user.id}&limit=50&offset=0`);
+      const offset = (pageNum - 1) * PAGE_SIZE;
+      console.log('🔔 Fetching notifications from FastAPI for user:', user.id, 'page:', pageNum);
+      console.log('🔔 API endpoint:', `/api/v1/get_search_results?user_id=${user.id}&limit=${PAGE_SIZE}&offset=${offset}`);
       
       // Fetch search results from FastAPI
-      const response = await api.get<any[]>(`/api/v1/get_search_results?user_id=${user.id}&limit=50&offset=0`);
+      const response = await api.get<any[]>(`/api/v1/get_search_results?user_id=${user.id}&limit=${PAGE_SIZE}&offset=${offset}`);
       
       console.log('🔔 FastAPI response received:', response);
       
@@ -105,9 +109,22 @@ export function useFastApiNotifications() {
             const searcherInfo = result.searcher_info || extractSearcherInfo(result.search_query);
             const searcherId = searcherInfo?.telegram_id || result.user_id;
             
+            // CRITICAL: Multiple layers of protection against self-notifications
             // Don't show if the searcher is the current user (can't contact yourself)
             if (searcherId && searcherId === user.id) {
-              console.log(`🚫 Filtering out own search: ${result.id}`);
+              console.log(`🚫 Filtering out own search (searcher match): ${result.id}`);
+              return false;
+            }
+            
+            // Additional check: if user_id matches current user
+            if (result.user_id === user.id && !searcherId) {
+              console.log(`🚫 Filtering out own search (user_id match): ${result.id}`);
+              return false;
+            }
+            
+            // Don't show if no valid searcher ID (can't contact nobody)
+            if (!searcherId || searcherId === null || searcherId === undefined) {
+              console.log(`🚫 Filtering out notification with no buyer ID: ${result.id}`);
               return false;
             }
             
@@ -149,11 +166,21 @@ export function useFastApiNotifications() {
         // Save notifications to database
         await saveNotificationsToDatabase(transformedNotifications);
         
-        setNotifications(transformedNotifications);
+        // Update state - append or replace based on pagination
+        if (append) {
+          setNotifications(prev => [...prev, ...transformedNotifications]);
+        } else {
+          setNotifications(transformedNotifications);
+        }
+        
+        // Update pagination state
+        setHasMore(transformedNotifications.length === PAGE_SIZE);
+        setPage(pageNum);
+        
         console.log('🔔 Notifications set:', transformedNotifications.length, 'notifications (after filtering own searches)');
 
-        // Show toast for new notifications if this is not the initial load
-        if (transformedNotifications.length > 0) {
+        // Show toast for new notifications only on initial load
+        if (transformedNotifications.length > 0 && pageNum === 1 && !append) {
           toast({
             title: "🔔 התראות התאמה!",
             description: `נמצאו ${transformedNotifications.length} התאמות חיפוש עבור היהלומים שלך`,
@@ -356,11 +383,20 @@ ${customerInfo?.diamonds_count ? `נמצאו ${customerInfo.diamonds_count} יה
     }
   }, [user?.id]);
 
+  const loadMore = () => {
+    if (!isLoading && hasMore) {
+      fetchNotifications(page + 1, true);
+    }
+  };
+
   return {
     notifications,
     isLoading,
+    hasMore,
+    page,
     markAsRead,
     contactCustomer,
-    refetch: fetchNotifications,
+    refetch: () => fetchNotifications(1, false),
+    loadMore,
   };
 }
