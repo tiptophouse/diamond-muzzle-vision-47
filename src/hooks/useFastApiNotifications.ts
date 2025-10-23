@@ -102,32 +102,31 @@ export function useFastApiNotifications() {
         console.log('🔔 FastAPI search results:', searchResults);
         
         // Transform search results into notification format
+        console.log('🔍 RAW search results before filtering:', JSON.stringify(searchResults, null, 2));
+        
         const transformedNotifications = searchResults
           .filter((result: any) => {
-            // CRITICAL: Filter out notifications where the user is seeing their own searches
-            // Only show notifications where OTHERS searched and YOUR diamonds matched
+            console.log('🔍 Processing result:', result.id, {
+              user_id: result.user_id,
+              owner_id: result.owner_id,
+              searcher_info: result.searcher_info,
+              current_user_id: user.id
+            });
+            
+            // Extract searcher information
             const searcherInfo = result.searcher_info || extractSearcherInfo(result.search_query);
-            const searcherId = searcherInfo?.telegram_id || result.user_id;
+            const searcherId = searcherInfo?.telegram_id;
             
-            // CRITICAL: Multiple layers of protection against self-notifications
-            // Don't show if the searcher is the current user (can't contact yourself)
+            console.log('🔍 Extracted searcher ID:', searcherId, 'vs current user:', user.id);
+            
+            // ONLY filter out if the searcher IS the current user (self-notifications)
+            // We WANT to show notifications where current user owns the diamonds
             if (searcherId && searcherId === user.id) {
-              console.log(`🚫 Filtering out own search (searcher match): ${result.id}`);
+              console.log(`🚫 FILTERED: Searcher is current user (self-notification)`);
               return false;
             }
             
-            // Additional check: if user_id matches current user
-            if (result.user_id === user.id && !searcherId) {
-              console.log(`🚫 Filtering out own search (user_id match): ${result.id}`);
-              return false;
-            }
-            
-            // Don't show if no valid searcher ID (can't contact nobody)
-            if (!searcherId || searcherId === null || searcherId === undefined) {
-              console.log(`🚫 Filtering out notification with no buyer ID: ${result.id}`);
-              return false;
-            }
-            
+            console.log(`✅ KEEPING notification ${result.id}`);
             return true;
           })
           .map((result: any) => ({
