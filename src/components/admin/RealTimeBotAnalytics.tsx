@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { api } from '@/lib/api';
+import type { Json } from '@/integrations/supabase/types';
 
 interface BotUsageData {
   id: string;
@@ -11,7 +12,7 @@ interface BotUsageData {
   command: string | null;
   message_type: string;
   chat_type: string;
-  user_info: any;
+  user_info: Json;
   response_time_ms: number;
   created_at: string;
 }
@@ -21,9 +22,9 @@ interface BotSummary {
   unique_users_today: number;
   commands_used_today: number;
   avg_response_time_ms: number;
-  most_used_commands: any[];
+  most_used_commands: Json;
   active_chats: number;
-  bot_distribution: Record<string, number>;
+  bot_distribution: Json;
 }
 
 export function RealTimeBotAnalytics() {
@@ -33,35 +34,66 @@ export function RealTimeBotAnalytics() {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Load initial data
     loadBotAnalytics();
     loadBotSummary();
 
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(() => {
-      loadBotAnalytics();
-      loadBotSummary();
-    }, 30000);
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('bot-usage-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'bot_usage_analytics'
+        },
+        (payload) => {
+          console.log('📊 New bot usage:', payload);
+          const newUsage = payload.new as BotUsageData;
+          
+          setRecentActivity(prev => [newUsage, ...prev.slice(0, 19)]); // Keep last 20
+          loadBotSummary(); // Refresh summary
+          
+          // Show toast for important commands
+          if (newUsage.command) {
+            toast({
+              title: "🤖 Bot Command Used",
+              description: `${(newUsage.user_info as any)?.first_name} used ${newUsage.command}`,
+              duration: 3000,
+            });
+          }
+        }
+      )
+      .subscribe();
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [toast]);
 
   const loadBotAnalytics = async () => {
     try {
-      const response = await api.get<BotUsageData[]>('/api/v1/bot-analytics/recent');
-      if (response.data) {
-        setRecentActivity(response.data.slice(0, 20));
-      }
+      const { data, error } = await supabase
+        .from('bot_usage_analytics')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      setRecentActivity(data || []);
     } catch (error) {
       console.error('❌ Error loading bot analytics:', error);
-      setRecentActivity([]);
     }
   };
 
   const loadBotSummary = async () => {
     try {
-      const response = await api.get<BotSummary>('/api/v1/bot-analytics/summary');
-      if (response.data) {
-        setSummary(response.data);
+      const { data, error } = await supabase.rpc('get_bot_usage_summary');
+      
+      if (error) throw error;
+      if (data && data.length > 0) {
+        setSummary(data[0]);
       }
     } catch (error) {
       console.error('❌ Error loading bot summary:', error);
@@ -152,11 +184,11 @@ export function RealTimeBotAnalytics() {
             </CardHeader>
             <CardContent>
             <div className="space-y-1">
-              {summary.bot_distribution && 
-                Object.entries(summary.bot_distribution).map(([bot, count]) => (
+              {summary.bot_distribution && typeof summary.bot_distribution === 'object' && 
+                Object.entries(summary.bot_distribution as Record<string, any>).map(([bot, count]) => (
                   <div key={bot} className="flex justify-between text-sm">
                     <span className="capitalize">{bot}</span>
-                    <span className="font-medium">{count}</span>
+                    <span className="font-medium">{count as number}</span>
                   </div>
                 ))
               }
@@ -167,7 +199,7 @@ export function RealTimeBotAnalytics() {
       )}
 
       {/* Popular Commands */}
-      {summary?.most_used_commands && summary.most_used_commands.length > 0 && (
+      {summary?.most_used_commands && Array.isArray(summary.most_used_commands) && summary.most_used_commands.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Most Used Commands Today</CardTitle>
@@ -175,7 +207,7 @@ export function RealTimeBotAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {summary.most_used_commands.map((cmd: any, index: number) => (
+              {(summary.most_used_commands as any[]).map((cmd: any, index: number) => (
                 <Badge key={index} variant="secondary" className="text-sm">
                   {cmd.command} ({cmd.count})
                 </Badge>
@@ -194,10 +226,9 @@ export function RealTimeBotAnalytics() {
         <CardContent>
           <div className="space-y-4">
             {recentActivity.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No recent bot activity</p>
-                <p className="text-sm text-muted-foreground mt-2">Webhook may not be receiving messages</p>
-              </div>
+              <p className="text-center text-muted-foreground py-8">
+                No recent bot activity
+              </p>
             ) : (
               recentActivity.map((activity) => (
                 <div key={activity.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">

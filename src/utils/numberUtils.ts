@@ -55,24 +55,3 @@ export const formatLargeNumber = (value: number | string): string => {
     return bValue % 1 === 0 ? `${bValue}B` : `${bValue.toFixed(1)}B`;
   }
 };
-
-// UNIFIED diamond value calculation - used across ALL components for consistency
-export const calculateDiamondValue = (diamond: any): number => {
-  const price = Number(diamond.price || diamond.total_price || 0);
-  const carat = Number(diamond.carat || diamond.weight || 1);
-  
-  if (price <= 0 || carat <= 0) return 0;
-  
-  const pricePerCarat = price / carat;
-  
-  // Cap at realistic market value (max $50k per carat)
-  const cappedPricePerCarat = Math.min(pricePerCarat, 50000);
-  const finalPrice = Math.round(cappedPricePerCarat * carat);
-  
-  return Math.max(0, finalPrice);
-};
-
-// Calculate total portfolio value from array of diamonds
-export const calculatePortfolioValue = (diamonds: any[]): number => {
-  return diamonds.reduce((sum, diamond) => sum + calculateDiamondValue(diamond), 0);
-};

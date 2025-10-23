@@ -4,7 +4,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { api, apiEndpoints } from "@/lib/api";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { calculatePortfolioValue, calculateDiamondValue } from "@/utils/numberUtils";
 
 interface MarketTrend {
   category: string;
@@ -152,12 +151,29 @@ export function useInsightsData() {
         
         setDemandInsights(demandData);
 
-        // Calculate real personal insights using unified calculation
+        // Calculate real personal insights with realistic bounds
         if (diamonds.length > 0) {
-          // Use unified portfolio calculation
-          const totalValue = calculatePortfolioValue(diamonds);
+          // Calculate total value using safe price calculations
+          const totalValue = diamonds.reduce((sum, d) => {
+            const weight = Number(d.weight) || 0;
+            const rawPpc = Number(d.price_per_carat) || 0;
+            
+            // Only use PPC if it's in reasonable range (100-50000 per carat)
+            // Calculate actual diamond value from FastAPI data
+            let diamondValue = 0;
+            if (rawPpc > 100 && rawPpc < 50000 && weight > 0 && weight < 20) {
+              diamondValue = rawPpc * weight;
+            } else if (rawPpc > 0) {
+              // Treat as total price
+              diamondValue = rawPpc;  
+            } else {
+              diamondValue = 0;
+            }
+            
+            return sum + diamondValue;
+          }, 0);
           
-          // Calculate average price per carat from valid diamonds
+          // Calculate average price per carat from realistic values only
           const validDiamonds = diamonds.filter(d => {
             const weight = Number(d.weight) || 0;
             const rawPpc = Number(d.price_per_carat) || 0;

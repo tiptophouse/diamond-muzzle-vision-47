@@ -92,7 +92,7 @@ export function AdminSidebar() {
   };
 
   const getNavClassName = ({ isActive }: { isActive: boolean }) => 
-    `w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+    `w-full flex items-center gap-2 px-2 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
       isActive 
         ? 'bg-primary text-primary-foreground shadow-sm' 
         : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
@@ -107,30 +107,30 @@ export function AdminSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border/50 bg-sidebar">
-      <SidebarHeader className="border-b border-sidebar-border/50 bg-gradient-to-r from-sidebar-accent/10 to-sidebar-accent/5 py-1">
+      <SidebarHeader className="border-b border-sidebar-border/50 bg-gradient-to-r from-sidebar-accent/10 to-sidebar-accent/5 py-2">
         <div className="flex items-center gap-2 px-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Crown className="h-3 w-3" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Crown className="h-3.5 w-3.5" />
           </div>
           {!isCollapsed && (
             <div className="flex flex-col">
-              <h2 className="text-xs font-semibold text-sidebar-foreground leading-tight">Admin</h2>
-              <p className="text-[10px] text-sidebar-foreground/60 leading-tight">{user?.first_name || 'Admin'}</p>
+              <h2 className="text-xs font-semibold text-sidebar-foreground">Admin</h2>
+              <p className="text-[10px] text-sidebar-foreground/60">{user?.first_name || 'Admin'}</p>
             </div>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-1.5 py-1 overflow-y-auto">
+      <SidebarContent className="px-1.5 py-2">
         {adminMenuItems.map((section) => (
-          <SidebarGroup key={section.title} className="mb-1">
+          <SidebarGroup key={section.title} className="mb-3">
             {!isCollapsed && (
-              <SidebarGroupLabel className="text-[9px] font-semibold text-sidebar-foreground/50 px-2 mb-0.5 uppercase tracking-wide">
+              <SidebarGroupLabel className="text-[10px] font-semibold text-sidebar-foreground/50 px-2 mb-1 uppercase tracking-wide">
                 {section.title}
               </SidebarGroupLabel>
             )}
             <SidebarGroupContent>
-              <SidebarMenu className="space-y-0">
+              <SidebarMenu className="space-y-0.5">
                 {section.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
@@ -159,7 +159,7 @@ export function AdminSidebar() {
         ))}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border/50 bg-sidebar-accent/5 py-1">
+      <SidebarFooter className="border-t border-sidebar-border/50 bg-sidebar-accent/5 py-2">
         <div className="flex items-center gap-1.5 px-2">
           <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
           {!isCollapsed && (

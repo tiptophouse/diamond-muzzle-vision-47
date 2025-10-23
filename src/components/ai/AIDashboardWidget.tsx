@@ -9,7 +9,6 @@ import { Bot, Brain, TrendingUp, Search, DollarSign, AlertTriangle, Sparkles, Me
 import { useAGUIClient, AgentType, AGENT_TYPES } from '@/hooks/useAGUIClient';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { calculatePortfolioValue, calculateDiamondValue } from '@/utils/numberUtils';
 
 interface AIDashboardWidgetProps {
   user: any;
@@ -23,10 +22,10 @@ export function AIDashboardWidget({ user, allDiamonds }: AIDashboardWidgetProps)
   const [isGeneratingInsights, setIsGeneratingInsights] = useState(false);
   const [dailyInsights, setDailyInsights] = useState<any>(null);
 
-  // Calculate real-time metrics using unified calculation
-  const totalValue = calculatePortfolioValue(allDiamonds);
+  // Calculate real-time metrics
+  const totalValue = allDiamonds.reduce((sum, d) => sum + (d.price_per_carat * d.weight || 0), 0);
   const averagePrice = allDiamonds.length > 0 ? totalValue / allDiamonds.length : 0;
-  const premiumStones = allDiamonds.filter(d => calculateDiamondValue(d) > averagePrice * 1.2).length;
+  const premiumStones = allDiamonds.filter(d => d.price_per_carat > averagePrice * 1.2).length;
 
   const handleQuickAction = async (prompt: string, agentType: AgentType) => {
     switchAgent(agentType);

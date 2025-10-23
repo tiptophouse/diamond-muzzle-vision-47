@@ -6,7 +6,6 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { cn } from '@/lib/utils';
 import { Diamond } from '@/components/inventory/InventoryTable';
-import { calculatePortfolioValue } from '@/utils/numberUtils';
 
 interface ActionFocusedDashboardProps {
   allDiamonds: Diamond[];
@@ -24,10 +23,36 @@ export function ActionFocusedDashboard({ allDiamonds }: ActionFocusedDashboardPr
   const { hapticFeedback } = useTelegramWebApp();
   const [expandedMatch, setExpandedMatch] = useState<string | null>(null);
 
-  // Calculate quick stats using unified calculation
+  // Calculate realistic portfolio value
+  const calculateRealisticValue = (diamonds: Diamond[]) => {
+    return diamonds.reduce((sum, d) => {
+      // Skip diamonds with invalid or unrealistic prices
+      if (!d.price || d.price <= 0 || d.price > 100000) return sum;
+      
+      // Calculate realistic price based on carat weight and market rates
+      const caratWeight = d.carat || 1;
+      const basePrice = d.price;
+      
+      // Apply realistic caps based on carat size
+      let cappedPrice = basePrice;
+      if (caratWeight < 0.5) {
+        cappedPrice = Math.min(basePrice, 5000);
+      } else if (caratWeight < 1) {
+        cappedPrice = Math.min(basePrice, 15000);
+      } else if (caratWeight < 2) {
+        cappedPrice = Math.min(basePrice, 35000);
+      } else {
+        cappedPrice = Math.min(basePrice, 75000);
+      }
+      
+      return sum + cappedPrice;
+    }, 0);
+  };
+
+  // Calculate quick stats
   const quickStats: QuickStats = {
     diamondCount: allDiamonds.length,
-    totalValue: calculatePortfolioValue(allDiamonds),
+    totalValue: calculateRealisticValue(allDiamonds),
     dailyMatches: notifications.filter(n => 
       n.type === 'diamond_match' && 
       new Date(n.created_at).toDateString() === new Date().toDateString()

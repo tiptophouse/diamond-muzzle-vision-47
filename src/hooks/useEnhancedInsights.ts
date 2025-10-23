@@ -1,7 +1,6 @@
 
 import { useMemo } from 'react';
 import { Diamond } from '@/components/inventory/InventoryTable';
-import { calculatePortfolioValue, calculateDiamondValue } from '@/utils/numberUtils';
 
 interface ShapeGroup {
   totalPrice: number;
@@ -27,8 +26,8 @@ export function useEnhancedInsights(diamonds: Diamond[]) {
       };
     }
 
-    // Calculate total value using unified calculation
-    const totalValue = calculatePortfolioValue(diamonds);
+    // Calculate total value and count
+    const totalValue = diamonds.reduce((sum, diamond) => sum + (diamond.price || 0), 0);
     const totalCount = diamonds.length;
     const averagePrice = totalCount > 0 ? totalValue / totalCount : 0;
 
@@ -38,7 +37,7 @@ export function useEnhancedInsights(diamonds: Diamond[]) {
       if (!groups[shape]) {
         groups[shape] = { totalPrice: 0, count: 0 };
       }
-      groups[shape].totalPrice += calculateDiamondValue(diamond);
+      groups[shape].totalPrice += diamond.price || 0;
       groups[shape].count += 1;
       return groups;
     }, {} as ShapeGroups);
