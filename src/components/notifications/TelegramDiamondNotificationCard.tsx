@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useInventoryQuickSearch } from '@/hooks/useInventoryQuickSearch';
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { QuickReplyWithGPT } from './QuickReplyWithGPT';
+import { DirectTelegramMessage } from './DirectTelegramMessage';
 
 interface DiamondMatch {
   stock_number: string;
@@ -52,6 +53,7 @@ export function TelegramDiamondNotificationCard({
   onContactCustomer 
 }: TelegramDiamondNotificationCardProps) {
   const [showQuickReply, setShowQuickReply] = useState(false);
+  const [showDirectMessage, setShowDirectMessage] = useState(false);
   const { hapticFeedback, mainButton, showAlert, share } = useTelegramWebApp();
   const { impactOccurred, notificationOccurred, selectionChanged } = useTelegramHapticFeedback();
   const { toast } = useToast();
@@ -109,23 +111,10 @@ export function TelegramDiamondNotificationCard({
     selectionChanged();
   }, [metadata?.customer_info, metadata?.searcher_info, onContactCustomer, impactOccurred, selectionChanged]);
 
-  const handleDirectContact = useCallback((userId: number) => {
+  const handleDirectContact = useCallback(() => {
     impactOccurred('medium');
-    
-    // Try different Telegram contact methods
-    if (window.Telegram?.WebApp) {
-      // Use Telegram Web App API to open user profile
-      window.open(`tg://user?id=${userId}`, '_blank');
-    } else {
-      // Fallback to opening in new window
-      window.open(`https://t.me/user/${userId}`, '_blank');
-    }
-    
-    toast({
-      title: "פותח צ'אט",
-      description: `פותח שיחה עם משתמש ${userId}`,
-    });
-  }, [impactOccurred, toast]);
+    setShowDirectMessage(true);
+  }, [impactOccurred]);
 
   const handleQuickSearch = useCallback((criteria: any) => {
     impactOccurred('light');
@@ -233,24 +222,42 @@ export function TelegramDiamondNotificationCard({
         <div className="bg-gradient-to-br from-green-500/20 to-green-600/10 rounded-lg p-4 border-2 border-green-500/30 shadow-lg">
           {getBuyerTelegramId() ? (
             <>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="p-2 bg-green-500/20 rounded-full">
-                  <User className="h-4 w-4 text-green-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-bold text-sm">👤 {getBuyerName()}</p>
-                  <p className="text-xs text-muted-foreground">ID: {getBuyerTelegramId()}</p>
-                </div>
-              </div>
-              
-              <Button
-                size="lg"
-                onClick={() => handleDirectContact(getBuyerTelegramId()!)}
-                className="w-full h-12 text-base font-bold gap-2 bg-green-600 hover:bg-green-700"
-              >
-                <MessageCircle className="h-5 w-5" />
-                📱 צ'אט עם הקונה
-              </Button>
+              {!showDirectMessage ? (
+                <>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 bg-green-500/20 rounded-full">
+                      <User className="h-4 w-4 text-green-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-bold text-sm">👤 {getBuyerName()}</p>
+                      <p className="text-xs text-muted-foreground">ID: {getBuyerTelegramId()}</p>
+                    </div>
+                  </div>
+                  
+                  <Button
+                    size="lg"
+                    onClick={handleDirectContact}
+                    className="w-full h-12 text-base font-bold gap-2 bg-green-600 hover:bg-green-700"
+                  >
+                    <MessageCircle className="h-5 w-5" />
+                    📱 שלח הודעה לקונה
+                  </Button>
+                </>
+              ) : (
+                <DirectTelegramMessage
+                  recipientId={getBuyerTelegramId()!}
+                  recipientName={getBuyerName()}
+                  diamondInfo={topMatch ? {
+                    stock_number: topMatch.stock_number,
+                    shape: topMatch.shape,
+                    weight: topMatch.weight,
+                    color: topMatch.color,
+                    clarity: topMatch.clarity,
+                    price: topMatch.total_price || (topMatch.price_per_carat * topMatch.weight)
+                  } : undefined}
+                  onClose={() => setShowDirectMessage(false)}
+                />
+              )}
             </>
           ) : (
             <div className="text-center space-y-2">

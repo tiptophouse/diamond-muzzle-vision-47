@@ -48,9 +48,53 @@ serve(async (req) => {
   }
 
   try {
-    const { telegramId, stoneData, storeUrl } = await req.json();
-    console.log('📥 Request data:', { telegramId, stoneData: !!stoneData, storeUrl });
+    const { telegramId, stoneData, storeUrl, chat_id, message } = await req.json();
+    console.log('📥 Request data:', { telegramId, chat_id, stoneData: !!stoneData, message: !!message, storeUrl });
     
+    // Support both old format (telegramId) and new format (chat_id, message)
+    if (message && chat_id) {
+      // Direct message mode
+      const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+      if (!botToken) {
+        console.error('❌ Bot token not configured');
+        return new Response(
+          JSON.stringify({ error: 'Bot token not configured' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('📤 Sending direct message to Telegram...');
+      const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chat_id,
+          text: message,
+          parse_mode: 'Markdown',
+        }),
+      });
+
+      const result = await telegramResponse.json();
+      console.log('📨 Telegram API response:', result);
+      
+      if (!telegramResponse.ok) {
+        console.error('❌ Telegram API error:', result);
+        return new Response(
+          JSON.stringify({ error: 'Failed to send Telegram message', details: result }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('✅ Direct message sent successfully');
+      return new Response(
+        JSON.stringify({ success: true, message_id: result.result.message_id }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Stone notification mode (existing functionality)
     if (!telegramId || !stoneData) {
       console.error('❌ Missing required fields');
       return new Response(
