@@ -187,27 +187,12 @@ export function useInventoryData() {
                 const rawPpc = Number(item.price_per_carat);
                 const rawTotal = Number(item.price);
                 
-                // Calculate price
+                // Use FastAPI price directly
                 let totalPrice = 0;
                 if (rawPpc > 0 && !isNaN(rawPpc) && weight > 0) {
                   totalPrice = Math.round(rawPpc * weight);
                 } else if (rawTotal > 0 && !isNaN(rawTotal)) {
                   totalPrice = Math.round(rawTotal);
-                }
-                
-                // Apply realistic caps to prevent inflated values
-                if (weight > 0 && totalPrice > 0) {
-                  let maxPrice = 100000;
-                  if (weight < 0.5) maxPrice = 5000;
-                  else if (weight < 1) maxPrice = 15000;
-                  else if (weight < 2) maxPrice = 35000;
-                  else if (weight < 3) maxPrice = 75000;
-                  else maxPrice = 150000;
-                  
-                  if (totalPrice > maxPrice) {
-                    console.warn(`⚠️ INVENTORY: Capping price ${totalPrice} -> ${maxPrice} for ${weight}ct`);
-                    totalPrice = maxPrice;
-                  }
                 }
                 
                 return Math.max(0, totalPrice);

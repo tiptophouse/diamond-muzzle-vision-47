@@ -64,7 +64,7 @@ export function useDiamondDistribution() {
             const rawPpc = Number(d.price_per_carat);
             const rawTotal = Number(d.price);
 
-            // Calculate realistic price with validation
+            // Use actual FastAPI price data directly
             let totalPrice = 0;
             
             // Priority 1: Calculate from price per carat if available
@@ -76,29 +76,7 @@ export function useDiamondDistribution() {
               totalPrice = Math.round(rawTotal);
             }
             
-            // Apply realistic caps based on carat weight to prevent inflated values
-            if (weight > 0 && totalPrice > 0) {
-              let maxPrice = 100000; // default max
-              if (weight < 0.5) {
-                maxPrice = 5000;
-              } else if (weight < 1) {
-                maxPrice = 15000;
-              } else if (weight < 2) {
-                maxPrice = 35000;
-              } else if (weight < 3) {
-                maxPrice = 75000;
-              } else {
-                maxPrice = 150000; // Large stones can be more valuable
-              }
-              
-              // Cap the price if it exceeds realistic market value
-              if (totalPrice > maxPrice) {
-                console.warn(`⚠️ Capping inflated price: ${totalPrice} -> ${maxPrice} for ${weight}ct diamond`);
-                totalPrice = maxPrice;
-              }
-            }
-            
-            // Data validation: ensure reasonable bounds
+            // Basic validation only
             if (totalPrice < 0) totalPrice = 0;
             if (weight < 0) weight = 0;
             
