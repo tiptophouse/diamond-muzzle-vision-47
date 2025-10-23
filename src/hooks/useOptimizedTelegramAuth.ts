@@ -65,13 +65,43 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
   const authenticateWithBackoff = useCallback(async (attempt: number = 0): Promise<void> => {
     if (initializedRef.current || !mountedRef.current) return;
 
-    const delay = Math.min(500 * Math.pow(1.5, attempt), 2000); // OPTIMIZED: Faster backoff - starts at 500ms, max 2s
+    const delay = Math.min(500 * Math.pow(1.5, attempt), 2000);
     if (attempt > 0) {
       console.log(`🔄 AUTH: Retry attempt ${attempt} after ${delay}ms delay`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
 
     try {
+      // Check if we're in preview/dev environment with a specific user ID
+      const isPreviewMode = window.location.hostname.includes('lovable.app') || 
+                           window.location.hostname.includes('localhost');
+      const urlParams = new URLSearchParams(window.location.search);
+      const testUserId = urlParams.get('test_user_id') || urlParams.get('user_id');
+      
+      // DEVELOPMENT MODE: Allow bypass for testing
+      if (isPreviewMode && testUserId) {
+        console.log('🔧 DEV MODE: Using test user ID:', testUserId);
+        const mockUser: TelegramUser = {
+          id: parseInt(testUserId),
+          first_name: `User ${testUserId}`,
+          last_name: 'Test',
+          language_code: 'en'
+        };
+        
+        setCurrentUserId(mockUser.id);
+        
+        updateState({
+          user: mockUser,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+          accessDeniedReason: null,
+          isTelegramEnvironment: true
+        });
+        
+        return;
+      }
+      
       // Fast environment check
       if (typeof window === 'undefined' || !window.Telegram?.WebApp) {
         throw new Error('not_telegram_environment');
