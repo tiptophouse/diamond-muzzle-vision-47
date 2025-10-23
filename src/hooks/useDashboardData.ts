@@ -4,6 +4,7 @@ import { api, apiEndpoints } from '@/lib/api';
 import { useToast } from '@/components/ui/use-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useInventoryDataSync } from './inventory/useInventoryDataSync';
+import { calculatePortfolioValue } from '@/utils/numberUtils';
 
 interface DashboardStats {
   totalClients: number;
@@ -38,17 +39,30 @@ export function useDashboardData() {
     if (!user?.id) return;
     
     try {
-      console.log('📊 Fetching dashboard stats from FastAPI...');
-      const response = await api.get(apiEndpoints.getDashboardStats(user.id));
+      console.log('📊 Fetching diamonds from FastAPI to calculate stats...');
+      const response = await api.get(apiEndpoints.getAllStones(user.id));
       
       if (response.error) {
         throw new Error(response.error);
       }
 
-      setStats(response.data as DashboardStats);
+      const diamonds = (response.data as any[]) || [];
+      console.log(`✅ Fetched ${diamonds.length} diamonds from FastAPI`);
+      
+      // Use unified calculation from numberUtils
+      const totalValue = calculatePortfolioValue(diamonds);
+      console.log(`💎 Calculated portfolio value: $${totalValue.toLocaleString()}`);
+      
+      setStats({
+        totalClients: 1, // Current user
+        activeClients: 1,
+        totalInventory: diamonds.length,
+        totalValue: totalValue,
+        recentSales: 0,
+        pendingQueries: 0
+      });
     } catch (error) {
       console.error('❌ Error fetching dashboard stats:', error);
-      // Fallback to default stats if FastAPI is not available
       setStats({
         totalClients: 0,
         activeClients: 0,
