@@ -10,16 +10,32 @@ export function useAllUsers() {
   const fetchAllUsers = async () => {
     try {
       console.log('🔍 Fetching ALL users from FastAPI...');
+      console.log('🔑 Current auth token exists:', !!localStorage.getItem('backend_jwt_token'));
       
       // Get ALL users from FastAPI /api/v1/clients endpoint
-      const response = await api.get(apiEndpoints.getAllClients());
+      const endpoint = apiEndpoints.getAllClients();
+      console.log('📡 Calling endpoint:', endpoint);
+      
+      const response = await api.get(endpoint);
+      
+      console.log('📥 Response received:', {
+        hasData: !!response.data,
+        hasError: !!response.error,
+        dataType: Array.isArray(response.data) ? 'array' : typeof response.data,
+        dataLength: Array.isArray(response.data) ? response.data.length : 'N/A'
+      });
       
       if (response.error) {
+        console.error('❌ API returned error:', response.error);
         throw new Error(response.error);
       }
 
       const clients = (response.data as any[]) || [];
       console.log(`✅ Successfully fetched ${clients.length} users from FastAPI`);
+      
+      if (clients.length > 0) {
+        console.log('👤 Sample user data:', clients[0]);
+      }
 
       // Transform FastAPI client data to match expected format
       const transformedUsers = clients.map((client: any) => ({
@@ -52,9 +68,15 @@ export function useAllUsers() {
       setAllUsers(transformedUsers);
     } catch (error: any) {
       console.error('❌ Error fetching all users from FastAPI:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+      
       toast({
-        title: "Error",
-        description: "Failed to load user data from FastAPI",
+        title: "⚠️ Failed to Load Users",
+        description: error.message || "Could not fetch user data from server",
         variant: "destructive",
       });
       setAllUsers([]);
