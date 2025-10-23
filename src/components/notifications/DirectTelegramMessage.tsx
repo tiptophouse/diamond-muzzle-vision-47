@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { MessageCircle, Send, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTelegramHapticFeedback } from '@/hooks/useTelegramHapticFeedback';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DirectTelegramMessageProps {
   recipientId: number;
@@ -40,6 +41,14 @@ export function DirectTelegramMessage({
       });
       return;
     }
+    if (!recipientId) {
+      toast({
+        title: "שגיאה",
+        description: "לא נמצאה זהות טלגרם של הנמען",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setIsSending(true);
     impactOccurred('medium');
@@ -53,19 +62,15 @@ export function DirectTelegramMessage({
         fullMessage = `💎 ${diamondInfo.shape} ${diamondInfo.weight}ct ${diamondInfo.color} ${diamondInfo.clarity}\n💰 $${diamondInfo.price.toLocaleString()}\n📦 Stock: ${diamondInfo.stock_number}\n\n${message}`;
       }
 
-      const response = await fetch(`${API_BASE}/send-telegram-message`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chat_id: recipientId,
-          message: fullMessage
-        })
+      const { data, error } = await supabase.functions.invoke('send-telegram-message', {
+        body: { chat_id: recipientId, message: fullMessage }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to send message');
+      if (error) {
+        throw new Error(error.message || 'Failed to send message');
+      }
+      if (data && (data.success === false || (data as any).error)) {
+        throw new Error((data as any).error || 'Failed to send message');
       }
 
       notificationOccurred('success');
