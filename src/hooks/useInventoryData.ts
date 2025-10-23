@@ -182,11 +182,36 @@ export function useInventoryData() {
               cut: item.cut || item.Cut || item.Make || 'Excellent',
               polish: item.polish || item.Polish || undefined,
               symmetry: item.symmetry || item.Symmetry || undefined,
-              price: Number(
-                item.price_per_carat ? 
-                  item.price_per_carat * (item.weight || item.carat || item.Weight) : 
-                  item.price || item.Price || item.RapnetAskingPrice || item.IndexAskingPrice || 0
-              ) || 0,
+              price: (() => {
+                const weight = parseFloat((item.weight || item.carat || item.Weight || 0).toString()) || 0;
+                const rawPpc = Number(item.price_per_carat);
+                const rawTotal = Number(item.price);
+                
+                // Calculate price
+                let totalPrice = 0;
+                if (rawPpc > 0 && !isNaN(rawPpc) && weight > 0) {
+                  totalPrice = Math.round(rawPpc * weight);
+                } else if (rawTotal > 0 && !isNaN(rawTotal)) {
+                  totalPrice = Math.round(rawTotal);
+                }
+                
+                // Apply realistic caps to prevent inflated values
+                if (weight > 0 && totalPrice > 0) {
+                  let maxPrice = 100000;
+                  if (weight < 0.5) maxPrice = 5000;
+                  else if (weight < 1) maxPrice = 15000;
+                  else if (weight < 2) maxPrice = 35000;
+                  else if (weight < 3) maxPrice = 75000;
+                  else maxPrice = 150000;
+                  
+                  if (totalPrice > maxPrice) {
+                    console.warn(`⚠️ INVENTORY: Capping price ${totalPrice} -> ${maxPrice} for ${weight}ct`);
+                    totalPrice = maxPrice;
+                  }
+                }
+                
+                return Math.max(0, totalPrice);
+              })(),
               status: item.status || item.Availability || 'Available',
               fluorescence: item.fluorescence || item.FluorescenceIntensity || undefined,
               imageUrl: finalImageUrl,

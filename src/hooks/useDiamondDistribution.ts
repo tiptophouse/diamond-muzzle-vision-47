@@ -64,19 +64,41 @@ export function useDiamondDistribution() {
             const rawPpc = Number(d.price_per_carat);
             const rawTotal = Number(d.price);
 
-            // Best practice: Use actual price data without artificial constraints
+            // Calculate realistic price with validation
             let totalPrice = 0;
             
-            // Priority 1: Use total price if available and valid
-            if (rawTotal > 0 && !isNaN(rawTotal)) {
-              totalPrice = Math.round(rawTotal);
-            } 
-            // Priority 2: Calculate from price per carat if available
-            else if (rawPpc > 0 && !isNaN(rawPpc) && weight > 0) {
+            // Priority 1: Calculate from price per carat if available
+            if (rawPpc > 0 && !isNaN(rawPpc) && weight > 0) {
               totalPrice = Math.round(rawPpc * weight);
             }
+            // Priority 2: Use total price if available
+            else if (rawTotal > 0 && !isNaN(rawTotal)) {
+              totalPrice = Math.round(rawTotal);
+            }
             
-            // Data validation: ensure reasonable bounds without artificial caps
+            // Apply realistic caps based on carat weight to prevent inflated values
+            if (weight > 0 && totalPrice > 0) {
+              let maxPrice = 100000; // default max
+              if (weight < 0.5) {
+                maxPrice = 5000;
+              } else if (weight < 1) {
+                maxPrice = 15000;
+              } else if (weight < 2) {
+                maxPrice = 35000;
+              } else if (weight < 3) {
+                maxPrice = 75000;
+              } else {
+                maxPrice = 150000; // Large stones can be more valuable
+              }
+              
+              // Cap the price if it exceeds realistic market value
+              if (totalPrice > maxPrice) {
+                console.warn(`⚠️ Capping inflated price: ${totalPrice} -> ${maxPrice} for ${weight}ct diamond`);
+                totalPrice = maxPrice;
+              }
+            }
+            
+            // Data validation: ensure reasonable bounds
             if (totalPrice < 0) totalPrice = 0;
             if (weight < 0) weight = 0;
             
