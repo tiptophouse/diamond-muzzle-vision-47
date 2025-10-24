@@ -4,9 +4,10 @@ import { http } from '@/api/http';
 
 interface SearchResult {
   id: number;
-  user_id: number;
+  seller_id: number;
+  buyer_id: number;
   search_query: string;
-  result_type: 'match' | 'unmatch';
+  result_type: string;
   diamonds_data?: any[];
   message_sent?: string;
   created_at: string;
@@ -49,21 +50,24 @@ export function useSearchResults() {
       setSearchResults([
         {
           id: 1,
-          user_id: user.id,
+          seller_id: user.id,
+          buyer_id: 123456789,
           search_query: "2 carat round brilliant diamond D color VVS1",
           result_type: 'match',
           created_at: new Date().toISOString()
         },
         {
           id: 2,
-          user_id: user.id,
+          seller_id: user.id,
+          buyer_id: 987654321,
           search_query: "1.5 carat princess cut E color VS1",
           result_type: 'match',
           created_at: new Date(Date.now() - 3600000).toISOString()
         },
         {
           id: 3,
-          user_id: user.id,
+          seller_id: user.id,
+          buyer_id: 555666777,
           search_query: "3 carat emerald cut F color VVS2",
           result_type: 'unmatch',
           created_at: new Date(Date.now() - 7200000).toISOString()
