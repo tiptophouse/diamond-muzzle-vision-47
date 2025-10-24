@@ -34,10 +34,10 @@ export function useSearchResults() {
 
     try {
       // Fetch search results
-      const searchResults = await http<SearchResult[]>(`/api/v1/get_search_results?user_id=${user.id}&limit=10`, { method: 'GET' });
+      const searchResults = await http<SearchResult[]>(`/api/v1/get_search_results?seller_id=${user.id}&limit=10`, { method: 'GET' });
 
       // Fetch search results count
-      const count = await http<SearchResultsCount>(`/api/v1/get_search_results_count?user_id=${user.id}`, { method: 'GET' });
+      const count = await http<SearchResultsCount>(`/api/v1/get_search_results_count?seller_id=${user.id}`, { method: 'GET' });
 
       setSearchResults(searchResults || []);
       setSearchResultsCount(count || { total: 0, matches: 0, unmatches: 0 });
