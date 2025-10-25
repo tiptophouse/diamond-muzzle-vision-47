@@ -86,81 +86,112 @@ export function useFastApiNotifications() {
     
     try {
       const offset = (pageNum - 1) * PAGE_SIZE;
-      console.log('🔔 Fetching notifications from FastAPI for user:', user.id, 'page:', pageNum);
-      console.log('🔔 API endpoint:', `/api/v1/get_search_results?user_id=${user.id}&limit=${PAGE_SIZE}&offset=${offset}`);
+      console.log('🔔 Fetching seller notifications from FastAPI for user:', user.id, 'page:', pageNum);
       
-      // Fetch search results from FastAPI
-      const response = await api.get<any[]>(`/api/v1/get_search_results?user_id=${user.id}&limit=${PAGE_SIZE}&offset=${offset}`);
+      // Try seller notifications endpoint first (preferred for seller-centric view)
+      let response: any;
+      let searchResults: any[];
+      let isSchemaSeller = true;
       
-      console.log('🔔 FastAPI response received:', response);
+      try {
+        console.log('🔔 Trying seller notifications endpoint:', `/api/v1/seller/notifications?user_id=${user.id}&limit=${PAGE_SIZE}&offset=${offset}`);
+        response = await api.get<any[]>(`/api/v1/seller/notifications?user_id=${user.id}&limit=${PAGE_SIZE}&offset=${offset}`);
+        searchResults = response?.data || response;
+        console.log('✅ Seller notifications endpoint success:', searchResults?.length, 'results');
+      } catch (sellerError) {
+        console.log('⚠️ Seller notifications endpoint failed, falling back to get_search_results:', sellerError);
+        isSchemaSeller = false;
+        
+        // Fallback to get_search_results endpoint
+        response = await api.get<any[]>(`/api/v1/get_search_results?user_id=${user.id}&limit=${PAGE_SIZE}&offset=${offset}`);
+        searchResults = response?.data || response;
+        console.log('✅ Fallback get_search_results success:', searchResults?.length, 'results');
+      }
       
-      // Handle the response structure - check if response.data exists
-      const searchResults = response?.data || response;
-      console.log('🔔 Search results data:', searchResults);
+      console.log('🔔 Schema type:', isSchemaSeller ? 'SellerNotificationSchema' : 'SearchResultSchema');
       
       if (searchResults && Array.isArray(searchResults)) {
-        console.log('🔔 FastAPI search results:', searchResults);
+        console.log('🔔 Processing results:', searchResults.length, 'items');
         
-        // Transform search results into notification format
-        console.log('🔍 RAW search results before filtering:', JSON.stringify(searchResults, null, 2));
-        
+        // Transform results into notification format with proper buyer ID extraction
         const transformedNotifications = searchResults
           .filter((result: any) => {
-            console.log('🔍 Processing result:', result.id, {
-              user_id: result.user_id,
-              owner_id: result.owner_id,
-              searcher_info: result.searcher_info,
-              current_user_id: user.id
-            });
+            // Extract buyer/searcher ID based on schema type
+            const buyerTelegramId = isSchemaSeller 
+              ? result.searcher_user_id  // SellerNotificationSchema
+              : result.buyer_id;          // SearchResultSchema
             
-            // Extract searcher information
-            const searcherInfo = result.searcher_info || extractSearcherInfo(result.search_query);
-            const searcherId = searcherInfo?.telegram_id;
+            console.log('🔍 Result:', result.id, 'Buyer ID:', buyerTelegramId, 'Current user:', user.id);
             
-            console.log('🔍 Extracted searcher ID:', searcherId, 'vs current user:', user.id);
-            
-            // ONLY filter out if the searcher IS the current user (self-notifications)
-            // We WANT to show notifications where current user owns the diamonds
-            if (searcherId && searcherId === user.id) {
-              console.log(`🚫 FILTERED: Searcher is current user (self-notification)`);
+            // Filter out self-notifications (where buyer is current user)
+            if (buyerTelegramId && buyerTelegramId === user.id) {
+              console.log(`🚫 FILTERED: Self-notification (buyer ${buyerTelegramId} = current user ${user.id})`);
               return false;
             }
             
             console.log(`✅ KEEPING notification ${result.id}`);
             return true;
           })
-          .map((result: any) => ({
-            id: result.id.toString(),
-            user_id: result.user_id,
-            search_query: result.search_query,
-            result_type: result.result_type,
-            diamonds_data: result.diamonds_data,
-            message_sent: result.message_sent,
-            created_at: result.created_at,
-            title: getNotificationTitle(result.result_type, result),
-            message: getNotificationMessage(result),
-            type: result.result_type === 'match' ? 'diamond_match' : 'search_result',
-            read: false, // FastAPI doesn't track read status yet
-            data: {
+          .map((result: any) => {
+            // Extract buyer/searcher information based on schema
+            const buyerTelegramId = isSchemaSeller 
+              ? result.searcher_user_id 
+              : result.buyer_id;
+            
+            const sellerId = isSchemaSeller
+              ? result.user_id
+              : result.seller_id;
+            
+            // Map diamond data with proper field normalization
+            const mappedDiamonds = (result.diamonds_data || []).map((d: any) => ({
+              stock_number: d.stock || d.stock_number,
+              shape: d.shape,
+              weight: d.weight ?? d.carat,
+              color: d.color,
+              clarity: d.clarity,
+              cut: d.cut,
+              polish: d.polish,
+              symmetry: d.symmetry,
+              fluorescence: d.fluorescence,
+              lab: d.lab,
+              certificate_number: d.certificate_number,
+              price_per_carat: d.price_per_carat ?? d.price,
+              status: d.status || 'Available',
+              confidence: d.confidence || 0.9,
+              total_price: (d.price_per_carat ?? d.price) * (d.weight ?? d.carat)
+            }));
+            
+            return {
+              id: result.id.toString(),
+              user_id: sellerId,
               search_query: result.search_query,
-              diamonds_count: result.diamonds_data?.length || 0,
+              result_type: result.result_type,
               diamonds_data: result.diamonds_data,
-              searcher_info: result.searcher_info || extractSearcherInfo(result.search_query),
-              user_id: result.user_id,
-              matches: result.diamonds_data?.map((diamond: any) => ({
-                stock_number: diamond.stock_number || diamond.stockNumber,
-                shape: diamond.shape,
-                weight: diamond.weight || diamond.carat,
-                color: diamond.color,
-                clarity: diamond.clarity,
-                cut: diamond.cut,
-                price_per_carat: diamond.price_per_carat || diamond.price,
-                status: diamond.status || 'Available',
-                confidence: diamond.confidence || 0.8,
-                total_price: diamond.total_price || (diamond.price_per_carat * (diamond.weight || diamond.carat))
-              }))
-            }
-          }));
+              message_sent: result.message_sent,
+              created_at: result.created_at,
+              title: getNotificationTitle(result.result_type, result),
+              message: getNotificationMessage(result),
+              type: result.result_type === 'match' ? 'diamond_match' : 'search_result',
+              read: false,
+              data: {
+                search_query: result.search_query,
+                diamonds_count: mappedDiamonds.length,
+                diamonds_data: result.diamonds_data,
+                searcher_info: {
+                  telegram_id: buyerTelegramId,
+                  name: result.searcher_name || 'Buyer',
+                  first_name: result.searcher_first_name,
+                  telegram_username: result.searcher_username
+                },
+                customer_info: {
+                  telegram_id: buyerTelegramId,
+                  name: result.searcher_name || 'Buyer'
+                },
+                user_id: sellerId,
+                matches: mappedDiamonds
+              }
+            };
+          });
 
         // Save notifications to database
         await saveNotificationsToDatabase(transformedNotifications);

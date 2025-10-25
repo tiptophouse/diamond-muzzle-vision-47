@@ -53,9 +53,13 @@ export const apiEndpoints = {
   getUserPayments: (userId: number) => `/api/v1/users/${userId}/payments`,
   getPaymentStats: () => `/api/v1/payments/stats`,
 
-  // Search endpoints - ADDED
+  // Search endpoints - ADDED (buyer-centric view)
   getSearchResults: (userId: number, limit: number = 10, offset: number = 0) => `/api/v1/get_search_results?user_id=${userId}&limit=${limit}&offset=${offset}`,
   getSearchResultsCount: (userId: number) => `/api/v1/get_search_results_count?user_id=${userId}`,
+  
+  // Seller notification endpoints - ADDED (seller-centric view)
+  sellerNotifications: (userId: number, limit: number = 20, offset: number = 0) => `/api/v1/seller/notifications?user_id=${userId}&limit=${limit}&offset=${offset}`,
+  sellerNotificationsCount: (userId: number) => `/api/v1/seller/notifications/count?user_id=${userId}`,
   
   // Client and admin endpoints
   getAllClients: () => `/api/v1/clients`,

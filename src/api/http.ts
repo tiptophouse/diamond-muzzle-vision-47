@@ -1,8 +1,6 @@
-
 import { getBackendAuthToken } from "@/lib/api/auth";
 import { toast } from "@/components/ui/use-toast";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.mazalbot.com";
+import { API_BASE_URL } from "@/lib/api/config";
 
 // Network connectivity cache
 let connectivityCache: { isHealthy: boolean; lastChecked: number } | null = null;
