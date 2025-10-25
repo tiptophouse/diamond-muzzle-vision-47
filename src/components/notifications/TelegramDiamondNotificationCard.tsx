@@ -162,10 +162,21 @@ export function TelegramDiamondNotificationCard({
     const searcherInfo = metadata?.searcher_info;
     const customerInfo = metadata?.customer_info;
     
-    return searcherInfo?.telegram_id || 
+    const buyerId = searcherInfo?.telegram_id || 
            customerInfo?.telegram_id || 
            metadata?.user_id ||
            null;
+    
+    // 🔍 DEBUG LOGGING - Check buyer ID extraction
+    console.log('🔍 BUYER ID EXTRACTION:', {
+      buyerId,
+      searcherInfo,
+      customerInfo,
+      metadata,
+      notificationId: notification.id
+    });
+    
+    return buyerId;
   };
 
   const getBuyerName = () => {

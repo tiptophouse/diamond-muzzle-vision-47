@@ -142,6 +142,20 @@ export function useFastApiNotifications() {
               ? result.user_id
               : result.seller_id;
             
+            // 🔍 DEBUG LOGGING - Check what we're receiving
+            console.log('🔍 NOTIFICATION DEBUG:', {
+              resultId: result.id,
+              isSchemaSeller,
+              buyerTelegramId,
+              sellerId,
+              searcher_user_id: result.searcher_user_id,
+              buyer_id: result.buyer_id,
+              searcher_name: result.searcher_name,
+              searcher_first_name: result.searcher_first_name,
+              searcher_username: result.searcher_username,
+              fullResult: result
+            });
+            
             // Map diamond data with proper field normalization
             const mappedDiamonds = (result.diamonds_data || []).map((d: any) => ({
               stock_number: d.stock || d.stock_number,
