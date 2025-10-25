@@ -117,10 +117,7 @@ export function useFastApiNotifications() {
         const transformedNotifications = searchResults
           .filter((result: any) => {
             // Extract buyer/searcher ID based on schema type
-            const buyerTelegramId = isSchemaSeller 
-              ? result.searcher_user_id  // SellerNotificationSchema
-              : result.buyer_id;          // SearchResultSchema
-            
+            const buyerTelegramId = result.searcher_user_id || result.buyer_id;
             console.log('🔍 Result:', result.id, 'Buyer ID:', buyerTelegramId, 'Current user:', user.id);
             
             // Filter out self-notifications (where buyer is current user)
@@ -134,13 +131,9 @@ export function useFastApiNotifications() {
           })
           .map((result: any) => {
             // Extract buyer/searcher information based on schema
-            const buyerTelegramId = isSchemaSeller 
-              ? result.searcher_user_id 
-              : result.buyer_id;
+            const buyerTelegramId = result.searcher_user_id || result.buyer_id;
             
-            const sellerId = isSchemaSeller
-              ? result.user_id
-              : result.seller_id;
+            const sellerId = result.user_id || result.seller_id;
             
             // 🔍 DEBUG LOGGING - Check what we're receiving
             console.log('🔍 NOTIFICATION DEBUG:', {
