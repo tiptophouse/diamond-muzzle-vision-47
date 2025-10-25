@@ -64,3 +64,9 @@ verify_jwt = false
 
 [functions.set-session-context]
 verify_jwt = false
+
+[functions.generate-conversation-starter]
+verify_jwt = false
+
+[functions.send-individual-message]
+verify_jwt = false

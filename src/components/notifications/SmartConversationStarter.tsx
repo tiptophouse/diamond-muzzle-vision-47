@@ -83,18 +83,12 @@ export function SmartConversationStarter({ customerInfo, onMessageSent }: SmartC
 
     setIsSending(true);
     try {
-      console.log('📤 Sending message to customer:', customerInfo.telegram_id);
+      console.log('📤 Sending message via Telegram bot');
       
       const { data, error } = await supabase.functions.invoke('send-individual-message', {
         body: {
           telegramId: customerInfo.telegram_id,
-          message: message,
-          buttons: [
-            {
-              text: '💎 צפה במלאי היהלומים',
-              url: 'https://t.me/diamondmazalbot?startapp=store'
-            }
-          ]
+          message: message
         }
       });
 
@@ -109,7 +103,7 @@ export function SmartConversationStarter({ customerInfo, onMessageSent }: SmartC
       }
 
       if (data?.success) {
-        console.log('✅ Message sent successfully:', data);
+        console.log('✅ Message sent successfully');
         toast({
           title: "הודעה נשלחה! ✅",
           description: `ההודעה נשלחה בהצלחה ללקוח`

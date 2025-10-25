@@ -103,8 +103,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           error: errorMessage, 
-          telegram_error: result,
-          user_id: telegramId 
+          telegram_error: result
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -114,8 +113,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        messageId: result.result.message_id,
-        userId: telegramId
+        messageId: result.result.message_id
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

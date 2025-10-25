@@ -108,24 +108,10 @@ export function QuickReplyWithGPT({ notification, onMessageSent }: QuickReplyWit
     impactOccurred('medium');
 
     try {
-      const { error } = await supabase.functions.invoke('send-individual-message', {
+      const { data, error } = await supabase.functions.invoke('send-individual-message', {
         body: {
           telegramId: notification.data.customer_info.telegram_id,
-          message: messageContent,
-          buttons: [
-            {
-              text: "💎 View Diamonds",
-              callback_data: "view_diamonds"
-            },
-            {
-              text: "📞 Contact Seller",
-              callback_data: "contact_seller"
-            },
-            {
-              text: "💬 Chat",
-              url: "https://t.me/your_seller_username"
-            }
-          ]
+          message: messageContent
         }
       });
 
@@ -133,9 +119,11 @@ export function QuickReplyWithGPT({ notification, onMessageSent }: QuickReplyWit
         throw new Error(error.message);
       }
 
+      console.log('✅ Message sent via Telegram bot:', data);
+
       toast({
         title: "✅ Message Sent",
-        description: `Quick reply sent to ${notification.data.customer_info.name || 'customer'}`,
+        description: "Message delivered successfully via Telegram",
       });
       
       notificationOccurred('success');
@@ -143,8 +131,8 @@ export function QuickReplyWithGPT({ notification, onMessageSent }: QuickReplyWit
     } catch (error) {
       console.error('Failed to send message:', error);
       toast({
-        title: "Send Failed",
-        description: "Could not send message. Please try again.",
+        title: "❌ Send Failed",
+        description: error instanceof Error ? error.message : "Could not send message. Please try again.",
         variant: "destructive",
       });
       notificationOccurred('error');
@@ -184,7 +172,7 @@ export function QuickReplyWithGPT({ notification, onMessageSent }: QuickReplyWit
         </CardTitle>
         {customerInfo && (
           <div className="text-sm text-muted-foreground">
-            Send to: <span className="font-medium">{customerInfo.name || `ID: ${customerInfo.telegram_id}`}</span>
+            Send to: <span className="font-medium">{customerInfo.name || 'Customer'}</span>
             {bestMatch && (
               <span className="block text-xs mt-1">
                 Best match: {bestMatch.shape} {bestMatch.weight}ct {bestMatch.color} {bestMatch.clarity}

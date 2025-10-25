@@ -186,7 +186,7 @@ Return JSON with the following structure:
     return new Response(
       JSON.stringify({ 
         success: true,
-        conversation_starters: conversationStarters.conversation_starters,
+        conversationStarters: conversationStarters.conversation_starters,
         customer_info: customerInfo
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
