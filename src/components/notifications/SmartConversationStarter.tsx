@@ -85,10 +85,28 @@ export function SmartConversationStarter({ customerInfo, onMessageSent }: SmartC
     try {
       console.log('📤 Sending message via Telegram bot');
       
+      const bestDiamond = customerInfo.diamonds?.[0];
+      
+      // Prepare diamond data if available
+      const diamondData = bestDiamond ? {
+        stock_number: bestDiamond.stock_number || bestDiamond.stock || '',
+        shape: bestDiamond.shape || '',
+        weight: bestDiamond.weight || bestDiamond.carat || 0,
+        color: bestDiamond.color || '',
+        clarity: bestDiamond.clarity || '',
+        cut: bestDiamond.cut,
+        price_per_carat: bestDiamond.price_per_carat || bestDiamond.price,
+        total_price: bestDiamond.total_price || (bestDiamond.price_per_carat || bestDiamond.price) * (bestDiamond.weight || bestDiamond.carat),
+        imageUrl: bestDiamond.picture || bestDiamond.imageUrl,
+        lab: bestDiamond.lab,
+        certificate_number: bestDiamond.certificate_number
+      } : undefined;
+      
       const { data, error } = await supabase.functions.invoke('send-individual-message', {
         body: {
           telegramId: customerInfo.telegram_id,
-          message: message
+          message: message,
+          diamondData: diamondData
         }
       });
 
@@ -106,7 +124,7 @@ export function SmartConversationStarter({ customerInfo, onMessageSent }: SmartC
         console.log('✅ Message sent successfully');
         toast({
           title: "הודעה נשלחה! ✅",
-          description: `ההודעה נשלחה בהצלחה ללקוח`
+          description: diamondData ? "כרטיס יהלום נשלח בהצלחה ללקוח" : "ההודעה נשלחה בהצלחה ללקוח"
         });
         
         setIsOpen(false);
