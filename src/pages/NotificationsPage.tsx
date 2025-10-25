@@ -8,6 +8,7 @@ import { IncomingChatbotMessages } from '@/components/notifications/IncomingChat
 import { TelegramNotificationsList } from '@/components/notifications/TelegramNotificationsList';
 
 import { useFastApiNotifications } from '@/hooks/useFastApiNotifications';
+import { useNotifications as useDbNotifications } from '@/hooks/useNotifications';
 import { useTelegramNotificationBridge } from '@/hooks/useTelegramNotificationBridge';
 import { useDiamondSearch } from '@/hooks/useDiamondSearch';
 import { useTelegramMessaging } from '@/hooks/useTelegramMessaging';
@@ -28,6 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const NotificationsPage = () => {
   const { notifications, isLoading, markAsRead, contactCustomer, refetch, loadMore, hasMore } = useFastApiNotifications();
+  const { notifications: dbNotifications, isLoading: isLoadingDb, markAsRead: markAsReadDb, refetch: refetchDb } = useDbNotifications();
   const { simulateSearchFromBot, isLoading: isSearching } = useDiamondSearch();
   const { sendMessage, isLoading: isSendingMessage } = useTelegramMessaging();
   const { user } = useTelegramAuth();
@@ -35,13 +37,21 @@ const NotificationsPage = () => {
   const { toast } = useToast();
   const { webApp } = useTelegramWebApp();
   
+  const hasFast = notifications.length > 0;
+  const displayNotifications = hasFast ? notifications : dbNotifications;
+  const displayIsLoading = hasFast ? isLoading : isLoadingDb;
+  const markAsReadHandler = hasFast ? markAsRead : markAsReadDb;
+  const refetchAll = useCallback(async () => {
+    await Promise.all([refetch(), refetchDb()]);
+  }, [refetch, refetchDb]);
+  
   // Initialize Telegram notification bridge
   useTelegramNotificationBridge();
   
   // Pull-to-refresh
   const { isRefreshing, pullDistance, isPulling } = usePullToRefresh({
     onRefresh: async () => {
-      await refetch();
+      await refetchAll();
     },
     threshold: 80,
   });
@@ -50,7 +60,7 @@ const NotificationsPage = () => {
   useNotificationRealtimeUpdates({
     onNewNotification: (newNotif) => {
       console.log('📲 New notification received via realtime:', newNotif);
-      refetch(); // Refresh the list to include the new notification
+      refetchAll(); // Refresh the list to include the new notification
     }
   });
   
@@ -58,7 +68,7 @@ const NotificationsPage = () => {
   const groupedNotifications = useMemo(() => {
     const groups = new Map<number, any>();
     
-    notifications
+    displayNotifications
       .filter(n => n.type === 'diamond_match' && n.data?.searcher_info?.telegram_id)
       .forEach(notif => {
         const buyerId = notif.data.searcher_info.telegram_id;
@@ -92,7 +102,7 @@ const NotificationsPage = () => {
     return Array.from(groups.values()).sort(
       (a, b) => new Date(b.latestTimestamp).getTime() - new Date(a.latestTimestamp).getTime()
     );
-  }, [notifications]);
+  }, [displayNotifications]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
   const businessNotifications = notifications.filter(n => 
