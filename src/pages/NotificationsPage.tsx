@@ -104,23 +104,23 @@ const NotificationsPage = () => {
     );
   }, [displayNotifications]);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
-  const businessNotifications = notifications.filter(n => 
+  const unreadCount = displayNotifications.filter(n => !n.read).length;
+  const businessNotifications = displayNotifications.filter(n => 
     ['buyer_interest', 'interested_buyers', 'pair_match', 'diamond_pairs', 'group_demand', 'price_opportunity', 'price_opportunities'].includes(n.type)
   );
-  const groupNotifications = notifications.filter(n => n.type === 'group_diamond_request');
-  const diamondMatches = notifications.filter(n => n.type === 'diamond_match');
-  const otherNotifications = notifications.filter(n => 
+  const groupNotifications = displayNotifications.filter(n => n.type === 'group_diamond_request');
+  const diamondMatches = displayNotifications.filter(n => n.type === 'diamond_match');
+  const otherNotifications = displayNotifications.filter(n => 
     !['buyer_interest', 'interested_buyers', 'pair_match', 'diamond_pairs', 'group_demand', 'price_opportunity', 'price_opportunities', 'group_diamond_request', 'diamond_match'].includes(n.type)
   );
   
   // Determine empty state type
   const getEmptyStateType = useCallback(() => {
-    if (notifications.length === 0) return 'first_time';
-    if (unreadCount === 0 && notifications.length > 0) return 'all_read';
+    if (displayNotifications.length === 0) return 'first_time';
+    if (unreadCount === 0 && displayNotifications.length > 0) return 'all_read';
     if (diamondMatches.length === 0) return 'no_matches';
     return 'no_buyers';
-  }, [notifications.length, unreadCount, diamondMatches.length]);
+  }, [displayNotifications.length, unreadCount, diamondMatches.length]);
 
   const handleContactBuyer = useCallback(async (buyerInfo: any) => {
     haptic.impactOccurred('medium');
@@ -160,10 +160,10 @@ const NotificationsPage = () => {
   }, [haptic, toast, webApp]);
 
   const handleMarkMultipleAsRead = useCallback((notificationIds: string[]) => {
-    notificationIds.forEach(id => markAsRead(id));
-  }, [markAsRead]);
+    notificationIds.forEach(id => markAsReadHandler(id));
+  }, [markAsReadHandler]);
 
-  if (isLoading && notifications.length === 0) {
+  if (displayIsLoading && displayNotifications.length === 0) {
     return (
       <TelegramMiniAppLayout>
         <div className="p-4 space-y-3">
@@ -211,7 +211,7 @@ const NotificationsPage = () => {
     }, 987654321, "Test Buyer");
     
     // Refresh notifications after search
-    setTimeout(() => refetch(), 1000);
+    setTimeout(() => refetchAll(), 1000);
   };
 
   return (
@@ -274,19 +274,19 @@ const NotificationsPage = () => {
             
             {/* Regular Notifications List */}
             <TelegramNotificationsList
-              notifications={notifications}
-              onMarkAsRead={markAsRead}
+              notifications={displayNotifications}
+              onMarkAsRead={markAsReadHandler}
               onMarkAllAsRead={() => {
-                notifications.forEach(n => {
-                  if (!n.read) markAsRead(n.id);
+                displayNotifications.forEach(n => {
+                  if (!n.read) markAsReadHandler(n.id);
                 });
               }}
               onContactCustomer={handleContactCustomer}
-              loading={isLoading}
+              loading={displayIsLoading}
             />
             
             {/* Empty State */}
-            {notifications.length === 0 && !isLoading && (
+            {displayNotifications.length === 0 && !displayIsLoading && (
               <EmptyStateVariations 
                 type={getEmptyStateType()}
                 onAction={(action) => {
@@ -300,15 +300,15 @@ const NotificationsPage = () => {
             )}
             
             {/* Load More Button */}
-            {hasMore && notifications.length > 0 && (
+            {hasMore && displayNotifications.length > 0 && (
               <div className="flex justify-center py-4">
                 <Button
                   onClick={loadMore}
                   variant="outline"
-                  disabled={isLoading}
+                  disabled={displayIsLoading}
                   className="gap-2"
                 >
-                  {isLoading ? (
+                  {displayIsLoading ? (
                     <>
                       <RefreshCw className="h-4 w-4 animate-spin" />
                       טוען...
@@ -362,7 +362,7 @@ const NotificationsPage = () => {
                   {isSearching ? 'מחפש...' : 'בדיקה'}
                 </Button>
                 
-                <Button onClick={refetch} variant="outline" size="sm" className="flex-1 text-xs">
+                <Button onClick={refetchAll} variant="outline" size="sm" className="flex-1 text-xs">
                   <RefreshCw className="h-3 w-3 mr-1" />
                   רענן
                 </Button>
