@@ -94,16 +94,21 @@ export function useFastApiNotifications() {
       let isSchemaSeller = true;
       
       try {
-        console.log('🔔 Trying seller notifications endpoint:', `/api/v1/seller/notifications?user_id=${user.id}&limit=${PAGE_SIZE}&offset=${offset}`);
-        response = await api.get<any[]>(`/api/v1/seller/notifications?user_id=${user.id}&limit=${PAGE_SIZE}&offset=${offset}`);
+        const timestamp = Date.now();
+        const sellerUrl = `/api/v1/seller/notifications?user_id=${user.id}&limit=${PAGE_SIZE}&offset=${offset}&_t=${timestamp}`;
+        console.log('🔔 Trying seller notifications endpoint:', sellerUrl);
+        response = await api.get<any[]>(sellerUrl);
         searchResults = response?.data || response;
         console.log('✅ Seller notifications endpoint success:', searchResults?.length, 'results');
       } catch (sellerError) {
         console.log('⚠️ Seller notifications endpoint failed, falling back to get_search_results:', sellerError);
         isSchemaSeller = false;
         
-        // Fallback to get_search_results endpoint
-        response = await api.get<any[]>(`/api/v1/get_search_results?user_id=${user.id}&limit=${PAGE_SIZE}&offset=${offset}`);
+        // Fallback to get_search_results endpoint with cache-busting
+        const timestamp = Date.now();
+        const fallbackUrl = `/api/v1/get_search_results?user_id=${user.id}&limit=${PAGE_SIZE}&offset=${offset}&_t=${timestamp}`;
+        console.log('🔔 Fallback URL:', fallbackUrl);
+        response = await api.get<any[]>(fallbackUrl);
         searchResults = response?.data || response;
         console.log('✅ Fallback get_search_results success:', searchResults?.length, 'results');
       }
@@ -118,7 +123,15 @@ export function useFastApiNotifications() {
           .filter((result: any) => {
             // Extract buyer/searcher ID based on schema type
             const buyerTelegramId = result.searcher_user_id || result.buyer_id;
-            console.log('🔍 Result:', result.id, 'Buyer ID:', buyerTelegramId, 'Current user:', user.id);
+            
+            // 🔍 DETAILED FILTER LOGGING
+            console.log('🔍 Filter check:', {
+              resultId: result.id,
+              buyerTelegramId,
+              currentUserId: user.id,
+              isMatch: buyerTelegramId === user.id,
+              willFilter: buyerTelegramId && buyerTelegramId === user.id
+            });
             
             // Filter out self-notifications (where buyer is current user)
             if (buyerTelegramId && buyerTelegramId === user.id) {
@@ -126,7 +139,7 @@ export function useFastApiNotifications() {
               return false;
             }
             
-            console.log(`✅ KEEPING notification ${result.id}`);
+            console.log(`✅ KEEPING notification ${result.id} - buyer: ${buyerTelegramId}`);
             return true;
           })
           .map((result: any) => {
@@ -186,9 +199,10 @@ export function useFastApiNotifications() {
                 diamonds_data: result.diamonds_data,
                 searcher_info: {
                   telegram_id: buyerTelegramId,
-                  name: result.searcher_name || 'Buyer',
-                  first_name: result.searcher_first_name,
-                  telegram_username: result.searcher_username
+                  name: result.searcher_name || result.buyer_name || `Buyer ${buyerTelegramId}`,
+                  first_name: result.searcher_first_name || null,
+                  telegram_username: result.searcher_username || null,
+                  has_full_info: !!(result.searcher_name || result.searcher_username)
                 },
                 customer_info: {
                   telegram_id: buyerTelegramId,

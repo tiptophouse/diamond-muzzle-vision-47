@@ -158,21 +158,16 @@ export function TelegramDiamondNotificationCard({
   };
 
   const getBuyerTelegramId = () => {
-    // Try ALL possible sources for buyer telegram ID
-    const searcherInfo = metadata?.searcher_info;
-    const customerInfo = metadata?.customer_info;
-    
-    const buyerId = searcherInfo?.telegram_id || 
-           customerInfo?.telegram_id || 
-           metadata?.user_id ||
-           null;
+    // Robust fallback chain for buyer telegram ID
+    const buyerId = notification.data?.searcher_info?.telegram_id 
+      || notification.data?.customer_info?.telegram_id
+      || notification.data?.user_id;
     
     // 🔍 DEBUG LOGGING - Check buyer ID extraction
     console.log('🔍 BUYER ID EXTRACTION:', {
       buyerId,
-      searcherInfo,
-      customerInfo,
-      metadata,
+      searcherInfo: notification.data?.searcher_info,
+      customerInfo: notification.data?.customer_info,
       notificationId: notification.id
     });
     
@@ -281,7 +276,10 @@ export function TelegramDiamondNotificationCard({
                     className="w-full h-12 text-base font-bold gap-2 bg-green-600 hover:bg-green-700"
                   >
                     <MessageCircle className="h-5 w-5" />
-                    📱 שלח הודעה לקונה
+                    {getBuyerUsername() 
+                      ? `📱 צור קשר @${getBuyerUsername()}` 
+                      : `📱 צור קשר (ID: ${getBuyerTelegramId()})`
+                    }
                   </Button>
                 </>
               ) : (

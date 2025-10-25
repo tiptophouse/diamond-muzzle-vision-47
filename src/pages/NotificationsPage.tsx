@@ -237,6 +237,36 @@ const NotificationsPage = () => {
       )}
       
       <div className="p-3 space-y-4 pb-20">
+        {/* Debug Panel */}
+        <details className="bg-muted/50 rounded-lg p-3 text-xs">
+          <summary className="cursor-pointer font-semibold flex items-center gap-2">
+            🔍 Debug Info ({displayNotifications.length} total)
+          </summary>
+          <div className="mt-2 space-y-2">
+            <p>✅ With Telegram ID: {displayNotifications.filter(n => 
+              n.data?.searcher_info?.telegram_id).length}</p>
+            <p>👤 Username-only: {displayNotifications.filter(n => 
+              !n.data?.searcher_info?.telegram_id && 
+              n.data?.searcher_info?.telegram_username).length}</p>
+            <p>📋 First 3 notifications:</p>
+            {displayNotifications.slice(0, 3).map(n => (
+              <details key={n.id} className="ml-4">
+                <summary className="cursor-pointer text-primary">Notification #{n.id}</summary>
+                <pre className="text-[10px] overflow-auto max-h-40 bg-background p-2 rounded mt-1">
+                  {JSON.stringify({
+                    id: n.id,
+                    type: n.type,
+                    telegram_id: n.data?.searcher_info?.telegram_id,
+                    username: n.data?.searcher_info?.telegram_username,
+                    name: n.data?.searcher_info?.name,
+                    has_full_info: n.data?.searcher_info?.has_full_info
+                  }, null, 2)}
+                </pre>
+              </details>
+            ))}
+          </div>
+        </details>
+        
         <Tabs defaultValue="enhanced" className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-4 h-auto">
             <TabsTrigger value="enhanced" className="flex items-center gap-1 py-3 text-xs">
