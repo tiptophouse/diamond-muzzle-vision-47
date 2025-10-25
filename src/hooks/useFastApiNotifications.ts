@@ -214,14 +214,76 @@ export function useFastApiNotifications() {
             };
           });
 
-        // Save notifications to database
-        await saveNotificationsToDatabase(transformedNotifications);
+        // Sort notifications with priority:
+        // 1. Unread first
+        // 2. Real diamond matches (buyer ≠ seller AND buyer !== null) appear first
+        // 3. Newest first by created_at
+        const sortedNotifications = transformedNotifications.sort((a, b) => {
+          // Priority 1: Unread status (unread first)
+          if (a.read !== b.read) return a.read ? 1 : -1;
+          
+          // Priority 2: Real diamond matches (buyer ≠ seller and buyer exists)
+          const aIsRealMatch = a.type === 'diamond_match' && 
+                               a.result_type === 'match' && 
+                               a.data?.searcher_info?.telegram_id && 
+                               a.data?.searcher_info?.telegram_id !== a.data?.user_id;
+          const bIsRealMatch = b.type === 'diamond_match' && 
+                               b.result_type === 'match' && 
+                               b.data?.searcher_info?.telegram_id && 
+                               b.data?.searcher_info?.telegram_id !== b.data?.user_id;
+          
+          if (aIsRealMatch !== bIsRealMatch) return aIsRealMatch ? -1 : 1;
+          
+          // Priority 3: Creation date (newest first)
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+
+        console.log('🔔 Notifications sorted:', {
+          total: sortedNotifications.length,
+          unread: sortedNotifications.filter(n => !n.read).length,
+          realMatches: sortedNotifications.filter(n => 
+            n.type === 'diamond_match' && 
+            n.result_type === 'match' && 
+            n.data?.searcher_info?.telegram_id && 
+            n.data?.searcher_info?.telegram_id !== n.data?.user_id
+          ).length,
+          firstThree: sortedNotifications.slice(0, 3).map(n => ({
+            id: n.id,
+            type: n.type,
+            buyer_id: n.data?.searcher_info?.telegram_id,
+            seller_id: n.data?.user_id,
+            read: n.read,
+            created_at: n.created_at
+          }))
+        });
+
+        // Save sorted notifications to database
+        await saveNotificationsToDatabase(sortedNotifications);
         
-        // Update state - append or replace based on pagination
+        // Update state - append or replace based on pagination with re-sorting
         if (append) {
-          setNotifications(prev => [...prev, ...transformedNotifications]);
+          setNotifications(prev => {
+            const combined = [...prev, ...sortedNotifications];
+            // Re-sort the entire combined list
+            return combined.sort((a, b) => {
+              if (a.read !== b.read) return a.read ? 1 : -1;
+              
+              const aIsRealMatch = a.type === 'diamond_match' && 
+                                   a.result_type === 'match' && 
+                                   a.data?.searcher_info?.telegram_id && 
+                                   a.data?.searcher_info?.telegram_id !== a.data?.user_id;
+              const bIsRealMatch = b.type === 'diamond_match' && 
+                                   b.result_type === 'match' && 
+                                   b.data?.searcher_info?.telegram_id && 
+                                   b.data?.searcher_info?.telegram_id !== b.data?.user_id;
+              
+              if (aIsRealMatch !== bIsRealMatch) return aIsRealMatch ? -1 : 1;
+              
+              return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            });
+          });
         } else {
-          setNotifications(transformedNotifications);
+          setNotifications(sortedNotifications);
         }
         
         // Update pagination state
