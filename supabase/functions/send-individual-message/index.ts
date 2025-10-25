@@ -51,10 +51,12 @@ serve(async (req) => {
       );
     }
 
-    // Prepare the message payload
+    // Prepare the message payload with signature
+    const messageWithSignature = `${message}\n\n<i>Provided by BrilliantBot</i>`;
+    
     const messagePayload: any = {
       chat_id: telegramId,
-      text: message,
+      text: messageWithSignature,
       parse_mode: 'HTML',
       disable_web_page_preview: false
     };
