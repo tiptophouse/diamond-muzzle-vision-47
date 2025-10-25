@@ -95,11 +95,29 @@ export function useFastApiNotifications() {
       
       try {
         const timestamp = Date.now();
-        const sellerUrl = `/api/v1/seller/notifications?user_id=${user.id}&limit=${PAGE_SIZE}&offset=${offset}&_t=${timestamp}`;
-        console.log('🔔 Trying seller notifications endpoint:', sellerUrl);
-        response = await api.get<any[]>(sellerUrl);
-        searchResults = response?.data || response;
-        console.log('✅ Seller notifications endpoint success:', searchResults?.length, 'results');
+        const random = Math.random();
+        const sellerUrl = `/api/v1/seller/notifications?user_id=${user.id}&limit=${PAGE_SIZE}&offset=${offset}&_t=${timestamp}&_r=${random}`;
+        console.log('🔔 Fetching fresh seller notifications:', sellerUrl);
+        
+        // Force fresh fetch with no-cache headers
+        const fullUrl = `https://api.mazalbot.com${sellerUrl}`;
+        console.log('🔔 Full URL:', fullUrl);
+        
+        const rawResponse = await fetch(fullUrl, {
+          method: 'GET',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
+        
+        if (!rawResponse.ok) {
+          throw new Error(`HTTP error! status: ${rawResponse.status}`);
+        }
+        
+        searchResults = await rawResponse.json();
+        console.log('✅ Seller notifications fetched:', searchResults?.length, 'results', 'First result:', searchResults?.[0]);
       } catch (sellerError) {
         console.log('⚠️ Seller notifications endpoint failed, falling back to get_search_results:', sellerError);
         isSchemaSeller = false;
@@ -492,8 +510,22 @@ ${customerInfo?.diamonds_count ? `נמצאו ${customerInfo.diamonds_count} יה
   // Fetch notifications on component mount and when user changes
   useEffect(() => {
     if (user?.id) {
+      console.log('🔄 Initial fetch triggered for user:', user.id);
       fetchNotifications();
     }
+  }, [user?.id]);
+
+  // Refetch when page becomes visible (user returns to the app)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user?.id) {
+        console.log('👁️ Page visible, refetching notifications');
+        fetchNotifications();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [user?.id]);
 
   const loadMore = () => {
