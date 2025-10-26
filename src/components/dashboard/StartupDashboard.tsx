@@ -10,6 +10,7 @@ import { ColorDistributionChart } from "@/components/charts/ColorDistributionCha
 import { ClarityDistributionChart } from "@/components/charts/ClarityDistributionChart";
 import { RecentDiamondsSection } from "@/components/charts/RecentDiamondsSection";
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { formatLargeNumber } from "@/utils/numberUtils";
 import { 
   Diamond, 
@@ -53,12 +54,14 @@ export function StartupDashboard() {
   const { selectionChanged, impactOccurred } = useTelegramHapticFeedback();
   
   const [metrics, setMetrics] = useState<StartupMetrics>({
-    totalUsers: 375,
-    activeToday: 42,
-    searchMatches: 28,
-    totalRevenue: 15600,
-    growthRate: 23.4
+    totalUsers: 0,
+    activeToday: 0,
+    searchMatches: 0,
+    totalRevenue: 0,
+    growthRate: 0
   });
+  
+  const [isLoadingMetrics, setIsLoadingMetrics] = useState(true);
   
   const totalInventoryValue = colorDistribution.reduce((sum, item) => sum + item.totalValue, 0);
   const unreadNotifications = searchResults.filter(r => r.result_type === 'match').length;
@@ -75,18 +78,46 @@ export function StartupDashboard() {
   };
 
   useEffect(() => {
-    // Simulate real-time metrics updates
-    const interval = setInterval(() => {
-      setMetrics(prev => ({
-        ...prev,
-        activeToday: prev.activeToday + Math.floor(Math.random() * 3),
-        searchMatches: prev.searchMatches + Math.floor(Math.random() * 2),
-        totalRevenue: prev.totalRevenue + Math.floor(Math.random() * 500)
-      }));
-    }, 10000);
-
+    const fetchMetrics = async () => {
+      try {
+        setIsLoadingMetrics(true);
+        
+        // Fetch real user counts from Supabase
+        const [totalUsersResult, activeTodayResult, activeWeekResult] = await Promise.all([
+          supabase.from('user_profiles').select('id', { count: 'exact', head: true }),
+          supabase.from('user_sessions').select('telegram_id', { count: 'exact', head: true })
+            .gte('session_start', new Date().toISOString().split('T')[0]),
+          supabase.from('user_profiles').select('id', { count: 'exact', head: true })
+            .gte('last_active', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+        ]);
+        
+        const totalUsers = totalUsersResult.count || 0;
+        const activeToday = activeTodayResult.count || 0;
+        const activeWeek = activeWeekResult.count || 0;
+        
+        // Calculate growth rate
+        const growthRate = totalUsers > 0 ? ((activeWeek / totalUsers) * 100).toFixed(1) : '0';
+        
+        setMetrics({
+          totalUsers,
+          activeToday,
+          searchMatches: searchResultsCount?.total || 0,
+          totalRevenue: totalInventoryValue * 0.15,
+          growthRate: parseFloat(growthRate)
+        });
+      } catch (error) {
+        console.error('Error fetching metrics:', error);
+      } finally {
+        setIsLoadingMetrics(false);
+      }
+    };
+    
+    fetchMetrics();
+    
+    // Refresh metrics every 30 seconds
+    const interval = setInterval(fetchMetrics, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [searchResultsCount, totalInventoryValue]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/2 to-secondary/5 pb-6">
@@ -156,7 +187,7 @@ export function StartupDashboard() {
                   <div>
                     <p className="text-xs text-muted-foreground font-medium">Total Users</p>
                     <p className="text-xl font-bold text-foreground">
-                      {metrics.totalUsers.toLocaleString()}
+                      {isLoadingMetrics ? '...' : metrics.totalUsers.toLocaleString()}
                     </p>
                     <p className="text-xs text-green-600 font-medium">+{metrics.growthRate}%</p>
                   </div>
