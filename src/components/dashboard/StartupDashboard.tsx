@@ -82,18 +82,25 @@ export function StartupDashboard() {
       try {
         setIsLoadingMetrics(true);
         
-        // Fetch real user counts from Supabase
-        const [totalUsersResult, activeTodayResult, activeWeekResult] = await Promise.all([
+        // Fetch from multiple sources for accurate counts
+        const [totalUsersResult, todaySessionsResult, activeWeekResult, todayPageVisitsResult] = await Promise.all([
           supabase.from('user_profiles').select('id', { count: 'exact', head: true }),
           supabase.from('user_sessions').select('telegram_id', { count: 'exact', head: true })
             .gte('session_start', new Date().toISOString().split('T')[0]),
           supabase.from('user_profiles').select('id', { count: 'exact', head: true })
-            .gte('last_active', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+            .gte('last_active', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+          supabase.from('page_visits').select('session_id', { count: 'exact', head: true })
+            .gte('visit_timestamp', new Date().toISOString().split('T')[0])
         ]);
         
         const totalUsers = totalUsersResult.count || 0;
-        const activeToday = activeTodayResult.count || 0;
+        const activeTodaySessions = todaySessionsResult.count || 0;
         const activeWeek = activeWeekResult.count || 0;
+        const todayPageVisits = todayPageVisitsResult.count || 0;
+        
+        // Use the higher count between sessions and page visits for "Active Today"
+        // This captures both authenticated users and general visitors
+        const activeToday = Math.max(activeTodaySessions, todayPageVisits);
         
         // Calculate growth rate
         const growthRate = totalUsers > 0 ? ((activeWeek / totalUsers) * 100).toFixed(1) : '0';
