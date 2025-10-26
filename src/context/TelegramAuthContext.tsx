@@ -21,6 +21,7 @@ interface TelegramAuthContextType {
   error: string | null;
   isTelegramEnvironment: boolean;
   accessDeniedReason: string | null;
+  hasSubscription: boolean;
 }
 
 const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(undefined);
@@ -32,6 +33,7 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
     user: authState.user, 
     isAuthenticated: authState.isAuthenticated,
     isTelegramEnvironment: authState.isTelegramEnvironment,
+    hasSubscription: authState.hasSubscription,
     loadTime: authState.loadTime
   });
   

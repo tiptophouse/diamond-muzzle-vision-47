@@ -8,6 +8,7 @@ export interface TelegramVerificationResponse {
   user_id: number;
   user_data: any;
   message?: string;
+  has_subscription?: boolean;
   security_info?: {
     timestamp_valid: boolean;
     age_seconds: number;
@@ -16,8 +17,14 @@ export interface TelegramVerificationResponse {
   };
 }
 
+export interface SignInResponse {
+  token: string;
+  has_subscription: boolean;
+}
+
 // Enhanced token management with caching
 let backendAuthToken: string | null = null;
+let userHasSubscription: boolean = false;
 
 export function getBackendAuthToken(): string | null {
   // Try memory first, then token manager
@@ -26,9 +33,14 @@ export function getBackendAuthToken(): string | null {
   return token;
 }
 
+export function hasActiveSubscription(): boolean {
+  return userHasSubscription;
+}
+
 export function clearBackendAuthToken(): void {
   console.log('🔑 Clearing backend auth token');
   backendAuthToken = null;
+  userHasSubscription = false;
   tokenManager.clear();
 }
 
@@ -69,15 +81,18 @@ export async function signInToBackend(initData: string): Promise<string | null> 
       return null;
     }
 
-    const result = await response.json();
+    const result: SignInResponse = await response.json();
     console.log('🔐 MAIN AUTH: Response data keys:', Object.keys(result));
     
-    // FIXED: According to OpenAPI spec, the field is "token", not "access_token"
+    // Extract token and subscription status
     const token = result.token;
+    const hasSubscription = result.has_subscription ?? false;
     
     if (token) {
       backendAuthToken = token;
+      userHasSubscription = hasSubscription;
       console.log('✅ MAIN AUTH: JWT token received and stored');
+      console.log('💳 MAIN AUTH: Subscription status:', hasSubscription);
       
       // Extract user ID and store token in manager
       try {

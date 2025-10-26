@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { TelegramUser } from '@/types/telegram';
-import { signInToBackend, clearBackendAuthToken } from '@/lib/api/auth';
+import { signInToBackend, clearBackendAuthToken, hasActiveSubscription } from '@/lib/api/auth';
 import { setCurrentUserId } from '@/lib/api/config';
 import { tokenManager } from '@/lib/api/tokenManager';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +14,7 @@ interface OptimizedAuthState {
   isAuthenticated: boolean;
   accessDeniedReason: string | null;
   loadTime: number;
+  hasSubscription: boolean;
 }
 
 export function useOptimizedTelegramAuth(): OptimizedAuthState {
@@ -32,7 +33,8 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
         isTelegramEnvironment: true,
         isAuthenticated: true,
         accessDeniedReason: null,
-        loadTime: 0
+        loadTime: 0,
+        hasSubscription: hasActiveSubscription()
       };
     }
     
@@ -43,7 +45,8 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
       isTelegramEnvironment: false,
       isAuthenticated: false,
       accessDeniedReason: null,
-      loadTime: 0
+      loadTime: 0,
+      hasSubscription: false
     };
   });
 
@@ -96,7 +99,8 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
           isLoading: false,
           error: null,
           accessDeniedReason: null,
-          isTelegramEnvironment: true
+          isTelegramEnvironment: true,
+          hasSubscription: true // Dev mode has subscription
         });
         
         return;
@@ -167,7 +171,8 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
         isAuthenticated: true,
         isLoading: false,
         error: null,
-        accessDeniedReason: null
+        accessDeniedReason: null,
+        hasSubscription: hasActiveSubscription()
       });
 
     } catch (error) {

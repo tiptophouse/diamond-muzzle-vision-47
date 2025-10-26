@@ -7,6 +7,7 @@ import { Plus, Gem, Store, PieChart, BarChart3, TrendingUp, Users, Search, Messa
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AuthDiagnostics } from "@/components/debug/AuthDiagnostics";
+import { SubscriptionPaywall } from '@/components/subscription/SubscriptionPaywall';
 
 interface NavigationCardProps {
   icon: React.ReactNode;
@@ -40,7 +41,8 @@ const Index = () => {
   const {
     user,
     isAuthenticated,
-    isLoading
+    isLoading,
+    hasSubscription
   } = useTelegramAuth();
   const {
     trackPageVisit
@@ -126,8 +128,15 @@ const Index = () => {
     return null;
   }
 
+  // Check subscription status for non-admin users
+  const isAdmin = isAuthenticated && user?.id === adminTelegramId;
+  if (isAuthenticated && !isAdmin && !hasSubscription) {
+    console.log('⚠️ User has no subscription - showing paywall');
+    return <SubscriptionPaywall />;
+  }
+
   // If user is admin, show admin navigation
-  if (isAuthenticated && user?.id === adminTelegramId) {
+  if (isAdmin) {
     console.log('✅ Admin user detected - showing admin navigation');
     redirectHandledRef.current = true;
     
