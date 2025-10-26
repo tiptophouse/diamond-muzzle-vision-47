@@ -22,9 +22,16 @@ export interface SignInResponse {
   has_subscription: boolean;
 }
 
+export interface TrialStatus {
+  isActive: boolean;
+  expiresAt: Date | null;
+  daysRemaining: number;
+}
+
 // Enhanced token management with caching
 let backendAuthToken: string | null = null;
 let userHasSubscription: boolean = false;
+let userTrialStatus: TrialStatus | null = null;
 
 export function getBackendAuthToken(): string | null {
   // Try memory first, then token manager
@@ -37,10 +44,15 @@ export function hasActiveSubscription(): boolean {
   return userHasSubscription;
 }
 
+export function getTrialStatus(): TrialStatus | null {
+  return userTrialStatus;
+}
+
 export function clearBackendAuthToken(): void {
   console.log('🔑 Clearing backend auth token');
   backendAuthToken = null;
   userHasSubscription = false;
+  userTrialStatus = null;
   tokenManager.clear();
 }
 
@@ -106,17 +118,51 @@ export async function signInToBackend(initData: string): Promise<string | null> 
             tokenManager.setToken(token, user.id);
             console.log('✅ MAIN AUTH: User ID extracted and token cached:', user.id);
             
-            // Set session context for RLS policies
+            // Check trial status and log attempt
             try {
               const { supabase } = await import('@/integrations/supabase/client');
+              
+              // Set session context for RLS policies
               await supabase.rpc('set_session_context', {
                 key: 'app.current_user_id',
                 value: user.id.toString()
               });
               console.log('✅ MAIN AUTH: Session context set for user:', user.id);
+              
+              // Check if trial is still active
+              const { data: trialData } = await supabase.rpc('is_trial_active', {
+                p_telegram_id: user.id
+              });
+              
+              // Get trial expiration date
+              const { data: profileData } = await supabase
+                .from('user_profiles')
+                .select('trial_expires_at')
+                .eq('telegram_id', user.id)
+                .single();
+              
+              const isTrialActive = trialData ?? true;
+              const expiresAt = profileData?.trial_expires_at ? new Date(profileData.trial_expires_at) : null;
+              const daysRemaining = expiresAt ? Math.max(0, Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 14;
+              
+              userTrialStatus = {
+                isActive: isTrialActive,
+                expiresAt,
+                daysRemaining
+              };
+              
+              // Log the subscription attempt
+              await supabase.rpc('log_subscription_attempt', {
+                p_telegram_id: user.id,
+                p_has_subscription: hasSubscription,
+                p_trial_expired: !isTrialActive
+              });
+              
+              console.log('✅ MAIN AUTH: Trial status checked:', userTrialStatus);
             } catch (contextError) {
-              console.warn('⚠️ MAIN AUTH: Failed to set session context, continuing:', contextError);
-              // Don't throw - this is not critical for basic functionality
+              console.warn('⚠️ MAIN AUTH: Failed to check trial status, continuing:', contextError);
+              // Don't throw - allow login to proceed
+              userTrialStatus = { isActive: true, expiresAt: null, daysRemaining: 14 };
             }
           }
         }

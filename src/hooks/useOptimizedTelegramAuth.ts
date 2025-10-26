@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { TelegramUser } from '@/types/telegram';
-import { signInToBackend, clearBackendAuthToken, hasActiveSubscription } from '@/lib/api/auth';
+import { signInToBackend, clearBackendAuthToken, hasActiveSubscription, getTrialStatus, TrialStatus } from '@/lib/api/auth';
 import { setCurrentUserId } from '@/lib/api/config';
 import { tokenManager } from '@/lib/api/tokenManager';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +15,7 @@ interface OptimizedAuthState {
   accessDeniedReason: string | null;
   loadTime: number;
   hasSubscription: boolean;
+  trialStatus: TrialStatus | null;
 }
 
 export function useOptimizedTelegramAuth(): OptimizedAuthState {
@@ -34,7 +35,8 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
         isAuthenticated: true,
         accessDeniedReason: null,
         loadTime: 0,
-        hasSubscription: hasActiveSubscription()
+        hasSubscription: hasActiveSubscription(),
+        trialStatus: getTrialStatus()
       };
     }
     
@@ -46,7 +48,8 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
       isAuthenticated: false,
       accessDeniedReason: null,
       loadTime: 0,
-      hasSubscription: false
+      hasSubscription: false,
+      trialStatus: null
     };
   });
 
@@ -100,7 +103,8 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
           error: null,
           accessDeniedReason: null,
           isTelegramEnvironment: true,
-          hasSubscription: true // Dev mode has subscription
+          hasSubscription: true, // Dev mode has subscription
+          trialStatus: { isActive: true, expiresAt: null, daysRemaining: 999 }
         });
         
         return;
@@ -172,7 +176,8 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
         isLoading: false,
         error: null,
         accessDeniedReason: null,
-        hasSubscription: hasActiveSubscription()
+        hasSubscription: hasActiveSubscription(),
+        trialStatus: getTrialStatus()
       });
 
     } catch (error) {

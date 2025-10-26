@@ -22,6 +22,7 @@ interface TelegramAuthContextType {
   isTelegramEnvironment: boolean;
   accessDeniedReason: string | null;
   hasSubscription: boolean;
+  trialStatus: { isActive: boolean; expiresAt: Date | null; daysRemaining: number } | null;
 }
 
 const TelegramAuthContext = createContext<TelegramAuthContextType | undefined>(undefined);
@@ -34,6 +35,7 @@ export function TelegramAuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: authState.isAuthenticated,
     isTelegramEnvironment: authState.isTelegramEnvironment,
     hasSubscription: authState.hasSubscription,
+    trialStatus: authState.trialStatus,
     loadTime: authState.loadTime
   });
   

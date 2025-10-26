@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AuthDiagnostics } from "@/components/debug/AuthDiagnostics";
 import { SubscriptionPaywall } from '@/components/subscription/SubscriptionPaywall';
+import { TrialBanner } from '@/components/subscription/TrialBanner';
 
 interface NavigationCardProps {
   icon: React.ReactNode;
@@ -42,7 +43,8 @@ const Index = () => {
     user,
     isAuthenticated,
     isLoading,
-    hasSubscription
+    hasSubscription,
+    trialStatus
   } = useTelegramAuth();
   const {
     trackPageVisit
@@ -130,9 +132,18 @@ const Index = () => {
 
   // Check subscription status for non-admin users
   const isAdmin = isAuthenticated && user?.id === adminTelegramId;
-  if (isAuthenticated && !isAdmin && !hasSubscription) {
-    console.log('⚠️ User has no subscription - showing paywall');
-    return <SubscriptionPaywall />;
+  if (isAuthenticated && !isAdmin) {
+    // Check if trial has expired AND user has no subscription
+    const trialExpired = trialStatus && !trialStatus.isActive;
+    if (trialExpired && !hasSubscription) {
+      console.log('⚠️ Trial expired and no subscription - showing paywall');
+      return <SubscriptionPaywall />;
+    }
+    
+    // Show trial warning if less than 3 days remaining
+    if (trialStatus && trialStatus.daysRemaining <= 3 && trialStatus.daysRemaining > 0 && !hasSubscription) {
+      console.log(`⚠️ Trial expiring in ${trialStatus.daysRemaining} days`);
+    }
   }
 
   // If user is admin, show admin navigation
@@ -198,6 +209,8 @@ const Index = () => {
     console.log('✅ Regular user detected - showing user navigation');
     redirectHandledRef.current = true;
     
+    const showTrialBanner = trialStatus && trialStatus.daysRemaining <= 3 && trialStatus.daysRemaining > 0 && !hasSubscription;
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
         <div className="max-w-4xl mx-auto">
@@ -212,6 +225,12 @@ const Index = () => {
               </div>
             </div>
           </div>
+
+          {showTrialBanner && (
+            <div className="mb-6">
+              <TrialBanner daysRemaining={trialStatus.daysRemaining} />
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <NavigationCard
