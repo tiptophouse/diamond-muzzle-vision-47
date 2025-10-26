@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TelegramAuthProvider } from './context/TelegramAuthContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
+import { OnboardingProvider } from './contexts/OnboardingContext';
 import { RTLProvider } from './contexts/RTLContext';
 import { SecureTelegramLayout } from './components/layout/SecureTelegramLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -41,6 +42,7 @@ import DiamondShareAnalytics from './pages/DiamondShareAnalytics';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import { StartParamInitializer } from './components/layout/StartParamInitializer';
 import { FloatingUploadButton } from './components/upload/FloatingUploadButton';
+import { OnboardingWizard } from './components/onboarding/OnboardingWizard';
 
 // Register service worker for offline support in Telegram Mini App
 registerServiceWorker();
@@ -66,10 +68,12 @@ function App() {
             <Router>
               <TutorialProvider>
                 <InteractiveWizardProvider>
-                  <SecureTelegramLayout>
-                  <StartParamInitializer />
-                  <FloatingUploadButton />
-                  <Routes>
+                  <OnboardingProvider>
+                    <SecureTelegramLayout>
+                      <StartParamInitializer />
+                      <FloatingUploadButton />
+                      <OnboardingWizard />
+                      <Routes>
                   {/* Public route - redirects to dashboard if authenticated */}
                   <Route path="/" element={
                     <PublicRoute>
@@ -227,13 +231,14 @@ function App() {
                     </AuthenticatedRoute>
                   } />
 
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-                </SecureTelegramLayout>
-              </InteractiveWizardProvider>
-            </TutorialProvider>
-          </Router>
-        </TelegramAuthProvider>
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                    </SecureTelegramLayout>
+                  </OnboardingProvider>
+                </InteractiveWizardProvider>
+              </TutorialProvider>
+            </Router>
+          </TelegramAuthProvider>
         </RTLProvider>
       </QueryClientProvider>
     </ErrorBoundary>
