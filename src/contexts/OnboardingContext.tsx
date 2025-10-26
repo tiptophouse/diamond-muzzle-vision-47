@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { isAdminTelegramId } from '@/lib/secureAdmin';
 
 interface OnboardingStep {
   id: string;
@@ -102,6 +103,25 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       try {
+        // 🔒 ADMIN-ONLY TEST MODE: Only show onboarding for admin users
+        const tg = window.Telegram?.WebApp;
+        const telegramUserId = tg?.initDataUnsafe?.user?.id;
+        
+        if (!telegramUserId) {
+          console.log('🚫 Onboarding: No Telegram user ID found');
+          return;
+        }
+
+        // Check if user is admin
+        const isAdmin = await isAdminTelegramId(telegramUserId);
+        if (!isAdmin) {
+          console.log('🚫 Onboarding: User is not admin, skipping onboarding wizard');
+          setHasCompletedOnboarding(true);
+          return;
+        }
+
+        console.log('✅ Onboarding: Admin user detected, checking onboarding status');
+
         const savedOnboarding = localStorage.getItem('onboarding-completed');
         const savedLang = localStorage.getItem('onboarding-language') as 'en' | 'he' | null;
         
@@ -109,7 +129,6 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
           setLanguageState(savedLang);
         } else {
           // Detect language from Telegram
-          const tg = window.Telegram?.WebApp;
           const detectedLang = tg?.initDataUnsafe?.user?.language_code === 'he' ? 'he' : 'en';
           setLanguageState(detectedLang);
           localStorage.setItem('onboarding-language', detectedLang);
@@ -134,7 +153,8 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
             localStorage.setItem('onboarding-completed', 'true');
             setHasCompletedOnboarding(true);
           } else {
-            // New user, show onboarding
+            // New admin user, show onboarding
+            console.log('🎯 Onboarding: Activating wizard for admin user');
             setIsActive(true);
           }
         }
