@@ -122,6 +122,18 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
 
         console.log('✅ Onboarding: Admin user detected, checking onboarding status');
 
+        // 🧪 TEST MODE: Check for force show parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const forceShow = urlParams.get('showOnboarding') === 'true';
+        
+        if (forceShow) {
+          console.log('🎯 Onboarding: Force showing onboarding wizard (test mode)');
+          localStorage.removeItem('onboarding-completed');
+          setIsActive(true);
+          setHasCompletedOnboarding(false);
+          return;
+        }
+
         const savedOnboarding = localStorage.getItem('onboarding-completed');
         const savedLang = localStorage.getItem('onboarding-language') as 'en' | 'he' | null;
         
