@@ -79,6 +79,11 @@ serve(async (req) => {
 
     const telegramApiUrl = `https://api.telegram.org/bot${botToken}`;
 
+    // Escape Markdown special characters
+    const escapeMarkdown = (text: string): string => {
+      return text.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, '\\$1');
+    };
+
     // Create inline keyboard for easy access
     const inlineKeyboard = {
       reply_markup: {
@@ -140,11 +145,15 @@ serve(async (req) => {
       
       for (const user of users) {
         try {
-          const personalizedMessage = `שלום ${user.first_name || 'יקר/ה'}! 👋
+          const escapedFirstName = escapeMarkdown(user.first_name || 'יקר/ה');
+          const escapedSenderName = escapeMarkdown(senderName);
+          const escapedMessage = escapeMarkdown(message);
+          
+          const personalizedMessage = `שלום ${escapedFirstName}! 👋
 
-${message}
+${escapedMessage}
 
-*הודעה זו נשלחה על ידי ${senderName}*`;
+*הודעה זו נשלחה על ידי ${escapedSenderName}*`;
           
           const response = await fetch(`${telegramApiUrl}/sendMessage`, {
             method: 'POST',
@@ -198,20 +207,21 @@ ${message}
 
       // Send confirmation to admin
       try {
-        const adminMessage = `📨 **Bulk Acadia Message Complete!**
+        const escapedAdminSenderName = escapeMarkdown(senderName);
+        const adminMessage = `📨 *Bulk Acadia Message Complete\\!*
 
-**Message Type:** Acadia Connection Instructions
-**Target:** All Users
+*Message Type:* Acadia Connection Instructions
+*Target:* All Users
 
-**Results:**
+*Results:*
 ✅ Successfully sent: ${successCount}
 ❌ Failed: ${errorCount}
 
-**Sent by:** ${senderName} (${senderId})
+*Sent by:* ${escapedAdminSenderName} \\(${senderId}\\)
 
-${errorCount > 0 ? `\n**Errors (first 5):**\n${errors.slice(0, 5).join('\n')}` : ''}
+${errorCount > 0 ? `\n*Errors \\(first 5\\):*\n${errors.slice(0, 5).map(e => escapeMarkdown(e)).join('\n')}` : ''}
 
-The Acadia connection message campaign has been completed!`;
+The Acadia connection message campaign has been completed\\!`;
         
         const response = await fetch(`${telegramApiUrl}/sendMessage`, {
           method: 'POST',
