@@ -64,7 +64,7 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col ios-scroll">
+    <div className="min-h-screen bg-background flex flex-col telegram-scroll">
       {/* Security Header - Compact for Mobile */}
       <div className="bg-primary/5 border-b border-primary/10 px-4 py-3 pt-safe">
         <div className="flex items-center justify-between max-w-screen-sm mx-auto">
@@ -79,11 +79,11 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
       </div>
 
       {/* Main Content Area with Telegram Mini App optimization */}
-      <main className="flex-1 pb-24 ios-scroll overflow-y-auto">
+      <main className="flex-1 telegram-bottom-spacing telegram-scroll overflow-y-auto">
         {children}
       </main>
 
-      {/* Bottom Navigation - Telegram Mini App Optimized */}
+      {/* Bottom Navigation - Telegram Mini App Optimized with Safe Areas */}
       <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border z-50 pb-safe-or-4">
         <div className="grid grid-cols-5 max-w-screen-sm mx-auto">
           {navigationItems.map((item) => {
@@ -96,7 +96,7 @@ export function SecureTelegramLayout({ children }: SecureTelegramLayoutProps) {
                 to={item.to}
                 onClick={handleNavClick}
                 className={cn(
-                  "flex flex-col items-center justify-center py-4 px-3 min-h-[64px] text-sm transition-colors duration-200 touch-manipulation relative",
+                  "flex flex-col items-center justify-center py-4 px-3 min-h-[64px] text-sm transition-colors duration-200 touch-manipulation",
                   "active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
                   active 
                     ? "text-primary bg-primary/5" 

@@ -24,7 +24,7 @@
   }
 }
 
-/* Modern clean theme inspired by 21.dev */
+/* Modern clean theme inspired by 21.dev + Telegram Mini App */
 :root {
   --background: 0 0% 98%;
   --foreground: 240 10% 3.9%;
@@ -46,6 +46,14 @@
   --input: 240 5.9% 90%;
   --ring: 240 5.9% 10%;
   --radius: 0.75rem;
+  
+  /* Telegram Mini App specific variables */
+  --tg-viewport-height: 100vh;
+  --tg-stable-height: 100vh;
+  --tg-safe-area-inset-top: 0px;
+  --tg-safe-area-inset-bottom: 0px;
+  --tg-safe-area-inset-left: 0px;
+  --tg-safe-area-inset-right: 0px;
   
   /* Premium gradients */
   --gradient-primary: linear-gradient(135deg, hsl(240 5.9% 10%) 0%, hsl(240 3.8% 25%) 100%);
@@ -190,26 +198,47 @@ img {
   }
   
   /* Optimize touch targets for iPhone */
-  button, .clickable {
-    min-height: 44px; /* iOS minimum touch target */
-    min-width: 44px;
+  button, a, input, textarea, select {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
   
-  /* Prevent rubber band effect only at document level, not content */
-  html {
-    overscroll-behavior-y: none;
+  /* Bottom navigation safe area - respects Telegram's safe zones */
+  .pb-safe-or-4 {
+    padding-bottom: max(var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom)), 1rem);
   }
-  
-  /* Dynamic viewport height for iOS with Telegram's stable height */
-  .ios-viewport {
-    height: var(--tg-viewport-stable-height, 100vh);
-    min-height: var(--tg-viewport-stable-height, 100vh);
-  }
-  
-  /* Bottom navigation safe area optimization for iOS */
-  .bottom-nav-ios {
-    bottom: var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
-  }
+}
+
+/* Telegram Mini App specific utilities */
+.tg-viewport-height {
+  height: var(--tg-viewport-height, 100vh);
+  min-height: var(--tg-viewport-height, 100vh);
+}
+
+.tg-stable-height {
+  height: var(--tg-stable-height, 100vh);
+  min-height: var(--tg-stable-height, 100vh);
+}
+
+/* Touch optimizations for Telegram */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Telegram-optimized scrolling */
+.telegram-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
+}
+
+/* Bottom navigation spacing for Telegram */
+.telegram-bottom-spacing {
+  padding-bottom: calc(64px + var(--tg-safe-area-inset-bottom, 0px));
 }
 
 /* Dynamic theme based on Telegram */
