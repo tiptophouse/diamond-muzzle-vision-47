@@ -256,37 +256,25 @@ class TelegramMiniAppSDK {
       return;
     }
 
-    try {
-      // Initialize WebApp
-      if (typeof this.webApp.ready === 'function') this.webApp.ready();
-      if (typeof this.webApp.expand === 'function') this.webApp.expand();
-      
-      // Set up theme integration
-      this.setupThemeIntegration();
-      
-      // Initialize advanced features
-      await this.initializeAdvancedFeatures();
-      
-      // Set up event listeners
-      this.setupEventListeners();
-      
-      this.initialized = true;
-      
-      console.log('🚀 Telegram Mini App SDK initialized:', {
-        version: this.webApp.version || 'unknown',
-        platform: this.webApp.platform || 'unknown',
-        isFullscreen: this.webApp.isFullscreen || false,
-        user: this.webApp.initDataUnsafe?.user,
-        chat: this.webApp.initDataUnsafe?.chat,
-        features: {
-          cloudStorage: !!(this.webApp as any).CloudStorage,
-          biometric: !!(this.webApp as any).BiometricManager,
-          location: !!(this.webApp as any).LocationManager,
-        }
-      });
-    } catch (error) {
-      console.error('❌ Failed to initialize Telegram Mini App SDK:', error);
-    }
+    // Fast initialization - no try-catch for speed
+    if (typeof this.webApp.ready === 'function') this.webApp.ready();
+    if (typeof this.webApp.expand === 'function') this.webApp.expand();
+    
+    // Set up theme integration (synchronous, fast)
+    this.setupThemeIntegration();
+    
+    // Set up event listeners (synchronous, fast)
+    this.setupEventListeners();
+    
+    this.initialized = true;
+    
+    // Log minimal info for debugging
+    console.log('🚀 Telegram SDK ready:', this.webApp.platform || 'unknown');
+    
+    // Initialize advanced features in background (non-blocking)
+    this.initializeAdvancedFeatures().catch(err => 
+      console.warn('⚠️ Advanced features init failed:', err)
+    );
   }
 
   private setupThemeIntegration() {

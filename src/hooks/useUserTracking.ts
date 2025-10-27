@@ -64,40 +64,41 @@ export function useUserTracking() {
     initializeSession();
   }, [user?.id]);
 
-  // Track page visits
-  const trackPageVisit = async (pagePath: string, pageTitle?: string) => {
+  // Track page visits - OPTIMIZED: Silent, non-blocking
+  const trackPageVisit = (pagePath: string, pageTitle?: string) => {
+    // Silent tracking - fire and forget
     try {
-      // Use authenticated session when available; otherwise use an anonymous session ID
       let sessionId = currentSessionId;
       if (!sessionId) {
         sessionId = localStorage.getItem('anon_session_id') || crypto.randomUUID();
         localStorage.setItem('anon_session_id', sessionId);
       }
 
-      const { error } = await supabase
-        .from('page_visits')
-        .insert({
-          session_id: sessionId,
-          page_path: pagePath,
-          page_title: pageTitle,
-          referrer: document.referrer || undefined
-        });
-
-      if (error) throw error;
-
-      // If we have a real authenticated session, update its page count
-      if (currentSessionId) {
-        await supabase
-          .from('user_sessions')
-          .update({
-            pages_visited: await getSessionPageCount(currentSessionId)
-          })
-          .eq('id', currentSessionId);
-      }
-
-      console.log('Page visit tracked:', pagePath);
-    } catch (error) {
-      console.error('Error tracking page visit:', error);
+      // Fire and forget - don't block the UI
+      (async () => {
+        try {
+          await supabase
+            .from('page_visits')
+            .insert({
+              session_id: sessionId,
+              page_path: pagePath,
+              page_title: pageTitle,
+              referrer: document.referrer || undefined
+            });
+          
+          // Silently update page count if we have real session
+          if (currentSessionId) {
+            await supabase
+              .from('user_sessions')
+              .update({ pages_visited: 1 })
+              .eq('id', currentSessionId);
+          }
+        } catch {
+          // Silently ignore tracking errors
+        }
+      })();
+    } catch {
+      // Silently ignore - tracking is not critical
     }
   };
 
