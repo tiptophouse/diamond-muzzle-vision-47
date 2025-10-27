@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, memo } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
@@ -15,16 +15,35 @@ import { Gem360Viewer } from "@/components/store/Gem360Viewer";
 import { UniversalImageHandler } from "@/components/store/UniversalImageHandler";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useDetailPageTracking } from "@/hooks/useDetailPageTracking";
 
 function DiamondDetailPage() {
   const { stockNumber: diamondId } = useParams<{ stockNumber: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { diamonds, loading, refetch } = useStoreData();
   const { user, isAuthenticated } = useTelegramAuth();
   const { toast } = useToast();
   const [isContactLoading, setIsContactLoading] = useState(false);
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [showImageUpload, setShowImageUpload] = useState(false);
+  const [sessionId] = useState(() => crypto.randomUUID());
+
+  // Determine source
+  const cameFrom = useMemo(() => {
+    if (location.state?.from === 'catalog') return 'catalog';
+    if (document.referrer.includes('t.me')) return 'share_link';
+    if (location.state?.from === 'search') return 'search';
+    return 'direct';
+  }, [location]);
+
+  // Track page interactions
+  const tracking = useDetailPageTracking({
+    stockNumber: diamondId || '',
+    sessionId,
+    cameFrom,
+    catalogPosition: location.state?.catalogPosition
+  });
 
   // Simple navigation without haptic feedback to prevent loops
   const handleGoBack = useCallback(() => {
@@ -72,6 +91,8 @@ function DiamondDetailPage() {
   const handleShare = useCallback(async () => {
     if (!diamond) return;
     
+    tracking.trackShareClick();
+    
     const shareTitle = `${diamond.carat}ct ${diamond.shape} ${diamond.color} ${diamond.clarity} Diamond`;
     const shareText = `💎 ${diamond.carat}ct ${diamond.shape} Diamond
 
@@ -118,7 +139,7 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
         });
       }
     }
-  }, [diamond, formatPrice, toast]);
+  }, [diamond, formatPrice, toast, tracking]);
 
   const handleContact = useCallback(async () => {
     if (!isAuthenticated || !user || !diamond) {
@@ -130,6 +151,7 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
       return;
     }
 
+    tracking.trackContactClick();
     setIsContactLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('send-diamond-contact', {
@@ -173,7 +195,7 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
     } finally {
       setIsContactLoading(false);
     }
-  }, [isAuthenticated, user, diamond, toast]);
+  }, [isAuthenticated, user, diamond, toast, tracking]);
 
   const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -383,7 +405,12 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
                 <div className="grid grid-cols-2 gap-4">
                   {diamond.certificateUrl && (
                     <Button asChild variant="outline" className="h-12">
-                      <a href={diamond.certificateUrl} target="_blank" rel="noopener noreferrer">
+                      <a 
+                        href={diamond.certificateUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        onClick={() => tracking.trackCertificateView()}
+                      >
                         <ExternalLink className="h-4 w-4 mr-2" />
                         Certificate
                       </a>
@@ -398,14 +425,24 @@ ${diamond.certificateUrl ? `📜 Certificate: ${diamond.certificateUrl}` : ''}`;
                   <h4 className="text-sm font-medium text-muted-foreground">360° View Options</h4>
                   <div className="grid grid-cols-2 gap-2">
                     <Button asChild variant="outline" size="sm">
-                      <a href={diamond.gem360Url} target="_blank" rel="noopener noreferrer">
+                      <a 
+                        href={diamond.gem360Url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        onClick={() => tracking.track360View()}
+                      >
                         <ExternalLink className="h-3 w-3 mr-1" />
                         Open Direct
                       </a>
                     </Button>
                     {diamond.certificateUrl && (
                       <Button asChild variant="outline" size="sm">
-                        <a href={diamond.certificateUrl} target="_blank" rel="noopener noreferrer">
+                        <a 
+                          href={diamond.certificateUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          onClick={() => tracking.trackCertificateView()}
+                        >
                           <ExternalLink className="h-3 w-3 mr-1" />
                           Certificate
                         </a>

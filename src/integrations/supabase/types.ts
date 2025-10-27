@@ -565,6 +565,57 @@ export type Database = {
           },
         ]
       }
+      diamond_detail_views: {
+        Row: {
+          came_from: string
+          catalog_position: number | null
+          clicked_contact: boolean | null
+          clicked_share: boolean | null
+          created_at: string
+          diamond_stock_number: string
+          id: string
+          scroll_depth_percentage: number | null
+          session_id: string
+          time_spent_seconds: number | null
+          timestamp: string
+          user_telegram_id: number | null
+          viewed_360: boolean | null
+          viewed_certificate: boolean | null
+        }
+        Insert: {
+          came_from: string
+          catalog_position?: number | null
+          clicked_contact?: boolean | null
+          clicked_share?: boolean | null
+          created_at?: string
+          diamond_stock_number: string
+          id?: string
+          scroll_depth_percentage?: number | null
+          session_id: string
+          time_spent_seconds?: number | null
+          timestamp?: string
+          user_telegram_id?: number | null
+          viewed_360?: boolean | null
+          viewed_certificate?: boolean | null
+        }
+        Update: {
+          came_from?: string
+          catalog_position?: number | null
+          clicked_contact?: boolean | null
+          clicked_share?: boolean | null
+          created_at?: string
+          diamond_stock_number?: string
+          id?: string
+          scroll_depth_percentage?: number | null
+          session_id?: string
+          time_spent_seconds?: number | null
+          timestamp?: string
+          user_telegram_id?: number | null
+          viewed_360?: boolean | null
+          viewed_certificate?: boolean | null
+        }
+        Relationships: []
+      }
       diamond_offers: {
         Row: {
           buyer_contact: string | null
@@ -1402,6 +1453,48 @@ export type Database = {
           telegram_id?: number
           updated_at?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      store_item_analytics: {
+        Row: {
+          created_at: string
+          device_type: string | null
+          diamond_stock_number: string
+          event_type: string
+          id: string
+          scroll_position: number | null
+          session_id: string
+          timestamp: string
+          user_telegram_id: number | null
+          view_duration_seconds: number | null
+          viewport_percentage: number | null
+        }
+        Insert: {
+          created_at?: string
+          device_type?: string | null
+          diamond_stock_number: string
+          event_type: string
+          id?: string
+          scroll_position?: number | null
+          session_id: string
+          timestamp?: string
+          user_telegram_id?: number | null
+          view_duration_seconds?: number | null
+          viewport_percentage?: number | null
+        }
+        Update: {
+          created_at?: string
+          device_type?: string | null
+          diamond_stock_number?: string
+          event_type?: string
+          id?: string
+          scroll_position?: number | null
+          session_id?: string
+          timestamp?: string
+          user_telegram_id?: number | null
+          view_duration_seconds?: number | null
+          viewport_percentage?: number | null
         }
         Relationships: []
       }

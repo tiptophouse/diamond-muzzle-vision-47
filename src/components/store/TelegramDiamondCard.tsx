@@ -12,6 +12,7 @@ import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useNavigate } from "react-router-dom";
 import { imagePreloader } from "@/utils/imagePreloader";
+import { useStoreItemTracking } from "@/hooks/useStoreItemTracking";
 
 interface TelegramDiamondCardProps {
   diamond: Diamond;
@@ -21,9 +22,17 @@ interface TelegramDiamondCardProps {
 
 export function TelegramDiamondCard({ diamond, index, onViewDetails }: TelegramDiamondCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [sessionId] = useState(() => crypto.randomUUID());
   const { hapticFeedback, mainButton, backButton } = useTelegramWebApp();
   const { user } = useTelegramAuth();
   const navigate = useNavigate();
+  
+  // Track card interactions
+  const { cardRef, trackClick } = useStoreItemTracking({
+    stockNumber: diamond.stockNumber,
+    catalogPosition: index,
+    sessionId
+  });
 
   // Priority loading for first 6 cards
   const isPriority = index < 6;
@@ -37,18 +46,29 @@ export function TelegramDiamondCard({ diamond, index, onViewDetails }: TelegramD
     }
   }, [diamond.gem360Url, diamond.imageUrl, isPriority]);
 
-  const handleViewDetails = useCallback(() => {
+  const handleViewDetails = useCallback((diamond: Diamond) => {
+    trackClick('view_details_click');
+    navigate(`/diamond/${diamond.stockNumber}`, { 
+      state: { 
+        from: 'catalog',
+        catalogPosition: index 
+      } 
+    });
+  }, [trackClick, navigate, index]);
+
+  // Updated handlers with haptic feedback
+  const handleViewDetailsWithHaptic = useCallback(() => {
     hapticFeedback.impact('light');
-    
     if (onViewDetails) {
       onViewDetails(diamond);
     } else {
-      navigate(`/diamond/${diamond.stockNumber}`);
+      handleViewDetails(diamond);
     }
-  }, [diamond, onViewDetails, navigate, hapticFeedback]);
+  }, [diamond, onViewDetails, handleViewDetails, hapticFeedback]);
 
   const handleContact = useCallback(() => {
     hapticFeedback.impact('medium');
+    trackClick('contact_click');
     
     const message = `💎 Interested in Diamond #${diamond.stockNumber}
 
@@ -93,11 +113,12 @@ View details: ${window.location.origin}/diamond/${diamond.stockNumber}`;
 
   return (
     <Card 
+      ref={cardRef}
       className="overflow-hidden hover:shadow-lg transition-all duration-300 group animate-fade-in"
       style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
     >
       {/* Optimized Image Container */}
-      <div className="relative h-48">
+      <div className="relative h-48" onClick={() => trackClick('image_click')}>
         {/* Enhanced image handling with Segoma support for user 2084882603 */}
         {diamond.gem360Url ? (
           <UniversalImageHandler
@@ -136,7 +157,7 @@ View details: ${window.location.origin}/diamond/${diamond.stockNumber}`;
         {/* Quick Action Overlay */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
           <Button
-            onClick={handleViewDetails}
+            onClick={handleViewDetailsWithHaptic}
             size="sm"
             className="bg-white/90 text-gray-900 hover:bg-white shadow-lg"
           >
@@ -185,7 +206,7 @@ View details: ${window.location.origin}/diamond/${diamond.stockNumber}`;
         <div className="grid grid-cols-3 gap-2 pt-2">
           {/* View Details - Primary Action */}
           <Button
-            onClick={handleViewDetails}
+            onClick={handleViewDetailsWithHaptic}
             size="sm"
             className="bg-primary hover:bg-primary/90 text-primary-foreground col-span-2"
           >
