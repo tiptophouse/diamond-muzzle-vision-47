@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,11 +22,11 @@ interface GroupNotificationCardProps {
   onContactCustomer?: (customerInfo: any) => void;
 }
 
-export function GroupNotificationCard({ 
+const GroupNotificationCardComponent = ({
   notification, 
   onMarkAsRead, 
   onContactCustomer 
-}: GroupNotificationCardProps) {
+}: GroupNotificationCardProps) => {
   const isGroupRequest = notification.type === 'group_diamond_request';
   const metadata = notification.data;
   
@@ -148,4 +148,11 @@ export function GroupNotificationCard({
       </CardContent>
     </Card>
   );
-}
+};
+
+export const GroupNotificationCard = memo(GroupNotificationCardComponent, (prev, next) => {
+  return (
+    prev.notification.id === next.notification.id &&
+    prev.notification.read === next.notification.read
+  );
+});

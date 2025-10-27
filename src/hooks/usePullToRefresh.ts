@@ -16,6 +16,7 @@ export function usePullToRefresh({
   const [pullDistance, setPullDistance] = useState(0);
   const startY = useRef(0);
   const isDragging = useRef(false);
+  const isRefreshingRef = useRef(false); // Guard against multiple refreshes
   const { impactOccurred, notificationOccurred } = useTelegramHapticFeedback();
 
   const handleTouchStart = useCallback((e: TouchEvent) => {
@@ -27,7 +28,7 @@ export function usePullToRefresh({
   }, []);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (!isDragging.current || isRefreshing) return;
+    if (!isDragging.current || isRefreshingRef.current) return;
 
     const currentY = e.touches[0].clientY;
     const diff = currentY - startY.current;
@@ -45,14 +46,15 @@ export function usePullToRefresh({
         impactOccurred('medium');
       }
     }
-  }, [isRefreshing, threshold, resistance, pullDistance, impactOccurred]);
+  }, [threshold, resistance, pullDistance, impactOccurred]);
 
   const handleTouchEnd = useCallback(async () => {
-    if (!isDragging.current) return;
+    if (!isDragging.current || isRefreshingRef.current) return;
     
     isDragging.current = false;
 
-    if (pullDistance >= threshold && !isRefreshing) {
+    if (pullDistance >= threshold) {
+      isRefreshingRef.current = true;
       setIsRefreshing(true);
       impactOccurred('heavy');
       
@@ -64,13 +66,14 @@ export function usePullToRefresh({
         notificationOccurred('error');
       } finally {
         setIsRefreshing(false);
+        isRefreshingRef.current = false;
         setPullDistance(0);
       }
     } else {
       // Reset pull distance with animation
       setPullDistance(0);
     }
-  }, [pullDistance, threshold, isRefreshing, onRefresh, impactOccurred, notificationOccurred]);
+  }, [pullDistance, threshold, onRefresh, impactOccurred, notificationOccurred]);
 
   useEffect(() => {
     document.addEventListener('touchstart', handleTouchStart, { passive: true });
