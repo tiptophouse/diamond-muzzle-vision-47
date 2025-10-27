@@ -148,55 +148,68 @@ serve(async (req) => {
 🎯 **רוצה לראות עוד פרטים? לחץ על הכפתורים למטה! 👇**
 ${testMode ? '\n🧪 *זו הודעת בדיקה - רק אתה רואה אותה*' : ''}`;
 
-    // Create inline keyboard with Telegram deep links (fixes the broken URLs)
+    // Create inline keyboard with web_app buttons (opens Mini App properly)
+    const miniAppUrl = 'https://bc6a5b8a-3262-41f9-a127-aae26f8063fe.lovableproject.com';
     const telegramBotUrl = `https://t.me/${Deno.env.get('TELEGRAM_BOT_USERNAME') || 'diamondmazalbot'}`;
     
     const inlineKeyboard = {
       reply_markup: {
         inline_keyboard: testMode ? [
-          // Personal chat - use web_app with proper deep links
+          // Personal chat - use web_app
           [
             {
               text: '💎 פרטים מלאים',
               web_app: {
-                url: `${telegramBotUrl}/app?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
+                url: `${miniAppUrl}/diamond/${diamond.stockNumber}?from=share&seller=${sharedBy}`
               }
             }
           ],
           [
             {
               text: '📱 צור קשר',
-              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
+              web_app: {
+                url: `${miniAppUrl}/contact?diamond=${diamond.stockNumber}&seller=${sharedBy}`
+              }
             }
           ],
           [
             {
               text: '🏪 עוד יהלומים מהמוכר',
-              url: `${telegramBotUrl}?startapp=store_${sharedBy}`
+              web_app: {
+                url: `${miniAppUrl}/store?seller=${sharedBy}`
+              }
             }
           ]
         ] : [
-          // Group chat - use Telegram deep links that actually work
+          // Group chat - use web_app to open Mini App directly
           [
             {
               text: '💎 פרטים מלאים + תמונות HD',
-              url: `${telegramBotUrl}?startapp=diamond_${diamond.stockNumber}_${sharedBy}`
+              web_app: {
+                url: `${miniAppUrl}/diamond/${diamond.stockNumber}?from=group&seller=${sharedBy}`
+              }
             }
           ],
           [
             {
               text: '📱 צור קשר למחיר ולפרטים',
-              url: `${telegramBotUrl}?start=contact_${diamond.stockNumber}_${sharedBy}`
+              web_app: {
+                url: `${miniAppUrl}/contact?diamond=${diamond.stockNumber}&seller=${sharedBy}`
+              }
             }
           ],
           [
             {
-              text: '🏪 עוד יהלומים מהמוכר',
-              url: `${telegramBotUrl}?startapp=store_${sharedBy}`
+              text: '💎 יהלומים מהמוכר',
+              web_app: {
+                url: `${miniAppUrl}/store?seller=${sharedBy}`
+              }
             },
             {
-              text: '🤖 עזרה בבחירה',
-              url: `${telegramBotUrl}?start=ai_assistant_${diamond.stockNumber}`
+              text: '📸 עזרה בבחירה',
+              web_app: {
+                url: `${miniAppUrl}/assistant?diamond=${diamond.stockNumber}`
+              }
             }
           ]
         ]
