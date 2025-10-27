@@ -2,8 +2,7 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Eye, Share2, MessageCircle, TrendingUp, Users, Target, Zap } from 'lucide-react';
-import { useDiamondSharePerformance } from '@/hooks/useDiamondSharePerformance';
+import { Eye, Share2, MessageCircle, TrendingUp, Users, Target } from 'lucide-react';
 
 interface LeadGenerationAnalyticsProps {
   shareAnalytics?: Array<{
@@ -37,12 +36,6 @@ interface LeadInsights {
 }
 
 export function LeadGenerationAnalytics({ shareAnalytics = [], totalDiamonds }: LeadGenerationAnalyticsProps) {
-  const { performanceData, loading: perfLoading } = useDiamondSharePerformance();
-  
-  const totalShares = useMemo(() => {
-    return performanceData.reduce((sum, d) => sum + d.totalShares, 0);
-  }, [performanceData]);
-
   const insights = useMemo((): LeadInsights => {
     if (!shareAnalytics || shareAnalytics.length === 0) {
       return {
@@ -165,20 +158,7 @@ export function LeadGenerationAnalytics({ shareAnalytics = [], totalDiamonds }: 
   return (
     <div className="space-y-6">
       {/* Lead Generation KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Shares</CardTitle>
-            <Share2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{totalShares}</div>
-            <p className="text-xs text-muted-foreground">
-              Diamonds shared to groups
-            </p>
-          </CardContent>
-        </Card>
-
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Views</CardTitle>
@@ -187,7 +167,7 @@ export function LeadGenerationAnalytics({ shareAnalytics = [], totalDiamonds }: 
           <CardContent>
             <div className="text-2xl font-bold">{insights.totalViews}</div>
             <p className="text-xs text-muted-foreground">
-              From {totalShares} shares
+              Across {totalDiamonds} diamonds
             </p>
           </CardContent>
         </Card>
@@ -268,62 +248,6 @@ export function LeadGenerationAnalytics({ shareAnalytics = [], totalDiamonds }: 
               Industry benchmark: 2-3 minutes indicates strong interest
             </p>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Share Performance Analysis */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Share Performance Analysis</CardTitle>
-          <CardDescription>Track how your shared diamonds are performing in groups</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {performanceData.length > 0 ? (
-            <div className="space-y-3">
-              {performanceData.slice(0, 10).map((diamond, index) => (
-                <div key={diamond.stockNumber} className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center space-x-3">
-                      <Badge variant="secondary">#{index + 1}</Badge>
-                      <div>
-                        <p className="font-medium">Stock #{diamond.stockNumber}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Shared {diamond.totalShares} {diamond.totalShares === 1 ? 'time' : 'times'}
-                        </p>
-                      </div>
-                    </div>
-                    <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-                      <Zap className="h-3 w-3 mr-1" />
-                      {diamond.viewsPerShare.toFixed(1)} views/share
-                    </Badge>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-4 mt-3 pt-3 border-t">
-                    <div className="text-center">
-                      <p className="text-lg font-bold text-blue-600">{diamond.totalViews}</p>
-                      <p className="text-xs text-muted-foreground">Total Views</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-lg font-bold text-green-600">{diamond.uniqueViewers}</p>
-                      <p className="text-xs text-muted-foreground">Unique Viewers</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-lg font-bold text-orange-600">{formatTime(diamond.avgViewTime)}</p>
-                      <p className="text-xs text-muted-foreground">Avg View Time</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <Share2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="font-medium">No Sharing Data Yet</h3>
-              <p className="text-sm text-muted-foreground">
-                Start sharing your diamonds to groups to track their performance
-              </p>
-            </div>
-          )}
         </CardContent>
       </Card>
 

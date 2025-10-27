@@ -56,7 +56,7 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
   const mountedRef = useRef(true);
   const initializedRef = useRef(false);
   const retryCount = useRef(0);
-  const maxRetries = 1; // OPTIMIZED: Single retry for speed
+  const maxRetries = 2; // OPTIMIZED: Reduced from 3 to 2 for faster loading
 
   const updateState = useCallback((updates: Partial<OptimizedAuthState>) => {
     if (mountedRef.current) {
@@ -71,7 +71,7 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
   const authenticateWithBackoff = useCallback(async (attempt: number = 0): Promise<void> => {
     if (initializedRef.current || !mountedRef.current) return;
 
-    const delay = Math.min(200 * Math.pow(1.5, attempt), 800); // Faster retries
+    const delay = Math.min(500 * Math.pow(1.5, attempt), 2000);
     if (attempt > 0) {
       console.log(`🔄 AUTH: Retry attempt ${attempt} after ${delay}ms delay`);
       await new Promise(resolve => setTimeout(resolve, delay));
@@ -118,10 +118,13 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
       const tg = window.Telegram.WebApp;
       updateState({ isTelegramEnvironment: true });
 
-      // Quick WebApp initialization - no try-catch for speed
-      if (typeof tg.ready === 'function') tg.ready();
-      if (typeof tg.expand === 'function') tg.expand();
-      console.log('✅ Telegram WebApp ready() and expand() called');
+      // Quick WebApp initialization
+      try {
+        tg.ready?.();
+        tg.expand?.();
+      } catch (e) {
+        console.warn('⚠️ AUTH: WebApp init warning:', e);
+      }
 
       // Validate initData
       if (!tg.initData?.length) {
@@ -291,14 +294,15 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
         });
         initializedRef.current = true;
       }
-    }, 5000); // OPTIMIZED: 5 seconds max
+    }, 8000); // OPTIMIZED: Reduced from 10 seconds to 8 seconds
 
-    // Start authentication immediately
-    authenticateWithBackoff();
+    // Start authentication with minimal delay
+    const initTimer = setTimeout(() => authenticateWithBackoff(), 25); // OPTIMIZED: Reduced from 50ms to 25ms
 
     return () => {
       mountedRef.current = false;
       clearTimeout(timeoutId);
+      clearTimeout(initTimer);
     };
   }, [authenticateWithBackoff, state.isAuthenticated, updateState]);
 

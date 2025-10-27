@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TelegramAuthProvider } from './context/TelegramAuthContext';
-import { TelegramSDK2Provider } from './providers/TelegramSDK2Provider';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';
@@ -67,11 +66,10 @@ function App() {
         <RTLProvider>
           <TelegramAuthProvider>
             <Router>
-              <TelegramSDK2Provider>
-                <TutorialProvider>
-                  <InteractiveWizardProvider>
-                    <OnboardingProvider>
-                      <SecureTelegramLayout>
+              <TutorialProvider>
+                <InteractiveWizardProvider>
+                  <OnboardingProvider>
+                    <SecureTelegramLayout>
                       <StartParamInitializer />
                       <FloatingUploadButton />
                       <OnboardingWizard />
@@ -235,11 +233,10 @@ function App() {
 
                       <Route path="*" element={<NotFound />} />
                     </Routes>
-                      </SecureTelegramLayout>
-                    </OnboardingProvider>
-                  </InteractiveWizardProvider>
-                </TutorialProvider>
-              </TelegramSDK2Provider>
+                    </SecureTelegramLayout>
+                  </OnboardingProvider>
+                </InteractiveWizardProvider>
+              </TutorialProvider>
             </Router>
           </TelegramAuthProvider>
         </RTLProvider>

@@ -130,8 +130,8 @@ const Index = () => {
     return null;
   }
 
-  // Check subscription status for non-admin users (ONLY show admin for ID 2138564172)
-  const isAdmin = isAuthenticated && user?.id === 2138564172;
+  // Check subscription status for non-admin users
+  const isAdmin = isAuthenticated && user?.id === adminTelegramId;
   if (isAuthenticated && !isAdmin) {
     // Check if trial has expired AND user has no subscription
     const trialExpired = trialStatus && !trialStatus.isActive;

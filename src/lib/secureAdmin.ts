@@ -13,8 +13,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
 
-// Cache for admin status (1 hour for better performance)
-const ADMIN_CACHE_DURATION = 60 * 60 * 1000;
+// Cache for admin status (5 minutes)
+const ADMIN_CACHE_DURATION = 5 * 60 * 1000;
 interface AdminCache {
   [telegramId: string]: {
     isAdmin: boolean;

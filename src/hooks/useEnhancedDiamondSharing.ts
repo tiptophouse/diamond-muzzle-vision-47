@@ -163,24 +163,7 @@ ${customMessage ? `\n📝 **הודעה:** ${customMessage}\n` : ''}
       description: "Diamond card sent successfully",
     });
 
-    // Record share event
-    await recordShareEvent(diamond, 'individual', targetId);
-
     return { success: true, messageId: data?.messageId };
-  };
-
-  const recordShareEvent = async (diamond: DiamondShareData, targetType: 'group' | 'individual', targetId?: number) => {
-    try {
-      const shareUrl = `${window.location.origin}/diamond/${diamond.stockNumber}`;
-      await supabase.from('diamond_shares').insert({
-        diamond_id: diamond.id,
-        stock_number: diamond.stockNumber,
-        shared_by: user!.id,
-        share_url: shareUrl,
-      });
-    } catch (error) {
-      console.error('Error recording share event:', error);
-    }
   };
 
   const shareToGroup = async ({
@@ -214,9 +197,6 @@ ${customMessage ? `\n📝 **הודעה:** ${customMessage}\n` : ''}
       title: "Diamond Shared",
       description: testMode ? "Test message sent to your chat" : "Diamond shared to group successfully",
     });
-
-    // Record share event
-    await recordShareEvent(diamond, 'group');
 
     return { success: true, messageId: data?.messageId };
   };
