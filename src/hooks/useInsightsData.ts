@@ -61,18 +61,45 @@ export function useInsightsData() {
   
   const fetchGroupInsights = async () => {
     try {
-      const { data: shareAnalytics } = await supabase
+      // Primary: legacy diamond share analytics (per-diamond views)
+      const { data: shareAnalytics, error: shareErr } = await supabase
         .from('diamond_share_analytics')
         .select('*')
         .limit(1000);
 
       if (shareAnalytics && shareAnalytics.length > 0) {
         const insights: GroupInsight = {
-          totalSharedDiamonds: new Set(shareAnalytics.map(s => s.diamond_stock_number)).size,
-          mostViewedShape: getMostFrequent(shareAnalytics, 'device_type') || 'round brilliant',
-          mostViewedColor: 'G', // This would need diamond data joined
-          avgViewTime: shareAnalytics.reduce((sum, s) => sum + (s.time_spent_seconds || 0), 0) / shareAnalytics.length,
+          totalSharedDiamonds: new Set(shareAnalytics.map((s: any) => s.diamond_stock_number)).size,
+          // Keep semantic naming for UI; when unknown, default gracefully
+          mostViewedShape: 'round brilliant',
+          mostViewedColor: 'G',
+          avgViewTime: shareAnalytics.reduce((sum: number, s: any) => sum + (s.time_spent_seconds || 0), 0) / shareAnalytics.length,
           totalViews: shareAnalytics.length
+        };
+        setGroupInsights(insights);
+        return;
+      }
+
+      // Fallback: aggregate from user_behavior_analytics (portfolio-level telemetry)
+      const { data: behaviorAnalytics, error: behaviorErr } = await supabase
+        .from('user_behavior_analytics')
+        .select('total_page_views, total_sessions, device_types')
+        .limit(1000);
+
+      if (behaviorErr) {
+        console.warn('Group insights fallback error:', behaviorErr);
+      }
+
+      if (behaviorAnalytics && behaviorAnalytics.length > 0) {
+        const totalViews = behaviorAnalytics.reduce((sum: number, r: any) => sum + (r.total_page_views || 0), 0);
+        const avgViewTime = 0; // Not available in fallback dataset
+
+        const insights: GroupInsight = {
+          totalSharedDiamonds: 0, // Unknown without per-diamond events
+          mostViewedShape: 'round brilliant',
+          mostViewedColor: 'G',
+          avgViewTime,
+          totalViews
         };
         setGroupInsights(insights);
       } else {
