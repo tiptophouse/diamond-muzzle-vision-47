@@ -8,7 +8,7 @@ const corsHeaders = {
 interface EngagementUser {
   telegram_id: number;
   first_name: string;
-  last_active?: string;
+  last_login?: string;
   created_at: string;
   has_diamonds: boolean;
   language_code?: string;
@@ -72,7 +72,7 @@ async function findInactiveUsers(supabase: any): Promise<EngagementUser[]> {
     .select(`
       telegram_id,
       first_name,
-      last_active,
+      last_login,
       created_at,
       language_code,
       inventory!left(id)
@@ -107,7 +107,7 @@ async function findInactiveUsers(supabase: any): Promise<EngagementUser[]> {
       acc.push({
         telegram_id: user.telegram_id,
         first_name: user.first_name || 'User',
-        last_active: user.last_active,
+        last_login: user.last_login,
         created_at: user.created_at,
         has_diamonds: user.inventory && user.inventory.length > 0,
         language_code: user.language_code || 'he' // Default to Hebrew if not specified
@@ -286,7 +286,7 @@ CREATE OR REPLACE FUNCTION get_low_engagement_users(days_inactive integer, max_d
 RETURNS TABLE(
   telegram_id bigint,
   first_name text,
-  last_active timestamp with time zone,
+  last_login timestamp with time zone,
   created_at timestamp with time zone,
   diamond_count bigint
 ) AS $$
@@ -295,17 +295,17 @@ BEGIN
   SELECT 
     up.telegram_id,
     up.first_name,
-    up.last_active,
+    up.last_login,
     up.created_at,
     COUNT(inv.id) as diamond_count
   FROM user_profiles up
   LEFT JOIN inventory inv ON up.telegram_id = inv.user_id AND inv.deleted_at IS NULL
   WHERE 
-    up.last_active < NOW() - INTERVAL '1 day' * days_inactive
-    OR up.last_active IS NULL
-  GROUP BY up.telegram_id, up.first_name, up.last_active, up.created_at
+    up.last_login < NOW() - INTERVAL '1 day' * days_inactive
+    OR up.last_login IS NULL
+  GROUP BY up.telegram_id, up.first_name, up.last_login, up.created_at
   HAVING COUNT(inv.id) <= max_diamonds
-  ORDER BY up.last_active ASC NULLS FIRST
+  ORDER BY up.last_login ASC NULLS FIRST
   LIMIT 50;
 END;
 $$ LANGUAGE plpgsql;
