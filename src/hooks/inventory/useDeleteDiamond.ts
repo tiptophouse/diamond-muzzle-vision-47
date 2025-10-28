@@ -27,8 +27,12 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
 
     console.log('🗑️ DELETE: Starting delete for diamond:', diamondId);
     
+    // Use FastAPI diamond_id (diamondId property) for server, fallback to id
+    const apiDiamondId = diamondData?.diamondId?.toString() || diamondId;
     const stockNumber = diamondData?.stockNumber || diamondId;
     const localDiamondId = diamondData?.id || diamondId;
+    
+    console.log('🗑️ DELETE: Using API diamond ID:', apiDiamondId, 'Stock:', stockNumber);
 
     // Optimistically remove from UI
     if (removeDiamondFromState) {
@@ -36,8 +40,8 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
     }
 
     try {
-      // Use the new API function with proper error handling
-      const response = await deleteDiamondAPI(stockNumber, user.id);
+      // Use the FastAPI diamond_id for deletion
+      const response = await deleteDiamondAPI(apiDiamondId, user.id);
       
       if (response.success) {
         console.log('✅ DELETE: Diamond deleted successfully:', response);

@@ -121,7 +121,7 @@ export function InventoryTableView({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onDelete(diamond.id)}
+                      onClick={() => onDelete(diamond.diamondId || diamond.id)}
                       className="text-destructive hover:text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />

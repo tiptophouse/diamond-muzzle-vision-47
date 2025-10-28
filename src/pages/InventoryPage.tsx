@@ -24,6 +24,7 @@ export default function InventoryPage() {
     diamonds,
     allDiamonds,
     handleRefresh,
+    error,
   } = useInventoryData();
 
   const {
@@ -178,6 +179,30 @@ export default function InventoryPage() {
   return (
     <TelegramMiniAppLayout>
       <div className="p-4 space-y-4 max-w-full overflow-hidden">
+        {/* Error Alert */}
+        {error && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+            <h3 className="text-destructive font-semibold mb-2">Could not load inventory</h3>
+            <p className="text-sm text-muted-foreground mb-3">{error}</p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleRefresh}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90"
+              >
+                Retry
+              </button>
+              <a
+                href="https://t.me/BrilliantBotMazalVision_bot"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md text-sm hover:bg-secondary/80"
+              >
+                Open in Telegram
+              </a>
+            </div>
+          </div>
+        )}
+        
         <InventoryHeader 
           totalCount={displayDiamonds.length}
           onRefresh={handleRefresh}
