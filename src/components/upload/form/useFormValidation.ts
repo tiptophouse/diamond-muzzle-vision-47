@@ -53,6 +53,7 @@ export const useFormValidation = () => {
       pricePerCarat: data.pricePerCarat ? Number(data.pricePerCarat) : undefined,
       rapnet: data.rapnet ? Number(data.rapnet) : undefined,
       storeVisible: data.storeVisible !== undefined ? data.storeVisible : true,
+      segomaUrl: data.segomaUrl?.trim() || '',
     };
   };
 

@@ -38,4 +38,7 @@ export interface DiamondFormData {
   
   // Image
   picture?: string;
+  
+  // 3D Viewer
+  segomaUrl?: string;
 }
