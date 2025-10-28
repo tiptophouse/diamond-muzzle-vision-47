@@ -1,4 +1,4 @@
-import { getBackendAuthToken, signInToBackend } from "@/lib/api/auth";
+import { getBackendAuthToken } from "@/lib/api/auth";
 import { toast } from "@/components/ui/use-toast";
 import { API_BASE_URL } from "@/lib/api/config";
 
@@ -70,41 +70,20 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
   
   console.log('🔑 HTTP: Making request to:', fullUrl, 'Method:', method);
 
-  // Check authentication for protected endpoints with auto-recovery
-  let token = getBackendAuthToken();
+  // Check authentication for protected endpoints (most endpoints require auth according to OpenAPI spec)
+  const token = getBackendAuthToken();
   
   if (!token && !endpoint.includes('/api/v1/sign-in/')) {
-    console.warn('⚠️ HTTP: No JWT token, attempting auto-recovery...');
+    console.error('❌ HTTP: No JWT token available for protected endpoint:', endpoint);
+    const error = new Error('נדרש אימות. אנא התחבר מחדש לאפליקציה');
     
-    // Attempt one-time silent sign-in using Telegram initData
-    const tg = (window as any).Telegram?.WebApp;
-    if (tg?.initData) {
-      try {
-        console.log('🔄 HTTP: Auto-recovering JWT with Telegram initData...');
-        await signInToBackend(tg.initData);
-        token = getBackendAuthToken();
-        
-        if (token) {
-          console.log('✅ HTTP: JWT auto-recovery successful');
-        }
-      } catch (authError) {
-        console.error('❌ HTTP: JWT auto-recovery failed:', authError);
-      }
-    }
+    toast({
+      title: "🔐 Authentication Required",
+      description: "אנא התחבר מחדש לאפליקציה",
+      variant: "destructive",
+    });
     
-    // If still no token after recovery attempt, fail
-    if (!token) {
-      console.error('❌ HTTP: No JWT token available for protected endpoint:', endpoint);
-      const error = new Error('נדרש אימות. אנא התחבר מחדש לאפליקציה');
-      
-      toast({
-        title: "🔐 Authentication Required",
-        description: "אנא התחבר מחדש לאפליקציה",
-        variant: "destructive",
-      });
-      
-      throw error;
-    }
+    throw error;
   }
 
   // Test backend health for non-auth requests

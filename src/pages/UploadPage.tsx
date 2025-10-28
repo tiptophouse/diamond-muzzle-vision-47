@@ -13,21 +13,14 @@ export default function UploadPage() {
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
         {/* Hero Header */}
         <div className="px-6 pt-8 pb-6 text-center space-y-3">
-          <div className="relative inline-block mb-4">
-            {/* Animated glow */}
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 opacity-30 animate-pulse blur-2xl"></div>
-            
-            {/* Icon container */}
-            <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-2xl">
-              <Upload className="h-10 w-10 text-white" />
-            </div>
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary-glow shadow-lg mb-2">
+            <Upload className="h-8 w-8 text-primary-foreground" />
           </div>
-          
-          <h1 className="text-4xl font-bold text-foreground bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-            Add Your Diamonds
+          <h1 className="text-3xl font-bold text-foreground">
+            Add Diamonds
           </h1>
-          <p className="text-muted-foreground max-w-md mx-auto text-lg">
-            Choose your preferred method to add diamonds to your inventory
+          <p className="text-muted-foreground max-w-md mx-auto">
+            Choose how you'd like to add diamonds to your inventory
           </p>
         </div>
 
@@ -36,10 +29,10 @@ export default function UploadPage() {
           {/* Single Diamond Upload - Primary */}
           <Link to="/upload-single-stone">
             <Card 
-              className="group hover:shadow-2xl transition-all duration-300 border-2 border-green-200 hover:border-green-400 active:scale-[0.98] cursor-pointer overflow-hidden bg-gradient-to-br from-green-50 to-emerald-50"
+              className="group hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/50 active:scale-[0.98] cursor-pointer overflow-hidden"
               onClick={() => hapticFeedback.impact('medium')}
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-green-400/10 to-emerald-400/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="relative p-6">
                 <div className="flex items-center gap-4 mb-3">
                   <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg">
@@ -72,10 +65,10 @@ export default function UploadPage() {
           {/* Bulk CSV Upload */}
           <Link to="/upload/bulk">
             <Card 
-              className="group hover:shadow-2xl transition-all duration-300 border-2 border-blue-200 hover:border-blue-400 active:scale-[0.98] cursor-pointer overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50"
+              className="group hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/50 active:scale-[0.98] cursor-pointer overflow-hidden"
               onClick={() => hapticFeedback.impact('medium')}
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-indigo-400/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="relative p-6">
                 <div className="flex items-center gap-4 mb-3">
                   <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg">

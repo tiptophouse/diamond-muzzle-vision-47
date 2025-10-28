@@ -9,7 +9,7 @@ const corsHeaders = {
 interface EngagementUser {
   telegram_id: number;
   first_name: string;
-  last_login?: string;
+  last_active?: string;
   created_at: string;
   has_inventory: boolean;
   days_since_signup: number;
@@ -73,7 +73,7 @@ async function findUsersNeedingGuidance(supabase: any): Promise<EngagementUser[]
     .select(`
       telegram_id,
       first_name,
-      last_login,
+      last_active,
       created_at,
       inventory!left(id)
     `)
@@ -92,11 +92,11 @@ async function findUsersNeedingGuidance(supabase: any): Promise<EngagementUser[]
     .select(`
       telegram_id,
       first_name,
-      last_login,
+      last_active,
       created_at,
       inventory!left(id)
     `)
-    .lt('last_login', new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString())
+    .lt('last_active', new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString())
     .limit(25);
 
   if (inactiveError) {
@@ -112,7 +112,7 @@ async function findUsersNeedingGuidance(supabase: any): Promise<EngagementUser[]
       acc.push({
         telegram_id: user.telegram_id,
         first_name: user.first_name || 'User',
-        last_login: user.last_login,
+        last_active: user.last_active,
         created_at: user.created_at,
         has_inventory: user.inventory && user.inventory.length > 0,
         days_since_signup: daysSinceSignup

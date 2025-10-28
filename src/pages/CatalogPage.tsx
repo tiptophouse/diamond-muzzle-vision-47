@@ -1,10 +1,9 @@
 
-import { useState, useEffect, useCallback, useMemo, memo } from "react";
+import { useState, useEffect, useCallback, useMemo, memo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useP2PStoreData } from "@/hooks/useP2PStoreData";
 import { useStoreFilters } from "@/hooks/useStoreFilters";
-import { useCatalogCache } from "@/hooks/useCatalogCache";
 import { EnhancedStoreGrid } from "@/components/store/EnhancedStoreGrid";
 import { TelegramDiamondCard } from "@/components/store/TelegramDiamondCard";
 import { DiamondCardSkeleton } from "@/components/store/DiamondCardSkeleton";
@@ -18,23 +17,21 @@ import { toast } from 'sonner';
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { TelegramStoreFilters } from "@/components/store/TelegramStoreFilters";
 import { TelegramSortSheet } from "@/components/store/TelegramSortSheet";
+import { getTelegramWebApp } from "@/utils/telegramWebApp";
 import { InventoryPagination } from "@/components/inventory/InventoryPagination";
 import { preloadDiamondImages, clearImageCache } from "@/utils/telegramImageOptimizer";
-import { logger } from "@/utils/logger";
 
 // Telegram memory management
-const ITEMS_PER_PAGE = 24;
-const SKELETON_COUNT = 3;
+const tg = getTelegramWebApp();
+const ITEMS_PER_PAGE = 24; // Show more items per page
+const SKELETON_COUNT = 3; // Fewer skeletons
 
-const CatalogPageComponent = () => {
+function CatalogPage() {
   const [searchParams] = useSearchParams();
-  const sellerId = searchParams.get('seller');
+  const sellerId = searchParams.get('seller'); // Add seller parameter support
   const stockNumber = searchParams.get('stock');
   
-  // Telegram cache
-  const { loadDiamonds, saveDiamonds } = useCatalogCache();
-  
-  // Use P2P store data if seller ID is provided
+  // Use P2P store data if seller ID is provided, otherwise use regular store data
   const { 
     diamonds: regularDiamonds, 
     loading: regularLoading, 
@@ -50,6 +47,7 @@ const CatalogPageComponent = () => {
     ownerInfo 
   } = useP2PStoreData(sellerId || undefined);
 
+  // Use appropriate data source based on whether we're viewing a P2P store
   const diamonds = sellerId ? p2pDiamonds : regularDiamonds;
   const loading = sellerId ? p2pLoading : regularLoading;
   const error = sellerId ? p2pError : regularError;
@@ -66,57 +64,64 @@ const CatalogPageComponent = () => {
   });
   const navigate = useNavigate();
 
-  // Load from cache on mount, then fetch fresh data in background
+  // Telegram memory optimization with image cleanup
   useEffect(() => {
-    const loadCachedData = async () => {
-      const cached = await loadDiamonds();
-      if (cached && cached.length > 0 && !diamonds) {
-        logger.perf('Loaded catalog from cache', { count: cached.length });
-        // Use cached data immediately while fresh data loads
+    if (tg) {
+      try {
+        if ('caches' in window) {
+          caches.keys().then(names => {
+            names.forEach(name => {
+              if (name.includes('diamond-images')) {
+                caches.delete(name);
+              }
+            });
+          });
+        }
+      } catch (e) {
+        console.log('Cache cleanup skipped');
       }
-    };
-    
-    loadCachedData();
-  }, [loadDiamonds]);
-  
-  // Save to cache when diamonds data changes
-  useEffect(() => {
-    if (diamonds && diamonds.length > 0 && !loading) {
-      saveDiamonds(diamonds);
     }
-  }, [diamonds, loading, saveDiamonds]);
-
-  // Cleanup on unmount
-  useEffect(() => {
+    
+    // Cleanup Telegram image cache on unmount
     return () => {
-      logger.perf('Catalog unmount - cleaning cache');
+      console.log('🧹 CATALOG: Cleaning up Telegram image cache on unmount');
       clearImageCache();
     };
   }, []);
 
-  // Enhanced media priority detection
+  // Enhanced media priority detection - CRITICAL PRIORITY ORDER: 3D > Image > Info Only
   const getMediaPriority = useCallback((diamond: Diamond) => {
-    // Priority 0: 3D/360° content (HIGHEST)
+    console.log('🎯 CATALOG: Checking media priority for', diamond.stockNumber, {
+      gem360Url: diamond.gem360Url,
+      imageUrl: diamond.imageUrl,
+      price: diamond.price
+    });
+
+    // Priority 0: 3D/360° content (HIGHEST PRIORITY)
     if (diamond.gem360Url && diamond.gem360Url.trim()) {
+      // Check for various 360° formats
       if (diamond.gem360Url.includes('gem360') || 
           diamond.gem360Url.includes('360') || 
           diamond.gem360Url.includes('vision360.html') ||
           diamond.gem360Url.includes('my360.sela') ||
           diamond.gem360Url.includes('3d')) {
+        console.log('✨ CATALOG: Priority 0 - 3D/360° detected for', diamond.stockNumber);
         return 0;
       }
     }
     
-    // Priority 1: Regular images (SECOND)
+    // Priority 1: Regular images (SECOND PRIORITY)
     if (diamond.imageUrl && diamond.imageUrl.trim() && diamond.imageUrl !== 'default') {
+      console.log('🖼️ CATALOG: Priority 1 - Image detected for', diamond.stockNumber);
       return 1;
     }
     
-    // Priority 2: Info only (LOWEST)
+    // Priority 2: Info only (LOWEST PRIORITY)
+    console.log('📄 CATALOG: Priority 2 - Info only for', diamond.stockNumber);
     return 2;
   }, []);
 
-  // Memoized sorted diamonds
+  // Memoized sorted diamonds with STRICT media priority ordering
   const sortedDiamonds = useMemo(() => {
     let processedDiamonds = [...filteredDiamonds];
     
@@ -124,12 +129,12 @@ const CatalogPageComponent = () => {
       const priorityA = getMediaPriority(a);
       const priorityB = getMediaPriority(b);
       
-      // Always sort by media priority first
+      // FIRST: Always sort by media priority (3D > Image > Info Only)
       if (priorityA !== priorityB) {
         return priorityA - priorityB;
       }
       
-      // Then by user selection
+      // SECOND: If same media priority, sort by user selection
       switch (sortBy) {
         case "price-low-high":
           return a.price - b.price;
@@ -143,13 +148,27 @@ const CatalogPageComponent = () => {
           return a.stockNumber.localeCompare(b.stockNumber);
         case "media-priority":
         default:
+          // For same priority, sort by stock number
           return a.stockNumber.localeCompare(b.stockNumber);
       }
     });
     
+    console.log('🔍 CATALOG: Media priority sorting results:', {
+      total: diamonds.length,
+      with3D: diamonds.filter(d => getMediaPriority(d) === 0).length,
+      withImages: diamonds.filter(d => getMediaPriority(d) === 1).length,
+      infoOnly: diamonds.filter(d => getMediaPriority(d) === 2).length,
+      first5Diamonds: diamonds.slice(0, 5).map(d => ({
+        stock: d.stockNumber,
+        priority: getMediaPriority(d),
+        has3D: !!(d.gem360Url && d.gem360Url.trim()),
+        hasImage: !!(d.imageUrl && d.imageUrl.trim() && d.imageUrl !== 'default')
+      }))
+    });
+    
     // Preload images for optimal performance
-    if (processedDiamonds.length > 0) {
-      preloadDiamondImages(processedDiamonds, 0);
+    if (diamonds.length > 0) {
+      preloadDiamondImages(diamonds, 0);
     }
     return processedDiamonds;
   }, [filteredDiamonds, sortBy, getMediaPriority]);
@@ -454,7 +473,6 @@ const CatalogPageComponent = () => {
       </div>
     </MobilePullToRefresh>
   );
-};
+}
 
-const CatalogPage = memo(CatalogPageComponent);
 export default CatalogPage;

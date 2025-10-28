@@ -1,12 +1,12 @@
-import { useState, memo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MessageCircle, Gem, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Diamond } from "@/components/inventory/InventoryTable";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import { useGlobalMotion } from "@/context/TelegramMotionContext";
+import { useTelegramAccelerometer } from "@/hooks/useTelegramAccelerometer";
 import { useTelegramHapticFeedback } from "@/hooks/useTelegramHapticFeedback";
-import { LazyGem360Viewer } from "./LazyGem360Viewer";
+import { Gem360Viewer } from "./Gem360Viewer";
 
 interface MotionDiamondCardProps {
   diamond: Diamond;
@@ -14,21 +14,60 @@ interface MotionDiamondCardProps {
   onViewDetails?: (diamond: Diamond) => void;
 }
 
-const MotionDiamondCardComponent = ({ diamond, index, onViewDetails }: MotionDiamondCardProps) => {
+export function MotionDiamondCard({ diamond, index, onViewDetails }: MotionDiamondCardProps) {
   const [imageError, setImageError] = useState(false);
+  const [isMotionMode, setIsMotionMode] = useState(true); // Auto-enable motion mode
+  const [showViewer, setShowViewer] = useState(false);
   const { user } = useTelegramAuth();
-  const { motionData, isSupported } = useGlobalMotion();
-  const { impactOccurred } = useTelegramHapticFeedback();
+  const { accelerometerData, orientationData, isSupported, startAccelerometer, stopAccelerometer } = useTelegramAccelerometer(isMotionMode, 60);
+  const { impactOccurred, selectionChanged } = useTelegramHapticFeedback();
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // Auto-start motion mode when component mounts
+  useEffect(() => {
+    if (isSupported && isMotionMode) {
+      startAccelerometer();
+    }
+    return () => {
+      if (isSupported) {
+        stopAccelerometer();
+      }
+    };
+  }, [isSupported, startAccelerometer, stopAccelerometer, isMotionMode]);
 
   // Calculate diamond image rotation based on device tilt
   const getDiamondImageTransform = () => {
-    if (!isSupported) return '';
+    if (!isMotionMode) return '';
     
-    const { beta, gamma } = motionData.orientation;
+    // Use orientation data for precise motion tracking
+    const { beta, gamma } = orientationData;
+    
+    // Convert orientation to rotation values (max ±10° as specified)
     const rotateX = Math.max(-10, Math.min(10, beta * 0.5));
     const rotateY = Math.max(-10, Math.min(10, gamma * 0.5));
     
     return `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+  };
+
+  // Toggle motion mode
+  const toggleMotionMode = () => {
+    if (!isSupported) {
+      impactOccurred('heavy');
+      return;
+    }
+
+    setIsMotionMode(prev => {
+      const newMode = !prev;
+      if (newMode) {
+        impactOccurred('medium');
+        startAccelerometer();
+      } else {
+        impactOccurred('light');
+        stopAccelerometer();
+      }
+      return newMode;
+    });
+    selectionChanged();
   };
 
   const handleContactOwner = () => {
@@ -64,8 +103,9 @@ const MotionDiamondCardComponent = ({ diamond, index, onViewDetails }: MotionDia
 
   return (
     <div 
+      ref={cardRef}
       className={`bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-300 group animate-fade-in ${
-        isSupported ? 'motion-card' : 'hover:-translate-y-1'
+        isMotionMode ? 'motion-card' : 'hover:-translate-y-1'
       }`}
       style={{ 
         animationDelay: `${index * 100}ms`
@@ -74,10 +114,12 @@ const MotionDiamondCardComponent = ({ diamond, index, onViewDetails }: MotionDia
       {/* Image Container */}
       <div className="relative h-64 bg-white rounded-t-xl overflow-hidden">
         {hasGem360 ? (
+          // Show interactive 3D viewer
           <div className="w-full h-full">
-            <LazyGem360Viewer 
+            <Gem360Viewer 
               gem360Url={diamond.gem360Url!}
               stockNumber={diamond.stockNumber}
+              isInline={true}
             />
           </div>
         ) : diamond.imageUrl && !imageError ? (
@@ -85,10 +127,10 @@ const MotionDiamondCardComponent = ({ diamond, index, onViewDetails }: MotionDia
             src={diamond.imageUrl}
             alt={`Diamond ${diamond.stockNumber}`}
             className={`w-full h-full object-cover transition-transform duration-200 ease-out ${
-              isSupported ? 'scale-110' : 'group-hover:scale-105'
+              isMotionMode ? 'scale-110' : 'group-hover:scale-105'
             }`}
             style={{
-              transform: isSupported ? getDiamondImageTransform() : '',
+              transform: isMotionMode ? getDiamondImageTransform() : '',
               transformStyle: 'preserve-3d'
             }}
             onError={() => setImageError(true)}
@@ -98,10 +140,10 @@ const MotionDiamondCardComponent = ({ diamond, index, onViewDetails }: MotionDia
             <div className="relative">
               <div 
                 className={`w-32 h-32 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-2xl transition-transform duration-200 ease-out ${
-                  isSupported ? 'scale-125' : ''
+                  isMotionMode ? 'scale-125' : ''
                 }`}
                 style={{
-                  transform: isSupported ? getDiamondImageTransform() : '',
+                  transform: isMotionMode ? getDiamondImageTransform() : '',
                   transformStyle: 'preserve-3d'
                 }}
               >
@@ -194,9 +236,4 @@ const MotionDiamondCardComponent = ({ diamond, index, onViewDetails }: MotionDia
       </div>
     </div>
   );
-};
-
-export const MotionDiamondCard = memo(MotionDiamondCardComponent, (prev, next) => {
-  return prev.diamond.id === next.diamond.id && 
-         prev.diamond.stockNumber === next.diamond.stockNumber;
-});
+}

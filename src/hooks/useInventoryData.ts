@@ -114,7 +114,7 @@ export function useInventoryData() {
 
       const cacheKey = `inventory_${user.id}`;
       
-      console.log('📥 INVENTORY HOOK: Fetching inventory from FastAPI...');
+      console.log('📥 INVENTORY HOOK: Fetching inventory data...');
       
       // SPECIAL DEBUG for user 2084882603 - Segoma issue
       if (String(user?.id) === '2084882603') {
@@ -128,21 +128,15 @@ export function useInventoryData() {
           throw new Error(result.error);
         }
 
-        // Handle wrapped response shapes from FastAPI
-        let rawData: any[] = result.data || [];
-        if (rawData && typeof rawData === 'object' && !Array.isArray(rawData)) {
-          rawData = (rawData as any).data || (rawData as any).diamonds || (rawData as any).items || [];
-        }
-
-        if (Array.isArray(rawData) && rawData.length > 0) {
-          console.log('📥 INVENTORY HOOK: Processing', rawData.length, 'diamonds from FastAPI');
+        if (result.data && result.data.length > 0) {
+          console.log('📥 INVENTORY HOOK: Processing', result.data.length, 'diamonds');
           
           // SPECIAL DEBUG for user 2084882603 - Segoma issue
           if (String(user?.id) === '2084882603') {
             console.log('🔍 SEGOMA INVENTORY DEBUG for user 2084882603:', {
-              totalDiamonds: rawData.length,
-              firstDiamond: rawData[0],
-              segoma3DLinks: rawData.map(item => ({
+              totalDiamonds: result.data.length,
+              firstDiamond: result.data[0],
+              segoma3DLinks: result.data.map(item => ({
                 stock: item.stock_number,
                 '3D Link': item['3D Link'],
                 segoma_url: item.segoma_url,
@@ -152,7 +146,7 @@ export function useInventoryData() {
           }
           
           // Transform data to match Diamond interface with enhanced field mapping
-          return rawData.map(item => {
+          return result.data.map(item => {
             // ENHANCED IMAGE URL PROCESSING - Accept ALL FastAPI image fields
             let finalImageUrl = undefined;
             const imageFields = [
@@ -178,7 +172,7 @@ export function useInventoryData() {
             }
 
             return {
-              id: item.id || item.diamond_id || item.stock_number || item.stock || item.VendorStockNumber || 'unknown',
+              id: item.id || `${item.stock || item.stock_number || item.VendorStockNumber}-${Date.now()}`,
               diamondId: item.id || item.diamond_id,
               stockNumber: item.stock || item.stock_number || item.stockNumber || item.VendorStockNumber || '',
               shape: normalizeShape(item.shape || item.Shape),
@@ -206,7 +200,6 @@ export function useInventoryData() {
               status: item.status || item.Availability || 'Available',
               fluorescence: item.fluorescence || item.FluorescenceIntensity || undefined,
               imageUrl: finalImageUrl,
-              picture: finalImageUrl,
             // ENHANCED 360° URL PROCESSING - Accept ALL FastAPI 360 fields INCLUDING CSV "3D Link" and column letters like "aa"
             gem360Url: detect360Url(item['3D Link']) ||      // CSV Segoma field - HIGH PRIORITY
                        detect360Url(item['3DLink']) ||       // Alternative format
