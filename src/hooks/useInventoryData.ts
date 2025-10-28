@@ -200,6 +200,7 @@ export function useInventoryData() {
               status: item.status || item.Availability || 'Available',
               fluorescence: item.fluorescence || item.FluorescenceIntensity || undefined,
               imageUrl: finalImageUrl,
+              picture: finalImageUrl,
             // ENHANCED 360° URL PROCESSING - Accept ALL FastAPI 360 fields INCLUDING CSV "3D Link" and column letters like "aa"
             gem360Url: detect360Url(item['3D Link']) ||      // CSV Segoma field - HIGH PRIORITY
                        detect360Url(item['3DLink']) ||       // Alternative format

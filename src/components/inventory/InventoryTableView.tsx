@@ -45,7 +45,7 @@ export function InventoryTableView({
                 <TableCell>
                   <div className="w-12 h-12 rounded-lg overflow-hidden">
                     <OptimizedDiamondImage
-                      imageUrl={diamond.picture}
+                      imageUrl={diamond.imageUrl || diamond.picture}
                       gem360Url={diamond.gem360Url}
                       stockNumber={diamond.stockNumber}
                       shape={diamond.shape}

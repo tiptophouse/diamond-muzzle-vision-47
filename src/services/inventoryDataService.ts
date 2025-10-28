@@ -1,4 +1,5 @@
 import { api, apiEndpoints, getCurrentUserId } from "@/lib/api";
+import { fetchMockInventoryData } from "@/services/mockInventoryService";
 
 export interface FetchInventoryResult {
   data?: any[];
@@ -10,15 +11,15 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
   const userId = getCurrentUserId();
   
   if (!userId) {
-    console.error('❌ INVENTORY SERVICE: No authenticated user ID available');
+    console.warn('⚠️ INVENTORY SERVICE: No authenticated user ID - using mock fallback for preview');
+    const mock = await fetchMockInventoryData();
     return {
-      error: 'Authentication required. Please authenticate with Telegram to view your inventory.',
+      data: mock.data,
       debugInfo: {
-        step: 'ERROR: No authenticated user',
+        ...mock.debugInfo,
+        step: 'FALLBACK: No user, returning mock diamonds',
         userId: null,
-        timestamp: new Date().toISOString(),
-        dataSource: 'none',
-        recommendation: 'User must authenticate with Telegram first. Check Telegram WebApp initData.'
+        reason: 'Missing Telegram initData in preview or unauthenticated session'
       }
     };
   }
