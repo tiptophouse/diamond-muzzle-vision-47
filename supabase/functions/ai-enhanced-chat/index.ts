@@ -166,7 +166,7 @@ Keep responses professional, data-driven, and actionable.`;
     console.error('❌ Error in AI Enhanced Chat:', error);
     
     return new Response(JSON.stringify({ 
-      response: 'I'm experiencing technical difficulties. Please try again.',
+      response: "I'm experiencing technical difficulties. Please try again.",
       error: error.message,
       success: false
     }), {
