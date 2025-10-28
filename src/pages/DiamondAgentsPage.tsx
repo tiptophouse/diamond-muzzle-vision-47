@@ -3,7 +3,8 @@ import { TelegramMiniAppLayout } from '@/components/layout/TelegramMiniAppLayout
 import { EnhancedChatContainer } from '@/components/chat/EnhancedChatContainer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Users, MessageCircle, TrendingUp } from 'lucide-react';
+import { Sparkles, Users, MessageCircle, TrendingUp, Brain } from 'lucide-react';
+import { AILearningIndicator } from '@/components/ai/AILearningIndicator';
 
 export default function DiamondAgentsPage() {
   return (
@@ -42,21 +43,23 @@ export default function DiamondAgentsPage() {
           </div>
         </div>
 
-        {/* Agent Information Cards - Collapsible */}
+        {/* AI Learning Status */}
         <div className="p-4 space-y-3 bg-muted/20">
+          <AILearningIndicator />
+          
           <Card className="border border-primary/20">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-primary" />
-                  AI-Powered Diamond Expertise
+                  <Brain className="w-4 h-4 text-primary" />
+                  AI-Powered Diamond Expertise with Machine Learning
                 </CardTitle>
                 <Badge variant="secondary" className="text-xs">
                   Enhanced
                 </Badge>
               </div>
               <CardDescription className="text-sm">
-                Advanced AI agents with FastAPI integration for real-time inventory analysis
+                Self-learning AI that gets smarter with every transaction, deal, and interaction
               </CardDescription>
             </CardHeader>
             <CardContent>

@@ -80,6 +80,108 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_learning_patterns: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_applied_at: string | null
+          pattern_data: Json
+          pattern_type: string
+          success_score: number | null
+          updated_at: string | null
+          usage_count: number | null
+          user_telegram_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_applied_at?: string | null
+          pattern_data: Json
+          pattern_type: string
+          success_score?: number | null
+          updated_at?: string | null
+          usage_count?: number | null
+          user_telegram_id: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_applied_at?: string | null
+          pattern_data?: Json
+          pattern_type?: string
+          success_score?: number | null
+          updated_at?: string | null
+          usage_count?: number | null
+          user_telegram_id?: number
+        }
+        Relationships: []
+      }
+      ai_market_insights: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          id: string
+          insight_data: Json
+          insight_type: string
+          sample_size: number | null
+          updated_at: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          insight_data: Json
+          insight_type: string
+          sample_size?: number | null
+          updated_at?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          insight_data?: Json
+          insight_type?: string
+          sample_size?: number | null
+          updated_at?: string | null
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
+      ai_transaction_feedback: {
+        Row: {
+          created_at: string | null
+          feedback_type: string
+          id: string
+          learning_extracted: boolean | null
+          match_id: string | null
+          outcome_data: Json
+          transaction_id: string | null
+          user_telegram_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          feedback_type: string
+          id?: string
+          learning_extracted?: boolean | null
+          match_id?: string | null
+          outcome_data: Json
+          transaction_id?: string | null
+          user_telegram_id: number
+        }
+        Update: {
+          created_at?: string | null
+          feedback_type?: string
+          id?: string
+          learning_extracted?: boolean | null
+          match_id?: string | null
+          outcome_data?: Json
+          transaction_id?: string | null
+          user_telegram_id?: number
+        }
+        Relationships: []
+      }
       analytics_events: {
         Row: {
           created_at: string
@@ -2433,6 +2535,14 @@ export type Database = {
         Returns: number
       }
       expire_keshett_agreements: { Args: never; Returns: number }
+      get_ai_recommendations: {
+        Args: { p_context_type?: string; p_user_telegram_id: number }
+        Returns: {
+          confidence: number
+          pattern_type: string
+          recommendation: Json
+        }[]
+      }
       get_bot_usage_summary: {
         Args: never
         Returns: {
@@ -2503,6 +2613,15 @@ export type Database = {
       set_session_context: {
         Args: { key: string; value: string }
         Returns: undefined
+      }
+      update_ai_learning_pattern: {
+        Args: {
+          p_pattern_data: Json
+          p_pattern_type: string
+          p_success_score?: number
+          p_user_telegram_id: number
+        }
+        Returns: string
       }
       update_diamond_for_user: {
         Args: { p_stock_number: string; p_update_data: Json; p_user_id: number }
