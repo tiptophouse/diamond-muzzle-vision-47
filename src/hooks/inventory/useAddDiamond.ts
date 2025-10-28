@@ -42,19 +42,20 @@ export function useAddDiamond(onSuccess?: () => void) {
         return false;
       }
 
-      if (!data.price || data.price <= 0) {
+      // Validate either price or pricePerCarat is provided
+      if ((!data.price || data.price <= 0) && (!data.pricePerCarat || data.pricePerCarat <= 0)) {
         toast({
           variant: "destructive",
           title: "❌ Missing Required Field",
-          description: "Valid Price is required", 
+          description: "Valid Price or Price Per Carat is required", 
         });
         return false;
       }
 
-      // Calculate price per carat from actual form data
+      // Calculate price per carat - prioritize pricePerCarat field
       const actualPricePerCarat = data.pricePerCarat && data.pricePerCarat > 0 
         ? Number(data.pricePerCarat)
-        : Math.round(Number(data.price) / Number(data.carat));
+        : (data.price && data.price > 0 ? Math.round(Number(data.price) / Number(data.carat)) : 0);
 
       // Helper function to map form values to FastAPI enum values
       const mapToApiEnum = (value: string): string => {
