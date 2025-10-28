@@ -172,7 +172,24 @@ export async function http<T>(endpoint: string, options: RequestInit = {}): Prom
       throw new Error(errorMessage);
     }
     
-    const data = await response.json();
+    const contentType = response.headers.get('content-type') || '';
+    const contentLength = response.headers.get('content-length');
+    let data: any = null;
+
+    // Gracefully handle 201/204 or empty bodies
+    if (response.status === 204 || contentLength === '0') {
+      data = {};
+    } else if (contentType.includes('application/json')) {
+      try {
+        data = await response.json();
+      } catch {
+        // If server returned no JSON body, treat as success with empty object
+        data = {};
+      }
+    } else {
+      const text = await response.text();
+      data = text ? { message: text } : {};
+    }
     
     // Show success messages for write operations
     if (method === 'DELETE') {

@@ -125,47 +125,43 @@ export function useAddDiamond(onSuccess?: () => void) {
 
         console.log('✅ ADD: FastAPI response:', response.data);
 
-        // Show success message - API call succeeded
-        if (response.data) {
-          toast({
-            title: "✅ יהלום נוסף בהצלחה!",
-            description: `אבן "${data.stockNumber}" נוספה למלאי שלך ונראית בחנות`,
+        // Treat as success if request completed without error (FastAPI may return 201 with empty body)
+        toast({
+          title: "✅ יהלום נוסף בהצלחה!",
+          description: `אבן "${data.stockNumber}" נוספה למלאי שלך ונראית בחנות`,
+        });
+        
+        // Send notification with direct link to the specific diamond
+        try {
+          const { supabase } = await import('@/integrations/supabase/client');
+          const diamondUrl = `${window.location.origin}/inventory?item=${data.stockNumber}`;
+          
+          await supabase.functions.invoke('send-telegram-message', {
+            body: {
+              telegramId: user.id,
+              stoneData: {
+                stockNumber: data.stockNumber,
+                shape: diamondDataPayload.shape,
+                carat: diamondDataPayload.weight,
+                color: diamondDataPayload.color,
+                clarity: diamondDataPayload.clarity,
+                cut: diamondDataPayload.cut,
+                polish: diamondDataPayload.polish,
+                symmetry: diamondDataPayload.symmetry,
+                fluorescence: diamondDataPayload.fluorescence,
+                pricePerCarat: diamondDataPayload.price_per_carat,
+                lab: diamondDataPayload.lab,
+                certificateNumber: diamondDataPayload.certificate_number
+              },
+              storeUrl: diamondUrl
+            }
           });
-          
-          // Send notification with direct link to the specific diamond
-          try {
-            const { supabase } = await import('@/integrations/supabase/client');
-            const diamondUrl = `${window.location.origin}/inventory?item=${data.stockNumber}`;
-            
-            await supabase.functions.invoke('send-telegram-message', {
-              body: {
-                telegramId: user.id,
-                stoneData: {
-                  stockNumber: data.stockNumber,
-                  shape: diamondDataPayload.shape,
-                  carat: diamondDataPayload.weight,
-                  color: diamondDataPayload.color,
-                  clarity: diamondDataPayload.clarity,
-                  cut: diamondDataPayload.cut,
-                  polish: diamondDataPayload.polish,
-                  symmetry: diamondDataPayload.symmetry,
-                  fluorescence: diamondDataPayload.fluorescence,
-                  pricePerCarat: diamondDataPayload.price_per_carat,
-                  lab: diamondDataPayload.lab,
-                  certificateNumber: diamondDataPayload.certificate_number
-                },
-                storeUrl: diamondUrl
-              }
-            });
-          } catch (notificationError) {
-            console.error('Failed to send notification:', notificationError);
-          }
-          
-          if (onSuccess) onSuccess();
-          return true;
-        } else {
-          throw new Error("No data returned from FastAPI");
+        } catch (notificationError) {
+          console.error('Failed to send notification:', notificationError);
         }
+        
+        if (onSuccess) onSuccess();
+        return true;
         
       } catch (apiError) {
         console.error('❌ ADD: FastAPI add failed:', apiError);
