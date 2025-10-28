@@ -19,14 +19,29 @@ interface BusinessInfoSectionProps {
 export function BusinessInfoSection({ register, setValue, watch, errors }: BusinessInfoSectionProps) {
   const carat = watch('carat');
   const price = watch('price');
+  const [pricingMode, setPricingMode] = React.useState<'total' | 'perCarat' | 'discount'>('total');
 
-  // Auto-calculate price per carat with proper integer rounding
+  // Auto-calculate price per carat with proper integer rounding (only in total price mode)
   React.useEffect(() => {
-    if (carat && price && carat > 0) {
+    if (pricingMode === 'total' && carat && price && carat > 0) {
       const pricePerCarat = formatPricePerCarat(price, carat);
       setValue('pricePerCarat', pricePerCarat);
     }
-  }, [carat, price, setValue]);
+  }, [carat, price, setValue, pricingMode]);
+
+  // Clear other fields when switching modes
+  React.useEffect(() => {
+    if (pricingMode === 'total') {
+      setValue('pricePerCarat', undefined);
+      setValue('rapnet', undefined);
+    } else if (pricingMode === 'perCarat') {
+      setValue('price', undefined);
+      setValue('rapnet', undefined);
+    } else if (pricingMode === 'discount') {
+      setValue('price', undefined);
+      setValue('pricePerCarat', undefined);
+    }
+  }, [pricingMode, setValue]);
 
   // Ensure price field always shows as integer
   React.useEffect(() => {
@@ -46,36 +61,100 @@ export function BusinessInfoSection({ register, setValue, watch, errors }: Busin
       </div>
       
       <div className="grid grid-cols-1 gap-6">
-        <DiamondInputField
-          id="price"
-          label="Total Price (USD) *"
-          type="number"
-          placeholder="Enter total price"
-          register={register}
-          validation={{ 
-            required: 'Price is required',
-            min: { value: 1, message: 'Price must be greater than 0' }
-          }}
-          errors={errors}
-        />
+        {/* Pricing Mode Selector */}
+        <div className="space-y-3">
+          <Label className="text-base font-medium">How do you want to enter the price?</Label>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => setPricingMode('total')}
+              className={`p-3 rounded-lg border-2 transition-all ${
+                pricingMode === 'total' 
+                  ? 'border-primary bg-primary/10 text-primary font-semibold' 
+                  : 'border-border bg-background hover:border-primary/50'
+              }`}
+            >
+              Total Price
+            </button>
+            <button
+              type="button"
+              onClick={() => setPricingMode('perCarat')}
+              className={`p-3 rounded-lg border-2 transition-all ${
+                pricingMode === 'perCarat' 
+                  ? 'border-primary bg-primary/10 text-primary font-semibold' 
+                  : 'border-border bg-background hover:border-primary/50'
+              }`}
+            >
+              Price/Carat
+            </button>
+            <button
+              type="button"
+              onClick={() => setPricingMode('discount')}
+              className={`p-3 rounded-lg border-2 transition-all ${
+                pricingMode === 'discount' 
+                  ? 'border-primary bg-primary/10 text-primary font-semibold' 
+                  : 'border-border bg-background hover:border-primary/50'
+              }`}
+            >
+              Discount %
+            </button>
+          </div>
+        </div>
 
-        <DiamondInputField
-          id="pricePerCarat"
-          label="Price Per Carat (USD)"
-          type="number"
-          placeholder="Auto-calculated from total price"
-          register={register}
-          errors={errors}
-        />
+        {/* Conditional Fields Based on Mode */}
+        {pricingMode === 'total' && (
+          <>
+            <DiamondInputField
+              id="price"
+              label="Total Price (USD) *"
+              type="number"
+              placeholder="Enter total price (e.g., 5000)"
+              register={register}
+              validation={{ 
+                required: 'Total price is required',
+                min: { value: 1, message: 'Price must be greater than 0' }
+              }}
+              errors={errors}
+            />
+            <DiamondInputField
+              id="pricePerCarat"
+              label="Price Per Carat (USD)"
+              type="number"
+              placeholder="Auto-calculated from total price"
+              register={register}
+              errors={errors}
+            />
+          </>
+        )}
 
-        <DiamondInputField
-          id="rapnet"
-          label="RapNet Percentage"
-          type="number"
-          placeholder="e.g., -15 (for 15% below RapNet)"
-          register={register}
-          errors={errors}
-        />
+        {pricingMode === 'perCarat' && (
+          <DiamondInputField
+            id="pricePerCarat"
+            label="Price Per Carat (USD) *"
+            type="number"
+            placeholder="Enter price per carat (e.g., 8000)"
+            register={register}
+            validation={{ 
+              required: 'Price per carat is required',
+              min: { value: 1, message: 'Price per carat must be greater than 0' }
+            }}
+            errors={errors}
+          />
+        )}
+
+        {pricingMode === 'discount' && (
+          <DiamondInputField
+            id="rapnet"
+            label="Discount Percentage *"
+            type="number"
+            placeholder="Enter discount (e.g., 40 for 40% below, or -15 for 15% below)"
+            register={register}
+            validation={{ 
+              required: 'Discount percentage is required'
+            }}
+            errors={errors}
+          />
+        )}
 
         <NativeMobileSelector
           id="status"

@@ -42,20 +42,34 @@ export function useAddDiamond(onSuccess?: () => void) {
         return false;
       }
 
-      // Validate either price or pricePerCarat is provided
-      if ((!data.price || data.price <= 0) && (!data.pricePerCarat || data.pricePerCarat <= 0)) {
+      // Validate at least one pricing method is provided
+      const hasPrice = data.price && data.price > 0;
+      const hasPricePerCarat = data.pricePerCarat && data.pricePerCarat > 0;
+      const hasDiscount = data.rapnet !== undefined && data.rapnet !== null;
+      
+      if (!hasPrice && !hasPricePerCarat && !hasDiscount) {
         toast({
           variant: "destructive",
           title: "❌ Missing Required Field",
-          description: "Valid Price or Price Per Carat is required", 
+          description: "Please enter Total Price, Price Per Carat, or Discount %", 
         });
         return false;
       }
 
-      // Calculate price per carat - prioritize pricePerCarat field
-      const actualPricePerCarat = data.pricePerCarat && data.pricePerCarat > 0 
-        ? Number(data.pricePerCarat)
-        : (data.price && data.price > 0 ? Math.round(Number(data.price) / Number(data.carat)) : 0);
+      // Calculate price per carat based on input method
+      let actualPricePerCarat = 0;
+      
+      if (data.pricePerCarat && data.pricePerCarat > 0) {
+        // Price per carat mode
+        actualPricePerCarat = Number(data.pricePerCarat);
+      } else if (data.price && data.price > 0) {
+        // Total price mode - calculate per carat
+        actualPricePerCarat = Math.round(Number(data.price) / Number(data.carat));
+      } else if (data.rapnet !== undefined && data.rapnet !== null) {
+        // Discount mode - store the discount percentage as-is
+        // Backend or store will handle displaying "X% below" instead of a dollar amount
+        actualPricePerCarat = Number(data.rapnet);
+      }
 
       // Helper function to map form values to FastAPI enum values
       const mapToApiEnum = (value: string): string => {
