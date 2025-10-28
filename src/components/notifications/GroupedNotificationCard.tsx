@@ -15,11 +15,6 @@ interface DiamondMatch {
   clarity: string;
   total_price?: number;
   price_per_carat: number;
-  picture?: string;
-  imageUrl?: string;
-  lab?: string;
-  certificate_number?: string;
-  cut?: string;
 }
 
 interface BuyerInfo {
@@ -126,23 +121,9 @@ export function GroupedNotificationCard({
                 key={idx}
                 className="bg-background/60 rounded-lg p-3 border border-border/50"
               >
-                <div className="flex items-start justify-between gap-3">
-                  {/* Diamond Image */}
-                  {(match.picture || match.imageUrl) && (
-                    <img
-                      src={match.picture || match.imageUrl}
-                      alt={`${match.shape} diamond`}
-                      className="w-16 h-16 object-cover rounded-md border border-border flex-shrink-0"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                  )}
-                  
+                <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0 flex-1">
-                    {!(match.picture || match.imageUrl) && (
-                      <Diamond className="h-4 w-4 text-primary flex-shrink-0" />
-                    )}
+                    <Diamond className="h-4 w-4 text-primary flex-shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold truncate">
                         {match.shape} {match.weight}ct

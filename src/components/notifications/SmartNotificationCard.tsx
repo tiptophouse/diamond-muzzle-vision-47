@@ -1,4 +1,5 @@
-import React, { memo } from 'react';
+
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,12 +22,12 @@ interface SmartNotificationCardProps {
   isLoading?: boolean;
 }
 
-const SmartNotificationCardComponent = ({
+export function SmartNotificationCard({ 
   notification, 
   onMarkAsRead,
   onContactCustomer,
   isLoading = false
-}: SmartNotificationCardProps) => {
+}: SmartNotificationCardProps) {
   const isDiamondMatch = notification.type === 'diamond_match';
   const metadata = notification.data;
   
@@ -206,13 +207,4 @@ const SmartNotificationCardComponent = ({
       </CardContent>
     </Card>
   );
-};
-
-// Memoize with custom comparison
-export const SmartNotificationCard = memo(SmartNotificationCardComponent, (prev, next) => {
-  return (
-    prev.notification.id === next.notification.id &&
-    prev.notification.read === next.notification.read &&
-    prev.isLoading === next.isLoading
-  );
-});
+}

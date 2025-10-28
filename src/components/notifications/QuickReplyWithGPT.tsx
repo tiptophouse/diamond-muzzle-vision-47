@@ -29,15 +29,8 @@ interface QuickReplyWithGPTProps {
         weight: number;
         color: string;
         clarity: string;
-        cut?: string;
         price?: number;
-        price_per_carat?: number;
-        total_price?: number;
         confidence_score?: number;
-        picture?: string;
-        imageUrl?: string;
-        lab?: string;
-        certificate_number?: string;
       }>;
       search_query?: string;
     };
@@ -115,28 +108,10 @@ export function QuickReplyWithGPT({ notification, onMessageSent }: QuickReplyWit
     impactOccurred('medium');
 
     try {
-      const bestMatch = notification.data?.matches?.[0];
-      
-      // Prepare diamond data if available
-      const diamondData = bestMatch ? {
-        stock_number: bestMatch.stock_number || '',
-        shape: bestMatch.shape || '',
-        weight: bestMatch.weight || 0,
-        color: bestMatch.color || '',
-        clarity: bestMatch.clarity || '',
-        cut: bestMatch.cut,
-        price_per_carat: bestMatch.price_per_carat,
-        total_price: bestMatch.total_price,
-        imageUrl: bestMatch.picture || bestMatch.imageUrl,
-        lab: bestMatch.lab,
-        certificate_number: bestMatch.certificate_number
-      } : undefined;
-
       const { data, error } = await supabase.functions.invoke('send-individual-message', {
         body: {
           telegramId: notification.data.customer_info.telegram_id,
-          message: messageContent,
-          diamondData: diamondData
+          message: messageContent
         }
       });
 
@@ -147,8 +122,8 @@ export function QuickReplyWithGPT({ notification, onMessageSent }: QuickReplyWit
       console.log('✅ Message sent via Telegram bot:', data);
 
       toast({
-        title: "✅ הודעה נשלחה",
-        description: diamondData ? "כרטיס יהלום נשלח בהצלחה דרך טלגרם" : "הודעה נשלחה בהצלחה דרך טלגרם",
+        title: "✅ Message Sent",
+        description: "Message delivered successfully via Telegram",
       });
       
       notificationOccurred('success');
@@ -156,8 +131,8 @@ export function QuickReplyWithGPT({ notification, onMessageSent }: QuickReplyWit
     } catch (error) {
       console.error('Failed to send message:', error);
       toast({
-        title: "❌ שליחה נכשלה",
-        description: error instanceof Error ? error.message : "לא ניתן לשלוח הודעה. נסה שוב מאוחר יותר.",
+        title: "❌ Send Failed",
+        description: error instanceof Error ? error.message : "Could not send message. Please try again.",
         variant: "destructive",
       });
       notificationOccurred('error');
@@ -193,14 +168,14 @@ export function QuickReplyWithGPT({ notification, onMessageSent }: QuickReplyWit
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <Sparkles className="h-4 w-4 text-blue-500" />
-          תגובה מהירה עם AI
+          Quick Reply with AI
         </CardTitle>
         {customerInfo && (
           <div className="text-sm text-muted-foreground">
-            שלח ל: <span className="font-medium">{customerInfo.name || 'לקוח'}</span>
+            Send to: <span className="font-medium">{customerInfo.name || 'Customer'}</span>
             {bestMatch && (
               <span className="block text-xs mt-1">
-                התאמה מובילה: {bestMatch.shape} {bestMatch.weight} קראט {bestMatch.color} {bestMatch.clarity}
+                Best match: {bestMatch.shape} {bestMatch.weight}ct {bestMatch.color} {bestMatch.clarity}
               </span>
             )}
           </div>
@@ -219,12 +194,12 @@ export function QuickReplyWithGPT({ notification, onMessageSent }: QuickReplyWit
             {isGenerating ? (
               <>
                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                יוצר...
+                Generating...
               </>
             ) : (
               <>
                 <Sparkles className="h-4 w-4 mr-2" />
-                צור תגובות מהירות
+                Generate Quick Replies
               </>
             )}
           </Button>
@@ -299,12 +274,12 @@ export function QuickReplyWithGPT({ notification, onMessageSent }: QuickReplyWit
               {isSending ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  שולח...
+                  Sending...
                 </>
               ) : (
                 <>
                   <Send className="h-4 w-4 mr-2" />
-                  שלח נבחר
+                  Send Selected
                 </>
               )}
             </Button>

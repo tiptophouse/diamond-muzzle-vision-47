@@ -1,5 +1,5 @@
 
-import React, { memo } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,12 +22,12 @@ interface BusinessNotificationCardProps {
   isLoading?: boolean;
 }
 
-const BusinessNotificationCardComponent = ({
+export function BusinessNotificationCard({ 
   notification, 
   onMarkAsRead,
   onContactCustomer,
   isLoading = false
-}: BusinessNotificationCardProps) => {
+}: BusinessNotificationCardProps) {
   const metadata = notification.data;
   
   const getTypeIcon = (type: string) => {
@@ -203,12 +203,4 @@ const BusinessNotificationCardComponent = ({
       </CardContent>
     </Card>
   );
-};
-
-export const BusinessNotificationCard = memo(BusinessNotificationCardComponent, (prev, next) => {
-  return (
-    prev.notification.id === next.notification.id &&
-    prev.notification.read === next.notification.read &&
-    prev.isLoading === next.isLoading
-  );
-});
+}

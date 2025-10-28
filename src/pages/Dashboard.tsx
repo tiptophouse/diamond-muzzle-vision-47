@@ -3,7 +3,7 @@ import { useInventoryData } from '@/hooks/useInventoryData';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { DashboardLoading } from '@/components/dashboard/DashboardLoading';
 import { SecurityMonitor } from '@/components/auth/SecurityMonitor';
-import { StartupDashboard } from '@/components/dashboard/StartupDashboard';
+import { ActionFocusedDashboard } from '@/components/dashboard/ActionFocusedDashboard';
 import { useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -80,7 +80,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <StartupDashboard />
+      <ActionFocusedDashboard allDiamonds={allDiamonds} />
       <SecurityMonitor />
     </>
   );

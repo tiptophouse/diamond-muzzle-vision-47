@@ -3,7 +3,6 @@ import { TelegramLayout } from "@/components/layout/TelegramLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { useDiamondShareData } from '@/hooks/useDiamondShareData';
 import { Badge } from "@/components/ui/badge";
 import { InsightsHeader } from "@/components/insights/InsightsHeader";
 import { ShapeDistributionChart } from "@/components/insights/ShapeDistributionChart";
@@ -36,7 +35,6 @@ export default function InsightsPage() {
 
   const { diamonds, loading: storeLoading, refetch: refetchStore } = useStoreData();
   const enhancedInsights = useEnhancedInsights(diamonds);
-  const { shareAnalytics, loading: shareLoading, refetch: refetchShare } = useDiamondShareData();
   
   if (!basicAuth) {
     return (
@@ -76,7 +74,7 @@ export default function InsightsPage() {
   }
 
   const handleRefreshAll = async () => {
-    await Promise.all([fetchRealInsights(), refetchStore(), refetchShare()]);
+    await Promise.all([fetchRealInsights(), refetchStore()]);
   };
 
   return (
@@ -139,7 +137,7 @@ export default function InsightsPage() {
 
             <TabsContent value="leads" className="space-y-6 pb-8">
               <LeadGenerationAnalytics 
-                shareAnalytics={shareAnalytics}
+                shareAnalytics={groupInsights ? [] : []} // Will be connected to real share analytics
                 totalDiamonds={diamonds.length}
               />
             </TabsContent>

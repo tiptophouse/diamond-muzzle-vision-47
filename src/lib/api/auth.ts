@@ -8,7 +8,6 @@ export interface TelegramVerificationResponse {
   user_id: number;
   user_data: any;
   message?: string;
-  has_subscription?: boolean;
   security_info?: {
     timestamp_valid: boolean;
     age_seconds: number;
@@ -17,21 +16,8 @@ export interface TelegramVerificationResponse {
   };
 }
 
-export interface SignInResponse {
-  token: string;
-  has_subscription: boolean;
-}
-
-export interface TrialStatus {
-  isActive: boolean;
-  expiresAt: Date | null;
-  daysRemaining: number;
-}
-
 // Enhanced token management with caching
 let backendAuthToken: string | null = null;
-let userHasSubscription: boolean = false;
-let userTrialStatus: TrialStatus | null = null;
 
 export function getBackendAuthToken(): string | null {
   // Try memory first, then token manager
@@ -40,19 +26,9 @@ export function getBackendAuthToken(): string | null {
   return token;
 }
 
-export function hasActiveSubscription(): boolean {
-  return userHasSubscription;
-}
-
-export function getTrialStatus(): TrialStatus | null {
-  return userTrialStatus;
-}
-
 export function clearBackendAuthToken(): void {
   console.log('🔑 Clearing backend auth token');
   backendAuthToken = null;
-  userHasSubscription = false;
-  userTrialStatus = null;
   tokenManager.clear();
 }
 
@@ -93,18 +69,15 @@ export async function signInToBackend(initData: string): Promise<string | null> 
       return null;
     }
 
-    const result: SignInResponse = await response.json();
+    const result = await response.json();
     console.log('🔐 MAIN AUTH: Response data keys:', Object.keys(result));
     
-    // Extract token and subscription status
+    // FIXED: According to OpenAPI spec, the field is "token", not "access_token"
     const token = result.token;
-    const hasSubscription = result.has_subscription ?? false;
     
     if (token) {
       backendAuthToken = token;
-      userHasSubscription = hasSubscription;
       console.log('✅ MAIN AUTH: JWT token received and stored');
-      console.log('💳 MAIN AUTH: Subscription status:', hasSubscription);
       
       // Extract user ID and store token in manager
       try {
@@ -118,51 +91,17 @@ export async function signInToBackend(initData: string): Promise<string | null> 
             tokenManager.setToken(token, user.id);
             console.log('✅ MAIN AUTH: User ID extracted and token cached:', user.id);
             
-            // Check trial status and log attempt
+            // Set session context for RLS policies
             try {
               const { supabase } = await import('@/integrations/supabase/client');
-              
-              // Set session context for RLS policies
               await supabase.rpc('set_session_context', {
                 key: 'app.current_user_id',
                 value: user.id.toString()
               });
               console.log('✅ MAIN AUTH: Session context set for user:', user.id);
-              
-              // Check if trial is still active
-              const { data: trialData } = await supabase.rpc('is_trial_active', {
-                p_telegram_id: user.id
-              });
-              
-              // Get trial expiration date
-              const { data: profileData } = await supabase
-                .from('user_profiles')
-                .select('trial_expires_at')
-                .eq('telegram_id', user.id)
-                .single();
-              
-              const isTrialActive = trialData ?? true;
-              const expiresAt = profileData?.trial_expires_at ? new Date(profileData.trial_expires_at) : null;
-              const daysRemaining = expiresAt ? Math.max(0, Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 14;
-              
-              userTrialStatus = {
-                isActive: isTrialActive,
-                expiresAt,
-                daysRemaining
-              };
-              
-              // Log the subscription attempt
-              await supabase.rpc('log_subscription_attempt', {
-                p_telegram_id: user.id,
-                p_has_subscription: hasSubscription,
-                p_trial_expired: !isTrialActive
-              });
-              
-              console.log('✅ MAIN AUTH: Trial status checked:', userTrialStatus);
             } catch (contextError) {
-              console.warn('⚠️ MAIN AUTH: Failed to check trial status, continuing:', contextError);
-              // Don't throw - allow login to proceed
-              userTrialStatus = { isActive: true, expiresAt: null, daysRemaining: 14 };
+              console.warn('⚠️ MAIN AUTH: Failed to set session context, continuing:', contextError);
+              // Don't throw - this is not critical for basic functionality
             }
           }
         }

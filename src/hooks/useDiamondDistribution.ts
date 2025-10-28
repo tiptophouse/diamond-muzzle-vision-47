@@ -69,22 +69,15 @@ export function useDiamondDistribution() {
             
             // Priority 1: Calculate from price per carat if available
             if (rawPpc > 0 && !isNaN(rawPpc) && weight > 0) {
-              // Validate price per carat is reasonable (under $100k per carat)
-              const validatedPpc = Math.min(rawPpc, 100000);
-              totalPrice = Math.round(validatedPpc * weight);
+              totalPrice = Math.round(rawPpc * weight);
             }
             // Priority 2: Use total price if available
             else if (rawTotal > 0 && !isNaN(rawTotal)) {
               totalPrice = Math.round(rawTotal);
             }
             
-            // Validation: Cap unrealistic prices
-            // Max diamond price: $5M (realistic for retail inventory)
+            // Basic validation only
             if (totalPrice < 0) totalPrice = 0;
-            if (totalPrice > 5000000) {
-              console.warn(`⚠️ Capping unrealistic price: $${totalPrice.toLocaleString()} -> $5,000,000 for diamond ${d.stock_number}`);
-              totalPrice = 5000000;
-            }
             if (weight < 0) weight = 0;
             
             return {

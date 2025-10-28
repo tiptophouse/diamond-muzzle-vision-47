@@ -66,18 +66,13 @@ export function useUserTracking() {
 
   // Track page visits
   const trackPageVisit = async (pagePath: string, pageTitle?: string) => {
-    try {
-      // Use authenticated session when available; otherwise use an anonymous session ID
-      let sessionId = currentSessionId;
-      if (!sessionId) {
-        sessionId = localStorage.getItem('anon_session_id') || crypto.randomUUID();
-        localStorage.setItem('anon_session_id', sessionId);
-      }
+    if (!user?.id || !currentSessionId) return;
 
+    try {
       const { error } = await supabase
         .from('page_visits')
         .insert({
-          session_id: sessionId,
+          session_id: currentSessionId,
           page_path: pagePath,
           page_title: pageTitle,
           referrer: document.referrer || undefined
@@ -85,15 +80,13 @@ export function useUserTracking() {
 
       if (error) throw error;
 
-      // If we have a real authenticated session, update its page count
-      if (currentSessionId) {
-        await supabase
-          .from('user_sessions')
-          .update({
-            pages_visited: await getSessionPageCount(currentSessionId)
-          })
-          .eq('id', currentSessionId);
-      }
+      // Update session page count
+      await supabase
+        .from('user_sessions')
+        .update({
+          pages_visited: await getSessionPageCount(currentSessionId)
+        })
+        .eq('id', currentSessionId);
 
       console.log('Page visit tracked:', pagePath);
     } catch (error) {

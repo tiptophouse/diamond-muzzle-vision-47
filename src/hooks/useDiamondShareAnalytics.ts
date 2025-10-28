@@ -82,19 +82,6 @@ export function useDiamondShareAnalytics(stockNumber: string) {
     }
   };
 
-  // Auto-save time spent every 10 seconds
-  useEffect(() => {
-    if (!stockNumber) return;
-
-    let elapsedTime = 0;
-    const interval = setInterval(() => {
-      elapsedTime += 10;
-      trackTimeSpent(elapsedTime, false);
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [stockNumber, sessionId]);
-
   const trackOtherDiamondsViewed = async () => {
     if (!stockNumber) return;
 
