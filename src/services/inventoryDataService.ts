@@ -1,7 +1,7 @@
 import { api, apiEndpoints, getCurrentUserId } from "@/lib/api";
 
 export interface FetchInventoryResult {
-  data?: any[];
+  data?: any; // Accept array or wrapped object from FastAPI
   error?: string;
   debugInfo: any;
 }
@@ -54,17 +54,17 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
       };
     }
     
-    if (result.data && Array.isArray(result.data)) {
-      console.log('✅ INVENTORY SERVICE: Successfully fetched', result.data.length, 'diamonds from FastAPI');
-      
-      // Warn if inventory is extremely large
-      if (result.data.length >= 10000) {
+    const responseData = (result as any).data;
+
+    if (Array.isArray(responseData)) {
+      console.log('✅ INVENTORY SERVICE: Successfully fetched', responseData.length, 'diamonds from FastAPI');
+
+      if (responseData.length >= 10000) {
         console.warn('⚠️ INVENTORY SERVICE: User has 10,000+ diamonds. Some diamonds may not be visible. Consider pagination.');
       }
-      
-      // Log image fields available in FastAPI response
-      if (result.data.length > 0) {
-        const sampleItem = result.data[0];
+
+      if (responseData.length > 0) {
+        const sampleItem = responseData[0];
         console.log('📸 INVENTORY SERVICE: Available image fields in FastAPI response:', {
           picture: sampleItem.picture,
           image_url: sampleItem.image_url,
@@ -73,39 +73,53 @@ export async function fetchInventoryData(): Promise<FetchInventoryResult> {
           image: sampleItem.image,
           photo_url: sampleItem.photo_url,
           diamond_image: sampleItem.diamond_image,
-          allImageFields: Object.keys(sampleItem).filter(key => 
-            key.toLowerCase().includes('image') || 
-            key.toLowerCase().includes('picture') || 
+          allImageFields: Object.keys(sampleItem).filter(key =>
+            key.toLowerCase().includes('image') ||
+            key.toLowerCase().includes('picture') ||
             key.toLowerCase().includes('photo')
           )
         });
       }
-      
+
       return {
-        data: result.data,
+        data: responseData,
         debugInfo: {
           ...debugInfo,
           step: 'SUCCESS: FastAPI data received',
-          totalDiamonds: result.data.length,
-          endpoint: endpoint,
-          imageFieldsFound: result.data.length > 0 ? Object.keys(result.data[0]).filter(key => 
-            key.toLowerCase().includes('image') || 
-            key.toLowerCase().includes('picture') || 
+          totalDiamonds: responseData.length,
+          endpoint,
+          imageFieldsFound: responseData.length > 0 ? Object.keys(responseData[0]).filter(key =>
+            key.toLowerCase().includes('image') ||
+            key.toLowerCase().includes('picture') ||
             key.toLowerCase().includes('photo')
           ) : []
         }
       };
-    } else {
-      console.log('⚠️ INVENTORY SERVICE: FastAPI returned empty or invalid data');
+    }
+
+    // Pass through wrapped objects so the hook can unwrap different shapes
+    if (responseData && typeof responseData === 'object') {
+      console.log('ℹ️ INVENTORY SERVICE: Received wrapped response object from FastAPI');
       return {
-        data: [],
+        data: responseData,
         debugInfo: {
           ...debugInfo,
-          step: 'SUCCESS: FastAPI returned empty data',
-          totalDiamonds: 0
+          step: 'SUCCESS: FastAPI returned wrapped object',
+          totalDiamonds: Array.isArray((responseData as any).data) ? (responseData as any).data.length : undefined,
+          endpoint
         }
       };
     }
+
+    console.log('⚠️ INVENTORY SERVICE: FastAPI returned empty data');
+    return {
+      data: [],
+      debugInfo: {
+        ...debugInfo,
+        step: 'SUCCESS: FastAPI returned empty data',
+        totalDiamonds: 0
+      }
+    };
     
   } catch (error) {
     console.error("❌ INVENTORY SERVICE: FastAPI request failed:", error);
