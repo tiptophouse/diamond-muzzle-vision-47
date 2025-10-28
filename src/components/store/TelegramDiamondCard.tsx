@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, memo } from "react";
 import { MessageCircle, Eye, Share2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,7 @@ interface TelegramDiamondCardProps {
   onViewDetails?: (diamond: Diamond) => void;
 }
 
-export function TelegramDiamondCard({ diamond, index, onViewDetails }: TelegramDiamondCardProps) {
+const TelegramDiamondCardComponent = ({ diamond, index, onViewDetails }: TelegramDiamondCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [sessionId] = useState(() => crypto.randomUUID());
   const { hapticFeedback, mainButton, backButton } = useTelegramWebApp();
@@ -246,4 +246,11 @@ View details: ${window.location.origin}/diamond/${diamond.stockNumber}`;
       </CardContent>
     </Card>
   );
-}
+};
+
+// Memoize to prevent unnecessary re-renders
+export const TelegramDiamondCard = memo(TelegramDiamondCardComponent, (prev, next) => {
+  return prev.diamond.id === next.diamond.id && 
+         prev.diamond.stockNumber === next.diamond.stockNumber &&
+         prev.index === next.index;
+});

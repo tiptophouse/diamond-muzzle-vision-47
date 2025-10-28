@@ -108,6 +108,14 @@ class TelegramOptimizedLogger {
     this.info(`Telegram Action: ${action}`, telegramContext);
   }
   
+  // Performance logging
+  perf(label: string, context?: LogContext) {
+    if (this.isDevelopment) {
+      console.log(`⚡ [PERF] ${label}`, context || '');
+    }
+    // Don't queue perf logs for performance
+  }
+  
   private queueLog(level: string, message: string, context?: any) {
     if (this.logQueue.length >= this.maxQueueSize) {
       this.logQueue.shift(); // Remove oldest log

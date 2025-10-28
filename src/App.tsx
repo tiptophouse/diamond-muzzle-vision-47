@@ -1,7 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { TelegramSDK2Provider } from './providers/TelegramSDK2Provider';
 import { TelegramAuthProvider } from './context/TelegramAuthContext';
+import { TelegramMotionProvider } from './context/TelegramMotionContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { InteractiveWizardProvider } from './contexts/InteractiveWizardContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';
@@ -64,8 +66,10 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <RTLProvider>
-          <TelegramAuthProvider>
-            <Router>
+          <Router>
+            <TelegramSDK2Provider>
+              <TelegramMotionProvider>
+                <TelegramAuthProvider>
               <TutorialProvider>
                 <InteractiveWizardProvider>
                   <OnboardingProvider>
@@ -237,8 +241,10 @@ function App() {
                   </OnboardingProvider>
                 </InteractiveWizardProvider>
               </TutorialProvider>
-            </Router>
-          </TelegramAuthProvider>
+                </TelegramAuthProvider>
+              </TelegramMotionProvider>
+            </TelegramSDK2Provider>
+          </Router>
         </RTLProvider>
       </QueryClientProvider>
     </ErrorBoundary>
