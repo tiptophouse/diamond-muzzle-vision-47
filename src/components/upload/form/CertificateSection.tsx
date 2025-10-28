@@ -61,9 +61,9 @@ export function CertificateSection({ register, setValue, watch, errors }: Certif
 
         <div className="md:col-span-2">
           <DiamondInputField
-            id="segomaUrl"
-            label="3D Viewer URL (Optional)"
-            placeholder="e.g., https://d2jvuhke77jh0i.cloudfront.net/741-103A.html"
+            id="gem360Url"
+            label="360° Viewer URL (Optional)"
+            placeholder="e.g., https://d2jvuhke77jh0i.cloudfront.net/741-103A.html (V360, Segoma, Gem360)"
             register={register}
             errors={errors}
           />

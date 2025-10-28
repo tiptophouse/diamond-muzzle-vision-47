@@ -39,6 +39,6 @@ export interface DiamondFormData {
   // Image
   picture?: string;
   
-  // 3D Viewer
-  segomaUrl?: string;
+  // 360° Viewer (V360, Segoma, Gem360, etc.)
+  gem360Url?: string;
 }
