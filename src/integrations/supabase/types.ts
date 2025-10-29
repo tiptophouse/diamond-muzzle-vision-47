@@ -20,7 +20,7 @@ export type Database = {
           admin_telegram_id: number
           created_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           metadata: Json | null
           resource_id: string | null
           resource_type: string | null
@@ -31,7 +31,7 @@ export type Database = {
           admin_telegram_id: number
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           resource_id?: string | null
           resource_type?: string | null
@@ -42,7 +42,7 @@ export type Database = {
           admin_telegram_id?: number
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           resource_id?: string | null
           resource_type?: string | null
@@ -77,6 +77,108 @@ export type Database = {
           role?: string
           telegram_id?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_learning_patterns: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_applied_at: string | null
+          pattern_data: Json
+          pattern_type: string
+          success_score: number | null
+          updated_at: string | null
+          usage_count: number | null
+          user_telegram_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_applied_at?: string | null
+          pattern_data: Json
+          pattern_type: string
+          success_score?: number | null
+          updated_at?: string | null
+          usage_count?: number | null
+          user_telegram_id: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_applied_at?: string | null
+          pattern_data?: Json
+          pattern_type?: string
+          success_score?: number | null
+          updated_at?: string | null
+          usage_count?: number | null
+          user_telegram_id?: number
+        }
+        Relationships: []
+      }
+      ai_market_insights: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          id: string
+          insight_data: Json
+          insight_type: string
+          sample_size: number | null
+          updated_at: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          insight_data: Json
+          insight_type: string
+          sample_size?: number | null
+          updated_at?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          insight_data?: Json
+          insight_type?: string
+          sample_size?: number | null
+          updated_at?: string | null
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
+      ai_transaction_feedback: {
+        Row: {
+          created_at: string | null
+          feedback_type: string
+          id: string
+          learning_extracted: boolean | null
+          match_id: string | null
+          outcome_data: Json
+          transaction_id: string | null
+          user_telegram_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          feedback_type: string
+          id?: string
+          learning_extracted?: boolean | null
+          match_id?: string | null
+          outcome_data: Json
+          transaction_id?: string | null
+          user_telegram_id: number
+        }
+        Update: {
+          created_at?: string | null
+          feedback_type?: string
+          id?: string
+          learning_extracted?: boolean | null
+          match_id?: string | null
+          outcome_data?: Json
+          transaction_id?: string | null
+          user_telegram_id?: number
         }
         Relationships: []
       }
@@ -565,6 +667,57 @@ export type Database = {
           },
         ]
       }
+      diamond_detail_views: {
+        Row: {
+          came_from: string
+          catalog_position: number | null
+          clicked_contact: boolean | null
+          clicked_share: boolean | null
+          created_at: string
+          diamond_stock_number: string
+          id: string
+          scroll_depth_percentage: number | null
+          session_id: string
+          time_spent_seconds: number | null
+          timestamp: string
+          user_telegram_id: number | null
+          viewed_360: boolean | null
+          viewed_certificate: boolean | null
+        }
+        Insert: {
+          came_from: string
+          catalog_position?: number | null
+          clicked_contact?: boolean | null
+          clicked_share?: boolean | null
+          created_at?: string
+          diamond_stock_number: string
+          id?: string
+          scroll_depth_percentage?: number | null
+          session_id: string
+          time_spent_seconds?: number | null
+          timestamp?: string
+          user_telegram_id?: number | null
+          viewed_360?: boolean | null
+          viewed_certificate?: boolean | null
+        }
+        Update: {
+          came_from?: string
+          catalog_position?: number | null
+          clicked_contact?: boolean | null
+          clicked_share?: boolean | null
+          created_at?: string
+          diamond_stock_number?: string
+          id?: string
+          scroll_depth_percentage?: number | null
+          session_id?: string
+          time_spent_seconds?: number | null
+          timestamp?: string
+          user_telegram_id?: number | null
+          viewed_360?: boolean | null
+          viewed_certificate?: boolean | null
+        }
+        Relationships: []
+      }
       diamond_offers: {
         Row: {
           buyer_contact: string | null
@@ -623,7 +776,7 @@ export type Database = {
           time_spent_seconds: number | null
           view_timestamp: string
           viewed_other_diamonds: boolean | null
-          viewer_ip_address: unknown | null
+          viewer_ip_address: unknown
           viewer_telegram_id: number | null
           viewer_user_agent: string | null
         }
@@ -639,7 +792,7 @@ export type Database = {
           time_spent_seconds?: number | null
           view_timestamp?: string
           viewed_other_diamonds?: boolean | null
-          viewer_ip_address?: unknown | null
+          viewer_ip_address?: unknown
           viewer_telegram_id?: number | null
           viewer_user_agent?: string | null
         }
@@ -655,7 +808,7 @@ export type Database = {
           time_spent_seconds?: number | null
           view_timestamp?: string
           viewed_other_diamonds?: boolean | null
-          viewer_ip_address?: unknown | null
+          viewer_ip_address?: unknown
           viewer_telegram_id?: number | null
           viewer_user_agent?: string | null
         }
@@ -1203,7 +1356,7 @@ export type Database = {
           referrer: string | null
           scroll_depth: number | null
           session_id: string | null
-          time_spent: unknown | null
+          time_spent: unknown
           visit_timestamp: string | null
         }
         Insert: {
@@ -1218,7 +1371,7 @@ export type Database = {
           referrer?: string | null
           scroll_depth?: number | null
           session_id?: string | null
-          time_spent?: unknown | null
+          time_spent?: unknown
           visit_timestamp?: string | null
         }
         Update: {
@@ -1233,7 +1386,7 @@ export type Database = {
           referrer?: string | null
           scroll_depth?: number | null
           session_id?: string | null
-          time_spent?: unknown | null
+          time_spent?: unknown
           visit_timestamp?: string | null
         }
         Relationships: [
@@ -1405,6 +1558,48 @@ export type Database = {
         }
         Relationships: []
       }
+      store_item_analytics: {
+        Row: {
+          created_at: string
+          device_type: string | null
+          diamond_stock_number: string
+          event_type: string
+          id: string
+          scroll_position: number | null
+          session_id: string
+          timestamp: string
+          user_telegram_id: number | null
+          view_duration_seconds: number | null
+          viewport_percentage: number | null
+        }
+        Insert: {
+          created_at?: string
+          device_type?: string | null
+          diamond_stock_number: string
+          event_type: string
+          id?: string
+          scroll_position?: number | null
+          session_id: string
+          timestamp?: string
+          user_telegram_id?: number | null
+          view_duration_seconds?: number | null
+          viewport_percentage?: number | null
+        }
+        Update: {
+          created_at?: string
+          device_type?: string | null
+          diamond_stock_number?: string
+          event_type?: string
+          id?: string
+          scroll_position?: number | null
+          session_id?: string
+          timestamp?: string
+          user_telegram_id?: number | null
+          view_duration_seconds?: number | null
+          viewport_percentage?: number | null
+        }
+        Relationships: []
+      }
       store_item_reshares: {
         Row: {
           created_at: string | null
@@ -1522,6 +1717,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subscription_attempts: {
+        Row: {
+          attempted_at: string
+          created_at: string
+          has_subscription: boolean
+          id: string
+          telegram_id: number
+          trial_expired: boolean
+        }
+        Insert: {
+          attempted_at?: string
+          created_at?: string
+          has_subscription: boolean
+          id?: string
+          telegram_id: number
+          trial_expired: boolean
+        }
+        Update: {
+          attempted_at?: string
+          created_at?: string
+          has_subscription?: boolean
+          id?: string
+          telegram_id?: number
+          trial_expired?: boolean
+        }
+        Relationships: []
       }
       subscriptions: {
         Row: {
@@ -1764,7 +1986,7 @@ export type Database = {
           storage_used_mb: number | null
           subscription_status: string | null
           telegram_id: number
-          total_time_spent: unknown | null
+          total_time_spent: unknown
           total_visits: number | null
           updated_at: string | null
           user_id: string | null
@@ -1781,7 +2003,7 @@ export type Database = {
           storage_used_mb?: number | null
           subscription_status?: string | null
           telegram_id: number
-          total_time_spent?: unknown | null
+          total_time_spent?: unknown
           total_visits?: number | null
           updated_at?: string | null
           user_id?: string | null
@@ -1798,7 +2020,7 @@ export type Database = {
           storage_used_mb?: number | null
           subscription_status?: string | null
           telegram_id?: number
-          total_time_spent?: unknown | null
+          total_time_spent?: unknown
           total_visits?: number | null
           updated_at?: string | null
           user_id?: string | null
@@ -1829,7 +2051,7 @@ export type Database = {
           telegram_id: number
           total_page_views: number | null
           total_sessions: number | null
-          total_time_spent: unknown | null
+          total_time_spent: unknown
           updated_at: string | null
           uploads_count: number | null
         }
@@ -1848,7 +2070,7 @@ export type Database = {
           telegram_id: number
           total_page_views?: number | null
           total_sessions?: number | null
-          total_time_spent?: unknown | null
+          total_time_spent?: unknown
           updated_at?: string | null
           uploads_count?: number | null
         }
@@ -1867,7 +2089,7 @@ export type Database = {
           telegram_id?: number
           total_page_views?: number | null
           total_sessions?: number | null
-          total_time_spent?: unknown | null
+          total_time_spent?: unknown
           updated_at?: string | null
           uploads_count?: number | null
         }
@@ -2002,6 +2224,7 @@ export type Database = {
           is_premium: boolean | null
           language: string | null
           language_code: string | null
+          last_active: string | null
           last_login: string | null
           last_name: string | null
           notes: string | null
@@ -2013,6 +2236,8 @@ export type Database = {
           subscription_plan: string | null
           telegram_id: number
           timezone: string | null
+          trial_expires_at: string | null
+          trial_started_at: string | null
           updated_at: string | null
           username: string | null
           website: string | null
@@ -2028,6 +2253,7 @@ export type Database = {
           is_premium?: boolean | null
           language?: string | null
           language_code?: string | null
+          last_active?: string | null
           last_login?: string | null
           last_name?: string | null
           notes?: string | null
@@ -2039,6 +2265,8 @@ export type Database = {
           subscription_plan?: string | null
           telegram_id: number
           timezone?: string | null
+          trial_expires_at?: string | null
+          trial_started_at?: string | null
           updated_at?: string | null
           username?: string | null
           website?: string | null
@@ -2054,6 +2282,7 @@ export type Database = {
           is_premium?: boolean | null
           language?: string | null
           language_code?: string | null
+          last_active?: string | null
           last_login?: string | null
           last_name?: string | null
           notes?: string | null
@@ -2065,6 +2294,8 @@ export type Database = {
           subscription_plan?: string | null
           telegram_id?: number
           timezone?: string | null
+          trial_expires_at?: string | null
+          trial_started_at?: string | null
           updated_at?: string | null
           username?: string | null
           website?: string | null
@@ -2087,7 +2318,7 @@ export type Database = {
           session_start: string | null
           telegram_id: number
           time_zone: string | null
-          total_duration: unknown | null
+          total_duration: unknown
           user_agent: string | null
           user_id: string | null
         }
@@ -2106,7 +2337,7 @@ export type Database = {
           session_start?: string | null
           telegram_id: number
           time_zone?: string | null
-          total_duration?: unknown | null
+          total_duration?: unknown
           user_agent?: string | null
           user_id?: string | null
         }
@@ -2125,7 +2356,7 @@ export type Database = {
           session_start?: string | null
           telegram_id?: number
           time_zone?: string | null
-          total_duration?: unknown | null
+          total_duration?: unknown
           user_agent?: string | null
           user_id?: string | null
         }
@@ -2293,10 +2524,7 @@ export type Database = {
         Args: { check_telegram_id: number }
         Returns: boolean
       }
-      clean_expired_cache: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      clean_expired_cache: { Args: never; Returns: undefined }
       delete_diamond: {
         Args: { p_stock_number: string; p_user_id: number }
         Returns: boolean
@@ -2309,12 +2537,17 @@ export type Database = {
         Args: { p_user_id: number }
         Returns: number
       }
-      expire_keshett_agreements: {
-        Args: Record<PropertyKey, never>
-        Returns: number
+      expire_keshett_agreements: { Args: never; Returns: number }
+      get_ai_recommendations: {
+        Args: { p_context_type?: string; p_user_telegram_id: number }
+        Returns: {
+          confidence: number
+          pattern_type: string
+          recommendation: Json
+        }[]
       }
       get_bot_usage_summary: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           active_chats: number
           avg_response_time_ms: number
@@ -2325,16 +2558,10 @@ export type Database = {
           unique_users_today: number
         }[]
       }
-      get_current_user_telegram_id: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      get_public_diamond_count: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      get_current_user_telegram_id: { Args: never; Returns: number }
+      get_public_diamond_count: { Args: never; Returns: number }
       get_realistic_analytics_summary: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           active_users_last_hour: number
           avg_session_duration_seconds: number
@@ -2345,7 +2572,7 @@ export type Database = {
         }[]
       }
       get_user_statistics: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           active_users: number
           blocked_users: number
@@ -2355,18 +2582,10 @@ export type Database = {
           users_with_phone: number
         }[]
       }
-      is_admin: {
-        Args: { telegram_id_param: number }
-        Returns: boolean
-      }
-      is_admin_user: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_current_user_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_admin: { Args: { telegram_id_param: number }; Returns: boolean }
+      is_admin_user: { Args: never; Returns: boolean }
+      is_current_user_admin: { Args: never; Returns: boolean }
+      is_trial_active: { Args: { p_telegram_id: number }; Returns: boolean }
       log_admin_action: {
         Args: {
           action_param: string
@@ -2377,10 +2596,15 @@ export type Database = {
         }
         Returns: undefined
       }
-      remove_all_duplicate_certificates: {
-        Args: Record<PropertyKey, never>
-        Returns: number
+      log_subscription_attempt: {
+        Args: {
+          p_has_subscription: boolean
+          p_telegram_id: number
+          p_trial_expired: boolean
+        }
+        Returns: undefined
       }
+      remove_all_duplicate_certificates: { Args: never; Returns: number }
       remove_duplicate_certificates: {
         Args: { p_user_id: number }
         Returns: number
@@ -2392,6 +2616,15 @@ export type Database = {
       set_session_context: {
         Args: { key: string; value: string }
         Returns: undefined
+      }
+      update_ai_learning_pattern: {
+        Args: {
+          p_pattern_data: Json
+          p_pattern_type: string
+          p_success_score?: number
+          p_user_telegram_id: number
+        }
+        Returns: string
       }
       update_diamond_for_user: {
         Args: { p_stock_number: string; p_update_data: Json; p_user_id: number }
