@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { TelegramLayout } from "@/components/layout/TelegramLayout";
-import { SingleStoneUploadForm } from "@/components/upload/SingleStoneUploadForm";
+import { StoneFormContainer } from "@/components/upload/StoneFormContainer";
 import { UploadForm } from "@/components/upload/UploadForm";
 import { UploadWizard } from "@/components/upload/UploadWizard";
 import { MobileTutorialWizard } from "@/components/tutorial/MobileTutorialWizard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
-import { FileText, Camera, Scan, Sparkles } from "lucide-react";
+import { FileText, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTelegramWebApp } from "@/hooks/useTelegramWebApp";
 export default function UploadSingleStonePage() {
@@ -164,7 +164,7 @@ export default function UploadSingleStonePage() {
                 </Button>
               </div>
             </div>
-            <SingleStoneUploadForm initialData={scannedData} showScanButton={false} />
+            <StoneFormContainer initialData={scannedData} showScanButton={false} />
           </div>
         )}
 
