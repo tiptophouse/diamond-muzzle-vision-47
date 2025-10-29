@@ -73,7 +73,7 @@ serve(async (req) => {
     }
 
     // Determine target chat: personal chat for test mode, group for normal mode
-    const targetChatId = testMode ? sharedBy : (Deno.env.get('B2B_GROUP_ID') || -1002178695748);
+    const targetChatId = testMode ? sharedBy : (Deno.env.get('B2B_GROUP_ID') || -1001009290613);
     const messagePrefix = testMode ? '🧪 **TEST MESSAGE** - ' : '';
     
     console.log(`📧 Sending diamond to ${testMode ? 'personal chat' : 'group'}: ${targetChatId}`);
