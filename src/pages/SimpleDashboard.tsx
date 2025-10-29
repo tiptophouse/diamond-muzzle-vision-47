@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { http } from '@/api/http';
 import { MobileTelegramDashboard } from '@/components/dashboard/MobileTelegramDashboard';
 import { FloatingAdminButton } from '@/components/admin/FloatingAdminButton';
+import { INVENTORY_CHANGE_EVENT } from '@/hooks/inventory/useInventoryDataSync';
 
 interface DashboardData {
   totalDiamonds: number;
@@ -93,6 +94,21 @@ export default function SimpleDashboard() {
       fetchDashboardData();
     }
   }, [isAuthenticated]); // Only run when authentication status changes
+
+  // Listen for inventory changes and refresh dashboard
+  useEffect(() => {
+    const handleInventoryChange = () => {
+      console.log('📊 Dashboard: Inventory changed detected, refreshing data...');
+      if (isAuthenticated && user) {
+        fetchDashboardData();
+      }
+    };
+
+    window.addEventListener(INVENTORY_CHANGE_EVENT, handleInventoryChange);
+    return () => {
+      window.removeEventListener(INVENTORY_CHANGE_EVENT, handleInventoryChange);
+    };
+  }, [isAuthenticated, user]);
 
   if (!isAuthenticated || !user) {
     // Still show dashboard with limited data

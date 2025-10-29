@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { http } from '@/api/http';
+import { INVENTORY_CHANGE_EVENT } from './inventory/useInventoryDataSync';
 
 interface DiamondData {
   id: string;
@@ -179,6 +180,19 @@ export function useDiamondDistribution() {
   useEffect(() => {
     // Always fetch data, regardless of authentication status for better UX
     fetchDistributionData();
+  }, [user?.id, isAuthenticated]);
+
+  // Listen for inventory changes and refresh
+  useEffect(() => {
+    const handleInventoryChange = () => {
+      console.log('📊 Distribution: Inventory changed, refreshing...');
+      fetchDistributionData();
+    };
+
+    window.addEventListener(INVENTORY_CHANGE_EVENT, handleInventoryChange);
+    return () => {
+      window.removeEventListener(INVENTORY_CHANGE_EVENT, handleInventoryChange);
+    };
   }, [user?.id, isAuthenticated]);
 
   return {

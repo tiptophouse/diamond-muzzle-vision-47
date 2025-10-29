@@ -190,8 +190,8 @@ export function SingleStoneUploadForm({
         console.log('❌ UPLOAD: Diamond creation failed');
         setApiConnected(false);
         toast({
-          title: "❌ Upload Failed",
-          description: "Failed to add diamond to inventory. Please try again.",
+          title: "❌ העלאה נכשלה",
+          description: "לא הצלחנו להוסיף את היהלום. אנא נסה שוב.",
           variant: "destructive",
         });
       } else {
@@ -199,8 +199,9 @@ export function SingleStoneUploadForm({
         setApiConnected(true);
         setUploadSuccess(true);
         toast({
-          title: "Diamond Added Successfully",
-          description: "Your diamond has been added to your inventory.",
+          title: "✅ יהלום נוסף בהצלחה!",
+          description: "היהלום נוסף ל-Dashboard, Store ו-Inventory שלך",
+          duration: 5000,
         });
         
         // Call success callback if provided
