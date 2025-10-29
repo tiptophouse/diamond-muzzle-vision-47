@@ -3,7 +3,6 @@ import { Diamond } from '@/components/inventory/InventoryTable';
 import { fetchInventoryData } from '@/services/inventoryDataService';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useInventoryDataSync } from '@/hooks/inventory/useInventoryDataSync';
-import { useRequestCache } from '@/hooks/useRequestCache';
 
 export function useInventoryData() {
   const { user, isLoading: authLoading } = useTelegramAuth();
@@ -12,7 +11,6 @@ export function useInventoryData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { subscribeToInventoryChanges } = useInventoryDataSync();
-  const inventoryCache = useRequestCache<Diamond[]>({ ttl: 2 * 60 * 1000 }); // 2 minutes cache
 
   // Memoize shape normalization to prevent recalculation
   const normalizeShape = useMemo(() => {
@@ -112,16 +110,14 @@ export function useInventoryData() {
       setLoading(true);
       setError(null);
 
-      const cacheKey = `inventory_${user.id}`;
-      
-      console.log('📥 INVENTORY HOOK: Fetching inventory data...');
+      console.log('📥 INVENTORY HOOK: Fetching FRESH inventory data (no cache)...');
       
       // SPECIAL DEBUG for user 2084882603 - Segoma issue
       if (String(user?.id) === '2084882603') {
         console.log('🔍 SEGOMA INVENTORY DEBUG for user 2084882603 - fetching data...');
       }
       
-      // ALWAYS fetch fresh data to reflect immediate changes after upload/delete
+      // ALWAYS fetch fresh data - NO CACHING to ensure immediate updates
       const result = await fetchInventoryData();
       
       if (result.error) {
@@ -253,7 +249,7 @@ export function useInventoryData() {
     } finally {
       setLoading(false);
     }
-  }, [user, processImageUrl, detect360Url, inventoryCache]);
+  }, [user, processImageUrl, detect360Url]);
 
   const handleRefresh = useCallback(() => {
     console.log('🔄 INVENTORY HOOK: Manual refresh triggered');

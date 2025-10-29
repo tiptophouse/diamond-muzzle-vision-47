@@ -117,10 +117,11 @@ export function StoneFormContainer({
   const handleFormSubmit = useCallback(async (data: DiamondFormData) => {
     const success = await submitForm(data);
     if (success) {
+      // Wait longer to ensure the success card shows, then reset
       setTimeout(() => {
         reset(defaultValues);
         setUploadSuccess(false);
-      }, 3000);
+      }, 4000);
     }
   }, [submitForm, reset, defaultValues]);
 
