@@ -43,8 +43,8 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
         console.log('✅ DELETE: Diamond deleted successfully:', response);
 
         toast({
-          title: "Diamond deleted successfully",
-          description: `Diamond ${stockNumber} has been removed from your inventory.`,
+          title: "✅ Diamond Deleted",
+          description: `Diamond ${stockNumber} has been permanently removed from your inventory and will no longer appear in your store.`,
         });
 
         // Trigger inventory refresh for real-time updates
@@ -53,6 +53,7 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
         if (onSuccess) onSuccess();
         return true;
       } else {
+        console.error('❌ DELETE: API returned failure:', response.message);
         throw new Error(response.message || 'Failed to delete diamond');
       }
       
@@ -96,8 +97,8 @@ export function useDeleteDiamond({ onSuccess, removeDiamondFromState, restoreDia
       
       toast({
         variant: "destructive",
-        title: "Failed to delete diamond",
-        description: error.message || "Could not delete diamond. Please try again.",
+        title: "❌ Delete Failed",
+        description: `Could not delete diamond ${stockNumber}. ${error.message || 'Please try again.'}`,
       });
       
       return false;

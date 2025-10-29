@@ -261,33 +261,30 @@ export function SingleStoneUploadForm({
 
   return (
     <>
-      {/* iPhone/TMA optimized form */}
-      <div className="space-y-4">
+      {/* Mobile-optimized compact form */}
+      <div className="space-y-3">
         {showScanButton && (
           <Card className="border-primary/20">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Add Single Diamond</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="p-3">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsScanning(true)}
-                className="w-full h-12 text-base active:scale-95 transition-transform"
+                className="w-full h-11 text-sm active:scale-95 transition-transform"
               >
-                <Camera className="h-5 w-5 mr-2" />
-                Scan Diamond Certificate
+                <Camera className="h-4 w-4 mr-2" />
+                Scan Certificate
               </Button>
             </CardContent>
           </Card>
         )}
 
         <ApiTestButton />
-        <ApiStatusIndicator isConnected={apiConnected} className="mb-4" />
+        <ApiStatusIndicator isConnected={apiConnected} className="mb-2" />
         
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col min-h-screen">
-          {/* Main form content - scrollable */}
-          <div className="flex-1 overflow-y-auto smooth-scroll">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col">
+          {/* Compact form sections */}
+          <div className="space-y-4">
             <DiamondDetailsSection
               register={register}
               setValue={setValue}
@@ -295,7 +292,7 @@ export function SingleStoneUploadForm({
               errors={errors}
             />
 
-            <div className="border-t border-border/20 mt-8">
+            <div className="border-t border-border/20 pt-4">
               <MeasurementsSection
                 register={register}
                 watch={watch}
@@ -303,10 +300,8 @@ export function SingleStoneUploadForm({
               />
             </div>
 
-            <div className="border-t border-border/20 mt-8 pt-8 px-4 space-y-6">
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold text-foreground">Certificate</h3>
-              </div>
+            <div className="border-t border-border/20 pt-4 px-3">
+              <h3 className="text-base font-semibold text-foreground mb-3">Certificate</h3>
               <CertificateSection
                 register={register}
                 setValue={setValue}
@@ -315,10 +310,8 @@ export function SingleStoneUploadForm({
               />
             </div>
 
-            <div className="border-t border-border/20 mt-8 pt-8 px-4 space-y-6">
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold text-foreground">Business Info</h3>
-              </div>
+            <div className="border-t border-border/20 pt-4 px-3">
+              <h3 className="text-base font-semibold text-foreground mb-3">Business Info</h3>
               <BusinessInfoSection
                 register={register}
                 setValue={setValue}
@@ -327,10 +320,8 @@ export function SingleStoneUploadForm({
               />
             </div>
 
-            <div className="border-t border-border/20 mt-8 pt-8 px-4 space-y-6">
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold text-foreground">Images</h3>
-              </div>
+            <div className="border-t border-border/20 pt-4 px-3">
+              <h3 className="text-base font-semibold text-foreground mb-3">Images</h3>
               <ImageUploadSection
                 setValue={setValue}
                 watch={watch}
@@ -339,11 +330,11 @@ export function SingleStoneUploadForm({
             </div>
 
             {/* Bottom padding for safe area */}
-            <div className="h-24"></div>
+            <div className="h-20"></div>
           </div>
 
           {/* Sticky bottom actions */}
-          <div className="sticky bottom-0 bg-background border-t border-border/20 safe-area-inset-bottom">
+          <div className="sticky bottom-0 bg-background border-t border-border/20 safe-area-inset-bottom z-10">
             <div data-tutorial="submit-diamond">
               <FormActions
                 onReset={resetForm}

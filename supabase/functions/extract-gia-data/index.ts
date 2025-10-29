@@ -68,6 +68,8 @@ serve(async (req) => {
               "picture": "string"
             }
 
+            CRITICAL: The certificate_number field is MANDATORY and is usually found at the top of the GIA certificate as a large number (often 10-13 digits). Look very carefully for this number - it's typically labeled as "Report Number" or just displayed prominently at the top. This is the most important field to extract correctly.
+            
             Extract exact values from the certificate. If a field is not visible, use null. Be very precise with measurements and percentages.`
           },
           {
