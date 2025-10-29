@@ -18,7 +18,7 @@ export function WelcomeBanner() {
             <Sparkles className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="font-semibold text-lg">Welcome to Diamond Muzzle! 💎</h3>
+            <h3 className="font-semibold text-lg">Welcome to BrilliantBot! 💎</h3>
             <p className="text-blue-100 text-sm">
               Take a quick tour to discover all the powerful features available to you.
             </p>

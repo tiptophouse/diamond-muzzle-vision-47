@@ -110,7 +110,7 @@ serve(async (req) => {
 
 function generateWelcomeMessage(firstName: string, isEnglish: boolean = false): string {
   if (isEnglish) {
-    return `🎉 <b>Welcome to Diamond Muzzle, ${firstName}!</b>
+    return `🎉 <b>Welcome to BrilliantBot, ${firstName}!</b>
 
 💎 You've joined the most advanced diamond trading platform! Here's what makes us special:
 
@@ -142,7 +142,7 @@ function generateWelcomeMessage(firstName: string, isEnglish: boolean = false): 
 Ready to transform your diamond business? Let's get started! 🚀`;
   } else {
     // Enhanced Hebrew version with comprehensive feature overview
-    return `🎉 <b>ברוכים הבאים ל-Diamond Muzzle, ${firstName}!</b>
+    return `🎉 <b>ברוכים הבאים ל-BrilliantBot, ${firstName}!</b>
 
 💎 <b>הצטרפת לפלטפורמת המסחר ביהלומים המתקדמת בעולם!</b>
 
@@ -256,7 +256,7 @@ function generateTutorialMessage(firstName: string, isEnglish: boolean = false):
   if (isEnglish) {
     return `🎓 <b>Quick Start Guide for ${firstName}</b>
 
-Ready to get the most out of Diamond Muzzle? Here's your personalized tutorial:
+Ready to get the most out of BrilliantBot? Here's your personalized tutorial:
 
 ✨ <b>In just 5 minutes, you'll learn:</b>
 • How to upload your first diamond
@@ -274,7 +274,7 @@ Let's start your journey to diamond trading success! 🚀`;
   } else {
     return `🎓 <b>מדריך התחלה מהירה עבור ${firstName}</b>
 
-מוכן להפיק את המקסימום מ-Diamond Muzzle? הנה המדריך האישי שלך:
+מוכן להפיק את המקסימום מ-BrilliantBot? הנה המדריך האישי שלך:
 
 ✨ <b>תוך 5 דקות בלבד תלמד:</b>
 • איך להעלות את היהלום הראשון שלך
