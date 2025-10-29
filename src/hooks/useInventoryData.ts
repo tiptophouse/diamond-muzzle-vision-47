@@ -121,85 +121,85 @@ export function useInventoryData() {
         console.log('🔍 SEGOMA INVENTORY DEBUG for user 2084882603 - fetching data...');
       }
       
-      const transformedDiamonds = await inventoryCache.getOrFetch(cacheKey, async () => {
-        const result = await fetchInventoryData();
+      // ALWAYS fetch fresh data to reflect immediate changes after upload/delete
+      const result = await fetchInventoryData();
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      if (result.data && result.data.length > 0) {
+        console.log('📥 INVENTORY HOOK: Processing', result.data.length, 'diamonds');
         
-        if (result.error) {
-          throw new Error(result.error);
+        // SPECIAL DEBUG for user 2084882603 - Segoma issue
+        if (String(user?.id) === '2084882603') {
+          console.log('🔍 SEGOMA INVENTORY DEBUG for user 2084882603:', {
+            totalDiamonds: result.data.length,
+            firstDiamond: result.data[0],
+            segoma3DLinks: result.data.map(item => ({
+              stock: item.stock_number,
+              '3D Link': item['3D Link'],
+              segoma_url: item.segoma_url,
+              picture: item.picture
+            }))
+          });
         }
-
-        if (result.data && result.data.length > 0) {
-          console.log('📥 INVENTORY HOOK: Processing', result.data.length, 'diamonds');
+        
+        // Transform data to match Diamond interface with enhanced field mapping
+        const transformedDiamonds = result.data.map(item => {
+          // ENHANCED IMAGE URL PROCESSING - Accept ALL FastAPI image fields
+          let finalImageUrl = undefined;
+          const imageFields = [
+            item.picture,          // Primary FastAPI image field
+            item.image_url,        // Alternative FastAPI field
+            item.imageUrl,         // CamelCase variant
+            item.Image,            // CSV field
+            item.image,            // Generic field
+            item.photo_url,        // Photo URL field
+            item.diamond_image,    // Diamond-specific image
+            item.media_url,        // Media URL
+            item.thumbnail_url,    // Thumbnail
+            item.product_image,    // Product image
+          ];
           
-          // SPECIAL DEBUG for user 2084882603 - Segoma issue
-          if (String(user?.id) === '2084882603') {
-            console.log('🔍 SEGOMA INVENTORY DEBUG for user 2084882603:', {
-              totalDiamonds: result.data.length,
-              firstDiamond: result.data[0],
-              segoma3DLinks: result.data.map(item => ({
-                stock: item.stock_number,
-                '3D Link': item['3D Link'],
-                segoma_url: item.segoma_url,
-                picture: item.picture
-              }))
-            });
-          }
-          
-          // Transform data to match Diamond interface with enhanced field mapping
-          return result.data.map(item => {
-            // ENHANCED IMAGE URL PROCESSING - Accept ALL FastAPI image fields
-            let finalImageUrl = undefined;
-            const imageFields = [
-              item.picture,          // Primary FastAPI image field
-              item.image_url,        // Alternative FastAPI field
-              item.imageUrl,         // CamelCase variant
-              item.Image,            // CSV field
-              item.image,            // Generic field
-              item.photo_url,        // Photo URL field
-              item.diamond_image,    // Diamond-specific image
-              item.media_url,        // Media URL
-              item.thumbnail_url,    // Thumbnail
-              item.product_image,    // Product image
-            ];
-            
-            // Accept FIRST valid image URL from FastAPI without strict filtering
-            for (const imageField of imageFields) {
-              const processedUrl = processImageUrl(imageField);
-              if (processedUrl) {
-                finalImageUrl = processedUrl;
-                break;
-              }
+          // Accept FIRST valid image URL from FastAPI without strict filtering
+          for (const imageField of imageFields) {
+            const processedUrl = processImageUrl(imageField);
+            if (processedUrl) {
+              finalImageUrl = processedUrl;
+              break;
             }
+          }
 
-            return {
-              id: item.id || `${item.stock || item.stock_number || item.VendorStockNumber}-${Date.now()}`,
-              diamondId: item.id || item.diamond_id,
-              stockNumber: item.stock || item.stock_number || item.stockNumber || item.VendorStockNumber || '',
-              shape: normalizeShape(item.shape || item.Shape),
-              carat: parseFloat((item.weight || item.carat || item.Weight || 0).toString()) || 0,
-              color: (item.color || item.Color || 'D').toUpperCase(),
-              clarity: (item.clarity || item.Clarity || 'FL').toUpperCase(),
-              cut: item.cut || item.Cut || item.Make || 'Excellent',
-              polish: item.polish || item.Polish || undefined,
-              symmetry: item.symmetry || item.Symmetry || undefined,
-              price: (() => {
-                const weight = parseFloat((item.weight || item.carat || item.Weight || 0).toString()) || 0;
-                const rawPpc = Number(item.price_per_carat);
-                const rawTotal = Number(item.price);
-                
-                // Use FastAPI price directly
-                let totalPrice = 0;
-                if (rawPpc > 0 && !isNaN(rawPpc) && weight > 0) {
-                  totalPrice = Math.round(rawPpc * weight);
-                } else if (rawTotal > 0 && !isNaN(rawTotal)) {
-                  totalPrice = Math.round(rawTotal);
-                }
-                
-                return Math.max(0, totalPrice);
-              })(),
-              status: item.status || item.Availability || 'Available',
-              fluorescence: item.fluorescence || item.FluorescenceIntensity || undefined,
-              imageUrl: finalImageUrl,
+          return {
+            id: item.id || `${item.stock || item.stock_number || item.VendorStockNumber}-${Date.now()}`,
+            diamondId: item.id || item.diamond_id,
+            stockNumber: item.stock || item.stock_number || item.stockNumber || item.VendorStockNumber || '',
+            shape: normalizeShape(item.shape || item.Shape),
+            carat: parseFloat((item.weight || item.carat || item.Weight || 0).toString()) || 0,
+            color: (item.color || item.Color || 'D').toUpperCase(),
+            clarity: (item.clarity || item.Clarity || 'FL').toUpperCase(),
+            cut: item.cut || item.Cut || item.Make || 'Excellent',
+            polish: item.polish || item.Polish || undefined,
+            symmetry: item.symmetry || item.Symmetry || undefined,
+            price: (() => {
+              const weight = parseFloat((item.weight || item.carat || item.Weight || 0).toString()) || 0;
+              const rawPpc = Number(item.price_per_carat);
+              const rawTotal = Number(item.price);
+              
+              // Use FastAPI price directly
+              let totalPrice = 0;
+              if (rawPpc > 0 && !isNaN(rawPpc) && weight > 0) {
+                totalPrice = Math.round(rawPpc * weight);
+              } else if (rawTotal > 0 && !isNaN(rawTotal)) {
+                totalPrice = Math.round(rawTotal);
+              }
+              
+              return Math.max(0, totalPrice);
+            })(),
+            status: item.status || item.Availability || 'Available',
+            fluorescence: item.fluorescence || item.FluorescenceIntensity || undefined,
+            imageUrl: finalImageUrl,
             // ENHANCED 360° URL PROCESSING - Accept ALL FastAPI 360 fields INCLUDING CSV "3D Link" and column letters like "aa"
             gem360Url: detect360Url(item['3D Link']) ||      // CSV Segoma field - HIGH PRIORITY
                        detect360Url(item['3DLink']) ||       // Alternative format
@@ -219,31 +219,31 @@ export function useInventoryData() {
                        detect360Url(item.three_d_url) ||
                        detect360Url(item.viewer_url) ||
                        undefined,
-              store_visible: item.store_visible !== false,
-              certificateNumber: item.certificate_number || 
-                               item.certificateNumber || 
-                               item.CertificateID || 
-                               undefined,
-              lab: item.lab || item.Lab || undefined,
-              certificateUrl: item.certificate_url || item.certificateUrl || undefined,
-            };
-          });
-        } else {
-          console.log('📥 INVENTORY HOOK: No diamonds found');
-          return [];
-        }
-      });
+            store_visible: item.store_visible !== false,
+            certificateNumber: item.certificate_number || 
+                             item.certificateNumber || 
+                             item.CertificateID || 
+                             undefined,
+            lab: item.lab || item.Lab || undefined,
+            certificateUrl: item.certificate_url || item.certificateUrl || undefined,
+          };
+        });
 
-      console.log('📥 INVENTORY HOOK: Transformed diamonds with image URLs:', 
-        transformedDiamonds.map(d => ({ 
-          stock: d.stockNumber, 
-          imageUrl: d.imageUrl,
-          gem360Url: d.gem360Url 
-        }))
-      );
-      
-      setDiamonds(transformedDiamonds);
-      setAllDiamonds(transformedDiamonds);
+        console.log('📥 INVENTORY HOOK: Transformed diamonds with image URLs:', 
+          transformedDiamonds.map(d => ({ 
+            stock: d.stockNumber, 
+            imageUrl: d.imageUrl,
+            gem360Url: d.gem360Url 
+          }))
+        );
+        
+        setDiamonds(transformedDiamonds);
+        setAllDiamonds(transformedDiamonds);
+      } else {
+        console.log('📥 INVENTORY HOOK: No diamonds found');
+        setDiamonds([]);
+        setAllDiamonds([]);
+      }
     } catch (err) {
       console.error('📥 INVENTORY HOOK: Unexpected error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load inventory';

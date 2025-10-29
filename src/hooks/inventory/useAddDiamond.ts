@@ -243,17 +243,16 @@ export function useAddDiamond(onSuccess?: () => void) {
           created_at: new Date().toISOString()
         };
         
-        existingData.push(newDiamond);
         localStorage.setItem('diamond_inventory', JSON.stringify(existingData));
         
         toast({
-          title: "⚠️ אבן נשמרה מקומית", 
-          description: `אבן "${data.stockNumber}" נשמרה במצב לא מקוון. שגיאת שרת: ${errorMessage}`,
+          title: "⚠️ אבן נשמרה מקומית",
+          description: `אבן "${data.stockNumber}" נשמרה מקומית בלבד ולא תופיע ב-Dashboard/Inventory עד שהשרת יחזור.`,
           variant: "default",
         });
         
-        if (onSuccess) onSuccess();
-        return true;
+        // Do NOT trigger success handlers or inventory refresh on offline save
+        return false;
       }
       
     } catch (error) {
