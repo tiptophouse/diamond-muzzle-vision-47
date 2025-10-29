@@ -5,6 +5,7 @@ import { setCurrentUserId } from '@/lib/api/config';
 import { tokenManager } from '@/lib/api/tokenManager';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { extractTelegramUser } from '@/lib/api/validation';
 
 interface OptimizedAuthState {
   user: TelegramUser | null;
@@ -159,8 +160,8 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
         throw new Error('backend_auth_failed');
       }
 
-      // Store token for future use
-      const userData = extractUserData(tg.initData);
+      // Extract and validate user data using centralized validation
+      const userData = extractTelegramUser(tg.initData);
       if (!userData) {
         throw new Error('invalid_user_data');
       }
@@ -239,33 +240,6 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
       initializedRef.current = true;
     }
   }, [updateState]);
-
-  // Extract user data efficiently
-  const extractUserData = (initData: string): TelegramUser | null => {
-    try {
-      const urlParams = new URLSearchParams(initData);
-      const userParam = urlParams.get('user');
-      
-      if (!userParam) return null;
-      
-      const user = JSON.parse(decodeURIComponent(userParam));
-      if (!user.id || !user.first_name) return null;
-      
-      return {
-        id: user.id,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        username: user.username,
-        language_code: user.language_code || 'en',
-        is_premium: user.is_premium,
-        photo_url: user.photo_url,
-        phone_number: user.phone_number
-      };
-    } catch (error) {
-      console.error('❌ AUTH: Failed to extract user data:', error);
-      return null;
-    }
-  };
 
   // Handle token refresh events
   useEffect(() => {

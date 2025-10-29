@@ -4,8 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from './useTelegramAuth';
 import { useTelegramWebApp } from './useTelegramWebApp';
 import { toast } from '@/components/ui/use-toast';
-import { API_BASE_URL } from '@/lib/api/config';
-// Removed old authentication import
+import { signInToBackend } from '@/lib/api/auth';
 import { getButtonClicked, isFastAPIResponse } from '@/types/groupCTA';
 
 export function useGroupCTATracking() {
@@ -17,25 +16,14 @@ export function useGroupCTATracking() {
     try {
       console.log('🔐 רושם משתמש ב-FastAPI');
       
-      // Direct call to FastAPI without pre-auth token
-      const response = await fetch(`${API_BASE_URL}/api/v1/sign-in/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          init_data: initData
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`רישום נכשל: ${response.status} ${errorText}`);
+      // Use centralized authentication with built-in validation
+      const token = await signInToBackend(initData);
+      
+      if (!token) {
+        throw new Error('רישום נכשל: לא התקבל אסימון מהשרת');
       }
 
-      const result = await response.json();
-      return { success: true, token: result.token };
+      return { success: true, token: token };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'שגיאה לא ידועה';
       return { success: false, error: errorMessage };

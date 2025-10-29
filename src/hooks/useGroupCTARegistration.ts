@@ -2,8 +2,7 @@
 import { useState } from 'react';
 import { useTelegramWebApp } from './useTelegramWebApp';
 import { toast } from '@/components/ui/use-toast';
-import { API_BASE_URL } from '@/lib/api/config';
-// Removed old authentication import
+import { signInToBackend } from '@/lib/api/auth';
 
 interface RegistrationResult {
   success: boolean;
@@ -19,30 +18,18 @@ export function useGroupCTARegistration() {
     try {
       console.log('🔐 רושם משתמש ב-FastAPI עם initData');
       
-      // Direct call to FastAPI without pre-auth token
-      const response = await fetch(`${API_BASE_URL}/api/v1/sign-in/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          init_data: initData
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ רישום נכשל:', response.status, errorText);
-        throw new Error(`רישום נכשל: ${response.status} ${errorText}`);
+      // Use centralized authentication with built-in validation
+      const token = await signInToBackend(initData);
+      
+      if (!token) {
+        throw new Error('רישום נכשל: לא התקבל אסימון מהשרת');
       }
 
-      const result = await response.json();
-      console.log('✅ רישום הצליח:', result);
+      console.log('✅ רישום הצליח');
       
       return {
         success: true,
-        token: result.token
+        token: token
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'שגיאה לא ידועה';

@@ -2,6 +2,7 @@
 import { API_BASE_URL } from './config';
 import { setCurrentUserId } from './config';
 import { tokenManager } from './tokenManager';
+import { validateInitData, validateSignInResponse, extractTelegramUser, type SignInResponse } from './validation';
 
 export interface TelegramVerificationResponse {
   success: boolean;
@@ -33,18 +34,31 @@ export function clearBackendAuthToken(): void {
 }
 
 // THE ONLY TRUE AUTHENTICATION METHOD: Telegram initData → FastAPI sign-in → JWT
+// This function validates initData on the client-side before sending to backend
+// Backend performs additional cryptographic validation of the Telegram signature
 export async function signInToBackend(initData: string): Promise<string | null> {
   try {
     console.log('🔐 MAIN AUTH: Starting FastAPI backend authentication');
     console.log('🔐 MAIN AUTH: InitData length:', initData?.length || 0);
     
-    if (!initData || initData.length === 0) {
-      console.error('🔐 MAIN AUTH: No initData provided');
+    // SECURITY: Validate initData structure before sending to backend
+    try {
+      validateInitData(initData);
+      console.log('✅ MAIN AUTH: Client-side initData validation passed');
+    } catch (validationError) {
+      console.error('❌ MAIN AUTH: Client-side validation failed:', validationError);
+      return null;
+    }
+
+    // Extract user data for caching (before backend call)
+    const userData = extractTelegramUser(initData);
+    if (!userData) {
+      console.error('❌ MAIN AUTH: Failed to extract user data from initData');
       return null;
     }
 
     const signInUrl = `${API_BASE_URL}/api/v1/sign-in/`;
-    console.log('🔐 MAIN AUTH: Sign-in URL:', signInUrl);
+    console.log('🔐 MAIN AUTH: Calling backend sign-in endpoint');
 
     const response = await fetch(signInUrl, {
       method: 'POST',
@@ -61,61 +75,65 @@ export async function signInToBackend(initData: string): Promise<string | null> 
     });
 
     console.log('🔐 MAIN AUTH: Response status:', response.status);
-    console.log('🔐 MAIN AUTH: Response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('🔐 MAIN AUTH: Sign-in failed:', response.status, errorText);
+      console.error('❌ MAIN AUTH: Backend sign-in failed:', response.status, errorText);
+      
+      // Log specific backend validation errors
+      if (response.status === 422) {
+        console.error('❌ MAIN AUTH: Backend validation error - initData format invalid');
+      } else if (response.status === 401) {
+        console.error('❌ MAIN AUTH: Backend authentication failed - invalid Telegram signature');
+      }
+      
       return null;
     }
 
-    const result = await response.json();
-    console.log('🔐 MAIN AUTH: Response data keys:', Object.keys(result));
+    const rawResult = await response.json();
     
-    // FIXED: According to OpenAPI spec, the field is "token", not "access_token"
-    const token = result.token;
+    // SECURITY: Validate backend response matches expected schema
+    let result: SignInResponse;
+    try {
+      result = validateSignInResponse(rawResult);
+      console.log('✅ MAIN AUTH: Backend response validation passed');
+    } catch (validationError) {
+      console.error('❌ MAIN AUTH: Backend response validation failed:', validationError);
+      return null;
+    }
+    
+    const { token, has_subscription } = result;
     
     if (token) {
       backendAuthToken = token;
       console.log('✅ MAIN AUTH: JWT token received and stored');
+      console.log('📊 MAIN AUTH: User subscription status:', has_subscription ? 'ACTIVE' : 'INACTIVE');
       
-      // Extract user ID and store token in manager
+      // Store user ID and token
+      setCurrentUserId(userData.id);
+      tokenManager.setToken(token, userData.id);
+      console.log('✅ MAIN AUTH: User ID extracted and token cached:', userData.id);
+      
+      // Set session context for RLS policies
       try {
-        const urlParams = new URLSearchParams(initData);
-        const userParam = urlParams.get('user');
-        
-        if (userParam) {
-          const user = JSON.parse(decodeURIComponent(userParam));
-          if (user.id) {
-            setCurrentUserId(user.id);
-            tokenManager.setToken(token, user.id);
-            console.log('✅ MAIN AUTH: User ID extracted and token cached:', user.id);
-            
-            // Set session context for RLS policies
-            try {
-              const { supabase } = await import('@/integrations/supabase/client');
-              await supabase.rpc('set_session_context', {
-                key: 'app.current_user_id',
-                value: user.id.toString()
-              });
-              console.log('✅ MAIN AUTH: Session context set for user:', user.id);
-            } catch (contextError) {
-              console.warn('⚠️ MAIN AUTH: Failed to set session context, continuing:', contextError);
-              // Don't throw - this is not critical for basic functionality
-            }
-          }
-        }
-      } catch (error) {
-        console.error('🔐 MAIN AUTH: Failed to extract user ID from initData:', error);
+        const { supabase } = await import('@/integrations/supabase/client');
+        await supabase.rpc('set_session_context', {
+          key: 'app.current_user_id',
+          value: userData.id.toString()
+        });
+        console.log('✅ MAIN AUTH: Session context set for RLS policies');
+      } catch (contextError) {
+        console.warn('⚠️ MAIN AUTH: Failed to set session context, continuing:', contextError);
+        // Don't throw - this is not critical for basic functionality
       }
       
       return backendAuthToken;
     } else {
-      console.error('🔐 MAIN AUTH: No token in response:', Object.keys(result));
+      console.error('❌ MAIN AUTH: No token in validated response');
       return null;
     }
   } catch (error) {
-    console.error('❌ MAIN AUTH: Sign-in error:', error);
+    console.error('❌ MAIN AUTH: Unexpected sign-in error:', error);
     return null;
   }
 }
