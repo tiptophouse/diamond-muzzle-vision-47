@@ -20,10 +20,25 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
   const startTime = useRef(Date.now());
   
   const [state, setState] = useState<OptimizedAuthState>(() => {
-    // Try to restore from cache for instant load
+    // Try to restore from cache for instant load - but verify Telegram environment
     const cachedAuth = tokenManager.getCachedAuthState();
     if (cachedAuth && tokenManager.isValid()) {
-      console.log('⚡ AUTH: Instant load from cache');
+      // Verify we still have valid Telegram environment with initData
+      if (!window.Telegram?.WebApp?.initData) {
+        console.warn('⚠️ AUTH: Cached auth exists but no initData - clearing cache');
+        tokenManager.clear();
+        return {
+          user: null,
+          isLoading: true,
+          error: null,
+          isTelegramEnvironment: false,
+          isAuthenticated: false,
+          accessDeniedReason: null,
+          loadTime: 0
+        };
+      }
+      
+      console.log('⚡ AUTH: Instant load from cache with valid initData');
       setCurrentUserId(cachedAuth.userId);
       return {
         user: cachedAuth.user,
@@ -72,13 +87,14 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
     }
 
     try {
-      // Check if we're in preview/dev environment with a specific user ID
-      const isPreviewMode = window.location.hostname.includes('lovable.app') || 
-                           window.location.hostname.includes('localhost');
+      // CRITICAL: Dev mode ONLY works on localhost (NOT on production lovable.app)
+      const isPreviewMode = window.location.hostname === 'localhost' || 
+                           window.location.hostname === '127.0.0.1' ||
+                           window.location.hostname.endsWith('.local');
       const urlParams = new URLSearchParams(window.location.search);
       const testUserId = urlParams.get('test_user_id') || urlParams.get('user_id');
       
-      // DEVELOPMENT MODE: Allow bypass for testing
+      // DEVELOPMENT MODE: Allow bypass for testing (localhost only)
       if (isPreviewMode && testUserId) {
         console.log('🔧 DEV MODE: Using test user ID:', testUserId);
         const mockUser: TelegramUser = {
@@ -118,9 +134,17 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
         console.warn('⚠️ AUTH: WebApp init warning:', e);
       }
 
-      // Validate initData
-      if (!tg.initData?.length) {
+      // STRICT initData validation - must have minimum length and required fields
+      if (!tg.initData || tg.initData.length < 50) {
+        console.error('❌ AUTH: Invalid or missing Telegram initData');
         throw new Error('no_init_data');
+      }
+
+      // Validate initData structure contains required Telegram fields
+      const initDataParams = new URLSearchParams(tg.initData);
+      if (!initDataParams.get('user') || !initDataParams.get('hash') || !initDataParams.get('auth_date')) {
+        console.error('❌ AUTH: Telegram initData missing required fields (user, hash, auth_date)');
+        throw new Error('invalid_init_data');
       }
 
       console.log('🚀 AUTH: Fast authentication starting...');
@@ -184,6 +208,7 @@ export function useOptimizedTelegramAuth(): OptimizedAuthState {
       const errorMessages = {
         'not_telegram_environment': 'This app only works inside Telegram WebApp',
         'no_init_data': 'Missing Telegram authentication data',
+        'invalid_init_data': 'Invalid Telegram authentication data',
         'backend_auth_failed': 'Backend authentication failed',
         'invalid_user_data': 'Invalid user data',
         'system_error': 'System authentication error'
