@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
 interface RTLContextType {
   direction: 'rtl' | 'ltr';
@@ -9,7 +9,7 @@ interface RTLContextType {
 
 const RTLContext = createContext<RTLContextType | undefined>(undefined);
 
-export function RTLProvider({ children }: { children: React.ReactNode }) {
+export function RTLProvider({ children }: { children: ReactNode }) {
   const [direction, setDirection] = useState<'rtl' | 'ltr'>('ltr');
   
   useEffect(() => {
