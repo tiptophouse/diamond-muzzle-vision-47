@@ -86,11 +86,11 @@ export function useInventoryData() {
 
     // Accept any valid HTTP/HTTPS URL that might be a 360° viewer with enhanced Segoma support
     if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
-      // Enhanced Segoma pattern detection
+      // Enhanced Segoma pattern detection (format: https://segoma.com/v.aspx?type=view&id=X)
       if (trimmedUrl.includes('segoma.com') || 
           trimmedUrl.includes('v.aspx') || 
           trimmedUrl.includes('type=view')) {
-        console.log('🔍 SEGOMA URL DETECTED in inventory:', trimmedUrl);
+        console.log('✅ SEGOMA URL DETECTED:', trimmedUrl);
       }
       return trimmedUrl;
     }
@@ -127,16 +127,18 @@ export function useInventoryData() {
       if (result.data && result.data.length > 0) {
         console.log('📥 INVENTORY HOOK: Processing', result.data.length, 'diamonds');
         
-        // SPECIAL DEBUG for user 2084882603 - Segoma issue
-        if (String(user?.id) === '2084882603') {
-          console.log('🔍 SEGOMA INVENTORY DEBUG for user 2084882603:', {
+        // SPECIAL DEBUG for users 38166518 and 2084882603 - Segoma URL monitoring
+        if (String(user?.id) === '2084882603' || String(user?.id) === '38166518') {
+          console.log(`🔍 SEGOMA DEBUG for user ${user?.id}:`, {
             totalDiamonds: result.data.length,
             firstDiamond: result.data[0],
-            segoma3DLinks: result.data.map(item => ({
+            segomaFields: result.data.slice(0, 5).map(item => ({
               stock: item.stock_number,
               '3D Link': item['3D Link'],
               segoma_url: item.segoma_url,
-              picture: item.picture
+              segomaUrl: item.segomaUrl,
+              gem360Url: item.gem360Url,
+              isSegomaFormat: (item['3D Link'] || item.segoma_url || item.segomaUrl)?.includes('segoma.com/v.aspx')
             }))
           });
         }

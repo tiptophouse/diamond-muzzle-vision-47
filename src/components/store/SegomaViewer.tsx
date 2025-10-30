@@ -19,14 +19,15 @@ export function SegomaViewer({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
-  // Enhanced debugging for Segoma URLs - User 2084882603 focus
-  console.log('🔍 SEGOMA VIEWER DEBUG:', {
+  // Enhanced debugging for Segoma URLs - Monitor specific users (38166518, 2084882603)
+  console.log('🔍 SEGOMA VIEWER:', {
     stockNumber,
     segomaUrl,
     isInline,
     isSegomaUrl: segomaUrl?.includes('segoma.com'),
     hasVAspx: segomaUrl?.includes('v.aspx'),
-    hasTypeView: segomaUrl?.includes('type=view')
+    hasTypeView: segomaUrl?.includes('type=view'),
+    isCorrectFormat: /segoma\.com\/v\.aspx\?type=view&id=/.test(segomaUrl)
   });
 
   useEffect(() => {

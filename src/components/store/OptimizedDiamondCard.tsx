@@ -87,7 +87,11 @@ const OptimizedDiamondCard = memo(({ diamond, index, onUpdate }: OptimizedDiamon
 
   const isV360 = !!(diamond.gem360Url && diamond.gem360Url.includes('v360.in'));
   const isMy360Fab = !!(diamond.gem360Url && diamond.gem360Url.includes('my360.fab'));
-  const isSegoma = !!(diamond.gem360Url && diamond.gem360Url.includes('segoma.com'));
+  // Detect Segoma URLs (format: https://segoma.com/v.aspx?type=view&id=X)
+  const isSegoma = !!(diamond.gem360Url && (
+    diamond.gem360Url.includes('segoma.com') || 
+    diamond.gem360Url.includes('v.aspx')
+  ));
 
   const hasValidImage = !!(
     diamond.imageUrl && 
