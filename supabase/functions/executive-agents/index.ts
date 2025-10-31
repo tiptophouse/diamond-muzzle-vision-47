@@ -41,11 +41,15 @@ serve(async (req) => {
 
     if (agent_type === 'cto') {
       // CTO: Technical data
+      console.log('🔍 CTO Agent: Fetching technical data...');
+      
       const [errors, apiUsage, systemHealth] = await Promise.all([
         supabase.from('error_reports').select('*').order('created_at', { ascending: false }).limit(50),
         supabase.from('bot_usage_analytics').select('*').order('created_at', { ascending: false }).limit(100),
         supabase.from('user_sessions').select('total_duration').order('session_start', { ascending: false }).limit(100)
       ]);
+
+      console.log(`📊 Fetched ${errors.data?.length || 0} errors, ${apiUsage.data?.length || 0} API logs`);
 
       contextData = {
         recent_errors: errors.data?.length || 0,
@@ -63,13 +67,46 @@ serve(async (req) => {
       };
     } else if (agent_type === 'ceo') {
       // CEO: Business metrics
-      const [users, analytics, diamonds] = await Promise.all([
+      console.log('🔍 CEO Agent: Fetching business data...');
+      
+      // Fetch Supabase data
+      const [users, analytics] = await Promise.all([
         supabase.from('user_profiles').select('*'),
-        supabase.from('user_analytics').select('*'),
-        fetch(`${BACKEND_URL}/api/v1/get_all_stones`, {
-          headers: { 'Authorization': `Bearer ${FASTAPI_BEARER_TOKEN}` }
-        }).then(r => r.ok ? r.json() : { error: 'FastAPI unavailable' }).catch(() => ({ error: 'Connection failed' }))
+        supabase.from('user_analytics').select('*')
       ]);
+
+      console.log(`📊 Fetched ${users.data?.length || 0} users, ${analytics.data?.length || 0} analytics records`);
+
+      // Try to fetch FastAPI diamonds with detailed error handling
+      let diamonds: any = { error: 'Not fetched' };
+      let fastapiError = '';
+      
+      try {
+        console.log(`🔗 Attempting FastAPI call to: ${BACKEND_URL}/api/v1/get_all_stones`);
+        const fastapiResponse = await fetch(`${BACKEND_URL}/api/v1/get_all_stones`, {
+          headers: { 
+            'Authorization': `Bearer ${FASTAPI_BEARER_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          signal: AbortSignal.timeout(10000) // 10 second timeout
+        });
+        
+        console.log(`📡 FastAPI Response Status: ${fastapiResponse.status}`);
+        
+        if (fastapiResponse.ok) {
+          diamonds = await fastapiResponse.json();
+          console.log(`✅ FastAPI Success: Received ${Array.isArray(diamonds) ? diamonds.length : 0} diamonds`);
+        } else {
+          const errorText = await fastapiResponse.text();
+          fastapiError = `FastAPI returned HTTP ${fastapiResponse.status}`;
+          console.error(`❌ FastAPI Error: ${fastapiError} - ${errorText.substring(0, 200)}`);
+          diamonds = { error: fastapiError };
+        }
+      } catch (fetchError: any) {
+        fastapiError = `Connection failed: ${fetchError.message}`;
+        console.error(`❌ FastAPI Connection Error:`, fetchError);
+        diamonds = { error: fastapiError };
+      }
 
       const totalRevenue = analytics.data?.reduce((sum: number, a: any) => sum + (a.revenue_per_user || 0), 0) || 0;
       const totalCosts = analytics.data?.reduce((sum: number, a: any) => sum + (a.cost_per_user || 0), 0) || 0;
@@ -90,16 +127,21 @@ serve(async (req) => {
         profit: totalRevenue - totalCosts,
         diamond_count: diamondCount,
         inventory_value: totalInventoryValue,
-        fastapi_status: Array.isArray(diamonds) ? 'connected' : 'error'
+        fastapi_status: Array.isArray(diamonds) ? 'connected' : 'error',
+        fastapi_error: fastapiError || undefined
       };
     } else if (agent_type === 'marketing') {
       // Marketing: Engagement metrics
+      console.log('🔍 Marketing Agent: Fetching engagement data...');
+      
       const [views, shares, behavior, notifications] = await Promise.all([
         supabase.from('diamond_views').select('*').order('view_start', { ascending: false }).limit(100),
         supabase.from('diamond_share_analytics').select('*').order('view_timestamp', { ascending: false }).limit(100),
         supabase.from('user_behavior_analytics').select('*').order('updated_at', { ascending: false }).limit(50),
         supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(100)
       ]);
+
+      console.log(`📊 Fetched ${views.data?.length || 0} views, ${shares.data?.length || 0} shares`);
 
       const avgViewTime = views.data?.reduce((sum: number, v: any) => sum + (v.total_view_time || 0), 0) / (views.data?.length || 1);
       const uniqueViewers = new Set(views.data?.map((v: any) => v.viewer_telegram_id)).size;
@@ -136,6 +178,15 @@ Be concise, data-driven, and specific with your recommendations.`,
 Current Business Data:
 ${JSON.stringify(contextData, null, 2)}
 
+${contextData.fastapi_error ? `\n⚠️ IMPORTANT: The FastAPI backend (which contains 27,000+ diamonds inventory) is currently unavailable: ${contextData.fastapi_error}
+
+This means inventory value calculations are incomplete. Please:
+1. Provide insights based on the available user and revenue data from Supabase
+2. Recommend checking FastAPI backend connectivity
+3. Note that diamond count shows 0 but this is a connection issue, not actual inventory
+
+Despite the FastAPI connection issue, you can still analyze user growth, revenue trends, and provide strategic recommendations.\n` : ''}
+
 Provide strategic business insights focusing on:
 - Revenue and profitability analysis
 - User growth and retention
@@ -160,6 +211,8 @@ Be concise, data-driven, and provide actionable marketing tactics.`
     };
 
     // Call Lovable AI Gateway
+    console.log("🤖 Calling Lovable AI with model: google/gemini-2.0-flash-exp");
+    
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -174,11 +227,13 @@ Be concise, data-driven, and provide actionable marketing tactics.`
           { role: "user", content: message }
         ],
         temperature: 0.7,
-        max_tokens: 1000
+        max_tokens: 1500
       }),
     });
 
     if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      console.error(`❌ AI Gateway Error: ${aiResponse.status} - ${errorText}`);
       throw new Error(`AI Gateway error: ${aiResponse.status}`);
     }
 
@@ -202,7 +257,7 @@ Be concise, data-driven, and provide actionable marketing tactics.`
     return new Response(
       JSON.stringify({
         error: error.message,
-        response: "I encountered an error analyzing the data. Please try again or contact support if the issue persists."
+        response: "I encountered an error analyzing the data. The issue has been logged. Based on what I can see, this might be due to backend connectivity. Please ensure the FastAPI backend is accessible and try again."
       }),
       { 
         status: 500,
