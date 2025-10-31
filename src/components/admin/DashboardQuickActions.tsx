@@ -7,13 +7,21 @@ import {
   Users, 
   CreditCard, 
   Share2, 
-  Bell 
+  Bell,
+  Sparkles
 } from 'lucide-react';
 
 export function DashboardQuickActions() {
   const navigate = useNavigate();
 
   const actions = [
+    {
+      icon: Sparkles,
+      label: 'Executive AI',
+      description: 'CTO/CEO/Marketing',
+      route: '/executive-agents',
+      color: 'from-violet-500 to-fuchsia-600'
+    },
     {
       icon: Rocket,
       label: 'Launch Campaign',
@@ -65,12 +73,12 @@ export function DashboardQuickActions() {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {actions.map((action) => (
+          {actions.map((action, index) => (
             <Button
-              key={action.tab}
+              key={action.tab || action.route || index}
               variant="outline"
               className="h-auto flex flex-col items-center gap-2 p-4 hover:shadow-lg transition-all"
-              onClick={() => navigate(`/admin?tab=${action.tab}`)}
+              onClick={() => action.route ? navigate(action.route) : navigate(`/admin?tab=${action.tab}`)}
             >
               <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${action.color} flex items-center justify-center`}>
                 <action.icon className="h-6 w-6 text-white" />

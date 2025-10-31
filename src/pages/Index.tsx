@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useUserTracking } from '@/hooks/useUserTracking';
 import { getFirstAdminTelegramId } from '@/lib/secureAdmin';
-import { Plus, Gem, Store, PieChart, BarChart3, TrendingUp, Users, Search, MessageSquare } from "lucide-react";
+import { Plus, Gem, Store, PieChart, BarChart3, TrendingUp, Users, Search, MessageSquare, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AuthDiagnostics } from "@/components/debug/AuthDiagnostics";
@@ -147,6 +147,14 @@ const Index = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <NavigationCard
+              icon={<Sparkles className="h-8 w-8" />}
+              title="Executive AI Agents"
+              description="CTO, CEO & Marketing insights"
+              href="/executive-agents"
+              className="bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white hover:from-violet-600 hover:to-fuchsia-600"
+            />
+
             <NavigationCard
               icon={<Users className="h-8 w-8" />}
               title="Admin Dashboard"
