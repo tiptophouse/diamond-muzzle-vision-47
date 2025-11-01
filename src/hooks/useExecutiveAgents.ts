@@ -118,12 +118,18 @@ export function useExecutiveAgents() {
     try {
       console.log('🎯 Executive Agent Request:', { agentType, userId: user.id, content });
       
+      // Get Telegram initData for FastAPI authentication
+      const initData = typeof window !== 'undefined' && window.Telegram?.WebApp?.initData 
+        ? window.Telegram.WebApp.initData 
+        : null;
+      
       // Call the executive-agents edge function with enhanced context
       const { data, error: functionInvokeError } = await supabase.functions.invoke('executive-agents', {
         body: {
           message: content,
           user_id: user.id,
           agent_type: agentType,
+          init_data: initData, // Add Telegram initData for FastAPI sign-in
           conversation_history: messages.map(msg => ({
             role: msg.role,
             content: msg.content

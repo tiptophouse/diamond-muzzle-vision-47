@@ -16,6 +16,7 @@ interface AgentRequest {
   message: string;
   user_id: number;
   agent_type: 'cto' | 'ceo' | 'marketing';
+  init_data?: string; // Telegram initData for dynamic FastAPI authentication
   conversation_history?: Array<{ role: string; content: string }>;
   context?: {
     fastapi_url?: string;
@@ -32,7 +33,7 @@ serve(async (req) => {
 
   try {
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
-    const { message, user_id, agent_type, conversation_history = [], context = {} }: AgentRequest = await req.json();
+    const { message, user_id, agent_type, init_data, conversation_history = [], context = {} }: AgentRequest = await req.json();
 
     console.log("🎯 Executive Agent Request:", { agent_type, user_id, message: message.substring(0, 50) });
 
@@ -77,18 +78,46 @@ serve(async (req) => {
 
       console.log(`📊 Fetched ${users.data?.length || 0} users, ${analytics.data?.length || 0} analytics records`);
 
-      // Try to fetch FastAPI diamonds with detailed error handling
+      // Try to fetch FastAPI diamonds with dynamic authentication
       let diamonds: any = { error: 'Not fetched' };
       let fastapiError = '';
+      let fastapiToken = FASTAPI_BEARER_TOKEN; // Start with static token
       
+      // Try dynamic sign-in first if init_data is available
+      if (init_data) {
+        try {
+          console.log('🔐 Attempting FastAPI dynamic sign-in...');
+          const signInResponse = await fetch(`${BACKEND_URL}/api/v1/sign-in/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ init_data }),
+            signal: AbortSignal.timeout(5000)
+          });
+          
+          if (signInResponse.ok) {
+            const signInData = await signInResponse.json();
+            fastapiToken = signInData.token;
+            console.log('✅ FastAPI sign-in successful, using dynamic token');
+          } else {
+            const errorText = await signInResponse.text();
+            console.log(`⚠️ FastAPI sign-in failed (${signInResponse.status}), falling back to static token - ${errorText.substring(0, 100)}`);
+          }
+        } catch (signInError: any) {
+          console.log(`⚠️ FastAPI sign-in error: ${signInError.message}, falling back to static token`);
+        }
+      } else {
+        console.log('⚠️ No init_data provided, using static FASTAPI_BEARER_TOKEN');
+      }
+      
+      // Fetch diamonds with the token (dynamic or static)
       try {
-        console.log(`🔗 Attempting FastAPI call to: ${BACKEND_URL}/api/v1/get_all_stones`);
+        console.log(`🔗 Fetching diamonds from: ${BACKEND_URL}/api/v1/get_all_stones`);
         const fastapiResponse = await fetch(`${BACKEND_URL}/api/v1/get_all_stones`, {
           headers: { 
-            'Authorization': `Bearer ${FASTAPI_BEARER_TOKEN}`,
+            'Authorization': `Bearer ${fastapiToken}`,
             'Content-Type': 'application/json'
           },
-          signal: AbortSignal.timeout(10000) // 10 second timeout
+          signal: AbortSignal.timeout(10000)
         });
         
         console.log(`📡 FastAPI Response Status: ${fastapiResponse.status}`);
@@ -98,8 +127,8 @@ serve(async (req) => {
           console.log(`✅ FastAPI Success: Received ${Array.isArray(diamonds) ? diamonds.length : 0} diamonds`);
         } else {
           const errorText = await fastapiResponse.text();
-          fastapiError = `FastAPI returned HTTP ${fastapiResponse.status}`;
-          console.error(`❌ FastAPI Error: ${fastapiError} - ${errorText.substring(0, 200)}`);
+          fastapiError = `HTTP ${fastapiResponse.status}: ${errorText.substring(0, 200)}`;
+          console.error(`❌ FastAPI Error: ${fastapiError}`);
           diamonds = { error: fastapiError };
         }
       } catch (fetchError: any) {
