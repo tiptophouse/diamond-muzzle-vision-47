@@ -73,84 +73,119 @@ export function GroupedNotificationCard({
   );
 
   return (
-    <Card className="bg-gradient-to-br from-primary/10 via-blue-500/5 to-purple-500/5 border-2 border-primary/20 shadow-lg">
-      {/* Collapsed Header */}
-      <div
-        onClick={handleToggle}
-        className="p-4 cursor-pointer hover:bg-primary/5 transition-colors touch-manipulation"
-      >
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <Avatar className="h-12 w-12 border-2 border-primary shadow-sm">
-              <AvatarFallback className="bg-primary/20 text-primary font-bold text-lg">
-                {group.buyer.name[0].toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-base truncate">{group.buyer.name}</p>
-              <p className="text-xs text-muted-foreground truncate">
-                {group.totalCount} diamonds • {formatDistanceToNow(new Date(group.latestTimestamp), { addSuffix: true })}
-              </p>
-              <p className="text-xs font-semibold text-primary mt-0.5">
-                Total Value: ${totalValue.toLocaleString()}
-              </p>
+    <Card className="overflow-hidden bg-card border-border shadow-md hover:shadow-lg transition-all">
+      {/* Header with buyer info */}
+      <div className="p-4 bg-gradient-to-r from-primary/5 to-accent/5">
+        <div className="flex items-start gap-3">
+          <Avatar className="h-14 w-14 border-2 border-primary/20 shadow-sm flex-shrink-0">
+            <AvatarFallback className="bg-primary text-primary-foreground font-bold text-xl">
+              {group.buyer.name[0].toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-lg text-foreground truncate">
+                  {group.buyer.name}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {formatDistanceToNow(new Date(group.latestTimestamp), { addSuffix: true })}
+                </p>
+              </div>
+              <Badge 
+                variant="secondary" 
+                className="text-base font-bold px-3 py-1 bg-primary/10 text-primary border-primary/20 flex-shrink-0"
+              >
+                {group.totalCount}
+              </Badge>
             </div>
-          </div>
-
-          <div className="flex flex-col items-end gap-2">
-            <Badge variant="default" className="text-base px-3 py-1 font-bold">
-              {group.totalCount}
-            </Badge>
-            {expanded ? (
-              <ChevronUp className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            )}
+            
+            <div className="flex items-center gap-2 text-sm">
+              <Diamond className="h-4 w-4 text-primary" />
+              <span className="font-semibold text-foreground">
+                {group.totalCount} {group.totalCount === 1 ? 'Diamond' : 'Diamonds'}
+              </span>
+              <span className="text-muted-foreground">•</span>
+              <span className="font-bold text-primary">
+                ${totalValue.toLocaleString()}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Expanded Content */}
+      {/* Contact Button - Always Visible */}
+      <div className="px-4 pt-3 pb-2">
+        <Button
+          size="lg"
+          onClick={handleContact}
+          className="w-full h-12 text-base font-semibold gap-2 bg-green-600 hover:bg-green-700 text-white shadow-md touch-manipulation"
+        >
+          <MessageCircle className="h-5 w-5" />
+          Contact Buyer
+        </Button>
+      </div>
+
+      {/* Toggle Diamond List */}
+      <div 
+        onClick={handleToggle}
+        className="px-4 pb-3 cursor-pointer hover:bg-accent/50 transition-colors touch-manipulation"
+      >
+        <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground font-medium">
+          {expanded ? (
+            <>
+              <ChevronUp className="h-4 w-4" />
+              Hide Diamond List
+            </>
+          ) : (
+            <>
+              <ChevronDown className="h-4 w-4" />
+              View Diamond List
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Expanded Diamond List */}
       {expanded && (
-        <CardContent className="pt-0 px-4 pb-4 space-y-3 border-t">
-          {/* Diamond List */}
-          <div className="space-y-2 max-h-64 overflow-y-auto">
+        <div className="px-4 pb-4 pt-0 border-t border-border/50">
+          <div className="space-y-2 max-h-80 overflow-y-auto mt-3">
             {group.matches.map((match, idx) => (
               <div
                 key={idx}
-                className="bg-background/60 rounded-lg p-3 border border-border/50"
+                className="bg-accent/30 rounded-lg p-3 border border-border/30 hover:bg-accent/50 transition-colors"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <Diamond className="h-4 w-4 text-primary flex-shrink-0" />
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Diamond className="h-5 w-5 text-primary" />
+                    </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold truncate">
+                      <p className="text-sm font-bold text-foreground">
                         {match.shape} {match.weight}ct
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {match.color} {match.clarity} • #{match.stock_number}
+                        {match.color} • {match.clarity}
+                      </p>
+                      <p className="text-xs text-muted-foreground/70 mt-0.5">
+                        Stock #{match.stock_number}
                       </p>
                     </div>
                   </div>
-                  <p className="font-bold text-primary text-sm flex-shrink-0">
-                    {formatPrice(match)}
-                  </p>
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-bold text-base text-primary">
+                      {formatPrice(match)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      ${match.price_per_carat.toLocaleString()}/ct
+                    </p>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-
-          {/* Contact Button - Prominent */}
-          <Button
-            size="lg"
-            onClick={handleContact}
-            className="w-full h-14 text-base font-bold gap-2 bg-green-600 hover:bg-green-700 shadow-lg touch-manipulation"
-          >
-            <MessageCircle className="h-5 w-5" />
-            📱 צ'אט עם {group.buyer.name}
-          </Button>
-        </CardContent>
+        </div>
       )}
     </Card>
   );
